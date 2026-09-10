@@ -86,14 +86,17 @@ object DefaultHandlers {
       case None =>
         sctx.errors.add(TypeError.DefaultHandlerNotInModule(handlerSym, handlerSym.loc))
         None
-      case Some((resolvedEffSym, _)) =>
+      case Some((resolvedEffSym, effect)) =>
         // Synthetic location of our handler
         val loc = handlerSym.loc.asSynthetic
-        // There is a valid effect to wrap
-        val handledEff = Type.Cst(TypeConstructor.Effect(resolvedEffSym, Kind.Eff), loc)
+        // There is a valid effect to wrap. Instantiate its parameters with fresh variables so the
+        // expected handler scheme is polymorphic in the effect arguments as well.
+        val effectArgs = effect.tparams.map(tparam => Type.freshVar(tparam.sym.kind, loc)(RegionScope.Top, flix))
+        val effectKind = Kind.mkArrowTo(effectArgs.map(_.kind), Kind.Eff)
+        val handledEff = Type.mkApply(Type.Cst(TypeConstructor.Effect(resolvedEffSym, effectKind), loc), effectArgs, loc)
         val declaredScheme = handlerDef.spec.sc
         // Generate expected scheme for generating IO
-        val expectedSchemeIO = getDefaultHandlerTypeScheme(handledEff, Type.IO, loc)
+        val expectedSchemeIO = getDefaultHandlerTypeScheme(handledEff, effectArgs.map(_.sym), Type.IO, loc)
         // Check if handler's scheme fits any of the valid handler's schemes and if not generate an error
         if (!Scheme.equal(expectedSchemeIO, declaredScheme, traitEnv, eqEnv, Nil)(RegionScope.Top, flix)) {
           sctx.errors.add(TypeError.IllegalDefaultHandlerSignature(resolvedEffSym, handlerSym, handlerSym.loc))
@@ -114,15 +117,16 @@ object DefaultHandlers {
     * }}}
     *
     * @param handledEff                The type of the effect associated with the default handler
+    * @param effectQuantifiers         The type parameters of the handled effect
     * @param generatedPrimitiveEffects The type of the generated primitive effects by the default handler
     * @param loc                       The source location to be used for members of the scheme
     * @return The expected scheme of the default handler
     */
-  private def getDefaultHandlerTypeScheme(handledEff: Type, generatedPrimitiveEffects: Type, loc: SourceLocation)(implicit flix: Flix): Scheme = {
+  private def getDefaultHandlerTypeScheme(handledEff: Type, effectQuantifiers: List[Symbol.KindedTypeVarSym], generatedPrimitiveEffects: Type, loc: SourceLocation)(implicit flix: Flix): Scheme = {
     val a = Type.freshVar(Kind.Star, loc)(RegionScope.Top, flix)
     val ef = Type.freshVar(Kind.Eff, loc)(RegionScope.Top, flix)
     Scheme(
-      quantifiers = List(a.sym, ef.sym),
+      quantifiers = effectQuantifiers ::: List(a.sym, ef.sym),
       tconstrs = Nil,
       econstrs = Nil,
       base = Type.mkArrowWithEffect(

@@ -41,7 +41,8 @@ private[monomorph2] object Specialize {
     * Lookup tables mapping each parametric def/enum/struct/restrictable-enum's original sym,
     * at a given ground instantiation, to its fresh specialized sym.
     *
-    * @param defTable              Fresh syms for parametric defs.
+    * @param defTable              Fresh syms for parametric defs, keyed by their ground arrow types.
+    * @param defArgTable           Fresh syms for root defs, keyed by their explicit ground type arguments.
     * @param enumTable             Fresh syms for parametric enums only.
     * @param structTable           Fresh syms for parametric structs only.
     * @param restrictableEnumTable Fresh syms for (parametric) restrictable enums. (Restrictable enums always carry the case-set index as an implicit tparam.)
@@ -49,6 +50,7 @@ private[monomorph2] object Specialize {
     */
   private[monomorph2] case class SpecializationTables(
     defTable: Map[(Symbol.DefnSym, Type), Symbol.DefnSym],
+    defArgTable: Map[(Symbol.DefnSym, List[Type]), Symbol.DefnSym],
     enumTable: Map[(Symbol.EnumSym, List[Type]), Symbol.EnumSym],
     structTable: Map[(Symbol.StructSym, List[Type]), Symbol.StructSym],
     restrictableEnumTable: Map[(Symbol.RestrictableEnumSym, List[Type]), Symbol.EnumSym],
@@ -56,11 +58,12 @@ private[monomorph2] object Specialize {
   )
 
   /**
-    * Returns the sym to use for a call to `sym` at ground arrow type `groundArrowTpe`.
+    * Returns the sym to use for a call to `sym` at ground arrow type `groundArrowTpe` and,
+    * when available, explicit ground type arguments `groundTypeArgs`.
     */
-  private[monomorph2] def lookupSym(sym: Symbol.DefnSym, groundArrowTpe: Type)
+  private[monomorph2] def lookupSym(sym: Symbol.DefnSym, groundArrowTpe: Type, groundTypeArgs: List[Type] = Nil)
                        (implicit tables: SpecializationTables, root: TypedAst.Root): Symbol.DefnSym =
-    tables.defTable.get((sym, groundArrowTpe)) match {
+    tables.defArgTable.get((sym, groundTypeArgs)).orElse(tables.defTable.get((sym, groundArrowTpe))) match {
       case Some(specializedSym) => specializedSym
 
       case None =>
@@ -408,6 +411,18 @@ private[monomorph2] object Specialize {
     val defTableMap =
       entries.map { case (freshSym, defn, _, it) => (defn.sym, it) -> freshSym }.toMap
 
+    // Calls to root definitions are normally resolved from their ground arrow type. If a type
+    // parameter occurs only in an effect, however, effect erasure gives different instantiations
+    // the same arrow type. For example, `f[Int32]` and `f[String]` are indistinguishable after
+    // erasing `E[Int32]` and `E[String]`. Keying by the explicit arguments keeps their specialized
+    // symbols distinct.
+    val defArgTableMap =
+      entries.collect {
+        case (freshSym, defn, subst, _) if root.defs.contains(defn.sym) =>
+          val args = defn.spec.tparams.map(tparam => subst(Type.Var(tparam.sym, tparam.loc)))
+          (defn.sym, args) -> freshSym
+      }.toMap
+
     val enumEntries = mkEnumEntries(solution)
     val enumTableMap =
       enumEntries.map { case (sym, args, freshSym, _) => (sym, args) -> freshSym }.toMap
@@ -422,7 +437,7 @@ private[monomorph2] object Specialize {
 
     val is: Map[(Symbol.TraitSym, TypeConstructor), Instance] = MonomorphHelpers.mkInstanceMap(root.instances)
 
-    implicit val tables: SpecializationTables = SpecializationTables(defTableMap, enumTableMap, structTableMap, restrictableEnumTableMap, is)
+    implicit val tables: SpecializationTables = SpecializationTables(defTableMap, defArgTableMap, enumTableMap, structTableMap, restrictableEnumTableMap, is)
 
     // Create specialized and lowered versions of the different families of declarations
 

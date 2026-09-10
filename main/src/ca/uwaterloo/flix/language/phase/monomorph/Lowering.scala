@@ -884,10 +884,20 @@ object Lowering {
       case Result.Err(_) => throw InternalCompilerException("Unexpected illegal effect set on entry point", currentDef.spec.eff.loc)
     }
     // Gather only the default handlers for the effects appearing in the signature of the definition.
-    val requiredHandlers = root.defaultHandlers.filter(h => defEffects.contains(h.handledSym))
+    val requiredHandlers = root.defaultHandlers.collect {
+      case handler if defEffects.contains(handler.handledSym) =>
+        // EntryPoints ensures that every retained entry point has a ground, finite effect set.
+        // Hence membership in defEffects implies a corresponding occurrence in the effect formula.
+        val handledEff = Type.findEffect(handler.handledSym, currentDef.spec.eff).getOrElse {
+          throw InternalCompilerException(s"Missing concrete effect '${handler.handledSym}' in entry point.", currentDef.spec.eff.loc)
+        }
+        (handler, handledEff)
+    }
     // Wrap the expression in each of the required default handlers.
     // Right now, the order depends on the order of defaultHandlers.
-    requiredHandlers.foldLeft(currentDef)((defn, handler) => wrapInHandler(defn, handler))
+    requiredHandlers.foldLeft(currentDef) {
+      case (defn, (handler, handledEff)) => wrapInHandler(defn, handler, handledEff)
+    }
   }
 
   /**
@@ -911,17 +921,18 @@ object Lowering {
     *
     * @param defn           The entry point function definition to wrap
     * @param defaultHandler Information about the default handler to apply
+    * @param handledEff     The concrete application of the handled effect in the entry point
     * @param root           The typed AST root
     * @return The wrapped function definition with updated effect signature
     */
-  private def wrapInHandler(defn: TypedAst.Def, defaultHandler: DefaultHandler)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
+  private def wrapInHandler(defn: TypedAst.Def, defaultHandler: DefaultHandler, handledEff: Type)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
     // Create synthetic locations
     val effLoc = defn.spec.eff.loc.asSynthetic
     val baseTypeLoc = defn.spec.declaredScheme.base.loc.asSynthetic
     val expLoc = defn.exp.loc.asSynthetic
     // The new type is the same as the wrapped def with an effect set of
     // `(ef - handledEffect) + IO` where `ef` is the effect set of the previous definition.
-    val effDif = Type.mkDifference(defn.spec.eff, defaultHandler.handledEff, effLoc)
+    val effDif = Type.mkDifference(defn.spec.eff, handledEff, effLoc)
     // Technically we could perform this outside at the wrapInHandlers level
     // by just checking the length of the handlers and if it is greater than 0
     // just adding IO. However, that would only work while default handlers can only generate IO.

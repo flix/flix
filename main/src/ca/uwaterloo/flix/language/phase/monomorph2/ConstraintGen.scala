@@ -234,9 +234,17 @@ private[monomorph2] object ConstraintGen {
     if (TypedAstOps.isEntryPoint(defn)(root)) {
       val loc = defn.spec.eff.loc
       val defEffects = Canonicalization.evalEff(defn.spec.eff)
-      val requiredHandlers = root.defaultHandlers.filter(h => defEffects.contains(h.handledSym))
+      val requiredHandlers = root.defaultHandlers.collect {
+        case handler if defEffects.contains(handler.handledSym) =>
+          // EntryPoints ensures that every retained entry point has a ground, finite effect set.
+          // Hence membership in defEffects implies a corresponding occurrence in the effect formula.
+          val handledEff = Type.findEffect(handler.handledSym, defn.spec.eff).getOrElse {
+            throw InternalCompilerException(s"Missing concrete effect '${handler.handledSym}' in entry point.", loc)
+          }
+          (handler, handledEff)
+      }
       requiredHandlers.foldLeft(defn.spec.eff) {
-        case (eff, handler) =>
+        case (eff, (handler, handledEff)) =>
           val handlerDef = root.defs(handler.handlerSym)
           val handlerTparams = handlerDef.spec.tparams
           // E.g. imagine we have this effect declaration:
@@ -262,16 +270,19 @@ private[monomorph2] object ConstraintGen {
           //   [Unit, Ask + IO] ~> Ask.handle
           // }}}
           //
-          // N.B. We use full unification rather than reading `a`/`ef` off fixed positions because
+          // N.B. We use full unification rather than reading type arguments off fixed positions because
           // a default handler's parameter type only has to be *equal* to `Unit -> a \ ef`, not
           // written that way syntactically — e.g. `f: Unit -> a \ (ef + Pure)` is a valid handler
-          // parameter type too.
+          // parameter type too. Unifying the complete handler arrow also recovers type parameters
+          // that occur only in the handled effect.
           val concreteParamTpe = Type.mkArrowWithEffect(Type.Unit, eff, defn.spec.retTpe, loc)
-          val subst = ConstraintSolver2.fullyUnify(handlerDef.spec.fparams.head.tpe, concreteParamTpe, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix)
+          val resultEff = Type.mkUnion(Type.mkDifference(eff, handledEff, loc), Type.IO, loc)
+          val concreteHandlerTpe = Type.mkArrowWithEffect(concreteParamTpe, resultEff, defn.spec.retTpe, loc)
+          val subst = ConstraintSolver2.fullyUnify(handlerDef.spec.declaredScheme.base, concreteHandlerTpe, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix)
             .getOrElse(throw InternalCompilerException(s"Could not unify default handler '${handler.handlerSym}' against its call site.", loc))
           val args = handlerTparams.map(tp => typeToMonoArg(subst(Type.Var(tp.sym, loc))))
           sctx.addFlowConstraint(FlowConstraint(Instantiation(args), MonoVar.Def(handler.handlerSym)))
-          Canonicalization.canonicalEffect(Type.mkUnion(Type.mkDifference(eff, handler.handledEff, loc), Type.IO, loc))
+          resultEff
       }
       ()
     }

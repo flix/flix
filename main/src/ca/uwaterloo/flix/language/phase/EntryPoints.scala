@@ -378,7 +378,7 @@ object EntryPoints {
       // previous phase has already reported an error. Either way, report nothing here.
       None
     } else {
-      Some(EntryPointError.IllegalEntryPointEffect(toEffType(residual, eff.loc), eff.loc))
+      Some(EntryPointError.IllegalEntryPointEffect(toEffType(residual, eff), eff.loc))
     }
   }
 
@@ -394,10 +394,12 @@ object EntryPoints {
       case Result.Err(_) => CofiniteSet.empty
     }
 
-  /** Reconstructs an effect [[Type]], located at `loc`, from a set of effect symbols. */
-  private def toEffType(s: CofiniteSet[Symbol.EffSym], loc: SourceLocation): Type = {
+  /** Reconstructs an effect [[Type]] from a set of effect symbols, preserving applied effects from `original`. */
+  private def toEffType(s: CofiniteSet[Symbol.EffSym], original: Type): Type = {
+    val loc = original.loc
+
     def union(syms: SortedSet[Symbol.EffSym]): Type =
-      Type.mkUnion(syms.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)), loc)
+      Type.mkUnion(syms.toList.map(sym => Type.findEffect(sym, original).getOrElse(Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc))), loc)
 
     s match {
       case CofiniteSet.Set(syms) => union(syms)
