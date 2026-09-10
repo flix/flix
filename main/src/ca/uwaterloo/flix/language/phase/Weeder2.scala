@@ -3207,8 +3207,9 @@ object Weeder2 {
       */
     private def checkDuplicateTypeParams(tparams: List[TypeParam])(implicit sctx: SharedContext): Unit = {
       val tparamsWithoutWildcards = tparams.filter(!_.ident.isWild)
-      val errors = SeqOps.getDuplicates(tparamsWithoutWildcards, (t: TypeParam) => t.ident.name)
-        .map(pair => DuplicateTypeParam(pair._1.ident.name, pair._1.ident.loc, pair._2.ident.loc))
+      val errors = SeqOps.getDuplicates(tparamsWithoutWildcards, (t: TypeParam) => t.ident.name).map {
+        case (tparam1, tparam2) => DuplicateTypeParam(tparam1.ident.name, tparam1.ident.loc, tparam2.ident.loc)
+      }
       errors.foreach(sctx.errors.add)
     }
 
