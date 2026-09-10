@@ -966,6 +966,46 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[TypeError.MethodNotFound](result)
   }
 
+  test("UndefinedJvmMethod.09") {
+    val input =
+      raw"""
+           |def foo(): String \ IO =
+           |    (2).toString()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("UndefinedJvmMethod.10") {
+    val input =
+      raw"""
+           |def foo(): Bool \ IO =
+           |    true.equals(true)
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("UndefinedJvmMethod.11") {
+    val input =
+      raw"""
+           |def foo(): Int32 \ IO =
+           |    (2.0f64).hashCode()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("UndefinedJvmMethod.12") {
+    val input =
+      raw"""
+           |def foo(): String \ IO =
+           |    'a'.toString()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
   test("UndefinedJvmField.01") {
     val input =
       """

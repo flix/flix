@@ -211,7 +211,14 @@ object TypeReduction2 {
     if (!typesAreKnown) return JavaResolution.UnresolvedTypes
 
     // Rigid type variables and other non-Java types fall back to Object.
-    retrieveMethod(JavaTypes.erasedDescriptorOf(thisObj), methodName, ts, static = false, loc)
+    val owner = JavaTypes.erasedDescriptorOf(thisObj)
+
+    // Primitives (e.g. Int32) have no methods and must not fall back to Object,
+    // since the receiver is never boxed and invoking Object methods on it would
+    // produce invalid bytecode.
+    if (owner.isPrimitive) return JavaResolution.NotFound
+
+    retrieveMethod(owner, methodName, ts, static = false, loc)
   }
 
   /** Tries to find a static method of `owner` that takes arguments of type `ts`. */
