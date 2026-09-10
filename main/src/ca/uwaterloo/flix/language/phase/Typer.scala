@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
@@ -35,7 +36,7 @@ object Typer {
   /**
     * Type checks the given AST root.
     */
-  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (TypedAst.Root, List[TypeError]) = flix.phase("Typer") {
+  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (TypedAst.Root, List[CompilationMessage]) = flix.phase("Typer") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     val traitEnv = mkTraitEnv(root.traits, root.instances)
@@ -52,10 +53,10 @@ object Typer {
     val precedenceGraph = LabelledPrecedenceGraph.empty
     val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
     val modules = collectModules(root)
-    val defaultHandlers = DefaultHandlers.visitDefaultHandlers(root)(flix, sctx, traitEnv, eqEnv)
+    val (defaultHandlers, defaultHandlerErrors) = DefaultHandlers.visitDefaultHandlers(root)(eqEnv, flix)
     val result = TypedAst.Root(modules, traits, instances, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, Set.empty, defaultHandlers, root.sources, traitEnv, eqEnv, root.availableClasses, precedenceGraph, DependencyGraph.empty, root.tokens)
 
-    (result, sctx.errors.asScala.toList)
+    (result, sctx.errors.asScala.toList ++ defaultHandlerErrors)
 
   }
 
