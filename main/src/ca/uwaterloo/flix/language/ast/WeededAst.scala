@@ -454,7 +454,9 @@ object WeededAst {
 
   case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr, loc: SourceLocation)
 
-  sealed trait TypeParam
+  sealed trait TypeParam {
+    def ident: Name.Ident
+  }
 
   object TypeParam {
 
