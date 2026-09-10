@@ -3687,6 +3687,27 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.IllegalDefaultHandlerSignature](result)
   }
 
+  test("Test.IllegalDefaultHandlerSignature.08") {
+    val input =
+      """
+        |pub eff E[t] {
+        |   def op(x: t): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E[Int32]) + IO =
+        |        run f() with handler E {
+        |            def op(_x, k) = k()
+        |        }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
   test("Test.NonPublicDefaultHandler.01") {
     val input =
       """

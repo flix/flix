@@ -694,6 +694,36 @@ object Type {
   }
 
   /**
+    * Returns an occurrence of the effect constructor `sym` in the effect formula `eff`.
+    *
+    * A saturated polymorphic effect application is treated as an atomic effect. In particular,
+    * effect types nested in its type arguments are not occurrences in the surrounding formula.
+    */
+  def findEffect(sym: Symbol.EffSym, eff: Type): Option[Type] = eff match {
+    case tpe@Type.Cst(TypeConstructor.Effect(otherSym, Kind.Eff), _) =>
+      Option.when(sym == otherSym)(tpe)
+    case app@Type.Apply(_, _, _) if app.kind == Kind.Eff => app.baseType match {
+      case Type.Cst(TypeConstructor.Effect(otherSym, _), _) =>
+        Option.when(sym == otherSym)(app)
+      case _ => app match {
+        case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x, _) =>
+          findEffect(sym, x)
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
+          findEffect(sym, x).orElse(findEffect(sym, y))
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
+          findEffect(sym, x).orElse(findEffect(sym, y))
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) =>
+          findEffect(sym, x).orElse(findEffect(sym, y))
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
+          findEffect(sym, x).orElse(findEffect(sym, y))
+        case _ => None
+      }
+    }
+    case Type.Alias(_, _, tpe, _) => findEffect(sym, tpe)
+    case _ => None
+  }
+
+  /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
   def freshVar(k: Kind, loc: SourceLocation, text: VarText = VarText.Absent)(implicit scope: RegionScope, flix: Flix): Type.Var = {

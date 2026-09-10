@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -241,6 +241,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointEffect](result)
+    val offendingEffect = result._2.collectFirst {
+      case EntryPointError.IllegalEntryPointEffect(eff, _) => eff
+    }
+    assert(offendingEffect.exists(_.typeArguments == List(Type.Int32)))
   }
 
   test("Test.IllegalEntryPointEffect.Test.01") {
@@ -767,6 +771,27 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit \ E1 + E2 + E3 + IO = E1.op1();E2.op2();E3.op3();println("Hello World")
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.PolymorphicDefaultHandler.01") {
+    val input =
+      """
+        |pub eff Emit[t] {
+        |    def emit(x: t): Unit
+        |}
+        |
+        |mod Emit {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Emit[t]) + IO =
+        |        run f() with handler Emit {
+        |            def emit(_x, k) = k()
+        |        }
+        |}
+        |
+        |def main(): Unit \ Emit[Int32] = Emit.emit(42)
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectSuccess(result)
