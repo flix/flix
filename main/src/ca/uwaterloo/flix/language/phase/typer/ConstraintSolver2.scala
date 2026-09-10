@@ -154,7 +154,7 @@ object ConstraintSolver2 {
     * Collects pointwise equalities between saturated applications of the same effect constructor.
     * Every occurrence in one constraint system must agree on the constructor's type arguments.
     * An application is saturated when all the constructor's type parameters are supplied and the
-    * result has kind `Eff`; for `F: Type -> Eff`, `F[Int32]` is saturated while `F` is not.
+    * result has kind `Eff`; for a declared effect `F: Type -> Eff`, `F[Int32]` is saturated while `F` is not.
     *
     * For example, given the declarations:
     * {{{
