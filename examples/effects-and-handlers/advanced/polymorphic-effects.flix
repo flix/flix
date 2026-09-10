@@ -9,9 +9,11 @@ eff State[s] {
 
 /// Increments an `Int32` state `n` times.
 def tick(n: Int32): Unit \ State[Int32] =
-    if (n <= 0) () else {
+    if (n > 0) {
         State.put(State.get() + 1);
         tick(n - 1)
+    } else {
+        ()
     }
 
 def main(): Unit \ IO = region rc {
