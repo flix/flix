@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.DefaultHandlerError
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
+import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.Nel
 
 import scala.collection.mutable
@@ -18,9 +19,12 @@ object DefaultHandlers {
       case (_, defn) => defn.spec.ann.isDefaultHandler
     }
 
-    val (errors, validHandlers) = handlerDefs.partitionMap {
+    // We check every handler and report the errors of all invalid ones.
+    val results = handlerDefs.map {
       case (sym, defn) => checkHandler(sym, defn, root)
     }
+    val validHandlers = results.collect { case Result.Ok(handler) => handler }
+    val errors = results.collect { case Result.Err(errs) => errs }
 
     // Check for [[DefaultHandlerError.DuplicateHandler]].
     val duplicateErrors = mutable.ListBuffer.empty[DefaultHandlerError]
@@ -61,9 +65,9 @@ object DefaultHandlers {
     *
     * Every violated rule is reported separately.
     *
-    * @return `Right` of the [[TypedAst.DefaultHandler]] if the handler is valid, `Left` of the errors otherwise.
+    * @return [[Result.Ok]] of the [[TypedAst.DefaultHandler]] if the handler is valid, [[Result.Err]] of the errors otherwise.
     */
-  private def checkHandler(handlerSym: Symbol.DefnSym, handlerDef: KindedAst.Def, root: KindedAst.Root)(implicit flix: Flix, eqEnv: EqualityEnv): Either[List[DefaultHandlerError], TypedAst.DefaultHandler] = {
+  private def checkHandler(handlerSym: Symbol.DefnSym, handlerDef: KindedAst.Def, root: KindedAst.Root)(implicit flix: Flix, eqEnv: EqualityEnv): Result[TypedAst.DefaultHandler, List[DefaultHandlerError]] = {
     // All default handlers must be public.
     val pubErrors = if (handlerDef.spec.mod.isPublic) Nil else {
       List(DefaultHandlerError.NonPublicHandler(handlerSym, handlerSym.loc))
@@ -83,8 +87,8 @@ object DefaultHandlers {
     }
 
     pubErrors ++ signatureErrors match {
-      case Nil => Right(TypedAst.DefaultHandler(handlerSym, effSym))
-      case errors => Left(errors)
+      case Nil => Result.Ok(TypedAst.DefaultHandler(handlerSym, effSym))
+      case errors => Result.Err(errors)
     }
   }
 
