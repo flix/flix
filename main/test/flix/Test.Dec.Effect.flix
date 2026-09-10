@@ -22,7 +22,7 @@ mod Test.Dec.Effect {
 
     }
 
-    pub eff Polymorphic[a]
+    pub eff Polymorphic[_a]
 
     pub eff PolymorphicWithKinds[a: Type, b: Type] {
         def op(x: a): b
