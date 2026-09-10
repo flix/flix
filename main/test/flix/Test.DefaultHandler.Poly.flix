@@ -76,6 +76,16 @@ mod Test.DefaultHandler.Poly {
     def testEchoBigInt(): Unit \ Assert + Echo[BigInt] =
         Assert.assertEq(expected = 42ii, Echo.echo(42ii))
 
+    @Test
+    def testEchoTuple(): Unit \ Assert + Echo[(String, Int32)] =
+        Assert.assertEq(expected = ("hello", 42), Echo.echo(("hello", 42)))
+
+    @Test
+    def testMultiplePolymorphicEffects(): Unit \ Assert + Emit[Int32] + Echo[String] = {
+        Emit.emit(42);
+        Assert.assertEq(expected = "hello", Echo.echo("hello"))
+    }
+
     eff Pair[a, b] {
         def first(x: a, y: b): a
     }
