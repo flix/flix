@@ -127,13 +127,21 @@ object Redundancy {
   private def checkUnusedTypeParamsEffects()(implicit root: Root): List[RedundancyError] = {
     val result = new ArrayBuffer[RedundancyError]
     for ((_, decl) <- root.effects) {
-      val usedTypeVars = decl.ops.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
-        case (acc, Op(_, Spec(_, _, _, _, fparams, _, retTpe, _, tconstrs, econstrs), _)) =>
-          val tpes = fparams.toList.map(_.tpe) ::: retTpe :: tconstrs.map(_.arg) ::: econstrs.map(_.tpe1) ::: econstrs.map(_.tpe2)
-          acc ++ tpes.flatMap(_.typeVars.map(_.sym))
+      val usedTypeVars = Set.newBuilder[Symbol.KindedTypeVarSym]
+      def addTypeVars(tpe: Type): Unit = tpe.typeVars.foreach(tvar => usedTypeVars += tvar.sym)
+      for (op <- decl.ops) {
+        val spec = op.spec
+        spec.fparams.foreach(fparam => addTypeVars(fparam.tpe))
+        addTypeVars(spec.retTpe)
+        spec.tconstrs.foreach(tconstr => addTypeVars(tconstr.arg))
+        spec.econstrs.foreach { econstr =>
+          addTypeVars(econstr.tpe1)
+          addTypeVars(econstr.tpe2)
+        }
       }
+      val used = usedTypeVars.result()
       result ++= decl.tparams.collect {
-        case tparam if deadTypeVar(tparam.sym, usedTypeVars) => UnusedTypeParam(tparam.name, tparam.loc)
+        case tparam if deadTypeVar(tparam.sym, used) => UnusedTypeParam(tparam.name, tparam.loc)
       }
     }
     result.toList

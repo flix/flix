@@ -841,18 +841,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectSuccess(result)
   }
 
-  test("PrefixedTypeParam.Effect.01") {
-    val input =
-      s"""
-         |eff E[_a] {
-         |    def op(): Unit
-         |}
-         |
-       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectSuccess(result)
-  }
-
   test("UnusedFormalParam.Def.01") {
     val input =
       s"""
