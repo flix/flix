@@ -53,7 +53,7 @@ object Typer {
     val precedenceGraph = LabelledPrecedenceGraph.empty
     val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
     val modules = collectModules(root)
-    val (defaultHandlers, defaultHandlerErrors) = DefaultHandlers.visitDefaultHandlers(root)(flix, eqEnv)
+    val (defaultHandlers, defaultHandlerErrors) = DefaultHandlers.visitDefaultHandlers(root)(eqEnv, flix)
     val result = TypedAst.Root(modules, traits, instances, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, Set.empty, defaultHandlers, root.sources, traitEnv, eqEnv, root.availableClasses, precedenceGraph, DependencyGraph.empty, root.tokens)
 
     (result, sctx.errors.asScala.toList ++ defaultHandlerErrors)

@@ -14,7 +14,7 @@ object DefaultHandlers {
   /**
     * Returns the valid default handlers in `root` together with the errors of the invalid ones.
     */
-  def visitDefaultHandlers(root: KindedAst.Root)(implicit flix: Flix, eqEnv: EqualityEnv): (List[TypedAst.DefaultHandler], List[DefaultHandlerError]) = {
+  def visitDefaultHandlers(root: KindedAst.Root)(implicit eqEnv: EqualityEnv, flix: Flix): (List[TypedAst.DefaultHandler], List[DefaultHandlerError]) = {
     val handlerDefs = root.defs.toList.filter {
       case (_, defn) => defn.spec.ann.isDefaultHandler
     }
@@ -67,7 +67,7 @@ object DefaultHandlers {
     *
     * @return [[Result.Ok]] of the [[TypedAst.DefaultHandler]] if the handler is valid, [[Result.Err]] of the errors otherwise.
     */
-  private def checkHandler(handlerSym: Symbol.DefnSym, handlerDef: KindedAst.Def, root: KindedAst.Root)(implicit flix: Flix, eqEnv: EqualityEnv): Result[TypedAst.DefaultHandler, List[DefaultHandlerError]] = {
+  private def checkHandler(handlerSym: Symbol.DefnSym, handlerDef: KindedAst.Def, root: KindedAst.Root)(implicit eqEnv: EqualityEnv, flix: Flix): Result[TypedAst.DefaultHandler, List[DefaultHandlerError]] = {
     // All default handlers must be public.
     val pubErrors = if (handlerDef.spec.mod.isPublic) Nil else {
       List(DefaultHandlerError.NonPublicHandler(handlerSym, handlerSym.loc))
@@ -99,7 +99,7 @@ object DefaultHandlers {
     * type and the effect are only checked when the parameter is well-formed, since they refer to the
     * type variables `a` and `ef` of the parameter type `Unit -> a \ ef`.
     */
-  private def checkSignature(handlerSym: Symbol.DefnSym, spec: KindedAst.Spec, effect: KindedAst.Effect)(implicit flix: Flix, eqEnv: EqualityEnv): List[DefaultHandlerError] = {
+  private def checkSignature(handlerSym: Symbol.DefnSym, spec: KindedAst.Spec, effect: KindedAst.Effect)(implicit eqEnv: EqualityEnv, flix: Flix): List[DefaultHandlerError] = {
     val loc = handlerSym.loc.asSynthetic
 
     // The handled effect applied to its own type parameters, e.g. `E[t]`. Only used in error messages.
@@ -158,7 +158,7 @@ object DefaultHandlers {
     * where `E` is `effect`, `ef` is the effect variable of the thunk, and `t1, ..., tn` are distinct type
     * variables that are different from `a` and `ef`.
     */
-  private def checkEffect(handlerSym: Symbol.DefnSym, spec: KindedAst.Spec, effect: KindedAst.Effect, handledEff: Type, a: Type.Var, ef: Type.Var, loc: SourceLocation)(implicit flix: Flix, eqEnv: EqualityEnv): List[DefaultHandlerError] = {
+  private def checkEffect(handlerSym: Symbol.DefnSym, spec: KindedAst.Spec, effect: KindedAst.Effect, handledEff: Type, a: Type.Var, ef: Type.Var, loc: SourceLocation)(implicit eqEnv: EqualityEnv, flix: Flix): List[DefaultHandlerError] = {
     // A missing effect annotation means the handler is pure.
     val eff = spec.eff.getOrElse(Type.Pure)
     val effLoc = spec.eff.map(_.loc).getOrElse(spec.tpe.loc)
