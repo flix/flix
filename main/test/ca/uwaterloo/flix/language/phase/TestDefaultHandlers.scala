@@ -22,15 +22,16 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestDefaultHandlers extends AnyFunSuite with TestUtils {
 
-  test("Test.NotInCompanionModule.01") {
+  test("Test.DuplicateHandler.01") {
     val input =
       """
         |pub eff E {
         |   def op(): Unit
         |}
         |
-        |@DefaultHandler
-        |pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO =
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO =
         |            run {
         |                f()
         |            } with handler E {
@@ -40,10 +41,22 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |
+        |    @DefaultHandler
+        |    pub def runWithIO2(f: Unit -> a \ ef): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour 2");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.NotInCompanionModule](result)
+    expectError[DefaultHandlerError.DuplicateHandler](result)
   }
 
   test("Test.IllegalArity.01") {
@@ -96,6 +109,223 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[DefaultHandlerError.IllegalArity](result)
+  }
+
+  test("Test.IllegalConstraint.01") {
+    val input =
+      """
+        |pub eff E[t] {
+        |   def op(x: t): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E[t]) + IO with Eq[t] =
+        |        run f() with handler E {
+        |            def op(_x, k) = k()
+        |        }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[DefaultHandlerError.IllegalConstraint](result)
+  }
+
+  test("Test.IllegalConstraint.02") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO with ToString[a] =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[DefaultHandlerError.IllegalConstraint](result)
+  }
+
+  test("Test.IllegalConstraint.03") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |pub trait C[a] {
+        |    type T: Type
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO with C[a] where C.T[a] ~ Int32 =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[DefaultHandlerError.IllegalConstraint](result)
+  }
+
+  test("Test.IllegalEffect.01") {
+    val input =
+      """
+        |pub eff E1 {
+        |   def op(): Unit
+        |}
+        |
+        |pub eff E2 {
+        |   def op(): Unit
+        |}
+        |
+        |mod E1 {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO + E2 =
+        |            run {
+        |                f()
+        |            } with handler E1 {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[DefaultHandlerError.IllegalEffect](result)
+  }
+
+  test("Test.IllegalEffect.02") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) =
+        |        run f() with handler E {
+        |            def op(k) = k()
+        |        }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[DefaultHandlerError.IllegalEffect](result)
+  }
+
+  test("Test.IllegalEffect.03") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ ef + E + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[DefaultHandlerError.IllegalEffect](result)
+  }
+
+  test("Test.IllegalEffectArguments.01") {
+    val input =
+      """
+        |pub eff E[t] {
+        |   def op(x: t): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E[Int32]) + IO =
+        |        run f() with handler E {
+        |            def op(_x, k) = k()
+        |        }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[DefaultHandlerError.IllegalEffectArguments](result)
+  }
+
+  test("Test.IllegalEffectArguments.02") {
+    val input =
+      """
+        |pub eff E[t] {
+        |   def op(x: t): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E[a]) + IO =
+        |        run f() with handler E {
+        |            def op(_x, k) = k()
+        |        }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[DefaultHandlerError.IllegalEffectArguments](result)
+  }
+
+  test("Test.IllegalEffectArguments.03") {
+    val input =
+      """
+        |pub eff E[s, t] {
+        |   def op(x: s, y: t): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E[t, t]) + IO =
+        |        run f() with handler E {
+        |            def op(_x, _y, k) = k()
+        |        }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[DefaultHandlerError.IllegalEffectArguments](result)
   }
 
   test("Test.IllegalParameterType.01") {
@@ -320,223 +550,6 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
     expectError[DefaultHandlerError.MissingHandledEffect](result)
   }
 
-  test("Test.IllegalEffectArguments.01") {
-    val input =
-      """
-        |pub eff E[t] {
-        |   def op(x: t): Unit
-        |}
-        |
-        |mod E {
-        |    @DefaultHandler
-        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E[Int32]) + IO =
-        |        run f() with handler E {
-        |            def op(_x, k) = k()
-        |        }
-        |}
-        |
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalEffectArguments](result)
-  }
-
-  test("Test.IllegalEffectArguments.02") {
-    val input =
-      """
-        |pub eff E[t] {
-        |   def op(x: t): Unit
-        |}
-        |
-        |mod E {
-        |    @DefaultHandler
-        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E[a]) + IO =
-        |        run f() with handler E {
-        |            def op(_x, k) = k()
-        |        }
-        |}
-        |
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalEffectArguments](result)
-  }
-
-  test("Test.IllegalEffectArguments.03") {
-    val input =
-      """
-        |pub eff E[s, t] {
-        |   def op(x: s, y: t): Unit
-        |}
-        |
-        |mod E {
-        |    @DefaultHandler
-        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E[t, t]) + IO =
-        |        run f() with handler E {
-        |            def op(_x, _y, k) = k()
-        |        }
-        |}
-        |
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalEffectArguments](result)
-  }
-
-  test("Test.IllegalEffect.01") {
-    val input =
-      """
-        |pub eff E1 {
-        |   def op(): Unit
-        |}
-        |
-        |pub eff E2 {
-        |   def op(): Unit
-        |}
-        |
-        |mod E1 {
-        |    @DefaultHandler
-        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO + E2 =
-        |            run {
-        |                f()
-        |            } with handler E1 {
-        |                def op(k) = {
-        |                    println("Default behaviour");
-        |                    k()
-        |                }
-        |            }
-        |}
-        |
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalEffect](result)
-  }
-
-  test("Test.IllegalEffect.02") {
-    val input =
-      """
-        |pub eff E {
-        |   def op(): Unit
-        |}
-        |
-        |mod E {
-        |    @DefaultHandler
-        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) =
-        |        run f() with handler E {
-        |            def op(k) = k()
-        |        }
-        |}
-        |
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalEffect](result)
-  }
-
-  test("Test.IllegalEffect.03") {
-    val input =
-      """
-        |pub eff E {
-        |   def op(): Unit
-        |}
-        |
-        |mod E {
-        |    @DefaultHandler
-        |    pub def runWithIO(f: Unit -> a \ ef): a \ ef + E + IO =
-        |            run {
-        |                f()
-        |            } with handler E {
-        |                def op(k) = {
-        |                    println("Default behaviour");
-        |                    k()
-        |                }
-        |            }
-        |}
-        |
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalEffect](result)
-  }
-
-  test("Test.IllegalConstraint.01") {
-    val input =
-      """
-        |pub eff E[t] {
-        |   def op(x: t): Unit
-        |}
-        |
-        |mod E {
-        |    @DefaultHandler
-        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E[t]) + IO with Eq[t] =
-        |        run f() with handler E {
-        |            def op(_x, k) = k()
-        |        }
-        |}
-        |
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalConstraint](result)
-  }
-
-  test("Test.IllegalConstraint.02") {
-    val input =
-      """
-        |pub eff E {
-        |   def op(): Unit
-        |}
-        |
-        |mod E {
-        |    @DefaultHandler
-        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO with ToString[a] =
-        |            run {
-        |                f()
-        |            } with handler E {
-        |                def op(k) = {
-        |                    println("Default behaviour");
-        |                    k()
-        |                }
-        |            }
-        |}
-        |
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalConstraint](result)
-  }
-
-  test("Test.IllegalConstraint.03") {
-    val input =
-      """
-        |pub eff E {
-        |   def op(): Unit
-        |}
-        |
-        |pub trait C[a] {
-        |    type T: Type
-        |}
-        |
-        |mod E {
-        |    @DefaultHandler
-        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO with C[a] where C.T[a] ~ Int32 =
-        |            run {
-        |                f()
-        |            } with handler E {
-        |                def op(k) = {
-        |                    println("Default behaviour");
-        |                    k()
-        |                }
-        |            }
-        |}
-        |
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.IllegalConstraint](result)
-  }
-
   test("Test.NonPublicHandler.01") {
     val input =
       """
@@ -563,16 +576,15 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
     expectError[DefaultHandlerError.NonPublicHandler](result)
   }
 
-  test("Test.DuplicateHandler.01") {
+  test("Test.NotInCompanionModule.01") {
     val input =
       """
         |pub eff E {
         |   def op(): Unit
         |}
         |
-        |mod E {
-        |    @DefaultHandler
-        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO =
+        |@DefaultHandler
+        |pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO =
         |            run {
         |                f()
         |            } with handler E {
@@ -582,22 +594,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |
-        |    @DefaultHandler
-        |    pub def runWithIO2(f: Unit -> a \ ef): a \ (ef - E) + IO =
-        |            run {
-        |                f()
-        |            } with handler E {
-        |                def op(k) = {
-        |                    println("Default behaviour 2");
-        |                    k()
-        |                }
-        |            }
-        |}
-        |
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[DefaultHandlerError.DuplicateHandler](result)
+    expectError[DefaultHandlerError.NotInCompanionModule](result)
   }
 
 }
