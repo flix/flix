@@ -208,8 +208,11 @@ object ConstraintSolver2 {
                 app
               case Some(representative) =>
                 if (app == representative) {
+                  // Already canonical: return the same object. The pass reaches its fixed point by reference
+                  // equality, so rebuilding it would count as progress every round and the solver would not terminate.
                   app
                 } else {
+                  // Not canonical: equate its arguments with the representative's and replace it by the representative.
                   for ((representativeArg, arg, i) <- ListOps.zipWithIndex(representative.typeArguments, app.typeArguments)) {
                     equalities = TypeConstraint.Equality(representativeArg, arg, Provenance.PolyEffEq(sym, i + 1, representative, app, loc)) :: equalities
                   }
