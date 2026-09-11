@@ -5,12 +5,13 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.util.{Formatter, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.{BeforeAndAfter, DoNotDiscover}
 import org.scalatest.funsuite.AnyFunSuite
 
-import java.io.{File, PrintStream}
+import java.io.{ByteArrayInputStream, File, InputStream, PrintStream}
+import java.net.{URI, URL}
 import java.nio.file.{Files, Path}
 
 @DoNotDiscover
@@ -703,6 +704,63 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       case _ => false
     }
     (forbidden, CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot))
+  }
+
+  // Whether the guess-then-fallback lookup in `FlixPackageManager.tryGuess` falls back decides how
+  // many requests a dependency install costs, so it is tested directly, with stubbed results,
+  // rather than against GitHub.
+
+  /** A project and version to attribute the stubbed lookups below to. */
+  private val StubProject: Project = Project("flix", "museum")
+  private val StubVersion: SemVer = SemVer(1, 1, 0)
+
+  /** A host the stubbed lookups below can name without reaching it. */
+  private val StubUrl: URL = new URI("https://example.invalid").toURL
+
+  /** The result the lookup falls back to when the guess missed, i.e. the listing lookup. */
+  private val Exhausted: Result[InputStream, PackageError] =
+    Err(PackageError.NoSuchFile(s"${StubProject.owner}/${StubProject.repo}", "fpkg"))
+
+  /** A stubbed 404: `assetName` is not published by the release. */
+  private def notFound(assetName: String): Result[InputStream, PackageError] =
+    Err(PackageError.ReleaseAssetNotFound(StubProject, StubVersion, assetName, StubUrl))
+
+  /** A stubbed hit: a stream whose contents are `assetName`, so the winner can be identified. */
+  private def found(assetName: String): Result[InputStream, PackageError] =
+    Ok(new ByteArrayInputStream(assetName.getBytes))
+
+  /** A stubbed rate limit, i.e. a failure that says nothing about whether the asset exists. */
+  private def refused: Result[InputStream, PackageError] =
+    Err(PackageError.DownloadRefused(StubUrl, 429, None))
+
+  /** Returns the name of the asset `result` opened, failing if it did not open one. */
+  private def openedName(result: Result[InputStream, PackageError]): String = result match {
+    case Ok(stream) => new String(stream.readAllBytes())
+    case Err(e) => fail(s"expected a stream, got ${e.message(formatter)}")
+  }
+
+  test("tryGuess.01: a hit on the guess is used, without falling back") {
+    val result = FlixPackageManager.tryGuess(found("museum.fpkg"))(fail("must not fall back after a hit"))
+    assertResult(expected = "museum.fpkg")(actual = openedName(result))
+  }
+
+  test("tryGuess.02: a 404 on the guess falls back to the listing") {
+    val result = FlixPackageManager.tryGuess(notFound("museum.fpkg"))(Exhausted)
+    assertResult(expected = Exhausted)(actual = result)
+  }
+
+  test("tryGuess.03: a failure other than a 404 is reported without falling back") {
+    val result = FlixPackageManager.tryGuess(refused)(fail("must not fall back after a refusal"))
+    val reported = result match {
+      case Err(e: PackageError.DownloadRefused) => e.status
+      case other => fail(s"expected a refusal, got $other")
+    }
+    assertResult(expected = 429)(actual = reported)
+  }
+
+  test("fpkgAssetName.01: the package is guessed under the repository name") {
+    val dep = Dependency.FlixDependency(Repository.GitHub, StubProject.owner, StubProject.repo, StubVersion, SecurityContext.Unrestricted)
+    assertResult(expected = "museum.fpkg")(actual = FlixPackageManager.fpkgAssetName(dep))
   }
 
 }
