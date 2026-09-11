@@ -210,12 +210,8 @@ object ConstraintSolver2 {
                 if (app == representative) {
                   app
                 } else {
-                  var ith = 1
-                  for ((representativeArg, arg) <- ListOps.zip(representative.typeArguments, app.typeArguments)) {
-                    if (representativeArg != arg) {
-                      equalities = TypeConstraint.Equality(representativeArg, arg, Provenance.PolyEffEq(sym, ith, representative, app, loc)) :: equalities
-                    }
-                    ith += 1
+                  for ((representativeArg, arg, i) <- ListOps.zipWithIndex(representative.typeArguments, app.typeArguments)) {
+                    equalities = TypeConstraint.Equality(representativeArg, arg, Provenance.PolyEffEq(sym, i + 1, representative, app, loc)) :: equalities
                   }
                   // Keep the location of the occurrence.
                   Type.mkApply(Type.Cst(tc, loc), representative.typeArguments, loc)
