@@ -38,6 +38,18 @@ object ListOps {
     loop(list1, list2, Nil)
   }
 
+  /** An alternative to [[List.zip]] and [[List.zipWithIndex]] that crashes for different length lists. */
+  def zipWithIndex[T1, T2](list1: List[T1], list2: List[T2]): List[(T1, T2, Int)] = {
+    @tailrec
+    def loop(l1: List[T1], l2: List[T2], i: Int, acc: List[(T1, T2, Int)]): List[(T1, T2, Int)] = (l1, l2) match {
+      case (x :: xs, y :: ys) => loop(xs, ys, i + 1, (x, y, i) :: acc)
+      case (Nil, Nil) => acc.reverse
+      case _ => throw InternalCompilerException(s"Zipped lists of length ${list1.length} and ${list2.length}.", SourceLocation.Unknown)
+    }
+
+    loop(list1, list2, 0, Nil)
+  }
+
   /** An alternative to [[List.zip]] that crashed for different length lists. */
   def zipOption[T1, T2](list1: List[T1], list2: List[T2]): Option[List[(T1, T2)]] = {
     @tailrec

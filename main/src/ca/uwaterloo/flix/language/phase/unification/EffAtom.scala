@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.util.collection.Nel
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -61,7 +62,7 @@ private object EffAtom {
   /** Representing a rigid variable. */
   case class VarRigid(sym: Symbol.KindedTypeVarSym) extends EffAtom
 
-  /** Representing an effect constant. */
+  /** Represents an effect constructor. */
   case class Eff(sym: Symbol.EffSym) extends EffAtom
 
   /** Represents an associated effect. */
@@ -78,7 +79,11 @@ private object EffAtom {
   def fromType(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): EffAtom = t match {
     case Type.Var(sym, _) if renv.isRigid(sym) => EffAtom.VarRigid(sym)
     case Type.Var(sym, _) => EffAtom.VarFlex(sym)
-    case Type.Cst(TypeConstructor.Effect(sym, _), _) => EffAtom.Eff(sym)
+    case Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), _) => EffAtom.Eff(sym)
+    case app@Type.Apply(_, _, _) if app.kind == Kind.Eff => app.baseType match {
+      case Type.Cst(TypeConstructor.Effect(sym, _), _) => EffAtom.Eff(sym)
+      case _ => throw InvalidType(t)
+    }
     case Type.Cst(TypeConstructor.Region(sym), _) => EffAtom.Region(sym)
     case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
     case Type.Cst(TypeConstructor.Error(id, _), _) => EffAtom.Error(id)
@@ -104,20 +109,29 @@ private object EffAtom {
     * the needs of [[EffUnification3.toSetFormula]].
     *
     * Examples:
-    *   - `collectAtoms(Crash ∪ ef, acc)` adds `Eff(Crash)` and `VarFlex(ef)` (if
-    *     [[RigidityEnv.isRigid]] is false for `ef`)
-    *   - `collectAtoms(Indexable.Aef[Error], acc)` adds nothing
+    *   - `collectAtoms(F[Int32] ∪ ef, acc, effectArgs)` adds `Eff(F)` and `VarFlex(ef)`
+    *     to `acc`, and records `F -> Nel(Int32)` in `effectArgs`
+    *   - `collectAtoms(Indexable.Aef[Error], acc, effectArgs)` adds nothing
+    *
+    * @param t the type whose effect atoms are collected.
+    * @param acc the set to which the collected atoms are added.
+    * @param effectArgs the map from polymorphic effect constructors to their non-empty argument lists.
     */
-  def collectAtoms(t: Type, acc: mutable.HashSet[EffAtom])(implicit scope: RegionScope, renv: RigidityEnv): Unit = t match {
+  def collectAtoms(t: Type, acc: mutable.HashSet[EffAtom], effectArgs: mutable.Map[Symbol.EffSym, Nel[Type]])(implicit scope: RegionScope, renv: RigidityEnv): Unit = t match {
     case Type.Var(sym, _) if renv.isRigid(sym) => acc += EffAtom.VarRigid(sym)
     case Type.Var(sym, _) => acc += EffAtom.VarFlex(sym)
-    case Type.Cst(TypeConstructor.Effect(sym, _), _) => acc += EffAtom.Eff(sym)
+    case Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), _) => acc += EffAtom.Eff(sym)
+    case app@Type.Apply(tpe1, tpe2, _) => app.baseType match {
+      case Type.Cst(TypeConstructor.Effect(sym, _), _) if app.kind == Kind.Eff =>
+        acc += EffAtom.Eff(sym)
+        effectArgs.getOrElseUpdate(sym, Nel.unsafeFrom(app.typeArguments))
+      case _ =>
+        collectAtoms(tpe1, acc, effectArgs)
+        collectAtoms(tpe2, acc, effectArgs)
+    }
     case Type.Cst(TypeConstructor.Region(sym), _) => acc += EffAtom.Region(sym)
     case Type.Cst(TypeConstructor.Error(id, _), _) => acc += EffAtom.Error(id)
-    case Type.Apply(tpe1, tpe2, _) =>
-      collectAtoms(tpe1, acc)
-      collectAtoms(tpe2, acc)
-    case Type.Alias(_, _, tpe, _) => collectAtoms(tpe, acc)
+    case Type.Alias(_, _, tpe, _) => collectAtoms(tpe, acc, effectArgs)
     case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc).foreach(acc += _)
     case _ => ()
   }
@@ -134,19 +148,6 @@ private object EffAtom {
     case _ => None
   }
 
-  /**
-    * Returns the [[Type]] represented by `atom` with location `loc`. The kind of errors and
-    * associated types are set to be [[Kind.Eff]].
-    */
-  def toType(atom: EffAtom, loc: SourceLocation): Type = atom match {
-    case EffAtom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)
-    case EffAtom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
-    case EffAtom.VarRigid(sym) => Type.Var(sym, loc)
-    case EffAtom.VarFlex(sym) => Type.Var(sym, loc)
-    case EffAtom.Assoc(sym, arg0) =>
-      Type.AssocType(AssocTypeSymUse(sym, loc), toType(arg0, loc), Kind.Eff, loc)
-    case EffAtom.Error(id) => Type.Cst(TypeConstructor.Error(id, Kind.Eff), loc)
-  }
 }
 
 /**

@@ -15,19 +15,15 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.util.ClassDescs
+import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 
-import java.lang.constant.{ClassDesc, ConstantDescs, MethodTypeDesc}
-import java.lang.reflect.Constructor
+import java.lang.constant.{ClassDesc, MethodTypeDesc}
 
 object JConstructor {
 
-  /** Returns the [[JConstructor]] of the given reflective `constructor`. */
-  def of(constructor: Constructor[?]): JConstructor = {
-    val paramDescs = constructor.getParameterTypes.map(ClassDescs.of)
-    val descriptor = MethodTypeDesc.of(ConstantDescs.CD_void, paramDescs: _*)
-    JConstructor(ClassDescs.of(constructor.getDeclaringClass), descriptor)
-  }
+  /** Returns the [[JConstructor]] of the given class-file constructor metadata. */
+  def of(constructor: JavaMethod): JConstructor =
+    JConstructor(constructor.ref.owner, constructor.ref.descriptor)
 
 }
 

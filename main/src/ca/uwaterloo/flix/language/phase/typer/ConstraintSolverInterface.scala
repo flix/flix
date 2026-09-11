@@ -201,29 +201,48 @@ object ConstraintSolverInterface {
       val baseTpe2 = subst(baseType2)
       val fullTpe1 = subst(fullType1)
       val fullTpe2 = subst(fullType2)
-      val default = List(mkMismatchedTypesOrEffects(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc))
+      // A function type and a concrete non-function type can never be unified, regardless of effects.
+      mkArrowAndNonArrowError(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc)
+        .getOrElse(List(mkMismatchedTypesOrEffects(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc)))
 
-      (fullType1.typeConstructor, fullType2.typeConstructor) match {
-        case (Some(TypeConstructor.SchemaRowExtend(pred1)), Some(TypeConstructor.SchemaRowExtend(pred2))) if pred1 == pred2 =>
-          (baseType1.typeConstructor, baseType2.typeConstructor) match {
-            case (Some(TypeConstructor.Relation(arity1)), Some(TypeConstructor.Relation(arity2))) if arity1 != arity2 =>
-              List(TypeError.MismatchedPredicateArity(pred1, arity1, arity2, baseType1.loc, baseType2.loc, loc))
+    case TypeConstraint.Equality(baseType1, baseType2, Provenance.PolyEffEq(sym, ith, eff1, eff2, loc)) =>
+      List(mkMismatchedEffectArgument(sym, ith, subst(baseType1), subst(baseType2), subst(eff1), subst(eff2), renv, root, loc))
 
-            case (Some(TypeConstructor.Lattice(arity1)), Some(TypeConstructor.Lattice(arity2))) if arity1 != arity2 =>
-              List(TypeError.MismatchedPredicateArity(pred1, arity1, arity2, baseType1.loc, baseType2.loc, loc))
+    case TypeConstraint.Equality(tpe1, tpe2, Provenance.Label(label, loc1, loc2, inner)) =>
+      if (ConstraintSolver2.isSyntactic(tpe1.kind)) {
+        // The leftover is (a part of) the type of the label.
+        val (fullType1, fullType2) = enclosingTypes(inner).getOrElse((tpe1, tpe2))
+        List(TypeError.MismatchedLabelType(label, subst(tpe1), subst(tpe2), subst(fullType1), subst(fullType2), renv, loc1, loc2, inner.loc))
+      } else {
+        // The leftover is an effect, a row, or the like: report it as the enclosing constraint would.
+        mkTypeError(TypeConstraint.Equality(tpe1, tpe2, inner), subst, renv, root)
+      }
 
-            case (Some(TypeConstructor.Relation(_)), Some(TypeConstructor.Lattice(_))) =>
-              List(TypeError.MismatchedPredicateDenotation(pred1, Denotation.Relational, Denotation.Latticenal, baseType1.loc, baseType2.loc, loc))
+    case TypeConstraint.Equality(tpe1, tpe2, Provenance.Predicate(pred, loc1, loc2, inner)) =>
+      val t1 = subst(tpe1)
+      val t2 = subst(tpe2)
+      (t1.typeConstructor, t2.typeConstructor) match {
+        case (Some(TypeConstructor.Relation(arity1)), Some(TypeConstructor.Relation(arity2))) if arity1 != arity2 =>
+          List(TypeError.MismatchedPredicateArity(pred, arity1, arity2, loc1, loc2, inner.loc))
 
-            case (Some(TypeConstructor.Lattice(_)), Some(TypeConstructor.Relation(_))) =>
-              List(TypeError.MismatchedPredicateDenotation(pred1, Denotation.Latticenal, Denotation.Relational, baseType1.loc, baseType2.loc, loc))
+        case (Some(TypeConstructor.Lattice(arity1)), Some(TypeConstructor.Lattice(arity2))) if arity1 != arity2 =>
+          List(TypeError.MismatchedPredicateArity(pred, arity1, arity2, loc1, loc2, inner.loc))
 
-            case _ => default
-          }
+        case (Some(TypeConstructor.Relation(_)), Some(TypeConstructor.Lattice(_))) =>
+          List(TypeError.MismatchedPredicateDenotation(pred, Denotation.Relational, Denotation.Latticenal, loc1, loc2, inner.loc))
 
-        // A function type and a concrete non-function type can never be unified, regardless of effects.
+        case (Some(TypeConstructor.Lattice(_)), Some(TypeConstructor.Relation(_))) =>
+          List(TypeError.MismatchedPredicateDenotation(pred, Denotation.Latticenal, Denotation.Relational, loc1, loc2, inner.loc))
+
         case _ =>
-          mkArrowAndNonArrowError(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc).getOrElse(default)
+          if (ConstraintSolver2.isSyntactic(t1.kind)) {
+            // The leftover is (a part of) a term type of the predicate.
+            val (fullType1, fullType2) = enclosingTypes(inner).getOrElse((tpe1, tpe2))
+            List(TypeError.MismatchedPredicateTypes(pred, t1, t2, subst(fullType1), subst(fullType2), renv, loc1, loc2, inner.loc))
+          } else {
+            // The leftover is an effect, a row, or the like: report it as the enclosing constraint would.
+            mkTypeError(TypeConstraint.Equality(tpe1, tpe2, inner), subst, renv, root)
+          }
       }
 
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
@@ -246,8 +265,18 @@ object ConstraintSolverInterface {
     case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.Match(baseTpe1, baseTpe2, loc)) =>
       List(mkMismatchedTypesOrEffects(subst(baseTpe1), subst(baseTpe2), subst(tpe1), subst(tpe2), renv, loc))
 
+    case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.PolyEffEq(sym, ith, eff1, eff2, loc)) =>
+      List(mkMismatchedEffectArgument(sym, ith, subst(tpe1), subst(tpe2), subst(eff1), subst(eff2), renv, root, loc))
+
     case TypeConstraint.Conflicted(_, _, Provenance.Timeout(msg, loc)) =>
       List(TypeError.TooComplex(msg, loc))
+
+    // A conflict inside a record label or predicate is reported as the enclosing constraint would.
+    case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.Label(_, _, _, inner)) =>
+      mkTypeError(TypeConstraint.Conflicted(tpe1, tpe2, inner), subst, renv, root)
+
+    case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.Predicate(_, _, _, inner)) =>
+      mkTypeError(TypeConstraint.Conflicted(tpe1, tpe2, inner), subst, renv, root)
 
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
       List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
@@ -273,6 +302,17 @@ object ConstraintSolverInterface {
   }
 
   /**
+    * Returns a [[TypeError.MismatchedEffectArgument]] for the `ith` type argument (1-based) of the effect `sym`,
+    * where `tpe1` and `tpe2` are the mismatched parts of the argument and `eff1` and `eff2` the two effect applications.
+    *
+    * The name of the type parameter is looked up in the declaration of the effect.
+    */
+  private def mkMismatchedEffectArgument(sym: Symbol.EffSym, ith: Int, tpe1: Type, tpe2: Type, eff1: Type, eff2: Type, renv: RigidityEnv, root: KindedAst.Root, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+    val tparam = root.effects(sym).tparams(ith - 1).name
+    TypeError.MismatchedEffectArgument(sym, ith, tparam, tpe1, tpe2, eff1, eff2, renv, loc)
+  }
+
+  /**
     * Create either the MismatchedTypes or MismatchedEffects error based on the kind of the type.
     */
   private def mkMismatchedTypesOrEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
@@ -282,6 +322,26 @@ object ConstraintSolverInterface {
       case _ =>
         TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, loc)
     }
+  }
+
+  /**
+    * Returns the two types related by the constraint that `prov` describes, looking through any
+    * [[Provenance.Label]] and [[Provenance.Predicate]] wrappers.
+    *
+    * Returns `None` if the provenance does not relate two types.
+    */
+  @tailrec
+  private def enclosingTypes(prov: Provenance): Option[(Type, Type)] = prov match {
+    case Provenance.ExpectType(expected, actual, _) => Some((expected, actual))
+    case Provenance.ExpectEffect(expected, actual, _) => Some((expected, actual))
+    case Provenance.ExpectArgument(expected, actual, _, _, _) => Some((expected, actual))
+    case Provenance.Match(tpe1, tpe2, _) => Some((tpe1, tpe2))
+    case Provenance.PolyEffEq(_, _, eff1, eff2, _) => Some((eff1, eff2))
+    case Provenance.Source(eff1, eff2, _) => Some((eff1, eff2))
+    case Provenance.Label(_, _, _, inner) => enclosingTypes(inner)
+    case Provenance.Predicate(_, _, _, inner) => enclosingTypes(inner)
+    case Provenance.NonUnitStatement(_, _) => None
+    case Provenance.Timeout(_, _) => None
   }
 
   /**

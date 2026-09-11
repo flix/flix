@@ -16,4 +16,4 @@
 package ca.uwaterloo.flix.language.ast.jvm
 
 /** Class-file metadata for a Java field. */
-case class JavaField(ref: JavaFieldRef, modifiers: Int, fieldType: JavaType)
+case class JavaField(ref: JavaFieldRef, modifiers: Int, fieldType: JavaType) extends JavaMember

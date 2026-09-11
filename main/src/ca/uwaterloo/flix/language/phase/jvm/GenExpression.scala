@@ -22,9 +22,10 @@ import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
+import ca.uwaterloo.flix.language.jvm.ClassDescs.internalNameOf
+import ca.uwaterloo.flix.language.jvm.JavaClasses
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenCastError, GenEffectCall, GenExtTag, GenExtTagged, GenFrames, GenFramesNil, GenHandler, GenHoleError, GenLazy, GenMatchError, GenNullaryTag, GenRecord, GenRecordEmpty, GenRecordExtend, GenRegion, GenResult, GenResumption, GenResumptionNil, GenStruct, GenSuspension, GenTag, GenTagged, GenThunk, GenTuple, GenUnit, GenValue}
-import ca.uwaterloo.flix.util.ClassDescs.internalNameOf
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 import java.lang.constant.ConstantDescs.{CD_double, CD_int, CD_long, CD_void}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkDescriptor
@@ -613,7 +614,7 @@ object GenExpression {
       case AtomicOp.Tag(sym) =>
         val caze = root.enums(sym.enumSym).cases(sym)
         val termTypes = caze.tpes.map(TypeDescs.toErasedClassDesc)
-        compileTag(sym.enumSym.toString, sym.name, caze.sym.ordinal, exps, termTypes)
+        compileTag(caze.sym, exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
         val List(exp) = exps
@@ -844,10 +845,7 @@ object GenExpression {
         mv.visitTypeInsn(Opcodes.NEW, declaration)
         // Duplicate the reference since the first argument for a constructor call is the reference to the object
         mv.visitInsn(Opcodes.DUP)
-        for ((arg, argType) <- exps.zip(constructor.descriptor.parameterList.asScala)) {
-          compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(argType))
-        }
+        compileJavaArgs(exps, constructor.descriptor)
 
         // Call the constructor
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, declaration, ClassMaker.ConstructorMethodName, constructor.descriptor.descriptorString(), false)
@@ -867,10 +865,7 @@ object GenExpression {
         val declaration = internalNameOf(method.owner)
         mv.visitTypeInsn(Opcodes.CHECKCAST, declaration)
 
-        for ((arg, argType) <- args.zip(method.descriptor.parameterList.asScala)) {
-          compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(argType))
-        }
+        compileJavaArgs(args, method.descriptor)
 
         // Check if we are invoking an interface or class.
         if (method.isInterface) {
@@ -878,6 +873,7 @@ object GenExpression {
         } else {
           mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, declaration, method.name, method.descriptor.descriptorString(), false)
         }
+        castJavaResult(method.descriptor.returnType(), tpe)
 
         // If the method is void, put a unit on top of the stack
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
@@ -893,18 +889,15 @@ object GenExpression {
 
         // Evaluate the receiver object.
         compileExpr(receiver)
-        val anonClassInternalName = sym.name.replace('.', '/')
+        val anonClassInternalName = internalNameOf(GenAnonymousClasses.desc(sym))
         mv.visitTypeInsn(Opcodes.CHECKCAST, anonClassInternalName)
 
-        // Evaluate and cast each argument.
-        for ((arg, argType) <- args.zip(method.descriptor.parameterList.asScala)) {
-          compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(argType))
-        }
+        // Evaluate and convert each argument.
+        compileJavaArgs(args, method.descriptor)
 
         // Call the bridge method super$methodName on the anonymous class.
-        val bridgeName = s"super$$${method.name}"
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, anonClassInternalName, bridgeName, method.descriptor.descriptorString(), false)
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, anonClassInternalName, GenAnonymousClasses.bridgeName(method), method.descriptor.descriptorString(), false)
+        castJavaResult(method.descriptor.returnType(), tpe)
 
         // If the method is void, put a unit on top of the stack
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
@@ -914,12 +907,10 @@ object GenExpression {
       case AtomicOp.InvokeStaticMethod(method) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
         addLoc(loc)
-        for ((arg, argType) <- exps.zip(method.descriptor.parameterList.asScala)) {
-          compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(argType))
-        }
+        compileJavaArgs(exps, method.descriptor)
         val declaration = internalNameOf(method.owner)
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, declaration, method.name, method.descriptor.descriptorString(), method.isInterface)
+        castJavaResult(method.descriptor.returnType(), tpe)
         if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
           mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
         }
@@ -1560,7 +1551,7 @@ object GenExpression {
 
     case Expr.NewObject(sym, _, _, _, constructors, methods, _) =>
       val methodExps = methods.map(_.exp)
-      val className = sym.name
+      val className = internalNameOf(GenAnonymousClasses.desc(sym))
       mv.visitTypeInsn(Opcodes.NEW, className)
       mv.visitInsn(Opcodes.DUP)
 
@@ -1569,10 +1560,7 @@ object GenExpression {
         constructors.head.exp match {
           case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), superArgs, _, _, _) =>
             // Super-only: compile args and call parameterized <init>
-            for ((arg, argType) <- superArgs.zip(constructor.descriptor.parameterList.asScala)) {
-              compileExpr(arg)
-              if (!argType.isPrimitive) mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(argType))
-            }
+            compileJavaArgs(superArgs, constructor.descriptor)
             mv.visitMethodInsn(Opcodes.INVOKESPECIAL, className, ClassMaker.ConstructorMethodName, constructor.descriptor.descriptorString(), false)
           case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", constructors.head.loc)
         }
@@ -1593,6 +1581,38 @@ object GenExpression {
     TypeDescs.structFields(struct)
   }
 
+  /**
+    * Compiles the arguments `args` of a Java call and converts each to its parameter type in `descriptor`.
+    *
+    * A reference parameter receives a `CHECKCAST`. A primitive parameter receives the widening primitive
+    * conversion from the erased type of the argument, e.g. `I2L` for an `Int32` argument to a `long` parameter.
+    * Overload resolution admits no other conversion, so the erased argument type is either the parameter type
+    * itself or a primitive that widens to it.
+    */
+  private def compileJavaArgs(args: List[Expr], descriptor: MethodTypeDesc)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    for ((arg, paramType) <- args.zip(descriptor.parameterList.asScala)) {
+      compileExpr(arg)
+      if (paramType.isPrimitive) xWidenPrimitive(TypeDescs.toClassDesc(arg.tpe), paramType)
+      else CHECKCAST(paramType)
+    }
+  }
+
+  /**
+    * Casts the value returned by a Java method with return type `returnType` to the erased Flix type `tpe` of
+    * the call.
+    *
+    * A method whose declared return type is a type variable returns its erasure, usually `Object`, while the
+    * Flix type of the call is the instantiation, e.g. `Vector[Int32]` for `ArrayList[Vector[Int32]].get(0)`.
+    * The cast recovers the JVM type the rest of the code expects, as javac does after an erased generic call.
+    * Nothing is emitted for `void` and primitive return types, or when the erasure already is the Flix type.
+    */
+  private def castJavaResult(returnType: ClassDesc, tpe: SimpleType)(implicit mv: MethodVisitor, root: Root): Unit = {
+    if (returnType != CD_void && !returnType.isPrimitive) {
+      val resultType = TypeDescs.toClassDesc(tpe)
+      if (resultType != returnType) castIfNotPrim(resultType)
+    }
+  }
+
   private def compileIsTag(ordinal: Int, exp: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     compileExpr(exp)
     CHECKCAST(GenTagged.Desc)
@@ -1601,16 +1621,16 @@ object GenExpression {
     ifConditionElse(Condition.ICMPEQ)(pushBool(true))(pushBool(false))
   }
 
-  private def compileTag(enumName: String, name: String, ordinal: Int, exps: List[Expr], tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileTag(sym: Symbol.CaseSym, exps: List[Expr], tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     tpes match {
       case Nil =>
-        GETSTATIC(GenNullaryTag.SingletonField(enumName, name))
+        GETSTATIC(GenNullaryTag.SingletonField(sym))
       case _ =>
         NEW(GenTag.desc(tpes))
         DUP()
         INVOKESPECIAL(GenTag.Constructor(tpes))
         DUP()
-        pushInt(ordinal)
+        pushInt(sym.ordinal)
         PUTFIELD(GenTag.OrdinalField)
         exps.zipWithIndex.foreach {
           case (e, i) => DUP()

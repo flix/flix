@@ -62,6 +62,22 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     if (isEmpty) tpe0 else visitType(tpe0)
   }
 
+  /**
+    * Returns the substitution obtained by applying `f` to every bound type.
+    *
+    * Performance: Returns `this` if `f` returns every bound type unchanged (by reference).
+    */
+  def mapTypes(f: Type => Type): Substitution = {
+    var newM = m
+    for ((sym, tpe) <- m) {
+      val t = f(tpe)
+      if (!(t eq tpe)) {
+        newM = newM.updated(sym, t)
+      }
+    }
+    if (newM eq m) this else Substitution(newM)
+  }
+
   private def visitType(t: Type): Type = t match {
     // NB: The order of cases has been determined by code coverage analysis.
     case x: Type.Var =>

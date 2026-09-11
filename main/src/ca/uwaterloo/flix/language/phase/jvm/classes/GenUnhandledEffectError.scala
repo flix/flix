@@ -17,13 +17,14 @@
 package ca.uwaterloo.flix.language.phase.jvm.classes
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.jvm.JavaClasses
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.IsFinal
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, InstanceField}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, mkDesc}
-import ca.uwaterloo.flix.language.phase.jvm.{ClassConstants, ClassMaker, JavaClasses, Mangle}
+import ca.uwaterloo.flix.language.phase.jvm.{ClassConstants, ClassMaker, Mangle}
 import org.objectweb.asm.MethodVisitor
 
 import java.lang.constant.ClassDesc
@@ -38,7 +39,7 @@ object GenUnhandledEffectError {
   val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("UnhandledEffectError"))
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(this.Desc, IsFinal, superClass = ClassConstants.FlixError.Desc)
+    val cm = ClassMaker.mkClass(this.Desc, IsFinal, superClass = GenFlixError.Desc)
 
     cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
     // This field allows external equality checking.
@@ -78,7 +79,7 @@ object GenUnhandledEffectError {
       INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
       appendString()
       INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
-      INVOKESPECIAL(ClassConstants.FlixError.Constructor)
+      INVOKESPECIAL(GenFlixError.Constructor)
       // save arguments locally
       thisLoad()
       suspension.load()

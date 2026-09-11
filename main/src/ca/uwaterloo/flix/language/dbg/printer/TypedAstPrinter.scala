@@ -3,8 +3,10 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
+import ca.uwaterloo.flix.language.ast.shared.{JConstructor, JField}
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.dbg.DocAst
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 
 object TypedAstPrinter {
 
@@ -78,16 +80,16 @@ object TypedAstPrinter {
     case Expr.Throw(exp, _, _, _) => DocAst.Expr.Throw(print(exp))
     case Expr.Handler(symUse, rules, _, _, _, _, _) => DocAst.Expr.Handler(symUse.sym, rules.map(printHandlerRule))
     case Expr.RunWith(exp1, exp2, _, _, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))
-    case Expr.InvokeConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
-    case Expr.InvokeSuperConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
+    case Expr.InvokeConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(JConstructor.of(constructor), exps.map(print))
+    case Expr.InvokeSuperConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(JConstructor.of(constructor), exps.map(print))
     case Expr.InvokeMethod(method, exp, exps, _, _, _) => DocAst.Expr.JavaInvokeMethod(method, print(exp), exps.map(print))
     case Expr.InvokeSuperMethod(method, exps, _, _, _) => DocAst.Expr.JavaInvokeStaticMethod(method, exps.map(print))
     case Expr.InvokeStaticMethod(method, exps, _, _, _) => DocAst.Expr.JavaInvokeStaticMethod(method, exps.map(print))
-    case Expr.GetField(field, exp, _, _, _) => DocAst.Expr.JavaGetField(field, print(exp))
-    case Expr.PutField(field, exp1, exp2, _, _, _) => DocAst.Expr.JavaPutField(field, print(exp1), print(exp2))
-    case Expr.GetStaticField(field, _, _, _) => DocAst.Expr.JavaGetStaticField(field)
-    case Expr.PutStaticField(field, exp, _, _, _) => DocAst.Expr.JavaPutStaticField(field, print(exp))
-    case Expr.NewObject(sym, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(sym, clazz.getName, TypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
+    case Expr.GetField(field, exp, _, _, _) => DocAst.Expr.JavaGetField(JField.of(field), print(exp))
+    case Expr.PutField(field, exp1, exp2, _, _, _) => DocAst.Expr.JavaPutField(JField.of(field), print(exp1), print(exp2))
+    case Expr.GetStaticField(field, _, _, _) => DocAst.Expr.JavaGetStaticField(JField.of(field))
+    case Expr.PutStaticField(field, exp, _, _, _) => DocAst.Expr.JavaPutStaticField(JField.of(field), print(exp))
+    case Expr.NewObject(sym, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(sym, DocAst.Expr.javaClassName(clazz.desc), TypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
     case Expr.NewChannel(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.GetChannel(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.PutChannel(_, _, _, _, _) => DocAst.Expr.Unknown
@@ -119,7 +121,7 @@ object TypedAstPrinter {
     */
   private def printJvmMethod(method: TypedAst.JvmMethod): DocAst.JvmMethod = method match {
     case TypedAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _) =>
-      DocAst.JvmMethod(ann.map(_.clazz.displayName()), ident, fparams.toList.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
+      DocAst.JvmMethod(ann.map(a => ClassDescs.simpleNameOf(a.clazz)), ident, fparams.toList.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
   }
 
   /**
@@ -133,7 +135,7 @@ object TypedAstPrinter {
     * Returns the [[DocAst]] representation of `rule`.
     */
   private def printCatchRule(rule: TypedAst.CatchRule): (Symbol.VarSym, String, DocAst.Expr) = rule match {
-    case TypedAst.CatchRule(bnd, clazz, exp, _) => (bnd.sym, clazz.getName, print(exp))
+    case TypedAst.CatchRule(bnd, clazz, exp, _) => (bnd.sym, DocAst.Expr.javaClassName(clazz), print(exp))
   }
 
   /**

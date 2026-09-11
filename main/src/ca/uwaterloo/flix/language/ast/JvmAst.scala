@@ -119,7 +119,7 @@ object JvmAst {
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: SimpleType, loc: SourceLocation)
 
-  case class AnonClass(name: String, clazz: JClass, tpe: SimpleType, constructors: List[JvmConstructor], methods: List[JvmMethod], superMethods: List[JMethod], loc: SourceLocation)
+  case class AnonClass(sym: Symbol.AnonClassSym, clazz: JClass, tpe: SimpleType, constructors: List[JvmConstructor], methods: List[JvmMethod], superMethods: List[JMethod], loc: SourceLocation)
 
   case class JvmConstructor(exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation)
 

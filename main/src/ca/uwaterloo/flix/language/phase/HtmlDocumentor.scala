@@ -766,6 +766,7 @@ object HtmlDocumentor {
     sb.append("<code>")
     sb.append("<span class='keyword'>eff</span> ")
     sb.append(s"<span class='name'>${esc(eff.name)}</span>")
+    docTypeParams(eff.decl.tparams)
     sb.append("</code>")
     docActions(None, eff.decl.loc)
     sb.append("</div>")

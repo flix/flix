@@ -174,8 +174,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
-  // this test is temporarily ignored because it recovers and proceeds
-  // to fail in future unimplemented phases
   test("InaccessibleStruct.03") {
     val input =
       s"""
@@ -963,6 +961,46 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let o = new String();
            |    let _ = o.charAt(null);
            |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("UndefinedJvmMethod.09") {
+    val input =
+      raw"""
+           |def foo(): String \ IO =
+           |    (2).toString()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("UndefinedJvmMethod.10") {
+    val input =
+      raw"""
+           |def foo(): Bool \ IO =
+           |    true.equals(true)
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("UndefinedJvmMethod.11") {
+    val input =
+      raw"""
+           |def foo(): Int32 \ IO =
+           |    (2.0f64).hashCode()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("UndefinedJvmMethod.12") {
+    val input =
+      raw"""
+           |def foo(): String \ IO =
+           |    'a'.toString()
        """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MethodNotFound](result)
@@ -2236,9 +2274,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedStruct](result)
   }
 
-  // A bug was introduced into the kinder when it was refactored, so this test fails, but
-  // will reenable it once my next struct kinder support pr is merged
-  test("ResoutionError.MissingStructField.01") {
+  test("ResolutionError.MissingStructField.01") {
     val input =
       """
         |mod S {

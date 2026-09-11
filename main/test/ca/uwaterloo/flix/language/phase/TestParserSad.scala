@@ -55,16 +55,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  test("IllegalEffectTypeParams.01") {
-    val input =
-      """
-        |eff MyEffect[a]
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEffectTypeParams](result)
-  }
-
-  test("IllegalEffectTypeParams.02") {
+  test("IllegalOperationTypeParams.01") {
     val input =
       """
         |eff MyEffect {
@@ -72,10 +63,10 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEffectTypeParams](result)
+    expectError[WeederError.IllegalOperationTypeParams](result)
   }
 
-  test("IllegalEffectTypeParams.03") {
+  test("IllegalOperationTypeParams.02") {
     val input =
       """
         |eff MyEffect[a] {
@@ -83,7 +74,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEffectTypeParams](result)
+    expectError[WeederError.IllegalOperationTypeParams](result)
   }
 
   test("IllegalExtMatchRule.01") {

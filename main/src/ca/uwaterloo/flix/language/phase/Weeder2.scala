@@ -3141,6 +3141,7 @@ object Weeder2 {
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree)
           val tparams = parameters.map(visitParameter)
+          checkDuplicateTypeParams(tparams)
           val kinded = tparams.collect { case t: TypeParam.Kinded => t }
           val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
           (kinded, unkinded) match {
@@ -3168,6 +3169,7 @@ object Weeder2 {
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree)
           val tparams = parameters.map(visitParameter)
+          checkDuplicateTypeParams(tparams)
           val kinded = tparams.collect { case t: TypeParam.Kinded => t }
           val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
           (kinded, unkinded) match {
@@ -3196,6 +3198,19 @@ object Weeder2 {
       tryPickKind(tree)
         .map(kind => TypeParam.Kinded(ident, kind))
         .getOrElse(TypeParam.Unkinded(ident))
+    }
+
+    /**
+      * Reports a [[DuplicateTypeParam]] error for every type parameter in `tparams` that repeats an earlier name.
+      *
+      * Wildcard names (prefixed with `_`) are exempt, as they are for formal parameters.
+      */
+    private def checkDuplicateTypeParams(tparams: List[TypeParam])(implicit sctx: SharedContext): Unit = {
+      val tparamsWithoutWildcards = tparams.filter(!_.ident.isWild)
+      val errors = SeqOps.getDuplicates(tparamsWithoutWildcards, (t: TypeParam) => t.ident.name).map {
+        case (tparam1, tparam2) => DuplicateTypeParam(tparam1.ident.name, tparam1.ident.loc, tparam2.ident.loc)
+      }
+      errors.foreach(sctx.errors.add)
     }
 
     def pickConstraints(tree: Tree)(implicit sctx: SharedContext): List[TraitConstraint] = {

@@ -23,7 +23,7 @@ import scala.collection.mutable
 /**
   * A custom class loader to load generated class files.
   *
-  * @param classes   A map from internal names (strings) to JvmClasses.
+  * @param classes   A map from binary names (strings) to JvmClasses.
   * @param jarLoader The class loader used to resolve classes from external JARs.
   *
   * We pass the platform class loader as the parent to avoid it delegating to the system classloader
@@ -40,13 +40,13 @@ class FlixClassLoader(classes: Map[String, JvmClass], jarLoader: ClassLoader) ex
     * Finds the class with the given binary `name`.
     */
   override def loadClass(name: String): Class[?] = try {
-    // Lookup the internal name in the cache to see if the class was already defined.
+    // Lookup the binary name in the cache to see if the class was already defined.
     cache.get(name) match {
       case None =>
         // Case 1: The class was not defined. Lookup the bytecode.
         classes.get(name) match {
           case None =>
-            // Case 1.1: The internal name does not exist. Try the external JAR loader.
+            // Case 1.1: The binary name does not exist. Try the external JAR loader.
             try {
               val clazz = jarLoader.loadClass(name)
               cache.put(name, clazz)
@@ -59,7 +59,7 @@ class FlixClassLoader(classes: Map[String, JvmClass], jarLoader: ClassLoader) ex
                 clazz
             }
           case Some(jvmClass) =>
-            // Case 1.2: The internal name was found. Define the class using its byte code.
+            // Case 1.2: The binary name was found. Define the class using its byte code.
             val clazz = defineClass(name, jvmClass.bytecode, 0, jvmClass.bytecode.length)
             // Store it in the cache.
             cache.put(name, clazz)

@@ -17,12 +17,13 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, TraitEnv}
 import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.constant.ClassDesc
 
 object TypedAst {
 
@@ -203,7 +204,7 @@ object TypedAst {
 
     case class Ascribe(exp: Expr, expectedType: Option[Type], expectedEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class InstanceOf(exp: Expr, clazz: java.lang.Class[?], loc: SourceLocation) extends Expr {
+    case class InstanceOf(exp: Expr, clazz: ClassDesc, loc: SourceLocation) extends Expr {
       def eff: Type = exp.eff
 
       def tpe: Type = Type.Bool
@@ -226,25 +227,25 @@ object TypedAst {
 
     case class RunWith(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(constructor: Constructor[?], exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class InvokeConstructor(constructor: JavaMethod, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class InvokeSuperConstructor(constructor: Constructor[?], exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class InvokeSuperConstructor(constructor: JavaMethod, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class InvokeMethod(method: Method, exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class InvokeMethod(method: JavaMethod, exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class InvokeSuperMethod(method: Method, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class InvokeSuperMethod(method: JavaMethod, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class InvokeStaticMethod(method: Method, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class InvokeStaticMethod(method: JavaMethod, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class GetField(field: Field, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class GetField(field: JavaField, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class PutField(field: Field, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class PutField(field: JavaField, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class GetStaticField(field: Field, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class GetStaticField(field: JavaField, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class PutStaticField(field: Field, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class PutStaticField(field: JavaField, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class NewObject(sym: Symbol.AnonClassSym, clazz: java.lang.Class[?], tpe: Type, eff: Type, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(sym: Symbol.AnonClassSym, clazz: JClass, tpe: Type, eff: Type, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -409,7 +410,7 @@ object TypedAst {
 
   case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: Nel[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
-  case class CatchRule(bnd: Binder, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
+  case class CatchRule(bnd: Binder, clazz: ClassDesc, exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(op: OpSymUse, fparams: Nel[FormalParam], exp: Expr, loc: SourceLocation)
 
@@ -453,8 +454,7 @@ object TypedAst {
     * }}}
     *
     *   @param handlerSym is handle's [[Symbol.DefnSym]].
-    *   @param handledEff is E's [[Type]].
     *   @param handledSym is E's [[Symbol.EffSym]].
     * */
-  case class DefaultHandler(handlerSym: Symbol.DefnSym, handledEff: Type, handledSym: Symbol.EffSym)
+  case class DefaultHandler(handlerSym: Symbol.DefnSym, handledSym: Symbol.EffSym)
 }

@@ -24,6 +24,8 @@ import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
+import java.lang.constant.ClassDesc
+import java.lang.constant.ConstantDescs.CD_Object
 import java.util.Objects
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -622,7 +624,7 @@ object Type {
     /**
       * A Java constructor, defined by its class and argument types.
       */
-    case class JvmConstructor(clazz: Class[?], tpes: List[Type]) extends JvmMember
+    case class JvmConstructor(clazz: ClassDesc, tpes: List[Type]) extends JvmMember
 
     /**
       * A Java field, defined by the receiver type and the field name.
@@ -637,7 +639,7 @@ object Type {
     /**
       * A Java static method, defined by the class, the method name, and the argument types.
       */
-    case class JvmStaticMethod(clazz: Class[?], name: Name.Ident, tpes: List[Type]) extends JvmMember
+    case class JvmStaticMethod(clazz: ClassDesc, name: Name.Ident, tpes: List[Type]) extends JvmMember
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -649,6 +651,8 @@ object Type {
     * associated types, or error types.
     *
     * Evaluates `eff` to a Cofinite set of effect symbols.
+    * A ground, saturated effect application such as `State[Int32]` evaluates to `State` because
+    * concrete effect sets identify effects by their constructor symbol.
     *
     * - Returns `Ok[s]` if `eff` is well-formed and has no type variables, associated types,
     *   or error types and hence reduces to a single Cofinite set.
@@ -675,6 +679,11 @@ object Type {
         CofiniteSet.difference(visit(x), visit(y))
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
         CofiniteSet.xor(visit(x), visit(y))
+      case app@Type.Apply(_, _, _) if app.kind == Kind.Eff && app.typeVars.isEmpty && !Type.hasAssocType(app) && !Type.hasError(app) =>
+        app.baseType match {
+          case Type.Cst(TypeConstructor.Effect(sym, _), _) => CofiniteSet.mkSet(sym)
+          case _ => throw NonGroundEffect
+        }
       case Type.Alias(_, _, tpe, _) => visit(tpe)
       case _ => throw NonGroundEffect
     }
@@ -682,6 +691,42 @@ object Type {
     try Result.Ok(visit(eff)) catch {
       case NonGroundEffect => Result.Err(())
     }
+  }
+
+  /**
+    * Returns an occurrence of the effect constructor `sym` in the effect formula `eff`.
+    *
+    * A saturated polymorphic effect application is treated as an atomic effect. In particular,
+    * effect types nested in its type arguments are not occurrences in the surrounding formula.
+    *
+    * For example:
+    *   - `findEffect(E, E[Int32] + IO)` returns `Some(E[Int32])`.
+    *   - `findEffect(E, F[String] + E[Bool])` returns `Some(E[Bool])`.
+    *   - `findEffect(E, F[E[Int32]])` returns `None` because `E[Int32]` is an argument to the
+    *     atomic effect `F[E[Int32]]`, not a member of the surrounding effect formula.
+    */
+  def findEffect(sym: Symbol.EffSym, eff: Type): Option[Type] = eff match {
+    case tpe@Type.Cst(TypeConstructor.Effect(otherSym, Kind.Eff), _) =>
+      Option.when(sym == otherSym)(tpe)
+    case app@Type.Apply(_, _, _) if app.kind == Kind.Eff => app.baseType match {
+      case Type.Cst(TypeConstructor.Effect(otherSym, _), _) =>
+        Option.when(sym == otherSym)(app)
+      case _ => app match {
+        case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x, _) =>
+          findEffect(sym, x)
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
+          findEffect(sym, x).orElse(findEffect(sym, y))
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
+          findEffect(sym, x).orElse(findEffect(sym, y))
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) =>
+          findEffect(sym, x).orElse(findEffect(sym, y))
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
+          findEffect(sym, x).orElse(findEffect(sym, y))
+        case _ => None
+      }
+    }
+    case Type.Alias(_, _, tpe, _) => findEffect(sym, tpe)
+    case _ => None
   }
 
   /**
@@ -954,9 +999,14 @@ object Type {
     }
 
   /**
-    * Constructs the a native type.
+    * Constructs the native type of the class `desc` with `arity` type parameters.
     */
-  def mkNative(clazz: Class[?], loc: SourceLocation): Type = Type.Cst(TypeConstructor.Native(clazz), loc)
+  def mkNative(desc: ClassDesc, arity: Int, loc: SourceLocation): Type = Type.Cst(TypeConstructor.Native(desc, arity), loc)
+
+  /**
+    * Returns the `java.lang.Object` type.
+    */
+  def mkObject(loc: SourceLocation): Type = mkNative(CD_Object, 0, loc)
 
   /**
     * Constructs a RecordExtend type.
@@ -1297,99 +1347,6 @@ object Type {
     case Type.JvmToType(_, _) => false
     case Type.JvmToEff(_, _) => false
     case Type.UnresolvedJvmType(_, _) => false
-  }
-
-  /**
-    * Returns the Flix Type of a Java Class.
-    *
-    * Arrays are returned with the [[Type.IO]] region.
-    *
-    * Returns a [[TypeConstructor.Native]] of `c` if nothing more specific is found.
-    */
-  def getFlixType(c: Class[?]): Type = {
-    if (c == java.lang.Boolean.TYPE) {
-      Type.Bool
-    } else if (c == java.lang.Byte.TYPE) {
-      Type.Int8
-    } else if (c == java.lang.Short.TYPE) {
-      Type.Int16
-    } else if (c == java.lang.Integer.TYPE) {
-      Type.Int32
-    } else if (c == java.lang.Long.TYPE) {
-      Type.Int64
-    } else if (c == java.lang.Character.TYPE) {
-      Type.Char
-    } else if (c == java.lang.Float.TYPE) {
-      Type.Float32
-    } else if (c == java.lang.Double.TYPE) {
-      Type.Float64
-    } else if (c == classOf[java.math.BigDecimal]) {
-      Type.BigDecimal
-    } else if (c == classOf[java.math.BigInteger]) {
-      Type.BigInt
-    } else if (c == classOf[java.lang.String]) {
-      Type.Str
-    } else if (c == classOf[java.util.regex.Pattern]) {
-      Type.Regex
-    } else if (c == java.lang.Void.TYPE) {
-      Type.Unit
-    } else if (c.isArray) {
-      val comp = c.getComponentType
-      val elmType = getFlixType(comp)
-      Type.mkArray(elmType, Type.IO, SourceLocation.Unknown)
-    } else {
-      Type.mkNative(c, SourceLocation.Unknown)
-    }
-  }
-
-  /**
-    * Returns a fully-applied Flix type for the given Java class, with `Object` type arguments
-    * for generic classes. Use this in ground-type contexts that need kind `Star`.
-    */
-  def instantiateJavaTypeWithObjectArgs(c: Class[?], loc: SourceLocation): Type = {
-    val base = getFlixType(c)
-    val n = c.getTypeParameters.length
-    Type.mkApply(base, List.fill(n)(Type.mkNative(classOf[Object], loc)), loc)
-  }
-
-  /**
-    * Returns the [[Class]] object of `tpe`, if it exists.
-    *
-    * Almost the inverse function of [[getFlixType]], but arrays and unit returns None.
-    */
-  def classFromFlixType(tpe: Type): Option[Class[?]] = tpe match {
-    case Type.Bool =>
-      Some(java.lang.Boolean.TYPE)
-    case Type.Int8 =>
-      Some(java.lang.Byte.TYPE)
-    case Type.Int16 =>
-      Some(java.lang.Short.TYPE)
-    case Type.Int32 =>
-      Some(java.lang.Integer.TYPE)
-    case Type.Int64 =>
-      Some(java.lang.Long.TYPE)
-    case Type.Char =>
-      Some(java.lang.Character.TYPE)
-    case Type.Float32 =>
-      Some(java.lang.Float.TYPE)
-    case Type.Float64 =>
-      Some(java.lang.Double.TYPE)
-    case Type.Cst(TypeConstructor.BigDecimal, _) =>
-      Some(classOf[java.math.BigDecimal])
-    case Type.Cst(TypeConstructor.BigInt, _) =>
-      Some(classOf[java.math.BigInteger])
-    case Type.Cst(TypeConstructor.Str, _) =>
-      Some(classOf[String])
-    case Type.Cst(TypeConstructor.Regex, _) =>
-      Some(classOf[java.util.regex.Pattern])
-    case Type.Cst(TypeConstructor.Native(clazz), _) =>
-      Some(clazz)
-    case _ =>
-      // Peel off type applications (e.g., ArrayList[String]) and check the base type.
-      tpe.baseType match {
-        case Type.Cst(TypeConstructor.Native(clazz), _) => Some(clazz)
-        case _ => None
-      }
   }
 
   /**

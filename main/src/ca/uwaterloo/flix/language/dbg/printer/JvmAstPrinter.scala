@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.JvmAst.Expr
 import ca.uwaterloo.flix.language.ast.{JvmAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.util.collection.MapOps
 
 object JvmAstPrinter {
@@ -94,6 +95,6 @@ object JvmAstPrinter {
   /** Returns the [[DocAst.JvmMethod]] representation of `method`. */
   private def printJvmMethod(method: JvmAst.JvmMethod): DocAst.JvmMethod = method match {
     case JvmAst.JvmMethod(ann, ident, fparams, exp, tpe, _, _, _) =>
-      DocAst.JvmMethod(ann.map(_.clazz.displayName()), ident, fparams map printFormalParam, print(exp), SimpleTypePrinter.print(tpe))
+      DocAst.JvmMethod(ann.map(a => ClassDescs.simpleNameOf(a.clazz)), ident, fparams map printFormalParam, print(exp), SimpleTypePrinter.print(tpe))
   }
 }

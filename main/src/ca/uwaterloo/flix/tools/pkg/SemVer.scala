@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.api.Version
+
 object SemVer {
 
   /**
@@ -24,6 +26,11 @@ object SemVer {
     Ordering.by((_: SemVer).major)
       .orElseBy(_.minor)
       .orElseBy(_.patch)
+
+  /**
+    * Returns the given Flix version `v` as a semantic version.
+    */
+  def ofVersion(v: Version): SemVer = SemVer(v.major, v.minor, v.revision)
 
   def ofString(input: String): Option[SemVer] = {
     val numPattern = raw"0|[1-9]\d*".r

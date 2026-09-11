@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 
 import scala.annotation.tailrec
@@ -55,7 +55,7 @@ object PreEffUnification {
     * Eliminates the atomic equations of the given system syntactically, without the set
     * algebra machinery.
     *
-    * An equation is atomic if it relates two atoms (variables, `Pure`, effect constants, or
+    * An equation is atomic if it relates two atoms (variables, `Pure`, effect applications, or
     * regions) where at least one side is a flexible variable (or the sides are identical).
     * Such equations are solvable by pure variable elimination: atoms need no normalization,
     * and the variable orientation mirrors `Equation.mk` (a variable on the right-hand side
@@ -116,13 +116,17 @@ object PreEffUnification {
   }
 
   /**
-    * Returns `true` if `t` is an atom: a variable, `Pure`, an effect constant, or a region.
+    * Returns `true` if `t` is an atom: a variable, `Pure`, an effect application, or a region.
     */
   private def isAtom(t: Type): Boolean = t match {
     case Type.Var(_, _) => true
     case Type.Cst(TypeConstructor.Pure, _) => true
     case Type.Cst(TypeConstructor.Effect(_, _), _) => true
     case Type.Cst(TypeConstructor.Region(_), _) => true
+    case app@Type.Apply(_, _, _) if app.kind == Kind.Eff => app.baseType match {
+      case Type.Cst(TypeConstructor.Effect(_, _), _) => true
+      case _ => false
+    }
     case _ => false
   }
 
@@ -131,13 +135,7 @@ object PreEffUnification {
     *
     * Assumes that `t1` and `t2` satisfy [[isAtom]].
     */
-  private def sameAtom(t1: Type, t2: Type): Boolean = (t1, t2) match {
-    case (Type.Var(s1, _), Type.Var(s2, _)) => s1 == s2
-    case (Type.Cst(TypeConstructor.Pure, _), Type.Cst(TypeConstructor.Pure, _)) => true
-    case (Type.Cst(TypeConstructor.Effect(s1, _), _), Type.Cst(TypeConstructor.Effect(s2, _), _)) => s1 == s2
-    case (Type.Cst(TypeConstructor.Region(s1), _), Type.Cst(TypeConstructor.Region(s2), _)) => s1 == s2
-    case _ => false
-  }
+  private def sameAtom(t1: Type, t2: Type): Boolean = t1 == t2
 
   /**
     * Follows variable bindings in `m` to the representative of `t`.

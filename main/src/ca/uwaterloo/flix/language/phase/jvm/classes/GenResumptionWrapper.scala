@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.{Mangle, MethodTypeDescs}
-import ca.uwaterloo.flix.util.ClassDescs
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 import java.lang.constant.ClassDesc

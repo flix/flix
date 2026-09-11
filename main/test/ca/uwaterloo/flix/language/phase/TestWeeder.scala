@@ -124,6 +124,68 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateStructField](result)
   }
 
+  test("DuplicateTypeParam.01") {
+    val input = "def f[a: Type, a: Type](x: a): a = x"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateTypeParam](result)
+  }
+
+  test("DuplicateTypeParam.02") {
+    val input =
+      """enum E[a, a] {
+        |    case E(a)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateTypeParam](result)
+  }
+
+  test("DuplicateTypeParam.03") {
+    val input =
+      """enum E[a: Type, b: Type, a: Type] {
+        |    case E(a, b)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateTypeParam](result)
+  }
+
+  test("DuplicateTypeParam.04") {
+    val input =
+      """struct S[a, a, r] {
+        |    x: a
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateTypeParam](result)
+  }
+
+  test("DuplicateTypeParam.05") {
+    val input = "type alias T[a, a] = a"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateTypeParam](result)
+  }
+
+  test("DuplicateTypeParam.06") {
+    val input =
+      """eff E[a, a] {
+        |    def op(x: a): Unit
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateTypeParam](result)
+  }
+
+  test("DuplicateTypeParam.07") {
+    val input =
+      """trait T[a] {
+        |    pub def f[b: Type, b: Type](x: b): a
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateTypeParam](result)
+  }
+
   test("EmptyForFragment.01") {
     val input =
       """

@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.{MonoAst, Symbol}
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.dbg.DocAst
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 
 object MonoAstPrinter {
 
@@ -55,7 +56,7 @@ object MonoAstPrinter {
   /** Returns the [[DocAst.JvmMethod]] representation of `method`. */
   private def printJvmMethod(method: MonoAst.JvmMethod): DocAst.JvmMethod = method match {
     case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _, _) =>
-      DocAst.JvmMethod(ann.map(_.clazz.displayName()), ident, fparams.toList.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
+      DocAst.JvmMethod(ann.map(a => ClassDescs.simpleNameOf(a.clazz)), ident, fparams.toList.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
   }
 
   /** Returns the [[DocAst]] representation of `rule`. */

@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.PatMatchError
+import ca.uwaterloo.flix.language.jvm.JavaMetadata
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -586,11 +587,11 @@ object PatMatch2 {
     * A catch rule is redundant if a preceding rule catches the same exception
     * class or a superclass of it, making the later rule impossible to reach.
     */
-  private def checkCatchRules(rules: List[TypedAst.CatchRule])(implicit sctx: SharedContext): Unit = {
+  private def checkCatchRules(rules: List[TypedAst.CatchRule])(implicit sctx: SharedContext, flix: Flix): Unit = {
     var precedingRules: List[TypedAst.CatchRule] = Nil
     for (rule <- rules) {
       // Check if any preceding rule's class is a superclass of (or equal to) this rule's class.
-      precedingRules.find(prev => prev.clazz.isAssignableFrom(rule.clazz)) match {
+      precedingRules.find(prev => JavaMetadata.isSubtype(rule.clazz, prev.clazz, rule.loc)) match {
         case Some(coveringRule) =>
           sctx.errors.add(PatMatchError.RedundantCatchRule(coveringRule.loc, rule.loc))
         case None => ()

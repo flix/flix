@@ -20,12 +20,13 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
+import ca.uwaterloo.flix.language.jvm.{ByteBuddyJavaTypeProvider, DependencyClassPath, ExternalJarLoader, JavaTypeProvider}
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.CodeGen
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
 import ca.uwaterloo.flix.language.phase.monomorph2.Monomorpher2
 import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
-import ca.uwaterloo.flix.language.phase.typer.jvm.{ByteBuddyJavaTypeProvider, JavaTypeProvider}
+import ca.uwaterloo.flix.language.verifier.TokenVerifier
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
@@ -198,8 +199,16 @@ class Flix {
     */
   val jarLoader = new ExternalJarLoader
 
+  /**
+    * The class files of the JARs added with [[addJar]].
+    *
+    * Read directly rather than through [[jarLoader]]: a class loader constructed at run time
+    * cannot serve resources inside a GraalVM native image.
+    */
+  private val dependencyClassPath = new DependencyClassPath
+
   /** The descriptor-based Java metadata provider owned by this compiler instance. */
-  val javaTypeProvider: JavaTypeProvider = ByteBuddyJavaTypeProvider.fromClassLoader(jarLoader)
+  val javaTypeProvider: JavaTypeProvider = ByteBuddyJavaTypeProvider.fromDependencyClassPath(dependencyClassPath, jarLoader)
 
   /**
     * Adds Flix source code from a file on the filesystem.
@@ -378,6 +387,7 @@ class Flix {
       case Result.Ok(()) =>
         val p1 = p.normalize()
         jarLoader.addURL(p1.toUri.toURL)
+        dependencyClassPath.addPath(p1)
         extendKnownJavaClassesAndInterfaces(p1)
         this
     }
@@ -524,7 +534,9 @@ class Flix {
 
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
     errors ++= lexerErrors
-    flix.emitEvent(FlixEvent.AfterLexer(afterLexer))
+    if (flix.options.xverify) {
+      TokenVerifier.verify(afterLexer)
+    }
 
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
     errors ++= parserErrors
@@ -681,8 +693,6 @@ class Flix {
 
     var tailPosAst = TailPos.run(effectBinderAst)
     effectBinderAst = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    flix.emitEvent(FlixEvent.AfterTailPos(tailPosAst))
 
     var eraserAst = Eraser.run(tailPosAst)
     tailPosAst = null // Explicitly null-out such that the memory becomes eligible for GC.

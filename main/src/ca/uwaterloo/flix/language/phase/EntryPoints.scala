@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, Nel}
 import ca.uwaterloo.flix.util.{ParOps, Result}
 
+import java.lang.constant.ConstantDescs.CD_Object
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.annotation.tailrec
@@ -377,7 +378,7 @@ object EntryPoints {
       // previous phase has already reported an error. Either way, report nothing here.
       None
     } else {
-      Some(EntryPointError.IllegalEntryPointEffect(toEffType(residual, eff.loc), eff.loc))
+      Some(EntryPointError.IllegalEntryPointEffect(toEffType(residual, eff), eff.loc))
     }
   }
 
@@ -393,10 +394,12 @@ object EntryPoints {
       case Result.Err(_) => CofiniteSet.empty
     }
 
-  /** Reconstructs an effect [[Type]], located at `loc`, from a set of effect symbols. */
-  private def toEffType(s: CofiniteSet[Symbol.EffSym], loc: SourceLocation): Type = {
+  /** Reconstructs an effect [[Type]] from a set of effect symbols, preserving applied effects from `original`. */
+  private def toEffType(s: CofiniteSet[Symbol.EffSym], original: Type): Type = {
+    val loc = original.loc
+
     def union(syms: SortedSet[Symbol.EffSym]): Type =
-      Type.mkUnion(syms.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)), loc)
+      Type.mkUnion(syms.toList.map(sym => Type.findEffect(sym, original).getOrElse(Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc))), loc)
 
     s match {
       case CofiniteSet.Set(syms) => union(syms)
@@ -462,7 +465,7 @@ object EntryPoints {
       case Type.Cst(TypeConstructor.Int16, _) => Result.Ok(true)
       case Type.Cst(TypeConstructor.Int32, _) => Result.Ok(true)
       case Type.Cst(TypeConstructor.Int64, _) => Result.Ok(true)
-      case Type.Cst(TypeConstructor.Native(clazz), _) if clazz == classOf[java.lang.Object] => Result.Ok(true)
+      case Type.Cst(TypeConstructor.Native(desc, _), _) if desc == CD_Object => Result.Ok(true)
       case Type.Cst(_, _) => Result.Ok(false)
       case Type.Apply(_, _, _) => Result.Ok(false)
       case Type.Alias(_, _, t, _) => isExportableType(t)
