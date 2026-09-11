@@ -1149,11 +1149,14 @@ object Kinder {
       }
 
     case UnkindedType.Apply(t10, t20, loc) =>
-      val t2 = visitType(t20, Kind.Wild, kenv, root)
+      val base = tpe0.baseType
+      // Visit the argument with the kind demanded by the head constructor (if known),
+      // so that an ill-kinded argument is reported at the argument rather than at the head.
+      val t2 = visitType(t20, getExpectedArgKind(base, tpe0), kenv, root)
       val k1 = Kind.mkArrow(t2.kind, expectedKind)
       val t1 = visitType(t10, k1, kenv, root)
       val app = mkApply(t1, t2, loc)
-      (tpe0.baseType, app.kind) match {
+      (base, app.kind) match {
         case (UnkindedType.Var(sym, _), Kind.Eff) =>
           sctx.errors.add(KindError.IllegalPolymorphicEffectConstructor(sym, loc))
           // Keep the illegal application underneath the error so later phases can still see
@@ -1369,6 +1372,33 @@ object Kinder {
     case _: UnkindedType.UnappliedNative => throw InternalCompilerException("unexpected unapplied native type", tpe0.loc)
 
 
+  }
+
+  /**
+    * Returns the kind expected of the last argument of the type application `app` whose base type is `base`.
+    *
+    * For example, in `E + IO`, i.e. `Apply(Apply(Union, E), IO)`, the argument `IO` is expected
+    * to have kind `Eff` because `Union` has kind `Eff -> Eff -> Eff`.
+    *
+    * Returns [[Kind.Wild]] if the kind of `base` is not statically known (e.g. it is a type variable)
+    * or if `app` applies more arguments than the kind of `base` accepts.
+    */
+  private def getExpectedArgKind(base: UnkindedType, app: UnkindedType)(implicit declKinds: DeclKinds): Kind = {
+    val baseKind = base match {
+      case UnkindedType.Cst(cst, _) => Some(cst.kind)
+      case UnkindedType.Enum(sym, _) => Some(declKinds.enumKinds(sym))
+      case UnkindedType.Effect(sym, _) => Some(declKinds.effectKinds(sym))
+      case UnkindedType.Struct(sym, _) => Some(declKinds.structKinds(sym))
+      case UnkindedType.RestrictableEnum(sym, _) => Some(declKinds.restrictableEnumKinds(sym))
+      case UnkindedType.Arrow(_, arity, _) => Some(Kind.mkArrow(arity))
+      case _ => None
+    }
+    baseKind match {
+      case Some(k) =>
+        // The argument of `app` is its last type argument, i.e. it is at index `numArgs - 1`.
+        Kind.kindArgs(k).lift(app.typeArguments.length - 1).getOrElse(Kind.Wild)
+      case None => Kind.Wild
+    }
   }
 
   /**
