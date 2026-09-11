@@ -41,9 +41,8 @@ private object AtomBimap {
     // The arguments used to reconstruct each polymorphic effect after set unification.
     val effectArgs = mutable.Map.empty[Symbol.EffSym, Nel[Type]]
     for (eq <- eqs) {
-      // The constraint solver has canonicalized every application; disagreement is an internal error.
-      EffAtom.collectAtoms(eq.tpe1, buf, effectArgs, strict = true)
-      EffAtom.collectAtoms(eq.tpe2, buf, effectArgs, strict = true)
+      EffAtom.collectAtoms(eq.tpe1, buf, effectArgs)
+      EffAtom.collectAtoms(eq.tpe2, buf, effectArgs)
     }
     fromAtoms(buf, effectArgs.toMap)
   }
@@ -56,8 +55,7 @@ private object AtomBimap {
   def fromType(tpe: Type)(implicit scope: RegionScope, renv: RigidityEnv): AtomBimap = {
     val buf = mutable.HashSet.empty[EffAtom]
     val effectArgs = mutable.Map.empty[Symbol.EffSym, Nel[Type]]
-    // A type reconstructed from an ill-typed definition may disagree with itself; the first arguments win.
-    EffAtom.collectAtoms(tpe, buf, effectArgs, strict = false)
+    EffAtom.collectAtoms(tpe, buf, effectArgs)
     fromAtoms(buf, effectArgs.toMap)
   }
 

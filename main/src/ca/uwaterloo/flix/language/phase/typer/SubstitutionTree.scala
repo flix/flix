@@ -101,21 +101,14 @@ class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.
     */
   def mapTypes(f: Type => Type): SubstitutionTree = {
     val newRoot = root.mapTypes(f)
-    var newBranches: Map[Symbol.RegionSym, SubstitutionTree] = null
+    var newBranches = branches
     for ((sym, tree) <- branches) {
       val t = tree.mapTypes(f)
       if (!(t eq tree)) {
-        if (newBranches == null) {
-          newBranches = branches
-        }
         newBranches = newBranches.updated(sym, t)
       }
     }
-    if ((newRoot eq root) && newBranches == null) {
-      this
-    } else {
-      new SubstitutionTree(newRoot, if (newBranches == null) branches else newBranches)
-    }
+    if ((newRoot eq root) && (newBranches eq branches)) this else new SubstitutionTree(newRoot, newBranches)
   }
 
   /**

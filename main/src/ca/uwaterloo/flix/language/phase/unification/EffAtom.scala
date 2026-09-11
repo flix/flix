@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Nel
 
 import scala.annotation.tailrec
@@ -117,33 +116,22 @@ private object EffAtom {
     * @param t the type whose effect atoms are collected.
     * @param acc the set to which the collected atoms are added.
     * @param effectArgs the map from polymorphic effect constructors to their non-empty argument lists.
-    * @param strict whether two applications of the same constructor with different arguments are an
-    *               internal error. The constraint solver canonicalizes every application before
-    *               effect unification, so `strict` holds there; a single type reconstructed from an
-    *               ill-typed definition may still disagree with itself, so it is simplified leniently
-    *               and the first argument list wins.
     */
-  def collectAtoms(t: Type, acc: mutable.HashSet[EffAtom], effectArgs: mutable.Map[Symbol.EffSym, Nel[Type]], strict: Boolean)(implicit scope: RegionScope, renv: RigidityEnv): Unit = t match {
+  def collectAtoms(t: Type, acc: mutable.HashSet[EffAtom], effectArgs: mutable.Map[Symbol.EffSym, Nel[Type]])(implicit scope: RegionScope, renv: RigidityEnv): Unit = t match {
     case Type.Var(sym, _) if renv.isRigid(sym) => acc += EffAtom.VarRigid(sym)
     case Type.Var(sym, _) => acc += EffAtom.VarFlex(sym)
     case Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), _) => acc += EffAtom.Eff(sym)
     case app@Type.Apply(tpe1, tpe2, _) => app.baseType match {
       case Type.Cst(TypeConstructor.Effect(sym, _), _) if app.kind == Kind.Eff =>
         acc += EffAtom.Eff(sym)
-        val args = Nel.unsafeFrom(app.typeArguments)
-        effectArgs.get(sym) match {
-          case None => effectArgs.update(sym, args)
-          case Some(other) if strict && other != args =>
-            throw InternalCompilerException(s"Disagreeing arguments for effect '$sym': '${other.toList.mkString(", ")}' and '${args.toList.mkString(", ")}'.", t.loc)
-          case Some(_) => ()
-        }
+        effectArgs.getOrElseUpdate(sym, Nel.unsafeFrom(app.typeArguments))
       case _ =>
-        collectAtoms(tpe1, acc, effectArgs, strict)
-        collectAtoms(tpe2, acc, effectArgs, strict)
+        collectAtoms(tpe1, acc, effectArgs)
+        collectAtoms(tpe2, acc, effectArgs)
     }
     case Type.Cst(TypeConstructor.Region(sym), _) => acc += EffAtom.Region(sym)
     case Type.Cst(TypeConstructor.Error(id, _), _) => acc += EffAtom.Error(id)
-    case Type.Alias(_, _, tpe, _) => collectAtoms(tpe, acc, effectArgs, strict)
+    case Type.Alias(_, _, tpe, _) => collectAtoms(tpe, acc, effectArgs)
     case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc).foreach(acc += _)
     case _ => ()
   }

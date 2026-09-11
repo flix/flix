@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.collection.ListOps
-import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{ChaosMonkey, Result}
 
 import scala.annotation.tailrec
 
@@ -192,16 +192,14 @@ object ConstraintSolver2 {
     // depends on iteration order. That only affects which application an error message lists first.
     var representatives = Map.empty[Symbol.EffSym, Type]
 
-    // The emitted argument equalities, in emission order, deduplicated so that several occurrences
-    // of the same application report a single error.
-    var emitted = Set.empty[(Symbol.EffSym, Int, Type, Type)]
+    // The emitted argument equalities, in emission order.
     var equalities: List[TypeConstraint] = Nil
 
-    def rewriteType(tpe: Type): Type = tpe match {
+    def visitType(tpe: Type): Type = tpe match {
       case app0@Type.Apply(tpe1, tpe2, loc) =>
         // Canonicalize the arguments first, so nested applications are covered and the
         // representative is stored in canonical form.
-        val app = app0.renew(rewriteType(tpe1), rewriteType(tpe2), loc)
+        val app = app0.renew(visitType(tpe1), visitType(tpe2), loc)
         app.baseType match {
           case Type.Cst(tc@TypeConstructor.Effect(sym, _), _) if app.kind == Kind.Eff =>
             representatives.get(sym) match {
@@ -214,9 +212,7 @@ object ConstraintSolver2 {
                 } else {
                   var ith = 1
                   for ((representativeArg, arg) <- ListOps.zip(representative.typeArguments, app.typeArguments)) {
-                    val key = (sym, ith, representativeArg, arg)
-                    if (representativeArg != arg && !emitted.contains(key)) {
-                      emitted = emitted + key
+                    if (representativeArg != arg) {
                       equalities = TypeConstraint.Equality(representativeArg, arg, Provenance.PolyEffEq(sym, ith, representative, app, loc)) :: equalities
                     }
                     ith += 1
@@ -228,51 +224,51 @@ object ConstraintSolver2 {
           case _ => app
         }
       case Type.Alias(cst, args, inner, loc) =>
-        val i = rewriteType(inner)
+        val i = visitType(inner)
         if (i eq inner) tpe else Type.Alias(cst, args, i, loc)
       case Type.AssocType(cst, arg, kind, loc) =>
-        val a = rewriteType(arg)
+        val a = visitType(arg)
         if (a eq arg) tpe else Type.AssocType(cst, a, kind, loc)
       case Type.JvmToType(inner, loc) =>
-        val i = rewriteType(inner)
+        val i = visitType(inner)
         if (i eq inner) tpe else Type.JvmToType(i, loc)
       case Type.JvmToEff(inner, loc) =>
-        val i = rewriteType(inner)
+        val i = visitType(inner)
         if (i eq inner) tpe else Type.JvmToEff(i, loc)
       case Type.UnresolvedJvmType(_, _) => tpe
       case Type.Var(_, _) => tpe
       case Type.Cst(_, _) => tpe
     }
 
-    def rewriteConstraint(constr: TypeConstraint): TypeConstraint = constr match {
+    def visitConstraint(constr: TypeConstraint): TypeConstraint = constr match {
       case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-        val t1 = rewriteType(tpe1)
-        val t2 = rewriteType(tpe2)
+        val t1 = visitType(tpe1)
+        val t2 = visitType(tpe2)
         if ((t1 eq tpe1) && (t2 eq tpe2)) constr else TypeConstraint.Equality(t1, t2, prov)
       case TypeConstraint.Trait(sym, tpe, loc) =>
-        val t = rewriteType(tpe)
+        val t = visitType(tpe)
         if (t eq tpe) constr else TypeConstraint.Trait(sym, t, loc)
       case TypeConstraint.Purification(sym, eff1, eff2, prov, nested) =>
-        val e1 = rewriteType(eff1)
-        val e2 = rewriteType(eff2)
-        val ns = ListOps.mapWithReuse(nested)(rewriteConstraint)
+        val e1 = visitType(eff1)
+        val e2 = visitType(eff2)
+        val ns = ListOps.mapWithReuse(nested)(visitConstraint)
         if ((e1 eq eff1) && (e2 eq eff2) && (ns eq nested)) constr else TypeConstraint.Purification(sym, e1, e2, prov, ns)
       case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
-        val t1 = rewriteType(tpe1)
-        val t2 = rewriteType(tpe2)
+        val t1 = visitType(tpe1)
+        val t2 = visitType(tpe2)
         if ((t1 eq tpe1) && (t2 eq tpe2)) constr else TypeConstraint.Conflicted(t1, t2, prov)
       case TypeConstraint.EffConflicted(_) => constr
     }
 
     // Constraints first, then the tree: bindings made before this pass may contain applications
     // that disagree with those in the constraints.
-    val rewrittenConstrs = ListOps.mapWithReuse(constrs)(rewriteConstraint)
-    val rewrittenTree = tree.mapTypes(rewriteType)
-    if ((rewrittenTree eq tree) && (rewrittenConstrs eq constrs)) {
+    val newConstrs = ListOps.mapWithReuse(constrs)(visitConstraint)
+    val newTree = tree.mapTypes(visitType)
+    if ((newTree eq tree) && (newConstrs eq constrs)) {
       soup
     } else {
       progress.markProgress()
-      new Soup(equalities.reverse ::: rewrittenConstrs, rewrittenTree)
+      new Soup(equalities.reverse ::: newConstrs, newTree)
     }
   }
 
