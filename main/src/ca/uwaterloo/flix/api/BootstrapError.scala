@@ -17,8 +17,10 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation}
 import ca.uwaterloo.flix.tools.pkg
-import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError}
+import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError, SemVer}
 import ca.uwaterloo.flix.util.Formatter
+
+import java.nio.file.Path
 
 sealed trait BootstrapError {
   /**
@@ -30,6 +32,22 @@ sealed trait BootstrapError {
 object BootstrapError {
   case class ManifestParseError(e: ManifestError) extends BootstrapError {
     override def message(f: Formatter): String = e.message(f)
+  }
+
+  /**
+    * An error raised to indicate that the project at `path` requires a newer version of Flix
+    * than the one currently running.
+    *
+    * @param path     the path of the `flix.toml` file.
+    * @param required the Flix version required by the project.
+    * @param current  the Flix version currently running.
+    */
+  case class FlixVersionTooOld(path: Path, required: SemVer, current: SemVer) extends BootstrapError {
+    override def message(f: Formatter): String =
+      s"""The project requires Flix version ${f.bold(required.toString)}, but the current version is ${f.red(current.toString)}.
+         |Please upgrade to Flix ${f.bold(required.toString)} or newer.
+         |The project file was found at ${f.cyan(path.toString)}.
+         |""".stripMargin
   }
 
   case class FlixPackageError(e: PackageError) extends BootstrapError {

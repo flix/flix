@@ -16,13 +16,13 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{NamedAst, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NameError
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps}
 
 import java.nio.file.{FileSystemNotFoundException, Path}
@@ -39,7 +39,7 @@ object Namer {
     * Introduces unique names for each syntactic entity in the given `program`.
     * */
   def run(program: DesugaredAst.Root)(implicit flix: Flix): (NamedAst.Root, List[NameError]) =
-    flix.phaseNew("Namer") {
+    flix.phase("Namer") {
 
       // Construct a new shared context.
       implicit val sctx: SharedContext = SharedContext.mk()
@@ -236,6 +236,15 @@ object Namer {
       }
 
       val ns = Name.NName(ns0.idents ++ qname.namespace.idents ++ List(qname.ident), qname.loc)
+
+      //
+      // Check for [[NameError.IllegalMainModule]] -- i.e. that no top-level module takes
+      // the name of the generated entry point class.
+      //
+      if (ns.parts == List(CompilerConstants.EntryPointClassName)) {
+        sctx.errors.add(NameError.IllegalMainModule(qname.ident))
+      }
+
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone)
@@ -1689,7 +1698,7 @@ object Namer {
   /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
-  private def getTypeParamsFromFormalParams(tparams0: List[DesugaredAst.TypeParam], fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
+  private def getTypeParamsFromFormalParams(tparams0: List[DesugaredAst.TypeParam], fparams: Nel[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     tparams0 match {
       case Nil => visitImplicitTypeParamsFromFormalParams(fparams, tpe, eff, econstrs)
       case tparams@(_ :: _) => visitExplicitTypeParams(tparams)
@@ -1723,7 +1732,7 @@ object Namer {
     *
     * Does not include wildcard parameters. These are handled by the Resolver.
     */
-  private def visitImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
+  private def visitImplicitTypeParamsFromFormalParams(fparams: Nel[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     // Compute the type variables that occur in the formal parameters.
     val fparamTvars = fparams.flatMap {
       case DesugaredAst.FormalParam(_, Some(tpe1), _) => freeTypeVars(tpe1)

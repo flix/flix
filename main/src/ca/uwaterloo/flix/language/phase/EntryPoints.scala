@@ -22,9 +22,10 @@ import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeC
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.util.collection.CofiniteSet
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
+import ca.uwaterloo.flix.util.collection.{CofiniteSet, Nel}
+import ca.uwaterloo.flix.util.{ParOps, Result}
 
+import java.lang.constant.ConstantDescs.CD_Object
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.annotation.tailrec
@@ -56,7 +57,7 @@ object EntryPoints {
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
   private implicit val S: RegionScope = RegionScope.Top
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoints") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phase("EntryPoints") {
     val (root1, errs1) = resolveMain(root)
     val (root2, errs2) = checkEntryPoints(root1)
     val root3 = findEntryPoints(root2)
@@ -306,7 +307,7 @@ object EntryPoints {
 
   /** Returns all the types in the signature of `defn`. */
   private def typesOf(defn: TypedAst.Def): List[Type] = {
-    defn.spec.fparams.map(_.tpe) ++
+    defn.spec.fparams.toList.map(_.tpe) ++
       List(defn.spec.retTpe) ++
       List(defn.spec.eff) ++
       defn.spec.tconstrs.map(_.arg) ++
@@ -317,7 +318,7 @@ object EntryPoints {
   private def checkUnitArg(defn: TypedAst.Def): Option[EntryPointError] = {
     defn.spec.fparams match {
       // One parameter of type Unit - valid.
-      case List(arg) =>
+      case Nel(arg, Nil) =>
         isUnitType(arg.tpe) match {
           case Result.Ok(true) => None
           case Result.Ok(false) =>
@@ -326,11 +327,9 @@ object EntryPoints {
             // Do not report an error, since previous phases should have done already.
             None
         }
-      // One parameter of a non-Unit type or more than two parameters - invalid.
-      case _ :: _ =>
+      // More than one parameter - invalid.
+      case _ =>
         Some(EntryPointError.IllegalRunnableEntryPointArgs(defn.sym.loc))
-      // Zero parameters.
-      case Nil => throw InternalCompilerException(s"Unexpected main with zero parameters ('${defn.sym}'", defn.sym.loc)
     }
   }
 
@@ -379,7 +378,7 @@ object EntryPoints {
       // previous phase has already reported an error. Either way, report nothing here.
       None
     } else {
-      Some(EntryPointError.IllegalEntryPointEffect(toEffType(residual, eff.loc), eff.loc))
+      Some(EntryPointError.IllegalEntryPointEffect(toEffType(residual, eff), eff.loc))
     }
   }
 
@@ -395,10 +394,12 @@ object EntryPoints {
       case Result.Err(_) => CofiniteSet.empty
     }
 
-  /** Reconstructs an effect [[Type]], located at `loc`, from a set of effect symbols. */
-  private def toEffType(s: CofiniteSet[Symbol.EffSym], loc: SourceLocation): Type = {
+  /** Reconstructs an effect [[Type]] from a set of effect symbols, preserving applied effects from `original`. */
+  private def toEffType(s: CofiniteSet[Symbol.EffSym], original: Type): Type = {
+    val loc = original.loc
+
     def union(syms: SortedSet[Symbol.EffSym]): Type =
-      Type.mkUnion(syms.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)), loc)
+      Type.mkUnion(syms.toList.map(sym => Type.findEffect(sym, original).getOrElse(Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc))), loc)
 
     s match {
       case CofiniteSet.Set(syms) => union(syms)
@@ -429,7 +430,7 @@ object EntryPoints {
 
   /** Returns an error for each type in `defn` that is not valid in Java. */
   private def checkJavaTypes(defn: TypedAst.Def)(implicit flix: Flix): List[EntryPointError] = {
-    val types = defn.spec.retTpe :: defn.spec.fparams.map(_.tpe)
+    val types = defn.spec.retTpe :: defn.spec.fparams.toList.map(_.tpe)
     types.flatMap(tpe => {
       isExportableType(tpe) match {
         case Result.Ok(true) =>
@@ -464,7 +465,7 @@ object EntryPoints {
       case Type.Cst(TypeConstructor.Int16, _) => Result.Ok(true)
       case Type.Cst(TypeConstructor.Int32, _) => Result.Ok(true)
       case Type.Cst(TypeConstructor.Int64, _) => Result.Ok(true)
-      case Type.Cst(TypeConstructor.Native(clazz), _) if clazz == classOf[java.lang.Object] => Result.Ok(true)
+      case Type.Cst(TypeConstructor.Native(desc, _), _) if desc == CD_Object => Result.Ok(true)
       case Type.Cst(_, _) => Result.Ok(false)
       case Type.Apply(_, _, _) => Result.Ok(false)
       case Type.Alias(_, _, t, _) => isExportableType(t)

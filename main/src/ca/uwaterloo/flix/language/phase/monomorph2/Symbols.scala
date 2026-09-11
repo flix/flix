@@ -1,6 +1,5 @@
 /*
- * Copyright 2021 Magnus Madsen
- *                Casper Dalgaard Nielsen
+ * Copyright 2026 Flix Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.monomorph2
 
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.util.collection.Nel
 
 /**
   * A collection of symbols defined in the Flix Standard Library that this pipeline's Channel and
@@ -37,6 +37,13 @@ private[monomorph2] object Symbols {
         lazy val NewChannelTuple: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannelTuple")
         lazy val SelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.selectFrom")
         lazy val UnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.unsafeGetAndUnlock")
+
+        /**
+          * Defs whose instantiation args may contain a raw Sender/Receiver reintroduced by
+          * [[ConstraintSolver]]'s param substitution — those need [[MonomorphHelpers.lowerChannelType]]
+          * re-applied so the key matches [[SpecializeAndLower]]'s lookup.
+          */
+        lazy val NeedsRelowering: Set[Symbol.DefnSym] = Set(Get, Put, NewChannelTuple, MpmcAdmin, UnsafeGetAndUnlock)
       }
     }
 
@@ -137,17 +144,17 @@ private[monomorph2] object Symbols {
       object Solver {
         // Synthetic, these are not real stdlib declarations, just the corresponding def's arrow type.
         lazy val SolveType: Type = Type.mkPureArrow(Types.Fixpoint.Ast.Datalog.Datalog, Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
-        lazy val MergeType: Type = Type.mkPureUncurriedArrow(scala.collection.immutable.List(Types.Fixpoint.Ast.Datalog.Datalog, Types.Fixpoint.Ast.Datalog.Datalog), Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
-        lazy val FilterType: Type = Type.mkPureUncurriedArrow(scala.collection.immutable.List(Types.Fixpoint.Ast.Shared.PredSym, Types.Fixpoint.Ast.Datalog.Datalog), Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
-        lazy val RenameType: Type = Type.mkPureUncurriedArrow(scala.collection.immutable.List(Types.List.mkList(Types.Fixpoint.Ast.Shared.PredSym, SourceLocation.Unknown), Types.Fixpoint.Ast.Datalog.Datalog), Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
+        lazy val MergeType: Type = Type.mkPureUncurriedArrow(Nel.of(Types.Fixpoint.Ast.Datalog.Datalog, Types.Fixpoint.Ast.Datalog.Datalog), Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
+        lazy val FilterType: Type = Type.mkPureUncurriedArrow(Nel.of(Types.Fixpoint.Ast.Shared.PredSym, Types.Fixpoint.Ast.Datalog.Datalog), Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
+        lazy val RenameType: Type = Type.mkPureUncurriedArrow(Nel.of(Types.List.mkList(Types.Fixpoint.Ast.Shared.PredSym, SourceLocation.Unknown), Types.Fixpoint.Ast.Datalog.Datalog), Types.Fixpoint.Ast.Datalog.Datalog, SourceLocation.Unknown)
 
         def mkProvenanceOf(t: Type, loc: SourceLocation): Type =
           Type.mkPureUncurriedArrow(
-            scala.collection.immutable.List(
+            Nel.of(
               Types.Fixpoint.Ast.Shared.PredSym,
               Type.mkVector(Types.Fixpoint.Boxed, loc),
               Type.mkVector(Types.Fixpoint.Ast.Shared.PredSym, loc),
-              Type.mkPureCurriedArrow(scala.collection.immutable.List(Types.Fixpoint.Ast.Shared.PredSym, Type.mkVector(Boxed, loc)), t, loc),
+              Type.mkPureCurriedArrow(Nel.of(Types.Fixpoint.Ast.Shared.PredSym, Type.mkVector(Boxed, loc)), t, loc),
               Types.Fixpoint.Ast.Datalog.Datalog
             ),
             Type.mkVector(t, loc), loc

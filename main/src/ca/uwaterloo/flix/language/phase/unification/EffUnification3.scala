@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.PreEffUnification.PreSolveResult
@@ -53,6 +53,12 @@ object EffUnification3 {
     * Returns `Result.Err(eqns0)` if `eqns0` contains an equation that is ill-kinded. Hence, it is better to handle ill-kinded equations elsewhere.
     *
     * Note: Treats `Type.Error` as a constant, i.e. only equal to itself. Hence, it is better to drop equations that contain `Type.Error`.
+    *
+    * Invariant: For every polymorphic effect constructor in `eqns0`, all saturated
+    * occurrences must have identical type arguments. The caller must first equate and
+    * solve these arguments, and apply the resulting substitution to `eqns0`. For example,
+    * `F[a]` and `F[b]` may reach this function only after `a` and `b` have become equal;
+    * `F[Int32]` and `F[String]` must be rejected by ordinary type unification beforehand.
     */
   def unifyAll(eqs0: List[TypeConstraint.Equality], scope: RegionScope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
     // Performance: Nothing to do if the equation list is empty
@@ -79,8 +85,9 @@ object EffUnification3 {
       }
     }
 
-    // Choose a unique number for each atom.
-    implicit val bimap: AtomBimap = AtomBimap.fromConstraints(eqs)
+    // Choose a unique number for each atom. Use the original constraint order so the effect
+    // argument representative stored in the bimap is independent of the chaos monkey.
+    implicit val bimap: AtomBimap = AtomBimap.fromConstraints(eqs0)
 
     //
     // Phase 1: Try to solve without subeffecting.
@@ -166,6 +173,11 @@ object EffUnification3 {
       if (x < 0) throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
       SetFormula.mkElemSet(x)
 
+    case tpe@Type.Apply(_, _, _) if isSaturatedEffect(tpe) =>
+      val x = m.getForwardIndex(EffAtom.fromType(tpe))
+      if (x < 0) throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
+      SetFormula.mkElemSet(x)
+
     case tpe@Type.Cst(TypeConstructor.Region(_), _) =>
       val x = m.getForwardIndex(EffAtom.fromType(tpe))
       if (x < 0) throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
@@ -201,6 +213,22 @@ object EffUnification3 {
     case Type.Alias(_, _, tpe, _) => toSetFormula(tpe)
 
     case _ => throw InvalidType(t)
+  }
+
+  /**
+    * Returns whether `tpe` is a saturated application of an effect constructor.
+    *
+    * For example, if a declared effect `F` has kind `Type -> Eff`, then `F[Int32]` is saturated while `F` is not.
+    */
+  private def isSaturatedEffect(tpe: Type): Boolean = {
+    if (tpe.kind != Kind.Eff) {
+      false
+    } else {
+      tpe.baseType match {
+        case Type.Cst(TypeConstructor.Effect(_, _), _) => true
+        case _ => false
+      }
+    }
   }
 
   /** Returns [[Substitution]] where each mapping in `s` is converted to [[Type]]. */
@@ -260,16 +288,16 @@ object EffUnification3 {
     case SetFormula.Univ => Type.Univ
     case SetFormula.Empty => Type.Pure
     case SetFormula.Cst(c) => m.getBackward(c) match {
-      case Some(atom) => EffAtom.toType(atom, loc)
+      case Some(atom) => m.toType(atom, loc)
       case None => throw InternalCompilerException(s"Unexpected unbound constant identifier '$c'", loc)
     }
     case SetFormula.Var(x) => m.getBackward(x) match {
-      case Some(atom) => EffAtom.toType(atom, loc)
+      case Some(atom) => m.toType(atom, loc)
       case None => throw InternalCompilerException(s"Unexpected unbound variable identifier '$x'", loc)
     }
     case SetFormula.ElemSet(s) =>
       val elementTypes = s.toList.map(e => m.getBackward(e) match {
-        case Some(atom) => EffAtom.toType(atom, loc)
+        case Some(atom) => m.toType(atom, loc)
         case None => throw InternalCompilerException(s"Unexpected unbound element identifier '$e'", loc)
       })
       Type.mkUnion(elementTypes, loc)
@@ -291,6 +319,9 @@ object EffUnification3 {
     * WARNING:
     * - The type `tpe` *MUST* have kind `Eff`.
     * - The type `tpe` *MUST* be well-kinded. Do not use this function for ill-kinded effects!
+    * - Every saturated occurrence of the same polymorphic effect constructor *MUST* have
+    *   identical type arguments. For example, `F[a] + F[a]` is permitted, whereas
+    *   `F[Int32] + F[String]` must have been rejected before calling this function.
     *
     * The type `tpe` may contain `Type.Error`.
     */

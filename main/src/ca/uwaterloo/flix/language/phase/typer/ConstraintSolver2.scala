@@ -21,10 +21,11 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
-import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{ChaosMonkey, Result}
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 /**
   * The constraint solver reduces a collection of constraints by iteratively applying reduction rules.
@@ -139,11 +140,98 @@ object ConstraintSolver2 {
     * Solves the given constraint set as far as possible.
     */
   def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: RegionScope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
-    val constrs = constrs0.map(initialSubst.apply)
+    // Apply the initial substitution to the constraints.
+    val initialConstrs = constrs0.map(initialSubst.apply)
+    val effectArgEqualities = breakdownPolyEffConstraints(initialConstrs, initialSubst)
+    val constrs = effectArgEqualities ::: initialConstrs
     val soup = new Soup(constrs, initialSubst)
     val progress = Progress()
     val res = soup.exhaustively(progress)(solveOne)
     res.get
+  }
+
+  /**
+    * Collects pointwise equalities between saturated applications of the same effect constructor.
+    * Every occurrence in one constraint system must agree on the constructor's type arguments.
+    * An application is saturated when all the constructor's type parameters are supplied and the
+    * result has kind `Eff`; for a declared effect `F: Type -> Eff`, `F[Int32]` is saturated while `F` is not.
+    *
+    * For example, given the declarations:
+    * {{{
+    * eff F[t] {
+    *     def op(x: t): Unit
+    * }
+    * def f(): Unit \ F[Int32] + F[String] = ()
+    * }}}
+    * the two applications of `F` produce the additional equality `Int32 ~ String`, making `f`
+    * ill-typed before its effect equations are solved.
+    */
+  private def breakdownPolyEffConstraints(constrs: List[TypeConstraint], initialSubst: SubstitutionTree): List[TypeConstraint] = {
+    // Maps each effect symbol to the saturated effect types whose arguments must agree.
+    // For example, `F[Int32] + F[String]` maps `F` to `F[Int32]` and `F[String]`.
+    var effectTypes = ListMap.empty[Symbol.EffSym, Type]
+
+    def visitType(tpe: Type): Unit = tpe match {
+      case app@Type.Apply(tpe1, tpe2, _) =>
+        app.baseType match {
+          case Type.Cst(TypeConstructor.Effect(sym, _), _) if app.kind == Kind.Eff =>
+            effectTypes = effectTypes + (sym -> app)
+          case _ => ()
+        }
+        visitType(tpe1)
+        visitType(tpe2)
+      case Type.Alias(_, args, inner, _) =>
+        args.foreach(visitType)
+        visitType(inner)
+      case Type.AssocType(_, arg, _, _) =>
+        visitType(arg)
+      case Type.JvmToType(inner, _) =>
+        visitType(inner)
+      case Type.JvmToEff(inner, _) =>
+        visitType(inner)
+      case Type.UnresolvedJvmType(member, _) =>
+        member.getTypeArguments.foreach(visitType)
+      case Type.Var(_, _) => ()
+      case Type.Cst(_, _) => ()
+    }
+
+    def visitConstraint(constr: TypeConstraint): Unit = constr match {
+      case TypeConstraint.Equality(tpe1, tpe2, _) =>
+        visitType(tpe1)
+        visitType(tpe2)
+      case TypeConstraint.Trait(_, tpe, _) =>
+        visitType(tpe)
+      case TypeConstraint.Purification(_, eff1, eff2, _, nested) =>
+        visitType(eff1)
+        visitType(eff2)
+        nested.foreach(visitConstraint)
+      case TypeConstraint.Conflicted(tpe1, tpe2, _) =>
+        visitType(tpe1)
+        visitType(tpe2)
+      case TypeConstraint.EffConflicted(_) => ()
+    }
+
+    def visitSubstitutionTree(tree: SubstitutionTree): Unit = {
+      tree.root.m.values.foreach(visitType)
+      tree.branches.values.foreach(visitSubstitutionTree)
+    }
+
+    // Collect all saturated effect applications in the constraint system.
+    constrs.foreach(visitConstraint)
+    visitSubstitutionTree(initialSubst)
+
+    val equalities = mutable.ListBuffer.empty[TypeConstraint]
+    for ((sym, occurrences) <- effectTypes.m) {
+      val representative = occurrences.head
+      for (occurrence <- occurrences.tail) {
+        var ith = 1
+        for ((tpe1, tpe2) <- ListOps.zip(representative.typeArguments, occurrence.typeArguments)) {
+          equalities += TypeConstraint.Equality(tpe1, tpe2, Provenance.PolyEffEq(sym, ith, representative, occurrence, occurrence.loc))
+          ith += 1
+        }
+      }
+    }
+    equalities.toList
   }
 
   /**
@@ -706,7 +794,7 @@ object ConstraintSolver2 {
     * Returns true if the kind should be unified syntactically.
     */
   @tailrec
-  private def isSyntactic(k: Kind): Boolean = k match {
+  def isSyntactic(k: Kind): Boolean = k match {
     case Kind.Star => true
     case Kind.Predicate => true
 

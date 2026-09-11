@@ -19,8 +19,10 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.IntroducedBy
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffSymUse, OpSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, JvmAnnotation, Modifiers, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, JClass, JMethod, JvmAnnotation, Modifiers, Source}
 import ca.uwaterloo.flix.language.phase.ClosureConv
+
+import java.lang.constant.ClassDesc
 
 object SimplifiedAst {
 
@@ -102,7 +104,7 @@ object SimplifiedAst {
 
     case class RunWith(exp: Expr, effUse: EffSymUse, rules: List[HandlerRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class NewObject(sym: Symbol.AnonClassSym, clazz: java.lang.Class[?], tpe: SimpleType, purity: Purity, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(sym: Symbol.AnonClassSym, clazz: JClass, tpe: SimpleType, purity: Purity, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
 
@@ -114,9 +116,9 @@ object SimplifiedAst {
 
   case class JvmConstructor(exp: Expr, retTpe: SimpleType, purity: Purity, loc: SourceLocation)
 
-  case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: SimpleType, purity: Purity, loc: SourceLocation)
+  case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: SimpleType, purity: Purity, javaSig: Option[JMethod], loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: ClassDesc, exp: Expr)
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 

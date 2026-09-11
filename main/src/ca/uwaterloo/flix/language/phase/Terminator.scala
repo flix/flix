@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{ChangeSet, SourceLocation, Symbol, Type, 
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TerminationError
 import ca.uwaterloo.flix.util.ParOps
-import ca.uwaterloo.flix.util.collection.{ListOps, OptionOps}
+import ca.uwaterloo.flix.util.collection.{ListOps, Nel, OptionOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
@@ -83,7 +83,7 @@ object Terminator {
     * Checks termination properties of `root`.
     */
   def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[TerminationError]) =
-    flix.phaseNew("Terminator") {
+    flix.phase("Terminator") {
       implicit val sctx: SharedContext = SharedContext.mk()
       implicit val _r: Root = root
       val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(
@@ -169,7 +169,7 @@ object Terminator {
     * onto the front of the context list, so that calls to both the local def
     * ''and'' any enclosing `@Terminates` function are checked.
     */
-  private case class RecursionContext(selfSym: SelfSym, fparams: List[FormalParam], env: SubEnv)
+  private case class RecursionContext(selfSym: SelfSym, fparams: Nel[FormalParam], env: SubEnv)
 
   /**
     * Tracks the structural relationship between local variables and the formal parameters
@@ -209,7 +209,7 @@ object Terminator {
       * Each formal parameter is mapped to itself with `Alias` strictness,
       * meaning "this variable ''is'' the parameter, not a substructure of it".
       */
-    def init(fparams: List[FormalParam]): SubEnv =
+    def init(fparams: Nel[FormalParam]): SubEnv =
       SubEnv(fparams.map(fp => fp.bnd.sym -> ParamRelation(fp.bnd.sym, Alias)).toMap)
   }
 
@@ -300,7 +300,7 @@ object Terminator {
     *
     * Returns `fparams` itself when `decreasingIndices` is empty.
     */
-  private def mkDecreasingFparams(fparams: List[FormalParam], decreasingIndices: Set[Int]): List[FormalParam] =
+  private def mkDecreasingFparams(fparams: Nel[FormalParam], decreasingIndices: Set[Int]): Nel[FormalParam] =
     if (decreasingIndices.isEmpty) fparams
     else fparams.zipWithIndex.map { case (fp, i) =>
       if (decreasingIndices.contains(i)) fp.copy(decreasing = Decreasing.StrictlyDecreasing) else fp
@@ -1004,7 +1004,7 @@ object Terminator {
   /**
     * Checks that the types of formal parameters are strictly positive.
     */
-  private def checkStrictPositivity(fparams: List[FormalParam], sym: QualifiedSym)(implicit sctx: SharedContext, root: Root): Unit = {
+  private def checkStrictPositivity(fparams: Nel[FormalParam], sym: QualifiedSym)(implicit sctx: SharedContext, root: Root): Unit = {
     for (fparam <- fparams) {
       fparam.tpe.typeConstructor match {
         case Some(TypeConstructor.Enum(enumSym, _)) =>

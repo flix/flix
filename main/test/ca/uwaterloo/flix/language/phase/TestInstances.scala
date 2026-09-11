@@ -506,20 +506,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.ExtraneousDef](result)
   }
 
-  ignore("Test.OrphanInstance.01") {
-    val input =
-      """
-        |trait C[a]
-        |
-        |mod C {
-        |    instance C[Int32]
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[InstanceError.OrphanInstance](result)
-  }
-
-  test("Test.OrphanInstance.02") {
+  test("Test.OrphanInstance.01") {
     val input =
       """
         |mod N {
@@ -532,22 +519,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.OrphanInstance](result)
   }
 
-  ignore("Test.OrphanInstance.03") {
-    val input =
-      """
-        |mod N {
-        |    trait C[a]
-        |
-        |    mod C {
-        |        instance N.C[Int32]
-        |    }
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[InstanceError.OrphanInstance](result)
-  }
-
-  test("Test.OrphanInstance.04") {
+  test("Test.OrphanInstance.02") {
     val input =
       """
         |mod N {
@@ -641,6 +613,35 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MissingSuperTraitInstance](result)
+  }
+
+  test("Test.MissingSuperTraitInstance.04") {
+    // The Resolver breaks the cycle A <-> B, but keeps the super trait C of A.
+    // The instance A[Int32] therefore still requires an instance of C, but not of B.
+    val input =
+      """
+        |trait A[a] with B[a], C[a]
+        |trait B[a] with A[a]
+        |trait C[a]
+        |
+        |instance A[Int32]
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[InstanceError.MissingSuperTraitInstance](result)
+  }
+
+  test("Test.MissingSuperTraitInstance.05") {
+    // The Resolver breaks the cycle A <-> B by dropping both super traits.
+    // The instance A[Int32] therefore does not require an instance of B.
+    val input =
+      """
+        |trait A[a] with B[a]
+        |trait B[a] with A[a]
+        |
+        |instance A[Int32]
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[InstanceError.MissingSuperTraitInstance](result)
   }
 
   test("Test.MultipleErrors.01") {

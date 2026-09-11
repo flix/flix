@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Decl
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
+import ca.uwaterloo.flix.util.collection.Nel
 
 import scala.annotation.tailrec
 
@@ -32,7 +33,7 @@ object CompletionUtils {
 
   def getLabelForSpec(spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
-      val args = if (isUnitFunction(fparams))
+      val args = if (isUnitFunction(fparams.toList))
         Nil
       else
         fparams.map {
@@ -69,12 +70,13 @@ object CompletionUtils {
   /**
     * Generate a snippet which represents defining an effect operation handler, with an extra `resume` as the last argument.
     */
-  def getOpHandlerSnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
-    val functionIsUnit = isUnitFunction(fparams)
+  def getOpHandlerSnippet(name: String, fparams: Nel[TypedAst.FormalParam]): String = {
+    val fps = fparams.toList
+    val functionIsUnit = isUnitFunction(fps)
 
-    val args = fparams.zipWithIndex.map {
+    val args = fps.zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
-    } :+ s"$${${fparams.length + 1}:resume}"
+    } :+ s"$${${fps.length + 1}:resume}"
     if (functionIsUnit)
       s"$name($${1:resume}) = "
     else

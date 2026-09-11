@@ -48,7 +48,7 @@ object Deriver {
 
   private val DerivableSyms: List[Symbol.TraitSym] = List(EqSym, OrderSym, ToStringSym, HashSym, CoerceSym)
 
-  def run(root: KindedAst.Root)(implicit flix: Flix): (KindedAst.Root, List[DerivationError]) = flix.phaseNew("Deriver") {
+  def run(root: KindedAst.Root)(implicit flix: Flix): (KindedAst.Root, List[DerivationError]) = flix.phase("Deriver") {
     implicit val sctx: SharedContext = SharedContext.mk()
     val derivedInstances = ParOps.parMap(root.enums.values)(getDerivedInstances(_, root)).flatten
     val newInstances = derivedInstances.foldLeft(root.instances) {
@@ -200,7 +200,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = Nil,
-        fparams = List(
+        fparams = Nel.of(
           KindedAst.FormalParam(param1, tpe, TypeSource.Ascribed, loc),
           KindedAst.FormalParam(param2, tpe, TypeSource.Ascribed, loc)
         ),
@@ -208,7 +208,7 @@ object Deriver {
           Nil,
           List(TraitConstraint(TraitSymUse(eqTraitSym, loc), tpe, loc)),
           Nil,
-          Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkBool(loc), loc)
+          Type.mkPureUncurriedArrow(Nel.of(tpe, tpe), Type.mkBool(loc), loc)
         ),
         tpe = Type.mkBool(loc),
         eff = Some(Type.Cst(TypeConstructor.Pure, loc)),
@@ -385,7 +385,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = Nil,
-        fparams = List(
+        fparams = Nel.of(
           KindedAst.FormalParam(param1, tpe, TypeSource.Ascribed, loc),
           KindedAst.FormalParam(param2, tpe, TypeSource.Ascribed, loc)
         ),
@@ -393,7 +393,7 @@ object Deriver {
           Nil,
           List(TraitConstraint(TraitSymUse(orderTraitSym, loc), tpe, loc)),
           Nil,
-          Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkEnum(comparisonEnumSym, Kind.Star, loc), loc)
+          Type.mkPureUncurriedArrow(Nel.of(tpe, tpe), Type.mkEnum(comparisonEnumSym, Kind.Star, loc), loc)
         ),
         tpe = Type.mkEnum(comparisonEnumSym, Kind.Star, loc),
         eff = Some(Type.Cst(TypeConstructor.Pure, loc)),
@@ -416,7 +416,7 @@ object Deriver {
       // `case (C2(x0, x1), C2(y0, y1))
       val (pat1, varSyms1) = mkPattern(sym, tpes, "x", loc)
       val (pat2, varSyms2) = mkPattern(sym, tpes, "y", loc)
-      val pat = KindedAst.Pattern.Tuple(Nel(pat1, List(pat2)), loc)
+      val pat = KindedAst.Pattern.Tuple(Nel.of(pat1, pat2), loc)
 
       // Call compare on each variable pair
       // `compare(x0, y0)`, `compare(x1, y1)`
@@ -556,7 +556,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = Nil,
-        fparams = List(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc)),
+        fparams = Nel.of(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
           Nil,
           List(TraitConstraint(TraitSymUse(toStringTraitSym, loc), tpe, loc)),
@@ -766,7 +766,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = Nil,
-        fparams = List(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc)),
+        fparams = Nel.of(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
           Nil,
           List(TraitConstraint(TraitSymUse(hashTraitSym, loc), tpe, loc)),
@@ -923,7 +923,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = Nil,
-        fparams = List(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc)),
+        fparams = Nel.of(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
           Nil,
           List(TraitConstraint(TraitSymUse(coerceTraitSym, loc), tpe, loc)),

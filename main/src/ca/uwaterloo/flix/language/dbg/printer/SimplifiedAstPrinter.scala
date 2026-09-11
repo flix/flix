@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expr.*
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.util.collection.MapOps
 
 object SimplifiedAstPrinter {
@@ -68,7 +69,7 @@ object SimplifiedAstPrinter {
     case Region(sym, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case SimplifiedAst.CatchRule(sym, clazz, body) =>
-        (sym, clazz, print(body))
+        (sym, DocAst.Expr.javaClassName(clazz), print(body))
     })
     case RunWith(exp, effUse, rules, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
       case SimplifiedAst.HandlerRule(op, fparams, body) =>
@@ -80,10 +81,10 @@ object SimplifiedAstPrinter {
           DocAst.JvmConstructor(print(exp), SimpleTypePrinter.print(retTpe))
       }
       val ms = methods.map {
-        case SimplifiedAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _) =>
-          DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams.map(printFormalParam), print(exp), SimpleTypePrinter.print(retTpe))
+        case SimplifiedAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _, _) =>
+          DocAst.JvmMethod(ann.map(a => ClassDescs.simpleNameOf(a.clazz)), ident, fparams.map(printFormalParam), print(exp), SimpleTypePrinter.print(retTpe))
       }
-      DocAst.Expr.NewObject(sym, clazz, SimpleTypePrinter.print(tpe), cs, ms)
+      DocAst.Expr.NewObject(sym, DocAst.Expr.javaClassName(clazz.desc), SimpleTypePrinter.print(tpe), cs, ms)
   }
 
   /**

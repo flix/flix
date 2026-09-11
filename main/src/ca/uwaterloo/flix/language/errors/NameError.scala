@@ -173,6 +173,27 @@ object NameError {
   }
 
   /**
+    * An error raised to indicate that a top-level module is named after the entry point class.
+    *
+    * @param ident The name of the module.
+    */
+  case class IllegalMainModule(ident: Name.Ident) extends NameError {
+    def code: ErrorCode = ErrorCode.E5658
+
+    def summary: String = s"Reserved module name: '${ident.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Reserved module name: '${red(ident.name)}'.
+         |
+         |${highlight(ident.loc, "reserved module name", fmt)}
+         |""".stripMargin
+    }
+
+    def loc: SourceLocation = ident.loc
+  }
+
+  /**
     * An error raised to indicate that the module `qname` is declared in an unexpected file.
     *
     * @param qname The name of the module.

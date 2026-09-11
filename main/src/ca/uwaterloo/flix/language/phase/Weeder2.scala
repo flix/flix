@@ -24,9 +24,8 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.WeederError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
-import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.collection.{ArrayOps, Chain, Nel, SeqOps}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
+import ca.uwaterloo.flix.util.collection.{ArrayOps, Nel, SeqOps}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import java.lang.{Byte as JByte, Integer as JInt, Long as JLong, Short as JShort}
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -49,31 +48,47 @@ object Weeder2 {
 
   import WeededAst.*
 
-  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Validation[WeededAst.Root, CompilationMessage], List[CompilationMessage]) = {
-    flix.phaseNew("Weeder2") {
+  /**
+    * Weeds the given syntax tree `root`.
+    *
+    * Returns the weeded root and the errors. The root is `None` if any compilation unit
+    * failed hard, in which case the list of errors is non-empty.
+    */
+  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Option[WeededAst.Root], List[CompilationMessage]) = {
+    flix.phase("Weeder2") {
       implicit val sctx: SharedContext = SharedContext.mk()
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
 
       // Schedule the biggest sources first to increase throughput.
       def sortBy(p: (Source, SyntaxTree.Tree)): Int = -p._1.data.length
 
-      // Parse each source file in parallel and join them into a WeededAst.Root
+      // Weed each source file in parallel. A unit that fails hard yields `None`.
       val refreshed = ParOps.parMapWithPriority(stale, sortBy) {
-        case (src, tree) => mapN(weed(tree))(tree => src -> tree)
+        case (src, tree) => weed(tree).map(src -> _)
       }
 
-      val compilationUnits = mapN(sequence(refreshed))(_.toMap ++ fresh)
-      (mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.availableClasses, root.tokens)), sctx.errors.asScala.toList)
-    }(DebugValidation())
+      // The root is only available if every unit was weeded successfully.
+      val result = Option.when(refreshed.forall(_.isDefined)) {
+        WeededAst.Root(refreshed.flatten.toMap ++ fresh, entryPoint, readRoot.availableClasses, root.tokens)
+      }
+      (result, sctx.errors.asScala.toList)
+    }
   }
 
-  private def weed(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Validation[CompilationUnit, CompilationMessage] = {
+  /**
+    * Weeds the given compilation unit `tree`.
+    *
+    * Returns `None` if the unit fails hard, in which case the error has been added to `sctx`.
+    */
+  private def weed(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Option[CompilationUnit] = {
     try {
       val usesAndImports = pickAllUsesAndImports(tree)
       val declarations = Decls.pickAllDeclarations(tree)
-      Validation.Success(CompilationUnit(usesAndImports, declarations, tree.loc))
+      Some(CompilationUnit(usesAndImports, declarations, tree.loc))
     } catch {
-      case PickException(error) => Validation.Failure(Chain(error))
+      case PickException(error) =>
+        sctx.errors.add(error)
+        None
     }
   }
 
@@ -686,12 +701,12 @@ object Weeder2 {
       loc
     )
 
-    def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit sctx: SharedContext): List[FormalParam] = {
+    def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit sctx: SharedContext): Nel[FormalParam] = {
       tryPick(TreeKind.ParameterList, tree) match {
         case Some(t) =>
           val params = pickAll(TreeKind.Parameter, t)
           if (params.isEmpty) {
-            List(unitFormalParameter(t.loc))
+            Nel.of(unitFormalParameter(t.loc))
           } else {
             val fparams = params.map(visitParameter(_, presence))
             // Check for duplicates
@@ -701,12 +716,12 @@ object Weeder2 {
             errors.foreach(sctx.errors.add)
 
             // Check missing or illegal type ascription
-            fparams
+            Nel.unsafeFrom(fparams)
           }
         case None =>
           val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.Module, loc = tree.loc)
           sctx.errors.add(error)
-          List(unitFormalParameter(tree.loc))
+          Nel.of(unitFormalParameter(tree.loc))
       }
     }
 
@@ -1820,14 +1835,14 @@ object Weeder2 {
       // `def f(x)` becomes `def f(_unit: Unit, x)`.
       // `def f(x, y, ..)` is unchanged.
       fparams0 match {
-        case fparam :: Nil =>
+        case Nel(fparam, Nil) =>
           // Since a continuation argument must always be there, the underlying function needs a
           // unit param. For example `def f(k)` becomes `def f(_unit: Unit, k)`.
 
           // The new param has the zero-width location of the actual argument.
           val loc = SourceLocation.zeroPoint(isReal = false, fparam.loc.source, fparam.loc.start)
           val unitParam = Decls.unitFormalParameter(loc)
-          HandlerRule(ident, List(unitParam, fparam), expr, tree.loc)
+          HandlerRule(ident, Nel.of(unitParam, fparam), expr, tree.loc)
         case fparams =>
           HandlerRule(ident, fparams, expr, tree.loc)
       }
@@ -2402,7 +2417,7 @@ object Weeder2 {
       expect(tree, TreeKind.Pattern.TagBody)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       patterns.map(visitPattern(_, seen)) match {
-        case Nil => Nel(Pattern.Cst(Constant.Unit, tree.loc), Nil)
+        case Nil => Nel.of(Pattern.Cst(Constant.Unit, tree.loc))
         case x :: xs => Nel(x, xs)
       }
     }
@@ -2954,7 +2969,7 @@ object Weeder2 {
       }
       pickAllTrees(parentTree).foldRight(rest) {
         case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithAlias =>
-          val qname = pickQName(parentTree)
+          val qname = pickQName(tree)
           val targs = Types.pickArguments(tree)
           Type.SchemaRowExtendByAlias(qname, targs, acc, tree.loc)
 
@@ -3126,6 +3141,7 @@ object Weeder2 {
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree)
           val tparams = parameters.map(visitParameter)
+          checkDuplicateTypeParams(tparams)
           val kinded = tparams.collect { case t: TypeParam.Kinded => t }
           val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
           (kinded, unkinded) match {
@@ -3153,6 +3169,7 @@ object Weeder2 {
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree)
           val tparams = parameters.map(visitParameter)
+          checkDuplicateTypeParams(tparams)
           val kinded = tparams.collect { case t: TypeParam.Kinded => t }
           val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
           (kinded, unkinded) match {
@@ -3181,6 +3198,19 @@ object Weeder2 {
       tryPickKind(tree)
         .map(kind => TypeParam.Kinded(ident, kind))
         .getOrElse(TypeParam.Unkinded(ident))
+    }
+
+    /**
+      * Reports a [[DuplicateTypeParam]] error for every type parameter in `tparams` that repeats an earlier name.
+      *
+      * Wildcard names (prefixed with `_`) are exempt, as they are for formal parameters.
+      */
+    private def checkDuplicateTypeParams(tparams: List[TypeParam])(implicit sctx: SharedContext): Unit = {
+      val tparamsWithoutWildcards = tparams.filter(!_.ident.isWild)
+      val errors = SeqOps.getDuplicates(tparamsWithoutWildcards, (t: TypeParam) => t.ident.name).map {
+        case (tparam1, tparam2) => DuplicateTypeParam(tparam1.ident.name, tparam1.ident.loc, tparam2.ident.loc)
+      }
+      errors.foreach(sctx.errors.add)
     }
 
     def pickConstraints(tree: Tree)(implicit sctx: SharedContext): List[TraitConstraint] = {
@@ -3281,9 +3311,11 @@ object Weeder2 {
   }
 
   private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): PredicateAndArity = {
-    val arityToken = pickToken(TokenKind.LiteralInt, tree)
     val ident = pickNameIdent(tree)
-    val arity = tryParsePredicateArity(arityToken)
+    val arity = tryPickToken(TokenKind.LiteralInt, tree) match {
+      case Some(token) => tryParsePredicateArity(token)
+      case None => 0 // The parser has already reported the missing integer literal.
+    }
     PredicateAndArity(Name.mkPred(ident), arity)
   }
 
@@ -3420,13 +3452,20 @@ object Weeder2 {
     * Picks out the first token of a specific [[TokenKind]].
     */
   private def pickToken(kind: TokenKind, tree: Tree, synctx: SyntacticContext = SyntacticContext.Unknown): Token = {
-    tree.children.collectFirst {
-      case token: Token if token.kind == kind => token
-    } match {
+    tryPickToken(kind, tree) match {
       case Some(t) => t
       case _ =>
         val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(kind)), synctx, loc = tree.loc)
         throw PickException(error)
+    }
+  }
+
+  /**
+    * Tries to pick out the first token of a specific [[TokenKind]].
+    */
+  private def tryPickToken(kind: TokenKind, tree: Tree): Option[Token] = {
+    tree.children.collectFirst {
+      case token: Token if token.kind == kind => token
     }
   }
 
@@ -3506,9 +3545,8 @@ object Weeder2 {
   /**
     * An exception thrown by [[pick]] and [[pickToken]] when a required sub-tree or token is missing.
     *
-    * This bypasses the [[Validation]] machinery: the exception is thrown deep inside weeding and
-    * caught in [[weed]], where it is converted into a [[Validation.Failure]]. It exists so that the
-    * remaining hard failures no longer rely on [[Validation]], which is slated for removal.
+    * The exception is thrown deep inside weeding and caught in [[weed]], where the error is
+    * reported and the enclosing compilation unit is dropped.
     */
   private case class PickException(error: NeedAtleastOne) extends RuntimeException
 

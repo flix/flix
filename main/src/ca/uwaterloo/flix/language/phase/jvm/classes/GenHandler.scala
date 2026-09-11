@@ -1,0 +1,164 @@
+/*
+ * Copyright 2021 Jonathan Lindegaard Starup
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package ca.uwaterloo.flix.language.phase.jvm.classes
+
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.jvm.JavaClasses
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.NotFinal
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{StaticInterfaceMethod, mkInterface}
+import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
+import ca.uwaterloo.flix.language.phase.jvm.Mangle.{DevFlixRuntime, mkDesc}
+import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkDescriptor
+import ca.uwaterloo.flix.language.phase.jvm.{ClassConstants, Mangle}
+import org.objectweb.asm.MethodVisitor
+
+import java.lang.constant.ClassDesc
+
+/**
+  * The `Handler` interface, implemented by every generated effect class.
+  *
+  * [[InstallHandlerMethod]] runs a thunk under a handler: if the thunk suspends on this
+  * handler's effect it applies the operation, and otherwise it passes the suspension
+  * further up with this handler recorded in the resumption.
+  */
+object GenHandler {
+
+  /** The JVM class descriptor for the generated `Handler` class. */
+  val Desc: ClassDesc = mkDesc(DevFlixRuntime, Mangle.mkClassName("Handler"))
+
+  def genByteCode()(implicit flix: Flix): Array[Byte] = {
+    val cm = mkInterface(this.Desc)
+    cm.mkStaticInterfaceMethod(InstallHandlerMethod, IsPublic, NotFinal, installHandlerIns(_))
+    cm.closeClassMaker()
+  }
+
+  def InstallHandlerMethod: StaticInterfaceMethod = StaticInterfaceMethod(
+    this.Desc,
+    "installHandler",
+    mkDescriptor(JavaClasses.String, GenHandler.Desc, GenFrames.Desc, GenThunk.Desc)(GenResult.Desc)
+  )
+
+  private def installHandlerIns(implicit mv: MethodVisitor): Unit = {
+    withName(0, JavaClasses.String) { effSym =>
+      withName(1, GenHandler.Desc) { handler =>
+        withName(2, GenFrames.Desc) { frames =>
+          withName(3, GenThunk.Desc) { thunk =>
+            thunk.load()
+            // Thunk|Value|Suspension
+            GenResult.unwindThunk()
+            // Value|Suspension
+            // handle suspension
+            DUP()
+            INSTANCEOF(GenSuspension.Desc)
+            ifCondition(Condition.NE) {
+              DUP()
+              CHECKCAST(GenSuspension.Desc)
+              storeWithName(4, GenSuspension.Desc) { s =>
+                NEW(GenResumptionCons.Desc)
+                DUP()
+                INVOKESPECIAL(GenResumptionCons.Constructor)
+                DUP()
+                effSym.load()
+                PUTFIELD(GenResumptionCons.SymField)
+                DUP()
+                handler.load()
+                PUTFIELD(GenResumptionCons.HandlerField)
+                DUP()
+                s.load()
+                GETFIELD(GenSuspension.PrefixField)
+                frames.load()
+                INVOKEINTERFACE(GenFrames.ReverseOntoMethod)
+                PUTFIELD(GenResumptionCons.FramesField)
+                DUP()
+                s.load()
+                GETFIELD(GenSuspension.ResumptionField)
+                PUTFIELD(GenResumptionCons.TailField)
+                storeWithName(5, GenResumptionCons.Desc) { r =>
+                  s.load()
+                  GETFIELD(GenSuspension.EffSymField)
+                  effSym.load()
+                  INVOKEVIRTUAL(ClassConstants.Object.EqualsMethod)
+                  ifCondition(Condition.NE) {
+                    s.load()
+                    GETFIELD(GenSuspension.EffOpField)
+                    handler.load()
+                    r.load()
+                    INVOKEINTERFACE(GenEffectCall.ApplyMethod)
+                    xReturn(GenResult.Desc)
+                  }
+                  NEW(GenSuspension.Desc)
+                  DUP()
+                  INVOKESPECIAL(GenSuspension.Constructor)
+                  DUP()
+                  s.load()
+                  GETFIELD(GenSuspension.EffSymField)
+                  PUTFIELD(GenSuspension.EffSymField)
+                  DUP()
+                  s.load()
+                  GETFIELD(GenSuspension.EffOpField)
+                  PUTFIELD(GenSuspension.EffOpField)
+                  DUP()
+                  NEW(GenFramesNil.Desc)
+                  DUP()
+                  INVOKESPECIAL(GenFramesNil.Constructor)
+                  PUTFIELD(GenSuspension.PrefixField)
+                  DUP()
+                  r.load()
+                  PUTFIELD(GenSuspension.ResumptionField)
+                  xReturn(GenSuspension.Desc)
+                }
+              }
+            }
+
+            // Value
+            CHECKCAST(GenValue.Desc)
+            storeWithName(6, GenValue.Desc) { res =>
+              //
+              // Case on frames
+              // FramesNil
+              frames.load()
+              INSTANCEOF(GenFramesNil.Desc)
+              ifCondition(Condition.NE) {
+                res.load()
+                xReturn(GenValue.Desc)
+              }
+              // FramesCons
+              frames.load()
+              CHECKCAST(GenFramesCons.Desc)
+              storeWithName(7, GenFramesCons.Desc) { cons => {
+                effSym.load()
+                handler.load()
+                cons.load()
+                GETFIELD(GenFramesCons.TailField)
+                // thunk
+                cons.load()
+                GETFIELD(GenFramesCons.HeadField)
+                res.load()
+                mkStaticLambda(GenThunk.InvokeMethod, GenFrame.StaticApplyMethod, drop = 0)
+                INVOKESTATIC(InstallHandlerMethod)
+                xReturn(GenResult.Desc)
+              }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+}

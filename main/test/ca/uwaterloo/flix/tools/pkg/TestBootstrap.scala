@@ -1,17 +1,16 @@
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError}
+import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Version}
 import ca.uwaterloo.flix.util.{FileOps, Formatter, Result}
 import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path}
-import java.security.{DigestInputStream, MessageDigest}
+import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipFile
 import scala.jdk.CollectionConverters.EnumerationHasAsScala
-import scala.util.Using
 
 @DoNotDiscover
 class TestBootstrap extends AnyFunSuite {
@@ -35,6 +34,23 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.build(PkgTestUtils.mkFlix)
+
+    // The build command does not write anything to disk.
+    val buildDir = p.resolve("./build/").normalize()
+    assert(!Files.exists(buildDir))
+  }
+
+  test("build-classes") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    b.buildClasses(PkgTestUtils.mkFlix)
+
+    val classDir = p.resolve("./build/class/").normalize()
+    val classFiles = FileOps.getFilesIn(classDir, Int.MaxValue)
+    assert(classFiles.nonEmpty)
+    assert(classFiles.forall(FileOps.isClassFile))
+    assert(Files.exists(classDir.resolve("Main.class")))
   }
 
   test("build-jar") {
@@ -75,19 +91,18 @@ class TestBootstrap extends AnyFunSuite {
     val packageName = p.getFileName.toString
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
 
+    val b1 = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val flix1 = PkgTestUtils.mkFlix
     // Use 1 thread for deterministic symbols
     flix1.setOptions(flix1.options.copy(threads = 1))
-
-    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildJar(flix1)
+    b1.buildJar(flix1)
     val hash1 = calcHash(jarPath)
 
-    // Use new flix instance to reset symbol generation
+    val b2 = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val flix2 = PkgTestUtils.mkFlix
     // Use 1 thread for deterministic symbols
     flix2.setOptions(flix2.options.copy(threads = 1))
-    b.buildJar(flix2)
+    b2.buildJar(flix2)
     val hash2 = calcHash(jarPath)
 
     assert(
@@ -167,7 +182,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.build(PkgTestUtils.mkFlix)
+    b.buildClasses(PkgTestUtils.mkFlix)
     val buildDir = p.resolve("./build/").normalize()
     val buildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
     if (buildFiles.isEmpty || buildFiles.exists(!FileOps.checkExt(_, "class"))) {
@@ -190,7 +205,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.build(PkgTestUtils.mkFlix)
+    b.buildClasses(PkgTestUtils.mkFlix)
     val buildDir = p.resolve("./build/").normalize()
     FileOps.writeString(buildDir.resolve("./other.txt").normalize(), "hello")
     b.clean() match {
@@ -398,12 +413,66 @@ class TestBootstrap extends AnyFunSuite {
     assert(bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix) == Result.Ok(()))
   }
 
+  test("flix-version.current") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    // N.B.: `init` writes the current version of Flix to `flix.toml`.
+    Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out) match {
+      case Result.Ok(_) => // Expected.
+      case Result.Err(e) => fail(s"Expected success, but got: ${e.message(Formatter.NoFormatter)}")
+    }
+  }
+
+  test("flix-version.older") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    FileOps.writeString(p.resolve("flix.toml").normalize(), mkTomlWithFlixVersion("0.1.0"))
+    Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out) match {
+      case Result.Ok(_) => // Expected: an older required version is fine.
+      case Result.Err(e) => fail(s"Expected success, but got: ${e.message(Formatter.NoFormatter)}")
+    }
+  }
+
+  test("flix-version.newer") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    FileOps.writeString(p.resolve("flix.toml").normalize(), mkTomlWithFlixVersion("999.0.0"))
+    Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out) match {
+      case Result.Ok(_) => fail("Expected BootstrapError.FlixVersionTooOld, but bootstrap succeeded.")
+      case Result.Err(e: BootstrapError.FlixVersionTooOld) =>
+        assert(e.required == SemVer(999, 0, 0))
+        assert(e.current == SemVer.ofVersion(Version.CurrentVersion))
+      case Result.Err(e) => fail(s"Expected BootstrapError.FlixVersionTooOld, but got: ${e.message(Formatter.NoFormatter)}")
+    }
+  }
+
+  test("flix-version.examples") {
+    val current = SemVer.ofVersion(Version.CurrentVersion)
+    val manifests = FileOps.getFilesIn(Path.of("examples"), Int.MaxValue).filter(_.getFileName.toString == "flix.toml")
+    assert(manifests.nonEmpty, "Expected to find at least one 'flix.toml' under 'examples'.")
+    for (manifest <- manifests) {
+      val required = ManifestParser.parse(manifest).unsafeGet.flix
+      assert(required == current, s"'$manifest' requires Flix $required, but the current version is $current.")
+    }
+  }
+
+  /**
+    * Returns a `flix.toml` without dependencies that requires the given version `v` of Flix.
+    */
+  private def mkTomlWithFlixVersion(v: String): String = {
+    s"""
+       |[package]
+       |name = "test"
+       |description = "test"
+       |version = "0.1.0"
+       |flix = "$v"
+       |authors = ["flix"]
+       |""".stripMargin
+  }
+
   private def calcHash(p: Path): String = {
     val sha = MessageDigest.getInstance("SHA-256")
-    Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>
-      input.readNBytes(8192)
-      sha.digest.map("%02x".format(_)).mkString
-    }.get
+    sha.digest(Files.readAllBytes(p)).map("%02x".format(_)).mkString
   }
 
 }

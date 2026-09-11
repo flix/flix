@@ -122,7 +122,7 @@ object Parser2 {
     case class Closed(index: Int) extends Mark
   }
 
-  def run(tokens0: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): (SyntaxTree.Root, List[CompilationMessage]) = flix.phaseNew("Parser2") {
+  def run(tokens0: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): (SyntaxTree.Root, List[CompilationMessage]) = flix.phase("Parser2") {
     // Compute the stale and fresh sources.
     val (stale, fresh) = changeSet.partition(tokens0, oldRoot.units)
 
@@ -1303,12 +1303,8 @@ object Parser2 {
       expect(TokenKind.KeywordEff)
       nameUnqualified(NAME_EFFECT)
 
-      // Check for illegal type parameters.
       if (at(TokenKind.BracketL)) {
-        val mark = open()
-        val loc = currentSourceLocation()
         Type.parameters()
-        closeWithError(mark, WeederError.IllegalEffectTypeParams(loc))
       }
 
       if (eat(TokenKind.CurlyL)) {
@@ -1346,7 +1342,7 @@ object Parser2 {
         val mark = open()
         val loc = currentSourceLocation()
         Type.parameters()
-        closeWithError(mark, WeederError.IllegalEffectTypeParams(loc))
+        closeWithError(mark, WeederError.IllegalOperationTypeParams(loc))
       }
 
       if (at(TokenKind.ParenL)) {
@@ -2119,28 +2115,25 @@ object Parser2 {
 
     private def extMatchExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      detectMatchLambda(TokenKind.KeywordEMatch) match {
-        case Result.Err(mark) => mark
-        case Result.Ok((isLambda, mark)) =>
-          if (isLambda) {
-            Pattern.pattern()
-            expect(TokenKind.ArrowThinRWhitespace)
-            expression()
-            close(mark, TreeKind.Expr.LambdaExtMatch)
-          } else {
-            expression()
-            zeroOrMore(
-              namedTokenSet = NamedTokenSet.ExtMatchRule,
-              checkForItem = _ == TokenKind.KeywordCase,
-              getItem = extMatchRule,
-              breakWhen = _.isRecoverInExpr,
-              delimiterL = TokenKind.CurlyL,
-              delimiterR = TokenKind.CurlyR,
-              separation = Separation.Optional(TokenKind.Comma)
-            )
-            close(mark, TreeKind.Expr.ExtMatch)
-          }
-      }
+      val (isLambda, mark) = detectMatchLambda(TokenKind.KeywordEMatch)
+      if (isLambda) {
+        Pattern.pattern()
+        expect(TokenKind.ArrowThinRWhitespace)
+        expression()
+        close(mark, TreeKind.Expr.LambdaExtMatch)
+      } else {
+        expression()
+        zeroOrMore(
+          namedTokenSet = NamedTokenSet.ExtMatchRule,
+          checkForItem = _ == TokenKind.KeywordCase,
+          getItem = extMatchRule,
+          breakWhen = _.isRecoverInExpr,
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR,
+          separation = Separation.Optional(TokenKind.Comma)
+        )(SyntacticContext.Expr.MatchBody, s)
+        close(mark, TreeKind.Expr.ExtMatch)
+      }  
     }
 
     private def extTagExpr()(implicit s: State): Mark.Closed = {
@@ -2272,27 +2265,25 @@ object Parser2 {
 
     private def matchOrMatchLambdaExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      detectMatchLambda(TokenKind.KeywordMatch) match {
-        case Result.Err(errMark) => errMark
-        case Result.Ok((isLambda, mark)) =>
-          if (isLambda) {
-            Pattern.pattern()
-            expect(TokenKind.ArrowThinRWhitespace)
-            expression()
-            close(mark, TreeKind.Expr.LambdaMatch)
-          } else {
-            expression()
-            zeroOrMore(
-              namedTokenSet = NamedTokenSet.MatchRule,
-              checkForItem = _ == TokenKind.KeywordCase,
-              getItem = matchRule,
-              breakWhen = _.isRecoverInExpr,
-              delimiterL = TokenKind.CurlyL,
-              delimiterR = TokenKind.CurlyR,
-              separation = Separation.Optional(TokenKind.Comma)
-            )
-            close(mark, TreeKind.Expr.Match)
-          }
+      val (isLambda, mark) = detectMatchLambda(TokenKind.KeywordMatch)
+
+      if (isLambda) {
+        Pattern.pattern()
+        expect(TokenKind.ArrowThinRWhitespace)
+        expression()
+        close(mark, TreeKind.Expr.LambdaMatch)
+      } else {
+      expression()
+        zeroOrMore(
+          namedTokenSet = NamedTokenSet.MatchRule,
+          checkForItem = _ == TokenKind.KeywordCase,
+          getItem = matchRule,
+          breakWhen = _.isRecoverInExpr,
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR,
+          separation = Separation.Optional(TokenKind.Comma)
+        )(SyntacticContext.Expr.MatchBody, s)
+        close(mark, TreeKind.Expr.Match)
       }
     }
 
@@ -2305,16 +2296,14 @@ object Parser2 {
       * In other words, if the expression is well-formed, then the cursor is placed as follows:
       * `keyword *cursor* pat -> ...` or `keyword *cursor* exp { ... }`.
       *
-      * Returns `Ok((true, mark))` it detects a match-lambda.
+      * Returns `(true, mark)` it detects a match-lambda.
       *
-      * Returns `Ok((false, mark))` if it does not detect a match-lambda.
-      *
-      * Returns `Err(mark)` if invalid syntax is encountered.
+      * Returns `(false, mark)` if it does not detect a match-lambda.
       *
       * @param keyword the keyword to expect at the start of the expression. Will be consumed by this function.
       *                Must be either [[TokenKind.KeywordMatch]] or [[TokenKind.KeywordEMatch]].
       */
-    private def detectMatchLambda(keyword: TokenKind)(implicit sctx: SyntacticContext, s: State): Result[(Boolean, Mark.Opened), Mark.Closed] = {
+    private def detectMatchLambda(keyword: TokenKind)(implicit sctx: SyntacticContext, s: State): (Boolean, Mark.Opened) = {
       assert(TokenKind.KeywordMatch == keyword || TokenKind.KeywordEMatch == keyword, "expected 'match' or 'ematch' keyword as start of match-lambda")
       assert(at(keyword))
       val mark = open()
@@ -2335,25 +2324,16 @@ object Parser2 {
           case TokenKind.ArrowThinRWhitespace if parenNestingLevel == 0 => result = true; continue = false
           case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
           case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
-          case TokenKind.Eof =>
-            val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = None, sctx, loc = currentSourceLocation())
-            return Result.Err(closeWithError(mark, error))
-          case t if t.isFirstInDecl =>
-            // Advance past the erroneous region to the next stable token
-            // (the start of the declaration).
-            for (_ <- 0 until lookAhead) {
-              advance()
-            }
-            val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), sctx, loc = currentSourceLocation())
-            return Result.Err(closeWithError(mark, error))
+          case TokenKind.Eof => continue = false
+          case t if t.isFirstInDecl => continue = false
           case _ => lookAhead += 1
         }
       }
-      Result.Ok((result, mark))
+      (result, mark)
     }
 
     private def matchRule()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.MatchBody
       assert(at(TokenKind.KeywordCase))
       val mark = open()
       expect(TokenKind.KeywordCase)

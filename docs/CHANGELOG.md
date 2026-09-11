@@ -1,5 +1,9 @@
 # Changelog
 
+Version 0.75.3:
+- Compiler: `build-jar` and `build-fatjar` now directly emits the artifact jar (thanks Magnus!)
+- Compiler: Fixed a few bugs (thanks Matt!)
+
 Version 0.75.2:
 - Compiler: Improved tree shaking of lowering-related library functions (thanks Simon!)
 - Compiler: Reduced the size of generated HTML documentation (thanks Magnus!)

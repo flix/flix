@@ -15,9 +15,9 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.Mutability
+import ca.uwaterloo.flix.language.ast.shared.{JConstructor, JField, JMethod, Mutability}
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.constant.ClassDesc
 
 /**
   * A common super-type for control pure expressions.
@@ -76,7 +76,7 @@ object AtomicOp {
 
   case class StructPut(sym: Symbol.StructFieldSym) extends AtomicOp
 
-  case class InstanceOf(clazz: Class[?]) extends AtomicOp
+  case class InstanceOf(clazz: ClassDesc) extends AtomicOp
 
   case object Cast extends AtomicOp
 
@@ -84,23 +84,23 @@ object AtomicOp {
 
   case object Box extends AtomicOp
 
-  case class InvokeConstructor(constructor: Constructor[?]) extends AtomicOp
+  case class InvokeConstructor(constructor: JConstructor) extends AtomicOp
 
-  case class InvokeSuperConstructor(constructor: Constructor[?]) extends AtomicOp
+  case class InvokeSuperConstructor(constructor: JConstructor) extends AtomicOp
 
-  case class InvokeMethod(method: Method) extends AtomicOp
+  case class InvokeMethod(method: JMethod) extends AtomicOp
 
-  case class InvokeSuperMethod(sym: Symbol.AnonClassSym, method: Method) extends AtomicOp
+  case class InvokeSuperMethod(sym: Symbol.AnonClassSym, method: JMethod) extends AtomicOp
 
-  case class InvokeStaticMethod(method: Method) extends AtomicOp
+  case class InvokeStaticMethod(method: JMethod) extends AtomicOp
 
-  case class GetField(field: Field) extends AtomicOp
+  case class GetField(field: JField) extends AtomicOp
 
-  case class PutField(field: Field) extends AtomicOp
+  case class PutField(field: JField) extends AtomicOp
 
-  case class GetStaticField(field: Field) extends AtomicOp
+  case class GetStaticField(field: JField) extends AtomicOp
 
-  case class PutStaticField(field: Field) extends AtomicOp
+  case class PutStaticField(field: JField) extends AtomicOp
 
   case object Throw extends AtomicOp
 

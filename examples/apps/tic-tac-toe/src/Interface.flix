@@ -21,16 +21,16 @@ mod Interface {
     ///
     /// Recursive helper function to read and return only valid moves.
     ///
-    def getMoveFromConsole(): Int32 \ Console = {
-        let line = Console.readln();
-        if (Object.isNull(line)) {
-            Console.println("Invalid move. Move must be a positive integer between 0 and 8");
-            getMoveFromConsole()
-        } else {
-            match Int32.parse(10, line) {
+    def getMoveFromConsole(): Int32 \ Console + Sys.Exit = {
+        match Console.readln() {
+            case None => {
+                Console.println("No input available. Exiting.");
+                Sys.Exit.exit(0)
+            }
+            case Some(line) => match Int32.parse(10, line) {
                 case Result.Ok(move) if (0 <= move and move <= 8) => move
                 case _ => {
-                    Console.println("Invalid move. Move must be a positive integer between 0 and 8");
+                    Console.println("Invalid move. Move must be an integer between 0 and 8 (inclusive)");
                     getMoveFromConsole()
                 }
             }
@@ -43,7 +43,7 @@ mod Interface {
     ///
     /// In other words, re-interprets the Interface effect using the IO and Console effects.
     ///
-    pub def interfaceWithConsole(f: Unit -> a \ ef): a \ ef - Interface + Console =
+    pub def interfaceWithConsole(f: Unit -> a \ ef): a \ ef - Interface + Console + Sys.Exit =
         run {
             f()
         }

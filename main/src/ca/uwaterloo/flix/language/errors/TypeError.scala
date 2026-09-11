@@ -17,13 +17,19 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaMemberResolver}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EffSymOrRigidVar, SymbolSet}
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
+
+import java.lang.constant.ClassDesc
+import scala.jdk.CollectionConverters.*
 
 /**
   * A common super-type for type errors.
@@ -33,16 +39,12 @@ sealed trait TypeError extends CompilationMessage {
 
   def isEffError: Boolean = this match {
     case _: TypeError.ArgumentGivenWrongEffect => true
-    case _: TypeError.DefaultHandlerNotInModule => true
-    case _: TypeError.DuplicateDefaultHandler => true
     case _: TypeError.EffectfulFunctionUsesOtherEffect => true
     case _: TypeError.ExplicitlyPureFunctionUsesEffect => true
     case _: TypeError.ExplicitlyPureFunctionUsesIO => true
-    case _: TypeError.IllegalDefaultHandlerSignature => true
     case _: TypeError.ImplicitlyPureFunctionUsesEffect => true
     case _: TypeError.ImplicitlyPureFunctionUsesIO => true
     case _: TypeError.MismatchedEffects => true
-    case _: TypeError.NonPublicDefaultHandler => true
     case _: TypeError.UnusedEffectInSignature => true
     case _ => false
   }
@@ -97,14 +99,14 @@ object TypeError {
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class ConstructorNotFound(clazz: Class[?], tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
+  case class ConstructorNotFound(clazz: ClassDesc, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E6025
 
-    def summary: String = s"Constructor not found: '${clazz.getName}' with arguments (${tpes.mkString(", ")})."
+    def summary: String = s"Constructor not found: '${ClassDescs.binaryNameOf(clazz)}' with arguments (${formatTypes(tpes, Some(renv))})."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Constructor not found: '${red(clazz.getName)}' with arguments (${cyan(tpes.mkString(", "))}).
+      s""">> Constructor not found: '${red(ClassDescs.binaryNameOf(clazz))}' with arguments (${cyan(formatTypes(tpes, Some(renv)))}).
          |
          |${highlight(loc, "cannot find constructor", fmt)}
          |
@@ -116,63 +118,6 @@ object TypeError {
          |automatic boxing or unboxing of primitive types.
          |""".stripMargin
     }
-  }
-
-  /**
-    * An error raised to indicate that a default handler is not in the companion module of its effect.
-    *
-    * @param handlerSym the symbol of the default handler.
-    * @param loc        the location of the default handler.
-    */
-  case class DefaultHandlerNotInModule(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
-    def code: ErrorCode = ErrorCode.E0621
-
-    def summary: String = s"Misplaced default handler: '${handlerSym.name}' must be in the companion module of its effect."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Misplaced default handler: '${red(handlerSym.name)}' must be in the companion module of its effect.
-         |
-         |${highlight(loc, "must be in companion module", fmt)}
-         |
-         |${underline("Explanation:")} A default handler must be defined inside the companion
-         |module of the effect it handles. For example:
-         |
-         |  pub eff E {
-         |      pub def op(): Unit
-         |  }
-         |
-         |  mod E {
-         |      @DefaultHandler
-         |      pub def runWithIO(f: Unit -> a \\ ef): a \\ (ef - E) + IO = ...
-         |  }
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that there are multiple default handlers for the same effect.
-    *
-    * @param sym  the symbol of the effect.
-    * @param loc1 the location of the first default handler.
-    * @param loc2 the location of the second default handler.
-    */
-  case class DuplicateDefaultHandler(sym: Symbol.EffSym, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
-    def code: ErrorCode = ErrorCode.E0734
-
-    def summary: String = s"Duplicate default handler for effect '${sym.name}'."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Duplicate default handler for effect '${red(sym.name)}'.
-         |
-         |${highlight(loc1, "first occurrence", fmt)}
-         |
-         |${highlight(loc2, "duplicate", fmt)}
-         |""".stripMargin
-    }
-
-    def loc: SourceLocation = loc1
   }
 
   /**
@@ -316,46 +261,38 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      val availableFields = Type.classFromFlixType(tpe).map(getFieldsByName).getOrElse(Nil)
+      val availableFields = JavaTypes.descriptorOf(tpe).toList.flatMap(desc => JavaMemberResolver.fields(desc).toOption.getOrElse(Nil))
+      val available = if (availableFields.isEmpty) "" else
+        s"""
+           |Available fields:
+           |${availableFields.map(f => s"  - ${formatField(f)}").mkString("\n")}
+           |""".stripMargin
       s""">> Field not found: '${red(fieldName.name)}' on type '${magenta(formatType(tpe))}'.
          |
          |${highlight(loc, "cannot find field", fmt)}
-         |
-         |Available fields:
-         |${availableFields.map(f => s"  - ${formatField(f)}").mkString("\n")}
-         |""".stripMargin
+         |$available""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that the signature of a default handler is illegal.
+    * Associated type used where not allowed.
     *
-    * @param effSym     the symbol of the effect.
-    * @param handlerSym the symbol of the handler.
-    * @param loc        the location of the default handler.
+    * @param sym the symbol of the associated type.
+    * @param loc the location where the error occurred.
     */
-  case class IllegalDefaultHandlerSignature(effSym: Symbol.EffSym, handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
-    def code: ErrorCode = ErrorCode.E0847
+  case class IllegalAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6221
 
-    def summary: String = s"Invalid signature for default handler of effect '${effSym.name}'."
+    def summary: String = s"Illegal associated type '$sym'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Invalid signature for default handler of effect '${red(effSym.name)}'.
+      s""">> Illegal associated type '${red(sym.toString)}'.
          |
-         |${highlight(loc, "invalid signature", fmt)}
+         |${highlight(loc, "associated type not allowed here", fmt)}
          |
-         |Expected signature:
-         |
-         |  pub def ${handlerSym.name}(f: Unit -> a \\ ef): a \\ (ef - ${effSym.name}) + IO
-         |
-         |${underline("Explanation:")} A default handler must:
-         |
-         |  (a) Take a single thunk argument of type 'Unit -> a \\ ef'.
-         |  (b) Return a value of type 'a' with effect '(ef - ${effSym.name}) + IO'.
-         |
-         |That is, a default handler must handle the effect (i.e. remove it from
-         |the effect set) and it may only introduce the 'IO' effect.
+         |${underline("Explanation:")} An associated type is not allowed in an enum,
+         |struct, or type alias.
          |""".stripMargin
     }
   }
@@ -432,33 +369,13 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Method not found: '${red(methodName.name)}' on type '${magenta(formatType(tpe))}' with arguments (${cyan(tpes.mkString(", "))}).
+      s""">> Method not found: '${red(methodName.name)}' on type '${magenta(formatType(tpe))}' with arguments (${cyan(formatTypes(tpes))}).
          |
          |${highlight(loc, "cannot find method", fmt)}
          |
          |${underline("Explanation:")} No Java method matches the given name and argument types.
          |Ensure that the argument types match exactly; Flix does not perform
          |automatic boxing or unboxing of primitive types.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that a default handler is not public.
-    *
-    * @param handlerSym the symbol of the handler.
-    * @param loc        the location of the handler.
-    */
-  case class NonPublicDefaultHandler(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
-    def code: ErrorCode = ErrorCode.E1738
-
-    def summary: String = s"Non-public default handler: '${handlerSym.name}' must be declared 'pub'."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Non-public default handler: '${red(handlerSym.name)}' must be declared '${cyan("pub")}'.
-         |
-         |${highlight(loc, "non-public default handler.", fmt)}
          |""".stripMargin
     }
   }
@@ -486,6 +403,38 @@ object TypeError {
          |
          |Type One: ${cyan(formatType(fullType1, Some(renv)))}
          |Type Two: ${magenta(formatType(fullType2, Some(renv), minimizeEffs = true))}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Mismatched Label Type.
+    *
+    * @param label     the record label.
+    * @param tpe1      the first type (the part of the label's type that could not be unified).
+    * @param tpe2      the second type (the part of the label's type that could not be unified).
+    * @param fullType1 the first enclosing type.
+    * @param fullType2 the second enclosing type.
+    * @param renv      the rigidity environment.
+    * @param loc1      the location of the first occurrence of the label.
+    * @param loc2      the location of the second occurrence of the label.
+    * @param loc       the location where the unification error occurred.
+    */
+  case class MismatchedLabelType(label: Name.Label, tpe1: Type, tpe2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E7491
+
+    def summary: String = s"Mismatched types for label '${label.name}': '${formatType(tpe1, Some(renv))}' and '${formatType(tpe2, Some(renv))}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched types for label '${cyan(label.name)}': '${red(formatType(tpe1, Some(renv)))}' and '${red(formatType(tpe2, Some(renv)))}'.
+         |
+         |${highlight(loc1, s"'${formatType(tpe1, Some(renv))}' comes from here.", fmt)}
+         |
+         |${highlight(loc2, s"'${formatType(tpe2, Some(renv))}' comes from here.", fmt)}
+         |
+         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
+         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
          |""".stripMargin
     }
   }
@@ -547,6 +496,38 @@ object TypeError {
   }
 
   /**
+    * Mismatched Predicate Types.
+    *
+    * @param pred      the predicate label.
+    * @param tpe1      the first type (the part of the predicate's type that could not be unified).
+    * @param tpe2      the second type (the part of the predicate's type that could not be unified).
+    * @param fullType1 the first enclosing type.
+    * @param fullType2 the second enclosing type.
+    * @param renv      the rigidity environment.
+    * @param loc1      the location of the first occurrence of the predicate.
+    * @param loc2      the location of the second occurrence of the predicate.
+    * @param loc       the location where the unification error occurred.
+    */
+  case class MismatchedPredicateTypes(pred: Name.Pred, tpe1: Type, tpe2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6710
+
+    def summary: String = s"Mismatched types for predicate '${pred.name}': '${formatType(tpe1, Some(renv))}' and '${formatType(tpe2, Some(renv))}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched types for predicate '${cyan(pred.name)}': '${red(formatType(tpe1, Some(renv)))}' and '${red(formatType(tpe2, Some(renv)))}'.
+         |
+         |${highlight(loc1, s"'${formatType(tpe1, Some(renv))}' comes from here.", fmt)}
+         |
+         |${highlight(loc2, s"'${formatType(tpe2, Some(renv))}' comes from here.", fmt)}
+         |
+         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
+         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Mismatched Types.
     *
     * @param baseType1 the first base type.
@@ -571,6 +552,42 @@ object TypeError {
          |
          |Type One: ${cyan(formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb))}
          |Type Two: ${magenta(formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb))}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Mismatched Effect Argument.
+    *
+    * Two applications of the same polymorphic effect disagree on one of their type arguments.
+    *
+    * @param sym    the symbol of the effect.
+    * @param ith    the position of the type argument (1-based).
+    * @param tparam the name of the type parameter at that position.
+    * @param tpe1   the first mismatched (base) type.
+    * @param tpe2   the second mismatched (base) type.
+    * @param eff1   the first effect application.
+    * @param eff2   the second effect application.
+    * @param renv   the rigidity environment.
+    * @param loc    the location where the error occurred.
+    */
+  case class MismatchedEffectArgument(sym: Symbol.EffSym, ith: Int, tparam: Name.Ident, tpe1: Type, tpe2: Type, eff1: Type, eff2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6795
+
+    def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(eff1), SymbolSet.symbolsOf(eff2))
+
+    def summary: String = s"Mismatched type arguments for effect '$sym': '${formatType(tpe1, Some(renv), amb = amb)}' and '${formatType(tpe2, Some(renv), amb = amb)}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched type arguments for effect '${magenta(sym.toString)}': '${red(formatType(tpe1, Some(renv), amb = amb))}' and '${red(formatType(tpe2, Some(renv), amb = amb))}'.
+         |
+         |${highlight(loc, "mismatched effect type argument.", fmt)}
+         |
+         |The effect '${magenta(sym.toString)}' is used with different types for its ${Grammar.ordinal(ith)} type parameter '${cyan(tparam.name)}'.
+         |
+         |Effect One: ${cyan(formatType(eff1, Some(renv), amb = amb))}
+         |Effect Two: ${magenta(formatType(eff2, Some(renv), amb = amb))}
          |""".stripMargin
     }
   }
@@ -818,14 +835,14 @@ object TypeError {
     * @param renv       the rigidity environment.
     * @param loc        the location where the error occurred.
     */
-  case class StaticMethodNotFound(clazz: Class[?], methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
+  case class StaticMethodNotFound(clazz: ClassDesc, methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E6358
 
-    def summary: String = s"Static method not found: '${methodName.name}' in class '${clazz.getName}'."
+    def summary: String = s"Static method not found: '${methodName.name}' in class '${ClassDescs.binaryNameOf(clazz)}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Static method not found: '${red(methodName.name)}' in class '${magenta(clazz.getName)}' with arguments (${cyan(tpes.mkString(", "))}).
+      s""">> Static method not found: '${red(methodName.name)}' in class '${magenta(ClassDescs.binaryNameOf(clazz))}' with arguments (${cyan(formatTypes(tpes, Some(renv)))}).
          |
          |${highlight(loc, "cannot find static method", fmt)}
          |
@@ -1008,42 +1025,33 @@ object TypeError {
   }
 
   /**
-    * Returns the constructors of the given class sorted by parameter count.
+    * Returns the public constructors of the given class sorted by parameter count.
     */
-  private def getConstructorsByArgs(clazz: Class[?]): List[java.lang.reflect.Constructor[?]] = {
-    clazz.getConstructors.sortBy(_.getParameterTypes.length).toList
-  }
-
-  /**
-    * Returns the fields of the given class sorted by name.
-    */
-  private def getFieldsByName(clazz: Class[?]): List[java.lang.reflect.Field] = {
-    clazz.getFields.sortBy(_.getName).toList
+  private def getConstructorsByArgs(clazz: ClassDesc)(implicit flix: Flix): List[JavaMethod] = {
+    val constructors = flix.javaTypeProvider.lookupClass(clazz).toOption.toList.flatMap(_.declaredConstructors)
+    constructors.filter(c => c.isPublic).sortBy(_.parameterTypes.length)
   }
 
   /**
     * Returns a formatted string representation of a Java constructor.
     */
-  private def formatConstructor(clazz: Class[?], c: java.lang.reflect.Constructor[?]): String = {
-    val params = c.getParameterTypes.map(formatJavaType).mkString(", ")
-    s"${clazz.getSimpleName}($params)"
+  private def formatConstructor(clazz: ClassDesc, c: JavaMethod): String = {
+    val params = c.ref.descriptor.parameterList().asScala.map(JavaTypes.formatType).mkString(", ")
+    s"${ClassDescs.simpleNameOf(clazz)}($params)"
+  }
+
+  /**
+    * Returns the types `tpes` formatted as a comma-separated list.
+    */
+  private def formatTypes(tpes: List[Type], renv: Option[RigidityEnv] = None)(implicit flix: Flix): String = {
+    tpes.map(formatType(_, renv)).mkString(", ")
   }
 
   /**
     * Returns a formatted string representation of a Java field.
     */
-  private def formatField(f: java.lang.reflect.Field): String = {
-    s"${f.getName}: ${formatJavaType(f.getType)}"
-  }
-
-  /**
-    * Returns the Flix-style string representation of a Java type.
-    */
-  private def formatJavaType(tpe: Class[?]): String = {
-    if (tpe.isPrimitive || tpe.isArray)
-      Type.getFlixType(tpe).toString
-    else
-      tpe.getName
+  private def formatField(f: JavaField): String = {
+    s"${f.ref.name}: ${JavaTypes.formatType(f.ref.descriptor)}"
   }
 
   /**

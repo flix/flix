@@ -153,10 +153,10 @@ object ClosureConv {
           }
       }
       val methods = methods0 map {
-        case JvmMethod(ann, ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
+        case JvmMethod(ann, ident, fparams, exp, retTpe, methodPurity, javaSig, methodLoc) =>
           val cloType = SimpleType.mkArrow(fparams.map(_.tpe), retTpe)
           val clo = mkLambdaClosure(fparams, exp, cloType, methodLoc)
-          JvmMethod(ann, ident, fparams, clo, retTpe, methodPurity, methodLoc)
+          JvmMethod(ann, ident, fparams, clo, retTpe, methodPurity, javaSig, methodLoc)
       }
       Expr.NewObject(sym, clazz, tpe, purity, constructors, methods, loc)
 
@@ -272,7 +272,7 @@ object ClosureConv {
           acc ++ freeVars(exp)
       }
       methods.foldLeft(constructorFvs) {
-        case (acc, JvmMethod(_, _, fparams, exp, _, _, _)) =>
+        case (acc, JvmMethod(_, _, fparams, exp, _, _, _, _)) =>
           acc ++ filterBoundParams(freeVars(exp), fparams)
       }
 
@@ -442,9 +442,9 @@ object ClosureConv {
     }
 
     def visitJvmMethod(method: JvmMethod)(implicit flix: Flix): JvmMethod = method match {
-      case JvmMethod(ann, ident, fparams0, exp, retTpe, purity, loc) =>
+      case JvmMethod(ann, ident, fparams0, exp, retTpe, purity, javaSig, loc) =>
         val fparams = fparams0.map(visitFormalParam)
-        JvmMethod(ann, ident, fparams, applySubst(exp, subst), retTpe, purity, loc)
+        JvmMethod(ann, ident, fparams, applySubst(exp, subst), retTpe, purity, javaSig, loc)
     }
 
     visitExp(e0)
@@ -661,9 +661,9 @@ object ClosureConv {
             JvmConstructor(e, retTpe, constructorPurity, constructorLoc)
         }
         val ms = methods.map {
-          case JvmMethod(ann, ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
+          case JvmMethod(ann, ident, fparams, exp, retTpe, methodPurity, javaSig, methodLoc) =>
             val e = visit(exp)
-            JvmMethod(ann, ident, fparams, e, retTpe, methodPurity, methodLoc)
+            JvmMethod(ann, ident, fparams, e, retTpe, methodPurity, javaSig, methodLoc)
         }
         Expr.NewObject(sym, clazz, tpe, purity, cs, ms, loc)
     }

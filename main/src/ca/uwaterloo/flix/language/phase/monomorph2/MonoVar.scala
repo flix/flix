@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 Simon Lykke Andersen
+ * Copyright 2026 Flix Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ import ca.uwaterloo.flix.language.ast.Symbol
   * instantiation the solver determines, then substitutes back wherever `MonoArg.Param`
   * references it.
   */
-sealed trait MonoVar
+private[monomorph2] sealed trait MonoVar
 
-object MonoVar {
+private[monomorph2] object MonoVar {
   case class Def(sym: Symbol.DefnSym) extends MonoVar
 
   case class Enum(sym: Symbol.EnumSym) extends MonoVar

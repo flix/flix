@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, DefSymUse,
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
-import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -59,7 +59,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   */
 object Kinder {
 
-  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (KindedAst.Root, List[KindError]) = flix.phaseNew("Kinder") {
+  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (KindedAst.Root, List[KindError]) = flix.phase("Kinder") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Precompute the kind of every declaration once, so it is not recomputed at each occurrence of the type.
@@ -189,7 +189,11 @@ object Kinder {
     case ResolvedAst.Declaration.Case(sym, tpes0, loc) =>
       val ts = tpes0.map(visitType(_, Kind.Star, kenv, root))
       val quants = tparams.map(_.sym)
-      val schemeBase = Type.mkPureUncurriedArrow(ts, resTpe, sym.loc.asSynthetic)
+      // A nullary case is not a function, but the enum type itself.
+      val schemeBase = ts match {
+        case Nil => resTpe
+        case t :: tail => Type.mkPureUncurriedArrow(Nel(t, tail), resTpe, sym.loc.asSynthetic)
+      }
       val sc = Scheme(quants, Nil, Nil, schemeBase)
       KindedAst.Case(sym, ts, sc, loc)
   }
@@ -210,7 +214,11 @@ object Kinder {
     case ResolvedAst.Declaration.RestrictableCase(sym, tpes0, loc) =>
       val ts = tpes0.map(visitType(_, Kind.Star, kenv, root))
       val quants = (index :: tparams).map(_.sym)
-      val schemeBase = Type.mkPureUncurriedArrow(ts, resTpe, sym.loc.asSynthetic)
+      // A nullary case is not a function, but the enum type itself.
+      val schemeBase = ts match {
+        case Nil => resTpe
+        case t :: tail => Type.mkPureUncurriedArrow(Nel(t, tail), resTpe, sym.loc.asSynthetic)
+      }
       val sc = Scheme(quants, Nil, Nil, schemeBase)
       KindedAst.RestrictableCase(sym, ts, sc, loc) // TODO RESTR-VARS the scheme is different for these. REVISIT
   }
@@ -266,7 +274,9 @@ object Kinder {
     case ResolvedAst.Declaration.Effect(doc, ann, mod, sym, tparams0, ops0, loc) =>
       val kenv = getKindEnvFromTypeParams(tparams0)
       val tparams = tparams0.map(visitTypeParam(_, kenv))
-      val ops = ops0.map(visitOp(_, tparams, kenv, root))
+      val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+      val tpe = Type.mkApply(Type.Cst(TypeConstructor.Effect(sym, declKinds.effectKinds(sym)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
+      val ops = ops0.map(visitOp(_, tparams, tpe, kenv, root))
       KindedAst.Effect(doc, ann, mod, sym, tparams, ops, loc)
   }
 
@@ -337,10 +347,10 @@ object Kinder {
   /**
     * Performs kinding on the given effect operation under the given kind environment.
     */
-  private def visitOp(op: ResolvedAst.Declaration.Op, tparams: List[KindedAst.TypeParam], kenv0: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Op = op match {
+  private def visitOp(op: ResolvedAst.Declaration.Op, tparams: List[KindedAst.TypeParam], eff: Type, kenv0: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Op = op match {
     case ResolvedAst.Declaration.Op(sym, spec0, loc) =>
       val kenv = inferSpec(spec0, kenv0, root)
-      val spec = visitSpec(spec0, tparams.map(_.sym), Some(sym.eff), kenv, root)
+      val spec = visitSpec(spec0, tparams.map(_.sym), Some(eff), kenv, root)
       KindedAst.Op(sym, spec, loc)
   }
 
@@ -350,7 +360,7 @@ object Kinder {
     * Adds `quantifiers` to the generated scheme's quantifier list.
     * Adds `effect` to the generated scheme's effect set
     */
-  private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], effect: Option[Symbol.EffSym], kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Spec = spec0 match {
+  private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], effect: Option[Type], kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Spec = spec0 match {
     case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0) =>
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val fparams = fparams0.map(visitFormalParam(_, kenv, root))
@@ -359,10 +369,10 @@ object Kinder {
       // If we're inside an effect, add that effect to the scheme.
       val eff = effect match {
         case None => declaredEff
-        case Some(sym) =>
+        case Some(tpe) =>
           Some(
             Type.mkUnion(
-              Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), SourceLocation.Unknown), // TODO EFFECT-TPARAMS need kind
+              tpe,
               declaredEff.getOrElse(Type.Pure),
               SourceLocation.Unknown
             )
@@ -514,7 +524,7 @@ object Kinder {
       case ResolvedAst.Expr.LocalDef(ann, sym, fparams0, exp10, exp20, loc) =>
         // we must infer the formal parameters because the may contain wildcard types
         // which would not appear in the function's kenv
-        val fparamKenvs = fparams0.map(inferFormalParam(_, kenv0, root))
+        val fparamKenvs = fparams0.toList.map(inferFormalParam(_, kenv0, root))
         val kenv1 = KindEnv.merge(kenv0 :: fparamKenvs)
         val fparams = fparams0.map(visitFormalParam(_, kenv1, root))
         val exp1 = visitExp(exp10, kenv1, root)
@@ -769,7 +779,8 @@ object Kinder {
         KindedAst.Expr.PutField(field, clazz, exp1, exp2, loc)
 
       case ResolvedAst.Expr.GetStaticField(field, loc) =>
-        KindedAst.Expr.GetStaticField(field, loc)
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+        KindedAst.Expr.GetStaticField(field, tvar, loc)
 
       case ResolvedAst.Expr.PutStaticField(field, exp0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
@@ -1138,10 +1149,21 @@ object Kinder {
       }
 
     case UnkindedType.Apply(t10, t20, loc) =>
-      val t2 = visitType(t20, Kind.Wild, kenv, root)
+      val base = tpe0.baseType
+      // Visit the argument with the kind demanded by the head constructor (if known),
+      // so that an ill-kinded argument is reported at the argument rather than at the head.
+      val t2 = visitType(t20, getExpectedArgKind(base, tpe0), kenv, root)
       val k1 = Kind.mkArrow(t2.kind, expectedKind)
       val t1 = visitType(t10, k1, kenv, root)
-      mkApply(t1, t2, loc)
+      val app = mkApply(t1, t2, loc)
+      (base, app.kind) match {
+        case (UnkindedType.Var(sym, _), Kind.Eff) =>
+          sctx.errors.add(KindError.IllegalPolymorphicEffectConstructor(sym, loc))
+          // Keep the illegal application underneath the error so later phases can still see
+          // its type variables and avoid reporting them as unused.
+          Type.Apply(Type.freshError(Kind.mkArrow(app.kind, Kind.Error), loc), app, loc)
+        case _ => app
+      }
 
     case UnkindedType.Ascribe(t, k, loc) =>
       unify(k, expectedKind) match {
@@ -1353,6 +1375,33 @@ object Kinder {
   }
 
   /**
+    * Returns the kind expected of the last argument of the type application `app` whose base type is `base`.
+    *
+    * For example, in `E + IO`, i.e. `Apply(Apply(Union, E), IO)`, the argument `IO` is expected
+    * to have kind `Eff` because `Union` has kind `Eff -> Eff -> Eff`.
+    *
+    * Returns [[Kind.Wild]] if the kind of `base` is not statically known (e.g. it is a type variable)
+    * or if `app` applies more arguments than the kind of `base` accepts.
+    */
+  private def getExpectedArgKind(base: UnkindedType, app: UnkindedType)(implicit declKinds: DeclKinds): Kind = {
+    val baseKind = base match {
+      case UnkindedType.Cst(cst, _) => Some(cst.kind)
+      case UnkindedType.Enum(sym, _) => Some(declKinds.enumKinds(sym))
+      case UnkindedType.Effect(sym, _) => Some(declKinds.effectKinds(sym))
+      case UnkindedType.Struct(sym, _) => Some(declKinds.structKinds(sym))
+      case UnkindedType.RestrictableEnum(sym, _) => Some(declKinds.restrictableEnumKinds(sym))
+      case UnkindedType.Arrow(_, arity, _) => Some(Kind.mkArrow(arity))
+      case _ => None
+    }
+    baseKind match {
+      case Some(k) =>
+        // The argument of `app` is its last type argument, i.e. it is at index `numArgs - 1`.
+        Kind.kindArgs(k).lift(app.typeArguments.length - 1).getOrElse(Kind.Wild)
+      case None => Kind.Wild
+    }
+  }
+
+  /**
     * Creates the appropriate kind error for an unexpected kind.
     * Returns specialized errors for Type/Eff mismatches.
     */
@@ -1478,7 +1527,7 @@ object Kinder {
     */
   private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext): KindEnv = spec0 match {
     case ResolvedAst.Spec(_, _, _, _, fparams, tpe, eff0, tconstrs, econstrs) =>
-      val fparamKenv = KindEnv.merge(fparams.map(inferFormalParam(_, kenv, root)))
+      val fparamKenv = KindEnv.merge(fparams.toList.map(inferFormalParam(_, kenv, root)))
       val tpeKenv = inferType(tpe, Kind.Star, kenv, root)
       val effKenv = eff0.map(inferType(_, Kind.Eff, kenv, root)).getOrElse(KindEnv.empty)
       val tconstrsKenv = KindEnv.merge(tconstrs.map(inferTraitConstraint(_, kenv, root)))
@@ -1887,9 +1936,7 @@ object Kinder {
     private def getEffectKind(eff0: ResolvedAst.Declaration.Effect): Kind = eff0 match {
       case ResolvedAst.Declaration.Effect(_, _, _, _, tparams, _, _) =>
         val kenv = getKindEnvFromTypeParams(tparams)
-        tparams.foldRight(Kind.Eff: Kind) {
-          case (tparam, acc) => kenv.map(tparam.sym) ->: acc
-        }
+        Kind.mkArrowTo(tparams.map(tparam => kenv.map(tparam.sym)), Kind.Eff)
     }
 
     /**

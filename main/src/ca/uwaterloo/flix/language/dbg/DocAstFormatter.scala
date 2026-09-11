@@ -199,10 +199,10 @@ object DocAstFormatter {
         group(aux(d1, paren = false) +\: text(word) +: formatType(d2, paren = false))
       case TryCatch(d, rules) =>
         val rs = semiSepOpt(rules.map {
-          case (sym, clazz, rule) =>
+          case (sym, className, rule) =>
             val rulef = aux(rule, paren = false, inBlock = true)
             text("case") +: text(sym.toString) |:: text(":") +:
-              formatJavaClass(clazz) +: text("=>") |:: breakIndent(rulef)
+              text(className) +: text("=>") |:: breakIndent(rulef)
         })
         val bodyf = aux(d, paren = false, inBlock = true)
         group(
@@ -219,22 +219,17 @@ object DocAstFormatter {
         group(
           text("handler") +: text(eff.toString) +: curly(rs)
         )
-      case NewObject(_, clazz, _, constructors, methods) =>
+      case NewObject(_, className, _, constructors, methods) =>
         val allFormatted = constructors.map(formatJvmConstructor) ++ methods.map(formatJvmMethod)
-        group(text("new") +: formatJavaClass(clazz) +: curly(
+        group(text("new") +: text(className) +: curly(
           semiSepOpt(allFormatted)
         ))
-      case Native(clazz) =>
-        formatJavaClass(clazz)
     }
     d0 match {
       case _: Composite if paren => parens(doc)
       case _: Composite | _: Atom => doc
     }
   }
-
-  private def formatJavaClass(clazz: Class[?]): Doc =
-    text(clazz.getName)
 
   private def formatJvmConstructor(c: JvmConstructor)(implicit i: Indent): Doc = {
     val JvmConstructor(clo, _) = c
@@ -430,14 +425,14 @@ object DocAstFormatter {
           case None =>
             text("#") |:: curlyTuple(predicatesf)
         }
-      case Type.Native(clazz) =>
-        formatJavaClass(clazz)
+      case Type.Native(desc) =>
+        text(Expr.javaClassName(desc))
       case Type.JvmConstructor(constructor) =>
-        formatJavaClass(constructor.getClass)
+        text(Expr.javaClassName(constructor.ref.owner))
       case Type.JvmMethod(method) =>
-        formatJavaClass(method.getClass)
+        text(Expr.javaClassName(method.ref.owner))
       case Type.JvmField(field) =>
-        formatJavaClass(field.getClass)
+        text(Expr.javaClassName(field.ref.owner))
       case Type.Not(t) =>
         text("not") +: formatType(t)
       case Type.And(t1, t2) =>

@@ -17,11 +17,12 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.jvm.JavaField
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 
-import java.lang.reflect.Field
+import java.lang.constant.ClassDesc
 
 object ResolvedAst {
 
@@ -81,7 +82,7 @@ object ResolvedAst {
     case class Op(sym: Symbol.OpSym, spec: Spec, loc: SourceLocation) extends Declaration
   }
 
-  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], tpe: UnkindedType, eff: Option[UnkindedType], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint])
+  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: Nel[FormalParam], tpe: UnkindedType, eff: Option[UnkindedType], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint])
 
   sealed trait Expr {
     def loc: SourceLocation
@@ -125,7 +126,7 @@ object ResolvedAst {
 
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class LocalDef(ann: Annotations, sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class LocalDef(ann: Annotations, sym: Symbol.VarSym, fparams: Nel[FormalParam], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Region(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -173,7 +174,7 @@ object ResolvedAst {
 
     case class Ascribe(exp: Expr, expectedType: Option[UnkindedType], expectedEff: Option[UnkindedType], loc: SourceLocation) extends Expr
 
-    case class InstanceOf(exp: Expr, clazz: java.lang.Class[?], loc: SourceLocation) extends Expr
+    case class InstanceOf(exp: Expr, clazz: ClassDesc, loc: SourceLocation) extends Expr
 
     case class CheckedCast(cast: CheckedCastType, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -190,25 +191,25 @@ object ResolvedAst {
 
     case class RunWith(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(clazz: Class[?], exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeConstructor(clazz: ClassDesc, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeSuperConstructor(clazz: Class[?], exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeSuperConstructor(clazz: ClassDesc, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeSuperMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], targs: List[UnkindedType], loc: SourceLocation) extends Expr
+    case class InvokeSuperMethod(clazz: ClassDesc, methodName: Name.Ident, exps: List[Expr], targs: List[UnkindedType], loc: SourceLocation) extends Expr
 
-    case class InvokeStaticMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeStaticMethod(clazz: ClassDesc, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class PutField(field: Field, clazz: java.lang.Class[?], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class PutField(field: JavaField, clazz: ClassDesc, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class GetStaticField(field: Field, loc: SourceLocation) extends Expr
+    case class GetStaticField(field: JavaField, loc: SourceLocation) extends Expr
 
-    case class PutStaticField(field: Field, exp: Expr, loc: SourceLocation) extends Expr
+    case class PutStaticField(field: JavaField, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class NewObject(sym: Symbol.AnonClassSym, clazz: java.lang.Class[?], targs: List[UnkindedType], constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(sym: Symbol.AnonClassSym, clazz: JClass, targs: List[UnkindedType], constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, loc: SourceLocation) extends Expr
 
@@ -362,11 +363,11 @@ object ResolvedAst {
 
   case class JvmConstructor(exp: Expr, tpe: UnkindedType, eff: Option[UnkindedType], loc: SourceLocation)
 
-  case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: UnkindedType, eff: Option[UnkindedType], loc: SourceLocation)
+  case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: Nel[FormalParam], exp: Expr, tpe: UnkindedType, eff: Option[UnkindedType], loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
+  case class CatchRule(sym: Symbol.VarSym, clazz: ClassDesc, exp: Expr, loc: SourceLocation)
 
-  case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
+  case class HandlerRule(symUse: OpSymUse, fparams: Nel[FormalParam], exp: Expr, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

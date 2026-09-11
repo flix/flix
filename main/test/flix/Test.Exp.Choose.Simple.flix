@@ -4,12 +4,14 @@ mod Test.Exp.Choose.Simple {
         case Cst, Var, Not, And, Or, Xor
     }
 
+    @CompileTest
     pub def testChoose01(): Bool = {
         choose Expr.Cst {
             case Expr.Cst => true
         }
     }
 
+    @CompileTest
     pub def testChoose02(): Bool = {
         choose Expr.Cst {
             case Expr.Cst => true
@@ -17,6 +19,7 @@ mod Test.Exp.Choose.Simple {
         }
     }
 
+    @CompileTest
     pub def testChoose03(): Bool = {
         let cstOrVar = if (true) open_variant Expr.Cst else open_variant Expr.Var;
         choose cstOrVar {
@@ -25,6 +28,7 @@ mod Test.Exp.Choose.Simple {
         }
     }
 
+    @CompileTest
     pub def testChoose04(): Bool = {
         let cstOrVar = if (true) open_variant Expr.Cst else open_variant Expr.Var;
         choose cstOrVar {
@@ -34,6 +38,7 @@ mod Test.Exp.Choose.Simple {
         }
     }
 
+    @CompileTest
     pub def testChoose05(): Bool = {
         let f = x -> choose x {
             case Expr.Cst => false
@@ -47,6 +52,7 @@ mod Test.Exp.Choose.Simple {
         h(Expr.Cst)
     }
 
+    @CompileTest
     pub def testChoose06(): Bool = {
         let f = x -> choose x {
             case Expr.Cst => false

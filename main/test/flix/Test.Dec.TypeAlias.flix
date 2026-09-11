@@ -238,4 +238,18 @@ mod Test.Dec.TypeAlias {
     @Test
     def testTypeAlias34(): Unit \ Assert =
         assertEq(expected = 42, testTypeAlias34Helper(testTypeAlias34Fn))
+
+    ///
+    /// A diamond: the shared alias `Diamond0` is reachable from `Diamond3` through both `Diamond1` and `Diamond2`.
+    ///
+    type alias Diamond0 = Int32
+    type alias Diamond1 = (Diamond0, Diamond0)
+    type alias Diamond2 = (Diamond0, Bool)
+    type alias Diamond3 = (Diamond1, Diamond2)
+
+    def testTypeAlias35Helper(x: Diamond3): Int32 = fst(fst(x)) + snd(fst(x)) + fst(snd(x))
+
+    @Test
+    def testTypeAlias35(): Unit \ Assert =
+        assertEq(expected = 6, testTypeAlias35Helper(((1, 2), (3, true))))
 }
