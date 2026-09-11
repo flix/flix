@@ -3042,11 +3042,30 @@ object Resolver {
     * A module is accessible from `ns0` if:
     *
     * (a) the module is marked public, or
-    * (b) the module is defined in `ns0` itself or in a parent of `ns0`.
+    * (b) the module is declared in `ns0` itself or in an ancestor of `ns0`.
     *
-    * Note: a module's `sym.ns` is its fully qualified namespace (including the module's own name),
-    * so the *containing* namespace is `sym.ns.init`. A non-`pub` module is therefore accessible
-    * to its parent, itself, and all descendants — but not to siblings or unrelated namespaces.
+    * This is the same rule as for definitions (see [[isDefAccessible]]) and mirrors Rust:
+    * a private item is visible in the module that declares it and in every module nested
+    * within that module, siblings included. Only namespaces outside the declaring namespace
+    * are excluded.
+    *
+    * Note: a module's `sym.ns` is its fully qualified name (including the module's own name),
+    * so the namespace that *declares* the module is `sym.ns.init`.
+    *
+    * For example, given:
+    *
+    * {{{
+    * mod A {
+    *     mod B { ... }
+    *     mod C {
+    *         mod D { ... }
+    *     }
+    * }
+    * mod E { ... }
+    * }}}
+    *
+    * the private module `A.B` is accessible from `A`, `A.B`, `A.C`, and `A.C.D`,
+    * but not from `E` or from the root namespace.
     */
   private def isModuleAccessible(mod0: NamedAst.Declaration.Mod, ns0: Name.NName): Boolean = {
     if (mod0.mod.isPublic) return true
@@ -3056,14 +3075,19 @@ object Resolver {
   }
 
   /**
-    * Walks each prefix of `targetNs` and emits an `InaccessibleModule` error for any prefix
+    * Walks each prefix of `targetNs` and emits an [[InaccessibleModule]] error for any prefix
     * whose declared module is not accessible from `ns0`.
     *
-    * Prefixes with no explicit `Declaration.Mod` are skipped: they are implicit intermediates
-    * (e.g. `B` in `mod B.C { ... }`) and have no modifier of their own.
+    * As in Rust, every module along a path must be accessible, not just the last one. For
+    * example, resolving `A.B.C.foo` from `D` checks that `A`, `A.B`, and `A.B.C` are each
+    * accessible from `D`. Whether `foo` itself is accessible is checked by the caller.
     *
-    * If multiple `Declaration.Mod`s exist at the same prefix (re-opened modules), the prefix
-    * is accessible if at least one of them is accessible.
+    * Prefixes with no explicit `Declaration.Mod` are skipped: they are implicit intermediates
+    * (e.g. `A` and `B` in `mod A.B.C { ... }`) and have no modifier of their own.
+    *
+    * A module has exactly one declaration site (see `NameError.DuplicateModule`), but a
+    * duplicate is reported rather than removed from the symbol table. We therefore tolerate
+    * several declarations at a prefix and treat it as accessible if at least one of them is.
     */
   private def checkPathAccessibility(targetNs: List[String], ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): Unit = {
     for (i <- 1 to targetNs.length) {
