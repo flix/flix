@@ -538,6 +538,60 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleModule](result)
   }
 
+  test("InaccessibleModule.11") {
+    // A private module is not accessible from the root namespace.
+    val input =
+      s"""
+         |mod A {
+         |    mod B {
+         |        pub def foo(): Int32 = 123
+         |    }
+         |}
+         |
+         |def g(): Int32 = A.B.foo()
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
+  test("InaccessibleModule.12") {
+    // `C` is private to `A.B`, so it is not accessible from `A.D`, which lies outside `A.B`.
+    val input =
+      s"""
+         |mod A {
+         |    mod B {
+         |        mod C {
+         |            pub def foo(): Int32 = 123
+         |        }
+         |    }
+         |    mod D {
+         |        pub def g(): Int32 = A.B.C.foo()
+         |    }
+         |}
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
+  test("InaccessibleModule.13") {
+    // A `use` does not bypass the check: the error is reported where the name is referenced.
+    val input =
+      s"""
+         |mod A {
+         |    mod B {
+         |        pub def foo(): Int32 = 123
+         |    }
+         |}
+         |
+         |mod D {
+         |    use A.B.foo
+         |    def g(): Int32 = foo()
+         |}
+         |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
   test("SealedTrait.01") {
     val input =
       """
