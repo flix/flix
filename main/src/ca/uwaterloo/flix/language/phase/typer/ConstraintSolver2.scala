@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
-import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
-import ca.uwaterloo.flix.util.{ChaosMonkey, Result}
+import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, Result}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -141,9 +141,7 @@ object ConstraintSolver2 {
     */
   def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: RegionScope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
     // Apply the initial substitution to the constraints.
-    val initialConstrs = constrs0.map(initialSubst.apply)
-    val effectArgEqualities = breakdownPolyEffConstraints(initialConstrs, initialSubst)
-    val constrs = effectArgEqualities ::: initialConstrs
+    val constrs = constrs0.map(initialSubst.apply)
     val soup = new Soup(constrs, initialSubst)
     val progress = Progress()
     val res = soup.exhaustively(progress)(solveOne)
@@ -151,10 +149,21 @@ object ConstraintSolver2 {
   }
 
   /**
-    * Collects pointwise equalities between saturated applications of the same effect constructor.
-    * Every occurrence in one constraint system must agree on the constructor's type arguments.
-    * An application is saturated when all the constructor's type parameters are supplied and the
-    * result has kind `Eff`; for a declared effect `F: Type -> Eff`, `F[Int32]` is saturated while `F` is not.
+    * Canonicalizes the saturated applications of every polymorphic effect in `soup`.
+    *
+    * Within one constraint system every application of a polymorphic effect must carry the same type
+    * arguments: [[EffUnification3.unifyAll]] identifies an effect atom by its constructor symbol alone
+    * and reconstructs the application from a single argument list, so `F[Int32]` and `F[String]` would
+    * silently unify as one atom. An application is saturated when all the constructor's type parameters
+    * are supplied and the result has kind `Eff`; for a declared effect `F: Type -> Eff`, `F[Int32]` is
+    * saturated while `F` is not.
+    *
+    * This pass establishes the invariant syntactically. It picks a representative application per effect
+    * symbol (the first one in the constraints or, for an effect that occurs only in the substitution
+    * tree, the one in the binding with the smallest variable id), rewrites every other application in the
+    * constraints and in the tree to the representative, and emits the pointwise equalities between the
+    * original and the representative arguments so that ordinary type unification either solves them or
+    * reports a [[ca.uwaterloo.flix.language.errors.TypeError.MismatchedEffectArgument]].
     *
     * For example, given the declarations:
     * {{{
@@ -163,75 +172,179 @@ object ConstraintSolver2 {
     * }
     * def f(): Unit \ F[Int32] + F[String] = ()
     * }}}
-    * the two applications of `F` produce the additional equality `Int32 ~ String`, making `f`
-    * ill-typed before its effect equations are solved.
+    * the effect of `f` becomes `F[Int32] + F[Int32]` and the equality `Int32 ~ String` is added, making
+    * `f` ill-typed.
+    *
+    * The pass must run after the last type reduction of a round and immediately before effect unification:
+    * reduction is the only step that creates new applications (an associated effect `T.E[String]` reduces
+    * to `F[String]` once its argument is known), and effect unification is the consumer of the invariant.
+    * The pass is idempotent, so it runs every round: once the applications agree it is a single read-only
+    * traversal, and an application whose argument equality failed has been rewritten and is not reported
+    * again.
+    *
+    * Returns `soup` itself if nothing was rewritten.
     */
-  private def breakdownPolyEffConstraints(constrs: List[TypeConstraint], initialSubst: SubstitutionTree): List[TypeConstraint] = {
-    // Maps each effect symbol to the saturated effect types whose arguments must agree.
-    // For example, `F[Int32] + F[String]` maps `F` to `F[Int32]` and `F[String]`.
-    var effectTypes = ListMap.empty[Symbol.EffSym, Type]
+  private def canonicalizeEffectApplications(soup: Soup, progress: Progress): Soup = {
+    val (constrs, tree) = soup.get
 
-    def visitType(tpe: Type): Unit = tpe match {
+    // The representative application of each polymorphic effect.
+    val representatives = mutable.Map.empty[Symbol.EffSym, Type]
+
+    // The variable id of the tree binding that supplied a representative, for effects that occur
+    // only in the tree. Constraints are visited in list order, but a substitution is a hash map, so
+    // the smallest id is used to make the choice independent of iteration order.
+    val treeRepresentativeIds = mutable.Map.empty[Symbol.EffSym, Int]
+
+    /**
+      * Registers `app`, an application of `sym`, found in a constraint (`bindingId < 0`) or in the
+      * tree binding of the variable with id `bindingId`.
+      */
+    def register(sym: Symbol.EffSym, app: Type, bindingId: Int): Unit = {
+      if (!representatives.contains(sym)) {
+        representatives.update(sym, app)
+        if (bindingId >= 0) {
+          treeRepresentativeIds.update(sym, bindingId)
+        }
+      } else if (bindingId >= 0) {
+        treeRepresentativeIds.get(sym) match {
+          case Some(id) if bindingId < id =>
+            representatives.update(sym, app)
+            treeRepresentativeIds.update(sym, bindingId)
+          case _ => ()
+        }
+      }
+    }
+
+    def collectType(tpe: Type, bindingId: Int): Unit = tpe match {
       case app@Type.Apply(tpe1, tpe2, _) =>
         app.baseType match {
           case Type.Cst(TypeConstructor.Effect(sym, _), _) if app.kind == Kind.Eff =>
-            effectTypes = effectTypes + (sym -> app)
+            register(sym, app, bindingId)
           case _ => ()
         }
-        visitType(tpe1)
-        visitType(tpe2)
+        collectType(tpe1, bindingId)
+        collectType(tpe2, bindingId)
       case Type.Alias(_, args, inner, _) =>
-        args.foreach(visitType)
-        visitType(inner)
+        args.foreach(collectType(_, bindingId))
+        collectType(inner, bindingId)
       case Type.AssocType(_, arg, _, _) =>
-        visitType(arg)
+        collectType(arg, bindingId)
       case Type.JvmToType(inner, _) =>
-        visitType(inner)
+        collectType(inner, bindingId)
       case Type.JvmToEff(inner, _) =>
-        visitType(inner)
+        collectType(inner, bindingId)
       case Type.UnresolvedJvmType(member, _) =>
-        member.getTypeArguments.foreach(visitType)
+        member.getTypeArguments.foreach(collectType(_, bindingId))
       case Type.Var(_, _) => ()
       case Type.Cst(_, _) => ()
     }
 
-    def visitConstraint(constr: TypeConstraint): Unit = constr match {
+    def collectConstraint(constr: TypeConstraint): Unit = constr match {
       case TypeConstraint.Equality(tpe1, tpe2, _) =>
-        visitType(tpe1)
-        visitType(tpe2)
+        collectType(tpe1, -1)
+        collectType(tpe2, -1)
       case TypeConstraint.Trait(_, tpe, _) =>
-        visitType(tpe)
+        collectType(tpe, -1)
       case TypeConstraint.Purification(_, eff1, eff2, _, nested) =>
-        visitType(eff1)
-        visitType(eff2)
-        nested.foreach(visitConstraint)
+        collectType(eff1, -1)
+        collectType(eff2, -1)
+        nested.foreach(collectConstraint)
       case TypeConstraint.Conflicted(tpe1, tpe2, _) =>
-        visitType(tpe1)
-        visitType(tpe2)
+        collectType(tpe1, -1)
+        collectType(tpe2, -1)
       case TypeConstraint.EffConflicted(_) => ()
     }
 
-    def visitSubstitutionTree(tree: SubstitutionTree): Unit = {
-      tree.root.m.values.foreach(visitType)
-      tree.branches.values.foreach(visitSubstitutionTree)
-    }
-
-    // Collect all saturated effect applications in the constraint system.
-    constrs.foreach(visitConstraint)
-    visitSubstitutionTree(initialSubst)
-
-    val equalities = mutable.ListBuffer.empty[TypeConstraint]
-    for ((sym, occurrences) <- effectTypes.m) {
-      val representative = occurrences.head
-      for (occurrence <- occurrences.tail) {
-        var ith = 1
-        for ((tpe1, tpe2) <- ListOps.zip(representative.typeArguments, occurrence.typeArguments)) {
-          equalities += TypeConstraint.Equality(tpe1, tpe2, Provenance.PolyEffEq(sym, ith, representative, occurrence, occurrence.loc))
-          ith += 1
-        }
+    def collectTree(t: SubstitutionTree): Unit = {
+      for ((sym, tpe) <- t.root.m) {
+        collectType(tpe, sym.id)
       }
+      t.branches.values.foreach(collectTree)
     }
-    equalities.toList
+
+    constrs.foreach(collectConstraint)
+    collectTree(tree)
+
+    // Performance: Nothing to do if no polymorphic effect occurs.
+    if (representatives.isEmpty) {
+      return soup
+    }
+
+    // The emitted argument equalities, deduplicated so that several occurrences of the same
+    // application report a single error.
+    val emitted = mutable.HashSet.empty[(Symbol.EffSym, Int, Type, Type)]
+    val equalities = mutable.ListBuffer.empty[TypeConstraint]
+
+    def rewriteType(tpe: Type): Type = tpe match {
+      case app@Type.Apply(tpe1, tpe2, loc) =>
+        app.baseType match {
+          case Type.Cst(TypeConstructor.Effect(sym, _), _) if app.kind == Kind.Eff =>
+            val representative = representatives(sym)
+            if (app == representative) {
+              app
+            } else {
+              var ith = 1
+              for ((representativeArg, arg) <- ListOps.zip(representative.typeArguments, app.typeArguments)) {
+                if (representativeArg != arg && emitted.add((sym, ith, representativeArg, arg))) {
+                  equalities += TypeConstraint.Equality(representativeArg, arg, Provenance.PolyEffEq(sym, ith, representative, app, loc))
+                }
+                ith += 1
+              }
+              // Keep the location of the occurrence.
+              representative.baseType match {
+                case Type.Cst(tc, _) => Type.mkApply(Type.Cst(tc, loc), representative.typeArguments, loc)
+                case other => throw InternalCompilerException(s"Unexpected effect base type '$other'.", loc)
+              }
+            }
+          case _ =>
+            app.renew(rewriteType(tpe1), rewriteType(tpe2), loc)
+        }
+      case Type.Alias(cst, args, inner, loc) =>
+        val i = rewriteType(inner)
+        if (i eq inner) tpe else Type.Alias(cst, args, i, loc)
+      case Type.AssocType(cst, arg, kind, loc) =>
+        val a = rewriteType(arg)
+        if (a eq arg) tpe else Type.AssocType(cst, a, kind, loc)
+      case Type.JvmToType(inner, loc) =>
+        val i = rewriteType(inner)
+        if (i eq inner) tpe else Type.JvmToType(i, loc)
+      case Type.JvmToEff(inner, loc) =>
+        val i = rewriteType(inner)
+        if (i eq inner) tpe else Type.JvmToEff(i, loc)
+      case Type.UnresolvedJvmType(_, _) => tpe
+      case Type.Var(_, _) => tpe
+      case Type.Cst(_, _) => tpe
+    }
+
+    def rewriteConstraint(constr: TypeConstraint): TypeConstraint = constr match {
+      case TypeConstraint.Equality(tpe1, tpe2, prov) =>
+        val t1 = rewriteType(tpe1)
+        val t2 = rewriteType(tpe2)
+        if ((t1 eq tpe1) && (t2 eq tpe2)) constr else TypeConstraint.Equality(t1, t2, prov)
+      case TypeConstraint.Trait(sym, tpe, loc) =>
+        val t = rewriteType(tpe)
+        if (t eq tpe) constr else TypeConstraint.Trait(sym, t, loc)
+      case TypeConstraint.Purification(sym, eff1, eff2, prov, nested) =>
+        val e1 = rewriteType(eff1)
+        val e2 = rewriteType(eff2)
+        val ns = ListOps.mapWithReuse(nested)(rewriteConstraint)
+        if ((e1 eq eff1) && (e2 eq eff2) && (ns eq nested)) constr else TypeConstraint.Purification(sym, e1, e2, prov, ns)
+      case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
+        val t1 = rewriteType(tpe1)
+        val t2 = rewriteType(tpe2)
+        if ((t1 eq tpe1) && (t2 eq tpe2)) constr else TypeConstraint.Conflicted(t1, t2, prov)
+      case TypeConstraint.EffConflicted(_) => constr
+    }
+
+    // Bindings made before this pass may contain applications that disagree; rewrite them as well.
+    val rewrittenTree = tree.mapTypes(rewriteType)
+    val rewrittenConstrs = ListOps.mapWithReuse(constrs)(rewriteConstraint)
+    if ((rewrittenTree eq tree) && (rewrittenConstrs eq constrs)) {
+      soup
+    } else {
+      progress.markProgress()
+      new Soup(equalities.toList ::: rewrittenConstrs, rewrittenTree)
+    }
   }
 
   /**
@@ -249,7 +362,7 @@ object ConstraintSolver2 {
     * Iterates once over all reduction rules to apply them to the constraint set.
     */
   private def solveOne(soup: Soup, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): Soup = {
-    soup
+    val reduced = soup
       .exhaustively(progress) {
         (soup, progress) =>
           simplifyAndSubstitute(soup, progress)
@@ -257,6 +370,8 @@ object ConstraintSolver2 {
             .flatMapSubst(schemaUnification(_, progress))
             .map(purifyEmptyRegion(_, progress))
       }
+    // Effect unification requires all applications of a polymorphic effect to agree; see the pass.
+    canonicalizeEffectApplications(reduced, progress)
       .blockApply(blockEffectUnification(_, progress))
       .flatMapSubst(caseSetUnification(_, progress))
       .flatMapSubst(booleanUnification(_, progress))

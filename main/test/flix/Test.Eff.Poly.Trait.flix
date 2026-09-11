@@ -57,6 +57,25 @@ mod Test.Eff.Poly.Trait {
             AskTell.askTell(Source.read(p))
     }
 
+    enum StringSource {
+        case Mk(String)
+    }
+
+    instance Source[StringSource] {
+        type Out = String
+
+        pub def read(src: StringSource): String = match src {
+            case StringSource.Mk(s) => s
+        }
+    }
+
+    instance Action[StringSource] {
+        type E = AskTell[String]
+
+        pub def act(p: StringSource): Int32 \ AskTell[String] =
+            String.length(AskTell.askTell(Source.read(p)))
+    }
+
     def echoViaTrait(x: t): t \ AskTell[t] with Echo[t] =
         Echo.echo(x)
 
@@ -96,5 +115,13 @@ mod Test.Eff.Poly.Trait {
             def askTell(x, k) = k(x + 1)
         };
         assertEq(expected = 42, result)
+
+    // The handler does not constrain the effect argument; it is inferred from the reduced associated effect.
+    @Test
+    def testAssociatedEffectTypeSecondInstance(): Unit \ Assert =
+        let result = run actViaTrait(StringSource.Mk("abc")) with handler AskTell {
+            def askTell(x, k) = k(x)
+        };
+        assertEq(expected = 3, result)
 
 }

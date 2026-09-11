@@ -95,6 +95,30 @@ class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.
   def apply(t: Type): Type = root.apply(t)
 
   /**
+    * Returns the tree obtained by applying `f` to every bound type, in the root and in every branch.
+    *
+    * Performance: Returns `this` if `f` returns every bound type unchanged (by reference).
+    */
+  def mapTypes(f: Type => Type): SubstitutionTree = {
+    val newRoot = root.mapTypes(f)
+    var newBranches: Map[Symbol.RegionSym, SubstitutionTree] = null
+    for ((sym, tree) <- branches) {
+      val t = tree.mapTypes(f)
+      if (!(t eq tree)) {
+        if (newBranches == null) {
+          newBranches = branches
+        }
+        newBranches = newBranches.updated(sym, t)
+      }
+    }
+    if ((newRoot eq root) && newBranches == null) {
+      this
+    } else {
+      new SubstitutionTree(newRoot, if (newBranches == null) branches else newBranches)
+    }
+  }
+
+  /**
     * Composes this substitution tree with the given substitution tree.
     */
   def @@(that: SubstitutionTree): SubstitutionTree = that match {

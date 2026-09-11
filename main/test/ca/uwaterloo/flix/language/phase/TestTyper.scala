@@ -1684,7 +1684,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.UnexpectedArg](result)
+    expectError[TypeError.MismatchedEffectArgument](result)
   }
 
   test("TestPolymorphicEffect.Neg.04") {
@@ -1728,6 +1728,62 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    } with handler Emit {
         |        def emit(_x, k) = k(())
         |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedEffectArgument](result)
+  }
+
+  test("TestPolymorphicEffect.Neg.AssocEffect.01") {
+    val input =
+      """
+        |eff Emit[t] {
+        |    def emit(x: t): Unit
+        |}
+        |
+        |trait T[a] {
+        |    type E: Eff
+        |    pub def g(x: a): Unit \ T.E[a]
+        |}
+        |
+        |instance T[Int32] {
+        |    type E = Emit[Int32]
+        |    pub def g(x: Int32): Unit \ Emit[Int32] = Emit.emit(x)
+        |}
+        |
+        |instance T[String] {
+        |    type E = Emit[String]
+        |    pub def g(x: String): Unit \ Emit[String] = Emit.emit(x)
+        |}
+        |
+        |def h(): Unit \ Emit[Int32] = T.g("s")
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedEffectArgument](result)
+  }
+
+  test("TestPolymorphicEffect.Neg.AssocEffect.02") {
+    val input =
+      """
+        |eff Emit[t] {
+        |    def emit(x: t): Unit
+        |}
+        |
+        |trait T[a] {
+        |    type E: Eff
+        |    pub def g(x: a): Unit \ T.E[a]
+        |}
+        |
+        |instance T[Int32] {
+        |    type E = Emit[Int32]
+        |    pub def g(x: Int32): Unit \ Emit[Int32] = Emit.emit(x)
+        |}
+        |
+        |instance T[String] {
+        |    type E = Emit[String]
+        |    pub def g(x: String): Unit \ Emit[String] = Emit.emit(x)
+        |}
+        |
+        |def h(): Unit \ Emit[Int32] = { T.g(1); T.g("s") }
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedEffectArgument](result)
