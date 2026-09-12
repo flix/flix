@@ -1,9 +1,9 @@
 # Changelog
 
 Version 0.76.0:
+- Compiler: Added support for building the compiler as a Graal native image (thanks Magnus!)
 - Compiler: Reimplemented bytecode generation to use nominal class descriptors (thanks Magnus!)
 - Compiler: Reimplemented Java resolution to read class files without loading classes (thanks Magnus!)
-- Compiler: Added support for building the compiler as a Graal native image (thanks Magnus!)
 - Compiler: Various performance improvements across the compiler (thanks Magnus and Simon!)
 
 Version 0.75.3:
