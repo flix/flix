@@ -852,8 +852,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   /**
     * Prints statistics about the source files of the project.
-    *
-    * The standard library and dependencies are not included.
     */
   def stat(flix: Flix)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
     Steps.updateStaleSources(flix)
