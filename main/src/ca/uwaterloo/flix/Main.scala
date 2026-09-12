@@ -87,7 +87,6 @@ object Main {
       assumeYes = cmdOpts.assumeYes,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
-      xsummary = cmdOpts.xsummary,
       xsubeffecting = cmdOpts.xsubeffecting,
       xnewmono = cmdOpts.xnewmono,
       XPerfFrontend = cmdOpts.XPerfFrontend,
@@ -521,7 +520,6 @@ object Main {
     xnodeprecated: Boolean = false,
     xlib: LibLevel = LibLevel.All,
     xprintphases: Boolean = false,
-    xsummary: Boolean = false,
     xverify: Boolean = false,
     xsubeffecting: Set[Subeffecting] = Set.empty,
     xnewmono: Boolean = false,
@@ -755,10 +753,6 @@ object Main {
       // Xprint-phase
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
         text("[experimental] writes the ASTs after each phase to './build/asts/'.")
-
-      // Xsummary
-      opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
-        text("[experimental] prints a summary of the compiled modules.")
 
       // Xverify
       opt[Unit]("Xverify").action((_, c) => c.copy(xverify = true)).
