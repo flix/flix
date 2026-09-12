@@ -1348,7 +1348,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     def checkFlixVersion(manifest: Manifest, tomlPath: Path): Result[Unit, BootstrapError] = {
       val required = manifest.flix
       val current = SemVer.ofVersion(Version.CurrentVersion)
-      if (SemVer.semVerOrdering.lt(current, required))
+      if (current < required)
         Err(BootstrapError.FlixVersionTooOld(tomlPath, required, current))
       else
         Ok(())
