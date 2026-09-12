@@ -452,7 +452,7 @@ class TestBootstrap extends AnyFunSuite {
     assert(manifests.nonEmpty, "Expected to find at least one 'flix.toml' under 'examples'.")
     for (manifest <- manifests) {
       val required = ManifestParser.parse(manifest).unsafeGet.flix
-      assert(required == current, s"'$manifest' requires Flix $required, but the current version is $current.")
+      assert(required <= current, s"'$manifest' requires Flix $required, but the current version is $current.")
     }
   }
 

@@ -20,14 +20,6 @@ import ca.uwaterloo.flix.api.Version
 object SemVer {
 
   /**
-    * An ordering on Semantic Versions
-    */
-  implicit def semVerOrdering: Ordering[SemVer] =
-    Ordering.by((_: SemVer).major)
-      .orElseBy(_.minor)
-      .orElseBy(_.patch)
-
-  /**
     * Returns the given Flix version `v` as a semantic version.
     */
   def ofVersion(v: Version): SemVer = SemVer(v.major, v.minor, v.revision)
@@ -46,8 +38,25 @@ object SemVer {
 /**
   * A semantic version number.
   */
-case class SemVer(major: Int, minor: Int, patch: Int) {
+case class SemVer(major: Int, minor: Int, patch: Int) extends Ordered[SemVer] {
   override def toString: String = s"$major.$minor.$patch"
+
+  /**
+    * Compares `this` semantic version to `that` semantic version.
+    *
+    * Versions are ordered by major, then minor, then patch.
+    */
+  override def compare(that: SemVer): Int = {
+    val byMajor = this.major.compare(that.major)
+    if (byMajor != 0) {
+      return byMajor
+    }
+    val byMinor = this.minor.compare(that.minor)
+    if (byMinor != 0) {
+      return byMinor
+    }
+    this.patch.compare(that.patch)
+  }
 
   /**
     * Of the given `versions`, get the newest version which is a major update, if one exists.
