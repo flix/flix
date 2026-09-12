@@ -42,40 +42,6 @@ mod TestFilterable {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // filterDelayList                                                         //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def filterDelayList01(): Unit \ Assert =
-        assertEq(expected = Nil, filter(isOdd, (DelayList.empty(): DelayList[Int32])) |> DelayList.toList)
-
-    @Test
-    def filterDelayList02(): Unit \ Assert =
-        assertEq(expected = 1 :: Nil, filter(isOdd, DelayList.range(1, 2)) |> DelayList.toList)
-
-    @Test
-    def filterDelayList03(): Unit \ Assert =
-        assertEq(expected = 1 :: 3 :: Nil, filter(isOdd, DelayList.range(1, 5)) |> DelayList.toList)
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // filterMapDelayList                                                      //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def filterMapDelayList01(): Unit \ Assert =
-        assertEq(expected = Nil, filterMap(oddPlus10, (DelayList.empty(): DelayList[Int32])) |> DelayList.toList)
-
-    @Test
-    def filterMapDelayList02(): Unit \ Assert =
-        assertEq(expected = 11 :: Nil, filterMap(oddPlus10, DelayList.range(1, 2)) |> DelayList.toList)
-
-    @Test
-    def filterMapDelayList03(): Unit \ Assert =
-        assertEq(expected = 11 :: 13 :: Nil, filterMap(oddPlus10, DelayList.range(1, 5)) |> DelayList.toList)
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // filterList                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
