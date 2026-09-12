@@ -46,17 +46,8 @@ case class SemVer(major: Int, minor: Int, patch: Int) extends Ordered[SemVer] {
     *
     * Versions are ordered by major, then minor, then patch.
     */
-  override def compare(that: SemVer): Int = {
-    val byMajor = this.major.compare(that.major)
-    if (byMajor != 0) {
-      return byMajor
-    }
-    val byMinor = this.minor.compare(that.minor)
-    if (byMinor != 0) {
-      return byMinor
-    }
-    this.patch.compare(that.patch)
-  }
+  override def compare(that: SemVer): Int =
+    Ordering[(Int, Int, Int)].compare((major, minor, patch), (that.major, that.minor, that.patch))
 
   /**
     * Of the given `versions`, get the newest version which is a major update, if one exists.
