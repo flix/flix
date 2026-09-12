@@ -55,8 +55,14 @@ object FormatterLsp {
   def format(root: SyntaxTree.Root, uri: String): List[TextEdit] =
     findTreeBasedOnUri(root, uri).map(treeToTextEdits).getOrElse(Nil)
 
-  // TODO: Call the actual formatter here as soon as it is merged.
-  private def treeToTextEdits(@unused tree: SyntaxTree.Tree): List[TextEdit] = Nil
+  private def treeToTextEdits(tree: SyntaxTree.Tree): List[TextEdit] = {
+    PrettyPrinter.format(tree) match {
+      case Some(formatted) =>
+        List(TextEdit(Range(Position(1, 1), Position(Int.MaxValue, 1)), formatted))
+      case None =>
+        Nil
+    }
+  }
 
   /**
     * Applies the given text edits to the file at the specified path.
