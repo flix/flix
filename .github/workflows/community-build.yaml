@@ -53,6 +53,7 @@ jobs:
         repo:
           - "flix/chalk"
           - "flix/datalog2"
+          - "flix/extras"
           - "flix/test-pkg-trust-plain"
           - "flix/test-pkg-trust-unchecked-cast"
           - "JonathanStarup/Flix-ANSI-Terminal"
