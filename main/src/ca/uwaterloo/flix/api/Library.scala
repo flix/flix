@@ -84,8 +84,6 @@ object Library {
     "Sys/Console.flix" -> LocalResource.get("/src/library/Sys/Console.flix"),
     "Debug.flix" -> LocalResource.get("/src/library/Debug.flix"),
     "DecodingReader.flix" -> LocalResource.get("/src/library/DecodingReader.flix"),
-    "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
-    "DelayMap.flix" -> LocalResource.get("/src/library/DelayMap.flix"),
     "Discrete.flix" -> LocalResource.get("/src/library/Discrete.flix"),
     "Down.flix" -> LocalResource.get("/src/library/Down.flix"),
     "EncodingWriter.flix" -> LocalResource.get("/src/library/EncodingWriter.flix"),

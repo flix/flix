@@ -507,7 +507,6 @@ object CompilerPerf {
     flix.addVirtualPath(Path.of("TestArray.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
     flix.addVirtualPath(Path.of("TestChain.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
     flix.addVirtualPath(Path.of("TestIterator.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))
-    flix.addVirtualPath(Path.of("TestDelayList.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayList.flix"))
     flix.addVirtualPath(Path.of("TestList.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestList.flix"))
     flix.addVirtualPath(Path.of("TestMap.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestMap.flix"))
     flix.addVirtualPath(Path.of("TestMutDeque.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutDeque.flix"))
