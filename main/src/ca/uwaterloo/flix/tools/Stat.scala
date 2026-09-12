@@ -110,30 +110,6 @@ object Stat {
   private def lineStat(root: Root): LineStat =
     root.sources.keys.filter(isRealFile).map(countLines).foldLeft(LineStat(0, 0, 0, 0))(_ + _)
 
-  /** Returns the module and def statistics of the project sources in `root`. */
-  private def defStat(root: Root): DefStat = {
-    val defs = root.defs.values.filter(d => isProject(d.loc)).toList
-    val pure = defs.count(d => isPure(d.spec.eff))
-    val polymorphic = defs.count(d => isPoly(d.spec.eff))
-    DefStat(
-      modules = root.modules.values.count(m => isProject(m.loc)),
-      pure = pure,
-      effectful = defs.length - pure - polymorphic,
-      polymorphic = polymorphic
-    )
-  }
-
-  /** Returns the declaration statistics of the project sources in `root`. */
-  private def declStat(root: Root): DeclStat =
-    DeclStat(
-      types = root.enums.values.count(e => isProject(e.loc)) +
-        root.structs.values.count(s => isProject(s.loc)) +
-        root.restrictableEnums.values.count(e => isProject(e.loc)),
-      traits = root.traits.values.count(t => isProject(t.loc)),
-      instances = root.instances.values.count(i => isProject(i.loc)),
-      effects = root.effects.values.count(e => isProject(e.loc))
-    )
-
   /**
     * Classifies every line of `src` as blank, code, or comment.
     *
@@ -182,13 +158,17 @@ object Stat {
     LineStat(files = 1, code = code, comment = comment, blank = blanks)
   }
 
-  /** Returns `true` if the given location is in a project source. */
-  private def isProject(loc: SourceLocation): Boolean = isRealFile(loc.source)
-
-  /** Returns `true` if the given source is a file on disk. */
-  private def isRealFile(src: Source): Boolean = src.input match {
-    case Input.RealFile(_, _) => true
-    case _ => false
+  /** Returns the module and def statistics of the project sources in `root`. */
+  private def defStat(root: Root): DefStat = {
+    val defs = root.defs.values.filter(d => isProject(d.loc)).toList
+    val pure = defs.count(d => isPure(d.spec.eff))
+    val polymorphic = defs.count(d => isPoly(d.spec.eff))
+    DefStat(
+      modules = root.modules.values.count(m => isProject(m.loc)),
+      pure = pure,
+      effectful = defs.length - pure - polymorphic,
+      polymorphic = polymorphic
+    )
   }
 
   /** Returns `true` if `eff` is the `Pure` effect. */
@@ -199,6 +179,26 @@ object Stat {
 
   /** Returns `true` if `eff` is not pure and contains an effect variable. */
   private def isPoly(eff: Type): Boolean = !isPure(eff) && eff.typeVars.nonEmpty
+
+  /** Returns the declaration statistics of the project sources in `root`. */
+  private def declStat(root: Root): DeclStat =
+    DeclStat(
+      types = root.enums.values.count(e => isProject(e.loc)) +
+        root.structs.values.count(s => isProject(s.loc)) +
+        root.restrictableEnums.values.count(e => isProject(e.loc)),
+      traits = root.traits.values.count(t => isProject(t.loc)),
+      instances = root.instances.values.count(i => isProject(i.loc)),
+      effects = root.effects.values.count(e => isProject(e.loc))
+    )
+
+  /** Returns `true` if the given location is in a project source. */
+  private def isProject(loc: SourceLocation): Boolean = isRealFile(loc.source)
+
+  /** Returns `true` if the given source is a file on disk. */
+  private def isRealFile(src: Source): Boolean = src.input match {
+    case Input.RealFile(_, _) => true
+    case _ => false
+  }
 
   /** Formats `n` with thousands separators. */
   private def fmt(n: Int): String = "%,d".formatLocal(Locale.US, n)
