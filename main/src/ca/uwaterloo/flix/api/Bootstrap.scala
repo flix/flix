@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmClass
 import java.lang.constant.ClassDesc
 import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
-import ca.uwaterloo.flix.tools.Tester
+import ca.uwaterloo.flix.tools.{Stat, Tester}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -848,6 +848,19 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def check(flix: Flix): Result[Unit, BootstrapError] = {
     Steps.updateStaleSources(flix)
     Steps.check(flix).map(_ => ())
+  }
+
+  /**
+    * Prints statistics about the source files of the project.
+    *
+    * The standard library and dependencies are not included.
+    */
+  def stat(flix: Flix)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
+    Steps.updateStaleSources(flix)
+    Steps.check(flix).map { root =>
+      val header = optManifest.map(m => s"${m.name} ${m.version}")
+      out.println(Stat.format(header, Stat.compute(root, Stat.isRealFile)))
+    }
   }
 
   /**
