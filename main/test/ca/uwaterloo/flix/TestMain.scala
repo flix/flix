@@ -232,10 +232,4 @@ class TestMain extends AnyFunSuite {
     assert(opts.xnodeprecated)
   }
 
-  test("--Xsummary") {
-    val args = Array("--Xsummary")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xsummary)
-  }
-
 }

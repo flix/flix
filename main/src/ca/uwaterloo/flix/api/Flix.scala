@@ -29,7 +29,6 @@ import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
 import ca.uwaterloo.flix.language.verifier.TokenVerifier
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.tools.compilertop.{CompilerTop, Profiler}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
@@ -621,14 +620,6 @@ class Flix {
     // `codeGen` can continue updating it through the mid-end and backend phases.
     if (errors.nonEmpty) {
       compilerTop.foreach(_.stop())
-    }
-
-    // Print summary?
-    if (options.xsummary) {
-      result.foreach(root => {
-        val table = Summary.fileSummaryTable(root, nsDepth = Some(1), minLines = Some(125))
-        table.getMarkdownLines.foreach(println)
-      })
     }
 
     // Return the result (which could contain soft failures).
