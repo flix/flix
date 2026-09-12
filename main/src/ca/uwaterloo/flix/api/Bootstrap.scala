@@ -857,7 +857,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Steps.updateStaleSources(flix)
     Steps.check(flix).map { root =>
       val header = optManifest.map(m => s"${m.name} ${m.version}")
-      out.println(Stat.format(header, Stat.compute(root, Stat.isRealFile)))
+      out.println(Stat.format(header, Stat.compute(root)))
     }
   }
 

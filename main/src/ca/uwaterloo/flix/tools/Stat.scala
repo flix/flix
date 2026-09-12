@@ -62,22 +62,14 @@ object Stat {
                          effects: Int)
 
   /**
-    * Returns `true` if the given source is a file on disk.
+    * Returns statistics for the project sources in `root`.
     *
-    * This excludes the standard library and files inside packages.
+    * Only sources that are files on disk are counted, which excludes the standard library and files inside packages.
     */
-  def isRealFile(src: Source): Boolean = src.input match {
-    case Input.RealFile(_, _) => true
-    case _ => false
-  }
+  def compute(root: Root): ProjectStat = {
+    def included(loc: SourceLocation): Boolean = isRealFile(loc.source)
 
-  /**
-    * Returns statistics for the sources in `root` that satisfy `include`.
-    */
-  def compute(root: Root, include: Source => Boolean): ProjectStat = {
-    def included(loc: SourceLocation): Boolean = include(loc.source)
-
-    val sources = root.sources.keys.filter(include).toList
+    val sources = root.sources.keys.filter(isRealFile).toList
     // The tokens kept in `root` are only the semantic ones, so each source is lexed again to get them all.
     val lineCounts = sources.map(src => countLines(src, Lexer.lex(src)._1))
     val defs = root.defs.values.filter(d => included(d.loc)).toList
@@ -172,6 +164,12 @@ object Stat {
       else comment += 1
     }
     LineCount(code, comment, blanks)
+  }
+
+  /** Returns `true` if the given source is a file on disk. */
+  private def isRealFile(src: Source): Boolean = src.input match {
+    case Input.RealFile(_, _) => true
+    case _ => false
   }
 
   /** Returns `true` if `eff` is the `Pure` effect. */
