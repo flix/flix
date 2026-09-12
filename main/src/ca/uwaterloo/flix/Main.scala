@@ -453,6 +453,19 @@ object Main {
               System.exit(1)
           }
 
+        case Command.Stat =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'stat' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.stat(flix)(System.out)
+            }
+          }
+
         case Command.EffCheck =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'eff-check' command does not support file arguments.")
@@ -572,6 +585,8 @@ object Main {
 
     case object Outdated extends Command
 
+    case object Stat extends Command
+
     case object EffCheck extends Command
 
     case object EffLock extends Command
@@ -659,6 +674,9 @@ object Main {
 
       cmd("outdated").text("  shows dependencies which have newer versions available.")
         .action((_, c) => c.copy(command = Command.Outdated))
+
+      cmd("stat").text("  prints statistics about the current project.")
+        .action((_, c) => c.copy(command = Command.Stat))
 
       cmd("eff-check").text("  checks that dependencies respect the 'effects.lock' file.")
         .action((_, c) => c.copy(command = Command.EffCheck))
