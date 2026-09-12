@@ -39,12 +39,6 @@ object Stat {
 
   /**
     * Statistics about the source files of a project.
-    *
-    * Only sources that are files on disk are counted, which excludes the standard library and files inside packages.
-    *
-    * @param lines the line statistics.
-    * @param defs  the def statistics.
-    * @param decls the statistics for the remaining declaration kinds.
     */
   case class ProjectStat(lines: LineStat, defs: DefStat, decls: DeclStat)
 
