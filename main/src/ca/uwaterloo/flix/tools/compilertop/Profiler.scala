@@ -47,7 +47,7 @@ import scala.jdk.CollectionConverters.*
   * | Weeder2            | No           | -- same --                                                                                                    |
   * | Desugar            | No           | -- same --                                                                                                    |
   * | Namer              | No           | -- same --                                                                                                    |
-  * | Resolver           | No           | Per-def work is nested inside trait/instance walks rather than a clean `parMapValues` over `root.defs`.       |
+  * | Resolver           | Yes          | `resolveDef` chokepoint covers module, instance, and trait-law defs; sigs (no `DefnSym`) excluded.               |
   * | Deriver            | No           | Generates new instances from enum derivations; iterates over enums, not existing defs.                        |
   * | Instances          | No           | Per-instance-def work interleaves with trait conformance checks; instrumentable but not a one-line wrap.      |
   * | Kinder             | Yes          | `visitDefSpecs` + `visitDefs`.                                                                                |

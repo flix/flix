@@ -38,7 +38,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   */
 object PredDeps {
 
-  def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[CompilationMessage]) = flix.phaseNew("PredDeps") {
+  def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[CompilationMessage]) = flix.phase("PredDeps") {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     implicit val sctx: SharedContext = SharedContext.mk()
 
@@ -56,7 +56,6 @@ object PredDeps {
   }
 
   private def visitTrait(trt: Trait)(implicit sctx: SharedContext): Trait = {
-    trt.laws.foreach(visitDef)
     trt.sigs.foreach(visitSig)
     trt
   }

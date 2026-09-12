@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.language.CompilationMessageKind.*
 
 sealed trait CompilationMessageKind {
   override def toString: String = this match {
+    case DefaultHandlerError => "Default Handler Error"
     case DerivationError => "Derivation Error"
     case EntryPointError => "Entry Point Error"
     case InstanceError => "Instance Error"
@@ -50,7 +51,8 @@ sealed trait CompilationMessageKind {
     case ResolutionError => Some(KindError)
     case KindError => Some(DerivationError)
     case DerivationError => Some(TypeError)
-    case TypeError => Some(EntryPointError)
+    case TypeError => Some(DefaultHandlerError)
+    case DefaultHandlerError => Some(EntryPointError)
     case EntryPointError => Some(InstanceError)
     case InstanceError => Some(StratificationError)
     case StratificationError => Some(PatternMatchError)
@@ -63,6 +65,8 @@ sealed trait CompilationMessageKind {
 }
 
 object CompilationMessageKind {
+
+  case object DefaultHandlerError extends CompilationMessageKind
 
   case object DerivationError extends CompilationMessageKind
 

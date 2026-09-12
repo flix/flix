@@ -1,5 +1,6 @@
 /api/
 /out/
+build/
 /local.properties
 /*.iml
 /flix.jar

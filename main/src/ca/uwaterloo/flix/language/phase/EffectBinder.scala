@@ -126,12 +126,12 @@ object EffectBinder {
   }
 
   private def visitJvmMethod(method: LiftedAst.JvmMethod)(implicit flix: Flix): ReducedAst.JvmMethod = method match {
-    case LiftedAst.JvmMethod(ann, ident, fparams0, clo0, retTpe, purity, loc) =>
+    case LiftedAst.JvmMethod(ann, ident, fparams0, clo0, retTpe, purity, javaSig, loc) =>
       // JvmMethods are generated as their own functions so let-binding do not
       // span across
       val fparams = fparams0.map(visitParam)
       val clo = visitExpr(clo0)
-      ReducedAst.JvmMethod(ann, ident, fparams, clo, retTpe, purity, loc)
+      ReducedAst.JvmMethod(ann, ident, fparams, clo, retTpe, purity, javaSig, loc)
   }
 
   /**
@@ -329,10 +329,10 @@ object EffectBinder {
       }
       ReducedAst.Expr.RunWith(e, effUse, rs, ExpPosition.NonTail, tpe, purity, loc)
 
-    case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
+    case LiftedAst.Expr.NewObject(sym, clazz, tpe, purity, constructors, methods, loc) =>
       val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
-      ReducedAst.Expr.NewObject(name, clazz, tpe, purity, cs, ms, loc)
+      ReducedAst.Expr.NewObject(sym, clazz, tpe, purity, cs, ms, loc)
   }
 
   /**

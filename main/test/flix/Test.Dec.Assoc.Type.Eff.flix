@@ -34,8 +34,7 @@ mod Test.Dec.Assoc.Type.Eff {
     instance Runner[Vector[a]] with Runner[a] {
         pub type E = Runner.E[a]
         pub def exec(x: Vector[a]): Unit \ Runner.E[a] =
-            let f: a -> Unit \ Runner.E[a] = Runner.exec;
-            foreach(a <- x) f(a)
+            foreach(a <- x) Runner.exec(a)
     }
 
     ////////////////////////////////////////////////////////

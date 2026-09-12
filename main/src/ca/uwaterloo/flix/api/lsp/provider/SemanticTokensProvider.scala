@@ -156,7 +156,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given trait `traitDecl`.
     */
   private def visitTrait(traitDecl: TypedAst.Trait): Iterator[SemanticToken] = traitDecl match {
-    case TypedAst.Trait(_, ann, _, sym, tparam, superTraits, assocs, signatures, laws, _) =>
+    case TypedAst.Trait(_, ann, _, sym, tparam, superTraits, assocs, signatures, _) =>
       val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
       IteratorOps.all(
         visitAnnotations(ann),
@@ -165,7 +165,6 @@ object SemanticTokensProvider {
         assocs.flatMap(visitAssocTypeSig),
         visitTypeParam(tparam),
         signatures.flatMap(visitSig),
-        laws.flatMap(visitDef),
       )
   }
 
@@ -868,7 +867,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Enum(_, _) => true
     case TypeConstructor.Struct(_, _) => true
     case TypeConstructor.RestrictableEnum(_, _) => true
-    case TypeConstructor.Native(_) => true
+    case TypeConstructor.Native(_, _) => true
     case TypeConstructor.Array => true
     case TypeConstructor.Vector => true
     case TypeConstructor.Pure => true
@@ -907,7 +906,7 @@ object SemanticTokensProvider {
     case TypeConstructor.CaseSet(_, _) => false
     case TypeConstructor.JvmField(_) => false
     case TypeConstructor.JvmConstructor(_) => false
-    case TypeConstructor.JvmMethod(_) => false
+    case TypeConstructor.JvmMethod(_, _) => false
     case TypeConstructor.Error(_, _) => false
 
     // backend constructors

@@ -472,6 +472,28 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError](result)
   }
 
+  // ---------------------------------------------------------------------------
+  // --- KindError.IllegalPolymorphicEffectConstructor ---
+  // ---------------------------------------------------------------------------
+
+  test("KindError.IllegalPolymorphicEffectConstructor.Def.01") {
+    val input =
+      """
+        |def f(): Unit \ ec[Int32] = ???
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectOneError[KindError.IllegalPolymorphicEffectConstructor](result)
+  }
+
+  test("KindError.IllegalPolymorphicEffectConstructor.TypeAlias.01") {
+    val input =
+      """
+        |type alias E[ec: Type -> Eff, a: Type] = ec[a]
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectOneError[KindError.IllegalPolymorphicEffectConstructor](result)
+  }
+
   test("IllegalTypeApplication.01") {
     val input =
       """
@@ -647,6 +669,108 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, DefaultOptions)
     expectError[KindError.MismatchedKinds](result)
+  }
+
+  // ---------------------------------------------------------------------------
+  // --- KindError.MismatchedArityOfEffect ---
+  // ---------------------------------------------------------------------------
+
+  test("KindError.MismatchedArityOfEffect.Def.Effect.01") {
+    val input =
+      """
+        |eff E
+        |
+        |def foo(): Unit \ E[String] = ()
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.MismatchedArityOfEffect](result)
+  }
+
+  test("KindError.MismatchedArityOfEffect.Def.Effect.02") {
+    val input =
+      """
+        |eff E
+        |
+        |def foo(): Unit \ E[String, Int32] = ()
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.MismatchedArityOfEffect](result)
+  }
+
+  test("KindError.MismatchedArityOfEffect.Def.Param.01") {
+    val input =
+      """
+        |eff E
+        |
+        |def foo(x: E[String]): Unit = ()
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.MismatchedArityOfEffect](result)
+  }
+
+  test("KindError.MismatchedArityOfEffect.Def.Union.01") {
+    val input =
+      """
+        |eff E[a] {
+        |    def op(x: a): Unit
+        |}
+        |
+        |def foo(): Unit \ E + IO = ()
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.MismatchedArityOfEffect](result)
+  }
+
+  test("KindError.MismatchedArityOfEffect.Def.Union.02") {
+    val input =
+      """
+        |eff E[a] {
+        |    def op(x: a): Unit
+        |}
+        |
+        |def foo(): Unit \ IO + E = ()
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.MismatchedArityOfEffect](result)
+  }
+
+  test("KindError.MismatchedArityOfEffect.Def.Difference.01") {
+    val input =
+      """
+        |eff E[a] {
+        |    def op(x: a): Unit
+        |}
+        |
+        |def foo(): Unit \ IO - E = ()
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.MismatchedArityOfEffect](result)
+  }
+
+  test("KindError.MismatchedArityOfEffect.Def.Difference.02") {
+    val input =
+      """
+        |eff E[a] {
+        |    def op(x: a): Unit
+        |}
+        |
+        |def foo(f: Unit -> Unit \ ef): Unit \ ef - E = f()
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.MismatchedArityOfEffect](result)
+  }
+
+  test("KindError.MismatchedArityOfEffect.TypeAlias.Difference.01") {
+    val input =
+      """
+        |eff E[a] {
+        |    def op(x: a): Unit
+        |}
+        |
+        |type alias A[ef: Eff] = ef - E
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.MismatchedArityOfEffect](result)
   }
 
   // ---------------------------------------------------------------------------
@@ -966,17 +1090,6 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.UnexpectedKind.Def.LocalDef.Type.02") {
-    val input =
-      """
-        |def g(): Int32 =
-        |    def f(x: {} -> Int32 \ Int32): Int32 = ???;
-        |    f(_ -> 1)
-        |""".stripMargin
-    val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
-  }
-
   test("KindError.UnexpectedKind.Def.LocalDef.Return.01") {
     val input =
       """
@@ -1005,15 +1118,6 @@ class TestKinder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(x: Int32[Int32]): Int32 = ???
-        |""".stripMargin
-    val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
-  }
-
-  test("KindError.UnexpectedKind.Def.Type.02") {
-    val input =
-      """
-        |def f(x: {} -> Int32 \ Int32): Int32 = ???
         |""".stripMargin
     val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -1136,28 +1240,8 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.UnexpectedKind.TypeAlias.01") {
-    val input =
-      """
-        |type alias T = {} -> Int32
-        |""".stripMargin
-    val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
-  }
-
   test("KindError.UnexpectedKind.TypeAlias.02") {
     val input = "type alias Z[r] = #{ A(Int32) | r }"
-    val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
-  }
-
-  test("KindError.UnexpectedKind.Trait.Law.01") {
-    val input =
-      """
-        |trait C[a: Type -> Type] {
-        |  law l: forall (x: a) ???
-        |}
-        |""".stripMargin
     val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
@@ -1524,6 +1608,17 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedEffect](result)
   }
 
+  test("KindError.UnexpectedEffect.Def.LocalDef.Param.02") {
+    val input =
+      """
+        |def g(): Int32 =
+        |    def f(x: {} -> Int32 \ Int32): Int32 = ???;
+        |    f(_ -> 1)
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.UnexpectedEffect](result)
+  }
+
   test("KindError.UnexpectedEffect.Def.LocalDef.Return.01") {
     val input =
       """
@@ -1540,6 +1635,15 @@ class TestKinder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(x: {}): Int32 = ???
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.UnexpectedEffect](result)
+  }
+
+  test("KindError.UnexpectedEffect.Def.Param.02") {
+    val input =
+      """
+        |def f(x: {} -> Int32 \ Int32): Int32 = ???
         |""".stripMargin
     val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedEffect](result)
@@ -1571,6 +1675,15 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |struct S [r] {
         |    c: { }
         |}
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.UnexpectedEffect](result)
+  }
+
+  test("KindError.UnexpectedEffect.TypeAlias.01") {
+    val input =
+      """
+        |type alias T = {} -> Int32
         |""".stripMargin
     val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedEffect](result)
@@ -1647,6 +1760,39 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, DefaultOptions)
     expectError[KindError.UninferrableKind](result)
+  }
+
+  test("KindError.RecordRowExtensionAlias.01") {
+    // The alias has Type kind (a record), but a record-row tail requires RecordRow kind.
+    val input =
+      """
+        |type alias R = { y = Int32 }
+        |def f(a: {x = Int32 | R}): Int32 = a#x
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError](result)
+  }
+
+  test("KindError.RecordRowExtensionAlias.02") {
+    // An alias to an enum has Type kind, which is not a valid record-row tail.
+    val input =
+      """
+        |enum Color { case Red }
+        |type alias R = Color
+        |def f(a: {x = Int32 | R}): Int32 = a#x
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError](result)
+  }
+
+  test("KindError.RecordRowExtensionAlias.03") {
+    // A bare (non-row) type directly in the tail is not a valid record-row tail.
+    val input =
+      """
+        |def f(a: {x = Int32 | Int32}): Int32 = a#x
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError](result)
   }
 
 }

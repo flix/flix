@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix, Version}
+import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
@@ -194,12 +195,12 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       // Compile the program.
       flix.addVirtualPath(CompilerConstants.VirtualPlaygroundFile, input)(SecurityContext.Plain)
 
-      flix.compile().toResult match {
+      flix.compile() match {
         case Result.Ok(compilationResult) =>
           // Compilation was successful.
 
-          // Determine if the main function is present.
-          compilationResult.getMain match {
+          // Load the program and determine if the main function is present.
+          JvmLoader.load(compilationResult).main match {
             case None =>
               // The main function was not present. Just report successful compilation.
               Ok(("Compilation was successful. No main function to run.", compilationResult.totalTime, 0L))
@@ -213,10 +214,15 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
 
         case Result.Err(errors) =>
           // Compilation failed. Format and return all the errors.
-          Err(CompilationMessage.formatAll(errors.toList)(flix.getFormatter, None))
+          Err(CompilationMessage.formatAll(errors)(flix.getFormatter, None))
       }
     } catch {
-      case ex: RuntimeException => Err(ex.getMessage)
+      // Catch `Throwable` (not just `RuntimeException`): a successfully compiled
+      // program can crash at runtime by throwing a `FlixError` (e.g. `HoleError`,
+      // `MatchError`, `CastError`), which extends `java.lang.Error`, not
+      // `RuntimeException`. If such an error escaped, no response would be sent
+      // and the client (play.flix.dev) would hang. See issue #11540.
+      case ex: Throwable => Err(Option(ex.getMessage).getOrElse(ex.toString))
     }
   }
 

@@ -23,25 +23,19 @@ sealed trait Modifier
 object Modifier {
 
   /**
-    * The lawful modifier.
-    */
-  case object Lawful extends Modifier
-
-  /**
     * The mutable modifier.
     */
-
   case object Mutable extends Modifier
-
-  /**
-    * The override modifier.
-    */
-  case object Override extends Modifier
 
   /**
     * The public modifier.
     */
   case object Public extends Modifier
+
+  /**
+    * The redefinition modifier.
+    */
+  case object Redef extends Modifier
 
   /**
     * The sealed modifier.

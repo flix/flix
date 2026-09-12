@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.util.collection.Chain
-
 import scala.annotation.{tailrec, unused}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Success, Try}
@@ -65,14 +63,6 @@ sealed trait Result[+T, +E] {
   }
 
   /**
-    * Returns `this` result as a [[Validation]].
-    */
-  final def toValidation: Validation[T, E] = this match {
-    case Result.Ok(t) => Validation.Success(t)
-    case Result.Err(e) => Validation.Failure(Chain(e))
-  }
-
-  /**
     * Returns `this` result as an [[Option]].
     */
   final def toOption: Option[T] = this match {
@@ -98,18 +88,6 @@ object Result {
     * A result that holds an error.
     */
   case class Err[T, E](e: E) extends Result[T, E]
-
-  /**
-    * Applies the given function `f` to value of `res` wrapping it in [[Result.Ok]].
-    */
-  def mapN[T, U, E](res: Result[T, E])(f: T => U): Result[U, E] =
-    res.map(f)
-
-  /**
-    * Applies the given function `f` to values of the results wrapping it in [[Result.Ok]].
-    */
-  def mapN[T1, T2, U, E](res1: Result[T1, E], res2: Result[T2, E])(f: (T1, T2) => U): Result[U, E] =
-    res1.flatMap(r1 => res2.map(r2 => f(r1, r2)))
 
   /**
     * Evaluates the given results from left to right collecting the values into a list.

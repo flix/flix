@@ -11,6 +11,7 @@ mod Test.Exp.ChooseStar.Simple {
     //   P3) Output maintains information on the absence of stable cases
     //
 
+    @CompileTest
     pub def testChooseStar01(): Bool = {
         // P2: check the lower bound by using result in a choose
         let star = choose* Expr.Cst {
@@ -21,6 +22,7 @@ mod Test.Exp.ChooseStar.Simple {
         }
     }
 
+    @CompileTest
     pub def testChooseStar02(): Bool = {
         // P2: check the lower bound by using result in a choose
         let star = choose* Expr.Cst {
@@ -33,6 +35,7 @@ mod Test.Exp.ChooseStar.Simple {
         }
     }
 
+    @CompileTest
     pub def testChooseStar03(): Bool = {
         // P2: check the lower bound by using result in a choose
         let star = choose* Expr.Cst {
@@ -46,6 +49,7 @@ mod Test.Exp.ChooseStar.Simple {
         }
     }
 
+   @CompileTest
    pub def testChooseStar04(): Bool = {
        // P2: check the lower bound by using result in a choose
        let star = choose* Expr.Cst {
@@ -60,6 +64,7 @@ mod Test.Exp.ChooseStar.Simple {
        }
    }
 
+   @CompileTest
    pub def testChooseStar05(): Bool = {
        // P3: Check that not is not present
        let star = choose* Expr.Cst {
@@ -71,6 +76,7 @@ mod Test.Exp.ChooseStar.Simple {
        }
    }
 
+   @CompileTest
    pub def testChooseStar06(): Bool = {
        // P3: Check that not is not present
        let star = choose* Expr.Cst {
@@ -82,6 +88,7 @@ mod Test.Exp.ChooseStar.Simple {
        }
    }
 
+    @CompileTest
     pub def testChooseStar07(): Bool = {
         // P3: Check that Not is not present
         let _f = c -> choose* c {
@@ -92,10 +99,10 @@ mod Test.Exp.ChooseStar.Simple {
             case Expr.Not => Expr.Not
             case Expr.Xor => Expr.And
         };
-//        let _ = if (true) f else g;
         true
     }
 
+    @CompileTest
     pub def testChoose08(): Bool = {
         // P1: Check that choose* upperbounds the input like choose
         let thing = choose* Expr.Cst {
@@ -104,6 +111,7 @@ mod Test.Exp.ChooseStar.Simple {
         choose thing {case Expr.Cst => true}
     }
 
+    @CompileTest
     pub def testChoose09(): Bool = {
         // P1: Check that choose* upperbounds the input like choose
         let thing = choose* Expr.Cst {
@@ -113,6 +121,7 @@ mod Test.Exp.ChooseStar.Simple {
         choose thing {case Expr.Cst => true}
     }
 
+    @CompileTest
     pub def testChoose10(): Bool = {
         // P1: Check that choose* upperbounds the input like choose
         let cstOrVar = if (true) open_variant Expr.Cst else open_variant Expr.Var;
@@ -123,6 +132,7 @@ mod Test.Exp.ChooseStar.Simple {
         choose thing {case Expr.Cst => true}
     }
 
+    @CompileTest
     pub def testChoose11(): Bool = {
         // P1: Check that choose* upperbounds the input like choose
         let cstOrVar = if (true) open_variant Expr.Cst else open_variant Expr.Var;
@@ -137,42 +147,7 @@ mod Test.Exp.ChooseStar.Simple {
         }
     }
 
-//    pub def testChoose12(): Bool = {
-//        // P1: Check that choose* upperbounds the input like choose
-//        let f = x -> choose* x {
-//            case Expr.Cst => Expr.Cst
-//            case Expr.Var => Expr.Xor
-//        };
-//        let g = x -> choose* x {
-//            case Expr.Cst => Expr.Cst
-//            case Expr.Xor => Expr.Var
-//        };
-//        let h = if (true) f else g;
-//        choose h(Expr.Cst) {
-//            case Expr.Cst => true
-//            case Expr.Var => true
-//            case Expr.Xor => true
-//        }
-//    }
-//
-//    pub def testChoose13(): Bool = {
-//        // P1: Check that choose* upperbounds the input like choose
-//        let f = x -> choose* x {
-//            case Expr.Cst => Expr.Cst
-//            case Expr.Var => Expr.Cst
-//            case Expr.Not => Expr.Cst
-//        };
-//        let g = x -> choose* x {
-//            case Expr.Cst => Expr.Cst
-//            case Expr.Xor => Expr.Cst
-//            case Expr.Not => Expr.Cst
-//        };
-//        let h = if (true) f else g;
-//
-//        let cstOrNot = if (true) open_variant Expr.Cst else open_variant Expr.Not;
-//        choose h(cstOrNot) {case Expr.Cst => true}
-//    }
-
+    @CompileTest
     pub def testChoose14(): Bool = {
         // P1: Check that choose* upperbounds the input like choose
         let id = x -> choose* x {

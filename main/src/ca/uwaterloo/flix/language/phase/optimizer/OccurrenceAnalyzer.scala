@@ -146,7 +146,7 @@ object OccurrenceAnalyzer {
         val ctx5 = combineSeq(ctx3, ctx4)
         val occur = ctx5.get(sym)
         val ctx6 = ctx5.removeVar(sym)
-        if ((e1 eq exp1) && (e2 eq exp2) && ListOps.zip(fparams, fps).forall { case (fp1, fp2) => fp1 eq fp2 } && (occur eq occur0)) {
+        if ((e1 eq exp1) && (e2 eq exp2) && fparams.zip(fps).forall { case (fp1, fp2) => fp1 eq fp2 } && (occur eq occur0)) {
           (exp0, ctx6) // Reuse exp0.
         } else {
           (Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), ctx6)
@@ -211,33 +211,6 @@ object OccurrenceAnalyzer {
           (Expr.ExtMatch(e, rs, tpe, eff, loc), ctx3)
         }
 
-      case Expr.VectorLit(exps, tpe, eff, loc) =>
-        val (es, ctxs) = exps.map(visitExp).unzip
-        val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
-        if (ListOps.zip(exps, es).forall { case (e1, e2) => e1 eq e2 }) {
-          (exp0, ctx) // Reuse exp0.
-        } else {
-          (Expr.VectorLit(es, tpe, eff, loc), ctx)
-        }
-
-      case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-        val (e1, ctx1) = visitExp(exp1)
-        val (e2, ctx2) = visitExp(exp2)
-        val ctx3 = combineSeq(ctx1, ctx2)
-        if ((e1 eq exp1) && (e2 eq exp2)) {
-          (exp0, ctx3) // Reuse exp0.
-        } else {
-          (Expr.VectorLoad(e1, e2, tpe, eff, loc), ctx3)
-        }
-
-      case Expr.VectorLength(exp, loc) =>
-        val (e, ctx) = visitExp(exp)
-        if (e eq exp) {
-          (exp0, ctx) // Reuse exp0.
-        } else {
-          (Expr.VectorLength(e, loc), ctx)
-        }
-
       case Expr.Cast(exp, tpe, eff, loc) =>
         val (e, ctx) = visitExp(exp)
         if (e eq exp) {
@@ -268,7 +241,7 @@ object OccurrenceAnalyzer {
           (Expr.RunWith(e, effUse, rs, tpe, eff, loc), ctx3)
         }
 
-      case Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
+      case Expr.NewObject(sym, clazz, tpe, eff, constructors, methods, loc) =>
         val (cs, cCtxs) = constructors.map(visitJvmConstructor).unzip
         val (ms, mCtxs) = methods.map(visitJvmMethod).unzip
         val ctx = (cCtxs ++ mCtxs).foldLeft(ExprContext.Empty)(combineBranch)
@@ -276,7 +249,7 @@ object OccurrenceAnalyzer {
             ListOps.zip(methods, ms).forall { case (m1, m2) => m1 eq m2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (Expr.NewObject(name, clazz, tpe, eff, cs, ms, loc), ctx)
+          (Expr.NewObject(sym, clazz, tpe, eff, cs, ms, loc), ctx)
         }
     }
   }
@@ -323,7 +296,7 @@ object OccurrenceAnalyzer {
       val (e, ctx1) = visitExp(exp)
       val fps = fparams.map(visitFormalParam(_, ctx1))
       val ctx2 = ctx1.removeVars(fps.map(_.sym))
-      if ((e eq exp) && ListOps.zip(fparams, fps).forall { case (fp1, fp2) => fp1 eq fp2 }) {
+      if ((e eq exp) && fparams.zip(fps).forall { case (fp1, fp2) => fp1 eq fp2 }) {
         (rule, ctx2) // Reuse rule.
       } else {
         (MonoAst.HandlerRule(op, fps, e), ctx2)
@@ -341,14 +314,14 @@ object OccurrenceAnalyzer {
   }
 
   private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit sym0: Symbol.DefnSym): (MonoAst.JvmMethod, ExprContext) = method match {
-    case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, eff, loc) =>
+    case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, eff, javaSig, loc) =>
       val (e, ctx1) = visitExp(exp)
       val fps = fparams.map(visitFormalParam(_, ctx1))
       val ctx2 = ctx1.removeVars(fps.map(_.sym))
-      if ((e eq exp) && ListOps.zip(fparams, fps).forall { case (fp1, fp2) => fp1 eq fp2 }) {
+      if ((e eq exp) && fparams.zip(fps).forall { case (fp1, fp2) => fp1 eq fp2 }) {
         (method, ctx2) // Reuse method.
       } else {
-        (MonoAst.JvmMethod(ann, ident, fparams, e, retTpe, eff, loc), ctx2)
+        (MonoAst.JvmMethod(ann, ident, fparams, e, retTpe, eff, javaSig, loc), ctx2)
       }
   }
 

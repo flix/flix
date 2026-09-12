@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.ExpPosition
+import ca.uwaterloo.flix.language.ast.shared.{ExpPosition, JMethod}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, ErasedAst, JvmAst, Purity, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -126,7 +126,7 @@ object Reducer {
 
       case ErasedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
         op match {
-          case AtomicOp.InvokeSuperMethod(method, className) => ctx.addSuperMethod(className, method)
+          case AtomicOp.InvokeSuperMethod(sym, method) => ctx.addSuperMethod(sym, method)
           case _ => ()
         }
         val es = exps.map(visitExpr)
@@ -214,20 +214,20 @@ object Reducer {
         }
         JvmAst.Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
 
-      case ErasedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
+      case ErasedAst.Expr.NewObject(sym, clazz, tpe, purity, constructors, methods, loc) =>
         val cs = constructors.map {
           case ErasedAst.JvmConstructor(clo, retTpe, cnsPurity, cnsLoc) =>
             val c = visitExpr(clo)
             JvmAst.JvmConstructor(c, retTpe, cnsPurity, cnsLoc)
         }
         val specs = methods.map {
-          case ErasedAst.JvmMethod(ann, ident, fparams, clo, retTpe, methPurity, methLoc) =>
+          case ErasedAst.JvmMethod(ann, ident, fparams, clo, retTpe, methPurity, javaSig, methLoc) =>
             val c = visitExpr(clo)
-            JvmAst.JvmMethod(ann, ident, fparams.map(visitFormalParam), c, retTpe, methPurity, methLoc)
+            JvmAst.JvmMethod(ann, ident, fparams.map(visitFormalParam), c, retTpe, methPurity, javaSig, methLoc)
         }
-        ctx.addAnonClass(JvmAst.AnonClass(name, clazz, tpe, cs, specs, Nil, loc))
+        ctx.addAnonClass(JvmAst.AnonClass(sym, clazz, tpe, cs, specs, Nil, loc))
 
-        JvmAst.Expr.NewObject(name, clazz, tpe, purity, cs, specs, loc)
+        JvmAst.Expr.NewObject(sym, clazz, tpe, purity, cs, specs, loc)
 
     }
   }
@@ -317,20 +317,34 @@ object Reducer {
     /** Collects all types encountered in def expressions (used as a set via `ConcurrentHashMap`). */
     private val defTypes: ConcurrentHashMap[SimpleType, Unit] = new ConcurrentHashMap()
 
-    /** Maps anonymous class names to the super methods they invoke, so the backend can generate `invokespecial` bridge methods. */
-    private val superMethods: ConcurrentHashMap[(String, java.lang.reflect.Method), Unit] = new ConcurrentHashMap()
+    /** Maps anonymous classes to the super methods they invoke, so the backend can generate `invokespecial` bridge methods. */
+    private val superMethods: ConcurrentHashMap[(Symbol.AnonClassSym, JMethod), Unit] = new ConcurrentHashMap()
 
     def addAnonClass(clazz: JvmAst.AnonClass): Unit =
       anonClasses.add(clazz)
 
-    def getAnonClasses: List[JvmAst.AnonClass] =
-      anonClasses.asScala.toList.map(ac => ac.copy(superMethods = getSuperMethods(ac.name)))
+    def getAnonClasses: List[JvmAst.AnonClass] = {
+      // Group the super methods by the anonymous class that invokes them. We do this
+      // once, up front, so that attaching them below costs a single lookup per class.
+      val methodsOf = mutable.Map.empty[Symbol.AnonClassSym, mutable.ArrayBuffer[JMethod]]
+      for ((sym, method) <- superMethods.keySet.asScala) {
+        val methods = methodsOf.getOrElseUpdate(sym, mutable.ArrayBuffer.empty)
+        methods += method
+      }
 
-    def addSuperMethod(className: String, method: java.lang.reflect.Method): Unit =
-      superMethods.putIfAbsent((className, method), ())
+      // Attach the super methods of each anonymous class. A class that invokes none
+      // already has the empty list it was constructed with.
+      anonClasses.asScala.toList.map {
+        anonClass =>
+          methodsOf.get(anonClass.sym) match {
+            case None => anonClass
+            case Some(methods) => anonClass.copy(superMethods = methods.toList)
+          }
+      }
+    }
 
-    def getSuperMethods(className: String): List[java.lang.reflect.Method] =
-      superMethods.keySet.asScala.collect { case (cn, m) if cn == className => m }.toList
+    def addSuperMethod(sym: Symbol.AnonClassSym, method: JMethod): Unit =
+      superMethods.putIfAbsent((sym, method), ())
 
     def addDefType(tpe: SimpleType): Unit =
       defTypes.putIfAbsent(tpe, ())

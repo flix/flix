@@ -297,12 +297,13 @@ object EffectProvenance {
     var v: Set[Vertex] = Set.empty
     constraints.foreach {
       case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-        val inf = prov match {
+        val inf = TypeConstraint.Provenance.unwrap(prov) match {
           case TypeConstraint.Provenance.ExpectEffect(effs, _, _) =>
             val l = if (effs.loc.isReal) effs.loc else prov.loc
             Some((SinkNode, IntermediateNode, l))
           case TypeConstraint.Provenance.Source(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
           case TypeConstraint.Provenance.Match(_, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
+          case TypeConstraint.Provenance.PolyEffEq(_, _, _, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
           case TypeConstraint.Provenance.ExpectType(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
           case TypeConstraint.Provenance.ExpectArgument(arg, _, _, _, _) => Some((ArgNode, IntermediateNode, arg.loc))
           case _ => None

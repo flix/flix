@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.VarText
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
@@ -29,6 +30,62 @@ sealed trait KindError extends CompilationMessage {
 }
 
 object KindError {
+
+  /**
+    * An error raised when a type variable is applied as an effect constructor.
+    *
+    * @param sym the type variable symbol.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalPolymorphicEffectConstructor(sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3442
+
+    private val name = sym.text match {
+      case VarText.Absent => "type variable"
+      case VarText.SourceText(s) => s
+    }
+
+    def summary: String = s"Illegal polymorphic effect constructor '$name'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Illegal polymorphic effect constructor '${red(name)}'.
+         |
+         |${highlight(loc, "effect constructor must be concrete", fmt)}
+         |
+         |${underline("Explanation:")} An effect constructor must refer to a declared effect.
+         |A type variable such as '$name' cannot be applied to produce an effect, even
+         |when it has a higher kind such as 'Type -> Eff'.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate wrong number of type arguments for an effect.
+    *
+    * @param sym           the effect symbol.
+    * @param expectedArity the expected number of type arguments.
+    * @param actualArity   the actual number of type arguments.
+    * @param loc           the location where the error occurred.
+    */
+  case class MismatchedArityOfEffect(sym: Symbol.EffSym, expectedArity: Int, actualArity: Int, loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3417
+
+    private val expected = Grammar.n_things(expectedArity, "type argument")
+    private val actual = Grammar.n_things(actualArity, "type argument")
+    private val wasOrWere = if (actualArity == 1) "was" else "were"
+
+    def summary: String =
+      s"Mismatched arity: effect '${sym.name}' expects $expected but $actual $wasOrWere given."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched arity: effect '${cyan(sym.name)}' expects $expected but $actual $wasOrWere given.
+         |
+         |${highlight(loc, "wrong number of type arguments", fmt)}
+         |""".stripMargin
+    }
+  }
 
   /**
     * An error raised to indicate wrong number of type arguments for an enum.

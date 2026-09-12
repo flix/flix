@@ -306,9 +306,17 @@ header > .spacer {
     width: 100%;
 }
 
-header .icon svg {
-    /* Get rid of weird padding on the icon */
+.icon {
+    /* The artwork of each icon is appended to this stylesheet by HtmlDocumentor, as a `--icon`
+       mask. Masking, rather than embedding the SVG as an image, lets the icon take the `color` of
+       its parent. */
     display: block;
+    flex: none;
+    width: 20px;
+    height: 20px;
+    background-color: currentColor;
+    -webkit-mask: var(--icon) center / contain no-repeat;
+    mask: var(--icon) center / contain no-repeat;
 }
 
 header > .toggle {
@@ -556,12 +564,16 @@ main h2 {
 
 .actions > .copy-link {
     text-decoration: none;
+    box-sizing: border-box;
     height: 1.4rem;
+    min-width: 1.4rem;
     padding: 0.2em;
-}
-.actions > .copy-link svg {
-    width: 1rem;
-    height: 1rem;
+    /* Center the section sign within the button. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    line-height: 1;
 }
 
 .copy-link-msg {

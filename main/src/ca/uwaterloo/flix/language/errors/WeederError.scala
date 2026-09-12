@@ -132,6 +132,32 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that the type parameter `name` was declared multiple times.
+    *
+    * @param name the name of the type parameter.
+    * @param loc1 the location of the first type parameter.
+    * @param loc2 the location of the second type parameter.
+    */
+  case class DuplicateTypeParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E8577
+
+    def summary: String = s"Duplicate type parameter: '$name'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Duplicate type parameter '${red(name)}'.
+         |
+         |${src(loc1, "first declaration")}
+         |
+         |${src(loc2, "duplicate")}
+         |""".stripMargin
+    }
+
+    def loc: SourceLocation = loc1
+
+  }
+
+  /**
     * An error raised to indicate that a loop does not contain any fragments.
     *
     * @param loc the location of the for-loop with no fragments.
@@ -277,20 +303,20 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that type parameters are present on an effect or operation.
+    * An error raised to indicate that type parameters are present on an effect operation.
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalEffectTypeParams(loc: SourceLocation) extends WeederError {
+  case class IllegalOperationTypeParams(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E9245
 
-    def summary: String = "Unexpected effect type parameters."
+    def summary: String = "Unexpected effect operation type parameters."
 
     def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
-      s""">> Unexpected effect type parameters.
+      s""">> Unexpected effect operation type parameters.
          |
-         |${src(loc, "type parameters on effects are not yet supported")}
+         |${src(loc, "effect operations cannot declare type parameters")}
          |""".stripMargin
     }
   }
@@ -1017,9 +1043,9 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that an argument list is missing a kind.
+    * An error raised to indicate that a constructor invocation is missing its argument list.
     *
-    * @param loc the location of the argument list.
+    * @param loc the location of the constructor invocation.
     */
   case class MissingArgumentList(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E2781

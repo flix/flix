@@ -64,12 +64,16 @@ object CodeHinter {
     * @return A collection of code quality hints
     */
   private def visitDefSymUse(symUse: SymUse.DefSymUse)(implicit root: Root): List[CodeHint] = {
-    val defn = root.defs(symUse.sym)
-    val ann = defn.spec.ann
-    checkDeprecated(ann, symUse.loc) ++
-      checkExperimental(ann, symUse.loc) ++
-      checkLazy(ann, symUse.loc) ++
-      checkParallel(ann, symUse.loc)
+    // The root may have non-critical errors, so the symbol may no longer be present.
+    root.defs.get(symUse.sym) match {
+      case None => Nil
+      case Some(defn) =>
+        val ann = defn.spec.ann
+        checkDeprecated(ann, symUse.loc) ++
+          checkExperimental(ann, symUse.loc) ++
+          checkLazy(ann, symUse.loc) ++
+          checkParallel(ann, symUse.loc)
+    }
   }
 
   /**
@@ -81,9 +85,13 @@ object CodeHinter {
     * @return A collection of code hints.
     */
   private def visitEnumSymUse(sym: Symbol.EnumSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
-    val enm = root.enums(sym)
-    val ann = enm.ann
-    checkDeprecated(ann, loc) ++ checkExperimental(ann, loc)
+    // The root may have non-critical errors, so the symbol may no longer be present.
+    root.enums.get(sym) match {
+      case None => Nil
+      case Some(enm) =>
+        val ann = enm.ann
+        checkDeprecated(ann, loc) ++ checkExperimental(ann, loc)
+    }
   }
 
   /**
@@ -94,9 +102,13 @@ object CodeHinter {
     * @return A collection of code quality hints.
     */
   private def visitTraitSymUse(symUse: SymUse.TraitSymUse)(implicit root: Root): List[CodeHint] = {
-    val trt = root.traits(symUse.sym)
-    val ann = trt.ann
-    checkDeprecated(ann, symUse.loc) ++ checkExperimental(ann, symUse.loc)
+    // The root may have non-critical errors, so the symbol may no longer be present.
+    root.traits.get(symUse.sym) match {
+      case None => Nil
+      case Some(trt) =>
+        val ann = trt.ann
+        checkDeprecated(ann, symUse.loc) ++ checkExperimental(ann, symUse.loc)
+    }
   }
 
   /**
@@ -201,8 +213,8 @@ object CodeHinter {
     * and uses lazy evaluation when given a pure function argument.
     */
   private def lazyWhenPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
-    val defn = root.defs(sym)
-    defn.spec.ann.isLazyWhenPure
+    // The root may have non-critical errors, so the symbol may no longer be present.
+    root.defs.get(sym).exists(_.spec.ann.isLazyWhenPure)
   }
 
   /**
@@ -210,8 +222,8 @@ object CodeHinter {
     * and uses parallel evaluation when given a pure function argument.
     */
   private def parallelWhenPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
-    val defn = root.defs(sym)
-    defn.spec.ann.isParallelWhenPure
+    // The root may have non-critical errors, so the symbol may no longer be present.
+    root.defs.get(sym).exists(_.spec.ann.isParallelWhenPure)
   }
 
   /**

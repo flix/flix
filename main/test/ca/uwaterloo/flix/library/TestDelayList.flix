@@ -226,51 +226,104 @@ mod TestDelayList {
 
     @Test
     def tail01(): Unit \ Assert =
-        assertEq(expected = ENil, DelayList.tail((ENil: DelayList[Unit])))
+        assertEq(expected = None, DelayList.tail((ENil: DelayList[Unit])))
 
     @Test
     def tail02(): Unit \ Assert =
-        assertEq(expected = ENil, DelayList.tail((LList(lazy ENil): DelayList[Unit])))
+        assertEq(expected = None, DelayList.tail((LList(lazy ENil): DelayList[Unit])))
 
     @Test
     def tail03(): Unit \ Assert =
-        assertEq(expected = ENil, DelayList.range(0, 1) |> DelayList.tail)
+        assertEq(expected = Some(ENil), DelayList.range(0, 1) |> DelayList.tail)
 
     @Test
     def tail04(): Unit \ Assert =
-    	assertEq(expected = ENil, LCons(1, lazy ENil) |> DelayList.tail)
+    	assertEq(expected = Some(ENil), LCons(1, lazy ENil) |> DelayList.tail)
 
     @Test
     def tail05(): Unit \ Assert =
-    	assertEq(expected = ENil, LList(lazy ECons(1, LList(lazy ENil))) |> DelayList.tail)
+    	assertEq(expected = Some(ENil), LList(lazy ECons(1, LList(lazy ENil))) |> DelayList.tail)
 
     @Test
     def tail06(): Unit \ Assert =
-    	assertEq(expected = ENil, ECons(1, LList(lazy ENil)) |> DelayList.tail)
+    	assertEq(expected = Some(ENil), ECons(1, LList(lazy ENil)) |> DelayList.tail)
 
     @Test
     def tail07(): Unit \ Assert =
-    	assertEq(expected = ENil, LCons(1, lazy LList(lazy ENil)) |> DelayList.tail)
+    	assertEq(expected = Some(ENil), LCons(1, lazy LList(lazy ENil)) |> DelayList.tail)
 
     @Test
     def tail08(): Unit \ Assert =
-    	assertEq(expected = DelayList.range(2, 4), LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil)))) |> DelayList.tail)
+    	assertEq(expected = Some(DelayList.range(2, 4)), LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil)))) |> DelayList.tail)
 
     @Test
     def tail09(): Unit \ Assert =
-    	assertEq(expected = DelayList.range(2, 4), LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil)))) |> DelayList.tail)
+    	assertEq(expected = Some(DelayList.range(2, 4)), LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil)))) |> DelayList.tail)
 
     @Test
     def tail10(): Unit \ Assert =
-    	assertEq(expected = DelayList.range(2, 4), LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil))))) |> DelayList.tail)
+    	assertEq(expected = Some(DelayList.range(2, 4)), LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil))))) |> DelayList.tail)
 
     @Test
     def tail11(): Unit \ Assert =
-    	assertEq(expected = DelayList.range(2, 4), LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))) |> DelayList.tail)
+    	assertEq(expected = Some(DelayList.range(2, 4)), LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))) |> DelayList.tail)
 
     @Test
     def tail12(): Unit \ Assert =
-    	assertEq(expected = DelayList.range(1, 1000), DelayList.range(0, 1000) |> DelayList.tail)
+    	assertEq(expected = Some(DelayList.range(1, 1000)), DelayList.range(0, 1000) |> DelayList.tail)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // init                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def init01(): Unit \ Assert =
+        assertEq(expected = None, DelayList.init((ENil: DelayList[Unit])))
+
+    @Test
+    def init02(): Unit \ Assert =
+        assertEq(expected = None, DelayList.init((LList(lazy ENil): DelayList[Unit])))
+
+    @Test
+    def init03(): Unit \ Assert =
+        assertEq(expected = Some(ENil), DelayList.range(0, 1) |> DelayList.init)
+
+    @Test
+    def init04(): Unit \ Assert =
+    	assertEq(expected = Some(ENil), LCons(1, lazy ENil) |> DelayList.init)
+
+    @Test
+    def init05(): Unit \ Assert =
+    	assertEq(expected = Some(ENil), LList(lazy ECons(1, LList(lazy ENil))) |> DelayList.init)
+
+    @Test
+    def init06(): Unit \ Assert =
+    	assertEq(expected = Some(ENil), ECons(1, LList(lazy ENil)) |> DelayList.init)
+
+    @Test
+    def init07(): Unit \ Assert =
+    	assertEq(expected = Some(ENil), LCons(1, lazy LList(lazy ENil)) |> DelayList.init)
+
+    @Test
+    def init08(): Unit \ Assert =
+    	assertEq(expected = Some(DelayList.range(1, 3)), LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil)))) |> DelayList.init)
+
+    @Test
+    def init09(): Unit \ Assert =
+    	assertEq(expected = Some(DelayList.range(1, 3)), LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil)))) |> DelayList.init)
+
+    @Test
+    def init10(): Unit \ Assert =
+    	assertEq(expected = Some(DelayList.range(1, 3)), LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil))))) |> DelayList.init)
+
+    @Test
+    def init11(): Unit \ Assert =
+    	assertEq(expected = Some(DelayList.range(1, 3)), LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))) |> DelayList.init)
+
+    @Test
+    def init12(): Unit \ Assert =
+    	assertEq(expected = Some(DelayList.range(0, 999)), DelayList.range(0, 1000) |> DelayList.init)
 
 
     /////////////////////////////////////////////////////////////////////////////

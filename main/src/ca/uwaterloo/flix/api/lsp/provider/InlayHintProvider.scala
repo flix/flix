@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, Expr, FormalParam
 import ca.uwaterloo.flix.language.ast.shared.{Decreasing, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.util.collection.Nel
 
 import scala.collection.mutable
 
@@ -215,7 +216,7 @@ object InlayHintProvider {
     */
   private def getTailRecursionHints(uri: String)(implicit root: Root): List[InlayHint] = {
     var hints: List[InlayHint] = List.empty
-    val localDefFparams: mutable.Map[Symbol.VarSym, List[FormalParam]] = mutable.Map.empty
+    val localDefFparams: mutable.Map[Symbol.VarSym, Nel[FormalParam]] = mutable.Map.empty
 
     object c extends Consumer {
       override def consumeExpr(expr: Expr): Unit = {
@@ -265,7 +266,7 @@ object InlayHintProvider {
   /**
     * Creates inlay hints for arguments corresponding to structurally decreasing parameters.
     */
-  private def mkDecreasingArgHints(exps: List[Expr], fparams: List[FormalParam]): List[InlayHint] = {
+  private def mkDecreasingArgHints(exps: List[Expr], fparams: Nel[FormalParam]): List[InlayHint] = {
     exps.zip(fparams).collect {
       case (arg, fparam) if fparam.decreasing == Decreasing.StrictlyDecreasing =>
         InlayHint(

@@ -37,6 +37,8 @@ object Styling {
   private val HotnessYellowThresholdMsPerLine: Double = 15.0
   private val ModuleHotnessRedThresholdMsPerLine:    Double = 4.0
   private val ModuleHotnessYellowThresholdMsPerLine: Double = 2.0
+  private val ObservedRedThresholdPct:         Double = 25.0
+  private val ObservedYellowThresholdPct:      Double = 50.0
   private val PctCpuRedThreshold:              Double = 5.0
   private val PctCpuYellowThreshold:           Double = 1.0
   private val PctWallRedThreshold:             Double = 15.0
@@ -101,6 +103,18 @@ object Styling {
     else formatted
   }
 
+  /**
+    * Darker-shade companion to [[stylePctWall]] for the unaccounted (blind)
+    * run of the phase wall-time bar: the *same* heat hue as [[stylePctWall]]
+    * but dimmed (and without the red tier's bold), so the blind run reads as a
+    * darker shade of the observed run's color rather than a different color.
+    */
+  def stylePctWallDim(formatted: String, pct: Double): String = {
+    if (pct >= PctWallRedThreshold) dim(red(formatted))
+    else if (pct >= PctWallYellowThreshold) dim(yellow(formatted))
+    else dim(formatted)
+  }
+
   /** Colors the active/parallelism field by occupancy: full=green bold, ≥50%=green, idle=gray, else yellow. */
   def styleThreads(active: Int, par: Int): String = {
     val s = f"$active%2d/$par%-2d"
@@ -116,5 +130,17 @@ object Styling {
     if (ratio >= HeapRedThresholdRatio) bold(red(formatted))
     else if (ratio >= HeapYellowThresholdRatio) yellow(formatted)
     else green(formatted)
+  }
+
+  /**
+    * Colors the dashboard `observed` percentage. Inverted from the other tiers
+    * because *high* coverage is the good outcome: a healthy figure stays the
+    * default dim/gray (no warning), dropping to yellow below the yellow cutoff
+    * and red below the red cutoff.
+    */
+  def styleObserved(formatted: String, pct: Double): String = {
+    if (pct < ObservedRedThresholdPct) red(formatted)
+    else if (pct < ObservedYellowThresholdPct) yellow(formatted)
+    else dim(formatted)
   }
 }

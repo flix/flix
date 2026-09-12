@@ -36,7 +36,7 @@ object Dependencies {
     *   - SymUse
     *   - Instance
     */
-  def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, Unit) = flix.phaseNew("Dependencies") {
+  def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, Unit) = flix.phase("Dependencies") {
     implicit val sctx: SharedContext = SharedContext(new ConcurrentHashMap[(Input, Input), Unit]())
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn))))
     val effects = changeSet.updateStaleValues(root.effects, oldRoot.effects)(ParOps.parMapValues(_)(visitEff))
@@ -100,7 +100,6 @@ object Dependencies {
     trt.superTraits.foreach(visitTraitConstraint)
     trt.assocs.foreach(visitAssocTypeSig)
     trt.sigs.foreach(visitSig)
-    trt.laws.foreach(visitDef)
     trt
   }
 

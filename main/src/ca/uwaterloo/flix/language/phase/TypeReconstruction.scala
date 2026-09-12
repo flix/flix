@@ -16,35 +16,35 @@
  */
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.Type.instantiateJavaTypeWithObjectArgs
 import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
+import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Decreasing}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.util.InternalCompilerException
-
-import java.lang.reflect.Executable
 
 object TypeReconstruction {
 
   /**
     * Reconstructs types in the given def.
     */
-  def visitDef(defn: KindedAst.Def, subst: SubstitutionTree): TypedAst.Def = defn match {
+  def visitDef(defn: KindedAst.Def, subst: SubstitutionTree)(implicit flix: Flix): TypedAst.Def = defn match {
     case KindedAst.Def(sym, spec0, exp0, loc) =>
       val spec = visitSpec(spec0)
-      val exp = visitExp(exp0)(subst)
+      val exp = visitExp(exp0)(subst, flix)
       TypedAst.Def(sym, spec, exp, loc)
   }
 
   /**
     * Reconstructs types in the given sig.
     */
-  def visitSig(sig: KindedAst.Sig, subst: SubstitutionTree): TypedAst.Sig = sig match {
+  def visitSig(sig: KindedAst.Sig, subst: SubstitutionTree)(implicit flix: Flix): TypedAst.Sig = sig match {
     case KindedAst.Sig(sym, spec0, exp0, loc) =>
       val spec = visitSpec(spec0)
-      val exp = exp0.map(visitExp(_)(subst))
+      val exp = exp0.map(visitExp(_)(subst, flix))
       TypedAst.Sig(sym, spec, exp, loc)
   }
 
@@ -90,7 +90,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given expression.
     */
-  private def visitExp(exp0: KindedAst.Expr)(implicit subst: SubstitutionTree): TypedAst.Expr = exp0 match {
+  private def visitExp(exp0: KindedAst.Expr)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.Expr = exp0 match {
     case KindedAst.Expr.Var(sym, loc) =>
       TypedAst.Expr.Var(sym, subst(sym.tvar), loc)
 
@@ -199,7 +199,7 @@ object TypeReconstruction {
 
     case KindedAst.Expr.Region(sym, regSym, exp, tvar, evar, loc) =>
       // Use the appropriate branch for the scope.
-      val e = visitExp(exp)(subst.branches.getOrElse(regSym, SubstitutionTree.empty))
+      val e = visitExp(exp)(subst.branches.getOrElse(regSym, SubstitutionTree.empty), flix)
       val tpe = subst(tvar)
       val eff = subst(evar)
       val bnd = TypedAst.Binder(sym, eff)
@@ -395,7 +395,7 @@ object TypeReconstruction {
       val rs = rules map {
         case KindedAst.CatchRule(sym, clazz, body, ruleLoc) =>
           val b = visitExp(body)
-          val bnd = TypedAst.Binder(sym, Type.mkNative(clazz, SourceLocation.Unknown))
+          val bnd = TypedAst.Binder(sym, JavaTypes.flixTypeOf(clazz, ruleLoc))
           TypedAst.CatchRule(bnd, clazz, b, ruleLoc)
       }
       val tpe = rs.head.exp.tpe
@@ -429,7 +429,7 @@ object TypeReconstruction {
     case KindedAst.Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
-      val tpe = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
+      val tpe = JavaTypes.instantiateWithObjectArgs(clazz, loc)
       val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
@@ -442,7 +442,7 @@ object TypeReconstruction {
     case KindedAst.Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
-      val tpe = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
+      val tpe = JavaTypes.instantiateWithObjectArgs(clazz, loc)
       val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
@@ -459,7 +459,7 @@ object TypeReconstruction {
       val methodTpe = subst(jvar)
       val eff = subst(evar)
       methodTpe.typeConstructor match {
-        case Some(TypeConstructor.JvmMethod(method)) =>
+        case Some(TypeConstructor.JvmMethod(method, _)) =>
           val es = getArgumentsWithVarArgs(method, es0, loc)
           TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, loc)
         case _ =>
@@ -472,7 +472,7 @@ object TypeReconstruction {
       val methodTpe = subst(jvar)
       val eff = subst(evar)
       methodTpe.typeConstructor match {
-        case Some(TypeConstructor.JvmMethod(method)) =>
+        case Some(TypeConstructor.JvmMethod(method, _)) =>
           val es = getArgumentsWithVarArgs(method, es0, loc)
           TypedAst.Expr.InvokeSuperMethod(method, es, returnTpe, eff, loc)
         case _ =>
@@ -485,7 +485,7 @@ object TypeReconstruction {
       val returnTpe = subst(tvar)
       val eff = subst(evar)
       methodTpe.typeConstructor match {
-        case Some(TypeConstructor.JvmMethod(method)) =>
+        case Some(TypeConstructor.JvmMethod(method, _)) =>
           val es = getArgumentsWithVarArgs(method, es0, loc)
           TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
         case _ =>
@@ -511,8 +511,8 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e1.eff, e2.eff, Type.IO, loc)
       TypedAst.Expr.PutField(field, e1, e2, tpe, eff, loc)
 
-    case KindedAst.Expr.GetStaticField(field, loc) =>
-      val tpe = instantiateJavaTypeWithObjectArgs(field.getType, loc)
+    case KindedAst.Expr.GetStaticField(field, tvar, loc) =>
+      val tpe = subst(tvar)
       val eff = Type.IO
       TypedAst.Expr.GetStaticField(field, tpe, eff, loc)
 
@@ -522,12 +522,12 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e.eff, Type.IO, loc)
       TypedAst.Expr.PutStaticField(field, e, tpe, eff, loc)
 
-    case KindedAst.Expr.NewObject(name, clazz, _, constructors, methods, tvar, loc) =>
+    case KindedAst.Expr.NewObject(sym, clazz, _, constructors, methods, tvar, loc) =>
       val tpe = subst(tvar)
       val eff = Type.IO
       val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
-      TypedAst.Expr.NewObject(name, clazz, tpe, eff, cs, ms, loc)
+      TypedAst.Expr.NewObject(sym, clazz, tpe, eff, cs, ms, loc)
 
     case KindedAst.Expr.NewChannel(exp, tvar, loc) =>
       val e = visitExp(exp)
@@ -640,33 +640,32 @@ object TypeReconstruction {
   /**
     * Returns the given arguments `es` with varargs arguments wrapped in a VectorLit if needed.
     */
-  private def getArgumentsWithVarArgs(exc: Executable, es: List[TypedAst.Expr], loc: SourceLocation): List[TypedAst.Expr] = {
-    if (!exc.isVarArgs) return es
+  private def getArgumentsWithVarArgs(method: JavaMethod, es: List[TypedAst.Expr], loc: SourceLocation)(implicit flix: Flix): List[TypedAst.Expr] = {
+    if (!method.isVarArgs) return es
 
-    val declaredArity = exc.getParameterCount
+    val descriptor = method.ref.descriptor
+    val declaredArity = descriptor.parameterCount()
     val actualArity = es.length
 
     if (actualArity == declaredArity - 1) {
       // Case 1: Varargs omitted entirely. Insert an empty vector.
-      val varArgsType = Type.mkNative(exc.getParameterTypes.last.getComponentType, loc)
+      val componentDesc = descriptor.parameterType(declaredArity - 1).componentType()
+      val varArgsType = JavaTypes.flixTypeOf(componentDesc, loc)
       val varArgs = TypedAst.Expr.VectorLit(Nil, Type.mkVector(varArgsType, loc), Type.Pure, loc)
       es :+ varArgs
     } else if (actualArity >= declaredArity) {
       val normalArgs = es.take(declaredArity - 1)
       val varArgExprs = es.drop(declaredArity - 1)
 
-      // Check if a single trailing arg is already a Vector/Array (from ...{} syntax).
+      // A single trailing argument is the varargs array itself if it is assignable to the array parameter.
+      // Otherwise it is an element, e.g. a `Vector[Int32]` passed for `T...` (erased to `Object[]`).
       val alreadyWrapped = varArgExprs match {
-        case single :: Nil => single.tpe.baseType match {
-          case Type.Cst(TypeConstructor.Vector, _) => true
-          case Type.Cst(TypeConstructor.Array, _) => true
-          case _ => false
-        }
+        case single :: Nil => JavaTypes.isVarArgsArray(single.tpe, descriptor.parameterType(declaredArity - 1), loc)
         case _ => false
       }
 
       if (alreadyWrapped) {
-        // Already a vector/array, no wrapping needed.
+        // Already the varargs array, no wrapping needed.
         es
       } else {
         // Case 2: Individual varargs arguments. Wrap them into a VectorLit.
@@ -684,7 +683,7 @@ object TypeReconstruction {
   /**
     * Applies the substitution to the given constraint.
     */
-  private def visitConstraint(c0: KindedAst.Constraint)(implicit subst: SubstitutionTree): TypedAst.Constraint = {
+  private def visitConstraint(c0: KindedAst.Constraint)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.Constraint = {
     val KindedAst.Constraint(cparams0, head0, body0, loc) = c0
 
     val head = visitHeadPredicate(head0)
@@ -709,7 +708,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given JVM constructor.
     */
-  private def visitJvmConstructor(constructor: KindedAst.JvmConstructor)(implicit subst: SubstitutionTree): TypedAst.JvmConstructor = {
+  private def visitJvmConstructor(constructor: KindedAst.JvmConstructor)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.JvmConstructor = {
     constructor match {
       case KindedAst.JvmConstructor(exp0, tpe, eff, loc) =>
         val exp = visitExp(exp0)
@@ -720,7 +719,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given JVM method.
     */
-  private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit subst: SubstitutionTree): TypedAst.JvmMethod = {
+  private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.JvmMethod = {
     method match {
       case KindedAst.JvmMethod(ann, ident, fparams0, exp0, tpe, eff, loc) =>
         val fparams = fparams0.map(visitFormalParam(_, subst))
@@ -732,7 +731,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given ext-match rule.
     */
-  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit subst: SubstitutionTree): TypedAst.ExtMatchRule = rule match {
+  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.ExtMatchRule = rule match {
     case KindedAst.ExtMatchRule(pat, exp, loc) =>
       val p = visitExtPat(pat)
       val e = visitExp(exp)
@@ -804,7 +803,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given head predicate.
     */
-  private def visitHeadPredicate(head0: KindedAst.Predicate.Head)(implicit subst: SubstitutionTree): TypedAst.Predicate.Head = head0 match {
+  private def visitHeadPredicate(head0: KindedAst.Predicate.Head)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.Predicate.Head = head0 match {
     case KindedAst.Predicate.Head.Atom(pred, den0, terms, tvar, loc) =>
       val ts = terms.map(t => visitExp(t))
       TypedAst.Predicate.Head.Atom(pred, den0, ts, subst(tvar), loc)
@@ -814,7 +813,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given body predicate.
     */
-  private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit subst: SubstitutionTree): TypedAst.Predicate.Body = body0 match {
+  private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.Predicate.Body = body0 match {
     case KindedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, terms, tvar, loc) =>
       val ts = terms.map(t => visitPattern(t))
       TypedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, ts, subst(tvar), loc)

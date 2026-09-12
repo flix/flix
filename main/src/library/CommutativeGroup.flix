@@ -22,7 +22,7 @@ pub mod CommutativeGroup {
     ///
     /// The default instances for number define the additive inverse in the real numbers.
     ///
-    pub lawful trait CommutativeGroup[a] with Group[a], CommutativeMonoid[a] {}
+    pub trait CommutativeGroup[a] with Group[a], CommutativeMonoid[a] {}
 
     instance CommutativeGroup[Unit]
 

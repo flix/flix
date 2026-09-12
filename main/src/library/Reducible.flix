@@ -24,55 +24,63 @@ pub mod Reducible {
     pub trait Reducible[t: Type -> Type] {
 
         ///
+        /// The associated effect of the `Reducible` instance.
+        ///
+        /// The effect describes the effect of traversing the underlying data structure.
+        /// It is pure (i.e. `{}`) for immutable data structures.
+        ///
+        type Aef[t]: Eff = {}
+
+        ///
         /// Left-associative reduction of a structure.
         /// Applies `g` to the initial element of `t` and combines it
         /// with the remainder of `t` using `f` going from left to right.
         ///
-        pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, t: t[a]): b \ { ef1, ef2 }
+        pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, t: t[a]): b \ (ef1 + ef2 + Reducible.Aef[t])
 
         ///
         /// Right-associative reduction of a structure.
         /// Applies `g` to the initial element of `t` and combines it
         /// with the remainder of `t` using `f` going from right to left.
         ///
-        pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, t: t[a]): b \ { ef1, ef2 }
+        pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, t: t[a]): b \ (ef1 + ef2 + Reducible.Aef[t])
 
         ///
         /// Left-associative reduction on `t` using `f`.
         ///
-        pub def reduceLeft(f: (a, a) -> a \ ef, t: t[a]): a \ ef =
+        pub def reduceLeft(f: (a, a) -> a \ ef, t: t[a]): a \ (ef + Reducible.Aef[t]) =
             Reducible.reduceLeftTo(f, identity, t)
 
         ///
         /// Right-associative reduction on `t` using `f`.
         ///
-        pub def reduceRight(f: (a, a) -> a \ ef, t: t[a]): a \ ef =
+        pub def reduceRight(f: (a, a) -> a \ ef, t: t[a]): a \ (ef + Reducible.Aef[t]) =
             Reducible.reduceRightTo(f, identity, t)
 
         ///
         /// Reduce `t` using the derived `SemiGroup` instance.
         ///
-        pub def reduce(t: t[a]): a with SemiGroup[a] =
+        pub def reduce(t: t[a]): a \ Reducible.Aef[t] with SemiGroup[a] =
             Reducible.reduceLeft(SemiGroup.combine, t)
 
         ///
         /// Applies `f` to each element of `t` and combines them using the derived `SemiGroup` instance.
         ///
-        pub def reduceMap(f: a -> b \ ef, t: t[a]): b \ ef with SemiGroup[b] =
+        pub def reduceMap(f: a -> b \ ef, t: t[a]): b \ (ef + Reducible.Aef[t]) with SemiGroup[b] =
             Reducible.reduceLeftTo((b, a) -> SemiGroup.combine(b, f(a)), f, t)
 
         ///
         /// Left-associative fold of a structure.
         /// Applies `f` to a start value `s` and all elements in `t` going from left to right.
         ///
-        pub def foldLeft(f: (b, a) -> b \ ef, s: b, t: t[a]): b \ ef =
+        pub def foldLeft(f: (b, a) -> b \ ef, s: b, t: t[a]): b \ (ef + Reducible.Aef[t]) =
             Reducible.reduceLeftTo(f, a -> f(s, a), t)
 
         ///
         /// Right-associative fold of a structure.
         /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
         ///
-        pub def foldRight(f: (a, b) -> b \ ef, s: b, t: t[a]): b \ ef =
+        pub def foldRight(f: (a, b) -> b \ ef, s: b, t: t[a]): b \ (ef + Reducible.Aef[t]) =
             Reducible.reduceRightTo(f, a -> f(a, s), t)
 
         ///
@@ -80,31 +88,31 @@ pub mod Reducible {
         ///
         /// Reduce `t` using the derived `SemiGroup` instance.
         ///
-        pub def fold(t: t[a]): a with SemiGroup[a] =
+        pub def fold(t: t[a]): a \ Reducible.Aef[t] with SemiGroup[a] =
             Reducible.reduceLeft(SemiGroup.combine, t)
 
         ///
         /// Returns the first element of `t`.
         ///
-        pub def head(t: t[a]): a =
+        pub def head(t: t[a]): a \ Reducible.Aef[t] =
             Reducible.reduceLeft((acc, _) -> acc, t)
 
         ///
         /// Returns the last element of `t`.
         ///
-        pub def last(t: t[a]): a =
+        pub def last(t: t[a]): a \ Reducible.Aef[t] =
             Reducible.reduceLeft((_, a) -> a, t)
 
         ///
         /// Returns `t` as a list without the last element.
         ///
-        pub def init(t: t[a]): List[a] =
+        pub def init(t: t[a]): List[a] \ Reducible.Aef[t] =
             Reducible.reduceRightTo((a, acc) -> a :: acc, _ -> Nil, t)
 
         ///
         /// Returns the tail of `t` as a list.
         ///
-        pub def tail(t: t[a]): List[a] =
+        pub def tail(t: t[a]): List[a] \ Reducible.Aef[t] =
             // NB: Builds a continuation function without the first
             // element that is immediately invoked to avoid `foldRight`.
             Reducible.reduceLeftTo((k, a) -> ks -> k(a :: ks), _ -> identity, t)(Nil)
@@ -112,49 +120,49 @@ pub mod Reducible {
         ///
         /// Returns the reverse of `t` as a list.
         ///
-        pub def reverse(t: t[a]): List[a] =
+        pub def reverse(t: t[a]): List[a] \ Reducible.Aef[t] =
             Reducible.foldLeft((acc, a) -> a :: acc, Nil, t)
 
         ///
         /// Returns the number of elements in `t` that satisfy the predicate `f`.
         ///
-        pub def count(f: a -> Bool \ ef, t: t[a]): Int32 \ ef =
+        pub def count(f: a -> Bool \ ef, t: t[a]): Int32 \ (ef + Reducible.Aef[t]) =
             Reducible.foldLeft((acc, a) -> if (f(a)) 1 + acc else acc, 0, t)
 
         ///
         /// Returns the number of elements in `t`.
         ///
-        pub def length(t: t[a]): Int32 =
+        pub def length(t: t[a]): Int32 \ Reducible.Aef[t] =
             Reducible.foldLeft((acc, _) -> 1 + acc, 0, t)
 
         ///
         /// Returns the sum of all elements in `t`.
         ///
-        pub def sum(t: t[Int32]): Int32 =
+        pub def sum(t: t[Int32]): Int32 \ Reducible.Aef[t] =
             Reducible.foldLeft((acc, a) -> a + acc, 0, t)
 
         ///
         /// Returns the sum of all elements in `t` according to the function `f`.
         ///
-        pub def sumWith(f: a -> Int32 \ ef, t: t[a]): Int32 \ ef =
+        pub def sumWith(f: a -> Int32 \ ef, t: t[a]): Int32 \ (ef + Reducible.Aef[t]) =
             Reducible.foldLeft((acc, a) -> f(a) + acc, 0, t)
 
         ///
         /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
         ///
-        pub def exists(f: a -> Bool \ ef, t: t[a]): Bool \ ef =
+        pub def exists(f: a -> Bool \ ef, t: t[a]): Bool \ (ef + Reducible.Aef[t]) =
             Reducible.foldLeft((acc, a) -> f(a) or acc, false, t)
 
         ///
         /// Returns `true` if and only if all elements in `t` satisfy the predicate `f`.
         ///
-        pub def forAll(f: a -> Bool \ ef, t: t[a]): Bool \ ef =
+        pub def forAll(f: a -> Bool \ ef, t: t[a]): Bool \ (ef + Reducible.Aef[t]) =
             Reducible.foldLeft((acc, a) -> f(a) and acc, true, t)
 
         ///
         /// Applies `f` to each element in `t`.
         ///
-        pub def forEach(f: a -> Unit \ ef, t: t[a]): Unit \ ef =
+        pub def forEach(f: a -> Unit \ ef, t: t[a]): Unit \ (ef + Reducible.Aef[t]) =
             Reducible.foldLeft((_, a) -> f(a), (), t)
 
         ///
@@ -162,55 +170,55 @@ pub mod Reducible {
         ///
         /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from left to right.
         ///
-        pub def find(f: a -> Bool \ ef, t: t[a]): Option[a] \ ef =
+        pub def find(f: a -> Bool \ ef, t: t[a]): Option[a] \ (ef + Reducible.Aef[t]) =
             Reducible.findLeft(f, t)
 
         ///
         /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from left to right.
         ///
-        pub def findLeft(f: a -> Bool \ ef, t: t[a]): Option[a] \ ef =
+        pub def findLeft(f: a -> Bool \ ef, t: t[a]): Option[a] \ (ef + Reducible.Aef[t]) =
             Reducible.foldLeft((acc, a) -> Option.withDefault(default = if (f(a)) Some(a) else None, acc), None, t)
 
         ///
         /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from right to left.
         ///
-        pub def findRight(f: a -> Bool \ ef, t: t[a]): Option[a] \ ef =
+        pub def findRight(f: a -> Bool \ ef, t: t[a]): Option[a] \ (ef + Reducible.Aef[t]) =
             Reducible.foldRight((a, acc) -> Option.withDefault(default = if (f(a)) Some(a) else None, acc), None, t)
 
         ///
         /// Returns `true` if and only if the element `a` is in `t`.
         ///
-        pub def memberOf(a: a, t: t[a]): Bool with Eq[a] =
+        pub def memberOf(a: a, t: t[a]): Bool \ Reducible.Aef[t] with Eq[a] =
             Reducible.foldLeft((acc, x) -> a == x or acc, false, t)
 
         ///
         /// Finds the smallest element of `t` according to the `Order` on `a`.
         ///
-        pub def minimum(t: t[a]): a with Order[a] =
+        pub def minimum(t: t[a]): a \ Reducible.Aef[t] with Order[a] =
             Reducible.reduceLeft(Order.min, t)
 
         ///
         /// Finds the smallest element of `t` according to the given comparator `cmp`.
         ///
-        pub def minimumBy(cmp: (a, a) -> Comparison, t: t[a]): a =
+        pub def minimumBy(cmp: (a, a) -> Comparison, t: t[a]): a \ Reducible.Aef[t] =
             Reducible.reduceLeft(Order.minBy(cmp), t)
 
         ///
         /// Finds the largest element of `t` according to the `Order` on `a`.
         ///
-        pub def maximum(t: t[a]): a with Order[a] =
+        pub def maximum(t: t[a]): a \ Reducible.Aef[t] with Order[a] =
             Reducible.reduceLeft(Order.max, t)
 
         ///
         /// Finds the largest element of `t` according to the given comparator `cmp`.
         ///
-        pub def maximumBy(cmp: (a, a) -> Comparison, t: t[a]): a =
+        pub def maximumBy(cmp: (a, a) -> Comparison, t: t[a]): a \ Reducible.Aef[t] =
             Reducible.reduceLeft(Order.maxBy(cmp), t)
 
         ///
         /// Returns `t` as a list without the longest prefix that satisfies the predicate `f`.
         ///
-        pub def dropWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ ef =
+        pub def dropWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ (ef + Reducible.Aef[t]) =
             def step(acc, a) = {
                 let (c, xs) = acc;
                 if (c and f(a))
@@ -223,7 +231,7 @@ pub mod Reducible {
         ///
         /// Returns the longest prefix of `t` as a list that satisfies the predicate `f`.
         ///
-        pub def takeWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ ef =
+        pub def takeWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ (ef + Reducible.Aef[t]) =
             def step(acc, a) = {
                 let (c, xs) = acc;
                 if (c and f(a))
@@ -236,13 +244,13 @@ pub mod Reducible {
         ///
         /// Returns `t` as a list with `a` inserted between every two adjacent elements.
         ///
-        pub def intersperse(a: a, t: t[a]): List[a] =
+        pub def intersperse(a: a, t: t[a]): List[a] \ Reducible.Aef[t] =
             Reducible.reduceRightTo((x, acc) -> x :: a :: acc, x -> x :: Nil, t)
 
         ///
         /// Returns `t` as an array.
         ///
-        pub def toArray(rc: Region[r], t: t[a]): Array[a, r] \ r =
+        pub def toArray(rc: Region[r], t: t[a]): Array[a, r] \ (r + Reducible.Aef[t]) =
             let v = MutList.empty(rc);
             Reducible.foldLeft((_, a) -> MutList.push(a, v), (), t);
             MutList.toArray(rc, v)
@@ -250,7 +258,7 @@ pub mod Reducible {
         ///
         /// Returns `t` as a vector.
         ///
-        pub def toVector(t: t[a]): Vector[a] = region rc {
+        pub def toVector(t: t[a]): Vector[a] \ Reducible.Aef[t] = region rc {
             let l = MutList.empty(rc);
             Reducible.foldLeft((_, a) -> MutList.push(a, l), (), t);
             MutList.toVector(l)
@@ -259,25 +267,25 @@ pub mod Reducible {
         ///
         /// Returns `t` as a list.
         ///
-        pub def toList(t: t[a]): List[a] =
+        pub def toList(t: t[a]): List[a] \ Reducible.Aef[t] =
             Reducible.foldRight((a, acc) -> a :: acc, Nil, t)
 
         ///
         /// Returns `t` as a map.
         ///
-        pub def toMap(t: t[(k, v)]): Map[k, v] with Order[k] =
+        pub def toMap(t: t[(k, v)]): Map[k, v] \ Reducible.Aef[t] with Order[k] =
             Reducible.foldLeft((acc, a) -> Map.insert(fst(a), snd(a), acc), Map.empty(), t)
 
         ///
         /// Returns `t` as a non-empty list.
         ///
-        pub def toNel(t: t[a]): Nel[a] =
+        pub def toNel(t: t[a]): Nel[a] \ Reducible.Aef[t] =
             Reducible.reduceLeftTo((acc, a) -> Nel.append(acc, Nel.Nel(a, Nil)), a -> Nel.Nel(a, Nil), t)
 
         ///
         /// Returns `t` as a set.
         ///
-        pub def toSet(t: t[a]): Set[a] with Order[a] =
+        pub def toSet(t: t[a]): Set[a] \ Reducible.Aef[t] with Order[a] =
             Reducible.foldLeft((acc, a) -> Set.insert(a, acc), Set.empty(), t)
 
     }
@@ -285,6 +293,6 @@ pub mod Reducible {
     ///
     /// Returns the number of elements in `t`.
     ///
-    pub def size(t: t[a]): Int32 with Reducible[t] = Reducible.length(t)
+    pub def size(t: t[a]): Int32 \ Reducible.Aef[t] with Reducible[t] = Reducible.length(t)
 
 }

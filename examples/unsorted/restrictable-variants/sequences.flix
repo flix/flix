@@ -857,7 +857,7 @@ instance Order[Seq.Seq[s][a]] with Order[a] {
     ///
     pub def compare(l1: Seq.Seq[s][a], l2: Seq.Seq[s][a]): Comparison = {
         let l = Seq.zip(l1, l2);
-        compareHelper(l) `Order.thenCompare` lazy (Seq.length(l1) <=> Seq.length(l2))
+        compareHelper(l) `thenCompare` lazy (Seq.length(l1) <=> Seq.length(l2))
     }
 
 }
@@ -865,7 +865,7 @@ instance Order[Seq.Seq[s][a]] with Order[a] {
 def compareHelper(l: Seq.Seq[s][(a, a)]): Comparison with Order[a] = choose l {
     case Seq.Seq.Nil         => Comparison.EqualTo
     case Seq.Seq.One(x)      => fst(x) <=> snd(x)
-    case Seq.Seq.Cons(x, xs) => (fst(x) <=> snd(x)) `Order.thenCompare` lazy compareHelper(xs)
+    case Seq.Seq.Cons(x, xs) => (fst(x) <=> snd(x)) `thenCompare` lazy compareHelper(xs)
 }
 
 instance Functor[Seq.Seq[s]] {
@@ -886,3 +886,11 @@ instance ForEach[Seq.Seq[s][a]] {
     type Elm = a
     pub def forEach(f: a -> Unit \ ef, t: Seq.Seq[s][a]): Unit \ ef = Seq.forEach(f, t)
 }
+
+///
+/// Lazily combines two comparisons.
+///
+/// If `c1` is either `Comparison.LessThan` or `Comparison.GreaterThan` then `c2` is never evaluated.
+///
+def thenCompare(c1: Comparison, c2: Lazy[Comparison]): Comparison =
+    if (c1 != Comparison.EqualTo) c1 else force c2

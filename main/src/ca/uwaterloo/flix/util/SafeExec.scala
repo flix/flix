@@ -40,18 +40,20 @@ object SafeExec {
     System.setOut(new PrintStream(newOut, true, UTF8))
     System.setErr(new PrintStream(newErr, true, UTF8))
 
-    // Execute the function f.
-    val result = f()
+    try {
+      // Execute the function f.
+      val result = f()
 
-    // Restore the original out and err streams.
-    System.setOut(originalOut)
-    System.setErr(originalErr)
+      // Return a triple of the result and the two captured streams as strings.
+      val capturedOut = newOut.toString(UTF8)
+      val capturedErr = newErr.toString(UTF8)
 
-    // Return a triple of the result and the two captured streams as strings.
-    val capturedOut = newOut.toString(UTF8)
-    val capturedErr = newErr.toString(UTF8)
-
-    (result, capturedOut, capturedErr)
+      (result, capturedOut, capturedErr)
+    } finally {
+      // Restore the original out and err streams, even if `f` throws.
+      System.setOut(originalOut)
+      System.setErr(originalErr)
+    }
   }
 
 }

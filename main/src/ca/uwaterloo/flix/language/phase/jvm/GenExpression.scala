@@ -22,13 +22,19 @@ import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
+import ca.uwaterloo.flix.language.jvm.ClassDescs.internalNameOf
+import ca.uwaterloo.flix.language.jvm.JavaClasses
+import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenCastError, GenEffectCall, GenExtTag, GenExtTagged, GenFrames, GenFramesNil, GenHandler, GenHoleError, GenLazy, GenMatchError, GenNullaryTag, GenRecord, GenRecordEmpty, GenRecordExtend, GenRegion, GenResult, GenResumption, GenResumptionNil, GenStruct, GenSuspension, GenTag, GenTagged, GenThunk, GenTuple, GenUnit, GenValue}
+import java.lang.constant.{ClassDesc, MethodTypeDesc}
+import java.lang.constant.ConstantDescs.{CD_double, CD_int, CD_long, CD_void}
+import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps
 import org.objectweb.asm
 import org.objectweb.asm.*
-import org.objectweb.asm.Opcodes.*
+
+import scala.jdk.CollectionConverters.*
 
 /**
   * Generate expression
@@ -44,6 +50,9 @@ object GenExpression {
     def lenv: Map[Symbol.LabelSym, Label]
 
     def localOffset: Int
+
+    /** Returns the absolute index of the local variable `varOffset` by adding this context's local offset. */
+    def getIndex(varOffset: Int): Int = varOffset + localOffset
 
     def addLabels(labels: Map[Symbol.LabelSym, Label]): MethodContext = {
       val updatedLabels = this.lenv ++ labels
@@ -105,104 +114,99 @@ object GenExpression {
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(cst, loc) => cst match {
       case Constant.Unit =>
-        BytecodeInstructions.GETSTATIC(BackendObjType.Unit.SingletonField)
+        GETSTATIC(GenUnit.SingletonField)
 
       case Constant.Null =>
-        import BytecodeInstructions.*
         ACONST_NULL()
 
       case Constant.Bool(b) =>
-        BytecodeInstructions.pushBool(b)
+        pushBool(b)
 
       case Constant.Char(c) =>
-        BytecodeInstructions.pushInt(c)
+        pushInt(c)
 
       case Constant.Float32(f) =>
         f match {
-          case 0f => mv.visitInsn(FCONST_0)
-          case 1f => mv.visitInsn(FCONST_1)
-          case 2f => mv.visitInsn(FCONST_2)
+          case 0f => mv.visitInsn(Opcodes.FCONST_0)
+          case 1f => mv.visitInsn(Opcodes.FCONST_1)
+          case 2f => mv.visitInsn(Opcodes.FCONST_2)
           case _ => mv.visitLdcInsn(f)
         }
 
       case Constant.Float64(d) =>
         d match {
-          case 0d => mv.visitInsn(DCONST_0)
-          case 1d => mv.visitInsn(DCONST_1)
+          case 0d => mv.visitInsn(Opcodes.DCONST_0)
+          case 1d => mv.visitInsn(Opcodes.DCONST_1)
           case _ => mv.visitLdcInsn(d)
         }
 
       case Constant.BigDecimal(dd) =>
-        import BytecodeInstructions.*
         // Can fail with NumberFormatException
         addLoc(loc)
-        NEW(JvmName.BigDecimal)
+        NEW(JavaClasses.BigDecimal)
         DUP()
         pushString(dd.toString)
         INVOKESPECIAL(ClassConstants.BigDecimal.Constructor)
 
       case Constant.Int8(b) =>
-        BytecodeInstructions.pushInt(b)
+        pushInt(b)
 
       case Constant.Int16(s) =>
-        BytecodeInstructions.pushInt(s)
+        pushInt(s)
 
       case Constant.Int32(i) =>
-        BytecodeInstructions.pushInt(i)
+        pushInt(i)
 
       case Constant.Int64(l) =>
         compileLong(l)
 
       case Constant.BigInt(ii) =>
-        import BytecodeInstructions.*
         // Add source line number for debugging (can fail with NumberFormatException)
         addLoc(loc)
-        NEW(JvmName.BigInteger)
+        NEW(JavaClasses.BigInteger)
         DUP()
         pushString(ii.toString)
         INVOKESPECIAL(ClassConstants.BigInteger.Constructor)
 
       case Constant.Str(s) =>
-        BytecodeInstructions.pushString(s)
+        pushString(s)
 
       case Constant.Regex(patt) =>
-        import BytecodeInstructions.*
         // Add source line number for debugging (can fail with PatternSyntaxException)
         addLoc(loc)
         pushString(patt.pattern)
         INVOKESTATIC(ClassConstants.Regex.CompileMethod)
 
       case Constant.RecordEmpty =>
-        BytecodeInstructions.GETSTATIC(BackendObjType.RecordEmpty.SingletonField)
+        GETSTATIC(GenRecordEmpty.SingletonField)
 
       case Constant.Static =>
-        import BytecodeInstructions.*
         //!TODO: For now, just emit null
         ACONST_NULL()
-        CHECKCAST(BackendObjType.Region.jvmName)
+        CHECKCAST(GenRegion.Desc)
 
     }
 
     case Expr.Var(_, offset, tpe, _) =>
-      BytecodeInstructions.xLoad(BackendType.toBackendType(tpe), JvmOps.getIndex(offset, ctx.localOffset))
+      xLoad(TypeDescs.toClassDesc(tpe), ctx.getIndex(offset))
 
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) => op match {
 
       case AtomicOp.Closure(sym) =>
         // JvmType of the closure
-        val jvmName = JvmOps.getClosureClassName(sym)
+        val closureName = internalNameOf(GenFunAndClosureClasses.closureDesc(sym))
         // new closure instance
-        mv.visitTypeInsn(NEW, jvmName.toInternalName)
+        mv.visitTypeInsn(Opcodes.NEW, closureName)
         // Duplicate
-        mv.visitInsn(DUP)
-        mv.visitMethodInsn(INVOKESPECIAL, jvmName.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+        mv.visitInsn(Opcodes.DUP)
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, closureName, ClassMaker.ConstructorMethodName, MethodTypeDescs.NothingToVoid.descriptorString(), false)
         // Capturing free args
         for ((arg, i) <- exps.zipWithIndex) {
-          val argType = BackendType.toBackendType(arg.tpe)
-          mv.visitInsn(DUP)
+          val argType = TypeDescs.toClassDesc(arg.tpe)
+          mv.visitInsn(Opcodes.DUP)
           compileExpr(arg)
-          BytecodeInstructions.castIfNotPrim(argType)
-          mv.visitFieldInsn(PUTFIELD, jvmName.toInternalName, s"clo$i", argType.toDescriptor)
+          castIfNotPrim(argType)
+          mv.visitFieldInsn(Opcodes.PUTFIELD, closureName, s"clo$i", argType.descriptorString())
         }
 
       case AtomicOp.Unary(sop) =>
@@ -211,40 +215,40 @@ object GenExpression {
 
         sop match {
           case SemanticOp.BoolOp.Not =>
-            mv.visitInsn(ICONST_1)
-            mv.visitInsn(IXOR)
+            mv.visitInsn(Opcodes.ICONST_1)
+            mv.visitInsn(Opcodes.IXOR)
 
-          case Float32Op.Neg => mv.visitInsn(FNEG)
+          case Float32Op.Neg => mv.visitInsn(Opcodes.FNEG)
 
-          case Float64Op.Neg => mv.visitInsn(DNEG)
+          case Float64Op.Neg => mv.visitInsn(Opcodes.DNEG)
 
           case Int8Op.Neg =>
-            mv.visitInsn(INEG)
-            mv.visitInsn(I2B) // Sign extend so sign bit is also changed
+            mv.visitInsn(Opcodes.INEG)
+            mv.visitInsn(Opcodes.I2B) // Sign extend so sign bit is also changed
 
           case Int16Op.Neg =>
-            mv.visitInsn(INEG)
-            mv.visitInsn(I2S) // Sign extend so sign bit is also changed
+            mv.visitInsn(Opcodes.INEG)
+            mv.visitInsn(Opcodes.I2S) // Sign extend so sign bit is also changed
 
-          case Int32Op.Neg => mv.visitInsn(INEG)
+          case Int32Op.Neg => mv.visitInsn(Opcodes.INEG)
 
-          case Int64Op.Neg => mv.visitInsn(LNEG)
+          case Int64Op.Neg => mv.visitInsn(Opcodes.LNEG)
 
           case Int8Op.Not | Int16Op.Not | Int32Op.Not =>
-            mv.visitInsn(ICONST_M1)
-            mv.visitInsn(IXOR)
+            mv.visitInsn(Opcodes.ICONST_M1)
+            mv.visitInsn(Opcodes.IXOR)
 
           case Int64Op.Not =>
-            mv.visitInsn(ICONST_M1)
-            mv.visitInsn(I2L)
-            mv.visitInsn(LXOR)
+            mv.visitInsn(Opcodes.ICONST_M1)
+            mv.visitInsn(Opcodes.I2L)
+            mv.visitInsn(Opcodes.LXOR)
 
           case _: ReflectOp =>
             throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
 
           case ObjectOp.Ordinal =>
-            mv.visitTypeInsn(CHECKCAST, BackendObjType.Tagged.jvmName.toInternalName)
-            mv.visitFieldInsn(GETFIELD, BackendObjType.Tagged.jvmName.toInternalName, "ordinal", BackendType.Int32.toDescriptor)
+            mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenTagged.Desc))
+            mv.visitFieldInsn(Opcodes.GETFIELD, internalNameOf(GenTagged.Desc), "ordinal", CD_int.descriptorString())
         }
 
       case AtomicOp.Binary(sop) =>
@@ -253,339 +257,339 @@ object GenExpression {
           case BoolOp.And =>
             val andEnd = new Label()
             compileExpr(exp1)
-            mv.visitInsn(DUP)
-            mv.visitJumpInsn(IFEQ, andEnd)
-            mv.visitInsn(POP)
+            mv.visitInsn(Opcodes.DUP)
+            mv.visitJumpInsn(Opcodes.IFEQ, andEnd)
+            mv.visitInsn(Opcodes.POP)
             compileExpr(exp2)
             mv.visitLabel(andEnd)
 
           case BoolOp.Or =>
             val orEnd = new Label()
             compileExpr(exp1)
-            mv.visitInsn(DUP)
-            mv.visitJumpInsn(IFNE, orEnd)
-            mv.visitInsn(POP)
+            mv.visitInsn(Opcodes.DUP)
+            mv.visitJumpInsn(Opcodes.IFNE, orEnd)
+            mv.visitInsn(Opcodes.POP)
             compileExpr(exp2)
             mv.visitLabel(orEnd)
 
           case Float32Op.Exp =>
             compileExpr(exp1)
-            mv.visitInsn(F2D) // Convert to double since "pow" is only defined for doubles
+            mv.visitInsn(Opcodes.F2D) // Convert to double since "pow" is only defined for doubles
             compileExpr(exp2)
-            mv.visitInsn(F2D) // Convert to double since "pow" is only defined for doubles
-            mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
-            mv.visitInsn(D2F) // Convert double to float
+            mv.visitInsn(Opcodes.F2D) // Convert to double since "pow" is only defined for doubles
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
+              mkDescriptor(CD_double, CD_double)(CD_double).descriptorString(), false)
+            mv.visitInsn(Opcodes.D2F) // Convert double to float
 
           case Float64Op.Exp =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
+              mkDescriptor(CD_double, CD_double)(CD_double).descriptorString(), false)
 
           case Int8Op.Exp =>
             compileExpr(exp1)
-            mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
+            mv.visitInsn(Opcodes.I2D) // Convert to double since "pow" is only defined for doubles
             compileExpr(exp2)
-            mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
-            mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
-            mv.visitInsn(D2I) // Convert to int
-            mv.visitInsn(I2B) // Convert int to byte
+            mv.visitInsn(Opcodes.I2D) // Convert to double since "pow" is only defined for doubles
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
+              mkDescriptor(CD_double, CD_double)(CD_double).descriptorString(), false)
+            mv.visitInsn(Opcodes.D2I) // Convert to int
+            mv.visitInsn(Opcodes.I2B) // Convert int to byte
 
           case Int16Op.Exp =>
             compileExpr(exp1)
-            mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
+            mv.visitInsn(Opcodes.I2D) // Convert to double since "pow" is only defined for doubles
             compileExpr(exp2)
-            mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
-            mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
-            mv.visitInsn(D2I) // Convert to int
-            mv.visitInsn(I2S) // Convert int to short
+            mv.visitInsn(Opcodes.I2D) // Convert to double since "pow" is only defined for doubles
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
+              mkDescriptor(CD_double, CD_double)(CD_double).descriptorString(), false)
+            mv.visitInsn(Opcodes.D2I) // Convert to int
+            mv.visitInsn(Opcodes.I2S) // Convert int to short
 
           case Int32Op.Exp =>
             compileExpr(exp1)
-            mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
+            mv.visitInsn(Opcodes.I2D) // Convert to double since "pow" is only defined for doubles
             compileExpr(exp2)
-            mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
-            mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
-            mv.visitInsn(D2I) // Convert to int
+            mv.visitInsn(Opcodes.I2D) // Convert to double since "pow" is only defined for doubles
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
+              mkDescriptor(CD_double, CD_double)(CD_double).descriptorString(), false)
+            mv.visitInsn(Opcodes.D2I) // Convert to int
 
           case Int64Op.Exp =>
             compileExpr(exp1)
-            mv.visitInsn(L2D) // Convert to double since "pow" is only defined for doubles
+            mv.visitInsn(Opcodes.L2D) // Convert to double since "pow" is only defined for doubles
             compileExpr(exp2)
-            mv.visitInsn(L2D) // Convert to double since "pow" is only defined for doubles
-            mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
-            mv.visitInsn(D2L) // Convert to long
+            mv.visitInsn(Opcodes.L2D) // Convert to double since "pow" is only defined for doubles
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, internalNameOf(JavaClasses.Math), "pow",
+              mkDescriptor(CD_double, CD_double)(CD_double).descriptorString(), false)
+            mv.visitInsn(Opcodes.D2L) // Convert to long
 
           case Int8Op.And | Int16Op.And | Int32Op.And =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(IAND)
+            mv.visitInsn(Opcodes.IAND)
 
           case Int8Op.Or | Int16Op.Or | Int32Op.Or =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(IOR)
+            mv.visitInsn(Opcodes.IOR)
 
           case Int8Op.Xor | Int16Op.Xor | Int32Op.Xor =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(IXOR)
+            mv.visitInsn(Opcodes.IXOR)
 
           case Int8Op.Shr | Int16Op.Shr | Int32Op.Shr =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(ISHR)
+            mv.visitInsn(Opcodes.ISHR)
 
           case Int8Op.Shl =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(ISHL)
-            mv.visitInsn(I2B) // Sign extend to make left most bit appear in the sign bit
+            mv.visitInsn(Opcodes.ISHL)
+            mv.visitInsn(Opcodes.I2B) // Sign extend to make left most bit appear in the sign bit
 
           case Int16Op.Shl =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(ISHL)
-            mv.visitInsn(I2S) // Sign extend to make left most bit appear in the sign bit
+            mv.visitInsn(Opcodes.ISHL)
+            mv.visitInsn(Opcodes.I2S) // Sign extend to make left most bit appear in the sign bit
 
           case Int32Op.Shl =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(ISHL)
+            mv.visitInsn(Opcodes.ISHL)
 
           case Int64Op.And =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(LAND)
+            mv.visitInsn(Opcodes.LAND)
 
           case Int64Op.Or =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(LOR)
+            mv.visitInsn(Opcodes.LOR)
 
           case Int64Op.Xor =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(LXOR)
+            mv.visitInsn(Opcodes.LXOR)
 
           case Int64Op.Shr =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(LSHR)
+            mv.visitInsn(Opcodes.LSHR)
 
           case Int64Op.Shl =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(LSHL)
+            mv.visitInsn(Opcodes.LSHL)
 
-          case Float32Op.Lt => visitComparison2(exp1, exp2, FCMPG, IFGE)
+          case Float32Op.Lt => visitComparison2(exp1, exp2, Opcodes.FCMPG, Opcodes.IFGE)
 
-          case Float32Op.Le => visitComparison2(exp1, exp2, FCMPG, IFGT)
+          case Float32Op.Le => visitComparison2(exp1, exp2, Opcodes.FCMPG, Opcodes.IFGT)
 
-          case Float32Op.Eq => visitComparison2(exp1, exp2, FCMPG, IFNE)
+          case Float32Op.Eq => visitComparison2(exp1, exp2, Opcodes.FCMPG, Opcodes.IFNE)
 
-          case Float32Op.Neq => visitComparison2(exp1, exp2, FCMPG, IFEQ)
+          case Float32Op.Neq => visitComparison2(exp1, exp2, Opcodes.FCMPG, Opcodes.IFEQ)
 
-          case Float32Op.Ge => visitComparison2(exp1, exp2, FCMPL, IFLT)
+          case Float32Op.Ge => visitComparison2(exp1, exp2, Opcodes.FCMPL, Opcodes.IFLT)
 
-          case Float32Op.Gt => visitComparison2(exp1, exp2, FCMPL, IFLE)
+          case Float32Op.Gt => visitComparison2(exp1, exp2, Opcodes.FCMPL, Opcodes.IFLE)
 
-          case Float64Op.Lt => visitComparison2(exp1, exp2, DCMPG, IFGE)
+          case Float64Op.Lt => visitComparison2(exp1, exp2, Opcodes.DCMPG, Opcodes.IFGE)
 
-          case Float64Op.Le => visitComparison2(exp1, exp2, DCMPG, IFGT)
+          case Float64Op.Le => visitComparison2(exp1, exp2, Opcodes.DCMPG, Opcodes.IFGT)
 
-          case Float64Op.Eq => visitComparison2(exp1, exp2, DCMPG, IFNE)
+          case Float64Op.Eq => visitComparison2(exp1, exp2, Opcodes.DCMPG, Opcodes.IFNE)
 
-          case Float64Op.Neq => visitComparison2(exp1, exp2, DCMPG, IFEQ)
+          case Float64Op.Neq => visitComparison2(exp1, exp2, Opcodes.DCMPG, Opcodes.IFEQ)
 
-          case Float64Op.Ge => visitComparison2(exp1, exp2, DCMPL, IFLT)
+          case Float64Op.Ge => visitComparison2(exp1, exp2, Opcodes.DCMPL, Opcodes.IFLT)
 
-          case Float64Op.Gt => visitComparison2(exp1, exp2, DCMPL, IFLE)
+          case Float64Op.Gt => visitComparison2(exp1, exp2, Opcodes.DCMPL, Opcodes.IFLE)
 
           case Int8Op.Lt | Int16Op.Lt | Int32Op.Lt | CharOp.Lt =>
-            visitComparison1(exp1, exp2, IF_ICMPGE)
+            visitComparison1(exp1, exp2, Opcodes.IF_ICMPGE)
 
           case Int8Op.Le | Int16Op.Le | Int32Op.Le | CharOp.Le =>
-            visitComparison1(exp1, exp2, IF_ICMPGT)
+            visitComparison1(exp1, exp2, Opcodes.IF_ICMPGT)
 
           case Int8Op.Eq | Int16Op.Eq | Int32Op.Eq | CharOp.Eq | BoolOp.Eq =>
-            visitComparison1(exp1, exp2, IF_ICMPNE)
+            visitComparison1(exp1, exp2, Opcodes.IF_ICMPNE)
 
           case Int8Op.Neq | Int16Op.Neq | Int32Op.Neq | CharOp.Neq | BoolOp.Neq =>
-            visitComparison1(exp1, exp2, IF_ICMPEQ)
+            visitComparison1(exp1, exp2, Opcodes.IF_ICMPEQ)
 
           case Int8Op.Ge | Int16Op.Ge | Int32Op.Ge | CharOp.Ge =>
-            visitComparison1(exp1, exp2, IF_ICMPLT)
+            visitComparison1(exp1, exp2, Opcodes.IF_ICMPLT)
 
           case Int8Op.Gt | Int16Op.Gt | Int32Op.Gt | CharOp.Gt =>
-            visitComparison1(exp1, exp2, IF_ICMPLE)
+            visitComparison1(exp1, exp2, Opcodes.IF_ICMPLE)
 
-          case Int64Op.Lt => visitComparison2(exp1, exp2, LCMP, IFGE)
+          case Int64Op.Lt => visitComparison2(exp1, exp2, Opcodes.LCMP, Opcodes.IFGE)
 
-          case Int64Op.Le => visitComparison2(exp1, exp2, LCMP, IFGT)
+          case Int64Op.Le => visitComparison2(exp1, exp2, Opcodes.LCMP, Opcodes.IFGT)
 
-          case Int64Op.Eq => visitComparison2(exp1, exp2, LCMP, IFNE)
+          case Int64Op.Eq => visitComparison2(exp1, exp2, Opcodes.LCMP, Opcodes.IFNE)
 
-          case Int64Op.Neq => visitComparison2(exp1, exp2, LCMP, IFEQ)
+          case Int64Op.Neq => visitComparison2(exp1, exp2, Opcodes.LCMP, Opcodes.IFEQ)
 
-          case Int64Op.Ge => visitComparison2(exp1, exp2, LCMP, IFLT)
+          case Int64Op.Ge => visitComparison2(exp1, exp2, Opcodes.LCMP, Opcodes.IFLT)
 
-          case Int64Op.Gt => visitComparison2(exp1, exp2, LCMP, IFLE)
+          case Int64Op.Gt => visitComparison2(exp1, exp2, Opcodes.LCMP, Opcodes.IFLE)
 
           case Float32Op.Add =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(FADD)
+            mv.visitInsn(Opcodes.FADD)
 
           case Float32Op.Sub =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(FSUB)
+            mv.visitInsn(Opcodes.FSUB)
 
           case Float32Op.Mul =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(FMUL)
+            mv.visitInsn(Opcodes.FMUL)
 
           case Float32Op.Div =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(FDIV)
+            mv.visitInsn(Opcodes.FDIV)
 
           case Float64Op.Add =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(DADD)
+            mv.visitInsn(Opcodes.DADD)
 
           case Float64Op.Sub =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(DSUB)
+            mv.visitInsn(Opcodes.DSUB)
 
           case Float64Op.Mul =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(DMUL)
+            mv.visitInsn(Opcodes.DMUL)
 
           case Float64Op.Div =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(DDIV)
+            mv.visitInsn(Opcodes.DDIV)
 
           case Int8Op.Add =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(IADD)
-            mv.visitInsn(I2B) // Sign extend after operation
+            mv.visitInsn(Opcodes.IADD)
+            mv.visitInsn(Opcodes.I2B) // Sign extend after operation
 
           case Int8Op.Sub =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(ISUB)
-            mv.visitInsn(I2B) // Sign extend after operation
+            mv.visitInsn(Opcodes.ISUB)
+            mv.visitInsn(Opcodes.I2B) // Sign extend after operation
 
           case Int8Op.Mul =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(IMUL)
-            mv.visitInsn(I2B) // Sign extend after operation
+            mv.visitInsn(Opcodes.IMUL)
+            mv.visitInsn(Opcodes.I2B) // Sign extend after operation
 
           case Int8Op.Div =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(IDIV)
-            mv.visitInsn(I2B) // Sign extend after operation
+            mv.visitInsn(Opcodes.IDIV)
+            mv.visitInsn(Opcodes.I2B) // Sign extend after operation
 
           case Int8Op.Rem =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(IREM)
-            mv.visitInsn(I2B) // Sign extend after operation
+            mv.visitInsn(Opcodes.IREM)
+            mv.visitInsn(Opcodes.I2B) // Sign extend after operation
 
           case Int16Op.Add =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(IADD)
-            mv.visitInsn(I2S) // Sign extend after operation
+            mv.visitInsn(Opcodes.IADD)
+            mv.visitInsn(Opcodes.I2S) // Sign extend after operation
 
           case Int16Op.Sub =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(ISUB)
-            mv.visitInsn(I2S) // Sign extend after operation
+            mv.visitInsn(Opcodes.ISUB)
+            mv.visitInsn(Opcodes.I2S) // Sign extend after operation
 
           case Int16Op.Mul =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(IMUL)
-            mv.visitInsn(I2S) // Sign extend after operation
+            mv.visitInsn(Opcodes.IMUL)
+            mv.visitInsn(Opcodes.I2S) // Sign extend after operation
 
           case Int16Op.Div =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(IDIV)
-            mv.visitInsn(I2S) // Sign extend after operation
+            mv.visitInsn(Opcodes.IDIV)
+            mv.visitInsn(Opcodes.I2S) // Sign extend after operation
 
           case Int16Op.Rem =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(IREM)
-            mv.visitInsn(I2S) // Sign extend after operation
+            mv.visitInsn(Opcodes.IREM)
+            mv.visitInsn(Opcodes.I2S) // Sign extend after operation
 
           case Int32Op.Add =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(IADD)
+            mv.visitInsn(Opcodes.IADD)
 
           case Int32Op.Sub =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(ISUB)
+            mv.visitInsn(Opcodes.ISUB)
 
           case Int32Op.Mul =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(IMUL)
+            mv.visitInsn(Opcodes.IMUL)
 
           case Int32Op.Div =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(IDIV)
+            mv.visitInsn(Opcodes.IDIV)
 
           case Int32Op.Rem =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(IREM)
+            mv.visitInsn(Opcodes.IREM)
 
           case Int64Op.Add =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(LADD)
+            mv.visitInsn(Opcodes.LADD)
 
           case Int64Op.Sub =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(LSUB)
+            mv.visitInsn(Opcodes.LSUB)
 
           case Int64Op.Mul =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(LMUL)
+            mv.visitInsn(Opcodes.LMUL)
 
           case Int64Op.Div =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(LDIV)
+            mv.visitInsn(Opcodes.LDIV)
 
           case Int64Op.Rem =>
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitInsn(LREM)
+            mv.visitInsn(Opcodes.LREM)
 
           case StringOp.Concat =>
             throw InternalCompilerException(s"Unexpected BinaryOperator StringOp.Concat. It should have been eliminated by Simplifier", loc)
@@ -595,139 +599,128 @@ object GenExpression {
             val refEqEnd = new Label()
             compileExpr(exp1)
             compileExpr(exp2)
-            mv.visitJumpInsn(IF_ACMPNE, refEqElse)
-            mv.visitInsn(ICONST_1)
-            mv.visitJumpInsn(GOTO, refEqEnd)
+            mv.visitJumpInsn(Opcodes.IF_ACMPNE, refEqElse)
+            mv.visitInsn(Opcodes.ICONST_1)
+            mv.visitJumpInsn(Opcodes.GOTO, refEqEnd)
             mv.visitLabel(refEqElse)
-            mv.visitInsn(ICONST_0)
+            mv.visitInsn(Opcodes.ICONST_0)
             mv.visitLabel(refEqEnd)
         }
 
       case AtomicOp.Is(sym) =>
         val List(exp) = exps
-        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
-        compileIsTag(sym.ordinal, exp, termTypes)
+        compileIsTag(sym.ordinal, exp)
 
       case AtomicOp.Tag(sym) =>
         val caze = root.enums(sym.enumSym).cases(sym)
-        val termTypes = caze.tpes.map(BackendType.toBackendType)
-        compileTag(sym.enumSym.toString, sym.name, caze.sym.ordinal, exps, termTypes)
+        val termTypes = caze.tpes.map(TypeDescs.toErasedClassDesc)
+        compileTag(caze.sym, exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
-        import BytecodeInstructions.*
         val List(exp) = exps
-        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
+        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(TypeDescs.toErasedClassDesc)
 
         compileUntag(exp, idx, termTypes)
-        castIfNotPrim(BackendType.toBackendType(tpe))
+        castIfNotPrim(TypeDescs.toClassDesc(tpe))
 
       case AtomicOp.Index(idx) =>
-        import BytecodeInstructions.*
         val List(exp) = exps
         val SimpleType.Tuple(elmTypes) = exp.tpe
-        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
+        val tupleElms = elmTypes.map(TypeDescs.toErasedClassDesc)
 
         compileExpr(exp)
-        GETFIELD(tupleType.IndexField(idx))
-        castIfNotPrim(BackendType.toBackendType(tpe))
+        GETFIELD(GenTuple.IndexField(tupleElms, idx))
+        castIfNotPrim(TypeDescs.toClassDesc(tpe))
 
       case AtomicOp.Tuple =>
-        import BytecodeInstructions.*
         val SimpleType.Tuple(elmTypes) = tpe
-        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
-        NEW(tupleType.jvmName)
+        val tupleElms = elmTypes.map(TypeDescs.toErasedClassDesc)
+        NEW(GenTuple.desc(tupleElms))
         DUP()
         exps.foreach(compileExpr)
-        INVOKESPECIAL(tupleType.Constructor)
+        INVOKESPECIAL(GenTuple.Constructor(tupleElms))
 
       case AtomicOp.RecordSelect(field) =>
-        import BytecodeInstructions.*
         val List(exp) = exps
-        val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
+        val recordValue = TypeDescs.toErasedClassDesc(tpe)
 
         compileExpr(exp)
         pushString(field.name)
-        INVOKEINTERFACE(BackendObjType.Record.LookupFieldMethod)
+        INVOKEINTERFACE(GenRecord.LookupFieldMethod)
         // Now that the specific RecordExtend object is found, we cast it to its exact class and extract the value.
-        CHECKCAST(recordType.jvmName)
-        GETFIELD(recordType.ValueField)
-        castIfNotPrim(BackendType.toBackendType(tpe))
+        CHECKCAST(GenRecordExtend.desc(recordValue))
+        GETFIELD(GenRecordExtend.ValueField(recordValue))
+        castIfNotPrim(TypeDescs.toClassDesc(tpe))
 
       case AtomicOp.RecordExtend(field) =>
-        import BytecodeInstructions.*
         val List(exp1, exp2) = exps
-        val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(exp1.tpe))
-        NEW(recordType.jvmName)
+        val recordValue = TypeDescs.toErasedClassDesc(exp1.tpe)
+        NEW(GenRecordExtend.desc(recordValue))
         DUP()
-        INVOKESPECIAL(recordType.Constructor)
+        INVOKESPECIAL(GenRecordExtend.Constructor(recordValue))
         DUP()
         pushString(field.name)
-        PUTFIELD(recordType.LabelField)
+        PUTFIELD(GenRecordExtend.LabelField(recordValue))
         DUP()
         compileExpr(exp1)
-        PUTFIELD(recordType.ValueField)
+        PUTFIELD(GenRecordExtend.ValueField(recordValue))
         DUP()
         compileExpr(exp2)
-        PUTFIELD(recordType.RestField)
+        PUTFIELD(GenRecordExtend.RestField(recordValue))
 
       case AtomicOp.RecordRestrict(field) =>
-        import BytecodeInstructions.*
         val List(exp) = exps
 
         compileExpr(exp)
         pushString(field.name)
-        INVOKEINTERFACE(BackendObjType.Record.RestrictFieldMethod)
+        INVOKEINTERFACE(GenRecord.RestrictFieldMethod)
 
       case AtomicOp.ExtIs(sym) =>
         val List(exp) = exps
-        val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
-        compileExtIsTag(sym.name, exp, tpes)
+        compileExtIsTag(sym.name, exp)
 
       case AtomicOp.ExtTag(sym) =>
-        val tpes = SimpleType.findExtensibleTermTypes(sym, tpe).map(BackendType.toBackendType)
+        val tpes = SimpleType.findExtensibleTermTypes(sym, tpe).map(TypeDescs.toErasedClassDesc)
         compileExtTag(sym.name, exps, tpes)
 
       case AtomicOp.ExtUntag(sym, idx) =>
-        import BytecodeInstructions.*
 
         val List(exp) = exps
-        val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
+        val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(TypeDescs.toErasedClassDesc)
 
         compileExtUntag(exp, idx, tpes)
-        castIfNotPrim(BackendType.toBackendType(tpe))
+        castIfNotPrim(TypeDescs.toClassDesc(tpe))
 
       case AtomicOp.ArrayLit =>
-        import BytecodeInstructions.*
         val innerType = tpe.asInstanceOf[SimpleType.Array].tpe
-        val backendType = BackendType.toBackendType(innerType)
+        val elmTpe = TypeDescs.toClassDesc(innerType)
 
         pushInt(exps.length)
-        xNewArray(backendType)
+        xNewArray(elmTpe)
         for ((e, i) <- exps.zipWithIndex) {
           DUP()
           pushInt(i)
           compileExpr(e)
-          xArrayStore(backendType)
+          xArrayStore(elmTpe)
         }
 
       case AtomicOp.ArrayNew =>
-        import BytecodeInstructions.*
         val List(exp1, exp2) = exps
         // We get the inner type of the array
         val innerType = tpe.asInstanceOf[SimpleType.Array].tpe
-        val backendType = BackendType.toBackendType(innerType)
-        val fillMethod = ClassMaker.StaticMethod(JvmName.Arrays, "fill", mkDescriptor(BackendType.Array(backendType.toErased), backendType.toErased)(VoidableType.Void))
+        val erasedElmTpe = TypeDescs.toErasedClassDesc(innerType)
+        val elmIs64BitWidth = erasedElmTpe == CD_long || erasedElmTpe == CD_double
+        val fillMethod = ClassMaker.StaticMethod(JavaClasses.Arrays, "fill", MethodTypeDesc.of(CD_void, erasedElmTpe.arrayType(), erasedElmTpe))
         compileExpr(exp1) // default
         compileExpr(exp2) // default, length
-        xNewArray(backendType) // default, arr
-        if (backendType.is64BitWidth) DUP_X2() else DUP_X1() // arr, default, arr
-        xSwap(lowerLarge = backendType.is64BitWidth, higherLarge = false) // arr, arr, default
+        xNewArray(TypeDescs.toClassDesc(innerType)) // default, arr
+        if (elmIs64BitWidth) DUP_X2() else DUP_X1() // arr, default, arr
+        xSwap(lowerLarge = elmIs64BitWidth, higherLarge = false) // arr, arr, default
         INVOKESTATIC(fillMethod)
 
       case AtomicOp.ArrayLoad =>
-        import BytecodeInstructions.*
         val List(exp1, exp2) = exps
-        val elmTpe = BackendType.toBackendType(tpe)
+        val elmTpe = TypeDescs.toClassDesc(tpe)
 
         // Add source line number for debugging (can fail with out of bounds).
         addLoc(loc)
@@ -737,28 +730,25 @@ object GenExpression {
         castIfNotPrim(elmTpe)
 
       case AtomicOp.ArrayStore =>
-        import BytecodeInstructions.*
         val List(exp1, exp2, exp3) = exps
-        val elmTpe = BackendType.toBackendType(exp3.tpe)
+        val elmTpe = TypeDescs.toClassDesc(exp3.tpe)
 
         // Add source line number for debugging (can fail with out of bounds).
         addLoc(loc)
         compileExpr(exp1) // Evaluating the array
-        castIfNotPrim(BackendType.Array(elmTpe))
+        castIfNotPrim(elmTpe.arrayType())
         compileExpr(exp2) // Evaluating the index
         compileExpr(exp3) // Evaluating the element
         xArrayStore(elmTpe)
-        GETSTATIC(BackendObjType.Unit.SingletonField)
+        GETSTATIC(GenUnit.SingletonField)
 
       case AtomicOp.ArrayLength =>
-        import BytecodeInstructions.*
         val List(exp) = exps
         compileExpr(exp)
         ARRAYLENGTH()
 
       case AtomicOp.StructNew(sym, mutability, _) =>
-        import BytecodeInstructions.*
-        val structType = getStructType(root.structs(sym))
+        val structElms = getStructType(root.structs(sym))
         val (fieldExps, regionOpt) = mutability match {
           case Mutability.Immutable => (exps, None)
           case Mutability.Mutable =>
@@ -770,106 +760,95 @@ object GenExpression {
           case None => ()
           case Some(region) =>
             compileExpr(region)
-            xPop(BackendType.toBackendType(region.tpe))
+            xPop(TypeDescs.toClassDesc(region.tpe))
         }
-        NEW(structType.jvmName)
+        NEW(GenStruct.desc(structElms))
         DUP()
         fieldExps.foreach(compileExpr)
-        INVOKESPECIAL(structType.Constructor)
+        INVOKESPECIAL(GenStruct.Constructor(structElms))
 
       case AtomicOp.StructGet(field) =>
-        import BytecodeInstructions.*
 
         val List(exp) = exps
         val struct = root.structs(field.structSym)
-        val structType = getStructType(struct)
+        val structElms = getStructType(struct)
         val idx = struct.fields.indexWhere(_.sym == field)
 
         compileExpr(exp)
-        GETFIELD(structType.IndexField(idx))
-        castIfNotPrim(BackendType.toBackendType(tpe))
+        GETFIELD(GenStruct.IndexField(structElms, idx))
+        castIfNotPrim(TypeDescs.toClassDesc(tpe))
 
       case AtomicOp.StructPut(field) =>
-        import BytecodeInstructions.*
 
         val List(exp1, exp2) = exps
         val struct = root.structs(field.structSym)
         val idx = struct.fields.indexWhere(_.sym == field)
-        val structType = getStructType(struct)
+        val structElms = getStructType(struct)
 
         compileExpr(exp1)
         compileExpr(exp2)
-        PUTFIELD(structType.IndexField(idx))
-        GETSTATIC(BackendObjType.Unit.SingletonField)
+        PUTFIELD(GenStruct.IndexField(structElms, idx))
+        GETSTATIC(GenUnit.SingletonField)
 
       case AtomicOp.InstanceOf(clazz) =>
-        import BytecodeInstructions.*
         val List(exp) = exps
-        val jvmName = JvmName.ofClass(clazz)
         compileExpr(exp)
-        INSTANCEOF(jvmName)
+        mv.visitTypeInsn(Opcodes.INSTANCEOF, internalNameOf(clazz))
 
       case AtomicOp.Cast =>
-        import BytecodeInstructions.*
         val List(exp) = exps
         compileExpr(exp)
-        castIfNotPrim(BackendType.toBackendType(tpe))
+        castIfNotPrim(TypeDescs.toClassDesc(tpe))
 
       case AtomicOp.Unbox =>
-        import BytecodeInstructions.*
         val List(exp) = exps
-        val bType = BackendType.toBackendType(tpe)
+        val bType = TypeDescs.toClassDesc(tpe)
         compileExpr(exp)
-        CHECKCAST(BackendObjType.Value.jvmName)
-        GETFIELD(BackendObjType.Value.fieldFromType(bType))
+        CHECKCAST(GenValue.Desc)
+        GETFIELD(GenValue.fieldFromType(bType))
         castIfNotPrim(bType)
 
       case AtomicOp.Box =>
-        import BytecodeInstructions.*
         val List(exp) = exps
         exp.tpe match {
           case SimpleType.Unit =>
             compileExpr(exp)
             POP()
-            GETSTATIC(BackendObjType.Value.UnitField)
+            GETSTATIC(GenValue.UnitField)
           case SimpleType.Bool =>
             compileExpr(exp)
             val falseLabel = new Label()
             val doneLabel = new Label()
-            mv.visitJumpInsn(IFEQ, falseLabel)
-            GETSTATIC(BackendObjType.Value.TrueField)
-            mv.visitJumpInsn(GOTO, doneLabel)
+            mv.visitJumpInsn(Opcodes.IFEQ, falseLabel)
+            GETSTATIC(GenValue.TrueField)
+            mv.visitJumpInsn(Opcodes.GOTO, doneLabel)
             mv.visitLabel(falseLabel)
-            GETSTATIC(BackendObjType.Value.FalseField)
+            GETSTATIC(GenValue.FalseField)
             mv.visitLabel(doneLabel)
           case _ =>
-            val erasedExpTpe = BackendType.toErasedBackendType(exp.tpe)
-            val valueField = BackendObjType.Value.fieldFromType(erasedExpTpe)
+            val erasedExpTpe = TypeDescs.toErasedClassDesc(exp.tpe)
+            val valueField = GenValue.fieldFromType(erasedExpTpe)
             compileExpr(exp)
-            NEW(BackendObjType.Value.jvmName)
+            NEW(GenValue.Desc)
             DUP()
-            INVOKESPECIAL(BackendObjType.Value.Constructor)
+            INVOKESPECIAL(GenValue.Constructor)
             DUP()
-            xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) // two objects on top of the stack
+            xSwap(lowerLarge = isCategory2(erasedExpTpe), higherLarge = true) // two objects on top of the stack
             PUTFIELD(valueField)
         }
 
       case AtomicOp.InvokeConstructor(constructor) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
-        BytecodeInstructions.addLoc(loc)
-        val descriptor = asm.Type.getConstructorDescriptor(constructor)
-        val declaration = asm.Type.getInternalName(constructor.getDeclaringClass)
+        addLoc(loc)
+        val declaration = internalNameOf(constructor.owner)
         // Create a new object of the declaration type
-        mv.visitTypeInsn(NEW, declaration)
+        mv.visitTypeInsn(Opcodes.NEW, declaration)
         // Duplicate the reference since the first argument for a constructor call is the reference to the object
-        mv.visitInsn(DUP)
-        for ((arg, argType) <- exps.zip(constructor.getParameterTypes)) {
-          compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
-        }
+        mv.visitInsn(Opcodes.DUP)
+        compileJavaArgs(exps, constructor.descriptor)
 
         // Call the constructor
-        mv.visitMethodInsn(INVOKESPECIAL, declaration, JvmName.ConstructorMethod, descriptor, false)
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, declaration, ClassMaker.ConstructorMethodName, constructor.descriptor.descriptorString(), false)
 
       case AtomicOp.InvokeSuperConstructor(constructor) =>
         // A InvokeSuperConstructor is handled directly in NewObject.
@@ -879,121 +858,101 @@ object GenExpression {
         val exp :: args = exps
 
         // Add source line number for debugging (can fail when calling unsafe java methods)
-        BytecodeInstructions.addLoc(loc)
+        addLoc(loc)
 
         // Evaluate the receiver object.
         compileExpr(exp)
-        val thisType = asm.Type.getInternalName(method.getDeclaringClass)
-        mv.visitTypeInsn(CHECKCAST, thisType)
+        val declaration = internalNameOf(method.owner)
+        mv.visitTypeInsn(Opcodes.CHECKCAST, declaration)
 
-        for ((arg, argType) <- args.zip(method.getParameterTypes)) {
-          compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
-        }
-
-        val declaration = asm.Type.getInternalName(method.getDeclaringClass)
-        val name = method.getName
-        val descriptor = asm.Type.getMethodDescriptor(method)
+        compileJavaArgs(args, method.descriptor)
 
         // Check if we are invoking an interface or class.
-        if (method.getDeclaringClass.isInterface) {
-          mv.visitMethodInsn(INVOKEINTERFACE, declaration, name, descriptor, true)
+        if (method.isInterface) {
+          mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, declaration, method.name, method.descriptor.descriptorString(), true)
         } else {
-          mv.visitMethodInsn(INVOKEVIRTUAL, declaration, name, descriptor, false)
+          mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, declaration, method.name, method.descriptor.descriptorString(), false)
         }
+        castJavaResult(method.descriptor.returnType(), tpe)
 
         // If the method is void, put a unit on top of the stack
-        if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
-          mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
+          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
         }
 
-      case AtomicOp.InvokeSuperMethod(method, className) =>
+      case AtomicOp.InvokeSuperMethod(sym, method) =>
         // Add source line number for debugging
-        BytecodeInstructions.addLoc(loc)
+        addLoc(loc)
 
         // The first expression is the receiver (the anonymous class instance, i.e. `_this`).
         val receiver :: args = exps
 
         // Evaluate the receiver object.
         compileExpr(receiver)
-        val anonClassInternalName = className.replace('.', '/')
-        mv.visitTypeInsn(CHECKCAST, anonClassInternalName)
+        val anonClassInternalName = internalNameOf(GenAnonymousClasses.desc(sym))
+        mv.visitTypeInsn(Opcodes.CHECKCAST, anonClassInternalName)
 
-        // Evaluate and cast each argument.
-        for ((arg, argType) <- args.zip(method.getParameterTypes)) {
-          compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
-        }
+        // Evaluate and convert each argument.
+        compileJavaArgs(args, method.descriptor)
 
         // Call the bridge method super$methodName on the anonymous class.
-        val bridgeName = s"super$$${method.getName}"
-        val descriptor = asm.Type.getMethodDescriptor(method)
-        mv.visitMethodInsn(INVOKEVIRTUAL, anonClassInternalName, bridgeName, descriptor, false)
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, anonClassInternalName, GenAnonymousClasses.bridgeName(method), method.descriptor.descriptorString(), false)
+        castJavaResult(method.descriptor.returnType(), tpe)
 
         // If the method is void, put a unit on top of the stack
-        if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
-          mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
+          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
         }
 
       case AtomicOp.InvokeStaticMethod(method) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
-        BytecodeInstructions.addLoc(loc)
-        for ((arg, argType) <- exps.zip(method.getParameterTypes)) {
-          compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
-        }
-        val declaration = asm.Type.getInternalName(method.getDeclaringClass)
-        val name = method.getName
-        val descriptor = asm.Type.getMethodDescriptor(method)
-        // Check if we are invoking an interface or class.
-        if (method.getDeclaringClass.isInterface) {
-          mv.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, true)
-        } else {
-          mv.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, false)
-        }
-        if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
-          mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        addLoc(loc)
+        compileJavaArgs(exps, method.descriptor)
+        val declaration = internalNameOf(method.owner)
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, declaration, method.name, method.descriptor.descriptorString(), method.isInterface)
+        castJavaResult(method.descriptor.returnType(), tpe)
+        if (method.descriptor.returnType() == java.lang.constant.ConstantDescs.CD_void) {
+          mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
         }
 
       case AtomicOp.GetField(field) =>
         val List(exp) = exps
         // Add source line number for debugging (can fail when calling java)
-        BytecodeInstructions.addLoc(loc)
+        addLoc(loc)
         compileExpr(exp)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(GETFIELD, declaration, field.getName, BackendType.toBackendType(tpe).toDescriptor)
+        val declaration = internalNameOf(field.owner)
+        mv.visitFieldInsn(Opcodes.GETFIELD, declaration, field.name, TypeDescs.toClassDesc(tpe).descriptorString())
 
       case AtomicOp.PutField(field) =>
         val List(exp1, exp2) = exps
         // Add source line number for debugging (can fail when calling java)
-        BytecodeInstructions.addLoc(loc)
+        addLoc(loc)
         compileExpr(exp1)
         compileExpr(exp2)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(PUTFIELD, declaration, field.getName, BackendType.toBackendType(exp2.tpe).toDescriptor)
+        val declaration = internalNameOf(field.owner)
+        mv.visitFieldInsn(Opcodes.PUTFIELD, declaration, field.name, TypeDescs.toClassDesc(exp2.tpe).descriptorString())
 
         // Push Unit on the stack.
-        mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
 
       case AtomicOp.GetStaticField(field) =>
         // Add source line number for debugging (can fail when calling java)
-        BytecodeInstructions.addLoc(loc)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(GETSTATIC, declaration, field.getName, BackendType.toBackendType(tpe).toDescriptor)
+        addLoc(loc)
+        val declaration = internalNameOf(field.owner)
+        mv.visitFieldInsn(Opcodes.GETSTATIC, declaration, field.name, TypeDescs.toClassDesc(tpe).descriptorString())
 
       case AtomicOp.PutStaticField(field) =>
         val List(exp) = exps
         // Add source line number for debugging (can fail when calling java)
-        BytecodeInstructions.addLoc(loc)
+        addLoc(loc)
         compileExpr(exp)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(PUTSTATIC, declaration, field.getName, BackendType.toBackendType(exp.tpe).toDescriptor)
+        val declaration = internalNameOf(field.owner)
+        mv.visitFieldInsn(Opcodes.PUTSTATIC, declaration, field.name, TypeDescs.toClassDesc(exp.tpe).descriptorString())
 
         // Push Unit on the stack.
-        mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        mv.visitFieldInsn(Opcodes.GETSTATIC, internalNameOf(GenUnit.Desc), GenUnit.SingletonField.name, GenUnit.Desc.descriptorString())
 
       case AtomicOp.Throw =>
-        import BytecodeInstructions.*
         val List(exp) = exps
         // Add source line number for debugging (can fail when handling exception).
         addLoc(loc)
@@ -1001,130 +960,129 @@ object GenExpression {
         ATHROW()
 
       case AtomicOp.Spawn =>
-        import BytecodeInstructions.*
         val List(exp1, exp2) = exps
         exp2 match {
           // The expression represents the `Static` region, just start a thread directly
           case Expr.Cst(Constant.Static, _) =>
             addLoc(loc)
             compileExpr(exp1)
-            CHECKCAST(JvmName.Runnable)
+            CHECKCAST(JavaClasses.Runnable)
             INVOKESTATIC(ClassConstants.Thread.StartVirtualThreadMethod)
             POP()
-            GETSTATIC(BackendObjType.Unit.SingletonField)
+            GETSTATIC(GenUnit.SingletonField)
           case _ =>
             addLoc(loc)
             compileExpr(exp2)
-            CHECKCAST(BackendObjType.Region.jvmName)
+            CHECKCAST(GenRegion.Desc)
             compileExpr(exp1)
-            CHECKCAST(JvmName.Runnable)
-            INVOKEVIRTUAL(BackendObjType.Region.SpawnMethod)
-            GETSTATIC(BackendObjType.Unit.SingletonField)
+            CHECKCAST(JavaClasses.Runnable)
+            INVOKEVIRTUAL(GenRegion.SpawnMethod)
+            GETSTATIC(GenUnit.SingletonField)
         }
 
       case AtomicOp.Lazy =>
-        import BytecodeInstructions.*
         val List(exp) = exps
 
         // Find the Lazy class name (Lazy$tpe).
         val SimpleType.Lazy(elmType) = tpe
-        val lazyType = BackendObjType.Lazy(BackendType.toBackendType(elmType))
+        val lazyElm = TypeDescs.toErasedClassDesc(elmType)
 
-        NEW(lazyType.jvmName)
+        NEW(GenLazy.desc(lazyElm))
         DUP()
         compileExpr(exp)
-        INVOKESPECIAL(lazyType.Constructor)
+        INVOKESPECIAL(GenLazy.Constructor(lazyElm))
 
       case AtomicOp.Force =>
-        import BytecodeInstructions.*
         val List(exp) = exps
 
         // Find the Lazy class type (Lazy$tpe) and the inner value type.
         val SimpleType.Lazy(elmType) = exp.tpe
-        val erasedElmType = BackendType.toBackendType(elmType)
-        val lazyType = BackendObjType.Lazy(erasedElmType)
+        val erasedElmType = TypeDescs.toErasedClassDesc(elmType)
+        val lazyElm = erasedElmType
 
         // Emit code for the lazy expression.
         compileExpr(exp)
-        CHECKCAST(lazyType.jvmName)
+        CHECKCAST(GenLazy.desc(lazyElm))
         DUP()
-        GETFIELD(lazyType.ExpField)
+        GETFIELD(GenLazy.ExpField(lazyElm))
         ifConditionElse(Condition.NONNULL)(
-          INVOKEVIRTUAL(lazyType.ForceMethod)
+          INVOKEVIRTUAL(GenLazy.ForceMethod(lazyElm))
         )(
-          GETFIELD(lazyType.ValueField)
+          GETFIELD(GenLazy.ValueField(lazyElm))
         )
 
       case AtomicOp.HoleError(sym) =>
-        import BytecodeInstructions.*
         // Add source line number for debugging (failable by design).
         addLoc(loc)
-        NEW(BackendObjType.HoleError.jvmName) // HoleError
+        NEW(GenHoleError.Desc) // HoleError
         DUP() // HoleError, HoleError
         pushString(sym.toString) // HoleError, HoleError, Sym
         pushLoc(loc) // HoleError, HoleError, Sym, Loc
-        INVOKESPECIAL(BackendObjType.HoleError.Constructor) // HoleError
+        INVOKESPECIAL(GenHoleError.Constructor) // HoleError
         ATHROW()
 
       case AtomicOp.MatchError =>
-        import BytecodeInstructions.*
         // Add source line number for debugging (failable by design)
         addLoc(loc)
-        NEW(BackendObjType.MatchError.jvmName) // MatchError
+        NEW(GenMatchError.Desc) // MatchError
         DUP() // MatchError, MatchError
         pushLoc(loc) // MatchError, MatchError, Loc
-        INVOKESPECIAL(BackendObjType.MatchError.Constructor) // MatchError
+        INVOKESPECIAL(GenMatchError.Constructor) // MatchError
         ATHROW()
 
       case AtomicOp.CastError(from, to) =>
-        import BytecodeInstructions.*
         // Add source line number for debugging (failable by design)
         addLoc(loc)
-        NEW(BackendObjType.CastError.jvmName) // CastError
+        NEW(GenCastError.Desc) // CastError
         DUP() // CastError, CastError
         pushLoc(loc) // CastError, CastError, Loc
         pushString(s"Cannot cast from type '$from' to '$to'") // CastError, CastError, Loc, String
-        INVOKESPECIAL(BackendObjType.CastError.Constructor) // CastError
+        INVOKESPECIAL(GenCastError.Constructor) // CastError
         ATHROW()
+
+      // Vector operations are simplified to array operations in the Simplifier.
+      case AtomicOp.VectorLit => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
+      case AtomicOp.VectorLoad => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
+      case AtomicOp.VectorLength => throw InternalCompilerException(s"Unexpected vector operation: '$op'.", loc)
     }
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
       // Type of the function abstract class
-      val functionInterface = JvmOps.getErasedFunctionInterfaceType(exp1.tpe)
-      val closureAbstractClass = JvmOps.getErasedClosureAbstractClassType(exp1.tpe)
+      val (fnArgs, fnResult) = GenArrow.erasedArgsAndResult(exp1.tpe)
+      val closureAbstractClass = GenAbstractArrow.descOfArrowType(exp1.tpe)
       ct match {
         case ExpPosition.Tail =>
           // Evaluating the closure
           compileExpr(exp1)
           // Casting to JvmType of closure abstract class
-          mv.visitTypeInsn(CHECKCAST, closureAbstractClass.jvmName.toInternalName)
+          mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(closureAbstractClass))
           // retrieving the unique thread object
-          mv.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.jvmName.toInternalName, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, false)
+          mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(closureAbstractClass), GenAbstractArrow.GetUniqueThreadClosureMethod(fnArgs, fnResult).name, mkDescriptor()(closureAbstractClass).descriptorString(), false)
           // Putting arg on the Fn class
           // Duplicate the FunctionInterface
-          mv.visitInsn(DUP)
+          mv.visitInsn(Opcodes.DUP)
           // Evaluating the expression
           compileExpr(exp2)
-          BytecodeInstructions.PUTFIELD(functionInterface.ArgField(0))
+          PUTFIELD(GenArrow.ArgField(fnArgs, fnResult, 0))
           // Return the closure
-          mv.visitInsn(ARETURN)
+          mv.visitInsn(Opcodes.ARETURN)
 
         case ExpPosition.NonTail =>
           compileExpr(exp1)
           // Casting to JvmType of closure abstract class
-          mv.visitTypeInsn(CHECKCAST, closureAbstractClass.jvmName.toInternalName)
+          mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(closureAbstractClass))
           // retrieving the unique thread object
-          mv.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.jvmName.toInternalName, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, false)
+          mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(closureAbstractClass), GenAbstractArrow.GetUniqueThreadClosureMethod(fnArgs, fnResult).name, mkDescriptor()(closureAbstractClass).descriptorString(), false)
           // Putting arg on the Fn class
           // Duplicate the FunctionInterface
-          mv.visitInsn(DUP)
+          mv.visitInsn(Opcodes.DUP)
           // Evaluating the expression
           compileExpr(exp2)
-          BytecodeInstructions.PUTFIELD(functionInterface.ArgField(0))
+          PUTFIELD(GenArrow.ArgField(fnArgs, fnResult, 0))
 
           // Calling unwind and unboxing
           if (Purity.isControlPure(purity)) {
-            BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)
+            GenResult.unwindSuspensionFreeThunk("in pure closure call", loc)
           } else {
             ctx match {
               case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
@@ -1132,13 +1090,13 @@ object GenExpression {
                 val pcPointLabel = pcLabels(pcPoint)
                 val afterUnboxing = new Label()
                 pcCounter(0) += 1
-                BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc)
-                mv.visitJumpInsn(GOTO, afterUnboxing)
+                GenResult.unwindThunkToValue(pcPoint, newFrame, setPc)
+                mv.visitJumpInsn(Opcodes.GOTO, afterUnboxing)
 
                 mv.visitLabel(pcPointLabel)
                 narrowLocals(mv)
 
-                mv.visitVarInsn(ALOAD, 1)
+                mv.visitVarInsn(Opcodes.ALOAD, 1)
 
                 mv.visitLabel(afterUnboxing)
 
@@ -1150,174 +1108,170 @@ object GenExpression {
 
     case Expr.ApplyDef(sym, exps, ct, _, _, loc) => ct match {
       case ExpPosition.Tail =>
-        val defJvmName = BackendObjType.Defn(sym).jvmName
+        val defInternalName = internalNameOf(GenFunAndClosureClasses.defnDesc(sym))
         // Type of the function abstract class
-        val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType)
+        val (fnArgs, fnResult) = GenArrow.erasedArgsAndResult(root.defs(sym).arrowType)
 
         // Put the def on the stack
-        mv.visitTypeInsn(NEW, defJvmName.toInternalName)
-        mv.visitInsn(DUP)
-        mv.visitMethodInsn(INVOKESPECIAL, defJvmName.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+        mv.visitTypeInsn(Opcodes.NEW, defInternalName)
+        mv.visitInsn(Opcodes.DUP)
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, defInternalName, ClassMaker.ConstructorMethodName, MethodTypeDescs.NothingToVoid.descriptorString(), false)
         // Putting args on the Fn class
         for ((arg, i) <- exps.zipWithIndex) {
           // Duplicate the FunctionInterface
-          mv.visitInsn(DUP)
+          mv.visitInsn(Opcodes.DUP)
           // Evaluating the expression
           compileExpr(arg)
-          BytecodeInstructions.PUTFIELD(functionInterface.ArgField(i))
+          PUTFIELD(GenArrow.ArgField(fnArgs, fnResult, i))
         }
         // Return the def
-        mv.visitInsn(ARETURN)
+        mv.visitInsn(Opcodes.ARETURN)
 
       case ExpPosition.NonTail =>
         val defn = root.defs(sym)
         val targetIsFunction = defn.cparams.isEmpty
         val canCallStaticMethod = Purity.isControlPure(defn.expr.purity) && targetIsFunction
         if (canCallStaticMethod) {
-          val paramTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
+          val paramTpes = defn.fparams.map(fp => TypeDescs.toClassDesc(fp.tpe))
           // Call the static method, using exact types
           for ((arg, tpe) <- ListOps.zip(exps, paramTpes)) {
             compileExpr(arg)
-            BytecodeInstructions.castIfNotPrim(tpe)
+            castIfNotPrim(tpe)
           }
-          val resultTpe = BackendObjType.Result.toTpe
-          val desc = MethodDescriptor(paramTpes, resultTpe)
-          val className = BackendObjType.Defn(sym).jvmName
-          mv.visitMethodInsn(INVOKESTATIC, className.toInternalName, JvmName.StaticApply, desc.toDescriptor, false)
-          BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
+          val desc = mkDescriptor(paramTpes *)(GenResult.Desc)
+          val className = internalNameOf(GenFunAndClosureClasses.defnDesc(sym))
+          mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, ClassMaker.StaticApplyMethodName, desc.descriptorString(), false)
+          GenResult.unwindSuspensionFreeThunk("in pure function call", loc)
         } else {
           // JvmType of Def
-          val defJvmName = BackendObjType.Defn(sym).jvmName
+          val defInternalName = internalNameOf(GenFunAndClosureClasses.defnDesc(sym))
 
           // Put the def on the stack
-          mv.visitTypeInsn(NEW, defJvmName.toInternalName)
-          mv.visitInsn(DUP)
-          mv.visitMethodInsn(INVOKESPECIAL, defJvmName.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+          mv.visitTypeInsn(Opcodes.NEW, defInternalName)
+          mv.visitInsn(Opcodes.DUP)
+          mv.visitMethodInsn(Opcodes.INVOKESPECIAL, defInternalName, ClassMaker.ConstructorMethodName, MethodTypeDescs.NothingToVoid.descriptorString(), false)
 
           // Putting args on the Fn class
           for ((arg, i) <- exps.zipWithIndex) {
             // Duplicate the FunctionInterface
-            mv.visitInsn(DUP)
+            mv.visitInsn(Opcodes.DUP)
             // Evaluating the expression
             compileExpr(arg)
-            mv.visitFieldInsn(PUTFIELD, defJvmName.toInternalName,
-              s"arg$i", BackendType.toErasedBackendType(arg.tpe).toDescriptor)
+            mv.visitFieldInsn(Opcodes.PUTFIELD, defInternalName,
+              s"arg$i", TypeDescs.toErasedClassDesc(arg.tpe).descriptorString())
           }
           // Calling unwind and unboxing
           ctx match {
             case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
               val defn = root.defs(sym)
               if (Purity.isControlPure(defn.expr.purity)) {
-                BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
+                GenResult.unwindSuspensionFreeThunk("in pure function call", loc)
               } else {
                 val pcPoint = pcCounter(0) + 1
                 val pcPointLabel = pcLabels(pcPoint)
                 val afterUnboxing = new Label()
                 pcCounter(0) += 1
-                BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc)
-                mv.visitJumpInsn(GOTO, afterUnboxing)
+                GenResult.unwindThunkToValue(pcPoint, newFrame, setPc)
+                mv.visitJumpInsn(Opcodes.GOTO, afterUnboxing)
 
                 mv.visitLabel(pcPointLabel)
                 narrowLocals(mv)
-                mv.visitVarInsn(ALOAD, 1)
+                mv.visitVarInsn(Opcodes.ALOAD, 1)
 
                 mv.visitLabel(afterUnboxing)
               }
             case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
-              BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
+              GenResult.unwindSuspensionFreeThunk("in pure function call", loc)
           }
         }
     }
 
     case Expr.ApplyOp(sym, exps, tpe, _, loc) => ctx match {
       case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
-        BackendObjType.Result.crashIfSuspension("Unexpected do-expression in direct method context", loc)
+        GenResult.crashIfSuspension("Unexpected do-expression in direct method context", loc)
 
       case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
-        import BackendObjType.Suspension
-        import BytecodeInstructions.*
-
         val pcPoint = pcCounter(0) + 1
         val pcPointLabel = pcLabels(pcPoint)
         val afterUnboxing = new Label()
-        val erasedResult = BackendType.toErasedBackendType(tpe)
+        val erasedResult = TypeDescs.toErasedClassDesc(tpe)
         pcCounter(0) += 1
 
-        val effectName = JvmOps.getEffectDefinitionClassName(sym.eff)
+        val effectName = GenEffectClasses.effectDesc(sym.eff)
         val effectStaticMethod = ClassMaker.StaticMethod(
           effectName,
-          JvmOps.getEffectOpName(sym),
+          GenEffectClasses.opName(sym),
           GenEffectClasses.opStaticFunctionDescriptor(sym)
         )
-        NEW(Suspension.jvmName)
+        NEW(GenSuspension.Desc)
         DUP()
-        INVOKESPECIAL(Suspension.Constructor)
+        INVOKESPECIAL(GenSuspension.Constructor)
         DUP()
         pushString(sym.eff.toString)
-        PUTFIELD(Suspension.EffSymField)
+        PUTFIELD(GenSuspension.EffSymField)
         DUP()
         // --- eff op ---
         exps.foreach(compileExpr)
-        mkStaticLambda(BackendObjType.EffectCall.ApplyMethod, effectStaticMethod, 2)
+        mkStaticLambda(GenEffectCall.ApplyMethod, effectStaticMethod, 2)
         // --------------
-        PUTFIELD(Suspension.EffOpField)
+        PUTFIELD(GenSuspension.EffOpField)
         DUP()
         // create continuation
-        NEW(BackendObjType.FramesNil.jvmName)
+        NEW(GenFramesNil.Desc)
         DUP()
-        INVOKESPECIAL(BackendObjType.FramesNil.Constructor)
+        INVOKESPECIAL(GenFramesNil.Constructor)
         newFrame(mv)
         DUP()
         pushInt(pcPoint)
         setPc(mv)
-        INVOKEVIRTUAL(BackendObjType.FramesNil.PushMethod)
+        INVOKEVIRTUAL(GenFramesNil.PushMethod)
         // store continuation
-        PUTFIELD(Suspension.PrefixField)
+        PUTFIELD(GenSuspension.PrefixField)
         DUP()
-        NEW(BackendObjType.ResumptionNil.jvmName)
+        NEW(GenResumptionNil.Desc)
         DUP()
-        INVOKESPECIAL(BackendObjType.ResumptionNil.Constructor)
-        PUTFIELD(Suspension.ResumptionField)
-        xReturn(Suspension.toTpe)
+        INVOKESPECIAL(GenResumptionNil.Constructor)
+        PUTFIELD(GenSuspension.ResumptionField)
+        xReturn(GenSuspension.Desc)
 
         mv.visitLabel(pcPointLabel)
         narrowLocals(mv)
         ALOAD(1)
-        GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))
+        GETFIELD(GenValue.fieldFromType(erasedResult))
 
         mv.visitLabel(afterUnboxing)
-        castIfNotPrim(BackendType.toBackendType(tpe))
+        castIfNotPrim(TypeDescs.toClassDesc(tpe))
     }
 
     case Expr.ApplySelfTail(sym, exps, _, _, _) => ctx match {
       case EffectContext(_, _, _, setPc, _, _, _, _) =>
         // The function abstract class name
-        val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType)
+        val (fnArgs, fnResult) = GenArrow.erasedArgsAndResult(root.defs(sym).arrowType)
         // Evaluate each argument and put the result on the Fn class.
         for ((arg, i) <- exps.zipWithIndex) {
-          mv.visitVarInsn(ALOAD, 0)
+          mv.visitVarInsn(Opcodes.ALOAD, 0)
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
-          BytecodeInstructions.PUTFIELD(functionInterface.ArgField(i))
+          PUTFIELD(GenArrow.ArgField(fnArgs, fnResult, i))
         }
-        mv.visitVarInsn(ALOAD, 0)
-        BytecodeInstructions.pushInt(0)
+        mv.visitVarInsn(Opcodes.ALOAD, 0)
+        pushInt(0)
         setPc(mv)
         // Jump to the entry point of the method.
-        mv.visitJumpInsn(GOTO, ctx.entryPoint)
+        mv.visitJumpInsn(Opcodes.GOTO, ctx.entryPoint)
 
       case DirectInstanceContext(_, _, _) =>
         // The function abstract class name
-        val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType)
+        val (fnArgs, fnResult) = GenArrow.erasedArgsAndResult(root.defs(sym).arrowType)
         // Evaluate each argument and put the result on the Fn class.
         for ((arg, i) <- exps.zipWithIndex) {
-          mv.visitVarInsn(ALOAD, 0)
+          mv.visitVarInsn(Opcodes.ALOAD, 0)
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
-          BytecodeInstructions.PUTFIELD(functionInterface.ArgField(i))
+          PUTFIELD(GenArrow.ArgField(fnArgs, fnResult, i))
         }
         // Jump to the entry point of the method.
-        mv.visitJumpInsn(GOTO, ctx.entryPoint)
+        mv.visitJumpInsn(Opcodes.GOTO, ctx.entryPoint)
 
       case DirectStaticContext(_, _, _) =>
         val defn = root.defs(sym)
@@ -1327,16 +1281,15 @@ object GenExpression {
         }
         for ((arg, fp) <- ListOps.zip(exps, defn.fparams).reverse) {
           // Store it in the ith parameter.
-          val tpe = BackendType.toBackendType(arg.tpe)
-          val offset = JvmOps.getIndex(fp.offset, ctx.localOffset)
-          BytecodeInstructions.xStore(tpe, offset)
+          val tpe = TypeDescs.toClassDesc(arg.tpe)
+          val offset = ctx.getIndex(fp.offset)
+          xStore(tpe, offset)
         }
         // Jump to the entry point of the method.
-        mv.visitJumpInsn(GOTO, ctx.entryPoint)
+        mv.visitJumpInsn(Opcodes.GOTO, ctx.entryPoint)
     }
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      import BytecodeInstructions.*
       compileExpr(exp1)
       branch(Condition.Bool) {
         case Branch.TrueBranch => compileExpr(exp2)
@@ -1352,7 +1305,7 @@ object GenExpression {
       // Label for the end of all branches
       val endLabel = new Label()
       // Skip branches if `exp` does not jump
-      mv.visitJumpInsn(GOTO, endLabel)
+      mv.visitJumpInsn(Opcodes.GOTO, endLabel)
       // Compiling branches
       branches.foreach { case (sym, branchExp) =>
         // Label for the start of the branch
@@ -1360,21 +1313,21 @@ object GenExpression {
         // evaluating the expression for the branch
         compileExpr(branchExp)(mv, ctx1, root, flix)
         // Skip the rest of the branches
-        mv.visitJumpInsn(GOTO, endLabel)
+        mv.visitJumpInsn(Opcodes.GOTO, endLabel)
       }
       // label for the end of branches
       mv.visitLabel(endLabel)
 
     case Expr.JumpTo(sym, _, _, _) =>
       // Jumping to the label
-      mv.visitJumpInsn(GOTO, ctx.lenv(sym))
+      mv.visitJumpInsn(Opcodes.GOTO, ctx.lenv(sym))
 
     case Expr.Switch(exp, enumSym, cases, defaultExp, _, _, _) =>
       // Compile the scrutinee (pushes enum value onto stack)
       compileExpr(exp)
       // Extract ordinal: checkcast Tagged, getfield ordinal
-      mv.visitTypeInsn(CHECKCAST, BackendObjType.Tagged.jvmName.toInternalName)
-      mv.visitFieldInsn(GETFIELD, BackendObjType.Tagged.jvmName.toInternalName, "ordinal", BackendType.Int32.toDescriptor)
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenTagged.Desc))
+      mv.visitFieldInsn(Opcodes.GETFIELD, internalNameOf(GenTagged.Desc), "ordinal", CD_int.descriptorString())
       // Build labels
       val defaultLabel = new Label()
       val endLabel = new Label()
@@ -1416,7 +1369,7 @@ object GenExpression {
       cases.foreach { case (sym, body) =>
         mv.visitLabel(caseLabels(sym.ordinal))
         compileExpr(body)
-        mv.visitJumpInsn(GOTO, endLabel)
+        mv.visitJumpInsn(Opcodes.GOTO, endLabel)
       }
       // Default branch
       mv.visitLabel(defaultLabel)
@@ -1425,8 +1378,7 @@ object GenExpression {
       mv.visitLabel(endLabel)
 
     case Expr.Let(_, offset, exp1, exp2, _) =>
-      import BytecodeInstructions.*
-      val bType = BackendType.toBackendType(exp1.tpe)
+      val bType = TypeDescs.toClassDesc(exp1.tpe)
       compileExpr(exp1)
       // No cast needed in most cases: operations self-cast (Untag, Index, etc.),
       // function calls are wrapped in Cast by the Eraser, and effect resume
@@ -1437,20 +1389,19 @@ object GenExpression {
         case _: Expr.NewObject => castIfNotPrim(bType)
         case _ => ()
       }
-      xStore(bType, JvmOps.getIndex(offset, ctx.localOffset))
+      xStore(bType, ctx.getIndex(offset))
       compileExpr(exp2)
 
     case Expr.Stm(exps, exp, _) =>
-      import BytecodeInstructions.*
       exps.foreach { e =>
         compileExpr(e)
-        xPop(BackendType.toBackendType(e.tpe))
+        xPop(TypeDescs.toClassDesc(e.tpe))
       }
       compileExpr(exp)
 
     case Expr.Region(_, offset, exp, _, _, loc) =>
       // Adding source line number for debugging
-      BytecodeInstructions.addLoc(loc)
+      addLoc(loc)
 
       // Introduce a label for before the try block.
       val beforeTryBlock = new Label()
@@ -1465,12 +1416,12 @@ object GenExpression {
       val afterFinally = new Label()
 
       // Create an instance of Region
-      mv.visitTypeInsn(NEW, BackendObjType.Region.jvmName.toInternalName)
-      mv.visitInsn(DUP)
-      mv.visitMethodInsn(INVOKESPECIAL, BackendObjType.Region.jvmName.toInternalName, JvmName.ConstructorMethod,
-        MethodDescriptor.NothingToVoid.toDescriptor, false)
+      mv.visitTypeInsn(Opcodes.NEW, internalNameOf(GenRegion.Desc))
+      mv.visitInsn(Opcodes.DUP)
+      mv.visitMethodInsn(Opcodes.INVOKESPECIAL, internalNameOf(GenRegion.Desc), ClassMaker.ConstructorMethodName,
+        MethodTypeDescs.NothingToVoid.descriptorString(), false)
 
-      BytecodeInstructions.xStore(BackendObjType.Region.toTpe, JvmOps.getIndex(offset, ctx.localOffset))
+      xStore(GenRegion.Desc, ctx.getIndex(offset))
 
       // Compile the scope body
       mv.visitLabel(beforeTryBlock)
@@ -1481,31 +1432,31 @@ object GenExpression {
       mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
 
       // When we exit the scope, call the region's `exit` method
-      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, JvmOps.getIndex(offset, ctx.localOffset))
-      mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
-      mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ExitMethod.name,
-        BackendObjType.Region.ExitMethod.d.toDescriptor, false)
+      xLoad(GenRegion.Desc, ctx.getIndex(offset))
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenRegion.Desc))
+      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(GenRegion.Desc), GenRegion.ExitMethod.name,
+        GenRegion.ExitMethod.d.descriptorString(), false)
       mv.visitLabel(afterTryBlock)
 
       // Compile the finally block which gets called if no exception is thrown
-      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, JvmOps.getIndex(offset, ctx.localOffset))
-      mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
-      mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
-        BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
-      mv.visitJumpInsn(GOTO, afterFinally)
+      xLoad(GenRegion.Desc, ctx.getIndex(offset))
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenRegion.Desc))
+      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(GenRegion.Desc), GenRegion.ReThrowChildExceptionMethod.name,
+        GenRegion.ReThrowChildExceptionMethod.d.descriptorString(), false)
+      mv.visitJumpInsn(Opcodes.GOTO, afterFinally)
 
       // Compile the finally block which gets called if an exception is thrown
       mv.visitLabel(finallyBlock)
-      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, JvmOps.getIndex(offset, ctx.localOffset))
-      mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
-      mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
-        BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
-      mv.visitInsn(ATHROW)
+      xLoad(GenRegion.Desc, ctx.getIndex(offset))
+      mv.visitTypeInsn(Opcodes.CHECKCAST, internalNameOf(GenRegion.Desc))
+      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, internalNameOf(GenRegion.Desc), GenRegion.ReThrowChildExceptionMethod.name,
+        GenRegion.ReThrowChildExceptionMethod.d.descriptorString(), false)
+      mv.visitInsn(Opcodes.ATHROW)
       mv.visitLabel(afterFinally)
 
     case Expr.TryCatch(exp, rules, _, _, loc) =>
       // Add source line number for debugging.
-      BytecodeInstructions.addLoc(loc)
+      addLoc(loc)
 
       // Introduce a label for before the try block.
       val beforeTryBlock = new Label()
@@ -1525,7 +1476,7 @@ object GenExpression {
       mv.visitLabel(beforeTryBlock)
       compileExpr(exp)
       mv.visitLabel(afterTryBlock)
-      mv.visitJumpInsn(GOTO, afterTryAndCatch)
+      mv.visitJumpInsn(Opcodes.GOTO, afterTryAndCatch)
 
       // Emit code for each catch rule.
       for ((CatchRule(_, offset, _, body), handlerLabel) <- rulesAndLabels) {
@@ -1533,178 +1484,196 @@ object GenExpression {
         mv.visitLabel(handlerLabel)
 
         // Store the exception in a local variable.
-        BytecodeInstructions.xStore(BackendType.Object, JvmOps.getIndex(offset, ctx.localOffset))
+        xStore(JavaClasses.Object, ctx.getIndex(offset))
 
         // Emit code for the handler body expression.
         compileExpr(body)
-        mv.visitJumpInsn(GOTO, afterTryAndCatch)
+        mv.visitJumpInsn(Opcodes.GOTO, afterTryAndCatch)
       }
 
       // Emit a try catch block for each catch rule. It's important to do this after compiling
       // sub-expressions to ensure correct catch case ordering.
       for ((CatchRule(_, _, clazz, _), handlerLabel) <- rulesAndLabels) {
-        mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, handlerLabel, asm.Type.getInternalName(clazz))
+        mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, handlerLabel, internalNameOf(clazz))
       }
 
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
     case Expr.RunWith(exp, effUse, rules, ct, _, _, loc) =>
-      import BytecodeInstructions.*
       // exp is a Unit -> exp.tpe closure
-      val effectJvmName = JvmOps.getEffectDefinitionClassName(effUse.sym)
+      val effectName = GenEffectClasses.effectDesc(effUse.sym)
+      val effectInternalName = internalNameOf(effectName)
       // eff name
       pushString(effUse.sym.toString)
       // handler
-      NEW(effectJvmName)
+      NEW(effectName)
       DUP()
-      mv.visitMethodInsn(Opcodes.INVOKESPECIAL, effectJvmName.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+      mv.visitMethodInsn(Opcodes.INVOKESPECIAL, effectInternalName, ClassMaker.ConstructorMethodName, MethodTypeDescs.NothingToVoid.descriptorString(), false)
       // bind handler closures
       for (HandlerRule(op, _, body) <- rules) {
         mv.visitInsn(Opcodes.DUP)
         compileExpr(body)
-        mv.visitFieldInsn(Opcodes.PUTFIELD, effectJvmName.toInternalName, JvmOps.getEffectOpName(op.sym), GenEffectClasses.opFieldType(op.sym).toDescriptor)
+        mv.visitFieldInsn(Opcodes.PUTFIELD, effectInternalName, GenEffectClasses.opName(op.sym), GenEffectClasses.opFieldType(op.sym).descriptorString())
       }
       // frames
-      NEW(BackendObjType.FramesNil.jvmName)
+      NEW(GenFramesNil.Desc)
       DUP()
-      INVOKESPECIAL(BackendObjType.FramesNil.Constructor)
+      INVOKESPECIAL(GenFramesNil.Constructor)
       // continuation
       compileExpr(exp)
       // exp.arg0 should be set to unit here but from lifting we know that it is unused so the
       // implicit null is fine.
       // call installHandler
-      INVOKESTATIC(BackendObjType.Handler.InstallHandlerMethod)
+      INVOKESTATIC(GenHandler.InstallHandlerMethod)
       // handle value/suspend/thunk if in non-tail position
       if (ct == ExpPosition.NonTail) {
         ctx match {
           case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
-            BackendObjType.Result.unwindSuspensionFreeThunk("in pure run-with call", loc)
+            GenResult.unwindSuspensionFreeThunk("in pure run-with call", loc)
 
           case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
             val pcPoint = pcCounter(0) + 1
             val pcPointLabel = pcLabels(pcPoint)
             val afterUnboxing = new Label()
             pcCounter(0) += 1
-            BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc)
-            mv.visitJumpInsn(GOTO, afterUnboxing)
+            GenResult.unwindThunkToValue(pcPoint, newFrame, setPc)
+            mv.visitJumpInsn(Opcodes.GOTO, afterUnboxing)
 
             mv.visitLabel(pcPointLabel)
             narrowLocals(mv)
-            BytecodeInstructions.ALOAD(1)
+            ALOAD(1)
             mv.visitLabel(afterUnboxing)
         }
       } else {
         ARETURN()
       }
 
-    case Expr.NewObject(name, _, _, _, constructors, methods, _) =>
+    case Expr.NewObject(sym, _, _, _, constructors, methods, _) =>
       val methodExps = methods.map(_.exp)
-      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
-      mv.visitTypeInsn(NEW, className)
-      mv.visitInsn(DUP)
+      val className = internalNameOf(GenAnonymousClasses.desc(sym))
+      mv.visitTypeInsn(Opcodes.NEW, className)
+      mv.visitInsn(Opcodes.DUP)
 
       // Handle constructors
       if (constructors.nonEmpty) {
         constructors.head.exp match {
           case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), superArgs, _, _, _) =>
             // Super-only: compile args and call parameterized <init>
-            val descriptor = asm.Type.getConstructorDescriptor(constructor)
-            for ((arg, argType) <- superArgs.zip(constructor.getParameterTypes)) {
-              compileExpr(arg)
-              if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
-            }
-            mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, descriptor, false)
+            compileJavaArgs(superArgs, constructor.descriptor)
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, className, ClassMaker.ConstructorMethodName, constructor.descriptor.descriptorString(), false)
           case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", constructors.head.loc)
         }
       } else {
-        mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, className, ClassMaker.ConstructorMethodName, MethodTypeDescs.NothingToVoid.descriptorString(), false)
       }
 
       // For each method, compile the closure which implements the body of that method and store it in a field
       methodExps.zipWithIndex.foreach { case (e, i) =>
-        mv.visitInsn(DUP)
+        mv.visitInsn(Opcodes.DUP)
         compileExpr(e)
-        mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getErasedClosureAbstractClassType(e.tpe).toDescriptor)
+        mv.visitFieldInsn(Opcodes.PUTFIELD, className, s"clo$i", GenAbstractArrow.descOfArrowType(e.tpe).descriptorString())
       }
 
   }
 
-  private def getStructType(struct: Struct)(implicit root: Root): BackendObjType.Struct = {
-    BackendObjType.Struct(struct.fields.map(field => BackendType.toBackendType(field.tpe)))
+  private def getStructType(struct: Struct): List[ClassDesc] = {
+    TypeDescs.structFields(struct)
   }
 
-  private def compileIsTag(ordinal: Int, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    import BytecodeInstructions.*
+  /**
+    * Compiles the arguments `args` of a Java call and converts each to its parameter type in `descriptor`.
+    *
+    * A reference parameter receives a `CHECKCAST`. A primitive parameter receives the widening primitive
+    * conversion from the erased type of the argument, e.g. `I2L` for an `Int32` argument to a `long` parameter.
+    * Overload resolution admits no other conversion, so the erased argument type is either the parameter type
+    * itself or a primitive that widens to it.
+    */
+  private def compileJavaArgs(args: List[Expr], descriptor: MethodTypeDesc)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    for ((arg, paramType) <- args.zip(descriptor.parameterList.asScala)) {
+      compileExpr(arg)
+      if (paramType.isPrimitive) xWidenPrimitive(TypeDescs.toClassDesc(arg.tpe), paramType)
+      else CHECKCAST(paramType)
+    }
+  }
+
+  /**
+    * Casts the value returned by a Java method with return type `returnType` to the erased Flix type `tpe` of
+    * the call.
+    *
+    * A method whose declared return type is a type variable returns its erasure, usually `Object`, while the
+    * Flix type of the call is the instantiation, e.g. `Vector[Int32]` for `ArrayList[Vector[Int32]].get(0)`.
+    * The cast recovers the JVM type the rest of the code expects, as javac does after an erased generic call.
+    * Nothing is emitted for `void` and primitive return types, or when the erasure already is the Flix type.
+    */
+  private def castJavaResult(returnType: ClassDesc, tpe: SimpleType)(implicit mv: MethodVisitor, root: Root): Unit = {
+    if (returnType != CD_void && !returnType.isPrimitive) {
+      val resultType = TypeDescs.toClassDesc(tpe)
+      if (resultType != returnType) castIfNotPrim(resultType)
+    }
+  }
+
+  private def compileIsTag(ordinal: Int, exp: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     compileExpr(exp)
-    CHECKCAST(BackendObjType.Tagged.jvmName)
-    GETFIELD(BackendObjType.Tagged.OrdinalField)
+    CHECKCAST(GenTagged.Desc)
+    GETFIELD(GenTagged.OrdinalField)
     pushInt(ordinal)
     ifConditionElse(Condition.ICMPEQ)(pushBool(true))(pushBool(false))
   }
 
-  private def compileTag(enumName: String, name: String, ordinal: Int, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    import BytecodeInstructions.*
+  private def compileTag(sym: Symbol.CaseSym, exps: List[Expr], tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     tpes match {
       case Nil =>
-        GETSTATIC(BackendObjType.NullaryTag(enumName, name, -1).SingletonField)
+        GETSTATIC(GenNullaryTag.SingletonField(sym))
       case _ =>
-        val tagType = BackendObjType.Tag(tpes)
-        NEW(tagType.jvmName)
+        NEW(GenTag.desc(tpes))
         DUP()
-        INVOKESPECIAL(tagType.Constructor)
+        INVOKESPECIAL(GenTag.Constructor(tpes))
         DUP()
-        pushInt(ordinal)
-        PUTFIELD(tagType.OrdinalField)
+        pushInt(sym.ordinal)
+        PUTFIELD(GenTag.OrdinalField)
         exps.zipWithIndex.foreach {
           case (e, i) => DUP()
             compileExpr(e)
-            PUTFIELD(tagType.IndexField(i))
+            PUTFIELD(GenTag.IndexField(tpes, i))
         }
     }
   }
 
-  private def compileUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    import BytecodeInstructions.*
-    // BackendObjType.NullaryTag cannot happen here since terms must be non-empty.
+  private def compileUntag(exp: Expr, idx: Int, tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    // GenNullaryTag cannot happen here since terms must be non-empty.
     if (tpes.isEmpty) throw InternalCompilerException(s"Unexpected empty tag types", exp.loc)
-    val tagType = BackendObjType.Tag(tpes)
     compileExpr(exp)
-    CHECKCAST(tagType.jvmName)
-    GETFIELD(tagType.IndexField(idx))
+    CHECKCAST(GenTag.desc(tpes))
+    GETFIELD(GenTag.IndexField(tpes, idx))
   }
 
-  private def compileExtIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    import BytecodeInstructions.*
+  private def compileExtIsTag(name: String, exp: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     compileExpr(exp)
-    CHECKCAST(BackendObjType.ExtTagged.jvmName)
-    GETFIELD(BackendObjType.ExtTagged.NameField)
-    BackendObjType.ExtTagged.mkTagName(name)
-    BackendObjType.ExtTagged.eqTagName()
+    CHECKCAST(GenExtTagged.Desc)
+    GETFIELD(GenExtTagged.NameField)
+    GenExtTagged.mkTagName(name)
+    GenExtTagged.eqTagName()
   }
 
-  private def compileExtTag(name: String, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    import BytecodeInstructions.*
-    val tagType = BackendObjType.ExtTag(tpes)
-    NEW(tagType.jvmName)
+  private def compileExtTag(name: String, exps: List[Expr], tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    NEW(GenExtTag.desc(tpes))
     DUP()
-    INVOKESPECIAL(tagType.Constructor)
+    INVOKESPECIAL(GenExtTag.Constructor(tpes))
     DUP()
-    BackendObjType.ExtTagged.mkTagName(name)
-    PUTFIELD(tagType.NameField)
+    GenExtTagged.mkTagName(name)
+    PUTFIELD(GenExtTag.NameField)
     exps.zipWithIndex.foreach {
       case (e, i) => DUP()
         compileExpr(e)
-        PUTFIELD(tagType.IndexField(i))
+        PUTFIELD(GenExtTag.IndexField(tpes, i))
     }
   }
 
-  private def compileExtUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    import BytecodeInstructions.*
-    val tagType = BackendObjType.ExtTag(tpes)
+  private def compileExtUntag(exp: Expr, idx: Int, tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     compileExpr(exp)
-    CHECKCAST(tagType.jvmName)
-    GETFIELD(tagType.IndexField(idx))
+    CHECKCAST(GenExtTag.desc(tpes))
+    GETFIELD(GenExtTag.IndexField(tpes, idx))
   }
 
   private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): (Label, Label) = {
@@ -1716,10 +1685,10 @@ object GenExpression {
   }
 
   private def visitComparisonEpilogue(visitor: MethodVisitor, condElse: Label, condEnd: Label): Unit = {
-    visitor.visitInsn(ICONST_1)
-    visitor.visitJumpInsn(GOTO, condEnd)
+    visitor.visitInsn(Opcodes.ICONST_1)
+    visitor.visitJumpInsn(Opcodes.GOTO, condEnd)
     visitor.visitLabel(condElse)
-    visitor.visitInsn(ICONST_0)
+    visitor.visitInsn(Opcodes.ICONST_0)
     visitor.visitLabel(condEnd)
   }
 
@@ -1745,42 +1714,42 @@ object GenExpression {
     */
   private def compileLong(i: Long)(implicit mv: MethodVisitor): Unit = i match {
     case -1 =>
-      mv.visitInsn(ICONST_M1)
-      mv.visitInsn(I2L) // Sign extend to long
+      mv.visitInsn(Opcodes.ICONST_M1)
+      mv.visitInsn(Opcodes.I2L) // Sign extend to long
 
     case 0 =>
-      mv.visitInsn(LCONST_0)
+      mv.visitInsn(Opcodes.LCONST_0)
 
     case 1 =>
-      mv.visitInsn(LCONST_1)
+      mv.visitInsn(Opcodes.LCONST_1)
 
     case 2 =>
-      mv.visitInsn(ICONST_2)
-      mv.visitInsn(I2L) // Sign extend to long
+      mv.visitInsn(Opcodes.ICONST_2)
+      mv.visitInsn(Opcodes.I2L) // Sign extend to long
 
     case 3 =>
-      mv.visitInsn(ICONST_3)
-      mv.visitInsn(I2L) // Sign extend to long
+      mv.visitInsn(Opcodes.ICONST_3)
+      mv.visitInsn(Opcodes.I2L) // Sign extend to long
 
     case 4 =>
-      mv.visitInsn(ICONST_4)
-      mv.visitInsn(I2L) // Sign extend to long
+      mv.visitInsn(Opcodes.ICONST_4)
+      mv.visitInsn(Opcodes.I2L) // Sign extend to long
 
     case 5 =>
-      mv.visitInsn(ICONST_5)
-      mv.visitInsn(I2L) // Sign extend to long
+      mv.visitInsn(Opcodes.ICONST_5)
+      mv.visitInsn(Opcodes.I2L) // Sign extend to long
 
     case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue =>
-      mv.visitIntInsn(BIPUSH, i.toInt)
-      mv.visitInsn(I2L) // Sign extend to long
+      mv.visitIntInsn(Opcodes.BIPUSH, i.toInt)
+      mv.visitInsn(Opcodes.I2L) // Sign extend to long
 
     case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue =>
-      mv.visitIntInsn(SIPUSH, i.toInt)
-      mv.visitInsn(I2L) // Sign extend to long
+      mv.visitIntInsn(Opcodes.SIPUSH, i.toInt)
+      mv.visitInsn(Opcodes.I2L) // Sign extend to long
 
     case _ if scala.Int.MinValue <= i && i <= scala.Int.MaxValue =>
       mv.visitLdcInsn(i.toInt)
-      mv.visitInsn(I2L) // Sign extend to long
+      mv.visitInsn(Opcodes.I2L) // Sign extend to long
 
     case _ => mv.visitLdcInsn(i)
   }

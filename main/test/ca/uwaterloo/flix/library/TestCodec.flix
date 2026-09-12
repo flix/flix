@@ -1,6 +1,7 @@
 mod TestCodec {
 
     use Assert.{assertEq, assertErr};
+    use Util.Codec;
 
     /////////////////////////////////////////////////////////////////////////////
     // encodeBase64                                                            //
@@ -107,5 +108,103 @@ mod TestCodec {
     def roundtrip03(): Unit \ Assert =
         assertEq(expected = Ok(String.toBytes("foobar")),
             Codec.decodeBase64(Codec.encodeBase64(String.toBytes("foobar"))))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // encodeHex                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def encodeHex01(): Unit \ Assert =
+        assertEq(expected = "", Codec.encodeHex(String.toBytes("")))
+
+    @Test
+    def encodeHex02(): Unit \ Assert =
+        assertEq(expected = "66", Codec.encodeHex(String.toBytes("f")))
+
+    @Test
+    def encodeHex03(): Unit \ Assert =
+        assertEq(expected = "666f6f", Codec.encodeHex(String.toBytes("foo")))
+
+    @Test
+    def encodeHex04(): Unit \ Assert =
+        assertEq(expected = "666f6f626172", Codec.encodeHex(String.toBytes("foobar")))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // decodeHex                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def decodeHex01(): Unit \ Assert =
+        assertEq(expected = Ok(String.toBytes("")), Codec.decodeHex(""))
+
+    @Test
+    def decodeHex02(): Unit \ Assert =
+        assertEq(expected = Ok(String.toBytes("f")), Codec.decodeHex("66"))
+
+    @Test
+    def decodeHex03(): Unit \ Assert =
+        assertEq(expected = Ok(String.toBytes("foobar")), Codec.decodeHex("666f6f626172"))
+
+    @Test
+    def decodeHex04(): Unit \ Assert =
+        assertErr(Codec.decodeHex("zz"))
+
+    @Test
+    def decodeHex05(): Unit \ Assert =
+        assertErr(Codec.decodeHex("abc"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // encodeHexString                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def encodeHexString01(): Unit \ Assert =
+        assertEq(expected = "", Codec.encodeHexString(""))
+
+    @Test
+    def encodeHexString02(): Unit \ Assert =
+        assertEq(expected = "466c6978", Codec.encodeHexString("Flix"))
+
+    @Test
+    def encodeHexString03(): Unit \ Assert =
+        assertEq(expected = "48656c6c6f2c20576f726c6421", Codec.encodeHexString("Hello, World!"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // decodeHexString                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def decodeHexString01(): Unit \ Assert =
+        assertEq(expected = Ok(""), Codec.decodeHexString(""))
+
+    @Test
+    def decodeHexString02(): Unit \ Assert =
+        assertEq(expected = Ok("Flix"), Codec.decodeHexString("466c6978"))
+
+    @Test
+    def decodeHexString03(): Unit \ Assert =
+        assertEq(expected = Ok("Hello, World!"), Codec.decodeHexString("48656c6c6f2c20576f726c6421"))
+
+    @Test
+    def decodeHexString04(): Unit \ Assert =
+        assertErr(Codec.decodeHexString("zz"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // hex roundtrip                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def hexRoundtrip01(): Unit \ Assert =
+        assertEq(expected = Ok(""), Codec.decodeHexString(Codec.encodeHexString("")))
+
+    @Test
+    def hexRoundtrip02(): Unit \ Assert =
+        assertEq(expected = Ok("The quick brown fox jumps over the lazy dog"),
+            Codec.decodeHexString(Codec.encodeHexString("The quick brown fox jumps over the lazy dog")))
+
+    @Test
+    def hexRoundtrip03(): Unit \ Assert =
+        assertEq(expected = Ok(String.toBytes("foobar")),
+            Codec.decodeHex(Codec.encodeHex(String.toBytes("foobar"))))
 
 }

@@ -22,12 +22,18 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{DefaultHandler, Predicate}
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, Mutability, Polarity, PredicateAndArity, RegionScope, SolveMode, SymUse, TypeSource}
+import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, JClass, JConstructor, JField, JMethod, Mutability, Polarity, PredicateAndArity, RegionScope, SolveMode, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaMemberResolver}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaBoxing
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
+
+import java.lang.constant.ClassDesc
+import scala.jdk.CollectionConverters.*
 
 /**
   * This phase translates AST expressions related to the Datalog subset of the
@@ -409,23 +415,24 @@ object Lowering {
     case TypedAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
-      MonoAst.Expr.VectorLit(es, t, eff, loc)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.VectorLit, es, t, eff, loc)
 
     case TypedAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
-      MonoAst.Expr.VectorLoad(e1, e2, t, eff, loc)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.VectorLoad, List(e1, e2), t, eff, loc)
 
     case TypedAst.Expr.VectorLength(exp, loc) =>
-      MonoAst.Expr.VectorLength(lowerExp(exp), loc)
+      val e = lowerExp(exp)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.VectorLength, List(e), Type.Int32, e.eff, loc)
 
     case TypedAst.Expr.Ascribe(exp, _, _, _, _, _) =>
       lowerExp(exp)
 
     case TypedAst.Expr.InstanceOf(exp, clazz, loc) =>
       val e = lowerExp(exp)
-      if (isPrimType(e.tpe)) {
+      if (JavaBoxing.isPrimitive(e.tpe)) {
         // If it's a primitive type, evaluate the expression but return false
         MonoAst.Expr.Stm(List(e), MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
       } else {
@@ -492,14 +499,14 @@ object Lowering {
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
       // Box primitive args where Java expects Object (e.g., `new SimpleEntry(42, true)`).
-      val javaParamTypes = constructor.getParameterTypes
+      val javaParamTypes = constructor.ref.descriptor.parameterList().asScala.toList
       val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
-      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), boxedArgs, t, eff, loc)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(JConstructor.of(constructor)), boxedArgs, t, eff, loc)
 
     case TypedAst.Expr.InvokeSuperConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), es, t, eff, loc)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(JConstructor.of(constructor)), es, t, eff, loc)
 
     case TypedAst.Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = lowerExp(exp)
@@ -507,20 +514,20 @@ object Lowering {
       val t = lowerType(tpe)
       // Box primitive args and unbox Object returns for Java generic methods.
       // E.g., `m.put("k", 42)` boxes 42 via Integer.valueOf; `m.get("k")` unboxes via intValue.
-      val javaParamTypes = method.getParameterTypes
+      val javaParamTypes = method.ref.descriptor.parameterList().asScala.toList
       val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
-      val javaReturnType = method.getReturnType
-      val needsUnbox = isPrimType(t) && !javaReturnType.isPrimitive
-      val invokeType = if (needsUnbox) boxedWrapperType(t, loc) else t
-      val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: boxedArgs, invokeType, eff, loc)
+      val javaReturnType = method.ref.descriptor.returnType()
+      val needsUnbox = JavaBoxing.isPrimitive(t) && !javaReturnType.isPrimitive
+      val invokeType = if (needsUnbox) JavaBoxing.boxedType(t, loc) else t
+      val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(JMethod.of(method)), e :: boxedArgs, invokeType, eff, loc)
       unboxIfNecessary(invoke, t, javaReturnType)
 
     case TypedAst.Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
-      (lctx.className, lctx.thisRef) match {
-        case (Some(cn), Some(thisRef)) =>
-          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(method, cn), thisRef :: es, t, eff, loc)
+      (lctx.sym, lctx.thisRef) match {
+        case (Some(sym), Some(thisRef)) =>
+          MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(sym, JMethod.of(method)), thisRef :: es, t, eff, loc)
         case _ =>
           throw InternalCompilerException("InvokeSuperMethod outside NewObject context", loc)
       }
@@ -529,45 +536,45 @@ object Lowering {
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
       // Box primitive args and unbox Object returns (same as InvokeMethod).
-      val javaParamTypes = method.getParameterTypes
+      val javaParamTypes = method.ref.descriptor.parameterList().asScala.toList
       val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
-      val javaReturnType = method.getReturnType
-      val needsUnbox = isPrimType(t) && !javaReturnType.isPrimitive
-      val invokeType = if (needsUnbox) boxedWrapperType(t, loc) else t
-      val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), boxedArgs, invokeType, eff, loc)
+      val javaReturnType = method.ref.descriptor.returnType()
+      val needsUnbox = JavaBoxing.isPrimitive(t) && !javaReturnType.isPrimitive
+      val invokeType = if (needsUnbox) JavaBoxing.boxedType(t, loc) else t
+      val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(JMethod.of(method)), boxedArgs, invokeType, eff, loc)
       unboxIfNecessary(invoke, t, javaReturnType)
 
     case TypedAst.Expr.GetField(field, exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.GetField(field), List(e), t, eff, loc)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.GetField(JField.of(field)), List(e), t, eff, loc)
 
     case TypedAst.Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.PutField(field), List(e1, e2), t, eff, loc)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.PutField(JField.of(field)), List(e1, e2), t, eff, loc)
 
     case TypedAst.Expr.GetStaticField(field, tpe, eff, loc) =>
       val t = lowerType(tpe)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.GetStaticField(field), List.empty, t, eff, loc)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.GetStaticField(JField.of(field)), List.empty, t, eff, loc)
 
     case TypedAst.Expr.PutStaticField(field, exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), t, eff, loc)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.PutStaticField(JField.of(field)), List(e), t, eff, loc)
 
-    case TypedAst.Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
+    case TypedAst.Expr.NewObject(sym, clazz, tpe, eff, constructors, methods, loc) =>
       val cs = constructors.map(lowerJvmConstructor)
       val ms = methods.map { m =>
         val thisParam = m.fparams.head
         val thisTpe = lowerType(thisParam.tpe)
         val thisRef = MonoAst.Expr.Var(thisParam.bnd.sym, thisTpe, loc)
-        implicit val lctx: LocalContext = LocalContext(Some(name), Some(thisRef))
-        lowerJvmMethod(m)
+        implicit val lctx: LocalContext = LocalContext(Some(sym), Some(thisRef))
+        lowerJvmMethod(m, clazz.desc)
       }
       val t = lowerType(tpe)
-      MonoAst.Expr.NewObject(name, clazz, t, eff, cs, ms, loc)
+      MonoAst.Expr.NewObject(sym, clazz, t, eff, cs, ms, loc)
 
     case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
@@ -667,13 +674,34 @@ object Lowering {
   /**
     * Lowers the given JvmMethod `method`.
     */
-  private def lowerJvmMethod(method: TypedAst.JvmMethod)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
-    case TypedAst.JvmMethod(ann, ident, fparams, exp, retTyp, eff, loc) =>
+  private def lowerJvmMethod(method: TypedAst.JvmMethod, clazz: ClassDesc)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
+    case TypedAst.JvmMethod(ann, ident, fparams, exp, _, eff, loc) =>
       val fs = fparams.map(lowerFormalParam)
-      val e = lowerExp(exp)
-      val t = lowerType(retTyp)
-      MonoAst.JvmMethod(ann, ident, fs, e, t, eff, loc)
+      val e0 = lowerExp(exp)
+      // If this method overrides a Java method whose erased return type is a reference
+      // (e.g. `Object` for a generic interface method) but the Flix result is a primitive,
+      // box it so the value matches the erased JVM signature. This mirrors the boxing applied
+      // to generic Java method *calls* above (see `boxIfNecessary` in InvokeMethod), and the
+      // call site unboxes the result symmetrically.
+      val overridden = overriddenJavaMethod(clazz, ident.name, fparams.tail.length, loc)
+      val e = overridden match {
+        case Some(m) => boxIfNecessary(e0, m.ref.descriptor.returnType())
+        case None => e0
+      }
+      MonoAst.JvmMethod(ann, ident, fs, e, e.tpe, eff, overridden.map(JMethod.of), loc)
   }
+
+  /**
+    * Returns the Java method on `clazz` matching `name` and `arity` (excluding the receiver), if any.
+    *
+    * The resolved method's erased signature is carried on the [[MonoAst.JvmMethod]] so the
+    * backend can emit matching descriptors.
+    */
+  private def overriddenJavaMethod(clazz: ClassDesc, name: String, arity: Int, loc: SourceLocation)(implicit flix: Flix): Option[JavaMethod] =
+    JavaMemberResolver.overridableMethods(clazz) match {
+      case Result.Ok(methods) => methods.find(m => m.ref.name == name && m.parameterTypes.length == arity)
+      case Result.Err(error) => throw InternalCompilerException(s"Java method lookup failed for '${ClassDescs.binaryNameOf(clazz)}': $error", loc)
+    }
 
   /**
     * Lowers the given catch rule `rule0`.
@@ -856,10 +884,20 @@ object Lowering {
       case Result.Err(_) => throw InternalCompilerException("Unexpected illegal effect set on entry point", currentDef.spec.eff.loc)
     }
     // Gather only the default handlers for the effects appearing in the signature of the definition.
-    val requiredHandlers = root.defaultHandlers.filter(h => defEffects.contains(h.handledSym))
+    val requiredHandlers = root.defaultHandlers.collect {
+      case handler if defEffects.contains(handler.handledSym) =>
+        // EntryPoints ensures that every retained entry point has a ground, finite effect set.
+        // Hence membership in defEffects implies a corresponding occurrence in the effect formula.
+        val handledEff = Type.findEffect(handler.handledSym, currentDef.spec.eff).getOrElse {
+          throw InternalCompilerException(s"Missing concrete effect '${handler.handledSym}' in entry point.", currentDef.spec.eff.loc)
+        }
+        (handler, handledEff)
+    }
     // Wrap the expression in each of the required default handlers.
     // Right now, the order depends on the order of defaultHandlers.
-    requiredHandlers.foldLeft(currentDef)((defn, handler) => wrapInHandler(defn, handler))
+    requiredHandlers.foldLeft(currentDef) {
+      case (defn, (handler, handledEff)) => wrapInHandler(defn, handler, handledEff)
+    }
   }
 
   /**
@@ -883,17 +921,18 @@ object Lowering {
     *
     * @param defn           The entry point function definition to wrap
     * @param defaultHandler Information about the default handler to apply
+    * @param handledEff     The concrete application of the handled effect in the entry point
     * @param root           The typed AST root
     * @return The wrapped function definition with updated effect signature
     */
-  private def wrapInHandler(defn: TypedAst.Def, defaultHandler: DefaultHandler)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
+  private def wrapInHandler(defn: TypedAst.Def, defaultHandler: DefaultHandler, handledEff: Type)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
     // Create synthetic locations
     val effLoc = defn.spec.eff.loc.asSynthetic
     val baseTypeLoc = defn.spec.declaredScheme.base.loc.asSynthetic
     val expLoc = defn.exp.loc.asSynthetic
     // The new type is the same as the wrapped def with an effect set of
     // `(ef - handledEffect) + IO` where `ef` is the effect set of the previous definition.
-    val effDif = Type.mkDifference(defn.spec.eff, defaultHandler.handledEff, effLoc)
+    val effDif = Type.mkDifference(defn.spec.eff, handledEff, effLoc)
     // Technically we could perform this outside at the wrapInHandlers level
     // by just checking the length of the handlers and if it is greater than 0
     // just adding IO. However, that would only work while default handlers can only generate IO.
@@ -958,35 +997,11 @@ object Lowering {
       case (Type.Int64, Type.Int64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
       case (Type.Float32, Type.Float32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
       case (Type.Float64, Type.Float64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
-      case (x, y) if !isPrimType(x) && !isPrimType(y) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (x, y) if !JavaBoxing.isPrimitive(x) && !JavaBoxing.isPrimitive(y) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
       case (x, y) =>
         val crash = MonoAst.Expr.ApplyAtomic(AtomicOp.CastError(erasedString(x), erasedString(y)), Nil, tpe, eff, loc)
         MonoAst.Expr.Stm(List(exp), crash, tpe, eff, loc)
     }
-  }
-
-  /**
-    * Returns `true` if `tpe` is a primitive type.
-    *
-    * N.B.: `tpe` must be normalized.
-    */
-  private def isPrimType(tpe: Type): Boolean = tpe match {
-    case Type.Char => true
-    case Type.Bool => true
-    case Type.Int8 => true
-    case Type.Int16 => true
-    case Type.Int32 => true
-    case Type.Int64 => true
-    case Type.Float32 => true
-    case Type.Float64 => true
-    case Type.Cst(_, _) => false
-    case Type.Apply(_, _, _) => false
-    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
   }
 
   /**
@@ -1014,65 +1029,17 @@ object Lowering {
   }
 
   /**
-    * Returns the `valueOf` boxing method for a Flix primitive type.
-    * This is the same mechanism javac uses to implement autoboxing.
-    */
-  private def javaBoxMethod(tpe: Type): java.lang.reflect.Method = tpe match {
-    case Type.Bool => classOf[java.lang.Boolean].getMethod("valueOf", java.lang.Boolean.TYPE)
-    case Type.Char => classOf[java.lang.Character].getMethod("valueOf", java.lang.Character.TYPE)
-    case Type.Int8 => classOf[java.lang.Byte].getMethod("valueOf", java.lang.Byte.TYPE)
-    case Type.Int16 => classOf[java.lang.Short].getMethod("valueOf", java.lang.Short.TYPE)
-    case Type.Int32 => classOf[java.lang.Integer].getMethod("valueOf", java.lang.Integer.TYPE)
-    case Type.Int64 => classOf[java.lang.Long].getMethod("valueOf", java.lang.Long.TYPE)
-    case Type.Float32 => classOf[java.lang.Float].getMethod("valueOf", java.lang.Float.TYPE)
-    case Type.Float64 => classOf[java.lang.Double].getMethod("valueOf", java.lang.Double.TYPE)
-    case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
-  }
-
-  /**
-    * Returns the unboxing method (e.g., `intValue`) for a Flix primitive type.
-    * This is the same mechanism javac uses to implement auto-unboxing.
-    */
-  private def javaUnboxMethod(tpe: Type): java.lang.reflect.Method = tpe match {
-    case Type.Bool => classOf[java.lang.Boolean].getMethod("booleanValue")
-    case Type.Char => classOf[java.lang.Character].getMethod("charValue")
-    case Type.Int8 => classOf[java.lang.Byte].getMethod("byteValue")
-    case Type.Int16 => classOf[java.lang.Short].getMethod("shortValue")
-    case Type.Int32 => classOf[java.lang.Integer].getMethod("intValue")
-    case Type.Int64 => classOf[java.lang.Long].getMethod("longValue")
-    case Type.Float32 => classOf[java.lang.Float].getMethod("floatValue")
-    case Type.Float64 => classOf[java.lang.Double].getMethod("doubleValue")
-    case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
-  }
-
-  /**
-    * Returns the Flix Type for the Java wrapper class of a primitive type.
-    * E.g., `Bool` -> `Native(java.lang.Boolean)`, `Int32` -> `Native(java.lang.Integer)`.
-    */
-  private def boxedWrapperType(tpe: Type, loc: SourceLocation): Type = tpe match {
-    case Type.Bool => Type.Cst(TypeConstructor.Native(classOf[java.lang.Boolean]), loc)
-    case Type.Char => Type.Cst(TypeConstructor.Native(classOf[java.lang.Character]), loc)
-    case Type.Int8 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Byte]), loc)
-    case Type.Int16 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Short]), loc)
-    case Type.Int32 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Integer]), loc)
-    case Type.Int64 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Long]), loc)
-    case Type.Float32 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Float]), loc)
-    case Type.Float64 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Double]), loc)
-    case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
-  }
-
-  /**
     * Boxes `arg` if the actual arg type (Flix primitive) mismatches the expected param type (Object).
     * E.g., in `m.put("k", 42)` on a `HashMap[String, Int32]`, the actual type is `Int32`
     * but the expected type is `Object` (erased), so `42` is boxed via `Integer.valueOf(42)`.
     */
-  private def boxIfNecessary(arg: MonoAst.Expr, expectedParamType: Class[?]): MonoAst.Expr = {
+  private def boxIfNecessary(arg: MonoAst.Expr, expectedParamType: ClassDesc): MonoAst.Expr = {
     val actualArgType = arg.tpe
-    if (isPrimType(actualArgType) && !expectedParamType.isPrimitive) {
+    if (JavaBoxing.isPrimitive(actualArgType) && !expectedParamType.isPrimitive) {
       MonoAst.Expr.ApplyAtomic(
-        AtomicOp.InvokeStaticMethod(javaBoxMethod(actualArgType)),
+        AtomicOp.InvokeStaticMethod(JavaBoxing.boxMethod(actualArgType)),
         List(arg),
-        boxedWrapperType(actualArgType, arg.loc),
+        JavaBoxing.boxedType(actualArgType, arg.loc),
         arg.eff,
         arg.loc.asSynthetic
       )
@@ -1084,10 +1051,10 @@ object Lowering {
     * E.g., in `let v: Int32 = m.get("k")` on a `HashMap[String, Int32]`, the expected type is
     * `Int32` but the actual Java return type is `Object` (erased), so the result is unboxed via `intValue()`.
     */
-  private def unboxIfNecessary(expr: MonoAst.Expr, expectedReturnType: Type, actualReturnType: Class[?]): MonoAst.Expr = {
-    if (isPrimType(expectedReturnType) && !actualReturnType.isPrimitive) {
+  private def unboxIfNecessary(expr: MonoAst.Expr, expectedReturnType: Type, actualReturnType: ClassDesc): MonoAst.Expr = {
+    if (JavaBoxing.isPrimitive(expectedReturnType) && !actualReturnType.isPrimitive) {
       MonoAst.Expr.ApplyAtomic(
-        AtomicOp.InvokeMethod(javaUnboxMethod(expectedReturnType)),
+        AtomicOp.InvokeMethod(JavaBoxing.unboxMethod(expectedReturnType)),
         List(expr),
         expectedReturnType,
         expr.eff,
@@ -1106,8 +1073,8 @@ object Lowering {
   }
 
   /** Returns `true` if `method` is a Java auto-unboxing method (e.g., `intValue`, `booleanValue`). */
-  private def isAutoUnboxMethod(method: java.lang.reflect.Method): Boolean = {
-    method.getParameterCount == 0 && (method.getName match {
+  private def isAutoUnboxMethod(method: JMethod): Boolean = {
+    method.descriptor.parameterCount() == 0 && (method.name match {
       case "booleanValue" | "charValue" | "byteValue" | "shortValue" |
            "intValue" | "longValue" | "floatValue" | "doubleValue" => true
       case _ => false
@@ -1160,12 +1127,25 @@ object Lowering {
     * Channel put expressions are rewritten as follows:
     * {{{ c <- 42 }}}
     * becomes a call to the standard library function:
-    * {{{ Concurrent/Channel.put(42, c) }}}
+    * {{{ let chan = c; let value = 42; Concurrent/Channel.put(value, chan) }}}
+    *
+    * Here `exp1` is the channel and `exp2` is the value (i.e. `exp1 <- exp2`). In source order
+    * the channel is evaluated before the value, but `Channel.put` takes the value before the
+    * channel. We let-bind both expressions in source order so that reordering them into the
+    * argument list does not change their evaluation order. See:
+    * https://github.com/flix/flix/issues/10378
     */
   private def mkPutChannel(exp1: MonoAst.Expr, exp2: MonoAst.Expr, eff: Type, loc: SourceLocation)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
-    val itpe = lowerType(Type.mkIoUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc))
+    val chanSym = mkLetSym("chan", loc)
+    val valueSym = mkLetSym("value", loc)
+    val chanVar = MonoAst.Expr.Var(chanSym, exp1.tpe, loc)
+    val valueVar = MonoAst.Expr.Var(valueSym, exp2.tpe, loc)
+    val itpe = lowerType(Type.mkIoUncurriedArrow(Nel.of(exp2.tpe, exp1.tpe), Type.Unit, loc))
     val defnSym = lookup(Defs.ChannelPut, itpe)
-    MonoAst.Expr.ApplyDef(defnSym, List(exp2, exp1), itpe, Type.Unit, eff, loc)
+    val putExp = MonoAst.Expr.ApplyDef(defnSym, List(valueVar, chanVar), itpe, Type.Unit, eff, loc)
+    // The channel binding is the outermost let, so the channel is evaluated before the value.
+    val valueLet = MonoAst.Expr.Let(valueSym, exp2, putExp, Type.Unit, eff, Occur.Unknown, loc)
+    MonoAst.Expr.Let(chanSym, exp1, valueLet, Type.Unit, eff, Occur.Unknown, loc)
   }
 
   /**
@@ -1242,7 +1222,7 @@ object Lowering {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
 
     val selectRetTpe = Type.mkTuple(List(Type.Int32, locksType), loc)
-    val itpe = Type.mkIoUncurriedArrow(List(admins.tpe, Type.Bool), selectRetTpe, loc)
+    val itpe = Type.mkIoUncurriedArrow(Nel.of(admins.tpe, Type.Bool), selectRetTpe, loc)
     val blocking = default match {
       case Some(_) => MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc)
       case None => MonoAst.Expr.Cst(Constant.Bool(true), Type.Bool, loc)
@@ -1269,9 +1249,9 @@ object Lowering {
     ListOps.zip(rs, channels).zipWithIndex map {
       case (((sym, chan, exp), (chSym, _)), i) =>
         val locksSym = mkLetSym("locks", loc)
-        val pat = mkTuplePattern(Nel(MonoAst.Pattern.Cst(Constant.Int32(i), Type.Int32, loc), List(MonoAst.Pattern.Var(locksSym, locksType, Occur.Unknown, loc))), loc)
+        val pat = mkTuplePattern(Nel.of(MonoAst.Pattern.Cst(Constant.Int32(i), Type.Int32, loc), MonoAst.Pattern.Var(locksSym, locksType, Occur.Unknown, loc)), loc)
         val getTpe = extractChannelTpe(chan.tpe)
-        val itpe = lowerType(Type.mkIoUncurriedArrow(List(chan.tpe, locksType), getTpe, loc))
+        val itpe = lowerType(Type.mkIoUncurriedArrow(Nel.of(chan.tpe, locksType), getTpe, loc))
         val args = List(MonoAst.Expr.Var(chSym, lowerType(chan.tpe), loc), MonoAst.Expr.Var(locksSym, locksType, loc))
         val defnSym = lookup(Defs.ChannelUnsafeGetAndUnlock, itpe)
         val getExp = MonoAst.Expr.ApplyDef(defnSym, args, lowerType(itpe), lowerType(getTpe), eff, loc)
@@ -1291,7 +1271,7 @@ object Lowering {
     default match {
       case Some(defaultExp) =>
         val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
-        val pat = mkTuplePattern(Nel(MonoAst.Pattern.Cst(Constant.Int32(-1), Type.Int32, loc), List(MonoAst.Pattern.Wild(locksType, loc))), loc)
+        val pat = mkTuplePattern(Nel.of(MonoAst.Pattern.Cst(Constant.Int32(-1), Type.Int32, loc), MonoAst.Pattern.Wild(locksType, loc)), loc)
         val defaultMatch = MonoAst.MatchRule(pat, None, defaultExp)
         List(defaultMatch)
       case _ =>
@@ -1536,7 +1516,7 @@ object Lowering {
     val predArity = selects.length
 
     // Define the name and type of the appropriate factsX function in Solver.flix
-    val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe, loc)
+    val defTpe = Type.mkPureUncurriedArrow(Nel.of(Types.PredSym, Types.Datalog), tpe, loc)
     val sym = lookup(Defs.Facts(predArity), defTpe)
 
     // Merge and solve exps
@@ -1585,22 +1565,12 @@ object Lowering {
 
   private def lowerInjectInto(exps: List[TypedAst.Expr], predsAndArities: List[PredicateAndArity], loc: SourceLocation)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val loweredExps = exps.zip(predsAndArities).map {
-      case (exp, PredicateAndArity(pred, _)) =>
-        // Compute the types arguments of the functor F[(a, b, c)] or F[a].
-        val (_, targsLength) = exp.tpe match {
-          case Type.Apply(tycon, innerType, _) => innerType.typeConstructor match {
-            case Some(TypeConstructor.Tuple(_)) => (tycon, innerType.typeArguments.length)
-            case Some(TypeConstructor.Unit) => (tycon, 0)
-            case _ => (tycon, 1)
-          }
-          case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.", loc)
-        }
-
+      case (exp, PredicateAndArity(pred, arity)) =>
         // The type of the function.
-        val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, lowerType(exp.tpe)), Types.Datalog, loc)
+        val defTpe = Type.mkPureUncurriedArrow(Nel.of(Types.PredSym, lowerType(exp.tpe)), Types.Datalog, loc)
 
         // Compute the symbol of the function.
-        val sym = lookup(Defs.ProjectInto(targsLength), defTpe)
+        val sym = lookup(Defs.ProjectInto(arity), defTpe)
 
         // Put everything together.
         val argExps = mkPredSym(pred) :: lowerExp(exp) :: Nil
@@ -1758,7 +1728,7 @@ object Lowering {
     *
     * Note: liftX and liftXb are similar and should probably be maintained together.
     */
-  private def liftX(exp0: MonoAst.Expr, argTypes: List[Type], resultType: Type)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+  private def liftX(exp0: MonoAst.Expr, argTypes: Nel[Type], resultType: Type)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     //
     // The liftX family of functions are of the form: a -> b -> c -> `resultType` and
     // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Boxed`.
@@ -1784,7 +1754,7 @@ object Lowering {
   /**
     * Lifts the given Boolean-valued lambda expression `exp0` with the given argument types `argTypes`.
     */
-  private def liftXb(exp0: MonoAst.Expr, argTypes: List[Type])(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
+  private def liftXb(exp0: MonoAst.Expr, argTypes: Nel[Type])(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     //
     // The liftX family of functions are of the form: a -> b -> c -> Bool and
     // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Bool.
@@ -1819,7 +1789,11 @@ object Lowering {
     //
 
     // The type of the function argument, i.e. i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)].
-    val argType = Type.mkPureCurriedArrow(argTypes, resultType, loc)
+    // With no in variables the `lift0XY` functions take the vector directly, rather than a function.
+    val argType = argTypes match {
+      case Nil => resultType
+      case t :: ts => Type.mkPureCurriedArrow(Nel(t, ts), resultType, loc)
+    }
 
     // The type of the returned function, i.e. Vector[Boxed] -> Vector[Vector[Boxed]].
     val returnType = Type.mkPureArrow(Type.mkVector(Types.Boxed, loc), Type.mkVector(Type.mkVector(Types.Boxed, loc), loc), loc)
@@ -1976,7 +1950,7 @@ object Lowering {
     }
 
     // Lift the lambda expression to operate on boxed values.
-    val liftedExp = liftXb(lambdaExp, fvs.map(_._2))
+    val liftedExp = liftXb(lambdaExp, Nel.unsafeFrom(fvs.map(_._2)))
 
     // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
@@ -2059,7 +2033,8 @@ object Lowering {
     }
 
     // Lift the lambda expression to operate on boxed values.
-    val liftedExp = liftX(lambdaExp, fvs.map(_._2), exp.tpe)
+    // `fvs` is non-empty since the caller falls back to a literal head term when there are no free variables.
+    val liftedExp = liftX(lambdaExp, Nel.unsafeFrom(fvs.map(_._2)), exp.tpe)
 
     // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
@@ -2091,7 +2066,7 @@ object Lowering {
     * Returns a vector expression constructed from the given `exps` with type list of `elmType`.
     */
   private def mkVector(exps: List[MonoAst.Expr], elmType: Type, loc: SourceLocation): MonoAst.Expr = {
-    MonoAst.Expr.VectorLit(exps, Type.mkVector(elmType, loc), Type.Pure, loc)
+    MonoAst.Expr.ApplyAtomic(AtomicOp.VectorLit, exps, Type.mkVector(elmType, loc), Type.Pure, loc)
   }
 
   /**
@@ -2207,19 +2182,6 @@ object Lowering {
           MonoAst.ExtMatchRule(p, e1, loc1)
       }
       MonoAst.Expr.ExtMatch(e, rs, tpe, eff, loc)
-
-    case MonoAst.Expr.VectorLit(exps, tpe, eff, loc) =>
-      val es = exps.map(substExp(_, subst))
-      MonoAst.Expr.VectorLit(es, tpe, eff, loc)
-
-    case MonoAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      MonoAst.Expr.VectorLoad(e1, e2, tpe, eff, loc)
-
-    case MonoAst.Expr.VectorLength(exp, loc) =>
-      val e = substExp(exp, subst)
-      MonoAst.Expr.VectorLength(e, loc)
 
     case MonoAst.Expr.Cast(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
@@ -2489,8 +2451,8 @@ object Lowering {
     * where `"terms" == termsVar.text`.
     */
   private def mkUnboxedTerm(termsVar: Symbol.VarSym, tpe: Type, i: Int, loc: SourceLocation)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
-    val outerItpe = Type.mkPureUncurriedArrow(List(Types.Boxed), tpe, loc)
-    val innerItpe = Type.mkPureUncurriedArrow(List(Type.Int32, Types.VectorOfBoxed), Types.Boxed, loc)
+    val outerItpe = Type.mkPureUncurriedArrow(Nel.of(Types.Boxed), tpe, loc)
+    val innerItpe = Type.mkPureUncurriedArrow(Nel.of(Type.Int32, Types.VectorOfBoxed), Types.Boxed, loc)
     MonoAst.Expr.ApplyDef(
       sym = lookup(Defs.Unbox, outerItpe),
       exps = List(
@@ -2513,7 +2475,7 @@ object Lowering {
     * A local context threaded through `lowerExp` to carry information from an
     * enclosing `NewObject` to nested `InvokeSuperMethod` expressions.
     *
-    * @param className The internal name of the enclosing anonymous class (e.g. `"pkg.Anon$1"`).
+    * @param className The internal name of the enclosing anonymous class.
     *                  Set to `Some` when lowering a `NewObject` method body; `None` otherwise.
     *                  Injected into `AtomicOp.InvokeSuperMethod` so the backend can generate
     *                  the `CHECKCAST` and `INVOKEVIRTUAL super$methodName` instructions.
@@ -2521,7 +2483,7 @@ object Lowering {
     *                  parameter of the JvmMethod). Prepended to `InvokeSuperMethod` arguments
     *                  so the backend receives the receiver object as the first expression.
     */
-  private case class LocalContext(className: Option[String], thisRef: Option[MonoAst.Expr])
+  private case class LocalContext(sym: Option[Symbol.AnonClassSym], thisRef: Option[MonoAst.Expr])
 
   private object LocalContext {
     val empty: LocalContext = LocalContext(None, None)

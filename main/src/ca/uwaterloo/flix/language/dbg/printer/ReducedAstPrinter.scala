@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.ReducedAst.Expr
 import ca.uwaterloo.flix.language.ast.{ReducedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.util.collection.MapOps
 
 object ReducedAstPrinter {
@@ -64,13 +65,13 @@ object ReducedAstPrinter {
     case Expr.Stm(exps, exp, _) => exps.foldRight(print(exp))((e, acc) => DocAst.Expr.Stm(print(e), acc))
     case Expr.Region(sym, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
-      case ReducedAst.CatchRule(sym, clazz, body) => (sym, clazz, print(body))
+      case ReducedAst.CatchRule(sym, clazz, body) => (sym, DocAst.Expr.javaClassName(clazz), print(body))
     })
     case Expr.RunWith(exp, effUse, rules, _, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
       case ReducedAst.HandlerRule(op, fparams, body) =>
         (op.sym, fparams.map(printFormalParam), print(body))
     })
-    case Expr.NewObject(name, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
+    case Expr.NewObject(sym, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(sym, DocAst.Expr.javaClassName(clazz.desc), SimpleTypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
   }
 
   /**
@@ -99,7 +100,7 @@ object ReducedAstPrinter {
     * Returns the [[DocAst.JvmMethod]] representation of `method`.
     */
   private def printJvmMethod(method: ReducedAst.JvmMethod): DocAst.JvmMethod = method match {
-    case ReducedAst.JvmMethod(ann, ident, fparams, exp, tpe, _, _) =>
-      DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams map printFormalParam, print(exp), SimpleTypePrinter.print(tpe))
+    case ReducedAst.JvmMethod(ann, ident, fparams, exp, tpe, _, _, _) =>
+      DocAst.JvmMethod(ann.map(a => ClassDescs.simpleNameOf(a.clazz)), ident, fparams map printFormalParam, print(exp), SimpleTypePrinter.print(tpe))
   }
 }

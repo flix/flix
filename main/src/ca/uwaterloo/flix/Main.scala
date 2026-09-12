@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer, FormatterLsp as LspFormatter}
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -24,16 +23,24 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
+import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.*
+import org.json4s.JsonDSL.*
+import org.json4s.native.JsonMethods
 
 import java.io.{File, PrintStream}
 import java.net.BindException
 import java.nio.file.Paths
 
 object Main {
+
+  /**
+    * The header printed by `--help` and `--version`.
+    */
+  private val Header: String = s"The Flix Programming Language ${Version.CurrentVersion}"
 
   def main(argv: Array[String]): Unit = {
 
@@ -45,6 +52,12 @@ object Main {
       Console.err.println("Unable to parse command line arguments. Will now exit.")
       System.exit(1)
       null
+    }
+
+    // check if the --version flag was passed.
+    if (cmdOpts.version) {
+      printVersion(cmdOpts.json)
+      System.exit(0)
     }
 
     // get GitHub token
@@ -69,20 +82,19 @@ object Main {
       json = cmdOpts.json,
       progress = true,
       installDeps = cmdOpts.installDeps,
-      outputJvm = false,
-      outputPath = Options.Default.outputPath,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       compilerTop = cmdOpts.top,
-      loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
       xsubeffecting = cmdOpts.xsubeffecting,
+      xnewmono = cmdOpts.xnewmono,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
-      xchaosMonkey = Options.Default.xchaosMonkey
+      xchaosMonkey = Options.Default.xchaosMonkey,
+      xverify = cmdOpts.xverify
     )
 
     // Don't use progress bar if benchmarking.
@@ -110,6 +122,7 @@ object Main {
         case Command.None =>
           // check if the --listen flag was passed.
           if (cmdOpts.listen.nonEmpty) {
+            featureNotSupportedInNativeImage()
             SocketServer.listen(cmdOpts.listen.get)
             System.exit(0)
           }
@@ -146,6 +159,7 @@ object Main {
 
           // check if we should start a REPL
           if (cmdOpts.files.isEmpty) {
+            featureNotSupportedInNativeImage()
             Bootstrap.bootstrap(cwd, options.githubToken) match {
               case Result.Ok(bootstrap) =>
                 val shell = new Shell(bootstrap, options)
@@ -156,6 +170,9 @@ object Main {
                 System.exit(1)
             }
           }
+
+          // running the given files loads the compiled program into the JVM.
+          featureNotSupportedInNativeImage()
 
           // configure Flix and add the paths.
           val flix = new Flix()
@@ -178,7 +195,7 @@ object Main {
           // evaluate main.
           flix.check() match {
             case (Some(root), Nil) =>
-              flix.codeGen(root).getMain match {
+              JvmLoader.load(flix.codeGen(root)).main match {
                 case None => // nop
                 case Some(m) =>
                   // Invoke main with the supplied arguments.
@@ -221,8 +238,21 @@ object Main {
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(loadClassFiles = false))
+              flix.setOptions(options)
               bootstrap.build(flix)
+            }
+          }
+
+        case Command.BuildClasses =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'build-classes' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
+              bootstrap.buildClasses(flix)
             }
           }
 
@@ -234,7 +264,7 @@ object Main {
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(loadClassFiles = false))
+              flix.setOptions(options)
               bootstrap.buildJar(flix)
             }
           }
@@ -247,7 +277,7 @@ object Main {
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(loadClassFiles = false))
+              flix.setOptions(options)
               bootstrap.buildFatJar(flix)
             }
           }
@@ -287,7 +317,7 @@ object Main {
             val flix = mkFlixWithFiles(cmdOpts.files, options)
             val (optRoot, errors) = flix.check()
             if (errors.isEmpty) {
-              HtmlDocumentor.run(optRoot.get, PackageModules.All)(flix)
+              HtmlDocumentor.run(optRoot.get, PackageModules.All, Bootstrap.getDocumentationDirectory(cwd))(flix)
               System.exit(0)
             } else exitWithErrors(flix, errors, optRoot)
           }
@@ -317,6 +347,7 @@ object Main {
             println("The 'run' command does not support file arguments.")
             System.exit(1)
           }
+          featureNotSupportedInNativeImage()
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
@@ -326,6 +357,7 @@ object Main {
           }
 
         case Command.Test =>
+          featureNotSupportedInNativeImage()
           if (cmdOpts.files.isEmpty) {
             exitOnResult {
               Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
@@ -337,12 +369,12 @@ object Main {
           } else {
             val flix = mkFlixWithFiles(cmdOpts.files, options.copy(progress = false))
             flix.compile() match {
-              case Validation.Success(compilationResult) =>
-                Tester.run(Nil, compilationResult)(flix) match {
+              case Result.Ok(compilationResult) =>
+                Tester.run(Nil, JvmLoader.load(compilationResult))(flix) match {
                   case Result.Ok(_) => System.exit(0)
                   case Result.Err(_) => System.exit(1)
                 }
-              case Validation.Failure(errors) => exitWithErrors(flix, errors.toList, None)
+              case Result.Err(errors) => exitWithErrors(flix, errors, None)
             }
           }
 
@@ -351,6 +383,7 @@ object Main {
             println("The 'repl' command does not support file arguments.")
             System.exit(1)
           }
+          featureNotSupportedInNativeImage()
           Bootstrap.bootstrap(cwd, options.githubToken) match {
             case Result.Ok(bootstrap) =>
               val shell = new Shell(bootstrap, options)
@@ -361,11 +394,13 @@ object Main {
               System.exit(1)
           }
 
-        case PlainLsp =>
+        case Command.PlainLsp =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'lsp' command does not support file arguments.")
             System.exit(1)
           }
+          // lsp4j needs reflection metadata that the native image does not include yet.
+          featureNotSupportedInNativeImage()
           LspServer.run(options)
           System.exit(0)
 
@@ -476,6 +511,7 @@ object Main {
     listen: Option[Int] = None,
     threads: Option[Int] = None,
     top: Boolean = false,
+    version: Boolean = false,
     assumeYes: Boolean = false,
     xbenchmarkCodeSize: Boolean = false,
     xbenchmarkIncremental: Boolean = false,
@@ -486,7 +522,9 @@ object Main {
     xlib: LibLevel = LibLevel.All,
     xprintphases: Boolean = false,
     xsummary: Boolean = false,
+    xverify: Boolean = false,
     xsubeffecting: Set[Subeffecting] = Set.empty,
+    xnewmono: Boolean = false,
     XPerfN: Option[Int] = None,
     XPerfFrontend: Boolean = false,
     XPerfPar: Boolean = false,
@@ -507,6 +545,8 @@ object Main {
     case object Check extends Command
 
     case object Build extends Command
+
+    case object BuildClasses extends Command
 
     case object BuildJar extends Command
 
@@ -577,7 +617,7 @@ object Main {
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
 
       // Head
-      head("The Flix Programming Language", Version.CurrentVersion.toString)
+      head(Header)
 
       // Command
       cmd("init").action((_, c) => c.copy(command = Command.Init)).text("  creates a new project in the current directory.")
@@ -586,13 +626,15 @@ object Main {
 
       cmd("build").action((_, c) => c.copy(command = Command.Build)).text("  builds (i.e. compiles) the current project.")
 
+      cmd("build-classes").action((_, c) => c.copy(command = Command.BuildClasses)).text("  builds the current project and writes the class files to the build directory.")
+
       cmd("build-jar").action((_, c) => c.copy(command = Command.BuildJar)).text("  builds a jar-file from the current project.")
 
       cmd("build-fatjar").action((_, c) => c.copy(command = Command.BuildFatJar)).text("  builds a fatjar-file from the current project.")
 
       cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  builds a fpkg-file from the current project.")
 
-      cmd("clean").action((_, c) => c.copy(command = Command.Clean)).text("  recursively removes class files from the build directory.")
+      cmd("clean").action((_, c) => c.copy(command = Command.Clean)).text("  removes the build directory (class files and generated documentation).")
 
       cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
 
@@ -675,7 +717,8 @@ object Main {
       opt[Unit]("yes").action((_, c) => c.copy(assumeYes = true)).
         text("automatically answer yes to all prompts.")
 
-      version("version").text("prints the version number.")
+      opt[Unit]("version").action((_, c) => c.copy(version = true)).
+        text("prints the version number.")
 
       // Experimental options:
       note("")
@@ -711,15 +754,23 @@ object Main {
 
       // Xprint-phase
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
-        text("[experimental] prints the ASTs after the each phase.")
+        text("[experimental] writes the ASTs after each phase to './build/asts/'.")
 
       // Xsummary
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
 
+      // Xverify
+      opt[Unit]("Xverify").action((_, c) => c.copy(xverify = true)).
+        text("[experimental] enables internal verifiers of compiler invariants.")
+
       // Xsubeffecting
       opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
         text("[experimental] enables sub-effecting in select places")
+
+      // Xnewmono
+      opt[Unit]("Xnewmono").action((_, c) => c.copy(xnewmono = true)).
+        text("[experimental] uses the constraint-based monomorphization pipeline instead of the demand-driven one.")
 
       note("")
 
@@ -732,6 +783,22 @@ object Main {
     }
 
     parser.parse(flixArgs, CmdOpts()).map(_.copy(args = progArgs.toList))
+  }
+
+  /**
+    * Prints the version number as JSON or plain text.
+    */
+  private def printVersion(json: Boolean): Unit = {
+    if (json) {
+      val v = Version.CurrentVersion
+      val result =
+        ("major" -> v.major) ~
+          ("minor" -> v.minor) ~
+          ("revision" -> v.revision)
+      println(JsonMethods.pretty(JsonMethods.render(result)))
+    } else {
+      println(Header)
+    }
   }
 
   /**
@@ -758,6 +825,21 @@ object Main {
   private def exitWithErrors(flix: Flix, errors: List[CompilationMessage], root: Option[TypedAst.Root]): Unit = {
     println(CompilationMessage.formatAll(errors)(flix.getFormatter, root))
     System.exit(1)
+  }
+
+  /**
+    * Exits with an explanatory message if running inside a GraalVM native image.
+    */
+  private def featureNotSupportedInNativeImage(): Unit = {
+    if (NativeImage.GraalEnabled) {
+      val msg =
+        """This action is not supported in the native image.
+          |
+          |You must run the flix.jar in the JVM for this action.
+          |""".stripMargin
+      println(msg)
+      System.exit(1)
+    }
   }
 
   /**

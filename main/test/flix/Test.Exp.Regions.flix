@@ -509,8 +509,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    // BUG: See #12248
-    @Test @Skip
+    @Test
     def testRegions2Regions3Nested01(): Unit \ Assert =
         region rc1 {
             region rc2 {
@@ -563,14 +562,14 @@ mod Test.Exp.Regions {
             }
         }
 
-    // BUG: See #12248
-    @Test @Skip
+    @Test
     def testRegions3Regions01(): Unit \ Assert =
         region rc1 {
             let a = Array.repeat(rc1, 8, 1);
             region rc2 {
                 let l: MutList[Int32, _] = MutList.empty(rc2);
-                region _ {
+                region rc3 {
+                    let _ = rc3;
                     let m = MutMap.empty(rc1);
                     MutList.push(1, l);
                     MutMap.put(1, 1, m);
@@ -579,8 +578,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    // BUG: See #12248
-    @Test @Skip
+    @Test
     def testRegions3Regions02(): Unit \ Assert =
         region rc1 {
             let a = Array.repeat(rc1, 8, 1);
@@ -595,12 +593,12 @@ mod Test.Exp.Regions {
             }
         }
 
-    // BUG: See #12248
-    @Test @Skip
+    @Test
     def testRegions3Regions03(): Unit \ Assert =
         region rc1 {
             let a = Array.repeat(rc1, 8, 1);
-            region _ {
+            region rc2 {
+                let _ = rc2;
                 let l: MutList[Int32, _] = MutList.empty(rc1);
                 region rc3 {
                     let m = MutMap.empty(rc3);
@@ -611,8 +609,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    // BUG: See #12248
-    @Test @Skip
+    @Test
     def testRegions3Regions04(): Unit \ Assert =
         region rc1 {
             let a = Array.repeat(rc1, 8, 1);
@@ -627,26 +624,26 @@ mod Test.Exp.Regions {
             }
         }
 
-    // BUG: See #12248
-    @Test @Skip
+    @Test
     def testRegions3Regions1Nested01(): Unit \ Assert =
         region rc1 {
             region rc2 {
                 let a: Array[MutList[Int32, rc1], rc2] = Array.repeat(rc2, 8, MutList.empty(rc1));
-                region _ {
+                region rc3 {
+                    let _ = rc3;
                     MutList.push(1, Array.get(0, a));
                     assertTrue(MutList.pop(Array.get(0, a)) == Some(1))
                 }
             }
         }
 
-    // BUG: See #12248
-    @Test @Skip
+    @Test
     def testRegions3Regions1Nested02(): Unit \ Assert =
         region rc1 {
             region rc2 {
                 let l: MutList[MutMap[Int32, Int32, rc1], rc2] = MutList.empty(rc2);
-                region _ {
+                region rc3 {
+                    let _ = rc3;
                     let m = MutMap.empty(rc1);
                     MutList.push(m, l);
                     MutMap.put(1, 1, m);
@@ -658,10 +655,10 @@ mod Test.Exp.Regions {
             }
         }
 
-    // BUG: See #12248
-    @Test @Skip
+    @Test
     def testRegions3Regions1Nested03(): Unit \ Assert =
-        region _ {
+        region rc1 {
+            let _ = rc1;
             region rc2 {
                 region rc3 {
                     let m: MutMap[Int32, MutList[Int32, rc3], rc2] = MutMap.empty(rc2);
@@ -677,8 +674,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    // BUG: See #12248
-    @Test @Skip
+    @Test
     def testRegions3Regions2Nested01(): Unit \ Assert =
         region rc1 {
             region rc2 {
@@ -697,8 +693,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    // BUG: See #12248
-    @Test @Skip
+    @Test
     def testRegions3Regions2Nested02(): Unit \ Assert =
         region rc1 {
             region rc2 {
@@ -1181,14 +1176,14 @@ mod Test.Exp.Regions {
             }
         }
 
-    // BUG: See #12248
-    @Test @Skip
+    @Test
     def testRegions3RegionsReferences01(): Unit \ Assert =
         region rc1 {
             let a = Ref.fresh(rc1, Array.repeat(rc1, 8, 1));
             region rc2 {
                 let l: Ref[MutList[Int32, _], _] = Ref.fresh(rc1, MutList.empty(rc2));
-                region _ {
+                region rc3 {
+                    let _ = rc3;
                     let m = Ref.fresh(rc2, MutMap.empty(rc2));
                     MutList.push(1, Ref.get(l));
                     MutMap.put(1, 1, Ref.get(m));
@@ -1250,26 +1245,26 @@ mod Test.Exp.Regions {
             }
         }
 
-    // BUG: See #12248
-    @Test @Skip
+    @Test
     def testRegions3Regions1NestedReferences01(): Unit \ Assert =
         region rc1 {
             region rc2 {
                 let a: Ref[Array[Ref[MutList[Int32, rc1], rc2], rc2], rc2] = Ref.fresh(rc2, Array.repeat(rc2, 8, Ref.fresh(rc2, MutList.empty(rc1))));
-                region _ {
+                region rc3 {
+                    let _ = rc3;
                     MutList.push(1, Ref.get(Array.get(0, Ref.get(a))));
                     assertEq(expected = Some(1), MutList.pop(Ref.get(Array.get(0, Ref.get(a)))))
                 }
             }
         }
 
-    // BUG: See #12248
-    @Test @Skip
+    @Test
     def testRegions3Regions1NestedReferences02(): Unit \ Assert =
         region rc1 {
             region rc2 {
                 let l: Ref[MutList[Ref[MutMap[Int32, Int32, rc1], rc2], rc2], rc1] = Ref.fresh(rc1, MutList.empty(rc2));
-                region _ {
+                region rc3 {
+                    let _ = rc3;
                     let m = Ref.fresh(rc2, MutMap.empty(rc1));
                     MutList.push(m, Ref.get(l));
                     MutMap.put(1, 1, Ref.get(m));
@@ -1281,10 +1276,10 @@ mod Test.Exp.Regions {
             }
         }
 
-    // BUG: See #12248
-    @Test @Skip
+    @Test
     def testRegions3Regions1NestedReferences03(): Unit \ Assert =
-        region _ {
+        region rc1 {
+            let _ = rc1;
             region rc2 {
                 region rc3 {
                     let m: Ref[MutMap[Int32, Ref[MutList[Int32, rc3], rc3], rc2], rc2] = Ref.fresh(rc2, MutMap.empty(rc2));

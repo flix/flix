@@ -17,10 +17,13 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, TraitUsageKind}
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, TypedAst, UnkindedType}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
+
+import java.lang.constant.ClassDesc
 
 /**
   * A common super-type for resolution errors.
@@ -101,6 +104,34 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate a duplicate definition in an instance.
+    *
+    * @param name the name of the duplicated definition.
+    * @param sym  the trait symbol of the instance.
+    * @param loc1 the location of the first definition.
+    * @param loc2 the location of the second definition.
+    */
+  case class DuplicateInstanceDef(name: String, sym: Symbol.TraitSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E9290
+
+    def summary: String = s"Duplicate definition '$name' in instance of trait '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Duplicate definition '${red(name)}' in instance of trait '${magenta(sym.name)}'.
+         |
+         |${highlight(loc1, "first occurrence", fmt)}
+         |
+         |${highlight(loc2, "duplicate", fmt)}
+         |
+         |${underline("Explanation:")} An instance can define each member of its trait at most once.
+         |""".stripMargin
+    }
+
+    val loc: SourceLocation = loc1
+  }
+
+  /**
     * An error raised to indicate a duplicate derivation.
     *
     * @param sym  the trait symbol of the duplicate derivation.
@@ -174,19 +205,28 @@ object ResolutionError {
   }
 
   /**
-    * Illegal Non-Java Type Error.
+    * An error raised to indicate that a `new` expression names a type that is not a Java class or interface.
     *
-    * @param tpe the illegal type.
-    * @param loc the location where the error occurred.
+    * @param loc the location of the type.
     */
-  case class IllegalNonJavaType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
+  case class IllegalNonJavaType(loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E9623
 
-    def summary: String = "Unexpected non-Java type. Expected class or interface type."
+    // The type as written in the source, if it fits on a single line.
+    private val name: Option[String] = loc.text
+
+    def summary: String = name match {
+      case Some(t) => s"Unexpected non-Java type: '$t'. Expected a Java class or interface."
+      case None => "Unexpected non-Java type. Expected a Java class or interface."
+    }
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected non-Java type: '${red(tpe.toString)}'.
+      val headline = name match {
+        case Some(t) => s">> Unexpected non-Java type: '${red(t)}'."
+        case None => ">> Unexpected non-Java type."
+      }
+      s"""$headline
          |
          |${highlight(loc, "unexpected type", fmt)}
          |
@@ -389,6 +429,29 @@ object ResolutionError {
   }
 
   /**
+    * Inaccessible Module Error.
+    *
+    * @param sym the module symbol.
+    * @param ns  the namespace where the symbol is not accessible.
+    * @param loc the location where the error occurred.
+    */
+  case class InaccessibleModule(sym: Symbol.ModuleSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E2544
+
+    def summary: String = s"Inaccessible module: '${sym.toString}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Module '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+         |
+         |${highlight(loc, "inaccessible module", fmt)}
+         |
+         |${underline("Tip:")} Mark the module as 'pub'.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Inaccessible Struct Error
     *
     * @param sym the struct symbol
@@ -585,25 +648,51 @@ object ResolutionError {
   }
 
   /**
-    * An error indicating the number of effect operation parameters does not match the expected number.
+    * An error indicating that an effect operation is given too many arguments,
+    * i.e. more arguments than the number of formal parameters it declares.
     *
     * @param op       the effect operation symbol.
-    * @param expected the expected number of parameters.
-    * @param actual   the actual number of parameters.
+    * @param expected the expected number of arguments (the operation's declared arity).
+    * @param actual   the actual number of arguments given.
     * @param loc      the location where the error occurred.
     */
-  case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
+  case class OverAppliedOp(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E0912
 
-    def summary: String = s"Mismatched arity for operation '${op.name}'."
+    def summary: String = s"Too many arguments for operation '${op.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched arity for operation '${red(op.name)}'.
+      s""">> Too many arguments for operation '${red(op.name)}'.
          |
-         |Expected ${Grammar.n_things(expected, "parameter")} but found $actual.
+         |Expected ${Grammar.n_things(expected, "argument")} but found $actual.
          |
-         |${highlight(loc, s"expected $expected parameters", fmt)}
+         |${highlight(loc, s"expected $expected arguments", fmt)}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error indicating that an effect operation is given too few arguments,
+    * i.e. fewer arguments than the number of formal parameters it declares.
+    *
+    * @param op       the effect operation symbol.
+    * @param expected the expected number of arguments (the operation's declared arity).
+    * @param actual   the actual number of arguments given.
+    * @param loc      the location where the error occurred.
+    */
+  case class UnderAppliedOp(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E0913
+
+    def summary: String = s"Too few arguments for operation '${op.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Too few arguments for operation '${red(op.name)}'.
+         |
+         |Expected ${Grammar.n_things(expected, "argument")} but found $actual.
+         |
+         |${highlight(loc, s"expected $expected arguments", fmt)}
          |""".stripMargin
     }
   }
@@ -814,10 +903,9 @@ object ResolutionError {
     *
     * @param name the class name.
     * @param ap   the anchor position.
-    * @param msg  the Java error message.
     * @param loc  the location of the class name.
     */
-  case class UndefinedJvmClass(name: Name.Ident, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmClass(name: Name.Ident, ap: AnchorPosition, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1792
 
     def summary: String = s"Undefined Java class: '$name'."
@@ -827,8 +915,6 @@ object ResolutionError {
       s""">> Undefined Java class '${red(name.name)}'.
          |
          |${highlight(loc, "undefined class", fmt)}
-         |
-         |$msg
          |""".stripMargin
     }
   }
@@ -852,17 +938,16 @@ object ResolutionError {
          |
          |${highlight(loc, "unknown import", fmt)}
          |
-         |$msg
-         |$nestedClassHint
+         |$msg$nestedClassHint
          |""".stripMargin
     }
 
     /**
-      * Returns a formatted string with helpful suggestions.
+      * Returns a hint on nested class syntax on its own line, or the empty string if the hint does not apply.
       */
     private def nestedClassHint: String = {
       if (raw".*\.[A-Z].*\.[A-Z].*".r matches name)
-        s"Static nested classes should be specified using '$$', e.g. java.util.Locale$$Builder"
+        s"\nStatic nested classes should be specified using '$$', e.g. java.util.Locale$$Builder"
       else
         ""
     }
@@ -875,14 +960,14 @@ object ResolutionError {
     * @param field the field name.
     * @param loc   the location of the field access.
     */
-  case class UndefinedJvmStaticField(clazz: Class[?], field: Name.Ident, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmStaticField(clazz: ClassDesc, field: Name.Ident, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1914
 
     def summary: String = s"Undefined static field: '${field.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Undefined static field '${red(field.name)}' in class '${cyan(clazz.getName)}'.
+      s""">> Undefined static field '${red(field.name)}' in class '${magenta(ClassDescs.binaryNameOf(clazz))}'.
          |
          |${highlight(loc, "field not found", fmt)}
          |""".stripMargin
@@ -1199,23 +1284,24 @@ object ResolutionError {
     * @param expectedArity the number of type arguments expected.
     * @param loc           the location where the error occurred.
     */
-  case class IllegalRawJavaType(clazz: java.lang.Class[?], expectedArity: Int, loc: SourceLocation) extends ResolutionError {
+  case class IllegalRawJavaType(clazz: ClassDesc, expectedArity: Int, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3692
 
+    private val name = ClassDescs.simpleNameOf(clazz)
     private val expected = Grammar.n_things(expectedArity, "type argument")
-    private val example = s"${clazz.getSimpleName}[${List.fill(expectedArity)("t").mkString(", ")}]"
+    private val example = s"$name[${List.fill(expectedArity)("t").mkString(", ")}]"
 
     def summary: String =
-      s"Missing type arguments: '${clazz.getSimpleName}' expects $expected."
+      s"Missing type arguments: '$name' expects $expected."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing type arguments: '${red(clazz.getSimpleName)}' expects $expected.
+      s""">> Missing type arguments: '${red(name)}' expects $expected.
          |
          |${highlight(loc, "missing type arguments", fmt)}
          |
          |${underline("Explanation:")} Java generic types cannot be used without type arguments.
-         |Use '${cyan(example)}' instead of '${red(clazz.getSimpleName)}'.
+         |Use '${cyan(example)}' instead of '${red(name)}'.
          |""".stripMargin
     }
   }

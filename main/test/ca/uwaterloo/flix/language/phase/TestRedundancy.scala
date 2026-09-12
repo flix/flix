@@ -1057,6 +1057,65 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedTypeParam](result)
   }
 
+  test("UnusedTypeParam.Effect.01") {
+    val input =
+      s"""
+         |eff E[a] {
+         |    def op(): Unit
+         |}
+         |
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeParam.Effect.02") {
+    val input =
+      s"""
+         |eff E[a, b] {
+         |    def op(x: a): Unit
+         |}
+         |
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeParam.Effect.03") {
+    val input =
+      s"""
+         |eff E[a, b] {
+         |    def op(): b
+         |}
+         |
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeParam.Effect.04") {
+    val input =
+      s"""
+         |eff E[a, b, c] {
+         |    def op1(x: a): Unit
+         |    def op2(): c
+         |}
+         |
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeParam.Effect.05") {
+    val input =
+      s"""
+         |eff E[a]
+         |
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
   test("UnusedTypeParam.Enum.01") {
     val input =
       s"""

@@ -18,14 +18,15 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.{Expr, ExtPattern, ExtTagPattern}
+import ca.uwaterloo.flix.language.ast.jvm.JavaField
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, RegionScope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.language.phase.unification.Substitution
-import ca.uwaterloo.flix.util.collection.ListOps
-import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, Subeffecting}
+import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
 
-import java.lang.reflect.{Modifier, ParameterizedType, TypeVariable}
 
 /**
   * This phase generates a list of type constraints, which include
@@ -110,7 +111,7 @@ object ConstraintGen {
         val (tpes, effs) = exps.map(visitExp).unzip
 
         c.unifyType(itvar, declaredType, loc2)
-        c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
+        c.expectTypeArguments(sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
         c.addClassConstraints(tconstrs, loc2)
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
@@ -123,7 +124,7 @@ object ConstraintGen {
       case Expr.ApplyLocalDef(LocalDefSymUse(sym, loc1), exps, arrowTvar, tvar, evar, loc2) =>
         val (tpes, effs) = exps.map(visitExp).unzip
         val defEff = freshVar(Kind.Eff, loc1)
-        val actualDefTpe = Type.mkUncurriedArrowWithEffect(tpes, defEff, tvar, loc1)
+        val actualDefTpe = Type.mkUncurriedArrowWithEffect(Nel.unsafeFrom(tpes), defEff, tvar, loc1)
         c.unifyType(actualDefTpe, arrowTvar, loc1)
         c.expectType(sym.tvar, actualDefTpe, loc1)
         c.unifyType(evar, Type.mkUnion(defEff :: effs, loc2), loc2)
@@ -164,7 +165,7 @@ object ConstraintGen {
         val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc1)
 
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
+        c.expectTypeArguments(sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
         c.addClassConstraints(tconstrs, loc2)
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(itvar, declaredType, loc2)
@@ -582,7 +583,11 @@ object ConstraintGen {
 
         // The tag type is a function from the types of terms to the type of the enum.
         val (tpes, effs) = exps.map(visitExp).unzip
-        val constructorBase = Type.mkPureUncurriedArrow(tpes, tvar, loc)
+        // A nullary tag is not a function, but the enum type itself.
+        val constructorBase = tpes match {
+          case Nil => tvar
+          case t :: ts => Type.mkPureUncurriedArrow(Nel(t, ts), tvar, loc)
+        }
         c.unifyType(tagType, constructorBase, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(effs, loc)
@@ -879,8 +884,9 @@ object ConstraintGen {
 
       case Expr.Handler(symUse, rules, tvar, evar1, evar2, loc) =>
         //
-        // ∀i. Γ, opix1: opit1, .., ki: opit -> t \ k_ef ⊢ ei: t \ ei_ef
-        //     k_ef = (ef - Eff) ∪ (∪_i ei_ef)
+        // β̄ fresh
+        // ∀i. Γ, opix1: opit1[ᾱ ↦ β̄], .., ki: opit[ᾱ ↦ β̄] -> t \ k_ef ⊢ ei: t \ ei_ef
+        //     k_ef = (ef - Eff[β̄]) ∪ (∪_i ei_ef)
         // ---------------------------------------------------------------------
         // Γ ⊢ handler Eff {
         //   def op1(op1x1, .., k1) = e1
@@ -889,16 +895,22 @@ object ConstraintGen {
         // }: (Unit -> t \ ef) -> t \ k_ef
         //
         // where:
-        // eff Eff {
+        // eff Eff[ᾱ] {
         //  def op1(op1x1: op1t1, ..): op1t
         //  def op2(op2x1: op2t2, ..): op2t
         //  ..
         // }
         //
-        val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2)).unzip
+        val effect = root.effects(symUse.sym)
+        val effectArgs = effect.tparams.map(tparam => freshVar(tparam.sym.kind, loc))
+        val effectSubst = Substitution(ListOps.zip(effect.tparams.map(_.sym), effectArgs).toMap)
+        val effectKind = Kind.mkArrowTo(effect.tparams.map(_.sym.kind), Kind.Eff)
+
+        val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2, effectSubst)).unzip
         c.unifyAllTypes(tvar :: tpes, loc)
 
-        val handledEffect = Type.Cst(TypeConstructor.Effect(symUse.sym, Kind.Eff), symUse.qname.loc) // TODO EFF-TPARAMS need kind
+        val handledEffectConstructor = Type.Cst(TypeConstructor.Effect(symUse.sym, effectKind), symUse.qname.loc)
+        val handledEffect = Type.mkApply(handledEffectConstructor, effectArgs, symUse.qname.loc)
         // Subtract the effect from the body effect and add the handler effects.
         val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, symUse.qname.loc), Type.mkUnion(effs, loc), loc)
         c.unifyType(evar2, continuationEffect, loc)
@@ -920,7 +932,7 @@ object ConstraintGen {
         // --------------------------------------------------------
         // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = mkConstructorType(clazz, loc)
+        val clazzTpe = JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
@@ -933,7 +945,7 @@ object ConstraintGen {
         // --------------------------------------------------------
         // Γ ⊢ super(e₁ ...) : k \ JvmToEff[ι]
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = mkConstructorType(clazz, loc)
+        val clazzTpe = JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
@@ -957,8 +969,8 @@ object ConstraintGen {
 
       case Expr.InvokeSuperMethod(clazz, methodName, exps, targs, jvar, tvar, evar, loc) =>
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = if (targs.nonEmpty) Type.mkApply(Type.mkNative(clazz, loc), targs, loc)
-                       else Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
+        val clazzTpe = if (targs.nonEmpty) Type.mkApply(JavaTypes.flixTypeOf(clazz, loc), targs, loc)
+                       else JavaTypes.instantiateWithObjectArgs(clazz, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(clazzTpe, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
@@ -993,8 +1005,8 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.PutField(field, clazz, exp1, exp2, loc) =>
-        val fieldType = Type.instantiateJavaTypeWithObjectArgs(field.getType, loc)
-        val classType = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
+        val fieldType = JavaTypes.instantiateWithObjectArgs(field.ref.descriptor, loc)
+        val classType = JavaTypes.instantiateWithObjectArgs(clazz, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = classType, actual = tpe1, exp1.loc)
@@ -1003,29 +1015,28 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, Type.IO, loc)
         (resTpe, resEff)
 
-      case Expr.GetStaticField(field, loc) =>
-        val isFinal = Modifier.isFinal(field.getModifiers)
-        val fieldType = Type.instantiateJavaTypeWithObjectArgs(field.getType, loc)
+      case Expr.GetStaticField(field, tvar, loc) =>
+        val isFinal = field.isFinal
+        val fieldType = JavaTypes.instantiateWithObjectArgs(field.ref.descriptor, loc)
         val fieldReadEff = if (isFinal) Type.Pure else Type.IO
-        val resTpe = fieldType
+        c.unifyType(tvar, fieldType, loc)
+        val resTpe = tvar
         val resEff = fieldReadEff
         (resTpe, resEff)
 
       case Expr.PutStaticField(field, exp, loc) =>
         val (valueTyp, eff) = visitExp(exp)
-        c.expectType(expected = Type.instantiateJavaTypeWithObjectArgs(field.getType, loc), actual = valueTyp, exp.loc)
+        c.expectType(expected = JavaTypes.instantiateWithObjectArgs(field.ref.descriptor, loc), actual = valueTyp, exp.loc)
         val resTpe = Type.Unit
         val resEff = Type.mkUnion(eff, Type.IO, loc)
         (resTpe, resEff)
 
       case Expr.NewObject(_, clazz, targs, constructors, methods, tvar, loc) =>
         constructors.foreach(visitJvmConstructor)
-        val resTpe = if (targs.nonEmpty) Type.mkApply(Type.mkNative(clazz, loc), targs, loc)
-                     else Type.mkNative(clazz, loc)
+        val resTpe = Type.mkApply(JavaTypes.flixTypeOf(clazz.desc, loc), targs, loc)
         c.unifyType(tvar, resTpe, loc)
 
-        // Constrain each method's params against the resolved Java method signature.
-        methods.foreach(m => visitNewObjectMethod(m, clazz, targs))
+        methods.foreach(visitJvmMethod)
 
         val resEff = Type.IO
         (tvar, resEff)
@@ -1153,7 +1164,11 @@ object ConstraintGen {
 
         // The tag type is a function from the type of variant to the type of the enum.
         val tpes = pats.map(visitPattern)
-        val constructorBase = if (tpes.nonEmpty) Type.mkPureUncurriedArrow(tpes, tvar, loc) else tvar
+        // A nullary tag is not a function, but the enum type itself.
+        val constructorBase = tpes match {
+          case Nil => tvar
+          case t :: ts => Type.mkPureUncurriedArrow(Nel(t, ts), tvar, loc)
+        }
         c.unifyType(tagType, constructorBase, loc)
         tvar
 
@@ -1259,6 +1274,7 @@ object ConstraintGen {
           c.expectType(expected = Type.Bool, actual = guardTpe, g.loc)
           c.expectType(expected = Type.Pure, actual = guardEff, g.loc)
       }
+
       val (tpe, eff) = visitExp(exp)
       (patTpe, tpe, eff)
   }
@@ -1270,16 +1286,16 @@ object ConstraintGen {
     */
   private def visitCatchRule(rule: KindedAst.CatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
     case KindedAst.CatchRule(sym, clazz, exp, _) =>
-      c.expectType(expected = Type.mkNative(clazz, sym.loc), sym.tvar, sym.loc)
+      c.expectType(expected = JavaTypes.flixTypeOf(clazz, sym.loc), sym.tvar, sym.loc)
       visitExp(exp)
   }
 
   /**
     * Generates constraints unifying the given expected and actual formal parameters.
     */
-  private def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam])(implicit c: TypeContext): Unit = {
+  private def unifyFormalParams(op: Symbol.OpSym, expected: List[Type], actual: List[KindedAst.FormalParam])(implicit c: TypeContext): Unit = {
     // length check done in Resolver
-    c.expectTypeArguments(op, expectedTypes = expected.map(_.tpe), actualTypes = actual.map(_.tpe), actual.map(_.loc))
+    c.expectTypeArguments(op, expectedTypes = expected, actualTypes = actual.map(_.tpe), actual.map(_.loc))
   }
 
   /**
@@ -1289,21 +1305,25 @@ object ConstraintGen {
     *
     * @param tryBlockTpe        the type of the try-block associated with the handler
     * @param continuationEffect the effect of the continuation
+    * @param effectSubst        the shared instantiation of the effect's type parameters
     */
-  private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
+  private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type, effectSubst: Substitution)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
     case KindedAst.HandlerRule(symUse, actualFparams0, body, opTvar, loc) =>
       val effect = root.effects(symUse.sym.eff)
       val ops = effect.ops.map(op => op.sym -> op).toMap
-      // Don't need to generalize since ops are monomorphic
+      // The effect parameters have already been instantiated once for the enclosing handler.
       // Don't need to handle unknown op because resolver would have caught this
-      val (actualFparams, List(resumptionFparam)) = actualFparams0.splitAt(actualFparams0.length - 1)
+      // The last formal parameter is the resumption, the rest correspond to the operation's parameters.
+      val actualFparams = actualFparams0.init
+      val resumptionFparam = actualFparams0.last
       ops(symUse.sym) match {
         case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, _, _, _), _) =>
-          val resumptionArgType = opTpe
+          val expectedParamTypes = expectedFparams.toList.map(fparam => effectSubst(fparam.tpe))
+          val resumptionArgType = effectSubst(opTpe)
           val resumptionResType = tryBlockTpe
           val resumptionEff = continuationEffect
           val expectedResumptionType = Type.mkArrowWithEffect(resumptionArgType, resumptionEff, resumptionResType, loc.asSynthetic)
-          unifyFormalParams(symUse.sym, expected = expectedFparams, actual = actualFparams)
+          unifyFormalParams(symUse.sym, expected = expectedParamTypes, actual = actualFparams)
           c.expectType(expected = expectedResumptionType, actual = resumptionFparam.tpe, resumptionFparam.loc)
           val (actualTpe, actualEff) = visitExp(body)
 
@@ -1342,81 +1362,6 @@ object ConstraintGen {
       val (bodyTpe, bodyEff) = visitExp(exp)
       c.expectType(expected = returnTpe, actual = bodyTpe, exp.loc)
       c.expectType(expected = eff, actual = bodyEff, exp.loc)
-  }
-
-  /**
-    * Generates constraints for a JVM method in a NewObject expression,
-    * including constraints that the Flix method's parameter and return types
-    * match the resolved Java method signature.
-    *
-    * For example, given `new Comparator[String]` with substMap `{T -> String}`,
-    * Java's `Comparator.compare(T, T) -> int` resolves to `compare(String, String) -> Int32`.
-    * If the Flix method declares `t: Int32` instead of `t: String`, the emitted
-    * constraint `Int32 ~ String` produces a type error.
-    */
-  private def visitNewObjectMethod(method: KindedAst.JvmMethod, clazz: Class[?], targs: List[Type])(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = method match {
-    case KindedAst.JvmMethod(_, ident, fparams, exp, returnTpe, eff, _) =>
-      // Constrain each formal param to its declared type.
-      fparams.foreach {
-        case KindedAst.FormalParam(sym, tpe, _, loc) =>
-          c.unifyType(sym.tvar, tpe, loc)
-      }
-
-      val (bodyTpe, bodyEff) = visitExp(exp)
-      c.expectType(expected = returnTpe, actual = bodyTpe, exp.loc)
-      c.expectType(expected = eff, actual = bodyEff, exp.loc)
-
-      // Find the matching Java method by name and arity (excluding 'this' param).
-      val flixParamCount = fparams.tail.length
-      val javaMethodOpt = JvmUtils.getInstanceMethods(clazz)
-        .find(m => m.getName == ident.name && m.getParameterCount == flixParamCount)
-      javaMethodOpt match {
-        case Some(jm) =>
-          // Build a substitution from the declaring class's type parameter names
-          // to the user-provided Flix type arguments. This correctly handles
-          // inherited methods where the declaring class differs from the
-          // instantiated class (e.g., UnaryOperator.apply is declared on Function).
-          val indexMapping = JvmUtils.resolveTypeParamMapping(jm, clazz)
-          val substMap: Map[String, Type] = indexMapping.flatMap { case (name, idx) =>
-            if (idx < targs.length) Some(name -> targs(idx)) else None
-          }
-
-          // Constrain each Flix param type against the resolved Java param type.
-          val resolvedParams = jm.getGenericParameterTypes.toList.map(resolveJavaType(_, substMap, ident.loc))
-          fparams.tail.zip(resolvedParams).foreach {
-            case (KindedAst.FormalParam(_, tpe, _, paramLoc), expectedType) =>
-              c.expectType(expected = expectedType, actual = tpe, paramLoc)
-          }
-
-          // Constrain the return type.
-          if (jm.getReturnType == java.lang.Void.TYPE)
-            c.expectType(expected = Type.Unit, actual = returnTpe, ident.loc)
-          else
-            c.expectType(expected = resolveJavaType(jm.getGenericReturnType, substMap, ident.loc), actual = returnTpe, ident.loc)
-        case None => // No matching Java method found; Safety will report the error.
-      }
-  }
-
-  /**
-    * Resolves a `java.lang.reflect.Type` to a Flix [[Type]] using the given
-    * substitution map. Falls back to the erased (Object-filled) type.
-    */
-  private def resolveJavaType(javaType: java.lang.reflect.Type, substMap: Map[String, Type], loc: SourceLocation): Type = javaType match {
-    case tv: TypeVariable[_] =>
-      substMap.getOrElse(tv.getName, Type.instantiateJavaTypeWithObjectArgs(classOf[Object], loc))
-    case pt: ParameterizedType =>
-      pt.getRawType match {
-        case rawClazz: Class[_] =>
-          val base = Type.getFlixType(rawClazz)
-          val resolvedArgs = pt.getActualTypeArguments.toList.map(resolveJavaType(_, substMap, loc))
-          Type.mkApply(base, resolvedArgs, loc)
-        case _ =>
-          Type.instantiateJavaTypeWithObjectArgs(classOf[Object], loc)
-      }
-    case clazz: Class[_] =>
-      Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
-    case _ =>
-      Type.instantiateJavaTypeWithObjectArgs(classOf[Object], loc)
   }
 
   /**
@@ -1529,18 +1474,6 @@ object ConstraintGen {
     }
     val regionOpt = struct.tparams.lastOption.map(region => substMap(region.sym))
     (instantiatedFields.toMap, tpe, regionOpt)
-  }
-
-  /** Builds the result type for a constructor call, using fresh type variables for generic classes. */
-  private def mkConstructorType(clazz: Class[?], loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Type = {
-    val numTypeParams = clazz.getTypeParameters.length
-    if (numTypeParams > 0) {
-      val baseTpe = Type.mkNative(clazz, loc)
-      val typeArgs = List.fill(numTypeParams)(freshVar(Kind.Star, loc))
-      Type.mkApply(baseTpe, typeArgs, loc)
-    } else {
-      Type.getFlixType(clazz)
-    }
   }
 
   /** Returns `true` if `exp` is a JVM interop invocation (constructor, method, or static method). */

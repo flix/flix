@@ -38,6 +38,18 @@ object MapOps {
   }
 
   /**
+    * Applies `f` to each of the values in the given map, keeping only entries that return `Some(...)`.
+    */
+  def filterMapValues[K, V1, V2](m: Map[K, V1])(f: V1 => Option[V2]): Map[K, V2] = {
+    m.flatMap {
+      case (k, v1) => f(v1) match {
+        case None => None
+        case Some(v2) => Some((k, v2))
+      }
+    }
+  }
+
+  /**
     * Combines the two maps with the given function.
     *
     * If a key is present in only one of the maps, then that map's value is used.

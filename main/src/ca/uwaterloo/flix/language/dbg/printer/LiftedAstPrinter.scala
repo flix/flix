@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expr.*
 import ca.uwaterloo.flix.language.ast.{LiftedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.util.collection.MapOps
 
 object LiftedAstPrinter {
@@ -63,22 +64,22 @@ object LiftedAstPrinter {
     case Stm(exps, exp, _, _, _) => exps.foldRight(print(exp))((e, acc) => DocAst.Expr.Stm(print(e), acc))
     case Region(sym, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
-      case LiftedAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
+      case LiftedAst.CatchRule(sym, clazz, rexp) => (sym, DocAst.Expr.javaClassName(clazz), print(rexp))
     })
     case RunWith(exp, effUse, rules, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
       case LiftedAst.HandlerRule(symUse, fparams, body) =>
         (symUse.sym, fparams.map(printFormalParam), print(body))
     })
-    case NewObject(name, clazz, tpe, _, constructors, methods, _) =>
+    case NewObject(sym, clazz, tpe, _, constructors, methods, _) =>
       val cs = constructors.map {
         case LiftedAst.JvmConstructor(clo, retTpe, _, _) =>
           DocAst.JvmConstructor(print(clo), SimpleTypePrinter.print(retTpe))
       }
       val ms = methods.map {
-        case LiftedAst.JvmMethod(ann, ident, fparams, clo, retTpe, _, _) =>
-          DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams.map(printFormalParam), print(clo), SimpleTypePrinter.print(retTpe))
+        case LiftedAst.JvmMethod(ann, ident, fparams, clo, retTpe, _, _, _) =>
+          DocAst.JvmMethod(ann.map(a => ClassDescs.simpleNameOf(a.clazz)), ident, fparams.map(printFormalParam), print(clo), SimpleTypePrinter.print(retTpe))
       }
-      DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), cs, ms)
+      DocAst.Expr.NewObject(sym, DocAst.Expr.javaClassName(clazz.desc), SimpleTypePrinter.print(tpe), cs, ms)
   }
 
   /**

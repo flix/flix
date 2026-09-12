@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.util.Result
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
+import scala.annotation.unused
 
 /**
   * The FormatterLsp object provides functionality to format Flix source files using the [[PrettyPrinter]].

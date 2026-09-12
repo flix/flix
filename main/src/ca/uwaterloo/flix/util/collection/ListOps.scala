@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.util.collection
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.util
 import scala.annotation.tailrec
 
 /**
@@ -35,6 +36,18 @@ object ListOps {
     }
 
     loop(list1, list2, Nil)
+  }
+
+  /** An alternative to [[List.zip]] and [[List.zipWithIndex]] that crashes for different length lists. */
+  def zipWithIndex[T1, T2](list1: List[T1], list2: List[T2]): List[(T1, T2, Int)] = {
+    @tailrec
+    def loop(l1: List[T1], l2: List[T2], i: Int, acc: List[(T1, T2, Int)]): List[(T1, T2, Int)] = (l1, l2) match {
+      case (x :: xs, y :: ys) => loop(xs, ys, i + 1, (x, y, i) :: acc)
+      case (Nil, Nil) => acc.reverse
+      case _ => throw InternalCompilerException(s"Zipped lists of length ${list1.length} and ${list2.length}.", SourceLocation.Unknown)
+    }
+
+    loop(list1, list2, 0, Nil)
   }
 
   /** An alternative to [[List.zip]] that crashed for different length lists. */
@@ -77,5 +90,106 @@ object ListOps {
     list.iterator.map(f).collectFirst {
       case Some(value) => value
     }
+  }
+
+  /**
+    * Applies `f` to each element of `list`, returning `list` itself if `f`
+    * returns a reference-equal (`eq`) element for every entry.
+    *
+    * Unchanged suffixes are shared between the result and `list`, so callers
+    * can detect "nothing changed" with a single reference equality check.
+    */
+  def mapWithReuse[T <: AnyRef](list: List[T])(f: T => T): List[T] =
+    list.mapConserve(f)
+
+  /**
+    * Applies `f` to each element of `list` (left-to-right), short-circuiting to `None` if any
+    * application does. Otherwise returns `Some` of the results, in order.
+    */
+  def traverse[A, B](list: List[A])(f: A => Option[B]): Option[List[B]] = {
+    @tailrec
+    def loop(l: List[A], acc: List[B]): Option[List[B]] = l match {
+      case x :: xs =>
+        f(x) match {
+          case Some(v) => loop(xs, v::acc)
+          case None => None
+        }
+      case Nil => Some(acc.reverse)
+    }
+    loop(list, List.empty[B])
+  }
+
+  /**
+    * Applies the one-to-many function `f` to each element of `list`,
+    * returning `list` itself if `f` returns a single reference-equal (`eq`)
+    * element for every entry.
+    */
+  def flatMapWithReuse[T <: AnyRef](list: List[T])(f: T => List[T]): List[T] = {
+    var changed = false
+    val buf = List.newBuilder[T]
+    var cur = list
+    while (cur.nonEmpty) {
+      val elm = cur.head
+      f(elm) match {
+        // Performance: Reuse the original element, if possible.
+        case e :: Nil if e eq elm => buf += e
+        case es =>
+          changed = true
+          buf ++= es
+      }
+      cur = cur.tail
+    }
+    if (changed) buf.result() else list
+  }
+
+  /**
+    * Identifies corresponding elements in the given lists according to the given function, disregarding order.
+    *
+    * Returns a 3-tuple:
+    * - the corresponding pairs
+    * - the unpaired items in the first list
+    * - the unpaired items in the second list
+    *
+    * Worst case O(n**2) time, but linear when the lists are ordered according to their correspondences.
+    *
+    * Assumes f is an equivalence-like relation.
+    */
+  def fullOuterJoin[A, B](l1: List[A], l2: List[B])(f: (A, B) => Boolean): (List[(A, B)], List[A], List[B]) = {
+    // pairs and unpaired1 are built up during iteration; unpaired2 is broken down during iteration
+    var pairs = List.empty[(A, B)]
+    var unpaired1 = List.empty[A]
+    var unpaired2 = l2
+
+    for {
+      a <- l1
+    } {
+      extractMatch(unpaired2)(f(a, _)) match {
+        case None =>
+          unpaired1 = a :: unpaired1
+        case Some((b, rest)) =>
+          unpaired2 = rest
+          pairs = (a, b) :: pairs
+      }
+    }
+
+    (pairs.reverse, unpaired1.reverse, unpaired2)
+  }
+
+  /** Removes and returns the first element in the list matching the given predicate. */
+  private def extractMatch[A](l: List[A])(f: A => Boolean): Option[(A, List[A])] = {
+    @tailrec
+    def helper(in: List[A], acc: List[A]): Option[(A, List[A])] = {
+      in match {
+        case Nil => None
+        case hd :: tl =>
+          if (f(hd)) {
+            Some((hd, acc reverse_::: tl))
+          } else {
+            helper(tl, hd :: acc)
+          }
+      }
+    }
+
+    helper(l, Nil)
   }
 }

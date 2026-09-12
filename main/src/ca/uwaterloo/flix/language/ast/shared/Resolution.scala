@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.ast.shared
 
 import ca.uwaterloo.flix.language.ast.{NamedAst, ResolvedAst, Symbol}
+import ca.uwaterloo.flix.util.collection.Nel
 
 /**
  * Result of a name resolution.
@@ -25,11 +26,11 @@ sealed trait Resolution
 object Resolution {
   case class Declaration(decl: NamedAst.Declaration) extends Resolution
 
-  case class JavaClass(clazz: Class[?]) extends Resolution
+  case class JavaClass(clazz: ca.uwaterloo.flix.language.ast.jvm.JavaClass) extends Resolution
 
   case class Var(sym: Symbol.VarSym) extends Resolution
 
-  case class LocalDef(ann: Annotations, sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]) extends Resolution
+  case class LocalDef(ann: Annotations, sym: Symbol.VarSym, fparams: Nel[ResolvedAst.FormalParam]) extends Resolution
 
   case class TypeVar(sym: Symbol.UnkindedTypeVarSym) extends Resolution
 

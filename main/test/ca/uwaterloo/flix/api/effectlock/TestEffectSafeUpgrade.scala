@@ -202,83 +202,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
     assert(checkIsSafe(original = "f", "g", result.get))
   }
 
-  ignore("IsEffectSafeUpgrade.12") {
-    val input =
-      """
-        |pub eff E {
-        |    def e(): Unit
-        |}
-        |pub eff A {
-        |    def e(): Unit
-        |}
-        |
-        |pub def f(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
-        |
-        |pub def g(_: a -> b): String \ {A, E} = unchecked_cast("str" as String \ {A, E})
-        |
-        |""".stripMargin
-    val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe(original = "f", "g", result.get))
-  }
-
-  ignore("IsEffectSafeUpgrade.13") {
-    val input =
-      """
-        |pub eff E {
-        |    def e(): Unit
-        |}
-        |pub eff A {
-        |    def e(): Unit
-        |}
-        |
-        |pub def f(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
-        |
-        |pub def g(_: a -> b): String \ {A, E} = unchecked_cast("str" as String \ {A, E})
-        |
-        |""".stripMargin
-    val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe(original = "g", "f", result.get))
-  }
-
-  ignore("IsEffectSafeUpgrade.14") {
-    val input =
-      """
-        |pub eff E {
-        |    def e(): Unit
-        |}
-        |pub eff A {
-        |    def e(): Unit
-        |}
-        |
-        |pub def f(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
-        |
-        |pub def g(_: a -> b \ ef): String \ {A, E} = unchecked_cast("str" as String \ {A, E})
-        |
-        |""".stripMargin
-    val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe(original = "g", "f", result.get))
-  }
-
-  ignore("IsEffectSafeUpgrade.15") {
-    val input =
-      """
-        |pub eff E {
-        |    def e(): Unit
-        |}
-        |pub eff A {
-        |    def e(): Unit
-        |}
-        |
-        |pub def f(_: a -> b \ {ef1, ef2}): String \ {ef1, ef2, A, E} = unchecked_cast("str" as String \ {ef1, ef2, A, E})
-        |
-        |pub def g(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
-        |
-        |""".stripMargin
-    val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe(original = "g", "f", result.get))
-  }
-
-  test("IsEffectSafeUpgrade.16") {
+  test("IsEffectSafeUpgrade.12") {
     val input =
       """
         |pub def f(_: Unit -> Unit): Unit = ()
@@ -290,7 +214,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
     assert(checkIsSafe(original = "f", "g", result.get))
   }
 
-  test("IsEffectSafeUpgrade.17") {
+  test("IsEffectSafeUpgrade.13") {
     val input =
       """
         |pub def f(_: Unit -> Unit \ ef): Unit = ()
@@ -302,7 +226,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
     assert(checkIsSafe(original = "f", "g", result.get))
   }
 
-  test("IsEffectSafeUpgrade.18") {
+  test("IsEffectSafeUpgrade.14") {
     val input =
       """
         |pub def f(_: Unit -> Unit): Unit = ()
@@ -314,7 +238,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
     assert(checkIsSafe(original = "f", "g", result.get))
   }
 
-  test("IsEffectSafeUpgrade.19") {
+  test("IsEffectSafeUpgrade.15") {
     val input =
       """
         |pub eff E {
@@ -330,7 +254,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
     assert(checkIsSafe(original = "f", "g", result.get))
   }
 
-  test("IsEffectSafeUpgrade.20") {
+  test("IsEffectSafeUpgrade.16") {
     val input =
       """
         |pub eff E {
@@ -346,7 +270,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
     assert(checkIsSafe(original = "f", "g", result.get))
   }
 
-  test("IsEffectSafeUpgrade.21") {
+  test("IsEffectSafeUpgrade.17") {
     val input =
       """
         |pub def f(_: a -> b): Unit = ()
