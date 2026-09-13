@@ -87,15 +87,38 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     */
   private val inputs = mutable.Map.empty[String, Input]
 
+  // Register the packages.
+  for ((p, sctx) <- pkgs) {
+    isValidFpkgFile(p) match {
+      case Result.Err(e: Throwable) => throw e
+      case Result.Ok(()) => inputs += p.toString -> Input.PkgFile(p, sctx)
+    }
+  }
+
+  /**
+    * The normalized paths of the JARs.
+    */
+  private val jarPaths: List[Path] = {
+    val result = mutable.ArrayBuffer.empty[Path]
+    for (p <- jars) {
+      isValidJarFile(p) match {
+        case Result.Err(e: Throwable) => throw e
+        case Result.Ok(()) => result += p.normalize()
+      }
+    }
+    result.toList
+  }
+
   /**
     * The set of sources changed since last compilation.
     */
   private var changeSet: ChangeSet = ChangeSet.Everything
 
   /**
-    * The set of known Java classes and interfaces.
+    * The set of known Java classes and interfaces: those of the Java platform and those of the JARs.
     */
-  private var availableClasses: AvailableClasses = AvailableClasses(getJavaPlatformClassesAndInterfaces())
+  private val availableClasses: AvailableClasses =
+    AvailableClasses(getPackageContent(ClassList.TheList ::: jarPaths.flatMap(getClassesAndInterfacesOfJar)))
 
   /**
     * A cache of ASTs for incremental compilation.
@@ -205,29 +228,20 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   private var formatter: Formatter = NoFormatter
 
   /**
-    * A class loader for loading external JARs.
+    * A class loader for loading the JARs.
     */
-  val jarLoader = new ExternalJarLoader
+  val jarLoader = new ExternalJarLoader(jarPaths.map(_.toUri.toURL).toArray)
 
   /**
-    * The class files of the JARs added with [[addJar]].
+    * The class files of the JARs.
     *
     * Read directly rather than through [[jarLoader]]: a class loader constructed at run time
     * cannot serve resources inside a GraalVM native image.
     */
-  private val dependencyClassPath = new DependencyClassPath
+  private val dependencyClassPath = new DependencyClassPath(jarPaths)
 
   /** The descriptor-based Java metadata provider owned by this compiler instance. */
   val javaTypeProvider: JavaTypeProvider = ByteBuddyJavaTypeProvider.fromDependencyClassPath(dependencyClassPath, jarLoader)
-
-  // Register the packages and JARs provided upfront.
-  // Must run after the fields above are initialized, since `addPkg` and `addJar` use them.
-  for ((p, sctx) <- pkgs) {
-    addPkg(p)(sctx)
-  }
-  for (p <- jars) {
-    addJar(p)
-  }
 
   /**
     * Adds Flix source code from a file on the filesystem.
@@ -348,21 +362,6 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   }
 
   /**
-    * Adds Flix source code from a Flix package file (.fpkg).
-    *
-    * @param p    the path to the Flix package file. Must be a readable `.fpkg` zip archive.
-    * @param sctx the security context for the input.
-    */
-  def addPkg(p: Path)(implicit sctx: SecurityContext): Flix = {
-    isValidFpkgFile(p) match {
-      case Result.Err(e: Throwable) => throw e
-      case Result.Ok(()) =>
-        addInput(p.toString, Input.PkgFile(p, sctx))
-        this
-    }
-  }
-
-  /**
     * Checks that `p` is a valid `.fpkg` filepath.
     * `p` is valid if all the following holds:
     *   1. `p` must not be `null`.
@@ -393,23 +392,6 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a zip archive."))
     }
     Result.Ok(())
-  }
-
-  /**
-    * Adds a JAR file to the class loader and extends the set of known Java classes and interfaces.
-    *
-    * @param p the path to the JAR file. Must be a readable `.jar` file.
-    */
-  def addJar(p: Path): Flix = {
-    isValidJarFile(p) match {
-      case Result.Err(e: Throwable) => throw e
-      case Result.Ok(()) =>
-        val p1 = p.normalize()
-        jarLoader.addURL(p1.toUri.toURL)
-        dependencyClassPath.addPath(p1)
-        extendKnownJavaClassesAndInterfaces(p1)
-        this
-    }
   }
 
   /**
@@ -885,20 +867,6 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     */
   private def shutdownThreadPool(): Unit = {
     threadPool.shutdown()
-  }
-
-  /**
-    * Extends the set of known Java classes and interfaces with those in the given JAR-file `p`.
-    */
-  private def extendKnownJavaClassesAndInterfaces(p: Path): Unit = {
-    availableClasses = availableClasses ++ getPackageContent(getClassesAndInterfacesOfJar(p))
-  }
-
-  /**
-    * Returns all Java classes and interfaces in the current Java Platform.
-    */
-  private def getJavaPlatformClassesAndInterfaces(): MultiMap[List[String], String] = {
-    getPackageContent(ClassList.TheList)
   }
 
   /**

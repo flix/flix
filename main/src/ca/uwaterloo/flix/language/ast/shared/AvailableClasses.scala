@@ -53,13 +53,5 @@ object AvailableClasses {
   * @param byPackage a map from a package name to a set of classes (and interfaces) in that package.
   * @param byClass a map from a class (or interface) to the packages that it occurs in.
   */
-case class AvailableClasses(byPackage: MultiMap[List[String], String], byClass: MultiMap[String, List[String]]) {
-  /**
-    * Returns `this` AvailableClasses extended with additional mappings from package names to class names.
-    */
-  def ++(newMapByPackage: MultiMap[List[String], String]): AvailableClasses = {
-    val newMapByClass = AvailableClasses.byPackage2ByClass(newMapByPackage)
-    AvailableClasses(byPackage ++ newMapByPackage, byClass ++ newMapByClass)
-  }
-}
+case class AvailableClasses(byPackage: MultiMap[List[String], String], byClass: MultiMap[String, List[String]])
 
