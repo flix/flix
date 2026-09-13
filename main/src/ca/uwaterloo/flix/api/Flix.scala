@@ -78,6 +78,11 @@ object Flix {
 class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) extends AutoCloseable {
 
   /**
+    * Whether [[close]] has been called. A closed instance cannot compile.
+    */
+  private var closed: Boolean = false
+
+  /**
     * A sequence of inputs to be parsed into Flix ASTs.
     */
   private val inputs = mutable.Map.empty[String, Input]
@@ -198,11 +203,6 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     * The default output formatter.
     */
   private var formatter: Formatter = NoFormatter
-
-  /**
-    * Whether [[close]] has been called. A closed instance cannot compile.
-    */
-  private var closed: Boolean = false
 
   /**
     * A class loader for loading external JARs.
