@@ -371,9 +371,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   // The `flix.toml` manifest if in project mode, otherwise `None`
   private var optManifest: Option[Manifest] = None
 
-  // Timestamps at the point the sources were loaded
-  private var timestamps: Map[Path, Long] = Map.empty
-
   // Lists of paths to the source files, flix packages and .jar files used
   private var sourcePaths: List[Path] = List.empty
   private var flixPackagePaths: List[Path] = List.empty
@@ -387,7 +384,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   /**
     * Starts a file system watcher that monitors the project directories for changes.
-    * When active, `updateStaleSources` will drain watcher events instead of polling timestamps.
+    * When active, [[applyFileChanges]] drains the watcher events.
     */
   def startWatching(): Unit = {
     val fw = new FileWatcher()
@@ -410,16 +407,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Applies any pending changes to the source files to the Flix instance.
-    * When the file watcher is active, drains watcher events.
-    * Otherwise, falls back to timestamp-based change detection.
+    * Applies any pending changes to the source files to the Flix instance by draining the events
+    * of the file watcher. Does nothing if the watcher is not active.
     *
     * Returns `true` if a package or JAR was added, modified, or deleted. Such a change cannot be
     * applied to `flix`, whose packages and JARs are fixed: the caller must close `flix` and
     * construct a new instance with [[mkFlix]], which picks up the current packages and JARs.
     */
-  def applyFileChanges(flix: Flix): Boolean = {
-    Steps.updateStaleSources(flix)
+  def applyFileChanges(flix: Flix): Boolean = fileWatcher match {
+    case Some(fw) => Steps.applyWatcherEvents(fw.drain(), flix)
+    case None => false
   }
 
   /**
@@ -437,11 +434,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     for (path <- sourcePaths) {
       flix.addFile(path)(SecurityContext.Unrestricted)
     }
-
-    // Everything the project currently contains is registered with the new instance. We record
-    // the timestamps so that `updateStaleSources` only reports what changes from here on.
-    timestamps = (sourcePaths ::: flixPackagePaths ::: jars).map(p => p -> p.toFile.lastModified).toMap
-
     flix
   }
 
@@ -508,7 +500,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // We also clear any cached ASTs.
     flix.clearCaches()
 
-    Steps.updateStaleSources(flix)
     Steps.compile(flix)
   }
 
@@ -517,7 +508,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def buildJar(flix: Flix): Result[Unit, BootstrapError] = {
     val jarFile = Bootstrap.getJarFile(projectPath)
-    Steps.updateStaleSources(flix)
     for {
       _ <- Steps.configureJarOutput(flix)
       result <- Steps.compile(flix)
@@ -538,7 +528,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def buildFatJar(flix: Flix): Result[Unit, BootstrapError] = {
     val jarFile = Bootstrap.getJarFile(projectPath)
     val libDir = Bootstrap.getLibraryDirectory(projectPath)
-    Steps.updateStaleSources(flix)
     for {
       _ <- Steps.configureJarOutput(flix)
       result <- Steps.compile(flix)
@@ -614,7 +603,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Ok(true) => ()
     }
 
-    Steps.updateStaleSources(flix)
     for {
       json <- FileOps.readString(Bootstrap.getEffectLockFile(projectPath)).mapErr(e => BootstrapError.FileError(s"IO error: ${e.getMessage}"))
       (lockedDefs, lockedSigs) <- EffectLock.deserialize(json).mapErr(BootstrapError.FileError.apply)
@@ -681,7 +669,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     if (!isProjectMode) {
       return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-lock'"))
     }
-    Steps.updateStaleSources(flix)
     for {
       root <- Steps.check(flix)
     } yield {
@@ -873,7 +860,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Type checks the source files for the project.
     */
   def check(flix: Flix): Result[Unit, BootstrapError] = {
-    Steps.updateStaleSources(flix)
     Steps.check(flix).map(_ => ())
   }
 
@@ -881,7 +867,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Prints statistics about the source files of the project.
     */
   def stat(flix: Flix)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
-    Steps.updateStaleSources(flix)
     Steps.check(flix).map { root =>
       val header = optManifest.map(m => s"${m.name} ${m.version}")
       out.println(Stat.format(header, Stat.compute(root)))
@@ -892,7 +877,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Generates API documentation.
     */
   def doc(flix: Flix): Result[Unit, BootstrapError] = {
-    Steps.updateStaleSources(flix)
     Steps.check(flix).map(HtmlDocumentor.run(_, getPackageModules, Bootstrap.getDocumentationDirectory(projectPath))(flix))
   }
 
@@ -900,7 +884,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Formats all source files in the project.
     */
   def format(flix: Flix): Result[Unit, BootstrapError] = {
-    Steps.updateStaleSources(flix)
     Steps.check(flix).map {
       case _ =>
         val syntaxTree = flix.getParsedAst
@@ -1291,13 +1274,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     /**
-      * Returns true if the timestamp of the given source file has changed since the last reload.
-      */
-    private def hasChanged(file: Path) = {
-      !timestamps.contains(file) || (timestamps(file) != file.toFile.lastModified())
-    }
-
-    /**
       * Downloads and installs all `.fpkg` and `.jar` (maven and urls) dependencies defined by `dependencyManifests`
       * into the `lib/`, `lib/cache`, and `lib/external` directories, respectively.
       * Requires network access.
@@ -1410,29 +1386,29 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     /**
-      * Applies any changes to the source files to `flix`. Returns `true` if a package or JAR was
-      * added, modified, or deleted, which requires a new Flix instance (see [[mkFlix]]).
-      *
-      * When a file watcher is active (REPL mode), drains watcher events instead of polling timestamps.
-      */
-    def updateStaleSources(flix: Flix): Boolean = fileWatcher match {
-      case Some(fw) => applyWatcherEvents(fw.drain(), flix)
-      case None => updateStaleSourcesByTimestamp(flix)
-    }
-
-    /**
       * Returns `true` if `path` is one of the packages or JARs of the project.
       */
     private def isDependency(path: Path): Boolean =
       flixPackagePaths.contains(path) || mavenPackagePaths.contains(path) || jarPackagePaths.contains(path)
 
     /**
+      * Returns `true` if `path` is named like a package or JAR file.
+      */
+    private def isDependencyFile(path: Path): Boolean = {
+      val name = path.getFileName.toString
+      name.endsWith(s".$EXT_FPKG") || name.endsWith(s".$EXT_JAR")
+    }
+
+    /**
       * Applies file watcher events for source files to the Flix instance and updates the cached
-      * path lists. Returns `true` if a package or JAR was added, modified, or deleted.
+      * source paths. Returns `true` if a package or JAR was added, modified, or deleted.
+      *
+      * A package or JAR that appeared or disappeared triggers a re-scan of the libraries, so that
+      * the next [[mkFlix]] uses the current packages and JARs.
       *
       * On overflow, events may have been lost: the project is re-scanned and `true` is returned.
       */
-    private def applyWatcherEvents(events: List[FileWatcher.WatchEvent], flix: Flix): Boolean = {
+    def applyWatcherEvents(events: List[FileWatcher.WatchEvent], flix: Flix): Boolean = {
       import FileWatcher.WatchEvent.*
 
       if (events.exists(_ == Overflow)) {
@@ -1442,98 +1418,52 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         return true
       }
 
-      var dependenciesChanged = false
+      // Whether a package or JAR appeared or disappeared.
+      var libsChanged = false
+      // Whether a package or JAR of the project was modified in place.
+      var dependencyModified = false
       for (event <- events) event match {
         case Created(path) =>
           if (FileOps.checkExt(path, EXT_FLIX)) {
             sourcePaths = path :: sourcePaths
             flix.addFile(path)(SecurityContext.Unrestricted)
-          } else if (FileOps.checkExt(path, EXT_FPKG)) {
-            flixPackagePaths = path :: flixPackagePaths
-            dependenciesChanged = true
-          } else if (FileOps.checkExt(path, EXT_JAR)) {
-            val libDir = Bootstrap.getLibraryDirectory(projectPath)
-            val mavenDir = libDir.resolve(MavenPackageManager.DirName)
-            val jarDir = libDir.resolve(JarPackageManager.DirName)
-            if (path.startsWith(mavenDir)) {
-              mavenPackagePaths = path :: mavenPackagePaths
-              dependenciesChanged = true
-            } else if (path.startsWith(jarDir)) {
-              jarPackagePaths = path :: jarPackagePaths
-              dependenciesChanged = true
-            }
+          } else if (isDependencyFile(path)) {
+            libsChanged = true
           }
 
         case Modified(path) =>
           if (FileOps.checkExt(path, EXT_FLIX)) {
             flix.addFile(path)(SecurityContext.Unrestricted)
           } else if (isDependency(path)) {
-            dependenciesChanged = true
+            dependencyModified = true
           }
 
         case Deleted(path) =>
-          if (path.toString.endsWith(s".$EXT_FLIX")) {
+          if (path.getFileName.toString.endsWith(s".$EXT_FLIX")) {
             sourcePaths = sourcePaths.filterNot(_ == path)
             flix.remFile(path)(SecurityContext.Unrestricted)
-          } else if (isDependency(path)) {
-            flixPackagePaths = flixPackagePaths.filterNot(_ == path)
-            mavenPackagePaths = mavenPackagePaths.filterNot(_ == path)
-            jarPackagePaths = jarPackagePaths.filterNot(_ == path)
-            dependenciesChanged = true
+          } else if (isDependencyFile(path)) {
+            libsChanged = true
           } else {
             // No recognized file extension — likely a directory deletion.
-            // Remove all tracked files that were children of this path.
+            // Remove all tracked source files that were children of this path and re-scan the libraries.
             val deletedFlix = sourcePaths.filter(_.startsWith(path))
-            val deletedDeps = (flixPackagePaths ::: mavenPackagePaths ::: jarPackagePaths).filter(_.startsWith(path))
             sourcePaths = sourcePaths.filterNot(_.startsWith(path))
-            flixPackagePaths = flixPackagePaths.filterNot(_.startsWith(path))
-            mavenPackagePaths = mavenPackagePaths.filterNot(_.startsWith(path))
-            jarPackagePaths = jarPackagePaths.filterNot(_.startsWith(path))
             for (p <- deletedFlix) flix.remFile(p)(SecurityContext.Unrestricted)
-            if (deletedDeps.nonEmpty) {
-              dependenciesChanged = true
-            }
+            libsChanged = true
           }
 
         case Overflow => // already handled above
       }
-      dependenciesChanged
-    }
 
-    /**
-      * Timestamp-based change detection (used when no file watcher is active).
-      *
-      * Applies changes to the source files to `flix` and returns `true` if a package or JAR has changed.
-      */
-    private def updateStaleSourcesByTimestamp(flix: Flix): Boolean = {
-      val previousSources = timestamps.keySet
-      var dependenciesChanged = false
-
-      for (path <- sourcePaths) {
-        if (hasChanged(path)) {
-          flix.addFile(path)(SecurityContext.Unrestricted)
-        }
+      if (libsChanged) {
+        val before = (flixPackagePaths.toSet, mavenPackagePaths.toSet, jarPackagePaths.toSet)
+        addLocalLibs()
+        val after = (flixPackagePaths.toSet, mavenPackagePaths.toSet, jarPackagePaths.toSet)
+        dependencyModified || before != after
+      } else {
+        dependencyModified
       }
-
-      for (path <- flixPackagePaths ::: mavenPackagePaths ::: jarPackagePaths) {
-        if (hasChanged(path)) {
-          dependenciesChanged = true
-        }
-      }
-
-      val currentSources = (sourcePaths ::: flixPackagePaths ::: mavenPackagePaths ::: jarPackagePaths).filter(p => Files.exists(p))
-
-      val deletedSources = previousSources -- currentSources
-      for (path <- deletedSources) {
-        if (FileOps.checkExt(path, EXT_FLIX)) {
-          flix.remFile(path)(SecurityContext.Unrestricted)
-        } else {
-          dependenciesChanged = true
-        }
-      }
-
-      timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
-      dependenciesChanged
     }
 
     /**
