@@ -26,7 +26,7 @@ import java.lang.constant.ClassDesc
 
 object ResolvedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, List.empty, None, Map.empty, AvailableClasses.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, List.empty, None, Map.empty, Map.empty)
 
   case class Root(modules: Map[Symbol.ModuleSym, Declaration.Mod],
                   traits: Map[Symbol.TraitSym, Declaration.Trait],
@@ -41,7 +41,6 @@ object ResolvedAst {
                   taOrder: List[Symbol.TypeAliasSym],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  availableClasses: AvailableClasses,
                   tokens: Map[Source, Array[Token]])
 
   case class CompilationUnit(usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation)
