@@ -34,22 +34,14 @@ object ExternalJarLoader {
 }
 
 /**
-  * A class loader to which JARs can be added dynamically.
+  * A class loader for the given JARs.
   *
   * We pass the platform class loader as the parent to avoid it delegating to the system classloader
   * (otherwise compiled Flix code has access to all classes within the compiler)
   */
-class ExternalJarLoader extends URLClassLoader(Array.empty, ClassLoader.getPlatformClassLoader) {
+class ExternalJarLoader(urls: Array[URL]) extends URLClassLoader(urls, ClassLoader.getPlatformClassLoader) {
 
   import ExternalJarLoader.*
-
-  /**
-    * Adds the URL to the class loader.
-    */
-  override def addURL(url: URL): Unit = {
-    // just reimplements the superclass, but makes it public
-    super.addURL(url)
-  }
 
   override def findClass(name: String): Class[? <: Object] = {
     try {
