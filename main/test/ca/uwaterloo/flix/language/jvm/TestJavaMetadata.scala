@@ -32,14 +32,14 @@ class TestJavaMetadata extends AnyFunSuite {
     try {
       assert(JavaMetadata.lookupClass(CD_String, loc).desc == CD_String)
       assert(JavaMetadata.lookupClass(ClassDesc.of("java.util.List"), loc).isInterface)
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("lookupClass.ThrowsOnMissingClass") {
     implicit val flix: Flix = new Flix
     try {
       intercept[InternalCompilerException](JavaMetadata.lookupClass(ClassDesc.of("java.lang.DoesNotExist"), loc))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("isSubtype") {
@@ -48,7 +48,7 @@ class TestJavaMetadata extends AnyFunSuite {
       assert(JavaMetadata.isSubtype(CD_String, CD_Object, loc))
       assert(!JavaMetadata.isSubtype(CD_Object, CD_String, loc))
       intercept[InternalCompilerException](JavaMetadata.isSubtype(ClassDesc.of("java.lang.DoesNotExist"), CD_Object, loc))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("isThrowable") {
@@ -58,7 +58,7 @@ class TestJavaMetadata extends AnyFunSuite {
       assert(JavaMetadata.isThrowable(ClassDesc.of("java.lang.RuntimeException"), loc))
       assert(!JavaMetadata.isThrowable(CD_String, loc))
       assert(!JavaMetadata.isThrowable(CD_int, loc))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("isObjectMethod") {
@@ -70,7 +70,7 @@ class TestJavaMetadata extends AnyFunSuite {
       val compare = methods.find(_.ref.name == "compare").get
       assert(JavaMetadata.isObjectMethod(equals, loc))
       assert(!JavaMetadata.isObjectMethod(compare, loc))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
 }

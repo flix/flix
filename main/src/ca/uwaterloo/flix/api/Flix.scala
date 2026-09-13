@@ -75,7 +75,12 @@ object Flix {
   * @param pkgs the Flix package files (`.fpkg`) to compile, each paired with its security context.
   * @param jars the JAR files whose classes are available to Java interop.
   */
-class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) {
+class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) extends AutoCloseable {
+
+  /**
+    * Whether [[close]] has been called. A closed instance cannot compile.
+    */
+  private var closed: Boolean = false
 
   /**
     * A sequence of inputs to be parsed into Flix ASTs.
@@ -512,6 +517,9 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) {
     * If the list of [[CompilationMessage]]s is empty, then the root is always `Some(root)`.
     */
   def check(): (Option[TypedAst.Root], List[CompilationMessage]) = try {
+    if (closed)
+      throw new IllegalStateException("The Flix instance has been closed.")
+
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -659,6 +667,9 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) {
     * This manual cleanup has been verified as effective in the profiler.
     */
   def codeGen(typedAst: TypedAst.Root): CompilationResult = try {
+    if (closed)
+      throw new IllegalStateException("The Flix instance has been closed.")
+
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -764,6 +775,19 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) {
     this.cachedTyperAst = TypedAst.empty
     this.changeSet = ChangeSet.Everything
     this.cachedErrors = Nil
+  }
+
+  /**
+    * Releases the resources held by this instance: the open JAR files of the dependency class path
+    * and the class loader for external JARs.
+    *
+    * Classes already loaded through [[jarLoader]] remain usable, but no further classes can be loaded
+    * from the JARs. The instance must not be used for compilation after it has been closed.
+    */
+  override def close(): Unit = {
+    closed = true
+    javaTypeProvider.close()
+    jarLoader.close()
   }
 
   /**
