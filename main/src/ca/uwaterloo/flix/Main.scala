@@ -33,7 +33,8 @@ import org.json4s.native.JsonMethods
 
 import java.io.{File, PrintStream}
 import java.net.BindException
-import java.nio.file.Paths
+import java.nio.file.{Path, Paths}
+import scala.collection.mutable
 
 object Main {
 
@@ -173,20 +174,28 @@ object Main {
           // running the given files loads the compiled program into the JVM.
           featureNotSupportedInNativeImage()
 
-          // configure Flix and add the paths.
-          val flix = new Flix()
-          flix.setOptions(options)
+          // partition the given files by extension.
           implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+          val flixFiles = mutable.ArrayBuffer.empty[Path]
+          val pkgFiles = mutable.ArrayBuffer.empty[(Path, SecurityContext)]
+          val jarFiles = mutable.ArrayBuffer.empty[Path]
           for (file <- cmdOpts.files) {
             val ext = file.getName.split('.').last
             ext match {
-              case "flix" => flix.addFile(file.toPath)
-              case "fpkg" => flix.addPkg(file.toPath)
-              case "jar" => flix.addJar(file.toPath)
+              case "flix" => flixFiles += file.toPath
+              case "fpkg" => pkgFiles += (file.toPath -> sctx)
+              case "jar" => jarFiles += file.toPath
               case _ =>
                 Console.println(s"Unrecognized file extension: '$ext'.")
                 System.exit(1)
             }
+          }
+
+          // configure Flix with the packages and JARs, and add the source files.
+          val flix = new Flix(pkgs = pkgFiles.toList, jars = jarFiles.toList)
+          flix.setOptions(options)
+          for (p <- flixFiles) {
+            flix.addFile(p)
           }
 
           flix.setFormatter(formatter)

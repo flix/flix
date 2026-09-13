@@ -68,8 +68,11 @@ object Flix {
 
 /**
   * Main programmatic interface for Flix.
+  *
+  * @param pkgs the Flix package files (`.fpkg`) to compile, each paired with its security context.
+  * @param jars the JAR files whose classes are available to Java interop.
   */
-class Flix {
+class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) {
 
   /**
     * A sequence of inputs to be parsed into Flix ASTs.
@@ -208,6 +211,15 @@ class Flix {
 
   /** The descriptor-based Java metadata provider owned by this compiler instance. */
   val javaTypeProvider: JavaTypeProvider = ByteBuddyJavaTypeProvider.fromDependencyClassPath(dependencyClassPath, jarLoader)
+
+  // Register the packages and JARs provided upfront.
+  // Must run after the fields above are initialized, since `addPkg` and `addJar` use them.
+  for ((p, sctx) <- pkgs) {
+    addPkg(p)(sctx)
+  }
+  for (p <- jars) {
+    addJar(p)
+  }
 
   /**
     * Adds Flix source code from a file on the filesystem.
