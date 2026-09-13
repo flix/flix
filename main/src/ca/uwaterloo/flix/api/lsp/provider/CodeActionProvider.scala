@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Diagnostic, Position, Range, TextEdit, WorkspaceEdit}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, EffSymOrRigidVar}
@@ -33,11 +34,11 @@ import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError
   */
 object CodeActionProvider {
 
-  def getCodeActions(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = {
+  def getCodeActions(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[CodeAction] = {
     getActionsFromErrors(uri, range, errors)
   }
 
-  private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = errors.flatMap {
+  private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[CodeAction] = errors.flatMap {
     case ResolutionError.UndefinedEffect(qn, ap, _, _, loc) if overlaps(range, loc) =>
       mkUseEffect(qn.ident, uri, ap)
 
@@ -350,11 +351,11 @@ object CodeActionProvider {
     *  import java.lang.Math
     * }}}
     */
-  private def mkImportJava(qn: Name.QName, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+  private def mkImportJava(qn: Name.QName, uri: String, ap: AnchorPosition)(implicit flix: Flix): List[CodeAction] = {
     // If `qn.namespace.idents.headOption` returns None, we use the `qn.ident.name`. Otherwise, we use the head of the namespace.
     // In the example above, headOption would return Some("Math"), so we will use "Math".
     val className = qn.namespace.idents.headOption.map(_.name).getOrElse(qn.ident.name)
-    root.availableClasses.byClass.get(className).toList.flatten.map { path =>
+    flix.availableClasses.byClass.get(className).toList.flatten.map { path =>
       val completePath = path.mkString(".") + "." + className
       CodeAction(
         title = s"import '$completePath'",

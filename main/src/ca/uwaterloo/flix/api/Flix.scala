@@ -117,7 +117,7 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   /**
     * The set of known Java classes and interfaces: those of the Java platform and those of the JARs.
     */
-  private val availableClasses: AvailableClasses =
+  val availableClasses: AvailableClasses =
     AvailableClasses(getPackageContent(ClassList.TheList ::: jarPaths.flatMap(getClassesAndInterfacesOfJar)))
 
   /**
@@ -533,7 +533,7 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     // The global collection of errors
     val errors = mutable.ArrayBuffer.empty[CompilationMessage]
 
-    val (afterReader, readerErrors) = Reader.run(getInputs, availableClasses)
+    val (afterReader, readerErrors) = Reader.run(getInputs)
     errors ++= readerErrors
 
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)

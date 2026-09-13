@@ -93,7 +93,7 @@ object Kinder {
         case (sym, m) => sym -> KindedAst.Mod(m.doc, m.ann, m.mod, m.sym, m.loc)
       }
 
-      val newRoot = KindedAst.Root(modules, traits, instances, defs, enums, structs, restrictableEnums, effects, taenv.aliases, root.uses, root.mainEntryPoint, root.sources, root.availableClasses, root.tokens)
+      val newRoot = KindedAst.Root(modules, traits, instances, defs, enums, structs, restrictableEnums, effects, taenv.aliases, root.uses, root.mainEntryPoint, root.sources, root.tokens)
 
       (newRoot, sctx.errors.asScala.toList)
     }

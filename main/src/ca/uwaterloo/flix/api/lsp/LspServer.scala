@@ -329,7 +329,7 @@ object LspServer {
       val range = Range.fromLsp4j(params.getRange)
       val codeActions =
         CodeActionProvider
-        .getCodeActions(uri, range, flixLanguageServer.currentErrors)(flixLanguageServer.root)
+        .getCodeActions(uri, range, flixLanguageServer.currentErrors)(flixLanguageServer.root, flixLanguageServer.flix)
         .map(_.toLsp4j)
         .map(messages.Either.forRight[Command, CodeAction])
         .asJava

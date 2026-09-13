@@ -27,7 +27,7 @@ import java.lang.constant.ClassDesc
 
 object TypedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Set.empty, List.empty,Map.empty, TraitEnv.empty, EqualityEnv.empty, AvailableClasses.empty, LabelledPrecedenceGraph.empty, DependencyGraph.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Set.empty, List.empty,Map.empty, TraitEnv.empty, EqualityEnv.empty, LabelledPrecedenceGraph.empty, DependencyGraph.empty, Map.empty)
 
   case class Root(modules: Map[Symbol.ModuleSym, Mod],
                   traits: Map[Symbol.TraitSym, Trait],
@@ -46,7 +46,6 @@ object TypedAst {
                   sources: Map[Source, SourceLocation],
                   traitEnv: TraitEnv,
                   eqEnv: EqualityEnv,
-                  availableClasses: AvailableClasses,
                   precedenceGraph: LabelledPrecedenceGraph,
                   dependencyGraph: DependencyGraph,
                   tokens: Map[Source, Array[Token]])

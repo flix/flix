@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.AutoImportCompletion
 import ca.uwaterloo.flix.api.lsp.{CompletionItemLabelDetails, Range}
-import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
 
 object AutoImportCompleter {
@@ -45,9 +45,9 @@ object AutoImportCompleter {
     * @param ap     the anchor position of the completion.
     * @param scp    the local scope.
     */
-  def getCompletions(prefix: String, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: Root): Iterable[AutoImportCompletion] = {
+  def getCompletions(prefix: String, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit flix: Flix): Iterable[AutoImportCompletion] = {
     if (!CompletionUtils.shouldComplete(prefix)) return Nil
-    val availableClasses = root.availableClasses.byClass.m.filter(_._1.exists(_.isUpper))
+    val availableClasses = flix.availableClasses.byClass.m.filter(_._1.exists(_.isUpper))
     availableClasses.keys.filter(CompletionUtils.fuzzyMatch(prefix, _)).flatMap { className =>
       availableClasses(className).collect { case namespace if !scp.m.contains(className) =>
         val qualifiedName = namespace.mkString(".") + "." + className
