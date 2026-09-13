@@ -505,7 +505,6 @@ object FindReferencesProvider {
     case Input.RealFile(_, _) => false
     case Input.VirtualFile(_, _, _) => true // over-approximation
     case Input.VirtualUri(_, _, _) => true // over-approximation
-    case Input.PkgFile(_, _) => false
     case Input.FileInPackage(_, _, _, _) => false
     case Input.Unknown => false
   }

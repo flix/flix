@@ -226,7 +226,6 @@ object Namer {
             case _: IllegalArgumentException => None
             case _: FileSystemNotFoundException => None
           }
-          case Input.PkgFile(_, _) => None
           case Input.FileInPackage(_, _, _, _) => None
           case Input.Unknown => None
         }

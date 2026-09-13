@@ -30,7 +30,6 @@ sealed trait Input {
     case Input.RealFile(_, sctx) => sctx
     case Input.VirtualFile(_, _, sctx) => sctx
     case Input.VirtualUri(_, _, sctx) => sctx
-    case Input.PkgFile(_, sctx) => sctx
     case Input.FileInPackage(_, _, _, sctx) => sctx
     case Input.Unknown => SecurityContext.Unrestricted
   }
@@ -71,11 +70,6 @@ object Input {
 
     override def toString: String = virtualUri.toString
   }
-
-  /**
-    * Represents an input, which is a package, on the filesystem.
-    */
-  case class PkgFile(packagePath: Path, sctx: SecurityContext) extends Input
 
   /**
     * Represents an input that originates from inside a package.
