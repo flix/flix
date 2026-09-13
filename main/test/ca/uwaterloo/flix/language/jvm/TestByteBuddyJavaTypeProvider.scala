@@ -191,7 +191,7 @@ class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
           assert(clazz.isRuntimeVisibleAnnotation)
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("lookupClass.Annotation.ClassRetention") {
@@ -203,7 +203,7 @@ class TestByteBuddyJavaTypeProvider extends AnyFunSuite {
           assert(!clazz.isRuntimeVisibleAnnotation)
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("lookupClass.Annotation.PlatformRetention") {

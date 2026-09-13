@@ -32,7 +32,7 @@ class TestJavaHierarchy extends AnyFunSuite {
       assert(JavaHierarchy.isSubtype(CD_String, ClassDesc.of("java.lang.CharSequence")) == Ok(true))
       assert(JavaHierarchy.isSubtype(CD_Object, CD_String) == Ok(false))
       assert(JavaHierarchy.isSubtype(CD_String, CD_Integer) == Ok(false))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("isSubtype.PrimitiveTypes") {
@@ -42,7 +42,7 @@ class TestJavaHierarchy extends AnyFunSuite {
       assert(JavaHierarchy.isSubtype(CD_int, CD_long) == Ok(false))
       assert(JavaHierarchy.isSubtype(CD_int, CD_Object) == Ok(false))
       assert(JavaHierarchy.isSubtype(CD_Integer, CD_int) == Ok(false))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("isSubtype.ArrayTypes") {
@@ -60,7 +60,7 @@ class TestJavaHierarchy extends AnyFunSuite {
       assert(JavaHierarchy.isSubtype(CD_int.arrayType(), CD_Object.arrayType()) == Ok(false))
       assert(JavaHierarchy.isSubtype(CD_Object.arrayType(), CD_String.arrayType()) == Ok(false))
       assert(JavaHierarchy.isSubtype(CD_Object, CD_Object.arrayType()) == Ok(false))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("isSubtype.ReportsMissingClass") {
@@ -68,7 +68,7 @@ class TestJavaHierarchy extends AnyFunSuite {
     try {
       val missing = ClassDesc.of("java.lang.DoesNotExist")
       assert(JavaHierarchy.isSubtype(missing, CD_Object) == Err(MissingClass(missing)))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
 }

@@ -75,7 +75,7 @@ object Flix {
   * @param pkgs the Flix package files (`.fpkg`) to compile, each paired with its security context.
   * @param jars the JAR files whose classes are available to Java interop.
   */
-class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) {
+class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) extends AutoCloseable {
 
   /**
     * A sequence of inputs to be parsed into Flix ASTs.
@@ -764,6 +764,18 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) {
     this.cachedTyperAst = TypedAst.empty
     this.changeSet = ChangeSet.Everything
     this.cachedErrors = Nil
+  }
+
+  /**
+    * Releases the resources held by this instance: the open JAR files of the dependency class path
+    * and the class loader for external JARs.
+    *
+    * Classes already loaded through [[jarLoader]] remain usable, but no further classes can be loaded
+    * from the JARs. The instance must not be used for compilation after it has been closed.
+    */
+  override def close(): Unit = {
+    javaTypeProvider.close()
+    jarLoader.close()
   }
 
   /**
