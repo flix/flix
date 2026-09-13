@@ -69,6 +69,9 @@ object Flix {
 /**
   * Main programmatic interface for Flix.
   *
+  * The packages and JARs are immutable: they are registered once at construction and cannot be
+  * changed afterwards. If they change, a new Flix compiler instance must be created.
+  *
   * @param pkgs the Flix package files (`.fpkg`) to compile, each paired with its security context.
   * @param jars the JAR files whose classes are available to Java interop.
   */
