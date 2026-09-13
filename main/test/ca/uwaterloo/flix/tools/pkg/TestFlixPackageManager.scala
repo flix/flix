@@ -690,12 +690,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       case Err(e) => fail(e.message(formatter))
     }
 
-    val flix = PkgTestUtils.mkFlix
+    val flix = PkgTestUtils.mkFlix(pkgs)
     flix.addVirtualPath(Path.of("Main.flix"), main)(SecurityContext.Unrestricted)
-
-    for ((path, sctx) <- pkgs) {
-      flix.addPkg(path)(sctx)
-    }
 
     val (optRoot, errors) = flix.check()
     val forbidden = errors.exists {
