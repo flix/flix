@@ -33,7 +33,7 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result}
+import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Options, Result}
 
 import java.io.{IOException, PrintStream}
 import java.nio.file.{FileSystems, Files, LinkOption, Path, StandardCopyOption}
@@ -416,6 +416,27 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def applyFileChanges(flix: Flix): Unit = {
     Steps.updateStaleSources(flix)
+  }
+
+  /**
+    * Returns a new Flix instance configured with the packages and JARs of this project.
+    *
+    * The packages and JARs are fixed for the lifetime of the instance. The source files are
+    * added by the first call to `updateStaleSources`, which every command performs.
+    */
+  def mkFlix(options: Options, formatter: Formatter): Flix = {
+    val pkgs = flixPackagePaths.map(p => (p, securityLevels.getOrElse(p, SecurityContext.Plain)))
+    val jars = mavenPackagePaths ::: jarPackagePaths
+    val flix = new Flix(pkgs = pkgs, jars = jars)
+    flix.setOptions(options)
+    flix.setFormatter(formatter)
+
+    // The packages and JARs are registered with the new instance. We record their timestamps
+    // so that `updateStaleSources` does not add them again, and we forget every other timestamp
+    // so that the source files are added to the new instance.
+    timestamps = (flixPackagePaths ::: jars).map(p => p -> p.toFile.lastModified).toMap
+
+    flix
   }
 
   /**

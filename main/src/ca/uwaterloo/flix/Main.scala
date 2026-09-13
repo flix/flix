@@ -226,8 +226,7 @@ object Main {
           if (cmdOpts.files.isEmpty) {
             exitOnResult {
               Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-                val flix = new Flix().setFormatter(formatter)
-                flix.setOptions(options)
+                val flix = bootstrap.mkFlix(options, formatter)
                 bootstrap.check(flix)
               }
             }
@@ -245,8 +244,7 @@ object Main {
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options)
+              val flix = bootstrap.mkFlix(options, formatter)
               bootstrap.build(flix)
             }
           }
@@ -258,8 +256,7 @@ object Main {
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options)
+              val flix = bootstrap.mkFlix(options, formatter)
               bootstrap.buildClasses(flix)
             }
           }
@@ -271,8 +268,7 @@ object Main {
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options)
+              val flix = bootstrap.mkFlix(options, formatter)
               bootstrap.buildJar(flix)
             }
           }
@@ -284,8 +280,7 @@ object Main {
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options)
+              val flix = bootstrap.mkFlix(options, formatter)
               bootstrap.buildFatJar(flix)
             }
           }
@@ -316,8 +311,7 @@ object Main {
           if (cmdOpts.files.isEmpty) {
             exitOnResult {
               Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-                val flix = new Flix().setFormatter(formatter)
-                flix.setOptions(options)
+                val flix = bootstrap.mkFlix(options, formatter)
                 bootstrap.doc(flix)
               }
             }
@@ -334,8 +328,7 @@ object Main {
           if (cmdOpts.files.isEmpty) {
             exitOnResult {
               Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-                val flix = new Flix().setFormatter(formatter)
-                flix.setOptions(options)
+                val flix = bootstrap.mkFlix(options, formatter)
                 bootstrap.format(flix)
               }
             }
@@ -358,8 +351,7 @@ object Main {
           featureNotSupportedInNativeImage()
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options)
+              val flix = bootstrap.mkFlix(options, formatter)
               bootstrap.run(flix, cmdOpts.args.toArray)
             }
           }
@@ -369,8 +361,7 @@ object Main {
           if (cmdOpts.files.isEmpty) {
             exitOnResult {
               Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-                val flix = new Flix().setFormatter(formatter)
-                flix.setOptions(options.copy(progress = false))
+                val flix = bootstrap.mkFlix(options.copy(progress = false), formatter)
                 bootstrap.test(flix)
               }
             }
@@ -434,8 +425,7 @@ object Main {
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(progress = false))
+              val flix = bootstrap.mkFlix(options.copy(progress = false), formatter)
               bootstrap.release(flix)(System.err)
             }
           }
@@ -447,8 +437,7 @@ object Main {
           }
           Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
             bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(progress = false))
+              val flix = bootstrap.mkFlix(options.copy(progress = false), formatter)
               bootstrap.outdated(flix)(System.err)
           } match {
             case Result.Ok(false) =>
@@ -469,8 +458,7 @@ object Main {
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(progress = false))
+              val flix = bootstrap.mkFlix(options.copy(progress = false), formatter)
               bootstrap.stat(flix)(System.out)
             }
           }
@@ -482,8 +470,7 @@ object Main {
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(progress = false))
+              val flix = bootstrap.mkFlix(options.copy(progress = false), formatter)
               bootstrap.checkEffects(flix)
             }
           }
@@ -496,8 +483,7 @@ object Main {
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
               bootstrap =>
-                val flix = new Flix().setFormatter(formatter)
-                flix.setOptions(options.copy(progress = false))
+                val flix = bootstrap.mkFlix(options.copy(progress = false), formatter)
                 bootstrap.lockEffects(flix)
             }
           }
