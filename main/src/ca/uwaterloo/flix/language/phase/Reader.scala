@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{ReadAst, SourceLocation}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, StreamOps}
+import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, Result, StreamOps}
 
 import java.nio.file.{Files, Path}
 import java.util.zip.ZipFile
@@ -76,7 +76,7 @@ object Reader {
     */
   private def unpack(p: Path)(implicit sctx: SecurityContext, flix: Flix): List[Source] = {
     // Check that the path is a flix package.
-    flix.isValidFpkgFile(p) match {
+    FileOps.isValidFpkgFile(p) match {
       case Result.Err(_) => throw new RuntimeException(s"The path '$p' is not a flix package.")
       case Result.Ok(()) =>
         // Open the zip file.

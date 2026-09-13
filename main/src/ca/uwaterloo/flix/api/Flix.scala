@@ -88,7 +88,7 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
 
   // Register the packages.
   for ((p, sctx) <- pkgs) {
-    isValidFpkgFile(p) match {
+    FileOps.isValidFpkgFile(p) match {
       case Result.Err(e: Throwable) => throw e
       case Result.Ok(()) => inputs += p.toString -> Input.PkgFile(p, sctx)
     }
@@ -212,7 +212,7 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   private val jarPaths: List[Path] = {
     val result = mutable.ArrayBuffer.empty[Path]
     for (p <- jars) {
-      isValidJarFile(p) match {
+      FileOps.isValidJarFile(p) match {
         case Result.Err(e: Throwable) => throw e
         case Result.Ok(()) => result += p.normalize()
       }
@@ -364,72 +364,6 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
       throw new IllegalArgumentException("'uri' must be non-null.")
     remInput(uri.toString, Input.VirtualUri(uri, "", /* unused */ SecurityContext.Plain))
     this
-  }
-
-  /**
-    * Checks that `p` is a valid `.fpkg` filepath.
-    * `p` is valid if all the following holds:
-    *   1. `p` must not be `null`.
-    *   1. `p` must exist in the file system.
-    *   1. `p` must be a regular file.
-    *   1. `p` must be readable.
-    *   1. `p` must end with `.fpkg`.
-    *   1. `p` must be a zip archive.
-    */
-  def isValidFpkgFile(p: Path): Result[Unit, IllegalArgumentException] = {
-    if (p == null) {
-      return Result.Err(new IllegalArgumentException(s"'p' must be non-null."))
-    }
-    val pNorm = p.normalize()
-    if (!Files.exists(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a file."))
-    }
-    if (!Files.isRegularFile(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a regular file."))
-    }
-    if (!Files.isReadable(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
-    }
-    if (!FileOps.checkExt(pNorm, "fpkg")) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .fpkg file."))
-    }
-    if (!FileOps.isZipArchive(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a zip archive."))
-    }
-    Result.Ok(())
-  }
-
-  /**
-    * Checks that `p` is a valid `.jar` filepath.
-    * `p` is valid if all the following holds:
-    *   1. `p` must not be `null`.
-    *   1. `p` must exist in the file system.
-    *   1. `p` must be a regular file.
-    *   1. `p` must be readable.
-    *   1. `p` must end with `.jar`.
-    *   1. `p` must be a zip archive.
-    */
-  def isValidJarFile(p: Path): Result[Unit, IllegalArgumentException] = {
-    if (p == null) {
-      return Result.Err(new IllegalArgumentException(s"'p' must be non-null."))
-    }
-    val pNorm = p.normalize()
-    if (!Files.exists(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a file."))
-    }
-    if (!Files.isRegularFile(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a regular file."))
-    }
-    if (!Files.isReadable(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
-    }
-    if (!FileOps.checkExt(pNorm, "jar")) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .jar file."))
-    }
-    if (!FileOps.isZipArchive(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a zip archive."))
-    }
-    Result.Ok(())
   }
 
   /**
