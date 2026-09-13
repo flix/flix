@@ -47,7 +47,7 @@ object AutoImportCompleter {
     */
   def getCompletions(prefix: String, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit flix: Flix): Iterable[AutoImportCompletion] = {
     if (!CompletionUtils.shouldComplete(prefix)) return Nil
-    val availableClasses = flix.availableClasses.byClass.m.filter(_._1.exists(_.isUpper))
+    val availableClasses = flix.AvailableClasses.byClass.m.filter(_._1.exists(_.isUpper))
     availableClasses.keys.filter(CompletionUtils.fuzzyMatch(prefix, _)).flatMap { className =>
       availableClasses(className).collect { case namespace if !scp.m.contains(className) =>
         val qualifiedName = namespace.mkString(".") + "." + className

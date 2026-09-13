@@ -355,7 +355,7 @@ object CodeActionProvider {
     // If `qn.namespace.idents.headOption` returns None, we use the `qn.ident.name`. Otherwise, we use the head of the namespace.
     // In the example above, headOption would return Some("Math"), so we will use "Math".
     val className = qn.namespace.idents.headOption.map(_.name).getOrElse(qn.ident.name)
-    flix.availableClasses.byClass.get(className).toList.flatten.map { path =>
+    flix.AvailableClasses.byClass.get(className).toList.flatten.map { path =>
       val completePath = path.mkString(".") + "." + className
       CodeAction(
         title = s"import '$completePath'",

@@ -117,8 +117,8 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   /**
     * The set of known Java classes and interfaces: those of the Java platform and those of the JARs.
     */
-  val availableClasses: AvailableClasses =
-    AvailableClasses(getPackageContent(ClassList.TheList ::: jarPaths.flatMap(getClassesAndInterfacesOfJar)))
+  val AvailableClasses: AvailableClasses =
+    shared.AvailableClasses(getPackageContent(ClassList.TheList ::: jarPaths.flatMap(getClassesAndInterfacesOfJar)))
 
   /**
     * A cache of ASTs for incremental compilation.
