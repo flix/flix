@@ -64,8 +64,11 @@ object LspServer {
   private class FlixLanguageServer(o: Options) extends LanguageServer with LanguageClientAware {
     /**
       * The Flix instance (the same instance is used for incremental compilation).
+      *
+      * Replaced during [[initialize]] by an instance with the JARs and packages of the workspace,
+      * since these are fixed for the lifetime of an instance.
       */
-    val flix: Flix = new Flix().setFormatter(NoFormatter).setOptions(o)
+    var flix: Flix = new Flix().setFormatter(NoFormatter).setOptions(o)
 
     /**
       * A map from source URIs to source code.
@@ -121,18 +124,38 @@ object LspServer {
 
     /**
       * Loads all Flix resources in the workspace, including:
-      *   - Flix source files (*.flix, src/**/*.flix, test/**/*.flix).
       *   - JAR files (lib/**/*.jar).
       *   - Flix package files (lib/**/*.fpkg).
+      *   - Flix source files (*.flix, src/**/*.flix, test/**/*.flix).
+      *
+      * The JARs and packages are fixed for the lifetime of a Flix instance, so the instance is
+      * constructed once they are known, and the source files are added afterwards.
       */
     private def loadFlixProject(roots: List[WorkspaceFolder]): Unit = {
-      for {
-        root <- roots
-        path = Paths.get(root.getName)
-        if Files.exists(path) && Files.isDirectory(path)
-      } {
+      val paths = mutable.ArrayBuffer.empty[Path]
+      for (root <- roots) {
+        val path = Paths.get(root.getName)
+        if (Files.exists(path) && Files.isDirectory(path)) {
+          paths += path
+        }
+      }
+
+      val pkgs = mutable.ArrayBuffer.empty[(Path, SecurityContext)]
+      val jars = mutable.ArrayBuffer.empty[Path]
+      for (path <- paths) {
+        for (p <- FileOps.getFilesIn(path.resolve("lib"), Int.MaxValue)) {
+          if (FileOps.checkExt(p, "jar")) {
+            jars += p
+          } else if (FileOps.checkExt(p, "fpkg")) {
+            pkgs += (p -> SecurityContext.Unrestricted)
+          }
+        }
+      }
+      flix.close()
+      flix = new Flix(pkgs = pkgs.toList, jars = jars.toList).setFormatter(NoFormatter).setOptions(o)
+
+      for (path <- paths) {
         loadFlixSources(path)
-        loadJarsAndFkgs(path)
       }
     }
 
@@ -154,24 +177,6 @@ object LspServer {
           addUri(p.toUri, source)
         }
       }
-    }
-
-    /**
-      * Loads all JAR files and Flix package files in the workspace, including:
-      *   - lib/**/*.jar
-      *   - lib/**/*.fpkg
-      */
-    private def loadJarsAndFkgs(path: Path): Unit = {
-      FileOps.getFilesIn(path.resolve("lib"), Int.MaxValue)
-        .foreach{ case p =>
-          // Load all JAR files in the workspace, the pattern should be lib/**/*.jar.
-          if (FileOps.checkExt(p, "jar"))
-            flix.addJar(p)
-          // Load all Flix package files in the workspace, the pattern should be lib/**/*.fpkg.
-          if (FileOps.checkExt(p, "fpkg")) {
-            flix.addPkg(p)(SecurityContext.Unrestricted)
-          }
-        }
     }
 
     private def mkServerCapabilities(): ServerCapabilities = {
@@ -206,6 +211,7 @@ object LspServer {
 
     override def shutdown(): CompletableFuture[AnyRef] = {
       System.err.println("shutdown")
+      flix.close()
       CompletableFuture.completedFuture(null)
     }
 

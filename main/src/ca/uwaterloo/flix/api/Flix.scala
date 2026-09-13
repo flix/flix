@@ -422,7 +422,7 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     *   1. `p` must end with `.jar`.
     *   1. `p` must be a zip archive.
     */
-  private def isValidJarFile(p: Path): Result[Unit, IllegalArgumentException] = {
+  def isValidJarFile(p: Path): Result[Unit, IllegalArgumentException] = {
     if (p == null) {
       return Result.Err(new IllegalArgumentException(s"'p' must be non-null."))
     }
