@@ -26,14 +26,14 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.check(PkgTestUtils.mkFlix)
+    b.check(PkgTestUtils.mkFlix(b))
   }
 
   test("build") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.build(PkgTestUtils.mkFlix)
+    b.build(PkgTestUtils.mkFlix(b))
 
     // The build command does not write anything to disk.
     val buildDir = p.resolve("./build/").normalize()
@@ -44,7 +44,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildClasses(PkgTestUtils.mkFlix)
+    b.buildClasses(PkgTestUtils.mkFlix(b))
 
     val classDir = p.resolve("./build/class/").normalize()
     val classFiles = FileOps.getFilesIn(classDir, Int.MaxValue)
@@ -57,7 +57,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    val flix = PkgTestUtils.mkFlix
+    val flix = PkgTestUtils.mkFlix(b)
     b.build(flix)
     b.buildJar(flix)
 
@@ -71,7 +71,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    val flix = PkgTestUtils.mkFlix
+    val flix = PkgTestUtils.mkFlix(b)
     b.build(flix)
     b.buildJar(flix)
 
@@ -92,14 +92,14 @@ class TestBootstrap extends AnyFunSuite {
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
 
     val b1 = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    val flix1 = PkgTestUtils.mkFlix
+    val flix1 = PkgTestUtils.mkFlix(b1)
     // Use 1 thread for deterministic symbols
     flix1.setOptions(flix1.options.copy(threads = 1))
     b1.buildJar(flix1)
     val hash1 = calcHash(jarPath)
 
     val b2 = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    val flix2 = PkgTestUtils.mkFlix
+    val flix2 = PkgTestUtils.mkFlix(b2)
     // Use 1 thread for deterministic symbols
     flix2.setOptions(flix2.options.copy(threads = 1))
     b2.buildJar(flix2)
@@ -146,9 +146,8 @@ class TestBootstrap extends AnyFunSuite {
     val packageName = p.getFileName.toString
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
 
-    val flix = PkgTestUtils.mkFlix
-
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    val flix = PkgTestUtils.mkFlix(b)
     b.build(flix)
 
     b.buildPkg()(Formatter.getDefault)
@@ -168,21 +167,21 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.run(PkgTestUtils.mkFlix, Array("arg0", "arg1"))
+    b.run(PkgTestUtils.mkFlix(b), Array("arg0", "arg1"))
   }
 
   test("test") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.test(PkgTestUtils.mkFlix)
+    b.test(PkgTestUtils.mkFlix(b))
   }
 
   test("clean-command-should-remove-class-files-and-directories-if-compiled-previously") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildClasses(PkgTestUtils.mkFlix)
+    b.buildClasses(PkgTestUtils.mkFlix(b))
     val buildDir = p.resolve("./build/").normalize()
     val buildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
     if (buildFiles.isEmpty || buildFiles.exists(!FileOps.checkExt(_, "class"))) {
@@ -205,7 +204,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildClasses(PkgTestUtils.mkFlix)
+    b.buildClasses(PkgTestUtils.mkFlix(b))
     val buildDir = p.resolve("./build/").normalize()
     FileOps.writeString(buildDir.resolve("./other.txt").normalize(), "hello")
     b.clean() match {
@@ -273,7 +272,7 @@ class TestBootstrap extends AnyFunSuite {
     }
 
     val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-    val flix = PkgTestUtils.mkFlix
+    val flix = PkgTestUtils.mkFlix(bootstrap)
     bootstrap.lockEffects(flix).unsafeGet
 
     // Assert that effects.lock exists now
@@ -308,9 +307,9 @@ class TestBootstrap extends AnyFunSuite {
     FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
 
     val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-    bootstrap.lockEffects(PkgTestUtils.mkFlix).unsafeGet
+    bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap)).unsafeGet
 
-    assert(bootstrap.checkEffects(PkgTestUtils.mkFlix) == Result.Ok(()))
+    assert(bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap)) == Result.Ok(()))
   }
 
   test("eff-check on effect unsafe upgrade reports error") {
@@ -343,7 +342,7 @@ class TestBootstrap extends AnyFunSuite {
     FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
 
     val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-    bootstrap.lockEffects(PkgTestUtils.mkFlix).unsafeGet
+    bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap)).unsafeGet
 
     // Perform upgrade by overriding manifest
     val tomlUpgr = PkgTestUtils.mkTomlWithDeps(
@@ -358,7 +357,7 @@ class TestBootstrap extends AnyFunSuite {
 
     val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
-    bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix) match {
+    bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix(bootstrapUpgr)) match {
       case Result.Err(BootstrapError.EffectUpgradeError(_)) => succeed
       case Result.Err(e) => fail(e.message(Formatter.getDefault))
       case Result.Ok(()) => fail("expected effect upgrade error")
@@ -395,7 +394,7 @@ class TestBootstrap extends AnyFunSuite {
     FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
 
     val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-    bootstrap.lockEffects(PkgTestUtils.mkFlix).unsafeGet
+    bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap)).unsafeGet
 
     // Perform upgrade by overriding manifest
     val tomlUpgr = PkgTestUtils.mkTomlWithDeps(
@@ -410,7 +409,7 @@ class TestBootstrap extends AnyFunSuite {
 
     val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
-    assert(bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix) == Result.Ok(()))
+    assert(bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix(bootstrapUpgr)) == Result.Ok(()))
   }
 
   test("flix-version.current") {

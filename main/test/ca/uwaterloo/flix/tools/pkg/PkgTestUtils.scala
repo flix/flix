@@ -15,8 +15,9 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.util.{Formatter, Options}
 
 import java.nio.file.Path
 
@@ -48,6 +49,12 @@ object PkgTestUtils {
     val flix = new Flix(pkgs = pkgs)
     flix.setOptions(flix.options.copy(githubToken = gitHubToken, progress = false))
   }
+
+  /**
+    * Returns a new [[Flix]] object for the given `bootstrap` that has the GitHub token of the CI runner set if available.
+    */
+  def mkFlix(bootstrap: Bootstrap): Flix =
+    bootstrap.mkFlix(Options.Default.copy(githubToken = gitHubToken, progress = false), Formatter.NoFormatter)
 
   def mkTomlWithDeps(deps: String): String = {
     s"""
