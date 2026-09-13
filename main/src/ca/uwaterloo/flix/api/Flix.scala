@@ -86,14 +86,6 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     */
   private val inputs = mutable.Map.empty[String, Input]
 
-  // Register the packages.
-  for ((p, sctx) <- pkgs) {
-    FileOps.isValidFpkgFile(p) match {
-      case Result.Err(e: Throwable) => throw e
-      case Result.Ok(()) => inputs += p.toString -> Input.PkgFile(p, sctx)
-    }
-  }
-
   /**
     * The set of sources changed since last compilation.
     */
@@ -185,6 +177,17 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     * The default assumed charset.
     */
   val defaultCharset: Charset = Charset.forName("UTF-8")
+
+  // Register the source files of the packages. The packages are read once, here.
+  for ((p, sctx) <- pkgs) {
+    FileOps.isValidFpkgFile(p) match {
+      case Result.Err(e: Throwable) => throw e
+      case Result.Ok(()) =>
+        for (input <- getSourcesOfPkg(p, sctx)) {
+          inputs += s"${input.packagePath}:${input.virtualPath}" -> input
+        }
+    }
+  }
 
   /**
     * The current Flix options.
@@ -806,6 +809,27 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     */
   private def shutdownThreadPool(): Unit = {
     threadPool.shutdown()
+  }
+
+  /**
+    * Returns the `.flix` source files inside the package at `p`, with the security context `sctx`.
+    */
+  private def getSourcesOfPkg(p: Path, sctx: SecurityContext): List[Input.FileInPackage] = {
+    Using(new ZipFile(p.toFile)) { zip =>
+      val result = mutable.ArrayBuffer.empty[Input.FileInPackage]
+      val iterator = zip.entries()
+      while (iterator.hasMoreElements) {
+        val entry = iterator.nextElement()
+        val name = entry.getName
+        if (name.endsWith(".flix")) {
+          val virtualPath = p.getFileName.toString + ":" + name
+          val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
+          val text = new String(bytes, defaultCharset)
+          result += Input.FileInPackage(p, virtualPath, text, sctx)
+        }
+      }
+      result.toList
+    }.get
   }
 
   /**

@@ -96,7 +96,6 @@ object EffectLock {
     case Input.RealFile(_, _) => true
     case Input.VirtualFile(_, _, _) => true
     case Input.VirtualUri(_, _, _) => true
-    case Input.PkgFile(_, _) => false
     case Input.FileInPackage(_, _, _, _) => false
     case Input.Unknown => false
   }
@@ -106,7 +105,6 @@ object EffectLock {
     case Input.RealFile(_, _) => false
     case Input.VirtualFile(_, _, _) => false
     case Input.VirtualUri(_, _, _) => false
-    case Input.PkgFile(_, _) => true
     case Input.FileInPackage(_, _, _, _) => true
     case Input.Unknown => false
   }
