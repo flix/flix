@@ -32,7 +32,6 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.compilertop.{CompilerTop, Profiler}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.tc.Debug
 
 import java.net.URI
@@ -224,8 +223,14 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   /**
     * The set of known Java classes and interfaces: those of the Java platform and those of the JARs.
     */
-  val availableClasses: AvailableClasses =
-    AvailableClasses(getPackageContent(ClassList.TheList ::: jarPaths.flatMap(getClassesAndInterfacesOfJar)))
+  val availableClasses: AvailableClasses = {
+    if (jarPaths.isEmpty) {
+      AvailableClasses.Platform
+    } else {
+      val jarClasses = jarPaths.flatMap(getClassesAndInterfacesOfJar)
+      AvailableClasses.Platform ++ AvailableClasses.fromClassFiles(jarClasses)
+    }
+  }
 
   /**
     * A class loader for loading the JARs.
@@ -885,30 +890,6 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
       }
       result.toList
     }.get
-  }
-
-  /**
-    * Returns a multimap from Java packages to sub-packages, classes, and interfaces.
-    */
-  private def getPackageContent(l: List[String]): MultiMap[List[String], String] = {
-    l.foldLeft[MultiMap[List[String], String]](MultiMap.empty) {
-      case (acc, clazz) =>
-        // Given a string `java/util/zip/ZipUtils.class` we convert it to the list `java :: util :: zip :: ZipUtils`.
-        // We strip both the ".class" and ".java" suffix. Order should not matter.
-        val clazzPath = clazz.stripSuffix(".class").stripSuffix(".java").split('/').toList
-
-        // Create a multimap from all package prefixes to their sub packages and classes.
-        // For example, if we have `java.lang.String`, we want to compute:
-        // Nil                  => {java}
-        // List("java")         => {lang}
-        // List("java", "lang") => {String}
-        clazzPath.inits.foldLeft(acc) {
-          // Case 1: Nonempty path: split prefix and package
-          case (acc1, prefix :+ pkg) => acc1 + (prefix -> pkg)
-          // Case 2: Empty path: skip it
-          case (acc1, _) => acc1
-        }
-    }
   }
 
 }
