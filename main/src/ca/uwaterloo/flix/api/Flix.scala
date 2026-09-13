@@ -516,145 +516,145 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     * Compiles the Flix program and returns a typed ast.
     * If the list of [[CompilationMessage]]s is empty, then the root is always `Some(root)`.
     */
-  def check(): (Option[TypedAst.Root], List[CompilationMessage]) = {
-    ensureOpen()
-    try {
-      // Mark this object as implicit.
-      implicit val flix: Flix = this
+  def check(): (Option[TypedAst.Root], List[CompilationMessage]) = try {
+    if (closed)
+      throw new IllegalStateException("The Flix instance has been closed.")
 
-      // Begin drawing the progress bar (if enabled).
-      progressBar.start()
+    // Mark this object as implicit.
+    implicit val flix: Flix = this
 
-      // Initialize the thread pool.
-      initThreadPool()
+    // Begin drawing the progress bar (if enabled).
+    progressBar.start()
 
-      // Reset the phase information.
-      phaseTimers = ArrayBuffer.empty
-      currentPhase = None
+    // Initialize the thread pool.
+    initThreadPool()
 
-      // Reset the phase list file if relevant
-      if (this.options.xprintphases) {
-        AstPrinter.resetPhaseFile()
-      }
+    // Reset the phase information.
+    phaseTimers = ArrayBuffer.empty
+    currentPhase = None
 
-      // We mark all inputs that contains compilation errors as dirty.
-      // Hence if a file contains an error it will be recompiled -- giving it a chance to disappear.
-      for (e <- cachedErrors) {
-        val i = e.loc.source.input
-        changeSet = changeSet.markChanged(i, cachedTyperAst.dependencyGraph)
-      }
-
-      // The default entry point
-      val entryPoint = flix.options.entryPoint
-
-      // The global collection of errors
-      val errors = mutable.ArrayBuffer.empty[CompilationMessage]
-
-      val (afterReader, readerErrors) = Reader.run(getInputs, availableClasses)
-      errors ++= readerErrors
-
-      val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
-      errors ++= lexerErrors
-      if (flix.options.xverify) {
-        TokenVerifier.verify(afterLexer)
-      }
-
-      val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
-      errors ++= parserErrors
-
-      val (weederResult, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
-      errors ++= weederErrors
-
-      val result = weederResult match {
-        case None => None
-
-        case Some(afterWeeder) =>
-          val afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
-
-          val (afterNamer, nameErrors) = Namer.run(afterDesugar)
-          errors ++= nameErrors
-
-          val (afterResolver, resolutionErrors) = Resolver.run(afterNamer, cachedResolverAst, changeSet)
-          errors ++= resolutionErrors
-
-          val (afterKinder, kindErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
-          errors ++= kindErrors
-
-          val (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
-          errors ++= derivationErrors
-
-          val (afterTyper, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
-          errors ++= typeErrors
-
-          val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterTyper)
-          errors ++= entryPointErrors
-
-          val (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
-          errors ++= instanceErrors
-
-          val (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances, cachedTyperAst, changeSet)
-          errors ++= predDepErrors
-
-          val (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
-          errors ++= stratificationErrors
-
-          val (afterPatMatch, patMatchErrors) = PatMatch2.run(afterStratifier, cachedTyperAst, changeSet)
-          errors ++= patMatchErrors
-
-          val (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
-          errors ++= redundancyErrors
-
-          val (_, safetyErrors) = Safety.run(afterRedundancy, cachedTyperAst, changeSet)
-          errors ++= safetyErrors
-
-          val (afterTerminator, terminationErrors) = Terminator.run(afterRedundancy, cachedTyperAst, changeSet)
-          errors ++= terminationErrors
-
-          val (afterDependencies, _) = Dependencies.run(afterTerminator, cachedTyperAst, changeSet)
-
-          if (options.incremental) {
-            this.cachedLexerTokens = afterLexer
-            this.cachedParserCst = afterParser
-            this.cachedWeederAst = afterWeeder
-            this.cachedDesugarAst = afterDesugar
-            this.cachedKinderAst = afterKinder
-            this.cachedResolverAst = afterResolver
-            this.cachedTyperAst = afterDependencies
-
-            // We record that no files are dirty in the change set.
-            this.changeSet = ChangeSet.Dirty(Set.empty)
-
-            // We save all the current errors.
-            this.cachedErrors = errors.toList
-          }
-
-          Some(afterDependencies)
-      }
-
-      // Shutdown the thread pool.
-      shutdownThreadPool()
-
-      // Reset the progress bar.
-      progressBar.complete()
-
-      // Stop the live compiler profiler TUI only if there are errors and no
-      // `codeGen` will follow. On the success path, leave it running so
-      // `codeGen` can continue updating it through the mid-end and backend phases.
-      if (errors.nonEmpty) {
-        compilerTop.foreach(_.stop())
-      }
-
-      // Return the result (which could contain soft failures).
-      (result, errors.toList)
-    } catch {
-      case ex: InternalCompilerException =>
-        progressBar.complete()
-        CrashHandler.handleCrash(ex)(this)
-        throw ex
-      case ex: Throwable =>
-        progressBar.complete()
-        throw ex
+    // Reset the phase list file if relevant
+    if (this.options.xprintphases) {
+      AstPrinter.resetPhaseFile()
     }
+
+    // We mark all inputs that contains compilation errors as dirty.
+    // Hence if a file contains an error it will be recompiled -- giving it a chance to disappear.
+    for (e <- cachedErrors) {
+      val i = e.loc.source.input
+      changeSet = changeSet.markChanged(i, cachedTyperAst.dependencyGraph)
+    }
+
+    // The default entry point
+    val entryPoint = flix.options.entryPoint
+
+    // The global collection of errors
+    val errors = mutable.ArrayBuffer.empty[CompilationMessage]
+
+    val (afterReader, readerErrors) = Reader.run(getInputs, availableClasses)
+    errors ++= readerErrors
+
+    val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
+    errors ++= lexerErrors
+    if (flix.options.xverify) {
+      TokenVerifier.verify(afterLexer)
+    }
+
+    val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
+    errors ++= parserErrors
+
+    val (weederResult, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
+    errors ++= weederErrors
+
+    val result = weederResult match {
+      case None => None
+
+      case Some(afterWeeder) =>
+        val afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
+
+        val (afterNamer, nameErrors) = Namer.run(afterDesugar)
+        errors ++= nameErrors
+
+        val (afterResolver, resolutionErrors) = Resolver.run(afterNamer, cachedResolverAst, changeSet)
+        errors ++= resolutionErrors
+
+        val (afterKinder, kindErrors) = Kinder.run(afterResolver, cachedKinderAst, changeSet)
+        errors ++= kindErrors
+
+        val (afterDeriver, derivationErrors) = Deriver.run(afterKinder)
+        errors ++= derivationErrors
+
+        val (afterTyper, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
+        errors ++= typeErrors
+
+        val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterTyper)
+        errors ++= entryPointErrors
+
+        val (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+        errors ++= instanceErrors
+
+        val (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances, cachedTyperAst, changeSet)
+        errors ++= predDepErrors
+
+        val (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
+        errors ++= stratificationErrors
+
+        val (afterPatMatch, patMatchErrors) = PatMatch2.run(afterStratifier, cachedTyperAst, changeSet)
+        errors ++= patMatchErrors
+
+        val (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
+        errors ++= redundancyErrors
+
+        val (_, safetyErrors) = Safety.run(afterRedundancy, cachedTyperAst, changeSet)
+        errors ++= safetyErrors
+
+        val (afterTerminator, terminationErrors) = Terminator.run(afterRedundancy, cachedTyperAst, changeSet)
+        errors ++= terminationErrors
+
+        val (afterDependencies, _) = Dependencies.run(afterTerminator, cachedTyperAst, changeSet)
+
+        if (options.incremental) {
+          this.cachedLexerTokens = afterLexer
+          this.cachedParserCst = afterParser
+          this.cachedWeederAst = afterWeeder
+          this.cachedDesugarAst = afterDesugar
+          this.cachedKinderAst = afterKinder
+          this.cachedResolverAst = afterResolver
+          this.cachedTyperAst = afterDependencies
+
+          // We record that no files are dirty in the change set.
+          this.changeSet = ChangeSet.Dirty(Set.empty)
+
+          // We save all the current errors.
+          this.cachedErrors = errors.toList
+        }
+
+        Some(afterDependencies)
+    }
+
+    // Shutdown the thread pool.
+    shutdownThreadPool()
+
+    // Reset the progress bar.
+    progressBar.complete()
+
+    // Stop the live compiler profiler TUI only if there are errors and no
+    // `codeGen` will follow. On the success path, leave it running so
+    // `codeGen` can continue updating it through the mid-end and backend phases.
+    if (errors.nonEmpty) {
+      compilerTop.foreach(_.stop())
+    }
+
+    // Return the result (which could contain soft failures).
+    (result, errors.toList)
+  } catch {
+    case ex: InternalCompilerException =>
+      progressBar.complete()
+      CrashHandler.handleCrash(ex)(this)
+      throw ex
+    case ex: Throwable =>
+      progressBar.complete()
+      throw ex
   }
 
   /**
@@ -666,88 +666,88 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     * we explicitly set certain local variables to `null` once they are no longer needed.
     * This manual cleanup has been verified as effective in the profiler.
     */
-  def codeGen(typedAst: TypedAst.Root): CompilationResult = {
-    ensureOpen()
-    try {
-      // Mark this object as implicit.
-      implicit val flix: Flix = this
+  def codeGen(typedAst: TypedAst.Root): CompilationResult = try {
+    if (closed)
+      throw new IllegalStateException("The Flix instance has been closed.")
 
-      // Begin drawing the progress bar (if enabled).
-      progressBar.start()
+    // Mark this object as implicit.
+    implicit val flix: Flix = this
 
-      // Initialize the thread pool.
-      initThreadPool()
+    // Begin drawing the progress bar (if enabled).
+    progressBar.start()
 
-      var treeShaker1Ast = TreeShaker1.run(typedAst)
-      // Note: Do not null typedAst. It is used later.
+    // Initialize the thread pool.
+    initThreadPool()
 
-      var monomorpherAst =
-        if (options.xnewmono) Monomorpher2.run(treeShaker1Ast)
-        else Specialization.run(treeShaker1Ast)
-      treeShaker1Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
+    var treeShaker1Ast = TreeShaker1.run(typedAst)
+    // Note: Do not null typedAst. It is used later.
 
-      var lambdaDropAst = LambdaDrop.run(monomorpherAst)
-      monomorpherAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+    var monomorpherAst =
+      if (options.xnewmono) Monomorpher2.run(treeShaker1Ast)
+      else Specialization.run(treeShaker1Ast)
+    treeShaker1Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-      var optimizerAst = Optimizer.run(lambdaDropAst)
-      lambdaDropAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+    var lambdaDropAst = LambdaDrop.run(monomorpherAst)
+    monomorpherAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-      var simplifierAst = Simplifier.run(optimizerAst)
-      optimizerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+    var optimizerAst = Optimizer.run(lambdaDropAst)
+    lambdaDropAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-      var closureConvAst = ClosureConv.run(simplifierAst)
-      simplifierAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+    var simplifierAst = Simplifier.run(optimizerAst)
+    optimizerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-      var lambdaLiftAst = LambdaLift.run(closureConvAst)
-      closureConvAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+    var closureConvAst = ClosureConv.run(simplifierAst)
+    simplifierAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-      var treeShaker2Ast = TreeShaker2.run(lambdaLiftAst)
-      lambdaLiftAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+    var lambdaLiftAst = LambdaLift.run(closureConvAst)
+    closureConvAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-      var effectBinderAst = EffectBinder.run(treeShaker2Ast)
-      treeShaker2Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
+    var treeShaker2Ast = TreeShaker2.run(lambdaLiftAst)
+    lambdaLiftAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-      var tailPosAst = TailPos.run(effectBinderAst)
-      effectBinderAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+    var effectBinderAst = EffectBinder.run(treeShaker2Ast)
+    treeShaker2Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-      var eraserAst = Eraser.run(tailPosAst)
-      tailPosAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+    var tailPosAst = TailPos.run(effectBinderAst)
+    effectBinderAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-      var reducerAst = Reducer.run(eraserAst)
-      eraserAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+    var eraserAst = Eraser.run(tailPosAst)
+    tailPosAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-      // Generate JVM classes.
-      val bytecodeAst = CodeGen.run(reducerAst)
-      reducerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+    var reducerAst = Reducer.run(eraserAst)
+    eraserAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-      val totalTime = flix.getTotalTime
+    // Generate JVM classes.
+    val bytecodeAst = CodeGen.run(reducerAst)
+    reducerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-      // Construct the compilation result. The generated classes are not loaded into the JVM;
-      // that is the caller's responsibility (see [[ca.uwaterloo.flix.runtime.JvmLoader]]).
-      val totalSize = bytecodeAst.classes.values.map(_.bytecode.length).sum
-      val result = new CompilationResult(bytecodeAst, totalTime, totalSize, this)
+    val totalTime = flix.getTotalTime
 
-      // Shutdown the thread pool.
-      shutdownThreadPool()
+    // Construct the compilation result. The generated classes are not loaded into the JVM;
+    // that is the caller's responsibility (see [[ca.uwaterloo.flix.runtime.JvmLoader]]).
+    val totalSize = bytecodeAst.classes.values.map(_.bytecode.length).sum
+    val result = new CompilationResult(bytecodeAst, totalTime, totalSize, this)
 
-      // Reset the progress bar.
+    // Shutdown the thread pool.
+    shutdownThreadPool()
+
+    // Reset the progress bar.
+    progressBar.complete()
+
+    // Stop the live compiler profiler TUI, if it is running.
+    compilerTop.foreach(_.stop())
+
+    // Return the result.
+    result
+  } catch {
+    case ex: InternalCompilerException =>
       progressBar.complete()
-
-      // Stop the live compiler profiler TUI, if it is running.
-      compilerTop.foreach(_.stop())
-
-      // Return the result.
-      result
-    } catch {
-      case ex: InternalCompilerException =>
-        progressBar.complete()
-        CrashHandler.handleCrash(ex)(this)
-        throw ex
-      case ex: Throwable =>
-        progressBar.complete()
-        CrashHandler.handleCrash(ex)(this)
-        throw ex
-    }
+      CrashHandler.handleCrash(ex)(this)
+      throw ex
+    case ex: Throwable =>
+      progressBar.complete()
+      CrashHandler.handleCrash(ex)(this)
+      throw ex
   }
 
   /**
@@ -788,15 +788,6 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     closed = true
     javaTypeProvider.close()
     jarLoader.close()
-  }
-
-  /**
-    * Throws [[IllegalStateException]] if [[close]] has been called on this instance.
-    */
-  private def ensureOpen(): Unit = {
-    if (closed) {
-      throw new IllegalStateException("The Flix instance has been closed.")
-    }
   }
 
   /**
