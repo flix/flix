@@ -223,9 +223,14 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   /**
     * The set of known Java classes and interfaces: those of the Java platform and those of the JARs.
     */
-  val availableClasses: AvailableClasses =
-    if (jarPaths.isEmpty) AvailableClasses.Platform
-    else AvailableClasses.Platform ++ AvailableClasses.fromClassFiles(jarPaths.flatMap(getClassesAndInterfacesOfJar))
+  val availableClasses: AvailableClasses = {
+    if (jarPaths.isEmpty) {
+      AvailableClasses.Platform
+    } else {
+      val jarClasses = jarPaths.flatMap(getClassesAndInterfacesOfJar)
+      AvailableClasses.Platform ++ AvailableClasses.fromClassFiles(jarClasses)
+    }
+  }
 
   /**
     * A class loader for loading the JARs.
