@@ -37,7 +37,7 @@ object ImportCompleter {
     * Gets completions from a java path prefix
     */
   private def javaClassCompletionsFromPrefix(prefix: List[String], range: Range)(implicit flix: Flix): Iterable[ImportCompletion] = {
-    flix.AvailableClasses.byPackage(prefix).map(clazz => {
+    flix.availableClasses.byPackage(prefix).map(clazz => {
       val label = prefix match {
         case Nil => clazz
         case v => v.mkString("", ".", s".$clazz")

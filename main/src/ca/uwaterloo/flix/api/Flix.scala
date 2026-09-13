@@ -96,29 +96,9 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   }
 
   /**
-    * The normalized paths of the JARs.
-    */
-  private val jarPaths: List[Path] = {
-    val result = mutable.ArrayBuffer.empty[Path]
-    for (p <- jars) {
-      isValidJarFile(p) match {
-        case Result.Err(e: Throwable) => throw e
-        case Result.Ok(()) => result += p.normalize()
-      }
-    }
-    result.toList
-  }
-
-  /**
     * The set of sources changed since last compilation.
     */
   private var changeSet: ChangeSet = ChangeSet.Everything
-
-  /**
-    * The set of known Java classes and interfaces: those of the Java platform and those of the JARs.
-    */
-  val AvailableClasses: AvailableClasses =
-    shared.AvailableClasses(getPackageContent(ClassList.TheList ::: jarPaths.flatMap(getClassesAndInterfacesOfJar)))
 
   /**
     * A cache of ASTs for incremental compilation.
@@ -226,6 +206,26 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     * The default output formatter.
     */
   private var formatter: Formatter = NoFormatter
+
+  /**
+    * The normalized paths of the JARs.
+    */
+  private val jarPaths: List[Path] = {
+    val result = mutable.ArrayBuffer.empty[Path]
+    for (p <- jars) {
+      isValidJarFile(p) match {
+        case Result.Err(e: Throwable) => throw e
+        case Result.Ok(()) => result += p.normalize()
+      }
+    }
+    result.toList
+  }
+
+  /**
+    * The set of known Java classes and interfaces: those of the Java platform and those of the JARs.
+    */
+  val availableClasses: AvailableClasses =
+    AvailableClasses(getPackageContent(ClassList.TheList ::: jarPaths.flatMap(getClassesAndInterfacesOfJar)))
 
   /**
     * A class loader for loading the JARs.
