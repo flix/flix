@@ -277,7 +277,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
 
     case Request.AddJar(id, uri) =>
       val path = Path.of(new URI(uri))
-      flix.isValidJarFile(path) match {
+      FileOps.isValidJarFile(path) match {
         case Ok(()) =>
           // The JAR takes effect at the next check, which constructs a new Flix instance.
           jars += path
