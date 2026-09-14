@@ -252,7 +252,7 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   val javaTypeProvider: JavaTypeProvider = ByteBuddyJavaTypeProvider.fromDependencyClassPath(dependencyClassPath, jarLoader)
 
   /**
-    * Adds Flix source code from a file on the filesystem.
+    * Adds Flix source code from a file on the filesystem. The file is read immediately.
     *
     * @param p    the path to the Flix source file. Must be a readable `.flix` file.
     * @param sctx the security context for the input.
@@ -261,7 +261,8 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     isValidFlixFile(p) match {
       case Result.Err(e: Throwable) => throw e
       case Result.Ok(()) =>
-        addInput(p.normalize().toString, Input.RealFile(p, sctx))
+        val text = new String(Files.readAllBytes(p), defaultCharset)
+        addInput(p.normalize().toString, Input.RealFile(p, text, sctx))
         this
     }
   }
@@ -299,13 +300,13 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     * Removes Flix source code associated with a file on the filesystem.
     *
     * @param p    the path to the Flix source file. Must be a `.flix` file.
-    * @param sctx the security context for the input.
+    * @param sctx unused.
     */
   def remFile(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    remInput(p.toString, Input.RealFile(p, sctx))
+    remInput(p.normalize().toString)
     this
   }
 
@@ -335,7 +336,7 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   def remVirtualPath(path: Path): Flix = {
     if (path == null)
       throw new IllegalArgumentException("'path' must be non-null.")
-    remInput(path.toString, Input.VirtualFile(path, "", /* unused */ SecurityContext.Plain))
+    remInput(path.toString)
     this
   }
 
@@ -365,31 +366,48 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   def remVirtualUri(uri: URI): Flix = {
     if (uri == null)
       throw new IllegalArgumentException("'uri' must be non-null.")
-    remInput(uri.toString, Input.VirtualUri(uri, "", /* unused */ SecurityContext.Plain))
+    remInput(uri.toString)
     this
   }
 
   /**
-    * Adds the given `input` under the given `name`.
+    * Adds the given `input` under the given `name`, replacing any input already registered under it.
+    *
+    * The replaced input, not the new one, is marked as changed: it is the input the cached dependency
+    * graph knows, since the graph was computed from the inputs registered at the time.
+    *
+    * Re-adding an input with the same text and security context changes nothing and marks nothing.
     */
   private def addInput(name: String, input: Input): Unit = inputs.get(name) match {
     case None =>
       inputs += name -> input
-    case Some(_) =>
-      changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
+    case Some(old) if isUnchanged(old, input) => // nop
+    case Some(old) =>
+      changeSet = changeSet.markChanged(old, cachedTyperAst.dependencyGraph)
       inputs += name -> input
   }
 
   /**
-    * Removes the given `input` under the given `name`.
+    * Removes the input registered under the given `name`, if any.
     *
     * Note: Removing an input means to replace it by the empty string.
     */
-  private def remInput(name: String, input: Input): Unit = inputs.get(name) match {
+  private def remInput(name: String): Unit = inputs.get(name) match {
     case None => // nop
-    case Some(_) =>
-      changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
+    case Some(old) =>
+      changeSet = changeSet.markChanged(old, cachedTyperAst.dependencyGraph)
       inputs += name -> Input.VirtualFile(parsePath(name), "", /* unused */ SecurityContext.Plain)
+  }
+
+  /**
+    * Returns `true` if `i1` and `i2` denote the same source with the same text and security context,
+    * i.e. if registering `i2` in place of `i1` would change nothing.
+    */
+  private def isUnchanged(i1: Input, i2: Input): Boolean = (i1, i2) match {
+    case (Input.RealFile(p1, t1, s1), Input.RealFile(p2, t2, s2)) => p1 == p2 && t1 == t2 && s1 == s2
+    case (Input.VirtualFile(p1, t1, s1), Input.VirtualFile(p2, t2, s2)) => p1 == p2 && t1 == t2 && s1 == s2
+    case (Input.VirtualUri(u1, t1, s1), Input.VirtualUri(u2, t2, s2)) => u1 == u2 && t1 == t2 && s1 == s2
+    case _ => false
   }
 
   /**

@@ -27,7 +27,7 @@ sealed trait Input {
     * Returns the security context associated with the input.
     */
   def security: SecurityContext = this match {
-    case Input.RealFile(_, sctx) => sctx
+    case Input.RealFile(_, _, sctx) => sctx
     case Input.VirtualFile(_, _, sctx) => sctx
     case Input.VirtualUri(_, _, sctx) => sctx
     case Input.FileInPackage(_, _, _, sctx) => sctx
@@ -39,9 +39,11 @@ sealed trait Input {
 object Input {
 
   /**
-    * Represents an input that points to the file system and which must exist.
+    * Represents an input read from the file at `realPath`, which must exist when the input is added.
+    *
+    * The `text` is read once, when the input is added, so that no I/O happens during compilation.
     */
-  case class RealFile(realPath: Path, sctx: SecurityContext) extends Input
+  case class RealFile(realPath: Path, text: String, sctx: SecurityContext) extends Input
 
   /**
     * Represents an input with the source code text `src` located at `virtualPath` -- a path that may not actually exist.

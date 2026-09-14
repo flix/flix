@@ -18,11 +18,12 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.TypeError.UnexpectedArg
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
 
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 
 class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
 
@@ -34,6 +35,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   private val FileF = Path.of("FileF.flix")
   private val FileG = Path.of("FileG.flix")
   private val FileH = Path.of("FileH.flix")
+  private val FileJ = Path.of("FileJ.flix")
 
   // A new Flix instance is created and initialized with some source code for each test.
   private var flix: Flix = _
@@ -308,5 +310,42 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
 
     flix.compile().unsafeGet
+  }
+
+  test("Incremental.AddFile.ReadWhenAdded") {
+    // A file is read when it is added. A later change on disk is not seen until the file is re-added.
+    val dir = Files.createTempDirectory("flix-incremental")
+    val file = dir.resolve("FileI.flix")
+    Files.writeString(file, "pub def i(): Int32 = 1")
+    flix.addFile(file)
+    flix.addVirtualPath(FileJ,
+      s"""
+         |def useI(): Int32 = i()
+         |""".stripMargin)
+    flix.compile().unsafeGet
+
+    Files.writeString(file, "pub def notI(): Int32 = 1")
+    flix.compile().unsafeGet
+
+    flix.addFile(file)
+    expectError[ResolutionError.UndefinedName](flix.check())
+  }
+
+  test("Incremental.RemFile.NormalizedPath") {
+    // A file added under a path with `..` segments must be removable under that same path.
+    val dir = Files.createTempDirectory("flix-incremental")
+    Files.createDirectory(dir.resolve("sub"))
+    val file = dir.resolve("FileI.flix")
+    Files.writeString(file, "pub def i(): Int32 = 1")
+    val unnormalized = dir.resolve("sub").resolve("..").resolve("FileI.flix")
+    flix.addFile(unnormalized)
+    flix.addVirtualPath(FileJ,
+      s"""
+         |def useI(): Int32 = i()
+         |""".stripMargin)
+    flix.compile().unsafeGet
+
+    flix.remFile(unnormalized)
+    expectError[ResolutionError.UndefinedName](flix.check())
   }
 }
