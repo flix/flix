@@ -599,14 +599,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Created(path) =>
         if (FileOps.checkExt(path, EXT_FLIX)) {
           sources = path :: sources
-          flix.addFile(path)(SecurityContext.Unrestricted)
+          flix.addFile(path, SecurityContext.Unrestricted)
         } else if (isDependencyFile(path)) {
           libsChanged = true
         }
 
       case Modified(path) =>
         if (FileOps.checkExt(path, EXT_FLIX)) {
-          flix.addFile(path)(SecurityContext.Unrestricted)
+          flix.addFile(path, SecurityContext.Unrestricted)
         } else if (files.isDependency(path)) {
           dependencyModified = true
         }
@@ -614,7 +614,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Deleted(path) =>
         if (path.getFileName.toString.endsWith(s".$EXT_FLIX")) {
           sources = sources.filterNot(_ == path)
-          flix.remFile(path)(SecurityContext.Unrestricted)
+          flix.remFile(path)
         } else if (isDependencyFile(path)) {
           libsChanged = true
         } else {
@@ -622,7 +622,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           // Remove all tracked source files that were children of this path and re-scan the project.
           val deletedFlix = sources.filter(_.startsWith(path))
           sources = sources.filterNot(_.startsWith(path))
-          for (p <- deletedFlix) flix.remFile(p)(SecurityContext.Unrestricted)
+          for (p <- deletedFlix) flix.remFile(p)
           libsChanged = true
         }
 
@@ -666,7 +666,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     flix.setOptions(options)
     flix.setFormatter(formatter)
     for (path <- files.sources) {
-      flix.addFile(path)(SecurityContext.Unrestricted)
+      flix.addFile(path, SecurityContext.Unrestricted)
     }
     flix
   }

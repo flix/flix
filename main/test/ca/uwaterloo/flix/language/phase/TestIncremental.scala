@@ -42,18 +42,18 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
 
   before {
     flix = new Flix()
-    flix.addVirtualPath(FileA,
+    flix.addSource(FileA,
       s"""
          |pub def f(x: Bool): Bool = not x
          |
-         |""".stripMargin)
-    flix.addVirtualPath(FileB,
+         |""".stripMargin, sctx)
+    flix.addSource(FileB,
       raw"""
            |def main(): Unit \ IO =
            |    println(f(true));
            |    println(C.cd(1) |> C.cda)
-           |""".stripMargin)
-    flix.addVirtualPath(FileC,
+           |""".stripMargin, sctx)
+    flix.addSource(FileC,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
@@ -65,53 +65,53 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |        let G.G(r) = g;
          |        r#el
          |}
-         |""".stripMargin)
-    flix.addVirtualPath(FileD,
+         |""".stripMargin, sctx)
+    flix.addSource(FileD,
       s"""
          |pub enum D[a] {
          |    case DA(a)
          |}
-         |""".stripMargin)
-    flix.addVirtualPath(FileE,
+         |""".stripMargin, sctx)
+    flix.addSource(FileE,
       s"""
          |instance C[Int32] {}
-         |""".stripMargin)
-    flix.addVirtualPath(FileF,
+         |""".stripMargin, sctx)
+    flix.addSource(FileF,
       s"""
          |pub type alias L[a] = D[a]
-         |""".stripMargin)
-    flix.addVirtualPath(FileG,
+         |""".stripMargin, sctx)
+    flix.addSource(FileG,
       s"""
          |pub enum G[a]({ el = a })
-         |""".stripMargin)
-    flix.addVirtualPath(FileH,
+         |""".stripMargin, sctx)
+    flix.addSource(FileH,
       s"""
          |pub trait H[a] with C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = C.cf(x, y, z)
          |}
-         |""".stripMargin)
+         |""".stripMargin, sctx)
 
     flix.compile().unsafeGet
   }
 
   test("Incremental.01") {
-    flix.addVirtualPath(FileA,
+    flix.addSource(FileA,
       s"""
          |pub def f(x: Int32): Int32 = x + 1i32
          |
-         |""".stripMargin)
-    flix.addVirtualPath(FileB,
+         |""".stripMargin, sctx)
+    flix.addSource(FileB,
       raw"""
            |def main(): Unit \ IO =
            |    println(f(123))
-           |""".stripMargin)
-    flix.addVirtualPath(FileC,
+           |""".stripMargin, sctx)
+    flix.addSource(FileC,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: Int32, y: a, z: a): a = if (f(x) == x) y else z
          |    pub def cg(x: a): a
          |}
-         |""".stripMargin)
+         |""".stripMargin, sctx)
     flix.remFile(FileE)
     flix.remFile(FileD)
     flix.remFile(FileF)
@@ -122,32 +122,32 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   }
 
   test("Incremental.02") {
-    flix.addVirtualPath(FileA,
+    flix.addSource(FileA,
       s"""
          |pub def f(x: String): String = String.toUpperCase(x)
-         |""".stripMargin)
-    flix.addVirtualPath(FileB,
+         |""".stripMargin, sctx)
+    flix.addSource(FileB,
       raw"""
            |def main(): Unit \ IO =
            |    println(f("Hello World"))
-           |""".stripMargin)
-    flix.addVirtualPath(FileC,
+           |""".stripMargin, sctx)
+    flix.addSource(FileC,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: String, y: a, z: a): a = if (f(x) == x) y else z
          |}
-         |""".stripMargin)
-    flix.addVirtualPath(FileH,
+         |""".stripMargin, sctx)
+    flix.addSource(FileH,
       s"""
          |pub trait H[a] with C[a] {
          |    pub def cf(x: String, y: a, z: a): a = C.cf(x, y, z)
          |}
-         |""".stripMargin)
+         |""".stripMargin, sctx)
     flix.compile().unsafeGet
   }
 
   test("Incremental.03") {
-    flix.addVirtualPath(FileA,
+    flix.addSource(FileA,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
@@ -156,37 +156,37 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |        case D.DA(x) => x
          |    }
          |}
-         |""".stripMargin)
-    flix.addVirtualPath(FileC,
+         |""".stripMargin, sctx)
+    flix.addSource(FileC,
       s"""
          |pub def f(x: Bool): Bool = not x
          |
-         |""".stripMargin)
+         |""".stripMargin, sctx)
     flix.compile().unsafeGet
   }
 
   test("Incremental.04") {
-    flix.addVirtualPath(FileA,
+    flix.addSource(FileA,
       s"""
          |pub def f(x: Int32): Bool = x == 0
          |
-         |""".stripMargin)
+         |""".stripMargin, sctx)
     expectError[UnexpectedArg](flix.check())
   }
 
   test("Incremental.05") {
-    flix.addVirtualPath(FileA,
+    flix.addSource(FileA,
       s"""
          |pub def f(x: Int64, y: Int64): Bool = x == y
          |
-         |""".stripMargin)
-    flix.addVirtualPath(FileB,
+         |""".stripMargin, sctx)
+    flix.addSource(FileB,
       raw"""
            |def main(): Unit \ IO =
            |    println(f(1i64, 2i64));
            |    println(C.cd(1i64) |> C.cda)
-           |""".stripMargin)
-    flix.addVirtualPath(FileC,
+           |""".stripMargin, sctx)
+    flix.addSource(FileC,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: Int64, b: Int64, y: a, z: a): a = if (f(x, b)) y else z
@@ -197,15 +197,15 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |    }
          |    pub def cdaf(x: a, y: a, d: D[a]): Bool
          |}
-         |""".stripMargin)
-    flix.addVirtualPath(FileD,
+         |""".stripMargin, sctx)
+    flix.addSource(FileD,
       s"""
          |pub enum D[a] {
          |    case DA(a, a)
          |    case DB(a, a, a)
          |}
-         |""".stripMargin)
-    flix.addVirtualPath(FileE,
+         |""".stripMargin, sctx)
+    flix.addSource(FileE,
       s"""
          |instance C[Int64] {
          |    pub def cd(x: Int64): D[Int64] = D.DB(x, x, x)
@@ -214,30 +214,30 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |        case D.DB(_, _, _) => false
          |    }
          |}
-         |""".stripMargin)
-    flix.addVirtualPath(FileH,
+         |""".stripMargin, sctx)
+    flix.addSource(FileH,
       s"""
          |pub trait H[a] with C[a] {
          |    pub def cf(x: Int64, b: Int64, y: a, z: a): a = C.cf(x, b, y, z)
          |}
-         |""".stripMargin)
+         |""".stripMargin, sctx)
     flix.compile().unsafeGet
   }
 
   test("Incremental.06") {
-    flix.addVirtualPath(FileA,
+    flix.addSource(FileA,
       s"""
          |mod F {
          |    pub def f(x: Bool): Bool = not x
          |}
-         |""".stripMargin)
-    flix.addVirtualPath(FileB,
+         |""".stripMargin, sctx)
+    flix.addSource(FileB,
       raw"""
            |def main(): Unit \ IO =
            |    println(F.f(true));
            |    println(C.cd(1i8) |> C.cda)
-           |""".stripMargin)
-    flix.addVirtualPath(FileC,
+           |""".stripMargin, sctx)
+    flix.addSource(FileC,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (F.f(x) == x) y else z
@@ -250,46 +250,46 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |          case D.DA(x) => x
          |        }
          |}
-         |""".stripMargin)
-    flix.addVirtualPath(FileD,
+         |""".stripMargin, sctx)
+    flix.addSource(FileD,
       s"""
          |mod DDD {
          |    pub enum D[a] {
          |        case DA(a)
          |    }
          |}
-         |""".stripMargin)
-    flix.addVirtualPath(FileE,
+         |""".stripMargin, sctx)
+    flix.addSource(FileE,
       s"""
          |instance C[Int8] {}
-         |""".stripMargin)
-    flix.addVirtualPath(FileF,
+         |""".stripMargin, sctx)
+    flix.addSource(FileF,
       s"""
          |pub type alias L[a] = DDD.D[a]
-         |""".stripMargin)
+         |""".stripMargin, sctx)
 
     flix.compile().unsafeGet
   }
 
   test("Incremental.07") {
-    flix.addVirtualPath(FileC,
+    flix.addSource(FileC,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
          |    pub def cd(x: a): L[a] = { x = x }
          |    pub def cda(l: L[a]): a = l#x
          |}
-         |""".stripMargin)
-    flix.addVirtualPath(FileF,
+         |""".stripMargin, sctx)
+    flix.addSource(FileF,
       s"""
          |pub type alias L[a] = { x = a }
-         |""".stripMargin)
+         |""".stripMargin, sctx)
 
     flix.compile().unsafeGet
   }
 
   test("Incremental.08") {
-    flix.addVirtualPath(FileC,
+    flix.addSource(FileC,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
@@ -303,11 +303,11 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
                       case D.DA(x) => x
          |        }
          |}
-         |""".stripMargin)
-    flix.addVirtualPath(FileG,
+         |""".stripMargin, sctx)
+    flix.addSource(FileG,
       s"""
          |pub enum G[a](D[a])
-         |""".stripMargin)
+         |""".stripMargin, sctx)
 
     flix.compile().unsafeGet
   }
@@ -317,17 +317,17 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
     val dir = Files.createTempDirectory("flix-incremental")
     val file = dir.resolve("FileI.flix")
     Files.writeString(file, "pub def i(): Int32 = 1")
-    flix.addFile(file)
-    flix.addVirtualPath(FileJ,
+    flix.addFile(file, sctx)
+    flix.addSource(FileJ,
       s"""
          |def useI(): Int32 = i()
-         |""".stripMargin)
+         |""".stripMargin, sctx)
     flix.compile().unsafeGet
 
     Files.writeString(file, "pub def notI(): Int32 = 1")
     flix.compile().unsafeGet
 
-    flix.addFile(file)
+    flix.addFile(file, sctx)
     expectError[ResolutionError.UndefinedName](flix.check())
   }
 
@@ -338,11 +338,11 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
     val file = dir.resolve("FileI.flix")
     Files.writeString(file, "pub def i(): Int32 = 1")
     val unnormalized = dir.resolve("sub").resolve("..").resolve("FileI.flix")
-    flix.addFile(unnormalized)
-    flix.addVirtualPath(FileJ,
+    flix.addFile(unnormalized, sctx)
+    flix.addSource(FileJ,
       s"""
          |def useI(): Int32 = i()
-         |""".stripMargin)
+         |""".stripMargin, sctx)
     flix.compile().unsafeGet
 
     flix.remFile(unnormalized)

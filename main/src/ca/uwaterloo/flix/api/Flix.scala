@@ -259,18 +259,79 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   val javaTypeProvider: JavaTypeProvider = ByteBuddyJavaTypeProvider.fromDependencyClassPath(dependencyClassPath, jarLoader)
 
   /**
-    * Adds Flix source code from a file on the filesystem. The file is read immediately.
+    * Adds the source `text` under the path `p`, replacing any source already registered under it.
+    *
+    * The path names the source; it need not exist on disk. To add a file from disk, see [[addFile]].
+    *
+    * @param p    the path that names the source.
+    * @param text the Flix source code.
+    * @param sctx the security context the source is compiled under.
+    */
+  def addSource(p: Path, text: String, sctx: SecurityContext): Flix = {
+    if (p == null)
+      throw new IllegalArgumentException("'p' must be non-null.")
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    if (sctx == null)
+      throw new IllegalArgumentException("'sctx' must be non-null.")
+    register(Source.fromString(SourceName.PathName(p), Origin.User, sctx, text))
+    this
+  }
+
+  /**
+    * Adds the source `text` under the URI `uri`, replacing any source already registered under it.
+    *
+    * Language servers name sources by the URI the client uses, so that locations sent back to the
+    * client refer to the same document.
+    *
+    * @param uri  the URI that names the source.
+    * @param text the Flix source code.
+    * @param sctx the security context the source is compiled under.
+    */
+  def addSource(uri: URI, text: String, sctx: SecurityContext): Flix = {
+    if (uri == null)
+      throw new IllegalArgumentException("'uri' must be non-null.")
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    if (sctx == null)
+      throw new IllegalArgumentException("'sctx' must be non-null.")
+    register(Source.fromString(SourceName.UriName(uri), Origin.User, sctx, text))
+    this
+  }
+
+  /**
+    * Removes the source named by the path `p`, if any.
+    */
+  def remSource(p: Path): Flix = {
+    if (p == null)
+      throw new IllegalArgumentException("'p' must be non-null.")
+    unregister(SourceName.PathName(p))
+    this
+  }
+
+  /**
+    * Removes the source named by the URI `uri`, if any.
+    */
+  def remSource(uri: URI): Flix = {
+    if (uri == null)
+      throw new IllegalArgumentException("'uri' must be non-null.")
+    unregister(SourceName.UriName(uri))
+    this
+  }
+
+  /**
+    * Adds the Flix source file at `p`. The file is read immediately and registered under its
+    * normalized path.
     *
     * @param p    the path to the Flix source file. Must be a readable `.flix` file.
-    * @param sctx the security context for the input.
+    * @param sctx the security context the source is compiled under.
     */
-  def addFile(p: Path)(implicit sctx: SecurityContext): Flix = {
+  def addFile(p: Path, sctx: SecurityContext): Flix = {
     isValidFlixFile(p) match {
       case Result.Err(e: Throwable) => throw e
       case Result.Ok(()) =>
         val text = new String(Files.readAllBytes(p), defaultCharset)
-        register(Source.fromString(SourceName.PathName(p.normalize()), Origin.User, sctx, text))
-        this
+        addSource(p.normalize(), text, sctx)
     }
   }
 
@@ -304,77 +365,14 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   }
 
   /**
-    * Removes Flix source code associated with a file on the filesystem.
+    * Removes the Flix source file at `p`, if it was added with [[addFile]].
     *
-    * @param p    the path to the Flix source file. Must be a `.flix` file.
-    * @param sctx unused.
+    * @param p the path to the Flix source file. Must be a `.flix` file.
     */
-  def remFile(p: Path)(implicit sctx: SecurityContext): Flix = {
+  def remFile(p: Path): Flix = {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
-
-    unregister(SourceName.PathName(p.normalize()))
-    this
-  }
-
-  /**
-    * Adds Flix source code from a string with an associated virtual path.
-    *
-    * @param path the virtual path to associate with the source code.
-    * @param src  the Flix source code.
-    * @param sctx the security context for the input.
-    */
-  def addVirtualPath(path: Path, src: String)(implicit sctx: SecurityContext): Flix = {
-    if (path == null)
-      throw new IllegalArgumentException("'path' must be non-null.")
-    if (src == null)
-      throw new IllegalArgumentException("'src' must be non-null.")
-    if (sctx == null)
-      throw new IllegalArgumentException("'sctx' must be non-null.")
-    register(Source.fromString(SourceName.PathName(path), Origin.User, sctx, src))
-    this
-  }
-
-  /**
-    * Removes Flix source code associated with a virtual path.
-    *
-    * @param path the virtual path of the source code to remove.
-    */
-  def remVirtualPath(path: Path): Flix = {
-    if (path == null)
-      throw new IllegalArgumentException("'path' must be non-null.")
-    unregister(SourceName.PathName(path))
-    this
-  }
-
-  /**
-    * Adds Flix source code from a string with an associated virtual URI.
-    *
-    * @param uri  the virtual URI to associate with the source code.
-    * @param src  the Flix source code.
-    * @param sctx the security context for the input.
-    */
-  def addVirtualUri(uri: URI, src: String)(implicit sctx: SecurityContext): Flix = {
-    if (uri == null)
-      throw new IllegalArgumentException("'uri' must be non-null.")
-    if (src == null)
-      throw new IllegalArgumentException("'src' must be non-null.")
-    if (sctx == null)
-      throw new IllegalArgumentException("'sctx' must be non-null.")
-    register(Source.fromString(SourceName.UriName(uri), Origin.User, sctx, src))
-    this
-  }
-
-  /**
-    * Removes Flix source code associated with a virtual URI.
-    *
-    * @param uri the virtual URI of the source code to remove.
-    */
-  def remVirtualUri(uri: URI): Flix = {
-    if (uri == null)
-      throw new IllegalArgumentException("'uri' must be non-null.")
-    unregister(SourceName.UriName(uri))
-    this
+    remSource(p.normalize())
   }
 
   /**

@@ -31,7 +31,7 @@ class TestFlixErrors extends AnyFunSuite {
     val input = "def main(): Unit = ???"
     val result = new Flix()
       .setOptions(Options.TestWithLibMin)
-      .addVirtualPath(CompilerConstants.VirtualTestFile, input)
+      .addSource(CompilerConstants.VirtualTestFile, input, sctx)
       .compile()
     expectRuntimeError(result, GenHoleError.Desc.displayName())
   }
@@ -40,7 +40,7 @@ class TestFlixErrors extends AnyFunSuite {
     val input = "def main(): Unit = ?namedHole"
     val result = new Flix()
       .setOptions(Options.TestWithLibMin)
-      .addVirtualPath(CompilerConstants.VirtualTestFile, input)
+      .addSource(CompilerConstants.VirtualTestFile, input, sctx)
       .compile()
     expectRuntimeError(result, GenHoleError.Desc.displayName())
   }
