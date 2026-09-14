@@ -42,7 +42,7 @@ case class SourceLocation(isReal: Boolean, source: Source, start: SourcePosition
   /**
    * Returns the security context associated with the source location.
    */
-  def security: SecurityContext = source.input.security
+  def security: SecurityContext = source.sctx
 
   /**
     * Returns the one-indexed line where the entity begins.

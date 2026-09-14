@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.{Input, Source}
+import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TokenKind, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.Lexer
 
@@ -108,7 +108,7 @@ object Stat {
 
   /** Returns the line statistics of the project sources in `root`. */
   private def lineStat(root: Root): LineStat =
-    root.sources.keys.filter(isRealFile).map(countLines).foldLeft(LineStat(0, 0, 0, 0))(_ + _)
+    root.sources.keys.filter(_.origin.isUser).map(countLines).foldLeft(LineStat(0, 0, 0, 0))(_ + _)
 
   /**
     * Classifies every line of `src` as blank, code, or comment.
@@ -191,14 +191,8 @@ object Stat {
       effects = root.effects.values.count(e => isProject(e.loc))
     )
 
-  /** Returns `true` if the given location is in a project source. */
-  private def isProject(loc: SourceLocation): Boolean = isRealFile(loc.source)
-
-  /** Returns `true` if the given source is a file on disk. */
-  private def isRealFile(src: Source): Boolean = src.input match {
-    case Input.RealFile(_, _, _) => true
-    case _ => false
-  }
+  /** Returns `true` if the given location is in a source the user supplied. */
+  private def isProject(loc: SourceLocation): Boolean = loc.source.origin.isUser
 
   /** Formats `n` with thousands separators. */
   private def fmt(n: Int): String = "%,d".formatLocal(Locale.US, n)

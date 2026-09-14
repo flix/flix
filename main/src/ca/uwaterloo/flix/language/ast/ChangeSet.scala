@@ -15,19 +15,19 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, Input}
+import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, SourceName}
 import ca.uwaterloo.flix.util.collection.ListMap
 
 sealed trait ChangeSet {
 
   /**
-    * Returns a new change set with `i` marked as changed.
+    * Returns a new change set with the source named `n` marked as changed.
     *
-    * Note: The input `i` is always marked as dirty itself.
+    * Note: The source `n` is always marked as dirty itself.
     */
-  def markChanged(i: Input, dg: DependencyGraph): ChangeSet = this match {
-    case ChangeSet.Everything => ChangeSet.Dirty(dg.dirty(i))
-    case ChangeSet.Dirty(s) => ChangeSet.Dirty(s ++ dg.dirty(i))
+  def markChanged(n: SourceName, dg: DependencyGraph): ChangeSet = this match {
+    case ChangeSet.Everything => ChangeSet.Dirty(dg.dirty(n))
+    case ChangeSet.Dirty(s) => ChangeSet.Dirty(s ++ dg.dirty(n))
   }
 
   /**
@@ -49,7 +49,7 @@ sealed trait ChangeSet {
       (newMap, Map.empty)
 
     case ChangeSet.Dirty(dirty) =>
-      val fresh = oldMap.filter(kv => !dirty.contains(kv._1.src.input)).filter(kv => newMap.contains(kv._1))
+      val fresh = oldMap.filter(kv => !dirty.contains(kv._1.src.sourceName)).filter(kv => newMap.contains(kv._1))
       val stale = newMap.filter(kv => !fresh.contains(kv._1))
 
       (stale, fresh)
@@ -78,7 +78,7 @@ sealed trait ChangeSet {
 
     case ChangeSet.Dirty(dirty) =>
       newMap.foldLeft((ListMap.empty[K, V], ListMap.empty[K, V])) { case ((stale, fresh), (k, v)) =>
-        if (oldMap.get(k).exists(v2 => eq(v, v2)) && !dirty.contains(v.src.input))
+        if (oldMap.get(k).exists(v2 => eq(v, v2)) && !dirty.contains(v.src.sourceName))
           (stale, fresh + (k -> v))
         else
           (stale + (k -> v), fresh)
@@ -117,7 +117,7 @@ object ChangeSet {
   /**
     * Represents a change set where everything in `s` is dirty (must be recompiled).
     */
-  case class Dirty(s: Set[Input]) extends ChangeSet
+  case class Dirty(s: Set[SourceName]) extends ChangeSet
 
 }
 

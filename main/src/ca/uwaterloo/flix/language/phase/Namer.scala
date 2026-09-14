@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps}
 
-import java.nio.file.{FileSystemNotFoundException, Path}
+import java.nio.file.Path
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -217,17 +217,12 @@ object Namer {
           case (p, name) => p.resolve(name)
         }.resolve(qname.ident.name + ".flix")
 
-        val optPath = loc.source.input match {
-          case Input.RealFile(realPath, _, _)  => Some(realPath)
-          case Input.VirtualFile(virtualPath, _, _) => Some(virtualPath)
-          case Input.VirtualUri(virtualUri, _, _) => try {
-            Some(Path.of(virtualUri))
-          } catch {
-            case _: IllegalArgumentException => None
-            case _: FileSystemNotFoundException => None
-          }
-          case Input.FileInPackage(_, _, _, _) => None
-          case Input.Unknown => None
+        // The check applies to the user's own sources and to the library, never to package entries.
+        val optPath = loc.source.origin match {
+          case Origin.User => loc.source.sourceName.toPath
+          case Origin.Library => loc.source.sourceName.toPath
+          case Origin.Package => None
+          case Origin.Unknown => None
         }
 
         optPath match {

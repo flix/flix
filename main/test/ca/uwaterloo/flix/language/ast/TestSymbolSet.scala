@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source, SymbolSet}
+import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, Source, SymbolSet}
 import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.funsuite.AnyFunSuite
 
