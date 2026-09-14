@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{FoldingRange, FoldingRangeKind}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.{Token, TokenKind}
 
 import scala.collection.mutable
@@ -32,10 +33,10 @@ import scala.collection.mutable
 object FoldingRangeProvider {
 
   /**
-    * Returns the folding ranges for the file at the given `uri`.
+    * Returns the folding ranges for the file at the given `name`.
     */
-  def getFoldingRanges(uri: String)(implicit root: Root): List[FoldingRange] = {
-    root.tokens.keys.find(_.name == uri) match {
+  def getFoldingRanges(name: SourceName)(implicit root: Root): List[FoldingRange] = {
+    root.tokens.keys.find(_.sourceName == name) match {
       case None => Nil
       case Some(source) =>
         val comments = root.tokens(source).iterator.filter(_.kind.isComment).toList

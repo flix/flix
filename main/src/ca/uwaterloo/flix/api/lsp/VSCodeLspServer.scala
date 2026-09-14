@@ -209,19 +209,11 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   }
 
   /**
-    * Adds the given source code to the compiler under the name the client string `uri` denotes.
+    * Adds the given source code to the compiler under `name`.
     */
-  private def addUri(uri: String, src: String): Unit = {
-    val name = ClientUri.toSourceName(uri).getOrElse(throw new IllegalArgumentException(s"Malformed uri: '$uri'."))
+  private def addSource(name: SourceName, src: String): Unit = {
     flix.addSource(name, src, SecurityContext.Unrestricted)
     sources += (name -> src)
-  }
-
-  /**
-    * Removes the source named by the client string `uri` from the compiler, if any.
-    */
-  private def remUri(uri: String): Unit = {
-    ClientUri.toSourceName(uri).foreach(remSource)
   }
 
   /**
@@ -248,12 +240,12 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     */
   private def processRequest(request: Request)(implicit ws: WebSocket, root: Root): JValue = request match {
 
-    case Request.AddUri(id, uri, src) =>
-      addUri(uri, src)
+    case Request.AddUri(id, name, src) =>
+      addSource(name, src)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
-    case Request.RemUri(id, uri) =>
-      remUri(uri)
+    case Request.RemUri(id, name) =>
+      remSource(name)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.AddPkg(id, uri, data) =>
@@ -265,7 +257,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
         if (name.endsWith(".flix")) {
           val bytes = StreamOps.readAllBytes(inputStream)
           val src = new String(bytes, Charset.forName("UTF-8"))
-          addUri(s"$uri/$name", src)
+          addSource(ClientUri.toSourceName(URI.create(s"$uri/$name")), src)
         }
         entry = inputStream.getNextEntry
       }
@@ -276,13 +268,13 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     case Request.RemPkg(id, uri) =>
       // clone is necessary because `remSource` modifies `sources`
       for ((name, _) <- sources.clone()
-           if ClientUri.fromSourceName(name).startsWith(uri)) {
+           if ClientUri.fromSourceName(name).startsWith(uri.toString)) {
         remSource(name)
       }
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.AddJar(id, uri) =>
-      val path = Path.of(new URI(uri))
+      val path = Path.of(uri)
       FileOps.isValidJarFile(path) match {
         case Ok(()) =>
           // The JAR takes effect at the next check, which constructs a new Flix instance.
@@ -294,7 +286,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       }
 
     case Request.RemJar(id, uri) =>
-      val path = Path.of(new URI(uri))
+      val path = Path.of(uri)
       if (jars.remove(path)) {
         jarsChanged = true
       }
@@ -308,78 +300,78 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
 
     case Request.Check(id) => processCheck(id)
 
-    case Request.Codelens(id, uri) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(CodeLensProvider.processCodeLens(uri)(root).map(_.toJSON)))
+    case Request.Codelens(id, name) =>
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(CodeLensProvider.processCodeLens(name)(root).map(_.toJSON)))
 
-    case Request.Complete(id, uri, pos) =>
+    case Request.Complete(id, name, pos) =>
       // Find the source of the given URI (which should always exist).
       val completions = CompletionProvider
-        .getCompletions(uri, pos, currentErrors)(root, flix)
+        .getCompletions(name, pos, currentErrors)(root, flix)
         .map(_.toCompletionItem(flix))
       val completionList = CompletionList(isIncomplete = true, completions)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> completionList.toJSON)
 
-    case Request.Highlight(id, uri, pos) =>
-      val highlights = HighlightProvider.processHighlight(uri, pos)(root)
+    case Request.Highlight(id, name, pos) =>
+      val highlights = HighlightProvider.processHighlight(name, pos)(root)
       if (highlights.isEmpty)
         ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this highlight.")
       else
         ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON).toList))
 
-    case Request.Hover(id, uri, pos) =>
-      HoverProvider.processHover(uri, pos)(root, flix) match {
+    case Request.Hover(id, name, pos) =>
+      HoverProvider.processHover(name, pos)(root, flix) match {
         case Some(hover) => ("id" -> id) ~ hover.toJSON
         case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this hover.")
       }
 
-    case Request.Goto(id, uri, pos) =>
-      GotoProvider.processGoto(uri, pos)(root) match {
+    case Request.Goto(id, name, pos) =>
+      GotoProvider.processGoto(name, pos)(root) match {
         case Some(location) => ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> location.toJSON)
-        case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
+        case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$name' at '$pos'.")
       }
 
-    case Request.Implementation(id, uri, pos) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root).map(_.toJSON))
+    case Request.Implementation(id, name, pos) =>
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ImplementationProvider.processImplementation(name, pos)(root).map(_.toJSON))
 
-    case Request.Rename(id, newName, uri, pos) =>
-      RenameProvider.processRename(newName, uri, pos)(root) match {
+    case Request.Rename(id, newName, name, pos) =>
+      RenameProvider.processRename(newName, name, pos)(root) match {
         case Some(rename) => ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> rename.toJSON)
         case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this rename.")
       }
 
-    case Request.DocumentSymbols(id, uri) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root).map(_.toJSON))
+    case Request.DocumentSymbols(id, name) =>
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processDocumentSymbols(name)(root).map(_.toJSON))
 
     case Request.WorkspaceSymbols(id, query) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root).map(_.toJSON))
 
-    case Request.Uses(id, uri, pos) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> FindReferencesProvider.findRefs(uri, pos)(root).map(_.toJSON))
+    case Request.Uses(id, name, pos) =>
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> FindReferencesProvider.findRefs(name, pos)(root).map(_.toJSON))
 
-    case Request.SemanticTokens(id, uri) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> SemanticTokensProvider.provideSemanticTokens(uri)(root)))
+    case Request.SemanticTokens(id, name) =>
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> SemanticTokensProvider.provideSemanticTokens(name)(root)))
 
-    case Request.Signature(id, uri, pos) =>
-      SignatureHelpProvider.provideSignatureHelp(uri, pos)(root, flix) match {
+    case Request.Signature(id, name, pos) =>
+      SignatureHelpProvider.provideSignatureHelp(name, pos)(root, flix) match {
         case Some(signature) => ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> signature.toJSON)
         case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this signature.")
       }
 
-    case Request.InlayHint(id, uri, range) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.getInlayHints(uri, range, currentErrors).map(_.toJSON))
+    case Request.InlayHint(id, name, range) =>
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.getInlayHints(name, range, currentErrors).map(_.toJSON))
 
     case Request.ShowAst(id) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("path" -> ShowAstProvider.showAst()(flix).toAbsolutePath.toString))
 
-    case Request.CodeAction(id, uri, range, _) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, currentErrors)(root, flix).map(_.toJSON))
+    case Request.CodeAction(id, name, range, _) =>
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(name, range, currentErrors)(root, flix).map(_.toJSON))
 
-    case Request.Formatting(id, uri, options) =>
-      val edits = FormattingProvider.formatDocument(uri, options)(flix).map(_.toJSON)
-      ("id" -> id) ~ ("uri" -> uri) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(edits))
+    case Request.Formatting(id, name, options) =>
+      val edits = FormattingProvider.formatDocument(name, options)(flix).map(_.toJSON)
+      ("id" -> id) ~ ("uri" -> ClientUri.fromSourceName(name)) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(edits))
 
-    case Request.FoldingRange(id, uri) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(FoldingRangeProvider.getFoldingRanges(uri)(root).map(_.toJSON)))
+    case Request.FoldingRange(id, name) =>
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(FoldingRangeProvider.getFoldingRanges(name)(root).map(_.toJSON)))
 
   }
 

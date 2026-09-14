@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.shared.SourceName
 
-import java.net.{URI, URISyntaxException}
-import java.nio.file.{InvalidPathException, Path}
+import java.net.URI
+import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -27,8 +27,8 @@ import java.util.concurrent.ConcurrentHashMap
   *
   * This is the only place that turns a client's URI into a source name, or a source name back
   * into a URI. A `file:` URI names a path, so that a document open in an editor and the same file
-  * read from disk are one source. A string without a scheme is a path too. Any other scheme, such
-  * as an editor's `untitled:` buffer, is kept as a URI.
+  * read from disk are one source. Any other URI, such as an editor's `untitled:` buffer, is kept
+  * as a URI.
   *
   * The client's own spelling of every name it has used is remembered, so that what goes back to
   * the client is exactly what came from it, whatever the platform makes of a path. A URI is
@@ -42,11 +42,15 @@ object ClientUri {
   private val spellings: ConcurrentHashMap[SourceName, String] = new ConcurrentHashMap()
 
   /**
-    * Returns the source name the client string `uri` denotes, or `None` if `uri` is malformed.
+    * Returns the source name the client URI `uri` denotes.
+    *
+    * A `file:` URI names a path when the platform can convert it, and stays a URI name when it
+    * cannot, e.g. a UNC name on a host without UNC. Any other URI, such as an editor's
+    * `untitled:` buffer, is a URI name.
     */
-  def toSourceName(uri: String): Option[SourceName] = {
+  def toSourceName(uri: URI): SourceName = {
     val name = parse(uri)
-    name.foreach(n => spellings.put(n, uri))
+    spellings.put(name, uri.toString)
     name
   }
 
@@ -70,31 +74,18 @@ object ClientUri {
   def fromLocation(loc: SourceLocation): String = fromSourceName(loc.source.sourceName)
 
   /**
-    * Parses the client string `uri` into a source name, without remembering it.
+    * Parses the client URI `uri` into a source name, without remembering it.
     */
-  private def parse(uri: String): Option[SourceName] = {
-    val parsed = try {
-      Some(new URI(uri))
-    } catch {
-      case _: URISyntaxException => None
-    }
-    parsed.flatMap { u =>
-      val scheme = u.getScheme
-      if (scheme == null) {
-        try {
-          Some(SourceName.PathName(Path.of(uri)))
-        } catch {
-          case _: InvalidPathException => None
-        }
-      } else if (scheme.equalsIgnoreCase("file")) {
-        try {
-          Some(SourceName.PathName(Path.of(u).normalize()))
-        } catch {
-          case _: IllegalArgumentException => None
-        }
-      } else {
-        Some(SourceName.UriName(u))
+  private def parse(uri: URI): SourceName = {
+    val scheme = uri.getScheme
+    if (scheme != null && scheme.equalsIgnoreCase("file")) {
+      try {
+        SourceName.PathName(Path.of(uri).normalize())
+      } catch {
+        case _: IllegalArgumentException => SourceName.UriName(uri)
       }
+    } else {
+      SourceName.UriName(uri)
     }
   }
 

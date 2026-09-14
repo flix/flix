@@ -42,9 +42,9 @@ object FindReferencesProvider {
     * If there is no such [[Symbol]] or Flix doesn't support "find references" for it then the request is invalid and the
     * response takes the form
     *
-    * `{'status': 'invalid_request', 'result': "Nothing found in <uri> at <pos>"}`
+    * `{'status': 'invalid_request', 'result': "Nothing found in <name> at <pos>"}`
     *
-    * The location of the cursor given by `uri` and the [[Position]] `pos` which resp. give the path to the file where
+    * The location of the cursor given by `name` and the [[Position]] `pos` which resp. give the path to the file where
     * the cursor is, and it's location within said file. Both should be provided by the LSP request.
     *
     * We assume a thin cursor, meaning there are two [[Position]] associated with it: the on the immediate left of
@@ -54,14 +54,14 @@ object FindReferencesProvider {
     * under the cursor, and we find the references for it. If there is such an occurrence under both of these
     * [[Position]]s, we prioritise the one under the right [[Position]].
     *
-    * @param uri  The URI of the file where the cursor is, provided by the LSP request.
-    * @param pos  The [[Position]] of the cursor within the file given by `uri`, provided by the LSP request.
+    * @param name  The URI of the file where the cursor is, provided by the LSP request.
+    * @param pos  The [[Position]] of the cursor within the file given by `name`, provided by the LSP request.
     * @param root The root AST node of the Flix project.
     * @return A Set of SourceLocations.
     */
-  def findRefs(uri: String, pos: Position)(implicit root: Root): Set[Location] = {
-    val left = searchLeftOfCursor(uri, pos).flatMap(getOccurs)
-    val right = searchRightOfCursor(uri, pos).flatMap(getOccurs)
+  def findRefs(name: SourceName, pos: Position)(implicit root: Root): Set[Location] = {
+    val left = searchLeftOfCursor(name, pos).flatMap(getOccurs)
+    val right = searchRightOfCursor(name, pos).flatMap(getOccurs)
 
     right.orElse(left)
       .map(_.filter(isInProject))
@@ -79,18 +79,18 @@ object FindReferencesProvider {
     * Note that the given [[Position]] `pos` that represents the cursors position is interpreted as the
     * [[Position]] to the immediate right of the cursor.
     *
-    * @param uri  The URI of the file where the thin cursor is.
+    * @param name  The URI of the file where the thin cursor is.
     * @param pos  The [[Position]] to the immediate right of the thin cursor.
     * @param root The root AST node of the Flix project.
     * @return The most specific AST node under the [[Position]] to the immediate left of the thin cursor,
     *         if there is one. Otherwise, [[None]].
     */
-  private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+  private def searchLeftOfCursor(name: SourceName, pos: Position)(implicit root: Root): Option[AnyRef] = {
     if (pos.character >= 2) {
       val left = Position(pos.line, pos.character - 1)
-      search(uri, left)
+      search(name, left)
     } else {
-      search(uri, pos)
+      search(name, pos)
     }
   }
 
@@ -101,29 +101,29 @@ object FindReferencesProvider {
     * Note that the given [[Position]] `pos` that represents the cursor's position is interpreted as the
     * [[Position]] to the immediate right of the cursor.
     *
-    * @param uri  The URI of the file where the thin cursor is.
+    * @param name  The URI of the file where the thin cursor is.
     * @param pos  The [[Position]] to the immediate right of the thin cursor.
     * @param root The root AST node of the Flix Project.
     * @return The most specific AST node under the [[Position]] to the immediate right of the thin cursor,
     *         if there is one. Otherwise, [[None]].
     */
-  private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = search(uri, pos)
+  private def searchRightOfCursor(name: SourceName, pos: Position)(implicit root: Root): Option[AnyRef] = search(name, pos)
 
   /**
-    * Returns the most specific AST node under the [[Position]] `pos` in the file given by `uri`.
+    * Returns the most specific AST node under the [[Position]] `pos` in the file given by `name`.
     * Returns [[None]] otherwise.
     *
     * Note that we filter out elements with synthetic [[SourceLocation]]s.
     *
-    * @param uri  The URI of the file where we're searching.
-    * @param pos  The [[Position]] where we're searching within the file given by `uri`.
+    * @param name  The URI of the file where we're searching.
+    * @param pos  The [[Position]] where we're searching within the file given by `name`.
     * @param root The root AST node of the Flix Project.
-    * @return The most specific AST node under the [[Position]] `pos` in the file given by `uri`,
+    * @return The most specific AST node under the [[Position]] `pos` in the file given by `name`,
     *         if there is one. Otherwise, [[None]].
     */
-  private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+  private def search(name: SourceName, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer()
-    Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
+    Visitor.visitRoot(root, consumer, InsideAcceptor(name, pos))
     consumer.getStack.find(isReal)
   }
 

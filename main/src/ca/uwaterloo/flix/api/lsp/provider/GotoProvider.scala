@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.JObject
@@ -30,9 +31,9 @@ object GotoProvider {
   /**
     * Processes a goto request.
     */
-  def processGoto(uri: String, pos: Position)(implicit root: Root): Option[LocationLink] = {
-    val gotoRight = searchRight(uri, pos).flatMap(goto)
-    val gotoLeft = searchLeft(uri, pos).flatMap(goto)
+  def processGoto(name: SourceName, pos: Position)(implicit root: Root): Option[LocationLink] = {
+    val gotoRight = searchRight(name, pos).flatMap(goto)
+    val gotoLeft = searchLeft(name, pos).flatMap(goto)
 
     gotoRight
       .orElse(gotoLeft)
@@ -46,13 +47,13 @@ object GotoProvider {
     * Note that the given [[Position]] `pos` of the cursor is interpreted as the [[Position]]
     * to the immediate right of the thin cursor.
     *
-    * @param uri  the URI of the file that the cursor is in.
+    * @param name  the URI of the file that the cursor is in.
     * @param pos  the [[Position]] to the immediate right of the thin cursor.
     * @param root the root AST node of the Flix program.
     * @return the most specific AST node under the space immediately right of the thin cursor
     *         if there is one. Otherwise, returns [[None]].
     */
-  private def searchRight(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = search(uri, pos)
+  private def searchRight(name: SourceName, pos: Position)(implicit root: Root): Option[AnyRef] = search(name, pos)
 
   /**
     * Returns the most specific AST node under the space immediately left of the thin cursor.
@@ -60,16 +61,16 @@ object GotoProvider {
     * Note that the given [[Position]] `pos` of the cursor is interpreted as the [[Position]]
     * to the immediate right of the thin cursor.
     *
-    * @param uri  URI of the file that the cursor is in.
+    * @param name  URI of the file that the cursor is in.
     * @param pos  [[Position]] to the immediate right of the thin cursor.
     * @param root Root AST node of the Flix Program.
     * @return the most specific AST node under the space immediately left of the thin cursor
     *         if there is one. Otherwise, returns [[None]].
     */
-  private def searchLeft(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+  private def searchLeft(name: SourceName, pos: Position)(implicit root: Root): Option[AnyRef] = {
     if (pos.character >= 2) {
       val left = Position(pos.line, pos.character - 1)
-      search(uri, left)
+      search(name, left)
     } else {
       None
     }
@@ -79,15 +80,15 @@ object GotoProvider {
     * Returns the most specific AST node under the [[Position]] `pos` if there is one.
     * Otherwise, returns [[None]].
     *
-    * @param uri  URI of the file that the [[Position]] `pos` is in.
+    * @param name  URI of the file that the [[Position]] `pos` is in.
     * @param pos  [[Position]] that we're searching under.
     * @param root Root AST node of the Flix program.
     * @return The most specific AST node under the [[Position]] `pos`
     *         if there is one. Otherwise, returns [[None]].
     */
-  private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+  private def search(name: SourceName, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer();
-    Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
+    Visitor.visitRoot(root, consumer, InsideAcceptor(name, pos))
     consumer.getStack.filter(isReal).headOption
   }
 

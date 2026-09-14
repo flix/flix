@@ -926,12 +926,6 @@ object Visitor {
     * @param loc the `SourceLocation` that want to know if `pos` is within.
     * @return `true` if `pos` in file at path `uri` is within `loc`. `false` otherwise.
     */
-  def inside(uri: String, pos: Position)(loc: SourceLocation): Boolean =
-    ClientUri.toSourceName(uri).exists(name => inside(name, pos)(loc))
-
-  /**
-    * Returns `true` if `pos`, in the source named `name`, is within `loc`.
-    */
   def inside(name: SourceName, pos: Position)(loc: SourceLocation): Boolean = {
     if (name != loc.source.sourceName) {
       return false

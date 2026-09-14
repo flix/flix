@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.provider.completion.{CompletionUtils, ExprContext}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
@@ -36,12 +37,12 @@ object LspUtil {
     *
     * So the stack actually contains a path from the leaf node that contains the given position to the root node, with the leaf node at the top of the stack.
     */
-  def getStack(uri: String, pos: Position)(implicit root: Root, flix: Flix): List[AnyRef] = {
+  def getStack(name: SourceName, pos: Position)(implicit root: Root, flix: Flix): List[AnyRef] = {
     val stack = StackConsumer()
 
     if (pos.character >= 2) {
       val leftPos = Position(pos.line, pos.character - 1)
-      Visitor.visitRoot(root, stack, InsideAcceptor(uri, leftPos))
+      Visitor.visitRoot(root, stack, InsideAcceptor(name, leftPos))
     }
 
     stack.getStack

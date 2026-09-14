@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.*
-import ca.uwaterloo.flix.language.ast.TypedAst.{EqualityConstraint, *}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.TypedAst.{EqualityConstraint, *}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, Type, TypeConstructor, TypedAst}
@@ -32,15 +32,7 @@ object SemanticTokensProvider {
     * Returns the semantic tokens for the given URI as SemanticToken objects.
     * Use this when you need direct access to the tokens (e.g., for highlighting).
     */
-  def getSemanticTokens(uri: String)(implicit root: Root): List[SemanticToken] = ClientUri.toSourceName(uri) match {
-    case None => Nil
-    case Some(name) => getSemanticTokens(name)
-  }
-
-  /**
-    * Returns all semantic tokens in the source named `name`.
-    */
-  private def getSemanticTokens(name: SourceName)(implicit root: Root): List[SemanticToken] = {
+  def getSemanticTokens(name: SourceName)(implicit root: Root): List[SemanticToken] = {
     //
     // This class uses iterators over lists to ensure fast append (!)
     //
@@ -133,10 +125,10 @@ object SemanticTokensProvider {
     val allTokens = (keywordModifierOrCommentTokens ++ traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ structTokens ++ typeAliasTokens ++ effectTokens).toList
 
     //
-    // We keep all tokens that are: (i) have the same source as `uri`, and (ii) come from real source locations.
+    // We keep all tokens that are: (i) have the same source as `name`, and (ii) come from real source locations.
     //
     // Note that the last criteria (automatically) excludes:
-    //   (a) tokens that come from entities inside `uri` but that originate from different uris, and
+    //   (a) tokens that come from entities inside `name` but that originate from different uris, and
     //   (b) tokens that come from synthetic (generated) source code.
     //
     val filteredTokens = allTokens.filter(t => include(name, t.loc) && !t.loc.isSynthetic)
@@ -151,8 +143,8 @@ object SemanticTokensProvider {
     * Processes a request for (full) semantic tokens.
     * Returns LSP-encoded format for the language server protocol.
     */
-  def provideSemanticTokens(uri: String)(implicit root: Root): List[Int] = {
-    encodeSemanticTokens(getSemanticTokens(uri))
+  def provideSemanticTokens(name: SourceName)(implicit root: Root): List[Int] = {
+    encodeSemanticTokens(getSemanticTokens(name))
   }
 
   /**

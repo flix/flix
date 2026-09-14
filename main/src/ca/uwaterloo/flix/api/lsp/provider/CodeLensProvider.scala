@@ -15,10 +15,10 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.api.lsp.ClientUri
 import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Range, ResponseStatus}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Spec}
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.collection.Nel
 import org.json4s.JsonAST.{JArray, JObject, JString}
@@ -29,10 +29,8 @@ object CodeLensProvider {
   /**
     * Processes a codelens request.
     */
-  def processCodeLens(uri: String)(implicit root: Root): List[CodeLens] = ClientUri.toSourceName(uri) match {
-    case None => Nil
-    case Some(name) => getRunCodeLenses(name) ::: getTestCodeLenses(name)
-  }
+  def processCodeLens(name: SourceName)(implicit root: Root): List[CodeLens] =
+    getRunCodeLenses(name) ::: getTestCodeLenses(name)
 
   /**
     * Returns code lenses for running entry points.
@@ -60,7 +58,7 @@ object CodeLensProvider {
   }
 
   /**
-    * Returns all entry points in the given `uri`.
+    * Returns all entry points in the given `name`.
     */
   private def getEntryPoints(name: SourceName)(implicit root: Root): List[Symbol.DefnSym] = root.defs.foldLeft(List.empty[Symbol.DefnSym]) {
     case (acc, (sym, defn)) if matchesSource(name, sym.loc) && isEntryPoint(defn.spec) => defn.sym :: acc
@@ -68,7 +66,7 @@ object CodeLensProvider {
   }
 
   /**
-    * Returns all tests in the given `uri`.
+    * Returns all tests in the given `name`.
     */
   private def getTests(name: SourceName)(implicit root: Root): List[Symbol.DefnSym] = root.defs.foldLeft(List.empty[Symbol.DefnSym]) {
     case (acc, (sym, defn)) if matchesSource(name, sym.loc) && isEntryPoint(defn.spec) && isTest(defn.spec) => defn.sym :: acc

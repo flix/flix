@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Acceptor, Consumer, DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Root}
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Constant, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
@@ -33,20 +34,20 @@ object HighlightProvider {
 
   /**
     * Handles an LSP highlight request by constructing an LSP highlight response for
-    * when the cursor is at `pos` in the file at `uri`.
+    * when the cursor is at `pos` in the file at `name`.
     *
     * Note that we assume a thin cursor so `pos` is interpreted as the character position
     * to the immediate right of the cursor
     *
     * If there is a [[Symbol]] or [[Name.Label]] under the cursor, every occurrence of
-    * it in the file at `uri` is collected and a [[DocumentHighlight]] is created for each.
+    * it in the file at `name` is collected and a [[DocumentHighlight]] is created for each.
     * These are then put in a [[JObject]] representing an LSP highlight response. It takes the form
     *
     * `{'status': 'success', 'message': [...]}` where `[...]` is a [[JArray]] containing each [[DocumentHighlight]].
     *
     * If there is no [[Symbol]] or [[Name.Label]] at `pos`, a [[JObject]] representing an LSP failure response is returned. It takes the form
     *
-    * `{'status': 'failure', 'message': "Nothing found in <uri> at <pos>`.
+    * `{'status': 'failure', 'message': "Nothing found in <name> at <pos>`.
     *
     * Since a thin cursor exists between character positions, it's associated with both
     * the [[Position]] to its immediate left and right. This means we need to consider what's under
@@ -56,15 +57,15 @@ object HighlightProvider {
     * Note that the [[Position]] `pos` given is interpreted as the [[Position]] to the
     * immediate right of the thin cursor.
     *
-    * @param uri  the URI of the file in question.
+    * @param name  the URI of the file in question.
     * @param pos  the [[Position]] of the cursor.
     * @param root the [[Root]] AST node of the Flix project.
     * @return A [[JObject]] representing an LSP highlight response. On success, contains [[DocumentHighlight]]
     *         for each occurrence of the symbol under the cursor.
     */
-  def processHighlight(uri: String, pos: Position)(implicit root: Root): Set[DocumentHighlight] = {
-    val highlightRight = searchRightOfCursor(uri, pos).flatMap(x => getOccurs(x, uri))
-    val highlightLeft = searchLeftOfCursor(uri, pos).flatMap(x => getOccurs(x, uri))
+  def processHighlight(name: SourceName, pos: Position)(implicit root: Root): Set[DocumentHighlight] = {
+    val highlightRight = searchRightOfCursor(name, pos).flatMap(x => getOccurs(x, name))
+    val highlightLeft = searchLeftOfCursor(name, pos).flatMap(x => getOccurs(x, name))
 
     highlightRight
       .orElse(highlightLeft)
@@ -88,16 +89,16 @@ object HighlightProvider {
     * where `|` is the cursor. Then `searchLeftOfCursor` would return the
     * most specific AST node `Var(y, ...)`
     *
-    * @param uri  the URI of the file in which the cursor is.
+    * @param name  the URI of the file in which the cursor is.
     * @param pos  the [[Position]] immediately right of the cursor.
     * @param root the [[Root]] AST node of the Flix project.
     * @return the most precise AST node under the [[Position]] immediately left
     *         of the cursor, if there is one. Otherwise, returns `None`.
     */
-  private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = pos match {
+  private def searchLeftOfCursor(name: SourceName, pos: Position)(implicit root: Root): Option[AnyRef] = pos match {
     case Position(line, character) if character >= 2 =>
       val leftOfCursor = Position(line, character - 1)
-      search(uri, leftOfCursor)
+      search(name, leftOfCursor)
     case _ => None
   }
 
@@ -115,14 +116,14 @@ object HighlightProvider {
     * where `|` is the cursor. Then `searchRightOfCursor` would return the most specific
     * AST node `Cst(Str("very important text"))`.
     *
-    * @param uri  the URI of the file in which the cursor is.
+    * @param name  the URI of the file in which the cursor is.
     * @param pos  the [[Position]] immediatately right of the cursor.
     * @param root the [[Root]] AST node of the Flix project.
     * @return the most precise AST node under the [[Position]] immediately right
     *         of the cursor, if there is one. Otherwise, returns `None`.
     */
-  private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
-    search(uri, pos)
+  private def searchRightOfCursor(name: SourceName, pos: Position)(implicit root: Root): Option[AnyRef] = {
+    search(name, pos)
   }
 
   /**
@@ -146,22 +147,22 @@ object HighlightProvider {
     * where `|` is the cursor. Then `search` would first search to the right and find nothing.
     * Then it would search to the left and find the most specific AST `Var(y)`.
     *
-    * @param uri  the URI of the file the cursor is in.
+    * @param name  the URI of the file the cursor is in.
     * @param pos  the [[Position]] immediately right of the thin cursor.
     * @param root the [[Root]] AST node of the Flix project.
     * @return the most precise AST under the cursor if there is one. Otherwise, returns `None`.
     */
-  private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+  private def search(name: SourceName, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val stackConsumer = StackConsumer()
-    Visitor.visitRoot(root, stackConsumer, InsideAcceptor(uri, pos))
+    Visitor.visitRoot(root, stackConsumer, InsideAcceptor(name, pos))
     stackConsumer
       .getStack
       .filter(isNotEmptyRecord)
-      .filter(ifDefThenInSym(uri, pos))
-      .filter(ifSigThenInSym(uri, pos))
-      .filter(ifOpThenInSym(uri, pos))
-      .filter(ifTraitThenInSym(uri, pos))
-      .filter(ifEnumThenInSym(uri, pos))
+      .filter(ifDefThenInSym(name, pos))
+      .filter(ifSigThenInSym(name, pos))
+      .filter(ifOpThenInSym(name, pos))
+      .filter(ifTraitThenInSym(name, pos))
+      .filter(ifEnumThenInSym(name, pos))
       .filter(isReal)
       .headOption
   }
@@ -222,28 +223,28 @@ object HighlightProvider {
     case _ => true
   }
 
-  private def ifEnumThenInSym(uri: String, pos: Position)(x: AnyRef): Boolean = x match {
-    case TypedAst.Enum(_, _, _, sym, _, _, _, _) if !Visitor.inside(uri, pos)(sym.loc) => false
+  private def ifEnumThenInSym(name: SourceName, pos: Position)(x: AnyRef): Boolean = x match {
+    case TypedAst.Enum(_, _, _, sym, _, _, _, _) if !Visitor.inside(name, pos)(sym.loc) => false
     case _ => true
   }
 
-  private def ifDefThenInSym(uri: String, pos: Position)(x: AnyRef): Boolean = x match {
-    case TypedAst.Def(sym, _, _, _) if !Visitor.inside(uri, pos)(sym.loc) => false
+  private def ifDefThenInSym(name: SourceName, pos: Position)(x: AnyRef): Boolean = x match {
+    case TypedAst.Def(sym, _, _, _) if !Visitor.inside(name, pos)(sym.loc) => false
     case _ => true
   }
 
-  private def ifSigThenInSym(uri: String, pos: Position)(x: AnyRef): Boolean = x match {
-    case TypedAst.Sig(sym, _, _, _) if !Visitor.inside(uri, pos)(sym.loc) => false
+  private def ifSigThenInSym(name: SourceName, pos: Position)(x: AnyRef): Boolean = x match {
+    case TypedAst.Sig(sym, _, _, _) if !Visitor.inside(name, pos)(sym.loc) => false
     case _ => true
   }
 
-  private def ifOpThenInSym(uri: String, pos: Position)(x: AnyRef): Boolean = x match {
-    case TypedAst.Op(sym, _, _) if !Visitor.inside(uri, pos)(sym.loc) => false
+  private def ifOpThenInSym(name: SourceName, pos: Position)(x: AnyRef): Boolean = x match {
+    case TypedAst.Op(sym, _, _) if !Visitor.inside(name, pos)(sym.loc) => false
     case _ => true
   }
 
-  private def ifTraitThenInSym(uri: String, pos: Position)(x: AnyRef): Boolean = x match {
-    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _) if !Visitor.inside(uri, pos)(sym.loc) => false
+  private def ifTraitThenInSym(name: SourceName, pos: Position)(x: AnyRef): Boolean = x match {
+    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _) if !Visitor.inside(name, pos)(sym.loc) => false
     case _ => true
   }
 
@@ -254,13 +255,13 @@ object HighlightProvider {
     * Otherwise, returns [[None]]:
     *
     * @param x    the object under the cursor.
-    * @param uri  the URI of the file in question.
+    * @param name  the URI of the file in question.
     * @param root the [[Root]] AST node of the Flix project.
     * @return [[Occurs]] containing all write and read occurrences of `x`, if it's a [[Symbol]] or [[Name.Label]].
     *         Otherwise, [[None]]
     */
-  private def getOccurs(x: AnyRef, uri: String)(implicit root: Root): Option[Occurs] = {
-    implicit val acceptor: Acceptor = FileAcceptor(uri)
+  private def getOccurs(x: AnyRef, name: SourceName)(implicit root: Root): Option[Occurs] = {
+    implicit val acceptor: Acceptor = FileAcceptor(name)
     x match {
       // Assoc Types
       case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(getAssocTypeSymOccurs(sym))
@@ -725,10 +726,10 @@ object HighlightProvider {
   }
 
   /**
-    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
+    * Returns a reply indicating that nothing was found at the `name` and `pos`.
     */
-  private def mkNotFound(uri: String, pos: Position): JObject = {
-    ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
+  private def mkNotFound(name: SourceName, pos: Position): JObject = {
+    ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$name' at '$pos'.")
   }
 
   /**

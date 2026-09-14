@@ -15,19 +15,15 @@
  */
 package ca.uwaterloo.flix.api.lsp.acceptors
 
-import ca.uwaterloo.flix.language.ast.shared.SourceName
-import ca.uwaterloo.flix.api.lsp.ClientUri
 import ca.uwaterloo.flix.api.lsp.Acceptor
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 
 /**
-  * Acceptor that accepts all AST nodes whose `SourceLocation` is within
-  * the file given by the path `uri`.
+  * Acceptor that accepts all AST nodes whose `SourceLocation` is within the source named `name`.
   *
-  * @param uri the path of the file that an AST node [[SourceLocation]] must be within to be accepted.
+  * @param name the name of the source that an AST node [[SourceLocation]] must be within to be accepted.
   */
-case class FileAcceptor(uri: String) extends Acceptor {
-  private val name: Option[SourceName] = ClientUri.toSourceName(uri)
-
-  def accept(loc: SourceLocation): Boolean = name.contains(loc.source.sourceName)
+case class FileAcceptor(name: SourceName) extends Acceptor {
+  def accept(loc: SourceLocation): Boolean = name == loc.source.sourceName
 }

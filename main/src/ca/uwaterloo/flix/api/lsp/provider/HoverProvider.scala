@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Hover, MarkupContent, MarkupKind, Position, Range, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.*
@@ -27,9 +28,9 @@ import ca.uwaterloo.flix.language.phase.unification.SetFormula
 
 object HoverProvider {
 
-  def processHover(uri: String, pos: Position)(implicit root: Root, flix: Flix): Option[Hover] = {
+  def processHover(name: SourceName, pos: Position)(implicit root: Root, flix: Flix): Option[Hover] = {
     val consumer = StackConsumer()
-    Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
+    Visitor.visitRoot(root, consumer, InsideAcceptor(name, pos))
 
     consumer.getStack.headOption.flatMap(hoverAny)
   }

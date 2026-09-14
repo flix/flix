@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.lsp.ClientUri
 import ca.uwaterloo.flix.api.lsp.{DocumentSymbol, Location, Range, SymbolKind, WorkspaceSymbol}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
 
 object SymbolProvider {
@@ -42,17 +43,15 @@ object SymbolProvider {
   }
 
   /**
-    * Returns all symbols that are inside the file pointed by uri.
+    * Returns all symbols that are inside the file pointed by name.
     */
-  def processDocumentSymbols(uri: String)(implicit root: Root): List[DocumentSymbol] = ClientUri.toSourceName(uri) match {
-    case None => Nil
-    case Some(name) =>
-      val enums = root.enums.values.collect { case enum0 if enum0.loc.source.sourceName == name => mkEnumDocumentSymbol(enum0) }
-      val defs = root.defs.values.collect { case d if d.sym.loc.source.sourceName == name => mkDefDocumentSymbol(d) }
-      val traits = root.traits.values.collect { case t if t.sym.loc.source.sourceName == name => mkTraitDocumentSymbol(t) }
-      val effs = root.effects.values.collect { case e if e.sym.loc.source.sourceName == name => mkEffectDocumentSymbol(e) }
-      val structs = root.structs.values.collect { case s if s.sym.loc.source.sourceName == name => mkStructDocumentSymbol(s) }
-      (traits ++ defs ++ enums ++ effs ++ structs).toList.filter(_.name.nonEmpty)
+  def processDocumentSymbols(name: SourceName)(implicit root: Root): List[DocumentSymbol] = {
+    val enums = root.enums.values.collect { case enum0 if enum0.loc.source.sourceName == name => mkEnumDocumentSymbol(enum0) }
+    val defs = root.defs.values.collect { case d if d.sym.loc.source.sourceName == name => mkDefDocumentSymbol(d) }
+    val traits = root.traits.values.collect { case t if t.sym.loc.source.sourceName == name => mkTraitDocumentSymbol(t) }
+    val effs = root.effects.values.collect { case e if e.sym.loc.source.sourceName == name => mkEffectDocumentSymbol(e) }
+    val structs = root.structs.values.collect { case s if s.sym.loc.source.sourceName == name => mkStructDocumentSymbol(s) }
+    (traits ++ defs ++ enums ++ effs ++ structs).toList.filter(_.name.nonEmpty)
   }
 
   /**

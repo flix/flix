@@ -16,11 +16,13 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.ClientUri
 import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Diagnostic, Position, Range, TextEdit, WorkspaceEdit}
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, EffSymOrRigidVar}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError}
@@ -34,7 +36,9 @@ import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError
   */
 object CodeActionProvider {
 
-  def getCodeActions(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[CodeAction] = {
+  def getCodeActions(name: SourceName, range: Range, errors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[CodeAction] = {
+    // The edits are keyed by the URI the client uses for the source.
+    val uri = ClientUri.fromSourceName(name)
     getActionsFromErrors(uri, range, errors)
   }
 
