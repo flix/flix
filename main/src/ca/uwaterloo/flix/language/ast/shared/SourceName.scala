@@ -33,10 +33,10 @@ sealed trait SourceName {
   /**
     * Returns the name as a path, if it denotes one.
     *
-    * A path name is returned as is. A `file:` URI is converted to a path. Any other URI, such as
-    * an editor's `untitled:` buffer, has no path, and neither has an entry of a package. Whether a
-    * URI denotes a path is decided by its scheme here, never by which file system providers the
-    * JVM happens to have installed.
+    * A path name is returned as is. An entry of a package is its path relative to the package
+    * root. A `file:` URI is converted to a path. Any other URI, such as an editor's `untitled:`
+    * buffer, has no path. Whether a URI denotes a path is decided by its scheme here, never by
+    * which file system providers the JVM happens to have installed.
     */
   def toPath: Option[Path] = this match {
     case SourceName.PathName(path) => Some(path)
@@ -50,7 +50,7 @@ sealed trait SourceName {
       } else {
         None
       }
-    case SourceName.PackageEntry(_, _) => None
+    case SourceName.PackageEntry(_, entry) => Some(Path.of(entry))
   }
 
   /**

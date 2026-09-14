@@ -292,7 +292,8 @@ object Main {
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              bootstrap.buildPkg()
+              val flix = bootstrap.mkFlix(options, formatter)
+              bootstrap.buildPkg(flix)
             }
           }
 

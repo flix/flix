@@ -1030,12 +1030,21 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   /**
     * Builds a flix package for the project.
+    *
+    * The project is checked first: a package is never built from sources that do not compile, so
+    * that its consumers never see errors its author could have fixed.
     */
-  def buildPkg()(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+  def buildPkg(flix: Flix)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
 
     // Check that there is a `flix.toml` file.
     if (!Files.exists(Bootstrap.getManifestFile(projectPath))) {
       return Result.Err(BootstrapError.FileError(s"Cannot create a Flix package without a `${formatter.red(FLIX_TOML)}` file."))
+    }
+
+    // Refuse to package sources that do not check.
+    check(flix) match {
+      case Ok(()) => // Continue
+      case Err(e) => return Result.Err(e)
     }
 
     // Create the artifact directory, if it does not exist.
@@ -1451,7 +1460,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Build artifacts
     out.println("Building project...")
-    buildPkg() match {
+    buildPkg(flix) match {
       case Ok(_) => // Continue
       case Err(e) => return Result.Err(e)
     }
