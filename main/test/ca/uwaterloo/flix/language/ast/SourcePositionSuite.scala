@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, Source}
 import org.scalatest.funsuite.AnyFunSuite
 
 class SourcePositionSuite extends AnyFunSuite {

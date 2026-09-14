@@ -32,15 +32,15 @@ object DependencyGraph {
   *
   * If the graph contains an edge `src -> dst` that means that if `src` changes then `dst` must be recomputed.
   */
-case class DependencyGraph(deps: MultiMap[Input, Input]) {
+case class DependencyGraph(deps: MultiMap[SourceName, SourceName]) {
 
   /**
-    * Returns all inputs that are transitively dirty (including `i`).
+    * Returns the names of all sources that are transitively dirty (including `n`).
     *
     * We compute a fixpoint such that if `x` is dirty, `x -> {y}` and `y -> {z}` then `{x, y, z}` are dirty.
     */
-  def dirty(i: Input): Set[Input] = {
-    var current = deps(i) + i
+  def dirty(n: SourceName): Set[SourceName] = {
+    var current = deps(n) + n
     var changed = true
     while (changed) {
       changed = false

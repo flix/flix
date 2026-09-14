@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Origin, SecurityContext, Source, SourceName}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.jvm.{ByteBuddyJavaTypeProvider, DependencyClassPath, ExternalJarLoader, JavaTypeProvider}
@@ -82,9 +82,16 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   private var closed: Boolean = false
 
   /**
-    * A sequence of inputs to be parsed into Flix ASTs.
+    * The registered sources, by name: the files of the packages, registered in the constructor, and
+    * the sources added by the caller. The sources of the bundled library are kept separately, see
+    * [[librarySources]].
     */
-  private val inputs = mutable.Map.empty[String, Input]
+  private val sources = mutable.Map.empty[SourceName, Source]
+
+  /**
+    * The sources of the bundled library, by library level. Built once per level, on first use.
+    */
+  private val librarySources = mutable.Map.empty[LibLevel, List[Source]]
 
   /**
     * The set of sources changed since last compilation.
@@ -183,8 +190,8 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     FileOps.isValidFpkgFile(p) match {
       case Result.Err(e: Throwable) => throw e
       case Result.Ok(()) =>
-        for (input <- getSourcesOfPkg(p, sctx)) {
-          inputs += s"${input.packagePath}:${input.virtualPath}" -> input
+        for (source <- getSourcesOfPkg(p, sctx)) {
+          sources += source.sourceName -> source
         }
     }
   }
@@ -262,7 +269,7 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
       case Result.Err(e: Throwable) => throw e
       case Result.Ok(()) =>
         val text = new String(Files.readAllBytes(p), defaultCharset)
-        addInput(p.normalize().toString, Input.RealFile(p, text, sctx))
+        register(Source.fromString(SourceName.PathName(p.normalize()), Origin.User, sctx, text))
         this
     }
   }
@@ -306,7 +313,7 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    remInput(p.normalize().toString)
+    unregister(SourceName.PathName(p.normalize()))
     this
   }
 
@@ -324,7 +331,7 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
       throw new IllegalArgumentException("'src' must be non-null.")
     if (sctx == null)
       throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(path.toString, Input.VirtualFile(path, src, sctx))
+    register(Source.fromString(SourceName.PathName(path), Origin.User, sctx, src))
     this
   }
 
@@ -336,7 +343,7 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   def remVirtualPath(path: Path): Flix = {
     if (path == null)
       throw new IllegalArgumentException("'path' must be non-null.")
-    remInput(path.toString)
+    unregister(SourceName.PathName(path))
     this
   }
 
@@ -354,7 +361,7 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
       throw new IllegalArgumentException("'src' must be non-null.")
     if (sctx == null)
       throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(uri.toString, Input.VirtualUri(uri, src, sctx))
+    register(Source.fromString(SourceName.UriName(uri), Origin.User, sctx, src))
     this
   }
 
@@ -366,48 +373,35 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   def remVirtualUri(uri: URI): Flix = {
     if (uri == null)
       throw new IllegalArgumentException("'uri' must be non-null.")
-    remInput(uri.toString)
+    unregister(SourceName.UriName(uri))
     this
   }
 
   /**
-    * Adds the given `input` under the given `name`, replacing any input already registered under it.
+    * Registers `source`, replacing any source already registered under its name.
     *
-    * The replaced input, not the new one, is marked as changed: it is the input the cached dependency
-    * graph knows, since the graph was computed from the inputs registered at the time.
-    *
-    * Re-adding an input with the same text and security context changes nothing and marks nothing.
+    * If a source is replaced, its name is marked as changed. Re-registering a source with the same
+    * origin, security context, and text changes nothing and marks nothing.
     */
-  private def addInput(name: String, input: Input): Unit = inputs.get(name) match {
+  private def register(source: Source): Unit = sources.get(source.sourceName) match {
     case None =>
-      inputs += name -> input
-    case Some(old) if isUnchanged(old, input) => // nop
-    case Some(old) =>
-      changeSet = changeSet.markChanged(old, cachedTyperAst.dependencyGraph)
-      inputs += name -> input
+      sources += source.sourceName -> source
+    case Some(old) if old.origin == source.origin && old.sctx == source.sctx && java.util.Arrays.equals(old.data, source.data) => // nop
+    case Some(_) =>
+      changeSet = changeSet.markChanged(source.sourceName, cachedTyperAst.dependencyGraph)
+      sources += source.sourceName -> source
   }
 
   /**
-    * Removes the input registered under the given `name`, if any.
+    * Unregisters the source with the given `name`, if any.
     *
-    * Note: Removing an input means to replace it by the empty string.
+    * Note: Unregistering a source means to replace its text by the empty string.
     */
-  private def remInput(name: String): Unit = inputs.get(name) match {
+  private def unregister(name: SourceName): Unit = sources.get(name) match {
     case None => // nop
     case Some(old) =>
-      changeSet = changeSet.markChanged(old, cachedTyperAst.dependencyGraph)
-      inputs += name -> Input.VirtualFile(parsePath(name), "", /* unused */ SecurityContext.Plain)
-  }
-
-  /**
-    * Returns `true` if `i1` and `i2` denote the same source with the same text and security context,
-    * i.e. if registering `i2` in place of `i1` would change nothing.
-    */
-  private def isUnchanged(i1: Input, i2: Input): Boolean = (i1, i2) match {
-    case (Input.RealFile(p1, t1, s1), Input.RealFile(p2, t2, s2)) => p1 == p2 && t1 == t2 && s1 == s2
-    case (Input.VirtualFile(p1, t1, s1), Input.VirtualFile(p2, t2, s2)) => p1 == p2 && t1 == t2 && s1 == s2
-    case (Input.VirtualUri(u1, t1, s1), Input.VirtualUri(u2, t2, s2)) => u1 == u2 && t1 == t2 && s1 == s2
-    case _ => false
+      changeSet = changeSet.markChanged(name, cachedTyperAst.dependencyGraph)
+      sources += name -> Source.empty(name, old.origin, old.sctx)
   }
 
   /**
@@ -480,11 +474,10 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
       AstPrinter.resetPhaseFile()
     }
 
-    // We mark all inputs that contains compilation errors as dirty.
+    // We mark all sources that contain compilation errors as dirty.
     // Hence if a file contains an error it will be recompiled -- giving it a chance to disappear.
     for (e <- cachedErrors) {
-      val i = e.loc.source.input
-      changeSet = changeSet.markChanged(i, cachedTyperAst.dependencyGraph)
+      changeSet = changeSet.markChanged(e.loc.source.sourceName, cachedTyperAst.dependencyGraph)
     }
 
     // The default entry point
@@ -493,10 +486,9 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     // The global collection of errors
     val errors = mutable.ArrayBuffer.empty[CompilationMessage]
 
-    val (afterReader, readerErrors) = Reader.run(getInputs)
-    errors ++= readerErrors
+    val readRoot = ReadAst.Root(getSources.map(src => src -> ()).toMap)
 
-    val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
+    val (afterLexer, lexerErrors) = Lexer.run(readRoot, cachedLexerTokens, changeSet)
     errors ++= lexerErrors
     if (flix.options.xverify) {
       TokenVerifier.verify(afterLexer)
@@ -505,7 +497,7 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
     errors ++= parserErrors
 
-    val (weederResult, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
+    val (weederResult, weederErrors) = Weeder2.run(readRoot, entryPoint, afterParser, cachedWeederAst, changeSet)
     errors ++= weederErrors
 
     val result = weederResult match {
@@ -785,34 +777,26 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   }
 
   /**
-    * Parses the given `name` into a Path.
-    * If `name` is a file:// URI, it is parsed as a URI; otherwise it is parsed directly.
+    * Returns the sources to compile: the registered sources followed by the sources of the bundled
+    * library selected by `options.lib`.
     */
-  private def parsePath(name: String): Path = {
-    if (name.startsWith("file://")) {
-      java.nio.file.Paths.get(new java.net.URI(name))
-    } else {
-      Path.of(name)
-    }
-  }
+  private def getSources: List[Source] = sources.values.toList ::: getLibrarySources(options.lib)
 
   /**
-    * Returns a list of inputs constructed from the strings and paths passed to Flix.
+    * Returns the sources of the bundled library at the given `level`, building them on first use.
     */
-  private def getInputs: List[Input] = {
-    val lib = options.lib match {
-      case LibLevel.Nix => Nil
-      case LibLevel.Min => getLibraryInputs(Library.CoreLibrary)
-      case LibLevel.All => getLibraryInputs(Library.CoreLibrary ++ Library.StandardLibrary)
-    }
-    inputs.values.toList ::: lib
-  }
+  private def getLibrarySources(level: LibLevel): List[Source] = librarySources.getOrElseUpdate(level, level match {
+    case LibLevel.Nix => Nil
+    case LibLevel.Min => mkLibrarySources(Library.CoreLibrary)
+    case LibLevel.All => mkLibrarySources(Library.CoreLibrary ++ Library.StandardLibrary)
+  })
 
   /**
-    * Returns the inputs for the given list of (path, text) pairs.
+    * Returns the library sources for the given list of (virtual path, text) pairs.
     */
-  private def getLibraryInputs(l: List[(String, String)]): List[Input] = l.foldLeft(List.empty[Input]) {
-    case (xs, (virtualPath, text)) => Input.VirtualFile(Path.of(virtualPath), text, SecurityContext.Unrestricted) :: xs
+  private def mkLibrarySources(l: List[(String, String)]): List[Source] = l.foldLeft(List.empty[Source]) {
+    case (xs, (virtualPath, text)) =>
+      Source.fromString(SourceName.PathName(Path.of(virtualPath)), Origin.Library, SecurityContext.Unrestricted, text) :: xs
   }
 
   /**
@@ -832,18 +816,17 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   /**
     * Returns the `.flix` source files inside the package at `p`, with the security context `sctx`.
     */
-  private def getSourcesOfPkg(p: Path, sctx: SecurityContext): List[Input.FileInPackage] = {
+  private def getSourcesOfPkg(p: Path, sctx: SecurityContext): List[Source] = {
     Using(new ZipFile(p.toFile)) { zip =>
-      val result = mutable.ArrayBuffer.empty[Input.FileInPackage]
+      val result = mutable.ArrayBuffer.empty[Source]
       val iterator = zip.entries()
       while (iterator.hasMoreElements) {
         val entry = iterator.nextElement()
         val name = entry.getName
         if (name.endsWith(".flix")) {
-          val virtualPath = p.getFileName.toString + ":" + name
           val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
           val text = new String(bytes, defaultCharset)
-          result += Input.FileInPackage(p, virtualPath, text, sctx)
+          result += Source.fromString(SourceName.PackageEntry(p, name), Origin.Package, sctx, text)
         }
       }
       result.toList
