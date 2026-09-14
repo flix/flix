@@ -196,7 +196,7 @@ object Stat {
 
   /** Returns `true` if the given source is a file on disk. */
   private def isRealFile(src: Source): Boolean = src.input match {
-    case Input.RealFile(_, _) => true
+    case Input.RealFile(_, _, _) => true
     case _ => false
   }
 

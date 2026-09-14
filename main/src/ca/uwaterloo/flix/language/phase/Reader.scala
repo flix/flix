@@ -23,11 +23,13 @@ import ca.uwaterloo.flix.language.ast.{ReadAst, SourceLocation}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.nio.file.Files
 import scala.collection.mutable
 
 /**
-  * A phase to read inputs into memory.
+  * A phase to turn inputs into sources.
+  *
+  * The text of every input is already in memory: it is read when the input is added to the
+  * compiler. This phase performs no I/O.
   */
 object Reader {
 
@@ -40,10 +42,8 @@ object Reader {
       val result = mutable.Map.empty[Source, Unit]
       for (input <- inputs) {
         input match {
-          case Input.RealFile(path, _) =>
-            val bytes = Files.readAllBytes(path)
-            val str = new String(bytes, flix.defaultCharset)
-            val src = Source.fromString(input, str)
+          case Input.RealFile(_, text, _) =>
+            val src = Source.fromString(input, text)
             result += (src -> ())
 
           case Input.VirtualFile(_, text, _) =>

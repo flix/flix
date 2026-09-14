@@ -218,7 +218,7 @@ object Namer {
         }.resolve(qname.ident.name + ".flix")
 
         val optPath = loc.source.input match {
-          case Input.RealFile(realPath, _)  => Some(realPath)
+          case Input.RealFile(realPath, _, _)  => Some(realPath)
           case Input.VirtualFile(virtualPath, _, _) => Some(virtualPath)
           case Input.VirtualUri(virtualUri, _, _) => try {
             Some(Path.of(virtualUri))

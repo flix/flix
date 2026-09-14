@@ -93,7 +93,7 @@ object EffectLock {
 
   /** Returns `true` if `input` is in the source project. */
   private def isFromLocalProject(input: Input): Boolean = input match {
-    case Input.RealFile(_, _) => true
+    case Input.RealFile(_, _, _) => true
     case Input.VirtualFile(_, _, _) => true
     case Input.VirtualUri(_, _, _) => true
     case Input.FileInPackage(_, _, _, _) => false
@@ -102,7 +102,7 @@ object EffectLock {
 
   /** Returns `true` if `input` is in a library. */
   private def isLibraryFunction(input: Input): Boolean = input match {
-    case Input.RealFile(_, _) => false
+    case Input.RealFile(_, _, _) => false
     case Input.VirtualFile(_, _, _) => false
     case Input.VirtualUri(_, _, _) => false
     case Input.FileInPackage(_, _, _, _) => true
