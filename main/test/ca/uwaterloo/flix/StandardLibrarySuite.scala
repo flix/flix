@@ -43,7 +43,7 @@ class StandardLibrarySuite extends AnyFunSuite {
     val paths = FileOps.getFlixFilesIn(Paths.get(Path), 1)
     for (p <- paths) {
       implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-      flix.addFile(p)
+      flix.addFile(p, sctx)
     }
 
     // Compile the program with all test suites.

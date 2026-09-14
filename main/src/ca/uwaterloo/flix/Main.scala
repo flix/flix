@@ -175,7 +175,7 @@ object Main {
           featureNotSupportedInNativeImage()
 
           // partition the given files by extension.
-          implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+          val sctx: SecurityContext = SecurityContext.Unrestricted
           val flixFiles = mutable.ArrayBuffer.empty[Path]
           val pkgFiles = mutable.ArrayBuffer.empty[(Path, SecurityContext)]
           val jarFiles = mutable.ArrayBuffer.empty[Path]
@@ -195,7 +195,7 @@ object Main {
           val flix = new Flix(pkgs = pkgFiles.toList, jars = jarFiles.toList)
           flix.setOptions(options)
           for (p <- flixFiles) {
-            flix.addFile(p)
+            flix.addFile(p, sctx)
           }
 
           flix.setFormatter(formatter)
@@ -814,10 +814,10 @@ object Main {
   private def mkFlixWithFiles(files: Seq[File], options: Options)(implicit formatter: Formatter): Flix = {
     val flix = new Flix().setFormatter(formatter)
     flix.setOptions(options)
-    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+    val sctx: SecurityContext = SecurityContext.Unrestricted
     for (file <- files) {
       if (file.getName.endsWith(".flix")) {
-        flix.addFile(file.toPath)
+        flix.addFile(file.toPath, sctx)
       } else {
         Console.println(s"Unrecognized file: '${file.getName}'. Only .flix files are supported.")
         System.exit(1)

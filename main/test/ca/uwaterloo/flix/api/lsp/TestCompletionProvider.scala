@@ -638,7 +638,7 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def compile(program: String): (Root, List[CompilationMessage]) = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    Flix.addVirtualPath(CompilerConstants.VirtualTestFile, program)
+    Flix.addSource(CompilerConstants.VirtualTestFile, program, sctx)
     Flix.check() match {
       case (Some(root), errors) => (root, errors)
       case (None, _) => fail("Compilation failed: a root is expected.")
@@ -654,7 +654,7 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def compileWithSuccess(program: String): Root = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    Flix.addVirtualPath(CompilerConstants.VirtualTestFile, program)
+    Flix.addSource(CompilerConstants.VirtualTestFile, program, sctx)
     Flix.check() match {
       case (Some(root), Nil) => root
       case (optRoot, errors) =>

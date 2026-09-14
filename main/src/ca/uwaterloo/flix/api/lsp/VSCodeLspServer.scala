@@ -213,7 +213,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     */
   private def addUri(uri: String, src: String): Unit = {
     val u = new URI(uri)
-    flix.addVirtualUri(u, src)(SecurityContext.Unrestricted)
+    flix.addSource(u, src, SecurityContext.Unrestricted)
     sources += (u -> src)
   }
 
@@ -222,7 +222,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     */
   private def remUri(uri: String): Unit = {
     val u = new URI(uri)
-    flix.remVirtualUri(u)
+    flix.remSource(u)
     sources -= u
   }
 
@@ -232,7 +232,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   private def mkFlix(): Flix = {
     val flix = new Flix(jars = jars.toList).setFormatter(NoFormatter).setOptions(o)
     for ((uri, src) <- sources) {
-      flix.addVirtualUri(uri, src)(SecurityContext.Unrestricted)
+      flix.addSource(uri, src, SecurityContext.Unrestricted)
     }
     flix
   }

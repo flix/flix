@@ -251,7 +251,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         val name = "$" + fragments.length
 
         // Add the source code fragment to Flix.
-        flix.addVirtualPath(Path.of(name), s)(SecurityContext.Unrestricted)
+        flix.addSource(Path.of(name), s, SecurityContext.Unrestricted)
 
         // And try to check it! (No code generation is needed for a declaration.)
         check(progress = false) match {
@@ -261,7 +261,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
           case Result.Err(_) =>
             // Check failed. Ignore the last fragment.
             fragments.pop()
-            flix.remVirtualPath(Path.of(name))
+            flix.remSource(Path.of(name))
             w.println("Error: Declaration ignored due to previous error(s).")
         }
 
@@ -283,10 +283,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
              |checked_ecast(())
              |""".stripMargin
         }
-        flix.addVirtualPath(CompilerConstants.VirtualShellFile, src)(SecurityContext.Unrestricted)
+        flix.addSource(CompilerConstants.VirtualShellFile, src, SecurityContext.Unrestricted)
         run(main)
         // Remove immediately so it doesn't confuse subsequent compilations (e.g. reloads or declarations)
-        flix.remVirtualPath(CompilerConstants.VirtualShellFile)
+        flix.remSource(CompilerConstants.VirtualShellFile)
         flix.setOptions(flix.options.copy(entryPoint = None))
 
       case Category.Unknown =>
@@ -330,7 +330,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       flix.close()
       flix = bootstrap.mkFlix(options, AnsiTerminalFormatter)
       for ((fragment, i) <- fragments.reverse.zipWithIndex) {
-        flix.addVirtualPath(Path.of("$" + (i + 1)), fragment)(SecurityContext.Unrestricted)
+        flix.addSource(Path.of("$" + (i + 1)), fragment, SecurityContext.Unrestricted)
       }
     }
   }
