@@ -365,4 +365,24 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
     val (_, errors) = flix.check()
     assert(errors.isEmpty)
   }
+
+  test("Incremental.DependencyGraph.SurvivesUnchangedCheck") {
+    // The dependency graph must survive a check in which nothing changed, which a language server
+    // performs constantly, so that a later change to a source still recompiles its dependents.
+    val (optRoot, errors) = flix.check()
+    assert(errors.isEmpty)
+    val dg = optRoot.get.dependencyGraph
+    assert(dg.dirty(SourceName.PathName(FileA)).contains(SourceName.PathName(FileB)))
+  }
+
+  test("Incremental.RemSource.AfterUnchangedCheck") {
+    // Removing a source after a check in which nothing changed must still recompile its dependents.
+    // The typed body of `main` in FileB must hold the resolution error, not a stale use of `f`.
+    flix.check()
+    flix.remSource(FileA)
+    val (optRoot, errors) = flix.check()
+    expectError[ResolutionError.UndefinedName]((optRoot, errors))
+    val main = optRoot.get.defs.collectFirst { case (sym, defn) if sym.text == "main" => defn }.get
+    assert(main.exp.toString.contains("UndefinedName"))
+  }
 }
