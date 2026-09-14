@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.ast.shared
 
 import java.net.URI
-import java.nio.file.{FileSystemNotFoundException, Path}
+import java.nio.file.Path
 
 /**
   * The name of a source. Two sources with the same name are the same source.
@@ -33,17 +33,23 @@ sealed trait SourceName {
   /**
     * Returns the name as a path, if it denotes one.
     *
-    * A path name is returned as is. A `file:` URI is converted to a path. Any other URI, and
-    * any entry of a package, has no path.
+    * A path name is returned as is. A `file:` URI is converted to a path. Any other URI, such as
+    * an editor's `untitled:` buffer, has no path, and neither has an entry of a package. Whether a
+    * URI denotes a path is decided by its scheme here, never by which file system providers the
+    * JVM happens to have installed.
     */
   def toPath: Option[Path] = this match {
     case SourceName.PathName(path) => Some(path)
-    case SourceName.UriName(uri) => try {
-      Some(Path.of(uri))
-    } catch {
-      case _: IllegalArgumentException => None
-      case _: FileSystemNotFoundException => None
-    }
+    case SourceName.UriName(uri) =>
+      if (uri.getScheme != null && uri.getScheme.equalsIgnoreCase("file")) {
+        try {
+          Some(Path.of(uri))
+        } catch {
+          case _: IllegalArgumentException => None // A malformed file URI, e.g. one with an authority.
+        }
+      } else {
+        None
+      }
     case SourceName.PackageEntry(_, _) => None
   }
 
