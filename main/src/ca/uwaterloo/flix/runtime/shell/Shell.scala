@@ -176,7 +176,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.BuildClasses => execBootstrap(bootstrap.buildClasses(flix))
       case Command.BuildJar => execBootstrap(bootstrap.buildJar(flix))
       case Command.BuildFatJar => execBootstrap(bootstrap.buildFatJar(flix))
-      case Command.BuildPkg => execBootstrap(bootstrap.buildPkg())
+      case Command.BuildPkg => execBootstrap(bootstrap.buildPkg(flix))
       case Command.Release => execBootstrap(bootstrap.release(flix))
       case Command.Check => execBootstrap(bootstrap.check(flix))
       case Command.Doc => execBootstrap(bootstrap.doc(flix))
