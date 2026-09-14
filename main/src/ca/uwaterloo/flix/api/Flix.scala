@@ -393,13 +393,15 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   /**
     * Unregisters the source with the given `name`, if any.
     *
-    * Note: Unregistering a source means to replace its text by the empty string.
+    * The name is marked as changed, so that everything that depended on the source is recompiled,
+    * and the source is forgotten. The caches of the incremental phases drop it at the next
+    * compilation, since they keep only entries that are still present.
     */
   private def unregister(name: SourceName): Unit = sources.get(name) match {
     case None => // nop
-    case Some(old) =>
+    case Some(_) =>
       changeSet = changeSet.markChanged(name, cachedTyperAst.dependencyGraph)
-      sources += name -> Source.empty(name, old.origin, old.sctx)
+      sources -= name
   }
 
   /**

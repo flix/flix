@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, SourceName}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.TypeError.UnexpectedArg
 import org.scalatest.BeforeAndAfter
@@ -347,5 +347,22 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
 
     flix.remFile(unnormalized)
     expectError[ResolutionError.UndefinedName](flix.check())
+  }
+
+  test("Incremental.RemSource.Forgotten") {
+    // A removed source is forgotten, not kept as an empty source.
+    flix.remSource(FileH)
+    val (optRoot, errors) = flix.check()
+    assert(errors.isEmpty)
+    assert(!optRoot.get.sources.keys.exists(_.sourceName == SourceName.PathName(FileH)))
+  }
+
+  test("Incremental.RemSource.Dependents") {
+    // Removing a source recompiles its dependents, and adding it back repairs them.
+    flix.remSource(FileA)
+    expectError[ResolutionError.UndefinedName](flix.check())
+    flix.addSource(FileA, "pub def f(x: Bool): Bool = not x", sctx)
+    val (_, errors) = flix.check()
+    assert(errors.isEmpty)
   }
 }
