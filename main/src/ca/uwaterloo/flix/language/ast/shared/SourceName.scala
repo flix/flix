@@ -34,22 +34,13 @@ sealed trait SourceName {
     * Returns the name as a path, if it denotes one.
     *
     * A path name is returned as is. An entry of a package is its path relative to the package
-    * root. A `file:` URI is converted to a path. Any other URI, such as an editor's `untitled:`
-    * buffer, has no path. Whether a URI denotes a path is decided by its scheme here, never by
-    * which file system providers the JVM happens to have installed.
+    * root. A URI name never denotes a path: a language server registers a document that is a file
+    * under its path, so a URI name only ever names a document that is not a file, such as an
+    * editor's `untitled:` buffer.
     */
   def toPath: Option[Path] = this match {
     case SourceName.PathName(path) => Some(path)
-    case SourceName.UriName(uri) =>
-      if (uri.getScheme != null && uri.getScheme.equalsIgnoreCase("file")) {
-        try {
-          Some(Path.of(uri))
-        } catch {
-          case _: IllegalArgumentException => None // A malformed file URI, e.g. one with an authority.
-        }
-      } else {
-        None
-      }
+    case SourceName.UriName(_) => None
     case SourceName.PackageEntry(_, entry) => Some(Path.of(entry))
   }
 
@@ -78,7 +69,8 @@ object SourceName {
   }
 
   /**
-    * A name that is a URI, as used by language clients.
+    * A name that is a URI: a document of a language client that is not a file, such as an editor's
+    * `untitled:` buffer. A file open in an editor is named by its path.
     */
   case class UriName(uri: URI) extends SourceName {
     override val hashCode: Int = uri.hashCode()

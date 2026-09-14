@@ -131,8 +131,10 @@ object FormatterLsp {
     */
   private def findTreeBasedOnUri(root: SyntaxTree.Root, uri: String): Option[SyntaxTree.Tree] = {
     // TODO: This is a temporary solution. We need a better way to map URIs to syntax trees.
-    root.units.find {
-      case (path, _) => path.toString == uri
+    ClientUri.toSourceName(uri).flatMap { name =>
+      root.units.find {
+        case (source, _) => source.sourceName == name
+      }
     }.map {
       case (_, tree) => tree
     }

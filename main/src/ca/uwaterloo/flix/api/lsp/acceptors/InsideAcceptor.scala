@@ -15,8 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp.acceptors
 
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.api.lsp.Visitor.inside
-import ca.uwaterloo.flix.api.lsp.{Acceptor, Position}
+import ca.uwaterloo.flix.api.lsp.{Acceptor, ClientUri, Position}
 import ca.uwaterloo.flix.language.ast.SourceLocation
 
 /**
@@ -29,5 +30,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
   * @param pos the [[Position]] that must be within the AST node's [[SourceLocation]] for the node to be accepted.
   */
 case class InsideAcceptor(uri: String, pos: Position) extends Acceptor {
-  def accept(loc: SourceLocation): Boolean = inside(uri, pos)(loc)
+  private val name: Option[SourceName] = ClientUri.toSourceName(uri)
+
+  def accept(loc: SourceLocation): Boolean = name.exists(n => inside(n, pos)(loc))
 }

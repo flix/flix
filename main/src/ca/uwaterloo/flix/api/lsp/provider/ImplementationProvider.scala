@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
+import ca.uwaterloo.flix.language.ast.shared.SourceName
+import ca.uwaterloo.flix.api.lsp.ClientUri
 import ca.uwaterloo.flix.api.lsp.{LocationLink, Position}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -42,8 +44,16 @@ object ImplementationProvider {
     * Returns the trait symbol located at the given position as a singleton iterable.
     * Returns an empty iterable if there is no such trait symbol.
     */
-  private def traitAt(uri: String, p: Position)(implicit root: Root): Iterable[Symbol.TraitSym] = {
-    root.instances.keys.filter(traitSym => traitSym.loc.source.name == uri
+  private def traitAt(uri: String, p: Position)(implicit root: Root): Iterable[Symbol.TraitSym] = ClientUri.toSourceName(uri) match {
+    case None => Nil
+    case Some(name) => traitAt(name, p)
+  }
+
+  /**
+    * Returns the trait symbol in the source named `name` located at the given position, if any.
+    */
+  private def traitAt(name: SourceName, p: Position)(implicit root: Root): Iterable[Symbol.TraitSym] = {
+    root.instances.keys.filter(traitSym => traitSym.loc.source.sourceName == name
       && (traitSym.loc.startLine < p.line
       || (traitSym.loc.startLine == p.line && traitSym.loc.startCol <= p.character))
       && (traitSym.loc.endLine > p.line

@@ -15,30 +15,64 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.shared.SourceName
 
 import java.net.{URI, URISyntaxException}
 import java.nio.file.{InvalidPathException, Path}
-import scala.collection.mutable
+import java.util.concurrent.ConcurrentHashMap
 
 /**
   * The conversion between the URIs a language client uses and the names the compiler uses.
   *
-  * Not yet used to register or match sources: the language servers still work on the client's
-  * strings. It runs in the shadow of every registration and every request instead, to check on
-  * real client input that the conversion round-trips before the servers are switched over to it.
-  * See [[shadow]].
+  * This is the only place that turns a client's URI into a source name, or a source name back
+  * into a URI. A `file:` URI names a path, so that a document open in an editor and the same file
+  * read from disk are one source. A string without a scheme is a path too. Any other scheme, such
+  * as an editor's `untitled:` buffer, is kept as a URI.
+  *
+  * The client's own spelling of every name it has used is remembered, so that what goes back to
+  * the client is exactly what came from it, whatever the platform makes of a path. A URI is
+  * synthesized only for a source the client never named, such as a file of the library.
   */
 object ClientUri {
 
   /**
+    * The client's spelling of each name it has used, most recent first.
+    */
+  private val spellings: ConcurrentHashMap[SourceName, String] = new ConcurrentHashMap()
+
+  /**
     * Returns the source name the client string `uri` denotes, or `None` if `uri` is malformed.
-    *
-    * A `file:` URI names a path, so that a document open in an editor and the same file added
-    * from disk are the same source. A string without a scheme is a path too. Any other scheme,
-    * such as an editor's `untitled:` buffer, is kept as a URI.
     */
   def toSourceName(uri: String): Option[SourceName] = {
+    val name = parse(uri)
+    name.foreach(n => spellings.put(n, uri))
+    name
+  }
+
+  /**
+    * Returns the string the client uses for the source named `name`: its own spelling if it has
+    * ever used one, otherwise a `file:` URI for an absolute path, the path itself for a relative
+    * path, which only the compiler's own sources have, and the text a URI name was parsed from.
+    */
+  def fromSourceName(name: SourceName): String = {
+    val spelling = spellings.get(name)
+    if (spelling != null) {
+      spelling
+    } else {
+      synthesize(name)
+    }
+  }
+
+  /**
+    * Returns the string the client uses for the source of `loc`.
+    */
+  def fromLocation(loc: SourceLocation): String = fromSourceName(loc.source.sourceName)
+
+  /**
+    * Parses the client string `uri` into a source name, without remembering it.
+    */
+  private def parse(uri: String): Option[SourceName] = {
     val parsed = try {
       Some(new URI(uri))
     } catch {
@@ -54,7 +88,7 @@ object ClientUri {
         }
       } else if (scheme.equalsIgnoreCase("file")) {
         try {
-          Some(SourceName.PathName(Path.of(u)))
+          Some(SourceName.PathName(Path.of(u).normalize()))
         } catch {
           case _: IllegalArgumentException => None
         }
@@ -65,56 +99,12 @@ object ClientUri {
   }
 
   /**
-    * Returns the string the client uses for the source named `name`.
-    *
-    * An absolute path is sent as a `file:` URI. A relative path, which only the compiler's own
-    * sources have, is sent as is. A URI name is sent as the text it was parsed from, so a client's
-    * own URI round-trips unchanged.
+    * Returns a string for a name the client has never spelled.
     */
-  def fromSourceName(name: SourceName): String = name match {
+  private def synthesize(name: SourceName): String = name match {
     case SourceName.PathName(path) => if (path.isAbsolute) path.toUri.toString else path.toString
     case SourceName.UriName(uri) => uri.toString
     case SourceName.PackageEntry(_, _) => name.toString
-  }
-
-  /**
-    * The distinct client strings that did not survive the round trip through [[toSourceName]] and
-    * [[fromSourceName]], each with what the round trip produced, or `None` if the string did not
-    * parse. In the order they were first seen.
-    */
-  private val mismatches: mutable.LinkedHashMap[String, Option[String]] = mutable.LinkedHashMap.empty
-
-  /**
-    * Returns the mismatches recorded by [[shadow]] so far.
-    */
-  def shadowMismatches: List[(String, Option[String])] = synchronized {
-    mismatches.toList
-  }
-
-  /**
-    * Runs the client string `uri` through the round trip and, if it does not come back unchanged,
-    * records it once on stderr and in [[shadowMismatches]].
-    *
-    * Never throws and never changes what the caller does with `uri`.
-    */
-  def shadow(uri: String): Unit = {
-    val roundTrip = toSourceName(uri).map(fromSourceName)
-    if (!roundTrip.contains(uri)) {
-      val fresh = synchronized {
-        if (mismatches.contains(uri)) {
-          false
-        } else {
-          mismatches.put(uri, roundTrip)
-          true
-        }
-      }
-      if (fresh) {
-        roundTrip match {
-          case None => System.err.println(s"[flix-lsp] shadow: the URI '$uri' does not parse as a source name.")
-          case Some(other) => System.err.println(s"[flix-lsp] shadow: the URI '$uri' round-trips to '$other'.")
-        }
-      }
-    }
   }
 
 }

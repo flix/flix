@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp.acceptors
 
+import ca.uwaterloo.flix.language.ast.shared.SourceName
+import ca.uwaterloo.flix.api.lsp.ClientUri
 import ca.uwaterloo.flix.api.lsp.Acceptor
 import ca.uwaterloo.flix.language.ast.SourceLocation
 
@@ -25,5 +27,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
   * @param uri the path of the file that an AST node [[SourceLocation]] must be within to be accepted.
   */
 case class FileAcceptor(uri: String) extends Acceptor {
-  def accept(loc: SourceLocation): Boolean = uri == loc.source.name
+  private val name: Option[SourceName] = ClientUri.toSourceName(uri)
+
+  def accept(loc: SourceLocation): Boolean = name.contains(loc.source.sourceName)
 }

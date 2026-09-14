@@ -457,9 +457,7 @@ object Request {
     */
   private def parseUri(v: JValue): Result[String, String] = {
     v \ "uri" match {
-      case JString(s) =>
-        ClientUri.shadow(s)
-        Ok(s)
+      case JString(s) => Ok(s)
       case s => Err(s"Unexpected uri: '$s'.")
     }
   }

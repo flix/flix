@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.{CompilerLog, CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, SourceName}
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
@@ -75,9 +75,9 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   private val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
   /**
-    * A map from source URIs to source code.
+    * A map from source names to source code.
     */
-  private val sources: mutable.Map[URI, String] = mutable.Map.empty
+  private val sources: mutable.Map[SourceName, String] = mutable.Map.empty
 
   /**
     * The JARs added with `api/addJar` and not removed with `api/remJar`, in insertion order.
@@ -209,21 +209,27 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   }
 
   /**
-    * Add the given source code to the compiler.
+    * Adds the given source code to the compiler under the name the client string `uri` denotes.
     */
   private def addUri(uri: String, src: String): Unit = {
-    val u = new URI(uri)
-    flix.addSource(u, src, SecurityContext.Unrestricted)
-    sources += (u -> src)
+    val name = ClientUri.toSourceName(uri).getOrElse(throw new IllegalArgumentException(s"Malformed uri: '$uri'."))
+    flix.addSource(name, src, SecurityContext.Unrestricted)
+    sources += (name -> src)
   }
 
   /**
-    * Remove the source code associated with the given uri from the compiler
+    * Removes the source named by the client string `uri` from the compiler, if any.
     */
   private def remUri(uri: String): Unit = {
-    val u = new URI(uri)
-    flix.remSource(u)
-    sources -= u
+    ClientUri.toSourceName(uri).foreach(remSource)
+  }
+
+  /**
+    * Removes the source named `name` from the compiler.
+    */
+  private def remSource(name: SourceName): Unit = {
+    flix.remSource(name)
+    sources -= name
   }
 
   /**
@@ -231,8 +237,8 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     */
   private def mkFlix(): Flix = {
     val flix = new Flix(jars = jars.toList).setFormatter(NoFormatter).setOptions(o)
-    for ((uri, src) <- sources) {
-      flix.addSource(uri, src, SecurityContext.Unrestricted)
+    for ((name, src) <- sources) {
+      flix.addSource(name, src, SecurityContext.Unrestricted)
     }
     flix
   }
@@ -268,10 +274,10 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.RemPkg(id, uri) =>
-      // clone is necessary because `remSourceCode` modifies `sources`
-      for ((u, _) <- sources.clone()
-           if u.toString.startsWith(uri)) {
-        remUri(u.toString)
+      // clone is necessary because `remSource` modifies `sources`
+      for ((name, _) <- sources.clone()
+           if ClientUri.fromSourceName(name).startsWith(uri)) {
+        remSource(name)
       }
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
@@ -437,7 +443,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     // println(s"lsp/check: ${e / 1_000_000}ms")
 
     // Compute Code Quality hints.
-    val codeHints = CodeHinter.run(sources.keysIterator.map(_.toString).toSet)(root)
+    val codeHints = CodeHinter.run(sources.keySet.toSet)(root)
 
     // Determine the status based on whether there are errors.
     // Merge by URI so that errors and code hints for the same file are combined into one entry rather than

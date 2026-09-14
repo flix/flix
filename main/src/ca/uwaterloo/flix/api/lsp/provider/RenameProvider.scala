@@ -16,6 +16,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
+import ca.uwaterloo.flix.api.lsp.ClientUri
 import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Consumer, Position, Range, TextEdit, Visitor, WorkspaceEdit}
@@ -240,12 +241,12 @@ object RenameProvider {
     // Convert the set of occurrences to a sorted list.
     val targets = occurrences.toList.sorted
 
-    // Group by URI.
-    val groupedByUri = targets.groupBy(_.source.name)
+    // Group by source.
+    val groupedBySource = targets.groupBy(_.source.sourceName)
 
-    // Construct text edits.
-    val textEdits = groupedByUri map {
-      case (uri, locs) => uri -> locs.map(loc => TextEdit(Range.from(loc), newName))
+    // Construct text edits, keyed by the URI the client uses for each source.
+    val textEdits = groupedBySource map {
+      case (name, locs) => ClientUri.fromSourceName(name) -> locs.map(loc => TextEdit(Range.from(loc), newName))
     }
 
     WorkspaceEdit(textEdits)
