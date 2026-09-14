@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider.*
-import ca.uwaterloo.flix.api.lsp.{CompletionList, FormattingOptions, Position, PublishDiagnosticsParams, Range}
+import ca.uwaterloo.flix.api.lsp.{ClientUri, CompletionList, FormattingOptions, Position, PublishDiagnosticsParams, Range}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
@@ -383,6 +383,7 @@ object LspServer {
       System.err.println(s"didOpen: $didOpenTextDocumentParams")
       val textDocument = didOpenTextDocumentParams.getTextDocument
       if (textDocument.getLanguageId == "flix") {
+        ClientUri.shadow(textDocument.getUri)
         val uri = new URI(textDocument.getUri)
         flixLanguageServer.addUri(uri, textDocument.getText)
         flixLanguageServer.processCheck()
@@ -395,6 +396,7 @@ object LspServer {
       */
     override def didChange(didChangeTextDocumentParams: DidChangeTextDocumentParams): Unit = {
       System.err.println(s"didChange: $didChangeTextDocumentParams")
+      ClientUri.shadow(didChangeTextDocumentParams.getTextDocument.getUri)
       val uri = new URI(didChangeTextDocumentParams.getTextDocument.getUri)
       if (flixLanguageServer.sources.contains(uri)) {
         //Since the TextDocumentSyncKind is Full, we can assume that there is only one change that is a full content change.
@@ -414,6 +416,7 @@ object LspServer {
 
     override def codeAction(params: CodeActionParams): CompletableFuture[util.List[messages.Either[Command, CodeAction]]] = {
       val uri = params.getTextDocument.getUri
+      ClientUri.shadow(uri)
       val range = Range.fromLsp4j(params.getRange)
       val codeActions =
         CodeActionProvider
@@ -426,12 +429,14 @@ object LspServer {
 
     override def codeLens(params: CodeLensParams): CompletableFuture[util.List[? <: CodeLens]] = {
       val uri = params.getTextDocument.getUri
+      ClientUri.shadow(uri)
       val codeLens = CodeLensProvider.processCodeLens(uri)(flixLanguageServer.root).map(_.toLsp4j).asJava
       CompletableFuture.completedFuture(codeLens)
     }
 
     override def completion(params: CompletionParams): CompletableFuture[messages.Either[util.List[CompletionItem], lsp4j.CompletionList]] = {
       val uri = params.getTextDocument.getUri
+      ClientUri.shadow(uri)
       val pos = Position.fromLsp4j(params.getPosition)
       val completions = CompletionProvider
         .getCompletions(uri, pos, flixLanguageServer.currentErrors)(flixLanguageServer.root, flixLanguageServer.flix)
@@ -442,6 +447,7 @@ object LspServer {
 
     override def definition(params: DefinitionParams): CompletableFuture[messages.Either[util.List[? <: Location], util.List[? <: LocationLink]]] = {
       val uri = params.getTextDocument.getUri
+      ClientUri.shadow(uri)
       val pos = Position.fromLsp4j(params.getPosition)
       val definition = GotoProvider.processGoto(uri, pos)(flixLanguageServer.root)
       CompletableFuture.completedFuture(messages.Either.forRight(definition.map(_.toLsp4j).toList.asJava))
@@ -454,6 +460,7 @@ object LspServer {
       */
     override def hover(params: HoverParams): CompletableFuture[Hover] = {
       val uri = params.getTextDocument.getUri
+      ClientUri.shadow(uri)
       val position = Position.fromLsp4j(params.getPosition)
       val hover = HoverProvider.processHover(uri, position)(flixLanguageServer.root, flixLanguageServer.flix).map(_.toLsp4j).orNull
       CompletableFuture.completedFuture(hover)
@@ -461,6 +468,7 @@ object LspServer {
 
     override def documentHighlight(params: DocumentHighlightParams): CompletableFuture[java.util.List[? <: DocumentHighlight]] = {
       val uri = params.getTextDocument.getUri
+      ClientUri.shadow(uri)
       val position = Position.fromLsp4j(params.getPosition)
       val highlights = HighlightProvider.processHighlight(uri, position)(flixLanguageServer.root)
       CompletableFuture.completedFuture(highlights.map(_.toLsp4j).toList.asJava)
@@ -471,6 +479,7 @@ object LspServer {
       */
     override def semanticTokensFull(params: SemanticTokensParams): CompletableFuture[SemanticTokens] = {
       val uri = params.getTextDocument.getUri
+      ClientUri.shadow(uri)
       val tokens = SemanticTokensProvider.provideSemanticTokens(uri)(flixLanguageServer.root)
       val semanticTokens = new lsp4j.SemanticTokens()
       semanticTokens.setData(tokens.map(Int.box).asJava)
@@ -479,6 +488,7 @@ object LspServer {
 
     override def references(params: ReferenceParams): CompletableFuture[util.List[? <: Location]] = {
       val uri = params.getTextDocument.getUri
+      ClientUri.shadow(uri)
       val pos = Position.fromLsp4j(params.getPosition)
       val references = FindReferencesProvider.findRefs(uri, pos)(flixLanguageServer.root)
       CompletableFuture.completedFuture(references.map(_.toLsp4j).toList.asJava)
@@ -487,6 +497,7 @@ object LspServer {
     override def rename(params: RenameParams): CompletableFuture[WorkspaceEdit] = {
       val newName = params.getNewName
       val uri = params.getTextDocument.getUri
+      ClientUri.shadow(uri)
       val pos = Position.fromLsp4j(params.getPosition)
       RenameProvider.processRename(newName, uri, pos)(flixLanguageServer.root) match {
         case Some(rename) => CompletableFuture.completedFuture(rename.toLsp4j)
@@ -498,6 +509,7 @@ object LspServer {
 
     override def signatureHelp(params: SignatureHelpParams): CompletableFuture[SignatureHelp] = {
       val uri = params.getTextDocument.getUri
+      ClientUri.shadow(uri)
       val pos = Position.fromLsp4j(params.getPosition)
       val signatureHelp = SignatureHelpProvider.provideSignatureHelp(uri, pos)(flixLanguageServer.root, flixLanguageServer.flix)
       CompletableFuture.completedFuture(signatureHelp.map(_.toLsp4j).orNull)
@@ -505,6 +517,7 @@ object LspServer {
 
     override def implementation(params: ImplementationParams): CompletableFuture[messages.Either[util.List[? <: Location], util.List[_ <: LocationLink]]] = {
       val uri = params.getTextDocument.getUri
+      ClientUri.shadow(uri)
       val pos = Position.fromLsp4j(params.getPosition)
       val implementation = GotoProvider.processGoto(uri, pos)(flixLanguageServer.root)
       CompletableFuture.completedFuture(messages.Either.forRight(implementation.map(_.toLsp4j).toList.asJava))
@@ -512,6 +525,7 @@ object LspServer {
 
     override def inlayHint(params: InlayHintParams): CompletableFuture[util.List[InlayHint]] = {
       val uri = params.getTextDocument.getUri
+      ClientUri.shadow(uri)
       val range = Range.fromLsp4j(params.getRange)
       val hints = InlayHintProvider.getInlayHints(uri, range, flixLanguageServer.currentErrors)(flixLanguageServer.root)
       CompletableFuture.completedFuture(hints.map(_.toLsp4j).asJava)
@@ -519,12 +533,14 @@ object LspServer {
 
     override def documentSymbol(params: DocumentSymbolParams): CompletableFuture[util.List[messages.Either[SymbolInformation, DocumentSymbol]]] = {
       val uri = params.getTextDocument.getUri
+      ClientUri.shadow(uri)
       val symbols = SymbolProvider.processDocumentSymbols(uri)(flixLanguageServer.root)
       CompletableFuture.completedFuture(symbols.map(_.toLsp4j).map(messages.Either.forRight[SymbolInformation, DocumentSymbol]).asJava)
     }
 
     override def foldingRange(params: FoldingRangeRequestParams): CompletableFuture[util.List[FoldingRange]] = {
       val uri = params.getTextDocument.getUri
+      ClientUri.shadow(uri)
       val foldingRanges = FoldingRangeProvider.getFoldingRanges(uri)(flixLanguageServer.root).map(_.toLsp4j).asJava
       CompletableFuture.completedFuture(foldingRanges)
     }
@@ -537,6 +553,7 @@ object LspServer {
       */
     override def formatting(params: DocumentFormattingParams): CompletableFuture[util.List[? <: TextEdit]] = {
       val uri = params.getTextDocument.getUri
+      ClientUri.shadow(uri)
       val options = FormattingOptions.fromLsp4j(params.getOptions)
 
       val editsJava: util.List[TextEdit] =
@@ -560,6 +577,7 @@ object LspServer {
       var dependencyChanged = false
       for (event <- didChangeWatchedFilesParams.getChanges.asScala) {
         val uri = event.getUri
+        ClientUri.shadow(uri)
         if (uri.endsWith(".jar") || uri.endsWith(".fpkg")) {
           dependencyChanged = true
         }
