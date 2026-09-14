@@ -37,7 +37,7 @@ object PublishDiagnosticsParams {
     errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
       case (acc, (source, compilationMessages)) =>
         val diagnostics = compilationMessages.map(msg => Diagnostic.from(msg, root))
-        PublishDiagnosticsParams(source.name, diagnostics) :: acc
+        PublishDiagnosticsParams(ClientUri.fromSourceName(source.sourceName), diagnostics) :: acc
     }
   }
 
@@ -49,7 +49,7 @@ object PublishDiagnosticsParams {
     errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
       case (acc, (source, codeHints)) =>
         val diagnostics = codeHints.map(codeHint => Diagnostic.from(codeHint))
-        PublishDiagnosticsParams(source.name, diagnostics) :: acc
+        PublishDiagnosticsParams(ClientUri.fromSourceName(source.sourceName), diagnostics) :: acc
     }
   }
 

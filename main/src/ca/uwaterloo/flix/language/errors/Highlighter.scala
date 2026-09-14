@@ -50,7 +50,7 @@ object Highlighter {
       case None => Coloring.Plain
       case Some(r) =>
         val (allTokens, _) = Lexer.lex(source)
-        val semanticTokens = SemanticTokensProvider.getSemanticTokens(source.name)(r)
+        val semanticTokens = SemanticTokensProvider.getSemanticTokens(source.sourceName)(r)
         Coloring.Highlighted(allTokens.to(ArraySeq), semanticTokens.to(ArraySeq))
     }
 

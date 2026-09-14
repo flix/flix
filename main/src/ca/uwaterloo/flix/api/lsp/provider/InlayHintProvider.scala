@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, TextEdit, Visitor}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, Expr, FormalParam, Root}
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.shared.{Decreasing, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -40,19 +41,19 @@ object InlayHintProvider {
   /**
     * Returns a list of inlay hints for the given URI and range.
     *
-    * @param uri   The URI of the file.
+    * @param name   The URI of the file.
     * @param range The range within the file to get inlay hints for.
     * @param root  The root of the typed AST.
     * @return A list of inlay hints.
     */
-  def getInlayHints(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[InlayHint] = {
+  def getInlayHints(name: SourceName, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[InlayHint] = {
     if (EnableEffectHints) {
-      val opSymUses: List[(SymUse.OpSymUse, SourceLocation)] = getOpSymUses(uri)
+      val opSymUses: List[(SymUse.OpSymUse, SourceLocation)] = getOpSymUses(name)
       val opEffSyms: List[(Symbol.EffSym, SourceLocation)] = opSymUses.map {
         case (opSymUse, loc) =>
           (opSymUse.sym.eff, loc)
       }
-      val defSymUses: List[(SymUse.DefSymUse, SourceLocation)] = getDefSymUses(uri)
+      val defSymUses: List[(SymUse.DefSymUse, SourceLocation)] = getDefSymUses(name)
       val defEffSyms: List[(Symbol.EffSym, SourceLocation)] = defSymUses.flatMap {
         case (defSymUse, loc) =>
           root.defs(defSymUse.sym).spec.eff.effects.zip(loc :: Nil)
@@ -69,9 +70,9 @@ object InlayHintProvider {
           val position = Position(loc.endLine, loc.source.getLine(loc.endLine).length + 2)
           acc.updated(position, acc.getOrElse(position, Set.empty[Symbol.EffSym]) + eff)
       }
-      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
+      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(name) ::: getTailRecursionHints(name)
     } else {
-      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
+      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(name) ::: getTailRecursionHints(name)
     }
   }
 
@@ -101,7 +102,7 @@ object InlayHintProvider {
   /**
     * Returns a list of operation symbol uses.
     */
-  private def getOpSymUses(uri: String)(implicit root: Root): List[(SymUse.OpSymUse, SourceLocation)] = {
+  private def getOpSymUses(name: SourceName)(implicit root: Root): List[(SymUse.OpSymUse, SourceLocation)] = {
     var opSymUses: List[(SymUse.OpSymUse, SourceLocation)] = List.empty
     object opSymUseConsumer extends Consumer {
       override def consumeExpr(expr: Expr): Unit = {
@@ -112,14 +113,14 @@ object InlayHintProvider {
         }
       }
     }
-    Visitor.visitRoot(root, opSymUseConsumer, FileAcceptor(uri))
+    Visitor.visitRoot(root, opSymUseConsumer, FileAcceptor(name))
     opSymUses
   }
 
   /**
     * Returns a list of definition symbol uses.
     */
-  private def getDefSymUses(uri: String)(implicit root: Root): List[(SymUse.DefSymUse, SourceLocation)] = {
+  private def getDefSymUses(name: SourceName)(implicit root: Root): List[(SymUse.DefSymUse, SourceLocation)] = {
     var defSymUses: List[(SymUse.DefSymUse, SourceLocation)] = List.empty
     object defSymUseConsumer extends Consumer {
       override def consumeExpr(expr: Expr): Unit = {
@@ -130,7 +131,7 @@ object InlayHintProvider {
         }
       }
     }
-    Visitor.visitRoot(root, defSymUseConsumer, FileAcceptor(uri))
+    Visitor.visitRoot(root, defSymUseConsumer, FileAcceptor(name))
     defSymUses
   }
 
@@ -180,7 +181,7 @@ object InlayHintProvider {
     *   def length(↓ l: List[a]): Int32
     * }}}
     */
-  private def getDecreasingParamHints(uri: String)(implicit root: Root): List[InlayHint] = {
+  private def getDecreasingParamHints(name: SourceName)(implicit root: Root): List[InlayHint] = {
     var hints: List[InlayHint] = List.empty
     object c extends Consumer {
       override def consumeFormalParam(fparam: FormalParam): Unit = {
@@ -197,7 +198,7 @@ object InlayHintProvider {
         }
       }
     }
-    Visitor.visitRoot(root, c, FileAcceptor(uri))
+    Visitor.visitRoot(root, c, FileAcceptor(name))
     hints
   }
 
@@ -214,7 +215,7 @@ object InlayHintProvider {
     *   }
     * }}}
     */
-  private def getTailRecursionHints(uri: String)(implicit root: Root): List[InlayHint] = {
+  private def getTailRecursionHints(name: SourceName)(implicit root: Root): List[InlayHint] = {
     var hints: List[InlayHint] = List.empty
     val localDefFparams: mutable.Map[Symbol.VarSym, Nel[FormalParam]] = mutable.Map.empty
 
@@ -246,7 +247,7 @@ object InlayHintProvider {
         }
       }
     }
-    Visitor.visitRoot(root, c, FileAcceptor(uri))
+    Visitor.visitRoot(root, c, FileAcceptor(name))
     hints
   }
 

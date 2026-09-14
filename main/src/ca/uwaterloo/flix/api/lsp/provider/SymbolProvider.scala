@@ -15,9 +15,11 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
+import ca.uwaterloo.flix.api.lsp.ClientUri
 import ca.uwaterloo.flix.api.lsp.{DocumentSymbol, Location, Range, SymbolKind, WorkspaceSymbol}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
 
 object SymbolProvider {
@@ -41,14 +43,14 @@ object SymbolProvider {
   }
 
   /**
-    * Returns all symbols that are inside the file pointed by uri.
+    * Returns all symbols that are inside the file pointed by name.
     */
-  def processDocumentSymbols(uri: String)(implicit root: Root): List[DocumentSymbol] = {
-    val enums = root.enums.values.collect { case enum0 if enum0.loc.source.name == uri => mkEnumDocumentSymbol(enum0) }
-    val defs = root.defs.values.collect { case d if d.sym.loc.source.name == uri => mkDefDocumentSymbol(d) }
-    val traits = root.traits.values.collect { case t if t.sym.loc.source.name == uri => mkTraitDocumentSymbol(t) }
-    val effs = root.effects.values.collect { case e if e.sym.loc.source.name == uri => mkEffectDocumentSymbol(e) }
-    val structs = root.structs.values.collect { case s if s.sym.loc.source.name == uri => mkStructDocumentSymbol(s) }
+  def processDocumentSymbols(name: SourceName)(implicit root: Root): List[DocumentSymbol] = {
+    val enums = root.enums.values.collect { case enum0 if enum0.loc.source.sourceName == name => mkEnumDocumentSymbol(enum0) }
+    val defs = root.defs.values.collect { case d if d.sym.loc.source.sourceName == name => mkDefDocumentSymbol(d) }
+    val traits = root.traits.values.collect { case t if t.sym.loc.source.sourceName == name => mkTraitDocumentSymbol(t) }
+    val effs = root.effects.values.collect { case e if e.sym.loc.source.sourceName == name => mkEffectDocumentSymbol(e) }
+    val structs = root.structs.values.collect { case s if s.sym.loc.source.sourceName == name => mkStructDocumentSymbol(s) }
     (traits ++ defs ++ enums ++ effs ++ structs).toList.filter(_.name.nonEmpty)
   }
 
@@ -57,7 +59,7 @@ object SymbolProvider {
     */
   private def mkTraitWorkSpaceSymbol(t: TypedAst.Trait) = t match {
     case TypedAst.Trait(_, _, _, sym, _, _, _, _, _) => WorkspaceSymbol(
-      sym.name, SymbolKind.Interface, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)),
+      sym.name, SymbolKind.Interface, Nil, None, Location.from(sym.loc),
     )
   }
 
@@ -100,7 +102,7 @@ object SymbolProvider {
     */
   private def mkSigWorkspaceSymbol(s: TypedAst.Sig): WorkspaceSymbol = s match {
     case TypedAst.Sig(sym, _, _, _) => WorkspaceSymbol(
-      sym.name, SymbolKind.Method, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)),
+      sym.name, SymbolKind.Method, Nil, None, Location.from(sym.loc),
     )
   }
 
@@ -110,13 +112,13 @@ object SymbolProvider {
   private def mkStructWorkspaceSymbol(s: TypedAst.Struct): List[WorkspaceSymbol] = s match {
     case TypedAst.Struct(_, _, _, sym, _, _, fields, _) =>
       fields.values.map(mkFieldWorkspaceSymbol).toList :+ WorkspaceSymbol(
-        sym.name, SymbolKind.Struct, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)),
+        sym.name, SymbolKind.Struct, Nil, None, Location.from(sym.loc),
       )
   }
 
   private def mkFieldWorkspaceSymbol(f: TypedAst.StructField): WorkspaceSymbol = f match {
     case TypedAst.StructField(sym, _, loc) => WorkspaceSymbol(
-      sym.name, SymbolKind.Field, Nil, None, Location(loc.source.name, Range.from(loc)),
+      sym.name, SymbolKind.Field, Nil, None, Location.from(loc),
     )
   }
 
@@ -155,7 +157,7 @@ object SymbolProvider {
     */
   private def mkDefWorkspaceSymbol(d: TypedAst.Def): WorkspaceSymbol = d match {
     case TypedAst.Def(sym, _, _, _) => WorkspaceSymbol(
-      sym.name, SymbolKind.Function, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)),
+      sym.name, SymbolKind.Function, Nil, None, Location.from(sym.loc),
     )
   }
 
@@ -191,7 +193,7 @@ object SymbolProvider {
   private def mkEnumWorkspaceSymbol(enum0: TypedAst.Enum): List[WorkspaceSymbol] = enum0 match {
     case TypedAst.Enum(_, _, _, sym, _, _, cases, loc) =>
       cases.values.map(mkCaseWorkspaecSymbol).toList :+ WorkspaceSymbol(
-        sym.name, SymbolKind.Enum, Nil, None, Location(loc.source.name, Range.from(loc)),
+        sym.name, SymbolKind.Enum, Nil, None, Location.from(loc),
       )
   }
 
@@ -200,7 +202,7 @@ object SymbolProvider {
     */
   private def mkCaseWorkspaecSymbol(c: TypedAst.Case): WorkspaceSymbol = c match {
     case TypedAst.Case(sym, _, _, loc) => WorkspaceSymbol(
-      sym.name, SymbolKind.EnumMember, Nil, None, Location(loc.source.name, Range.from(loc)))
+      sym.name, SymbolKind.EnumMember, Nil, None, Location.from(loc))
   }
 
   /**
@@ -209,7 +211,7 @@ object SymbolProvider {
   private def mkEffectWorkspaceSymbol(effect: TypedAst.Effect): List[WorkspaceSymbol] = effect match {
     case TypedAst.Effect(_, _, _, sym, _, ops, _) =>
       ops.map(mkOpWorkspaceSymbol) :+ WorkspaceSymbol(
-        sym.name, SymbolKind.Interface, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)))
+        sym.name, SymbolKind.Interface, Nil, None, Location.from(sym.loc))
   }
 
   /**
@@ -233,7 +235,7 @@ object SymbolProvider {
     */
   private def mkOpWorkspaceSymbol(op: TypedAst.Op): WorkspaceSymbol = op match {
     case TypedAst.Op(sym, _, _) =>
-      WorkspaceSymbol(sym.name, SymbolKind.Function, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)))
+      WorkspaceSymbol(sym.name, SymbolKind.Function, Nil, None, Location.from(sym.loc))
   }
 
   /**

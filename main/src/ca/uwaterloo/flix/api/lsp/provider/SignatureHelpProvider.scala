@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{LspUtil, Position, SignatureHelp, SignatureInformation}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 
 object SignatureHelpProvider {
@@ -26,8 +27,8 @@ object SignatureHelpProvider {
     * Provides signature help for the given position.
     * We find the nearest application, which is the lowest ApplyDef/ApplySig in the AST that contains the position of the cursor.
     */
-  def provideSignatureHelp(uri: String, pos: Position)(implicit root: Root, flix: Flix): Option[SignatureHelp] = {
-    LspUtil.getStack(uri, pos).collectFirst {
+  def provideSignatureHelp(name: SourceName, pos: Position)(implicit root: Root, flix: Flix): Option[SignatureHelp] = {
+    LspUtil.getStack(name, pos).collectFirst {
       case TypedAst.Expr.ApplyDef(defnSymUse, exps, _, _, _, _, _, _) =>
         // The lookup is guaranteed to succeed because otherwise the expression would be replaced by Expr.Error.
         mkSignatureHelp(defnSymUse.sym, root.defs(defnSymUse.sym).spec, exps, pos)

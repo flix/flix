@@ -25,7 +25,7 @@ import org.json4s.*
   * Companion object of [[Location]].
   */
 object Location {
-  def from(loc: SourceLocation): Location = Location(loc.source.name, Range.from(loc))
+  def from(loc: SourceLocation): Location = Location(ClientUri.fromLocation(loc), Range.from(loc))
 }
 
 /**

@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.*
-import ca.uwaterloo.flix.language.ast.TypedAst.{EqualityConstraint, *}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.TypedAst.{EqualityConstraint, *}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, Type, TypeConstructor, TypedAst}
@@ -32,11 +32,11 @@ object SemanticTokensProvider {
     * Returns the semantic tokens for the given URI as SemanticToken objects.
     * Use this when you need direct access to the tokens (e.g., for highlighting).
     */
-  def getSemanticTokens(uri: String)(implicit root: Root): List[SemanticToken] = {
+  def getSemanticTokens(name: SourceName)(implicit root: Root): List[SemanticToken] = {
     //
     // This class uses iterators over lists to ensure fast append (!)
     //
-    val sourceOpt = root.tokens.keys.find(_.name == uri)
+    val sourceOpt = root.tokens.keys.find(_.sourceName == name)
 
     // NOTE: We do not retain all tokens in the program.
     // We only retain those tokens selected by [[TokenKind.isSemanticToken]].
@@ -67,7 +67,7 @@ object SemanticTokensProvider {
     // Construct an iterator of the semantic tokens from traits.
     //
     val traitTokens = root.traits.values.flatMap {
-      case decl if include(uri, decl.sym.loc) => visitTrait(decl)
+      case decl if include(name, decl.sym.loc) => visitTrait(decl)
       case _ => Nil
     }
 
@@ -75,7 +75,7 @@ object SemanticTokensProvider {
     // Construct an iterator of the semantic tokens from instances.
     //
     val instanceTokens = root.instances.values.flatMap {
-      case instance if include(uri, instance.trt.loc) => visitInstance(instance)
+      case instance if include(name, instance.trt.loc) => visitInstance(instance)
       case _ => Nil
     }
 
@@ -83,7 +83,7 @@ object SemanticTokensProvider {
     // Construct an iterator of the semantic tokens from defs.
     //
     val defnTokens = root.defs.values.flatMap {
-      case decl if include(uri, decl.sym.loc) => visitDef(decl)
+      case decl if include(name, decl.sym.loc) => visitDef(decl)
       case _ => Nil
     }
 
@@ -91,7 +91,7 @@ object SemanticTokensProvider {
     // Construct an iterator of the semantic tokens from enums.
     //
     val enumTokens = root.enums.values.flatMap {
-      case decl if include(uri, decl.loc) => visitEnum(decl)
+      case decl if include(name, decl.loc) => visitEnum(decl)
       case _ => Nil
     }
 
@@ -99,7 +99,7 @@ object SemanticTokensProvider {
     // Construct an iterator of the semantic tokens from structs.
     //
     val structTokens = root.structs.values.flatMap {
-      case decl if include(uri, decl.loc) => visitStruct(decl)
+      case decl if include(name, decl.loc) => visitStruct(decl)
       case _ => Nil
     }
 
@@ -107,7 +107,7 @@ object SemanticTokensProvider {
     // Construct an iterator of the semantic tokens from type aliases.
     //
     val typeAliasTokens = root.typeAliases.flatMap {
-      case (_, decl) if include(uri, decl.loc) => visitTypeAlias(decl)
+      case (_, decl) if include(name, decl.loc) => visitTypeAlias(decl)
       case _ => Nil
     }
 
@@ -115,7 +115,7 @@ object SemanticTokensProvider {
     // Construct an iterator of the semantic tokens from effects.
     //
     val effectTokens = root.effects.flatMap {
-      case (_, decl) if include(uri, decl.loc) => visitEffect(decl)
+      case (_, decl) if include(name, decl.loc) => visitEffect(decl)
       case _ => Nil
     }
 
@@ -125,13 +125,13 @@ object SemanticTokensProvider {
     val allTokens = (keywordModifierOrCommentTokens ++ traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ structTokens ++ typeAliasTokens ++ effectTokens).toList
 
     //
-    // We keep all tokens that are: (i) have the same source as `uri`, and (ii) come from real source locations.
+    // We keep all tokens that are: (i) have the same source as `name`, and (ii) come from real source locations.
     //
     // Note that the last criteria (automatically) excludes:
-    //   (a) tokens that come from entities inside `uri` but that originate from different uris, and
+    //   (a) tokens that come from entities inside `name` but that originate from different uris, and
     //   (b) tokens that come from synthetic (generated) source code.
     //
-    val filteredTokens = allTokens.filter(t => include(uri, t.loc) && !t.loc.isSynthetic)
+    val filteredTokens = allTokens.filter(t => include(name, t.loc) && !t.loc.isSynthetic)
 
     //
     // Split multiline tokens in the list into multiple single-line tokens.
@@ -143,14 +143,14 @@ object SemanticTokensProvider {
     * Processes a request for (full) semantic tokens.
     * Returns LSP-encoded format for the language server protocol.
     */
-  def provideSemanticTokens(uri: String)(implicit root: Root): List[Int] = {
-    encodeSemanticTokens(getSemanticTokens(uri))
+  def provideSemanticTokens(name: SourceName)(implicit root: Root): List[Int] = {
+    encodeSemanticTokens(getSemanticTokens(name))
   }
 
   /**
-    * Returns `true` if the given source location `loc` is associated with the given `uri`.
+    * Returns `true` if the given source location `loc` is in the source named `name`.
     */
-  private def include(uri: String, loc: SourceLocation): Boolean = loc.source.name == uri
+  private def include(name: SourceName, loc: SourceLocation): Boolean = loc.source.sourceName == name
 
   /**
     * Returns all semantic tokens in the given trait `traitDecl`.

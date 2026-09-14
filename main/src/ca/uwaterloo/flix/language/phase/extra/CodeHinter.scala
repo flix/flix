@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.AllAcceptor
 import ca.uwaterloo.flix.api.lsp.{Consumer, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, TraitSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, SymUse}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, SourceName, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
 
@@ -29,7 +29,7 @@ object CodeHinter {
   /**
     * Returns a collection of code quality hints for the given AST `root`.
     */
-  def run(sources: Set[String])(implicit root: Root): List[CodeHint] = {
+  def run(sources: Set[SourceName])(implicit root: Root): List[CodeHint] = {
     val occurs = getOccurrences
 
     val applyDefHints = occurs.applyDefOccurs.flatMap { case (sym, exps) => visitApplyDef(sym, exps) }
@@ -237,6 +237,6 @@ object CodeHinter {
   /**
     * Returns `true` if the given code `hint` should be included in the result.
     */
-  private def include(hint: CodeHint, sources: Set[String]): Boolean =
-    sources.contains(hint.loc.source.name)
+  private def include(hint: CodeHint, sources: Set[SourceName]): Boolean =
+    sources.contains(hint.loc.source.sourceName)
 }

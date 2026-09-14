@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.provider.completion.*
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.shared.{SyntacticContext, TraitUsageKind}
 import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError, WeederError}
 
@@ -39,13 +40,13 @@ import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError
 object CompletionProvider {
 
   /**
-    * Returns all completions in the given `uri` at the given position `pos`.
+    * Returns all completions in the given `name` at the given position `pos`.
     */
-  def getCompletions(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
+  def getCompletions(name: SourceName, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
     if (currentErrors.isEmpty)
-      HoleCompleter.getHoleCompletion(uri, pos).toList
+      HoleCompleter.getHoleCompletion(name, pos).toList
     else
-      errorsAt(uri, pos, currentErrors).flatMap {
+      errorsAt(name, pos, currentErrors).flatMap {
         case err: WeederError.UndefinedAnnotation =>
           ExprSnippetCompleter.generateDefaultHandlerSnippet("@DefaultHandler template", Range.from(err.loc)) ::
             AnnotationCompleter.getAnnotations(err.name, Range.from(err.loc))
@@ -58,7 +59,7 @@ object CompletionProvider {
           val qn = err.qn
           val range = Range.from(err.loc)
           EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
-            EnumTagCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            EnumTagCompleter.getCompletions(name, pos, qn, range, ap, scp) ++
             ModuleCompleter.getCompletions(qn, range, ap, scp)
 
         case err: ResolutionError.UndefinedName =>
@@ -70,12 +71,12 @@ object CompletionProvider {
           AutoImportCompleter.getCompletions(ident, range, ap, scp) ++
             LocalScopeCompleter.getCompletionsExpr(range, scp) ++
             KeywordCompleter.getExprKeywords(Some(err.qn), range) ++
-            DefCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            DefCompleter.getCompletions(name, pos, qn, range, ap, scp) ++
             EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
             EffectCompleter.getCompletions(qn, range, ap, scp, inHandler = false) ++
-            OpCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
-            SignatureCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
-            EnumTagCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            OpCompleter.getCompletions(name, pos, qn, range, ap, scp) ++
+            SignatureCompleter.getCompletions(name, pos, qn, range, ap, scp) ++
+            EnumTagCompleter.getCompletions(name, pos, qn, range, ap, scp) ++
             TraitCompleter.getCompletions(qn, TraitUsageKind.Expr, range, ap, scp) ++
             ModuleCompleter.getCompletions(qn, range, ap, scp)
 
@@ -110,7 +111,7 @@ object CompletionProvider {
 
         case err: TypeError.MethodNotFound => InvokeMethodCompleter.getCompletions(err.tpe, err.methodName)
 
-        case err: ParseError => getSyntacticCompletions(uri, err)
+        case err: ParseError => getSyntacticCompletions(name, err)
 
         case _ => Nil
       }
@@ -119,13 +120,13 @@ object CompletionProvider {
   /**
     * Returns completions based on the syntactic context.
     */
-  private def getSyntacticCompletions(uri: String, e: ParseError)(implicit root: Root, flix: Flix): List[Completion] = {
+  private def getSyntacticCompletions(name: SourceName, e: ParseError)(implicit root: Root, flix: Flix): List[Completion] = {
     val range: Range = Range.from(e.loc)
     if (range.isEmpty)
       Nil
     else e.sctx match {
       // Expressions.
-      case SyntacticContext.Expr.Constraint => (PredicateCompleter.getCompletions(uri, range) ++ KeywordCompleter.getConstraintKeywords(range)).toList
+      case SyntacticContext.Expr.Constraint => (PredicateCompleter.getCompletions(name, range) ++ KeywordCompleter.getConstraintKeywords(range)).toList
       case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords(None, range)
 
       // Declarations.
@@ -147,6 +148,6 @@ object CompletionProvider {
   /**
     * Filters the list of errors to only those that occur at the given position.
     */
-  private def errorsAt(uri: String, pos: Position, errors: List[CompilationMessage]): List[CompilationMessage] =
-    errors.filter(err => uri == err.loc.source.name && pos.line <= err.loc.startLine)
+  private def errorsAt(name: SourceName, pos: Position, errors: List[CompilationMessage]): List[CompilationMessage] =
+    errors.filter(err => name == err.loc.source.sourceName && pos.line <= err.loc.startLine)
 }

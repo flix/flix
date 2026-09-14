@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SyntaxTree
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.tools.fmt.PrettyPrinter
 import ca.uwaterloo.flix.util.Result
 
@@ -38,7 +39,7 @@ object FormatterLsp {
     */
   def formatFiles(root: SyntaxTree.Root, sourcePaths: List[Path])(implicit flix: Flix): Unit = {
     sourcePaths.foreach { path =>
-      findTreeBasedOnUri(root, path.toString).foreach { tree =>
+      findTree(root, SourceName.PathName(path.normalize())).foreach { tree =>
         applyTextEditsToFile(path, treeToTextEdits(tree))
       }
     }
@@ -49,11 +50,11 @@ object FormatterLsp {
     * Returns a single [[TextEdit]] replacing the entire document.
     *
     * @param root the syntax tree root
-    * @param uri  the file URI
+    * @param name  the file URI
     * @return a list containing a single document text edit
     */
-  def format(root: SyntaxTree.Root, uri: String): List[TextEdit] =
-    findTreeBasedOnUri(root, uri).map(treeToTextEdits).getOrElse(Nil)
+  def format(root: SyntaxTree.Root, name: SourceName): List[TextEdit] =
+    findTree(root, name).map(treeToTextEdits).getOrElse(Nil)
 
   // TODO: Call the actual formatter here as soon as it is merged.
   private def treeToTextEdits(@unused tree: SyntaxTree.Tree): List[TextEdit] = Nil
@@ -126,13 +127,12 @@ object FormatterLsp {
     * Finds the syntax tree corresponding to the given URI.
     *
     * @param root the syntax tree root
-    * @param uri  the file path of the syntax tree
+    * @param name  the file path of the syntax tree
     * @return an option containing the syntax tree if found
     */
-  private def findTreeBasedOnUri(root: SyntaxTree.Root, uri: String): Option[SyntaxTree.Tree] = {
-    // TODO: This is a temporary solution. We need a better way to map URIs to syntax trees.
+  private def findTree(root: SyntaxTree.Root, name: SourceName): Option[SyntaxTree.Tree] = {
     root.units.find {
-      case (path, _) => path.toString == uri
+      case (source, _) => source.sourceName == name
     }.map {
       case (_, tree) => tree
     }

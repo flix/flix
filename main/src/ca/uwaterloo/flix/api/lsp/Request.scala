@@ -15,11 +15,13 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
 import org.json4s.JsonAST.{JString, JValue}
 import org.json4s.jvalue2monadic
+import java.net.{URI, URISyntaxException}
 import java.util.Base64
 
 /**
@@ -37,32 +39,32 @@ object Request {
   /**
     * A request to add (or update) the given uri with the given source code.
     */
-  case class AddUri(requestId: String, uri: String, src: String) extends Request
+  case class AddUri(requestId: String, name: SourceName, src: String) extends Request
 
   /**
     * A request to remove the given uri.
     */
-  case class RemUri(requestId: String, uri: String) extends Request
+  case class RemUri(requestId: String, name: SourceName) extends Request
 
   /**
     * A request to add (or update) the package at the given uri with the given binary data.
     */
-  case class AddPkg(requestId: String, uri: String, data: Array[Byte]) extends Request
+  case class AddPkg(requestId: String, uri: URI, data: Array[Byte]) extends Request
 
   /**
     * A request to remove the package at the given uri.
     */
-  case class RemPkg(requestId: String, uri: String) extends Request
+  case class RemPkg(requestId: String, uri: URI) extends Request
 
   /**
     * A request to add (or update) the JAR at the given uri.
     */
-  case class AddJar(requestId: String, uri: String) extends Request
+  case class AddJar(requestId: String, uri: URI) extends Request
 
   /**
     * A request to remove the package at the given uri.
     */
-  case class RemJar(requestId: String, uri: String) extends Request
+  case class RemJar(requestId: String, uri: URI) extends Request
 
   /**
     * A request for the compiler version.
@@ -88,57 +90,57 @@ object Request {
   /**
     * A code lens request.
     */
-  case class Codelens(requestId: String, uri: String) extends Request
+  case class Codelens(requestId: String, name: SourceName) extends Request
 
   /**
     * A complete request.
     */
-  case class Complete(requestId: String, uri: String, pos: Position) extends Request
+  case class Complete(requestId: String, name: SourceName, pos: Position) extends Request
 
   /**
     * A request to go to a declaration.
     */
-  case class Goto(requestId: String, uri: String, pos: Position) extends Request
+  case class Goto(requestId: String, name: SourceName, pos: Position) extends Request
 
   /**
     * A request to find implementations.
     */
-  case class Implementation(requestId: String, uri: String, pos: Position) extends Request
+  case class Implementation(requestId: String, name: SourceName, pos: Position) extends Request
 
   /**
     * A request to get highlight information.
     */
-  case class Highlight(requestId: String, uri: String, pos: Position) extends Request
+  case class Highlight(requestId: String, name: SourceName, pos: Position) extends Request
 
   /**
     * A request to get hover information.
     */
-  case class Hover(requestId: String, uri: String, pos: Position) extends Request
+  case class Hover(requestId: String, name: SourceName, pos: Position) extends Request
 
   /**
     * A request to rename a definition, local variable, or other named entity.
     */
-  case class Rename(requestId: String, newName: String, uri: String, pos: Position) extends Request
+  case class Rename(requestId: String, newName: String, name: SourceName, pos: Position) extends Request
 
   /**
     * A request to find all uses of an entity.
     */
-  case class Uses(requestId: String, uri: String, pos: Position) extends Request
+  case class Uses(requestId: String, name: SourceName, pos: Position) extends Request
 
   /**
     * A request to get document symbols information.
     */
-  case class DocumentSymbols(requestId: String, uri: String) extends Request
+  case class DocumentSymbols(requestId: String, name: SourceName) extends Request
 
   /**
    * A request to get semantic tokens for a file.
    */
-  case class SemanticTokens(requestId: String, uri: String) extends Request
+  case class SemanticTokens(requestId: String, name: SourceName) extends Request
 
   /**
     * A request to get the signature information.
     */
-  case class Signature(requestId: String, uri: String, pos: Position) extends Request
+  case class Signature(requestId: String, name: SourceName, pos: Position) extends Request
 
   /**
     * A request to get workspace symbols information.
@@ -148,7 +150,7 @@ object Request {
   /**
     * A request to get the inlay hints for the given [[range]] in a file denoted by [[uri]]
     */
-  case class InlayHint(requestId: String, uri: String, range: Range) extends Request
+  case class InlayHint(requestId: String, name: SourceName, range: Range) extends Request
 
   /**
     * A request to print the ASTs following each phase.
@@ -159,17 +161,17 @@ object Request {
   /**
     * A request to view available code actions.
     */
-  case class CodeAction(requestId: String, uri: String, range: Range, context: CodeActionContext) extends Request
+  case class CodeAction(requestId: String, name: SourceName, range: Range, context: CodeActionContext) extends Request
 
   /**
     * A request to format a file.
     */
-  case class Formatting(requestId: String, uri: String, options: FormattingOptions) extends Request
+  case class Formatting(requestId: String, name: SourceName, options: FormattingOptions) extends Request
 
   /**
     * A request to get the folding ranges for a file.
     */
-  case class FoldingRange(requestId: String, uri: String) extends Request
+  case class FoldingRange(requestId: String, name: SourceName) extends Request
 
   /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
@@ -181,9 +183,9 @@ object Request {
     }
     for {
       id <- parseId(json)
-      uri <- parseUri(json)
+      name <- parseSourceName(json)
       src <- srcRes
-    } yield Request.AddUri(id, uri, src)
+    } yield Request.AddUri(id, name, src)
   }
 
   /**
@@ -192,8 +194,8 @@ object Request {
   def parseRemUri(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      uri <- parseUri(json)
-    } yield Request.RemUri(id, uri)
+      name <- parseSourceName(json)
+    } yield Request.RemUri(id, name)
   }
 
   /**
@@ -299,8 +301,8 @@ object Request {
   def parseCodelens(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      uri <- parseUri(json)
-    } yield Request.Codelens(id, uri)
+      name <- parseSourceName(json)
+    } yield Request.Codelens(id, name)
   }
 
   /**
@@ -309,9 +311,9 @@ object Request {
   def parseComplete(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      uri <- parseUri(json)
+      name <- parseSourceName(json)
       pos <- Position.parse(json \ "position")
-    } yield Request.Complete(id, uri, pos)
+    } yield Request.Complete(id, name, pos)
   }
 
   /**
@@ -320,9 +322,9 @@ object Request {
   def parseGoto(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      uri <- parseUri(json)
+      name <- parseSourceName(json)
       pos <- Position.parse(json \ "position")
-    } yield Request.Goto(id, uri, pos)
+    } yield Request.Goto(id, name, pos)
   }
 
   /**
@@ -331,9 +333,9 @@ object Request {
   def parseImplementation(json: JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      uri <- parseUri(json)
+      name <- parseSourceName(json)
       pos <- Position.parse(json \ "position")
-    } yield Request.Implementation(id, uri, pos)
+    } yield Request.Implementation(id, name, pos)
   }
 
   /**
@@ -342,9 +344,9 @@ object Request {
   def parseHighlight(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      uri <- parseUri(json)
+      name <- parseSourceName(json)
       pos <- Position.parse(json \ "position")
-    } yield Request.Highlight(id, uri, pos)
+    } yield Request.Highlight(id, name, pos)
   }
 
   /**
@@ -353,9 +355,9 @@ object Request {
   def parseHover(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      uri <- parseUri(json)
+      name <- parseSourceName(json)
       pos <- Position.parse(json \ "position")
-    } yield Request.Hover(id, uri, pos)
+    } yield Request.Hover(id, name, pos)
   }
 
   /**
@@ -365,9 +367,9 @@ object Request {
     for {
       id <- parseId(json)
       newName <- parseString("newName", json)
-      uri <- parseUri(json)
+      name <- parseSourceName(json)
       pos <- Position.parse(json \ "position")
-    } yield Request.Rename(id, newName, uri, pos)
+    } yield Request.Rename(id, newName, name, pos)
   }
 
   /**
@@ -376,9 +378,9 @@ object Request {
   def parseUses(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      uri <- parseUri(json)
+      name <- parseSourceName(json)
       pos <- Position.parse(json \ "position")
-    } yield Request.Uses(id, uri, pos)
+    } yield Request.Uses(id, name, pos)
   }
 
   /**
@@ -387,8 +389,8 @@ object Request {
   def parseDocumentSymbols(v: JValue): Result[Request, String] = {
     for {
       id <- parseId(v)
-      uri <- parseUri(v)
-    } yield Request.DocumentSymbols(id, uri)
+      name <- parseSourceName(v)
+    } yield Request.DocumentSymbols(id, name)
   }
 
   /**
@@ -407,8 +409,8 @@ object Request {
   def parseSemanticTokens(json: JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      uri <- parseUri(json)
-    } yield Request.SemanticTokens(id, uri)
+      name <- parseSourceName(json)
+    } yield Request.SemanticTokens(id, name)
   }
 
   /**
@@ -417,9 +419,9 @@ object Request {
   def parseSignature(json: JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      uri <- parseUri(json)
+      name <- parseSourceName(json)
       pos <- Position.parse(json \ "position")
-    } yield Request.Signature(id, uri, pos)
+    } yield Request.Signature(id, name, pos)
   }
 
   /**
@@ -428,9 +430,9 @@ object Request {
   def parseInlayHint(json: JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      uri <- parseUri(json)
+      name <- parseSourceName(json)
       range <- Range.parse(json \ "range")
-    } yield Request.InlayHint(id, uri, range)
+    } yield Request.InlayHint(id, name, range)
   }
 
   /**
@@ -455,14 +457,22 @@ object Request {
   /**
     * Attempts to parse the `uri` from the given JSON value `v`.
     */
-  private def parseUri(v: JValue): Result[String, String] = {
+  private def parseUri(v: JValue): Result[URI, String] = {
     v \ "uri" match {
       case JString(s) =>
-        ClientUri.shadow(s)
-        Ok(s)
+        try {
+          Ok(new URI(s))
+        } catch {
+          case ex: URISyntaxException => Err(s"Malformed uri: '$s': ${ex.getMessage}")
+        }
       case s => Err(s"Unexpected uri: '$s'.")
     }
   }
+
+  /**
+    * Attempts to parse the `uri` from the given JSON value `v` as the name of a source.
+    */
+  private def parseSourceName(v: JValue): Result[SourceName, String] = parseUri(v).map(ClientUri.toSourceName)
 
   /**
     * Attempts to parse the given `key` as a String from the given JSON value `v`.
@@ -480,10 +490,10 @@ object Request {
   def parseCodeAction(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      uri <- parseUri(json)
+      name <- parseSourceName(json)
       range <- Range.parse(json \ "range")
       context <- CodeActionContext.parse(json \ "context")
-    } yield Request.CodeAction(id, uri, range, context)
+    } yield Request.CodeAction(id, name, range, context)
   }
 
   /**
@@ -495,9 +505,9 @@ object Request {
   def parseFormatting(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      uri <- parseUri(json)
+      name <- parseSourceName(json)
       options = FormattingOptions.parse(json \ "options")
-    } yield Request.Formatting(id, uri, options)
+    } yield Request.Formatting(id, name, options)
   }
 
   /**
@@ -506,8 +516,8 @@ object Request {
   def parseFoldingRange(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      uri <- parseUri(json)
-    } yield Request.FoldingRange(id, uri)
+      name <- parseSourceName(json)
+    } yield Request.FoldingRange(id, name)
   }
 
 }

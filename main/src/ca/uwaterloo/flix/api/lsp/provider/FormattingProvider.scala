@@ -17,13 +17,14 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{FormattingOptions, Position, FormatterLsp, TextEdit, Range}
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 
 import scala.annotation.unused
 
 object FormattingProvider {
 
-  def formatDocument(uri: String, @unused options: FormattingOptions)(implicit @unused flix: Flix): List[TextEdit] = {
+  def formatDocument(name: SourceName, @unused options: FormattingOptions)(implicit @unused flix: Flix): List[TextEdit] = {
     val parsedAst = flix.getParsedAst
-    FormatterLsp.format(parsedAst, uri)
+    FormatterLsp.format(parsedAst, name)
   }
 }
