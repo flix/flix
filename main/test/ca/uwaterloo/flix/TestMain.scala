@@ -63,6 +63,12 @@ class TestMain extends AnyFunSuite {
     assert(opts.command == Main.Command.Outdated)
   }
 
+  test("stat") {
+    val args = Array("stat")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Stat)
+  }
+
   test("doc") {
     val args = Array("doc")
     val opts = Main.parseCmdOpts(args).get
@@ -224,12 +230,6 @@ class TestMain extends AnyFunSuite {
     val args = Array("--Xno-deprecated")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xnodeprecated)
-  }
-
-  test("--Xsummary") {
-    val args = Array("--Xsummary")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xsummary)
   }
 
 }

@@ -255,6 +255,56 @@ object FileOps {
   }
 
   /**
+    * Checks that `p` is a valid `.fpkg` filepath.
+    * `p` is valid if all the following holds:
+    *   1. `p` must not be `null`.
+    *   1. `p` must exist in the file system.
+    *   1. `p` must be a regular file.
+    *   1. `p` must be readable.
+    *   1. `p` must end with `.fpkg`.
+    *   1. `p` must be a zip archive.
+    */
+  def isValidFpkgFile(p: Path): Result[Unit, IllegalArgumentException] = isValidZipFile(p, "fpkg")
+
+  /**
+    * Checks that `p` is a valid `.jar` filepath.
+    * `p` is valid if all the following holds:
+    *   1. `p` must not be `null`.
+    *   1. `p` must exist in the file system.
+    *   1. `p` must be a regular file.
+    *   1. `p` must be readable.
+    *   1. `p` must end with `.jar`.
+    *   1. `p` must be a zip archive.
+    */
+  def isValidJarFile(p: Path): Result[Unit, IllegalArgumentException] = isValidZipFile(p, "jar")
+
+  /**
+    * Checks that `p` is a non-null path to an existing, regular, readable zip archive with the extension `ext`.
+    */
+  private def isValidZipFile(p: Path, ext: String): Result[Unit, IllegalArgumentException] = {
+    if (p == null) {
+      return Result.Err(new IllegalArgumentException(s"'p' must be non-null."))
+    }
+    val pNorm = p.normalize()
+    if (!Files.exists(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a file."))
+    }
+    if (!Files.isRegularFile(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a regular file."))
+    }
+    if (!Files.isReadable(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
+    }
+    if (!checkExt(pNorm, ext)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .$ext file."))
+    }
+    if (!isZipArchive(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a zip archive."))
+    }
+    Result.Ok(())
+  }
+
+  /**
     * To support DOS time, Java 8+ treats dates before the 1980 January in special way.
     * Here we use 2014-06-27 (the date of the first commit to Flix) to avoid the complexity introduced by this hack.
     *

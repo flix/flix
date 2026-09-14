@@ -48,8 +48,11 @@ class Shell(bootstrap: Bootstrap, options: Options) {
 
   /**
     * The Flix instance (the same instance is used for incremental compilation).
+    *
+    * Replaced by a new instance when a package or JAR changes, since the packages and JARs
+    * are fixed for the lifetime of an instance. See [[refresh]].
     */
-  private implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
+  private var flix: Flix = bootstrap.mkFlix(options, AnsiTerminalFormatter)
 
   /**
     * Remove any line continuation backslashes from the given string
@@ -95,9 +98,8 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     // Print the welcome banner.
     printWelcomeBanner()
 
-    // Perform the initial check. This loads the project sources into the Flix
-    // instance (which must happen before the file watcher starts), reports any
-    // errors, and warms the incremental caches. Code generation is not needed.
+    // Perform the initial check. This reports any errors and warms the incremental
+    // caches. Code generation is not needed.
     check(progress = true)
 
     // Start watching for file system changes.
@@ -127,6 +129,9 @@ class Shell(bootstrap: Bootstrap, options: Options) {
 
     // Stop the file watcher.
     bootstrap.stopWatching()
+
+    // Release the resources held by the Flix instance.
+    flix.close()
 
     // Print goodbye message.
     terminal.writer().println("Thanks, and goodbye.")
@@ -230,6 +235,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   private def execEval(s: String)(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
 
+    // Apply any pending file system changes (which may replace the Flix instance).
+    // This must happen before the source line is added to the instance.
+    refresh()
+
     //
     // Try to determine the category of the source line.
     //
@@ -242,7 +251,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         val name = "$" + fragments.length
 
         // Add the source code fragment to Flix.
-        flix.addVirtualPath(Path.of(name), s)(SecurityContext.Unrestricted)
+        flix.addSource(Path.of(name), s, SecurityContext.Unrestricted)
 
         // And try to check it! (No code generation is needed for a declaration.)
         check(progress = false) match {
@@ -252,7 +261,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
           case Result.Err(_) =>
             // Check failed. Ignore the last fragment.
             fragments.pop()
-            flix.remVirtualPath(Path.of(name))
+            flix.remSource(Path.of(name))
             w.println("Error: Declaration ignored due to previous error(s).")
         }
 
@@ -274,10 +283,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
              |checked_ecast(())
              |""".stripMargin
         }
-        flix.addVirtualPath(CompilerConstants.VirtualShellFile, src)(SecurityContext.Unrestricted)
+        flix.addSource(CompilerConstants.VirtualShellFile, src, SecurityContext.Unrestricted)
         run(main)
         // Remove immediately so it doesn't confuse subsequent compilations (e.g. reloads or declarations)
-        flix.remVirtualPath(CompilerConstants.VirtualShellFile)
+        flix.remSource(CompilerConstants.VirtualShellFile)
         flix.setOptions(flix.options.copy(entryPoint = None))
 
       case Category.Unknown =>
@@ -290,6 +299,9 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * Executes the given bootstrap function and prints any errors.
     */
   private def execBootstrap[T](f: => Result[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = {
+    // Apply any pending file system changes (which may replace the Flix instance).
+    refresh()
+
     // Reset the options: a previous command may have changed e.g. the build mode on the shared Flix instance.
     flix.setOptions(options)
     f match {
@@ -306,13 +318,29 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   }
 
   /**
+    * Applies any pending file system changes (new, modified, or deleted files) to the Flix instance.
+    * Called at the start of every command, before the command adds anything to the instance.
+    *
+    * If a package or JAR changed, the current instance is closed and replaced by a new one, since
+    * the packages and JARs are fixed for the lifetime of an instance. The declarations entered in
+    * the shell are added to the new instance.
+    */
+  private def refresh(): Unit = {
+    if (bootstrap.applyFileChanges(flix)) {
+      flix.close()
+      flix = bootstrap.mkFlix(options, AnsiTerminalFormatter)
+      for ((fragment, i) <- fragments.reverse.zipWithIndex) {
+        flix.addSource(Path.of("$" + (i + 1)), fragment, SecurityContext.Unrestricted)
+      }
+    }
+  }
+
+  /**
     * Type checks the current files and packages (first time from scratch, subsequent times incrementally).
-    * Automatically picks up any file changes detected by the file watcher before checking.
+    *
+    * Pending file system changes must have been applied by the caller (see [[refresh]]).
     */
   private def check(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Result[TypedAst.Root, List[CompilationMessage]] = {
-    // Apply any pending file system changes (new, modified, or deleted files).
-    bootstrap.applyFileChanges(flix)
-
     // Set the main entry point if there is one (i.e. if the programmer wrote an expression)
     flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
 

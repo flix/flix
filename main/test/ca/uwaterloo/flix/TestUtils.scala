@@ -36,7 +36,7 @@ trait TestUtils {
     * Checks the given input string `s` with the given compilation options `o`.
     */
   def check(s: String, o: Options)(implicit sctx: SecurityContext): (Option[TypedAst.Root], List[CompilationMessage]) = {
-    new Flix().setOptions(o).addVirtualPath(CompilerConstants.VirtualTestFile, s).check()
+    new Flix().setOptions(o).addSource(CompilerConstants.VirtualTestFile, s, sctx).check()
   }
 
   /**

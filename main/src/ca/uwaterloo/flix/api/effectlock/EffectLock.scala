@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.effectlock
 import ca.uwaterloo.flix.api.effectlock.serialization.{Deserialize, Serialize}
 import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, TypedAst}
 import ca.uwaterloo.flix.api.effectlock.UseGraph.UsedSym
-import ca.uwaterloo.flix.language.ast.shared.Input
+import ca.uwaterloo.flix.language.ast.shared.{Origin, Source}
 import ca.uwaterloo.flix.util.Result
 
 object EffectLock {
@@ -75,40 +75,35 @@ object EffectLock {
   /** Returns `true` if for the edge `f -> g`, `f` occurs in the source project and `g` occurs in a library and `g` is public. */
   private def isPublicLibraryCall(graphEdge: (UsedSym, UsedSym), root: TypedAst.Root): Boolean = graphEdge match {
     case (src, UsedSym.DefnSym(dst)) =>
-      isFromLocalProject(getInput(src)) &&
-        isLibraryFunction(dst.src.input) &&
+      isFromLocalProject(getSource(src)) &&
+        isLibraryFunction(dst.src) &&
         root.defs.get(dst).exists(_.spec.mod.isPublic)
 
     case (src, UsedSym.SigSym(dst)) =>
-      isFromLocalProject(getInput(src)) &&
-        isLibraryFunction(dst.src.input) &&
+      isFromLocalProject(getSource(src)) &&
+        isLibraryFunction(dst.src) &&
         root.sigs.get(dst).exists(_.spec.mod.isPublic)
   }
 
-  /** Returns the input source of `sym0`. This is a helper function to reduce repetition. */
-  private def getInput(sym0: UsedSym): Input = sym0 match {
-    case UsedSym.DefnSym(sym) => sym.src.input
-    case UsedSym.SigSym(sym) => sym.src.input
+  /** Returns the source of `sym0`. This is a helper function to reduce repetition. */
+  private def getSource(sym0: UsedSym): Source = sym0 match {
+    case UsedSym.DefnSym(sym) => sym.src
+    case UsedSym.SigSym(sym) => sym.src
   }
 
-  /** Returns `true` if `input` is in the source project. */
-  private def isFromLocalProject(input: Input): Boolean = input match {
-    case Input.RealFile(_, _) => true
-    case Input.VirtualFile(_, _, _) => true
-    case Input.VirtualUri(_, _, _) => true
-    case Input.PkgFile(_, _) => false
-    case Input.FileInPackage(_, _, _, _) => false
-    case Input.Unknown => false
-  }
+  /** Returns `true` if `src` is in the source project, i.e. was supplied by the user. */
+  private def isFromLocalProject(src: Source): Boolean = src.origin.isUser
 
-  /** Returns `true` if `input` is in a library. */
-  private def isLibraryFunction(input: Input): Boolean = input match {
-    case Input.RealFile(_, _) => false
-    case Input.VirtualFile(_, _, _) => false
-    case Input.VirtualUri(_, _, _) => false
-    case Input.PkgFile(_, _) => true
-    case Input.FileInPackage(_, _, _, _) => true
-    case Input.Unknown => false
+  /**
+    * Returns `true` if `src` is in a library: the library bundled with the compiler or a package.
+    *
+    * A synthetic source with an unknown origin is in no library.
+    */
+  private def isLibraryFunction(src: Source): Boolean = src.origin match {
+    case Origin.User => false
+    case Origin.Library => true
+    case Origin.Package => true
+    case Origin.Unknown => false
   }
 
   /** Returns the definition of `sym0` w.r.t. `root`. */

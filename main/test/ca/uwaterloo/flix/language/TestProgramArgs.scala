@@ -40,7 +40,7 @@ class TestProgramArgs extends AnyFunSuite {
 
     val result = new Flix()
       .setOptions(Options.TestWithLibAll)
-      .addVirtualPath(CompilerConstants.VirtualTestFile, input)
+      .addSource(CompilerConstants.VirtualTestFile, input, sctx)
       .compile()
     result match {
       case Result.Ok(r) => JvmLoader.load(r).main match {

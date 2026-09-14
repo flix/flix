@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.{FileOps, Options}
+import ca.uwaterloo.flix.util.{FileOps, Options, Result}
 import org.eclipse.lsp4j
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages
@@ -61,11 +61,34 @@ object LspServer {
     */
   private val TriggerChars = List("#", ".", "/", "?")
 
+  /**
+    * The glob pattern of the JARs and packages watched for changes.
+    */
+  private val DependencyGlob = "**/lib/**/*.{jar,fpkg}"
+
+  /**
+    * The id of the registration of the dependency watcher.
+    */
+  private val DependencyWatcherId = "flix/dependencies"
+
   private class FlixLanguageServer(o: Options) extends LanguageServer with LanguageClientAware {
     /**
       * The Flix instance (the same instance is used for incremental compilation).
+      *
+      * The JARs and packages are fixed for the lifetime of an instance, so the instance is
+      * replaced during [[initialize]] and whenever a JAR or package changes (see [[processCheck]]).
       */
-    val flix: Flix = new Flix().setFormatter(NoFormatter).setOptions(o)
+    var flix: Flix = new Flix().setFormatter(NoFormatter).setOptions(o)
+
+    /**
+      * The workspace folders that exist on disk.
+      */
+    private var workspaceRoots: List[Path] = Nil
+
+    /**
+      * Whether a JAR or package changed since [[flix]] was constructed.
+      */
+    private var dependenciesChanged: Boolean = false
 
     /**
       * A map from source URIs to source code.
@@ -120,20 +143,101 @@ object LspServer {
     }
 
     /**
+      * Registers a file watcher for the JARs and packages under `lib/`, if the client supports dynamic
+      * registration. The client then reports changes through `didChangeWatchedFiles`.
+      */
+    override def initialized(params: InitializedParams): Unit = {
+      if (supportsWatchedFilesRegistration) {
+        val watcher = new FileSystemWatcher(messages.Either.forLeft(DependencyGlob))
+        val options = new DidChangeWatchedFilesRegistrationOptions(List(watcher).asJava)
+        val registration = new Registration(DependencyWatcherId, "workspace/didChangeWatchedFiles", options)
+        flixLanguageClient.registerCapability(new RegistrationParams(List(registration).asJava))
+      } else {
+        System.err.println("The client does not support dynamic registration of file watchers: changes to JARs and packages are not detected.")
+      }
+    }
+
+    /**
+      * Returns `true` if the client supports dynamic registration of `didChangeWatchedFiles`.
+      */
+    private def supportsWatchedFilesRegistration: Boolean = {
+      val workspace = clientCapabilities.getWorkspace
+      workspace != null &&
+        workspace.getDidChangeWatchedFiles != null &&
+        java.lang.Boolean.TRUE.equals(workspace.getDidChangeWatchedFiles.getDynamicRegistration)
+    }
+
+    /**
       * Loads all Flix resources in the workspace, including:
-      *   - Flix source files (*.flix, src/**/*.flix, test/**/*.flix).
       *   - JAR files (lib/**/*.jar).
       *   - Flix package files (lib/**/*.fpkg).
+      *   - Flix source files (*.flix, src/**/*.flix, test/**/*.flix).
+      *
+      * The JARs and packages are fixed for the lifetime of a Flix instance, so the instance is
+      * constructed once they are known, and the source files are added afterwards.
       */
     private def loadFlixProject(roots: List[WorkspaceFolder]): Unit = {
-      for {
-        root <- roots
-        path = Paths.get(root.getName)
-        if Files.exists(path) && Files.isDirectory(path)
-      } {
-        loadFlixSources(path)
-        loadJarsAndFkgs(path)
+      val paths = mutable.ArrayBuffer.empty[Path]
+      for (root <- roots) {
+        val path = Paths.get(root.getName)
+        if (Files.exists(path) && Files.isDirectory(path)) {
+          paths += path
+        }
       }
+      workspaceRoots = paths.toList
+
+      flix.close()
+      flix = mkFlix()
+
+      for (path <- workspaceRoots) {
+        loadFlixSources(path)
+      }
+    }
+
+    /**
+      * Returns the JARs and packages under `lib/` of every workspace root.
+      *
+      * A file that is not a valid JAR or package (for example one that is still being written) is skipped.
+      */
+    private def scanDependencies(): (List[(Path, SecurityContext)], List[Path]) = {
+      val pkgs = mutable.ArrayBuffer.empty[(Path, SecurityContext)]
+      val jars = mutable.ArrayBuffer.empty[Path]
+      for (path <- workspaceRoots) {
+        for (p <- FileOps.getFilesIn(path.resolve("lib"), Int.MaxValue)) {
+          if (FileOps.checkExt(p, "jar")) {
+            FileOps.isValidJarFile(p) match {
+              case Result.Ok(()) => jars += p
+              case Result.Err(ex) => System.err.println(s"Skipping JAR: ${ex.getMessage}")
+            }
+          } else if (FileOps.checkExt(p, "fpkg")) {
+            FileOps.isValidFpkgFile(p) match {
+              case Result.Ok(()) => pkgs += (p -> SecurityContext.Unrestricted)
+              case Result.Err(ex) => System.err.println(s"Skipping package: ${ex.getMessage}")
+            }
+          }
+        }
+      }
+      (pkgs.toList, jars.toList)
+    }
+
+    /**
+      * Returns a new Flix instance with the current JARs and packages under `lib/` and the current [[sources]].
+      */
+    private def mkFlix(): Flix = {
+      val (pkgs, jars) = scanDependencies()
+      val flix = new Flix(pkgs = pkgs, jars = jars).setFormatter(NoFormatter).setOptions(o)
+      for ((uri, src) <- sources) {
+        flix.addSource(uri, src, SecurityContext.Unrestricted)
+      }
+      flix
+    }
+
+    /**
+      * Records that a JAR or package changed and re-checks the project with a new Flix instance.
+      */
+    def onDependencyChange(): Unit = {
+      dependenciesChanged = true
+      processCheck()
     }
 
     /**
@@ -154,24 +258,6 @@ object LspServer {
           addUri(p.toUri, source)
         }
       }
-    }
-
-    /**
-      * Loads all JAR files and Flix package files in the workspace, including:
-      *   - lib/**/*.jar
-      *   - lib/**/*.fpkg
-      */
-    private def loadJarsAndFkgs(path: Path): Unit = {
-      FileOps.getFilesIn(path.resolve("lib"), Int.MaxValue)
-        .foreach{ case p =>
-          // Load all JAR files in the workspace, the pattern should be lib/**/*.jar.
-          if (FileOps.checkExt(p, "jar"))
-            flix.addJar(p)
-          // Load all Flix package files in the workspace, the pattern should be lib/**/*.fpkg.
-          if (FileOps.checkExt(p, "fpkg")) {
-            flix.addPkg(p)(SecurityContext.Unrestricted)
-          }
-        }
     }
 
     private def mkServerCapabilities(): ServerCapabilities = {
@@ -206,6 +292,7 @@ object LspServer {
 
     override def shutdown(): CompletableFuture[AnyRef] = {
       System.err.println("shutdown")
+      flix.close()
       CompletableFuture.completedFuture(null)
     }
 
@@ -226,7 +313,7 @@ object LspServer {
       * Adds the given source code to the Flix instance.
       */
     def addUri(uri: URI, src: String): Unit = {
-      flix.addVirtualUri(uri, src)(SecurityContext.Unrestricted)
+      flix.addSource(uri, src, SecurityContext.Unrestricted)
       sources.put(uri, src)
     }
 
@@ -235,6 +322,13 @@ object LspServer {
       */
     def processCheck(): Unit = {
       try {
+        // The JARs and packages are fixed for the lifetime of a Flix instance: if they changed, replace the instance.
+        if (dependenciesChanged) {
+          flix.close()
+          flix = mkFlix()
+          dependenciesChanged = false
+        }
+
         val diagnostics = flix.check() match {
           // Case 1: Compilation was successful or partially successful so that we have the root and errors.
           case (Some(root1), errors) =>
@@ -323,7 +417,7 @@ object LspServer {
       val range = Range.fromLsp4j(params.getRange)
       val codeActions =
         CodeActionProvider
-        .getCodeActions(uri, range, flixLanguageServer.currentErrors)(flixLanguageServer.root)
+        .getCodeActions(uri, range, flixLanguageServer.currentErrors)(flixLanguageServer.root, flixLanguageServer.flix)
         .map(_.toLsp4j)
         .map(messages.Either.forRight[Command, CodeAction])
         .asJava
@@ -459,8 +553,20 @@ object LspServer {
       System.err.println(s"didChangeConfiguration: $didChangeConfigurationParams")
     }
 
+    /**
+      * Called when a watched file changes. Only JARs and packages are watched (see `initialized`).
+      */
     override def didChangeWatchedFiles(didChangeWatchedFilesParams: DidChangeWatchedFilesParams): Unit = {
-      System.err.println(s"didChangeWatchedFiles: $didChangeWatchedFilesParams")
+      var dependencyChanged = false
+      for (event <- didChangeWatchedFilesParams.getChanges.asScala) {
+        val uri = event.getUri
+        if (uri.endsWith(".jar") || uri.endsWith(".fpkg")) {
+          dependencyChanged = true
+        }
+      }
+      if (dependencyChanged) {
+        flixLanguageServer.onDependencyChange()
+      }
     }
 
     override def symbol(params: WorkspaceSymbolParams): CompletableFuture[messages.Either[util.List[? <: SymbolInformation], util.List[? <: WorkspaceSymbol]]] = {

@@ -46,7 +46,7 @@ class TestFoldingRangeProvider extends AnyFunSuite {
     */
   private def foldingRanges(program: String): List[FoldingRange] = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    Flix.addVirtualPath(CompilerConstants.VirtualTestFile, program)
+    Flix.addSource(CompilerConstants.VirtualTestFile, program, sctx)
     Flix.check() match {
       case (Some(root), _) => FoldingRangeProvider.getFoldingRanges(Uri)(root)
       case (None, _) => fail("Compilation failed: a root is expected.")

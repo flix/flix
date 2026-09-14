@@ -223,6 +223,34 @@ object NameError {
     }
   }
 
+
+  /**
+    * An error raised to indicate that the public module `ns` is declared inside another module.
+    *
+    * A public module must be declared at the top level of its own file.
+    *
+    * @param ns  the fully qualified name of the nested public module.
+    * @param loc the location of the module name.
+    */
+  case class IllegalNestedPublicModule(ns: Name.NName, loc: SourceLocation) extends NameError {
+    def code: ErrorCode = ErrorCode.E5544
+
+    def summary: String = s"Nested public module: '$ns'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Nested public module: '${red(ns.toString)}'.
+         |
+         |${highlight(loc, "nested public module", fmt)}
+         |
+         |${underline("Explanation:")} A public module must be declared at the top level of its
+         |own file, not inside another module. For example:
+         |
+         |  // File ${ns.parts.mkString("/")}.flix
+         |  pub mod $ns { ... }
+         |""".stripMargin
+    }
+  }
   /**
     * An error raised to indicate that the given `name` is a reserved name.
     *

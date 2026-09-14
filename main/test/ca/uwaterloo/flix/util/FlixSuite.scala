@@ -96,7 +96,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
 
     // Add the given path.
     for (p <- paths) {
-      Flix.addFile(p)
+      Flix.addFile(p, sctx)
     }
 
     try {

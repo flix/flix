@@ -61,7 +61,7 @@ class TestJavaTypes extends AnyFunSuite {
         case Some(TypeConstructor.Native(desc, arity)) => assert(desc == list && arity == 1)
         case other => fail(s"Unexpected type constructor: $other")
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("flixTypeOf.Descriptor") {

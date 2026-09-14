@@ -69,7 +69,7 @@ object Weeder2 {
 
       // The root is only available if every unit was weeded successfully.
       val result = Option.when(refreshed.forall(_.isDefined)) {
-        WeededAst.Root(refreshed.flatten.toMap ++ fresh, entryPoint, readRoot.availableClasses, root.tokens)
+        WeededAst.Root(refreshed.flatten.toMap ++ fresh, entryPoint, root.tokens)
       }
       (result, sctx.errors.asScala.toList)
     }

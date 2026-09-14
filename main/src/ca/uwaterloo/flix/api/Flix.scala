@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Origin, SecurityContext, Source, SourceName}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.jvm.{ByteBuddyJavaTypeProvider, DependencyClassPath, ExternalJarLoader, JavaTypeProvider}
@@ -29,11 +29,9 @@ import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
 import ca.uwaterloo.flix.language.verifier.TokenVerifier
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.tools.compilertop.{CompilerTop, Profiler}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.tc.Debug
 
 import java.net.URI
@@ -69,23 +67,36 @@ object Flix {
 
 /**
   * Main programmatic interface for Flix.
+  *
+  * The packages and JARs are immutable: they are registered once at construction and cannot be
+  * changed afterwards. If they change, a new Flix compiler instance must be created.
+  *
+  * @param pkgs the Flix package files (`.fpkg`) to compile, each paired with its security context.
+  * @param jars the JAR files whose classes are available to Java interop.
   */
-class Flix {
+class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) extends AutoCloseable {
 
   /**
-    * A sequence of inputs to be parsed into Flix ASTs.
+    * Whether [[close]] has been called. A closed instance cannot compile.
     */
-  private val inputs = mutable.Map.empty[String, Input]
+  private var closed: Boolean = false
+
+  /**
+    * The registered sources, by name: the files of the packages, registered in the constructor, and
+    * the sources added by the caller. The sources of the bundled library are kept separately, see
+    * [[librarySources]].
+    */
+  private val sources = mutable.Map.empty[SourceName, Source]
+
+  /**
+    * The sources of the bundled library, by library level. Built once per level, on first use.
+    */
+  private val librarySources = mutable.Map.empty[LibLevel, List[Source]]
 
   /**
     * The set of sources changed since last compilation.
     */
   private var changeSet: ChangeSet = ChangeSet.Everything
-
-  /**
-    * The set of known Java classes and interfaces.
-    */
-  private var availableClasses: AvailableClasses = AvailableClasses(getJavaPlatformClassesAndInterfaces())
 
   /**
     * A cache of ASTs for incremental compilation.
@@ -174,6 +185,17 @@ class Flix {
     */
   val defaultCharset: Charset = Charset.forName("UTF-8")
 
+  // Register the source files of the packages. The packages are read once, here.
+  for ((p, sctx) <- pkgs) {
+    FileOps.isValidFpkgFile(p) match {
+      case Result.Err(e: Throwable) => throw e
+      case Result.Ok(()) =>
+        for (source <- getSourcesOfPkg(p, sctx)) {
+          sources += source.sourceName -> source
+        }
+    }
+  }
+
   /**
     * The current Flix options.
     */
@@ -195,33 +217,121 @@ class Flix {
   private var formatter: Formatter = NoFormatter
 
   /**
-    * A class loader for loading external JARs.
+    * The normalized paths of the JARs.
     */
-  val jarLoader = new ExternalJarLoader
+  private val jarPaths: List[Path] = {
+    val result = mutable.ArrayBuffer.empty[Path]
+    for (p <- jars) {
+      FileOps.isValidJarFile(p) match {
+        case Result.Err(e: Throwable) => throw e
+        case Result.Ok(()) => result += p.normalize()
+      }
+    }
+    result.toList
+  }
 
   /**
-    * The class files of the JARs added with [[addJar]].
+    * The set of known Java classes and interfaces: those of the Java platform and those of the JARs.
+    */
+  val availableClasses: AvailableClasses = {
+    if (jarPaths.isEmpty) {
+      AvailableClasses.Platform
+    } else {
+      val jarClasses = jarPaths.flatMap(getClassesAndInterfacesOfJar)
+      AvailableClasses.Platform ++ AvailableClasses.fromClassFiles(jarClasses)
+    }
+  }
+
+  /**
+    * A class loader for loading the JARs.
+    */
+  val jarLoader = new ExternalJarLoader(jarPaths.map(_.toUri.toURL).toArray)
+
+  /**
+    * The class files of the JARs.
     *
     * Read directly rather than through [[jarLoader]]: a class loader constructed at run time
     * cannot serve resources inside a GraalVM native image.
     */
-  private val dependencyClassPath = new DependencyClassPath
+  private val dependencyClassPath = new DependencyClassPath(jarPaths)
 
   /** The descriptor-based Java metadata provider owned by this compiler instance. */
   val javaTypeProvider: JavaTypeProvider = ByteBuddyJavaTypeProvider.fromDependencyClassPath(dependencyClassPath, jarLoader)
 
   /**
-    * Adds Flix source code from a file on the filesystem.
+    * Adds the source `text` under the path `p`, replacing any source already registered under it.
+    *
+    * The path names the source; it need not exist on disk. To add a file from disk, see [[addFile]].
+    *
+    * @param p    the path that names the source.
+    * @param text the Flix source code.
+    * @param sctx the security context the source is compiled under.
+    */
+  def addSource(p: Path, text: String, sctx: SecurityContext): Flix = {
+    if (p == null)
+      throw new IllegalArgumentException("'p' must be non-null.")
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    if (sctx == null)
+      throw new IllegalArgumentException("'sctx' must be non-null.")
+    register(Source.fromString(SourceName.PathName(p), Origin.User, sctx, text))
+    this
+  }
+
+  /**
+    * Adds the source `text` under the URI `uri`, replacing any source already registered under it.
+    *
+    * Language servers name sources by the URI the client uses, so that locations sent back to the
+    * client refer to the same document.
+    *
+    * @param uri  the URI that names the source.
+    * @param text the Flix source code.
+    * @param sctx the security context the source is compiled under.
+    */
+  def addSource(uri: URI, text: String, sctx: SecurityContext): Flix = {
+    if (uri == null)
+      throw new IllegalArgumentException("'uri' must be non-null.")
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    if (sctx == null)
+      throw new IllegalArgumentException("'sctx' must be non-null.")
+    register(Source.fromString(SourceName.UriName(uri), Origin.User, sctx, text))
+    this
+  }
+
+  /**
+    * Removes the source named by the path `p`, if any.
+    */
+  def remSource(p: Path): Flix = {
+    if (p == null)
+      throw new IllegalArgumentException("'p' must be non-null.")
+    unregister(SourceName.PathName(p))
+    this
+  }
+
+  /**
+    * Removes the source named by the URI `uri`, if any.
+    */
+  def remSource(uri: URI): Flix = {
+    if (uri == null)
+      throw new IllegalArgumentException("'uri' must be non-null.")
+    unregister(SourceName.UriName(uri))
+    this
+  }
+
+  /**
+    * Adds the Flix source file at `p`. The file is read immediately and registered under its
+    * normalized path.
     *
     * @param p    the path to the Flix source file. Must be a readable `.flix` file.
-    * @param sctx the security context for the input.
+    * @param sctx the security context the source is compiled under.
     */
-  def addFile(p: Path)(implicit sctx: SecurityContext): Flix = {
+  def addFile(p: Path, sctx: SecurityContext): Flix = {
     isValidFlixFile(p) match {
       case Result.Err(e: Throwable) => throw e
       case Result.Ok(()) =>
-        addInput(p.normalize().toString, Input.RealFile(p, sctx))
-        this
+        val text = new String(Files.readAllBytes(p), defaultCharset)
+        addSource(p.normalize(), text, sctx)
     }
   }
 
@@ -255,198 +365,43 @@ class Flix {
   }
 
   /**
-    * Removes Flix source code associated with a file on the filesystem.
+    * Removes the Flix source file at `p`, if it was added with [[addFile]].
     *
-    * @param p    the path to the Flix source file. Must be a `.flix` file.
-    * @param sctx the security context for the input.
+    * @param p the path to the Flix source file. Must be a `.flix` file.
     */
-  def remFile(p: Path)(implicit sctx: SecurityContext): Flix = {
+  def remFile(p: Path): Flix = {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
-
-    remInput(p.toString, Input.RealFile(p, sctx))
-    this
+    remSource(p.normalize())
   }
 
   /**
-    * Adds Flix source code from a string with an associated virtual path.
+    * Registers `source`, replacing any source already registered under its name.
     *
-    * @param path the virtual path to associate with the source code.
-    * @param src  the Flix source code.
-    * @param sctx the security context for the input.
+    * If a source is replaced, its name is marked as changed. Re-registering a source with the same
+    * origin, security context, and text changes nothing and marks nothing.
     */
-  def addVirtualPath(path: Path, src: String)(implicit sctx: SecurityContext): Flix = {
-    if (path == null)
-      throw new IllegalArgumentException("'path' must be non-null.")
-    if (src == null)
-      throw new IllegalArgumentException("'src' must be non-null.")
-    if (sctx == null)
-      throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(path.toString, Input.VirtualFile(path, src, sctx))
-    this
-  }
-
-  /**
-    * Removes Flix source code associated with a virtual path.
-    *
-    * @param path the virtual path of the source code to remove.
-    */
-  def remVirtualPath(path: Path): Flix = {
-    if (path == null)
-      throw new IllegalArgumentException("'path' must be non-null.")
-    remInput(path.toString, Input.VirtualFile(path, "", /* unused */ SecurityContext.Plain))
-    this
-  }
-
-  /**
-    * Adds Flix source code from a string with an associated virtual URI.
-    *
-    * @param uri  the virtual URI to associate with the source code.
-    * @param src  the Flix source code.
-    * @param sctx the security context for the input.
-    */
-  def addVirtualUri(uri: URI, src: String)(implicit sctx: SecurityContext): Flix = {
-    if (uri == null)
-      throw new IllegalArgumentException("'uri' must be non-null.")
-    if (src == null)
-      throw new IllegalArgumentException("'src' must be non-null.")
-    if (sctx == null)
-      throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(uri.toString, Input.VirtualUri(uri, src, sctx))
-    this
-  }
-
-  /**
-    * Removes Flix source code associated with a virtual URI.
-    *
-    * @param uri the virtual URI of the source code to remove.
-    */
-  def remVirtualUri(uri: URI): Flix = {
-    if (uri == null)
-      throw new IllegalArgumentException("'uri' must be non-null.")
-    remInput(uri.toString, Input.VirtualUri(uri, "", /* unused */ SecurityContext.Plain))
-    this
-  }
-
-  /**
-    * Adds Flix source code from a Flix package file (.fpkg).
-    *
-    * @param p    the path to the Flix package file. Must be a readable `.fpkg` zip archive.
-    * @param sctx the security context for the input.
-    */
-  def addPkg(p: Path)(implicit sctx: SecurityContext): Flix = {
-    isValidFpkgFile(p) match {
-      case Result.Err(e: Throwable) => throw e
-      case Result.Ok(()) =>
-        addInput(p.toString, Input.PkgFile(p, sctx))
-        this
-    }
-  }
-
-  /**
-    * Checks that `p` is a valid `.fpkg` filepath.
-    * `p` is valid if all the following holds:
-    *   1. `p` must not be `null`.
-    *   1. `p` must exist in the file system.
-    *   1. `p` must be a regular file.
-    *   1. `p` must be readable.
-    *   1. `p` must end with `.fpkg`.
-    *   1. `p` must be a zip archive.
-    */
-  def isValidFpkgFile(p: Path): Result[Unit, IllegalArgumentException] = {
-    if (p == null) {
-      return Result.Err(new IllegalArgumentException(s"'p' must be non-null."))
-    }
-    val pNorm = p.normalize()
-    if (!Files.exists(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a file."))
-    }
-    if (!Files.isRegularFile(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a regular file."))
-    }
-    if (!Files.isReadable(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
-    }
-    if (!FileOps.checkExt(pNorm, "fpkg")) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .fpkg file."))
-    }
-    if (!FileOps.isZipArchive(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a zip archive."))
-    }
-    Result.Ok(())
-  }
-
-  /**
-    * Adds a JAR file to the class loader and extends the set of known Java classes and interfaces.
-    *
-    * @param p the path to the JAR file. Must be a readable `.jar` file.
-    */
-  def addJar(p: Path): Flix = {
-    isValidJarFile(p) match {
-      case Result.Err(e: Throwable) => throw e
-      case Result.Ok(()) =>
-        val p1 = p.normalize()
-        jarLoader.addURL(p1.toUri.toURL)
-        dependencyClassPath.addPath(p1)
-        extendKnownJavaClassesAndInterfaces(p1)
-        this
-    }
-  }
-
-  /**
-    * Checks that `p` is a valid `.jar` filepath.
-    * `p` is valid if all the following holds:
-    *   1. `p` must not be `null`.
-    *   1. `p` must exist in the file system.
-    *   1. `p` must be a regular file.
-    *   1. `p` must be readable.
-    *   1. `p` must end with `.jar`.
-    *   1. `p` must be a zip archive.
-    */
-  private def isValidJarFile(p: Path): Result[Unit, IllegalArgumentException] = {
-    if (p == null) {
-      return Result.Err(new IllegalArgumentException(s"'p' must be non-null."))
-    }
-    val pNorm = p.normalize()
-    if (!Files.exists(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a file."))
-    }
-    if (!Files.isRegularFile(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a regular file."))
-    }
-    if (!Files.isReadable(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
-    }
-    if (!FileOps.checkExt(pNorm, "jar")) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .jar file."))
-    }
-    if (!FileOps.isZipArchive(pNorm)) {
-      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a zip archive."))
-    }
-    Result.Ok(())
-  }
-
-  /**
-    * Adds the given `input` under the given `name`.
-    */
-  private def addInput(name: String, input: Input): Unit = inputs.get(name) match {
+  private def register(source: Source): Unit = sources.get(source.sourceName) match {
     case None =>
-      inputs += name -> input
+      sources += source.sourceName -> source
+    case Some(old) if old.origin == source.origin && old.sctx == source.sctx && java.util.Arrays.equals(old.data, source.data) => // nop
     case Some(_) =>
-      changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
-      inputs += name -> input
+      changeSet = changeSet.markChanged(source.sourceName, cachedTyperAst.dependencyGraph)
+      sources += source.sourceName -> source
   }
 
   /**
-    * Removes the given `input` under the given `name`.
+    * Unregisters the source with the given `name`, if any.
     *
-    * Note: Removing an input means to replace it by the empty string.
+    * The name is marked as changed, so that everything that depended on the source is recompiled,
+    * and the source is forgotten. The caches of the incremental phases drop it at the next
+    * compilation, since they keep only entries that are still present.
     */
-  private def remInput(name: String, input: Input): Unit = inputs.get(name) match {
+  private def unregister(name: SourceName): Unit = sources.get(name) match {
     case None => // nop
     case Some(_) =>
-      changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
-      inputs += name -> Input.VirtualFile(parsePath(name), "", /* unused */ SecurityContext.Plain)
+      changeSet = changeSet.markChanged(name, cachedTyperAst.dependencyGraph)
+      sources -= name
   }
 
   /**
@@ -498,6 +453,9 @@ class Flix {
     * If the list of [[CompilationMessage]]s is empty, then the root is always `Some(root)`.
     */
   def check(): (Option[TypedAst.Root], List[CompilationMessage]) = try {
+    if (closed)
+      throw new IllegalStateException("The Flix instance has been closed.")
+
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -516,11 +474,10 @@ class Flix {
       AstPrinter.resetPhaseFile()
     }
 
-    // We mark all inputs that contains compilation errors as dirty.
+    // We mark all sources that contain compilation errors as dirty.
     // Hence if a file contains an error it will be recompiled -- giving it a chance to disappear.
     for (e <- cachedErrors) {
-      val i = e.loc.source.input
-      changeSet = changeSet.markChanged(i, cachedTyperAst.dependencyGraph)
+      changeSet = changeSet.markChanged(e.loc.source.sourceName, cachedTyperAst.dependencyGraph)
     }
 
     // The default entry point
@@ -529,10 +486,9 @@ class Flix {
     // The global collection of errors
     val errors = mutable.ArrayBuffer.empty[CompilationMessage]
 
-    val (afterReader, readerErrors) = Reader.run(getInputs, availableClasses)
-    errors ++= readerErrors
+    val readRoot = ReadAst.Root(getSources.map(src => src -> ()).toMap)
 
-    val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
+    val (afterLexer, lexerErrors) = Lexer.run(readRoot, cachedLexerTokens, changeSet)
     errors ++= lexerErrors
     if (flix.options.xverify) {
       TokenVerifier.verify(afterLexer)
@@ -541,7 +497,7 @@ class Flix {
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
     errors ++= parserErrors
 
-    val (weederResult, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
+    val (weederResult, weederErrors) = Weeder2.run(readRoot, entryPoint, afterParser, cachedWeederAst, changeSet)
     errors ++= weederErrors
 
     val result = weederResult match {
@@ -623,14 +579,6 @@ class Flix {
       compilerTop.foreach(_.stop())
     }
 
-    // Print summary?
-    if (options.xsummary) {
-      result.foreach(root => {
-        val table = Summary.fileSummaryTable(root, nsDepth = Some(1), minLines = Some(125))
-        table.getMarkdownLines.foreach(println)
-      })
-    }
-
     // Return the result (which could contain soft failures).
     (result, errors.toList)
   } catch {
@@ -653,6 +601,9 @@ class Flix {
     * This manual cleanup has been verified as effective in the profiler.
     */
   def codeGen(typedAst: TypedAst.Root): CompilationResult = try {
+    if (closed)
+      throw new IllegalStateException("The Flix instance has been closed.")
+
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -761,6 +712,19 @@ class Flix {
   }
 
   /**
+    * Releases the resources held by this instance: the open JAR files of the dependency class path
+    * and the class loader for external JARs.
+    *
+    * Classes already loaded through [[jarLoader]] remain usable, but no further classes can be loaded
+    * from the JARs. The instance must not be used for compilation after it has been closed.
+    */
+  override def close(): Unit = {
+    closed = true
+    javaTypeProvider.close()
+    jarLoader.close()
+  }
+
+  /**
     * Enters the phase with the given name.
     *
     * Runs `f`, records its execution time, and, if `--Xprint-phases` is enabled,
@@ -813,34 +777,26 @@ class Flix {
   }
 
   /**
-    * Parses the given `name` into a Path.
-    * If `name` is a file:// URI, it is parsed as a URI; otherwise it is parsed directly.
+    * Returns the sources to compile: the registered sources followed by the sources of the bundled
+    * library selected by `options.lib`.
     */
-  private def parsePath(name: String): Path = {
-    if (name.startsWith("file://")) {
-      java.nio.file.Paths.get(new java.net.URI(name))
-    } else {
-      Path.of(name)
-    }
-  }
+  private def getSources: List[Source] = sources.values.toList ::: getLibrarySources(options.lib)
 
   /**
-    * Returns a list of inputs constructed from the strings and paths passed to Flix.
+    * Returns the sources of the bundled library at the given `level`, building them on first use.
     */
-  private def getInputs: List[Input] = {
-    val lib = options.lib match {
-      case LibLevel.Nix => Nil
-      case LibLevel.Min => getLibraryInputs(Library.CoreLibrary)
-      case LibLevel.All => getLibraryInputs(Library.CoreLibrary ++ Library.StandardLibrary)
-    }
-    inputs.values.toList ::: lib
-  }
+  private def getLibrarySources(level: LibLevel): List[Source] = librarySources.getOrElseUpdate(level, level match {
+    case LibLevel.Nix => Nil
+    case LibLevel.Min => mkLibrarySources(Library.CoreLibrary)
+    case LibLevel.All => mkLibrarySources(Library.CoreLibrary ++ Library.StandardLibrary)
+  })
 
   /**
-    * Returns the inputs for the given list of (path, text) pairs.
+    * Returns the library sources for the given list of (virtual path, text) pairs.
     */
-  private def getLibraryInputs(l: List[(String, String)]): List[Input] = l.foldLeft(List.empty[Input]) {
-    case (xs, (virtualPath, text)) => Input.VirtualFile(Path.of(virtualPath), text, SecurityContext.Unrestricted) :: xs
+  private def mkLibrarySources(l: List[(String, String)]): List[Source] = l.foldLeft(List.empty[Source]) {
+    case (xs, (virtualPath, text)) =>
+      Source.fromString(SourceName.PathName(Path.of(virtualPath)), Origin.Library, SecurityContext.Unrestricted, text) :: xs
   }
 
   /**
@@ -858,17 +814,23 @@ class Flix {
   }
 
   /**
-    * Extends the set of known Java classes and interfaces with those in the given JAR-file `p`.
+    * Returns the `.flix` source files inside the package at `p`, with the security context `sctx`.
     */
-  private def extendKnownJavaClassesAndInterfaces(p: Path): Unit = {
-    availableClasses = availableClasses ++ getPackageContent(getClassesAndInterfacesOfJar(p))
-  }
-
-  /**
-    * Returns all Java classes and interfaces in the current Java Platform.
-    */
-  private def getJavaPlatformClassesAndInterfaces(): MultiMap[List[String], String] = {
-    getPackageContent(ClassList.TheList)
+  private def getSourcesOfPkg(p: Path, sctx: SecurityContext): List[Source] = {
+    Using(new ZipFile(p.toFile)) { zip =>
+      val result = mutable.ArrayBuffer.empty[Source]
+      val iterator = zip.entries()
+      while (iterator.hasMoreElements) {
+        val entry = iterator.nextElement()
+        val name = entry.getName
+        if (name.endsWith(".flix")) {
+          val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
+          val text = new String(bytes, defaultCharset)
+          result += Source.fromString(SourceName.PackageEntry(p, name), Origin.Package, sctx, text)
+        }
+      }
+      result.toList
+    }.get
   }
 
   /**
@@ -887,30 +849,6 @@ class Flix {
       }
       result.toList
     }.get
-  }
-
-  /**
-    * Returns a multimap from Java packages to sub-packages, classes, and interfaces.
-    */
-  private def getPackageContent(l: List[String]): MultiMap[List[String], String] = {
-    l.foldLeft[MultiMap[List[String], String]](MultiMap.empty) {
-      case (acc, clazz) =>
-        // Given a string `java/util/zip/ZipUtils.class` we convert it to the list `java :: util :: zip :: ZipUtils`.
-        // We strip both the ".class" and ".java" suffix. Order should not matter.
-        val clazzPath = clazz.stripSuffix(".class").stripSuffix(".java").split('/').toList
-
-        // Create a multimap from all package prefixes to their sub packages and classes.
-        // For example, if we have `java.lang.String`, we want to compute:
-        // Nil                  => {java}
-        // List("java")         => {lang}
-        // List("java", "lang") => {String}
-        clazzPath.inits.foldLeft(acc) {
-          // Case 1: Nonempty path: split prefix and package
-          case (acc1, prefix :+ pkg) => acc1 + (prefix -> pkg)
-          // Case 2: Empty path: skip it
-          case (acc1, _) => acc1
-        }
-    }
   }
 
 }

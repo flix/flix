@@ -38,7 +38,7 @@ import org.json4s.native.JsonMethods.parse
 import java.io.ByteArrayInputStream
 import java.net.{InetSocketAddress, URI}
 import java.nio.charset.Charset
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipInputStream
@@ -75,14 +75,27 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   private val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
   /**
-    * The Flix instance (the same instance is used for incremental compilation).
-    */
-  private val flix: Flix = new Flix().setFormatter(NoFormatter).setOptions(o)
-
-  /**
     * A map from source URIs to source code.
     */
   private val sources: mutable.Map[URI, String] = mutable.Map.empty
+
+  /**
+    * The JARs added with `api/addJar` and not removed with `api/remJar`, in insertion order.
+    */
+  private val jars: mutable.LinkedHashSet[Path] = mutable.LinkedHashSet.empty
+
+  /**
+    * Whether [[jars]] changed since [[flix]] was constructed.
+    */
+  private var jarsChanged: Boolean = false
+
+  /**
+    * The Flix instance (the same instance is used for incremental compilation).
+    *
+    * Replaced by a new instance when the JARs change (see [[processCheck]]), since the JARs are
+    * fixed for the lifetime of an instance.
+    */
+  private var flix: Flix = mkFlix()
 
   /**
     * The current AST root. The root is null until the source code is compiled.
@@ -200,7 +213,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     */
   private def addUri(uri: String, src: String): Unit = {
     val u = new URI(uri)
-    flix.addVirtualUri(u, src)(SecurityContext.Unrestricted)
+    flix.addSource(u, src, SecurityContext.Unrestricted)
     sources += (u -> src)
   }
 
@@ -209,8 +222,19 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     */
   private def remUri(uri: String): Unit = {
     val u = new URI(uri)
-    flix.remVirtualUri(u)
+    flix.remSource(u)
     sources -= u
+  }
+
+  /**
+    * Returns a new Flix instance with the current [[jars]] and [[sources]].
+    */
+  private def mkFlix(): Flix = {
+    val flix = new Flix(jars = jars.toList).setFormatter(NoFormatter).setOptions(o)
+    for ((uri, src) <- sources) {
+      flix.addSource(uri, src, SecurityContext.Unrestricted)
+    }
+    flix
   }
 
   /**
@@ -253,11 +277,21 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
 
     case Request.AddJar(id, uri) =>
       val path = Path.of(new URI(uri))
-      flix.addJar(path)
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success)
+      FileOps.isValidJarFile(path) match {
+        case Ok(()) =>
+          // The JAR takes effect at the next check, which constructs a new Flix instance.
+          jars += path
+          jarsChanged = true
+          ("id" -> id) ~ ("status" -> ResponseStatus.Success)
+        case Err(ex) =>
+          ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> ex.getMessage)
+      }
 
-    case Request.RemJar(id, _) =>
-      // No-op (there is no easy way to remove a Jar from the JVM)
+    case Request.RemJar(id, uri) =>
+      val path = Path.of(new URI(uri))
+      if (jars.remove(path)) {
+        jarsChanged = true
+      }
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.Version(id) => processVersion(id)
@@ -332,7 +366,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("path" -> ShowAstProvider.showAst()(flix).toAbsolutePath.toString))
 
     case Request.CodeAction(id, uri, range, _) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, currentErrors)(root).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, currentErrors)(root, flix).map(_.toJSON))
 
     case Request.Formatting(id, uri, options) =>
       val edits = FormattingProvider.formatDocument(uri, options)(flix).map(_.toJSON)
@@ -347,6 +381,14 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * Processes a validate request.
     */
   private def processCheck(requestId: String): JValue = {
+    // The JARs are fixed for the lifetime of a Flix instance: if they changed, replace the instance.
+    // A JAR that disappeared without a `api/remJar` request is dropped.
+    if (jarsChanged) {
+      jars.filterInPlace(path => Files.isRegularFile(path))
+      flix.close()
+      flix = mkFlix()
+      jarsChanged = false
+    }
 
     // Measure elapsed time.
     val t = System.nanoTime()
@@ -411,6 +453,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * Processes a shutdown request.
     */
   private def processShutdown(): Nothing = {
+    flix.close()
     System.exit(0)
     throw null // unreachable
   }

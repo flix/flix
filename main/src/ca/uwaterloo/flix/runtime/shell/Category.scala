@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.api.CompilerConstants
-import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Origin, SecurityContext, Source, SourceName}
 import ca.uwaterloo.flix.language.phase.Lexer
 
 /**
@@ -44,8 +44,7 @@ object Category {
     * Returns the syntactic category of the given source code string `s`.
     */
   def categoryOf(s: String): Category = {
-    val input = Input.VirtualFile(CompilerConstants.VirtualShellFile, s, SecurityContext.Unrestricted)
-    val source = Source.fromString(input, s)
+    val source = Source.fromString(SourceName.PathName(CompilerConstants.VirtualShellFile), Origin.User, SecurityContext.Unrestricted, s)
 
     // Tokenize the input and check if the first token looks like the start of a declaration or an expression.
     val (tokens, errors) = Lexer.lex(source)

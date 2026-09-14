@@ -26,7 +26,7 @@ import java.lang.constant.ClassDesc
 
 object KindedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Map.empty, AvailableClasses.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Map.empty, Map.empty)
 
   case class Root(modules: Map[Symbol.ModuleSym, Mod],
                   traits: Map[Symbol.TraitSym, Trait],
@@ -40,7 +40,6 @@ object KindedAst {
                   uses: ListMap[Symbol.ModuleSym, UseOrImport],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  availableClasses: AvailableClasses,
                   tokens: Map[Source, Array[Token]])
 
   case class Mod(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.ModuleSym, loc: SourceLocation)

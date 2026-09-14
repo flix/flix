@@ -37,7 +37,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
           assert(constructors.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("(I)V")))
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("constructors.SelectsReferenceSubtypeMatch") {
@@ -51,7 +51,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
           assert(constructors.map(_.ref.descriptor) == List(collectionConstructor))
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("constructors.SelectsPrimitiveWideningMatch") {
@@ -63,7 +63,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
           assert(constructors.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("(I)V")))
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("constructors.SelectsPrimitiveBoxingMatch") {
@@ -76,7 +76,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
           assert(constructors.map(_.ref.descriptor) == List(objectConstructor))
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("constructors.RejectsUnsupportedUnboxing") {
@@ -87,7 +87,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
         case Ok(constructors) => assert(constructors.isEmpty)
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("constructors.ReturnsTiedNullMatches") {
@@ -103,7 +103,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
           assert(constructors.map(_.ref.descriptor).toSet == expected)
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("constructors.SelectsFixedArityVarArgsMatch") {
@@ -117,7 +117,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
           assert(constructors.map(_.ref.descriptor) == List(varArgsConstructor))
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("constructors.SelectsExpandedVarArgsMatch") {
@@ -131,7 +131,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
           assert(constructors.map(_.ref.descriptor) == List(varArgsConstructor))
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("constructors.ReturnsNoMatch") {
@@ -142,7 +142,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
         case Ok(constructors) => assert(constructors.isEmpty)
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("constructors.ReportsMissingClass") {
@@ -150,7 +150,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
     try {
       val missing = ClassDesc.of("dev.flix.prototype.DoesNotExist")
       assert(JavaMemberResolver.constructors(missing, Nil) == Err(MissingClass(missing)))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("methods.SelectsExactInstanceOverload") {
@@ -163,7 +163,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
           assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("(I)Ljava/lang/Object;")))
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("methods.FallsBackToObject") {
@@ -176,7 +176,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
           assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("()Ljava/lang/String;")))
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("methods.ResolvesArrayObjectMethod") {
@@ -189,7 +189,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
           assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("()Ljava/lang/String;")))
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("methods.SelectsExpandedVarArgsMatch") {
@@ -203,7 +203,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
           assert(methods.map(_.ref.descriptor) == List(MethodTypeDesc.ofDescriptor("([Ljava/lang/Object;)Ljava/util/List;")))
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("methods.ReportsMissingClass") {
@@ -211,7 +211,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
     try {
       val missing = ClassDesc.of("dev.flix.prototype.DoesNotExist")
       assert(JavaMemberResolver.methods(missing, "method", Nil, static = false) == Err(MissingClass(missing)))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   // --- overridableMethods ---
@@ -242,7 +242,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       assert(method.ref.owner == owner)
       assert(method.parameterTypes == List(classVar(owner, "T"), classVar(owner, "T")))
       assert(method.returnType == JavaType.NonGeneric(CD_int))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.Direct.Callable.call") {
@@ -251,7 +251,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       val owner = ClassDesc.of("java.util.concurrent.Callable")
       val method = theOverridable(owner, "call")
       assert(method.returnType == classVar(owner, "V"))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.Direct.ArrayList.get") {
@@ -261,7 +261,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       val method = theOverridable(owner, "get", CD_int)
       assert(method.ref.owner == owner)
       assert(method.returnType == classVar(owner, "E"))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.Direct.TreeMap.get") {
@@ -270,7 +270,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       val owner = ClassDesc.of("java.util.TreeMap")
       val method = theOverridable(owner, "get", CD_Object)
       assert(method.returnType == classVar(owner, "V"))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.Inherited.UnaryOperator.apply") {
@@ -282,7 +282,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       assert(method.ref.owner == ClassDesc.of("java.util.function.Function"))
       assert(method.parameterTypes == List(classVar(owner, "T")))
       assert(method.returnType == classVar(owner, "T"))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.Inherited.BinaryOperator.apply") {
@@ -293,7 +293,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       val method = theOverridable(owner, "apply", CD_Object, CD_Object)
       assert(method.parameterTypes == List(classVar(owner, "T"), classVar(owner, "T")))
       assert(method.returnType == classVar(owner, "T"))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.NoParams.Runnable.run") {
@@ -303,7 +303,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       val method = theOverridable(owner, "run")
       assert(method.parameterTypes == Nil)
       assert(method.returnType == JavaType.NonGeneric(CD_void))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.NoParams.Object.toString") {
@@ -312,7 +312,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       val method = theOverridable(CD_Object, "toString")
       assert(method.ref.owner == CD_Object)
       assert(method.returnType == JavaType.NonGeneric(CD_String))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.Static.ExcludesStaticMethods") {
@@ -320,7 +320,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
     try {
       assert(overridable(ClassDesc.of("java.lang.Integer"), "valueOf", CD_int).isEmpty)
       assert(overridable(ClassDesc.of("java.util.Collections"), "sort", ClassDesc.of("java.util.List")).isEmpty)
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.InheritedFromObject.Comparator.equals") {
@@ -330,7 +330,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       val owner = ClassDesc.of("java.util.Comparator")
       val method = theOverridable(owner, "equals", CD_Object)
       assert(method.ref.owner == owner)
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.InheritedFromObject.ArrayList.hashCode") {
@@ -339,7 +339,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       val owner = ClassDesc.of("java.util.ArrayList")
       val method = theOverridable(owner, "hashCode")
       assert(method.returnType == JavaType.NonGeneric(CD_int))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.Renamed.TestGenericChildInterface.testMethod") {
@@ -351,7 +351,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       assert(method.ref.owner == ClassDesc.of("dev.flix.test.TestGenericInterface"))
       assert(method.parameterTypes == List(classVar(owner, "T")))
       assert(method.returnType == classVar(owner, "T"))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.Renamed.TestGenericSubInterface.compareTo") {
@@ -364,7 +364,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       // The bound of T is Comparable, so the variable erases to Comparable rather than Object.
       val comparable = ClassDesc.of("java.lang.Comparable")
       assert(method.parameterTypes == List(JavaType.Variable(JavaTypeVariable(JavaTypeVariableOwner.Class(owner), "T"), comparable)))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.TwoLevel.TestGenericGrandchildInterface") {
@@ -384,7 +384,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       val identity = theOverridable(owner, "identity", CD_Object)
       assert(identity.ref.owner == owner)
       assert(identity.parameterTypes == List(classVar(owner, "U")))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.Reordered.TestGenericSwappedInterface.apply") {
@@ -395,7 +395,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       val method = theOverridable(owner, "apply", CD_Object)
       assert(method.parameterTypes == List(classVar(owner, "B")))
       assert(method.returnType == classVar(owner, "A"))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.Interface.IncludesPublicObjectMethods") {
@@ -409,7 +409,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       // Final and protected methods of Object are not overridable through an interface.
       assert(overridable(owner, "getClass").isEmpty)
       assert(overridable(owner, "clone").isEmpty)
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.Class.IncludesProtectedMethods") {
@@ -422,7 +422,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       // Protected methods inherited from Object are overridable by a subclass.
       assert(theOverridable(owner, "clone").ref.owner == CD_Object)
       assert(theOverridable(ClassDesc.of("java.util.AbstractList"), "removeRange", CD_int, CD_int).ref.owner == ClassDesc.of("java.util.AbstractList"))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.Class.ExcludesFinalMethods") {
@@ -431,7 +431,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       assert(overridable(ClassDesc.of("java.util.ArrayList"), "getClass").isEmpty)
       assert(overridable(ClassDesc.of("java.util.ArrayList"), "wait").isEmpty)
       assert(overridable(ClassDesc.of("java.lang.Thread"), "join").isEmpty)
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("overridableMethods.ReportsMissingClass") {
@@ -439,7 +439,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
     try {
       val missing = ClassDesc.of("dev.flix.prototype.DoesNotExist")
       assert(JavaMemberResolver.overridableMethods(missing) == Err(MissingClass(missing)))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   // --- instanceMethods / staticMethods / fields ---
@@ -455,7 +455,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
           assert(!names.contains("clone") || methods.exists(m => m.ref.name == "clone" && m.ref.owner == ClassDesc.of("java.util.ArrayList")))
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("instanceMethods.Interface.IncludesObjectMethods") {
@@ -468,7 +468,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
           assert(!names.contains("clone"))
         case Err(error) => fail(error.toString)
       }
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("instanceMethods.ArrayAndPrimitive") {
@@ -476,7 +476,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
     try {
       assert(JavaMemberResolver.instanceMethods(CD_String.arrayType()) == JavaMemberResolver.instanceMethods(CD_Object))
       assert(JavaMemberResolver.instanceMethods(CD_int) == Ok(Nil))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("staticMethods.Class.InheritsFromSuperclassOnly") {
@@ -499,7 +499,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       }
       assert(JavaMemberResolver.staticMethods(ClassDesc.of("java.util.ArrayList")).map(_.map(_.ref.name).contains("of")) == Ok(false))
       assert(JavaMemberResolver.staticMethods(CD_int) == Ok(Nil))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
   test("fields.IncludesInheritedFields") {
@@ -516,7 +516,7 @@ class TestJavaMemberResolver extends AnyFunSuite {
       }
       assert(JavaMemberResolver.fields(CD_int) == Ok(Nil))
       assert(JavaMemberResolver.fields(CD_String.arrayType()) == Ok(Nil))
-    } finally flix.javaTypeProvider.close()
+    } finally flix.close()
   }
 
 }

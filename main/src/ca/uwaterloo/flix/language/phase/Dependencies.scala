@@ -37,7 +37,7 @@ object Dependencies {
     *   - Instance
     */
   def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, Unit) = flix.phase("Dependencies") {
-    implicit val sctx: SharedContext = SharedContext(new ConcurrentHashMap[(Input, Input), Unit]())
+    implicit val sctx: SharedContext = SharedContext(new ConcurrentHashMap[(SourceName, SourceName), Unit]())
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn))))
     val effects = changeSet.updateStaleValues(root.effects, oldRoot.effects)(ParOps.parMapValues(_)(visitEff))
     val enums = changeSet.updateStaleValues(root.enums, oldRoot.enums)(ParOps.parMapValues(_)(visitEnum))
@@ -46,7 +46,17 @@ object Dependencies {
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
     val typeAliases = changeSet.updateStaleValues(root.typeAliases, oldRoot.typeAliases)(ParOps.parMapValues(_)(visitTypeAlias))
 
-    var deps = MultiMap.empty[Input, Input]
+    // The edges recorded above come only from the entries that were revisited. The fresh entries
+    // were not revisited, and their edges are still valid: keep them from the old graph. An edge
+    // `src -> dst` was recorded when visiting the entries of `dst`, so it is kept exactly when `dst`
+    // is not dirty; the edges into a dirty source have just been recomputed, or the source is gone.
+    var deps = changeSet match {
+      case ChangeSet.Everything => MultiMap.empty[SourceName, SourceName]
+      case ChangeSet.Dirty(dirty) =>
+        MultiMap(oldRoot.dependencyGraph.deps.m.map {
+          case (src, dsts) => src -> dsts.filterNot(dirty.contains)
+        }.filter { case (_, dsts) => dsts.nonEmpty })
+    }
     sctx.deps.forEach { case (k, _) => deps = deps + k }
     val dg = DependencyGraph(deps)
     (root.copy(
@@ -66,7 +76,7 @@ object Dependencies {
     * The value is fixed to () since it doesn't matter.
     */
   private def addDependency(src: SourceLocation, dst: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    sctx.deps.put((src.source.input, dst.source.input), ())
+    sctx.deps.put((src.source.sourceName, dst.source.sourceName), ())
   }
 
   private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext): TypedAst.Def =  {
@@ -773,10 +783,10 @@ object Dependencies {
   }
 
   /**
-    * We want to compute a set of dependency edges from an input to its dependencies.
-    * In other words, we want to compute `Map[Input, Set[Input]]`.
-    * However, since we are in a concurrent setting, we prefer to simply compute the set of edges `Set[(Input, Input)]`.
-    * However, since Java has no `ConcurrentSet[t]` we instead use  `ConcurrentMap[(Input, Input), Unit]` to record the edges.
+    * We want to compute a set of dependency edges from a source to its dependencies.
+    * In other words, we want to compute `Map[SourceName, Set[SourceName]]`.
+    * However, since we are in a concurrent setting, we prefer to simply compute the set of edges `Set[(SourceName, SourceName)]`.
+    * However, since Java has no `ConcurrentSet[t]` we instead use  `ConcurrentMap[(SourceName, SourceName), Unit]` to record the edges.
     */
-  private case class SharedContext(deps: ConcurrentMap[(Input, Input), Unit])
+  private case class SharedContext(deps: ConcurrentMap[(SourceName, SourceName), Unit])
 }

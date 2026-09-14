@@ -96,7 +96,7 @@ object Model {
     * treated as backend.
     */
   val FrontendPhases: Set[String] = Set(
-    "Reader", "Lexer", "Parser2", "Weeder2", "Desugar", "Namer", "Resolver",
+    "Lexer", "Parser2", "Weeder2", "Desugar", "Namer", "Resolver",
     "Kinder", "Deriver", "Typer", "EntryPoints", "Instances", "PredDeps",
     "Stratifier", "PatMatch", "Redundancy", "Safety", "Terminator", "Dependencies",
   )
@@ -108,7 +108,7 @@ object Model {
     * spot. Three structural reasons, mirroring the coverage table in
     * [[Profiler]]:
     *
-    *   - Pre-naming passes (`Reader`, `Lexer`, `Parser2`, `Weeder2`, `Desugar`,
+    *   - Pre-naming passes (`Lexer`, `Parser2`, `Weeder2`, `Desugar`,
     *     `Namer`) run before any `DefnSym` exists, so there is no key to attribute.
     *   - Pure filter passes (`TreeShaker1`, `TreeShaker2`) do no per-def work.
     *   - The `Optimizer` fixpoint wrapper does no work of its own; its time is
@@ -120,7 +120,7 @@ object Model {
     * closeable blind spots and belong in the unaccounted tally.
     */
   val NonAttributablePhases: Set[String] = Set(
-    "Reader", "Lexer", "Parser2", "Weeder2", "Desugar", "Namer",
+    "Lexer", "Parser2", "Weeder2", "Desugar", "Namer",
     "TreeShaker1", "Optimizer", "TreeShaker2",
   )
 

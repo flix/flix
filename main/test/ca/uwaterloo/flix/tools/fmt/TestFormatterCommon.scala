@@ -90,7 +90,7 @@ trait TestFormatterCommon extends AnyFunSuite {
     val flix = new Flix().setOptions(Options.Default.copy(lib = LibLevel.Nix))
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
     for ((name, content) <- StdlibFiles) {
-      flix.addVirtualPath(Paths.get(name), content)
+      flix.addSource(Paths.get(name), content, sctx)
     }
     flix.check()
     flix
@@ -147,7 +147,7 @@ trait TestFormatterCommon extends AnyFunSuite {
   ): Parsed = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
     val vpath = Paths.get(path)
-    flix.addVirtualPath(vpath, src)
+    flix.addSource(vpath, src, sctx)
     try {
       val (optRoot, errors) = flix.check()
       if (errors.nonEmpty) {
@@ -162,10 +162,10 @@ trait TestFormatterCommon extends AnyFunSuite {
     } finally {
       restoreTo match {
         case Some(orig) =>
-          flix.addVirtualPath(vpath, orig)
+          flix.addSource(vpath, orig, sctx)
           flix.check()
         case None =>
-          flix.remVirtualPath(vpath)
+          flix.remSource(vpath)
       }
     }
   }

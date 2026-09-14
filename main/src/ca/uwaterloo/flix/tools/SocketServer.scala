@@ -193,7 +193,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       logSourceCode(input)
 
       // Compile the program.
-      flix.addVirtualPath(CompilerConstants.VirtualPlaygroundFile, input)(SecurityContext.Plain)
+      flix.addSource(CompilerConstants.VirtualPlaygroundFile, input, SecurityContext.Plain)
 
       flix.compile() match {
         case Result.Ok(compilationResult) =>

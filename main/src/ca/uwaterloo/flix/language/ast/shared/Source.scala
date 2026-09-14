@@ -17,41 +17,43 @@ package ca.uwaterloo.flix.language.ast.shared
 
 import ca.uwaterloo.flix.language.ast.Sourceable
 
+import java.nio.file.Path
 import scala.annotation.tailrec
 
 object Source {
   /** An unknown source. */
-  val Unknown: Source = Source.empty(Input.Unknown)
+  val Unknown: Source = Source.empty(SourceName.PathName(Path.of("unknown")), Origin.Unknown, SecurityContext.Unrestricted)
 
-  /** Returns an empty source of `input`. */
-  def empty(input: Input): Source = Source(input, Array.emptyCharArray)
+  /** Returns an empty source with the given name, origin, and security context. */
+  def empty(sourceName: SourceName, origin: Origin, sctx: SecurityContext): Source =
+    Source(sourceName, origin, sctx, Array.emptyCharArray)
 
-  /** Returns a source of `input` with the given `str`. */
-  def fromString(input: Input, str: String): Source = Source(input, str.toCharArray)
+  /** Returns a source with the given name, origin, and security context, and the text `str`. */
+  def fromString(sourceName: SourceName, origin: Origin, sctx: SecurityContext, str: String): Source =
+    Source(sourceName, origin, sctx, str.toCharArray)
 }
 
 /**
- * A source is a name and an array of character data.
- */
-case class Source(input: Input, data: Array[Char]) extends Sourceable {
+  * A source: its name, where it came from, the security context it is compiled under, and its text.
+  *
+  * Two sources are equal if they have the same name. The text is deliberately not part of equality:
+  * a cache keyed by source must still find the source after its text has changed.
+  */
+case class Source(sourceName: SourceName, origin: Origin, sctx: SecurityContext, data: Array[Char]) extends Sourceable {
 
-  def name: String = input match {
-    case Input.RealFile(path, _) => path.toString
-    case Input.VirtualFile(name, _, _) => name.toString
-    case Input.VirtualUri(name, _, _) => name.toString
-    case Input.PkgFile(path, _) => path.toString
-    case Input.FileInPackage(_, virtualPath, _, _) => virtualPath
-    case Input.Unknown => "unknown"
-  }
+  /**
+    * The name as a string, for display and for the language server.
+    */
+  def name: String = sourceName.toString
 
   def src: Source = this
 
   override def equals(o: scala.Any): Boolean = o match {
-    case that: Source => this.input == that.input
+    case that: Source => this.sourceName == that.sourceName
     case _ => false
   }
 
-  override def hashCode(): Int = input.hashCode()
+  override def hashCode(): Int = sourceName.hashCode()
 
   override def toString: String = name
 

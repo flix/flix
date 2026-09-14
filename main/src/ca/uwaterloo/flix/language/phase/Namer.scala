@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps}
 
-import java.nio.file.{FileSystemNotFoundException, Path}
+import java.nio.file.Path
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -66,7 +66,7 @@ object Namer {
       val modules = buildModuleMap(units)
 
       val errors = sctx.errors.asScala.toList ++ checkOrphanModules(symbols)
-      (NamedAst.Root(symbols, instances, uses, units, modules, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
+      (NamedAst.Root(symbols, instances, uses, units, modules, program.mainEntryPoint, locations, program.tokens), errors)
     }
 
   /**
@@ -202,28 +202,27 @@ object Namer {
   private def visitMod(decl: DesugaredAst.Declaration.Mod, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Mod = decl match {
     case DesugaredAst.Declaration.Mod(doc, ann, mod, qname, usesAndImports0, decls, loc) =>
 
-      //
-      // Check for [[NameError.IllegalModuleFile]] -- i.e. that public modules reside at correct paths.
-      //
+      val ns = Name.NName(ns0.idents ++ qname.namespace.idents ++ List(qname.ident), qname.loc)
 
-      // If the module is A.B.C then we build the path A/B/C.flix.
-      val expectedPath: Path = qname.namespace.idents.map(_.name).foldLeft(Path.of("")) {
-        case (p, name) => p.resolve(name)
-      }.resolve(qname.ident.name + ".flix")
+      //
+      // Check for [[NameError.IllegalNestedPublicModule]] -- i.e. that public modules are declared
+      // at the top level -- and [[NameError.IllegalModuleFile]] -- i.e. that they reside at correct paths.
+      //
+      if (mod.isPublic && !ns0.isRoot) {
+        // A nested public module is never at a correct path, so we report only this error.
+        sctx.errors.add(NameError.IllegalNestedPublicModule(ns, qname.loc))
+      } else if (mod.isPublic) {
+        // If the module is A.B.C then we build the path A/B/C.flix.
+        val expectedPath: Path = qname.namespace.idents.map(_.name).foldLeft(Path.of("")) {
+          case (p, name) => p.resolve(name)
+        }.resolve(qname.ident.name + ".flix")
 
-      if (mod.isPublic) {
-        val optPath = loc.source.input match {
-          case Input.RealFile(realPath, _)  => Some(realPath)
-          case Input.VirtualFile(virtualPath, _, _) => Some(virtualPath)
-          case Input.VirtualUri(virtualUri, _, _) => try {
-            Some(Path.of(virtualUri))
-          } catch {
-            case _: IllegalArgumentException => None
-            case _: FileSystemNotFoundException => None
-          }
-          case Input.PkgFile(_, _) => None
-          case Input.FileInPackage(_, _, _, _) => None
-          case Input.Unknown => None
+        // The check applies to the user's own sources and to the library, never to package entries.
+        val optPath = loc.source.origin match {
+          case Origin.User => loc.source.sourceName.toPath
+          case Origin.Library => loc.source.sourceName.toPath
+          case Origin.Package => None
+          case Origin.Unknown => None
         }
 
         optPath match {
@@ -234,8 +233,6 @@ object Namer {
             }
         }
       }
-
-      val ns = Name.NName(ns0.idents ++ qname.namespace.idents ++ List(qname.ident), qname.loc)
 
       //
       // Check for [[NameError.IllegalMainModule]] -- i.e. that no top-level module takes

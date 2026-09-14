@@ -595,32 +595,6 @@ class TestNamer extends AnyFunSuite with TestUtils {
     rejectError[NameError.DuplicateModule](result)
   }
 
-  test("IllegalReservedName.Enum.01") {
-    val input =
-      """pub enum Int32 {
-        |  case Value,
-        |}
-    """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NameError.IllegalReservedName](result)
-  }
-
-  test("IllegalReservedName.Alias.01") {
-    val input =
-      """type alias Float32[k] = (k,k)
-    """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NameError.IllegalReservedName](result)
-  }
-
-  test("IllegalReservedName.Struct.01") {
-    val input =
-      """struct Float64 {}
-    """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NameError.IllegalReservedName](result)
-  }
-
   test("IllegalMainModule.01") {
     val input =
       """
@@ -656,6 +630,105 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     rejectError[NameError.IllegalMainModule](result)
+  }
+
+  test("IllegalNestedPublicModule.01") {
+    val input =
+      """
+        |mod A {
+        |    pub mod B {
+        |        pub def f(): Int32 = 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectOneError[NameError.IllegalNestedPublicModule](result)
+  }
+
+  test("IllegalNestedPublicModule.02") {
+    // Nesting at any depth is rejected.
+    val input =
+      """
+        |mod A {
+        |    mod B {
+        |        pub mod C {
+        |            pub def f(): Int32 = 1
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectOneError[NameError.IllegalNestedPublicModule](result)
+  }
+
+  test("IllegalNestedPublicModule.03") {
+    // The enclosing module may use the dotted form; the nested public module is still rejected.
+    val input =
+      """
+        |mod A.B {
+        |    pub mod C {
+        |        pub def f(): Int32 = 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectOneError[NameError.IllegalNestedPublicModule](result)
+  }
+
+  test("IllegalNestedPublicModule.04") {
+    // A private nested module is fine.
+    val input =
+      """
+        |mod A {
+        |    mod B {
+        |        pub def f(): Int32 = 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[NameError.IllegalNestedPublicModule](result)
+  }
+
+  test("IllegalNestedPublicModule.05") {
+    // A public module declared at the top level with the dotted form is not nested.
+    val input =
+      """
+        |mod A {
+        |    pub def f(): Int32 = 1
+        |}
+        |
+        |pub mod A.B {
+        |    pub def g(): Int32 = 2
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[NameError.IllegalNestedPublicModule](result)
+  }
+
+  test("IllegalReservedName.Enum.01") {
+    val input =
+      """pub enum Int32 {
+        |  case Value,
+        |}
+    """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalReservedName](result)
+  }
+
+  test("IllegalReservedName.Alias.01") {
+    val input =
+      """type alias Float32[k] = (k,k)
+    """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalReservedName](result)
+  }
+
+  test("IllegalReservedName.Struct.01") {
+    val input =
+      """struct Float64 {}
+    """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalReservedName](result)
   }
 
   test("IllegalReservedName.Trait.01") {

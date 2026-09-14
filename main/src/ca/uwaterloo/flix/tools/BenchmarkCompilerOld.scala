@@ -253,9 +253,9 @@ object BenchmarkCompilerOld {
     * Adds test code to the benchmarking suite.
     */
   private def addInputs(flix: Flix): Unit = {
-    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    flix.addVirtualPath(Path.of("Test.Exp.Fixpoint.PQuery.flix"), LocalResource.get("/test/flix/Test.Exp.Fixpoint.PQuery.flix"))
-    flix.addVirtualPath(Path.of("Test.Exp.Fixpoint.PSolve.flix"), LocalResource.get("/test/flix/Test.Exp.Fixpoint.PSolve.flix"))
+    val sctx: SecurityContext = SecurityContext.Unrestricted
+    flix.addSource(Path.of("Test.Exp.Fixpoint.PQuery.flix"), LocalResource.get("/test/flix/Test.Exp.Fixpoint.PQuery.flix"), sctx)
+    flix.addSource(Path.of("Test.Exp.Fixpoint.PSolve.flix"), LocalResource.get("/test/flix/Test.Exp.Fixpoint.PSolve.flix"), sctx)
   }
 
   case object SummaryStatistics {

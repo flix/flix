@@ -360,18 +360,18 @@ class TestResolver extends AnyFunSuite with TestUtils {
   }
 
   test("InaccessibleModule.02") {
+    // `B` is accessible from its sibling `D`, but `C` is private to `A.B`.
     val input =
       s"""
          |mod A {
-         |    pub mod B {
+         |    mod B {
          |        mod C {
          |            pub def foo(): Int32 = 123
          |        }
          |    }
-         |}
-         |
-         |mod D {
-         |    def g(): Int32 = A.B.C.foo()
+         |    mod D {
+         |        def g(): Int32 = A.B.C.foo()
+         |    }
          |}
          |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -379,11 +379,12 @@ class TestResolver extends AnyFunSuite with TestUtils {
   }
 
   test("InaccessibleModule.03") {
+    // `B` is private to `A`, so the path is blocked at `B`.
     val input =
       s"""
          |mod A {
          |    mod B {
-         |        pub mod C {
+         |        mod C {
          |            pub def foo(): Int32 = 123
          |        }
          |    }
@@ -421,7 +422,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       s"""
          |mod A {
-         |    pub mod B {
+         |    mod B {
          |        mod C {
          |            pub enum Color {
          |                case Red,
@@ -429,10 +430,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |            }
          |        }
          |    }
-         |}
-         |
-         |mod D {
-         |    def f(): A.B.C.Color = A.B.C.Color.Red
+         |    mod D {
+         |        def f(): A.B.C.Color = A.B.C.Color.Red
+         |    }
          |}
          |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -521,17 +521,16 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       s"""
          |mod A {
-         |    pub mod B {
+         |    mod B {
          |        mod C {
          |            pub trait Show[a] {
          |                pub def show(x: a): String
          |            }
          |        }
          |    }
-         |}
-         |
-         |mod D {
-         |    def f(x: a): String with A.B.C.Show[a] = ???
+         |    mod D {
+         |        def f(x: a): String with A.B.C.Show[a] = ???
+         |    }
          |}
          |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -555,25 +554,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
   }
 
   test("InaccessibleModule.12") {
-    // `C` is private to `A.B`, so it is not accessible from `A.D`, which lies outside `A.B`.
-    val input =
-      s"""
-         |mod A {
-         |    mod B {
-         |        mod C {
-         |            pub def foo(): Int32 = 123
-         |        }
-         |    }
-         |    mod D {
-         |        pub def g(): Int32 = A.B.C.foo()
-         |    }
-         |}
-         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleModule](result)
-  }
-
-  test("InaccessibleModule.13") {
     // A `use` does not bypass the check: the error is reported where the name is referenced.
     val input =
       s"""

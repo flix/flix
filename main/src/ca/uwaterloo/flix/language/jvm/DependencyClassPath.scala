@@ -23,36 +23,32 @@ import scala.collection.mutable
 
 /**
   * The class path of a project's dependencies: a [[ClassFileLocator]] that reads class files
-  * from a growing set of JARs and class directories.
+  * from a fixed list of JARs and class directories.
   *
   * Entries are read directly from the archive rather than through a [[ClassLoader]]. A class
   * loader constructed at run time cannot serve resources inside a GraalVM native image, which
   * would make every class from a project's dependencies unresolvable.
   *
-  * Entries are consulted in the order they were added.
+  * Entries are consulted in the given order.
   *
-  * [[addPath]] is called while the compiler is being configured, before compilation starts.
-  * [[locate]] is then called from the worker threads, which are created afterwards, so the
-  * entries are safely published to them.
+  * Throws [[java.io.IOException]] if a path cannot be opened.
   */
-final class DependencyClassPath extends ClassFileLocator {
+final class DependencyClassPath(paths: List[Path]) extends ClassFileLocator {
 
   /**
     * The locators to consult, in order.
     */
-  private val locators = mutable.ArrayBuffer.empty[ClassFileLocator]
-
-  /**
-    * Adds the JAR or class directory at `path`.
-    *
-    * Throws [[java.io.IOException]] if `path` cannot be opened.
-    */
-  def addPath(path: Path): Unit = {
+  private val locators: List[ClassFileLocator] = {
     val version = ClassFileVersion.ofThisVm()
-    val locator =
-      if (Files.isDirectory(path)) ClassFileLocator.ForFolder.of(path.toFile, version)
-      else ClassFileLocator.ForJarFile.of(path.toFile, version)
-    locators += locator
+    val result = mutable.ArrayBuffer.empty[ClassFileLocator]
+    for (path <- paths) {
+      if (Files.isDirectory(path)) {
+        result += ClassFileLocator.ForFolder.of(path.toFile, version)
+      } else {
+        result += ClassFileLocator.ForJarFile.of(path.toFile, version)
+      }
+    }
+    result.toList
   }
 
   /**
@@ -74,7 +70,6 @@ final class DependencyClassPath extends ClassFileLocator {
     */
   override def close(): Unit = {
     locators.foreach(_.close())
-    locators.clear()
   }
 
 }
