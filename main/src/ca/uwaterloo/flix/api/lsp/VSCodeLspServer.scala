@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.{CompilerLog, CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.SourceName
+import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, SourceName}
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
@@ -35,13 +35,10 @@ import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
-import java.io.ByteArrayInputStream
-import java.net.{InetSocketAddress, URI}
-import java.nio.charset.Charset
+import java.net.InetSocketAddress
 import java.nio.file.{Files, Path}
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.zip.ZipInputStream
 import scala.collection.mutable
 
 /**
@@ -80,20 +77,25 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   private val sources: mutable.Map[SourceName, String] = mutable.Map.empty
 
   /**
+    * The packages added with `api/addPkg` and not removed with `api/remPkg`, in insertion order.
+    */
+  private val pkgs: mutable.LinkedHashSet[Path] = mutable.LinkedHashSet.empty
+
+  /**
     * The JARs added with `api/addJar` and not removed with `api/remJar`, in insertion order.
     */
   private val jars: mutable.LinkedHashSet[Path] = mutable.LinkedHashSet.empty
 
   /**
-    * Whether [[jars]] changed since [[flix]] was constructed.
+    * Whether [[pkgs]] or [[jars]] changed since [[flix]] was constructed.
     */
-  private var jarsChanged: Boolean = false
+  private var dependenciesChanged: Boolean = false
 
   /**
     * The Flix instance (the same instance is used for incremental compilation).
     *
-    * Replaced by a new instance when the JARs change (see [[processCheck]]), since the JARs are
-    * fixed for the lifetime of an instance.
+    * Replaced by a new instance when the packages or JARs change (see [[processCheck]]), since
+    * the packages and JARs are fixed for the lifetime of an instance.
     */
   private var flix: Flix = mkFlix()
 
@@ -225,10 +227,11 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   }
 
   /**
-    * Returns a new Flix instance with the current [[jars]] and [[sources]].
+    * Returns a new Flix instance with the current [[pkgs]], [[jars]], and [[sources]].
     */
   private def mkFlix(): Flix = {
-    val flix = new Flix(jars = jars.toList).setFormatter(NoFormatter).setOptions(o)
+    val pkgsWithSctx = pkgs.toList.map(p => (p, SecurityContext.Unrestricted))
+    val flix = new Flix(pkgs = pkgsWithSctx, jars = jars.toList).setFormatter(NoFormatter).setOptions(o)
     for ((name, src) <- sources) {
       ClientUri.addSource(flix, name, src)
     }
@@ -248,28 +251,22 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       remSource(name)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
-    case Request.AddPkg(id, uri, data) =>
-      // TODO: Possibly move into Input class?
-      val inputStream = new ZipInputStream(new ByteArrayInputStream(data))
-      var entry = inputStream.getNextEntry
-      while (entry != null) {
-        val name = entry.getName
-        if (name.endsWith(".flix")) {
-          val bytes = StreamOps.readAllBytes(inputStream)
-          val src = new String(bytes, Charset.forName("UTF-8"))
-          addSource(ClientUri.toSourceName(URI.create(s"$uri/$name")), src)
-        }
-        entry = inputStream.getNextEntry
+    case Request.AddPkg(id, uri) =>
+      val path = Path.of(uri)
+      FileOps.isValidFpkgFile(path) match {
+        case Ok(()) =>
+          // The package takes effect at the next check, which constructs a new Flix instance.
+          pkgs += path
+          dependenciesChanged = true
+          ("id" -> id) ~ ("status" -> ResponseStatus.Success)
+        case Err(ex) =>
+          ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> ex.getMessage)
       }
-      inputStream.close()
-
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.RemPkg(id, uri) =>
-      // clone is necessary because `remSource` modifies `sources`
-      for ((name, _) <- sources.clone()
-           if ClientUri.fromSourceName(name).startsWith(uri.toString)) {
-        remSource(name)
+      val path = Path.of(uri)
+      if (pkgs.remove(path)) {
+        dependenciesChanged = true
       }
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
@@ -279,7 +276,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
         case Ok(()) =>
           // The JAR takes effect at the next check, which constructs a new Flix instance.
           jars += path
-          jarsChanged = true
+          dependenciesChanged = true
           ("id" -> id) ~ ("status" -> ResponseStatus.Success)
         case Err(ex) =>
           ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> ex.getMessage)
@@ -288,7 +285,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     case Request.RemJar(id, uri) =>
       val path = Path.of(uri)
       if (jars.remove(path)) {
-        jarsChanged = true
+        dependenciesChanged = true
       }
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
@@ -379,13 +376,15 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * Processes a validate request.
     */
   private def processCheck(requestId: String): JValue = {
-    // The JARs are fixed for the lifetime of a Flix instance: if they changed, replace the instance.
-    // A JAR that disappeared without a `api/remJar` request is dropped.
-    if (jarsChanged) {
+    // The packages and JARs are fixed for the lifetime of a Flix instance: if they changed, replace
+    // the instance. A package or JAR that disappeared without a `api/remPkg` or `api/remJar`
+    // request is dropped.
+    if (dependenciesChanged) {
+      pkgs.filterInPlace(path => Files.isRegularFile(path))
       jars.filterInPlace(path => Files.isRegularFile(path))
       flix.close()
       flix = mkFlix()
-      jarsChanged = false
+      dependenciesChanged = false
     }
 
     // Measure elapsed time.
