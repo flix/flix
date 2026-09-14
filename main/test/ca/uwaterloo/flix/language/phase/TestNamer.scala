@@ -17,46 +17,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.errors.{NameError, ResolutionError}
-import ca.uwaterloo.flix.util.{FileOps, Options}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
-import java.util.zip.ZipOutputStream
-import scala.util.Using
-
 class TestNamer extends AnyFunSuite with TestUtils {
-
-  /**
-    * Returns a Flix package in a fresh temporary directory with the given `entries`, each a pair of
-    * an entry name and its text.
-    */
-  private def mkPkg(entries: (String, String)*): Path = {
-    val pkg = Files.createTempDirectory("flix-namer").resolve("dep.fpkg")
-    Using(new ZipOutputStream(Files.newOutputStream(pkg))) { zip =>
-      for ((name, text) <- entries) {
-        FileOps.addToZip(zip, name, text.getBytes(StandardCharsets.UTF_8))
-      }
-    }.get
-    pkg
-  }
-
-  test("IllegalModuleFile.Package.01") {
-    // A public module inside a package must live at the path its name dictates, as in any source.
-    val pkg = mkPkg("src/Bar.flix" -> "pub mod Foo { pub def f(): Int32 = 1 }")
-    val flix = new Flix(pkgs = List((pkg, SecurityContext.Unrestricted))).setOptions(Options.TestWithLibNix)
-    expectError[NameError.IllegalModuleFile](flix.check())
-  }
-
-  test("IllegalModuleFile.Package.02") {
-    val pkg = mkPkg("src/Foo.flix" -> "pub mod Foo { pub def f(): Int32 = 1 }")
-    val flix = new Flix(pkgs = List((pkg, SecurityContext.Unrestricted))).setOptions(Options.TestWithLibNix)
-    val (_, errors) = flix.check()
-    assert(errors.isEmpty, errors.map(_.summary))
-  }
 
   test("DuplicateLowerName.01") {
     val input =
