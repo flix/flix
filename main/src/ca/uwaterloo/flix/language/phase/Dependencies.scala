@@ -46,7 +46,17 @@ object Dependencies {
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
     val typeAliases = changeSet.updateStaleValues(root.typeAliases, oldRoot.typeAliases)(ParOps.parMapValues(_)(visitTypeAlias))
 
-    var deps = MultiMap.empty[SourceName, SourceName]
+    // The edges recorded above come only from the entries that were revisited. The fresh entries
+    // were not revisited, and their edges are still valid: keep them from the old graph. An edge
+    // `src -> dst` was recorded when visiting the entries of `dst`, so it is kept exactly when `dst`
+    // is not dirty; the edges into a dirty source have just been recomputed, or the source is gone.
+    var deps = changeSet match {
+      case ChangeSet.Everything => MultiMap.empty[SourceName, SourceName]
+      case ChangeSet.Dirty(dirty) =>
+        MultiMap(oldRoot.dependencyGraph.deps.m.map {
+          case (src, dsts) => src -> dsts.filterNot(dirty.contains)
+        }.filter { case (_, dsts) => dsts.nonEmpty })
+    }
     sctx.deps.forEach { case (k, _) => deps = deps + k }
     val dg = DependencyGraph(deps)
     (root.copy(
