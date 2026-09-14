@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
-import ca.uwaterloo.flix.tools.pkg.github.GitHub.{Asset, Project}
+import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
 import ca.uwaterloo.flix.util.Formatter
 
 import java.io.IOException
@@ -117,9 +117,12 @@ object PackageError {
          |""".stripMargin
   }
 
-  case class DownloadError(asset: Asset, message: Option[String]) extends PackageError {
+  /**
+    * A downloaded asset could not be written to disk under `fileName`.
+    */
+  case class DownloadError(fileName: String, message: Option[String]) extends PackageError {
     override def message(f: Formatter): String =
-      s"""A download error occurred while downloading ${f.bold(asset.name)}
+      s"""An error occurred while saving ${f.bold(fileName)}
          |${
         message match {
           case Some(e) => e
