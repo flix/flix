@@ -27,6 +27,9 @@ import java.nio.file.{FileSystemNotFoundException, Path}
   */
 sealed trait SourceName {
 
+  // Every case caches its hash: names are hashed on hot paths, e.g. once per dependency edge and
+  // as part of every source location, and a product hash over a path would be computed each time.
+
   /**
     * Returns the name as a path, if it denotes one.
     *
@@ -64,16 +67,22 @@ object SourceName {
     * A name that is a path. The path need not exist on disk: a fragment typed into the REPL and a
     * file of the bundled library have path names too.
     */
-  case class PathName(path: Path) extends SourceName
+  case class PathName(path: Path) extends SourceName {
+    override val hashCode: Int = path.hashCode()
+  }
 
   /**
     * A name that is a URI, as used by language clients.
     */
-  case class UriName(uri: URI) extends SourceName
+  case class UriName(uri: URI) extends SourceName {
+    override val hashCode: Int = uri.hashCode()
+  }
 
   /**
     * The name of the file `entry` inside the Flix package at `pkg`.
     */
-  case class PackageEntry(pkg: Path, entry: String) extends SourceName
+  case class PackageEntry(pkg: Path, entry: String) extends SourceName {
+    override val hashCode: Int = 31 * pkg.hashCode() + entry.hashCode
+  }
 
 }
