@@ -227,7 +227,7 @@ object LspServer {
       val (pkgs, jars) = scanDependencies()
       val flix = new Flix(pkgs = pkgs, jars = jars).setFormatter(NoFormatter).setOptions(o)
       for ((name, src) <- sources) {
-        flix.addSource(name, src, SecurityContext.Unrestricted)
+        ClientUri.addSource(flix, name, src)
       }
       flix
     }
@@ -313,7 +313,7 @@ object LspServer {
       * Adds the given source code to the Flix instance under `name`.
       */
     def addSource(name: SourceName, src: String): Unit = {
-      flix.addSource(name, src, SecurityContext.Unrestricted)
+      ClientUri.addSource(flix, name, src)
       sources.put(name, src)
     }
 

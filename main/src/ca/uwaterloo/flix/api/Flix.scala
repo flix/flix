@@ -270,7 +270,12 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   def addSource(p: Path, text: String, sctx: SecurityContext): Flix = {
     if (p == null)
       throw new IllegalArgumentException("'p' must be non-null.")
-    addSource(SourceName.PathName(p), text, sctx)
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    if (sctx == null)
+      throw new IllegalArgumentException("'sctx' must be non-null.")
+    register(Source.fromString(SourceName.PathName(p), Origin.User, sctx, text))
+    this
   }
 
   /**
@@ -286,30 +291,11 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   def addSource(uri: URI, text: String, sctx: SecurityContext): Flix = {
     if (uri == null)
       throw new IllegalArgumentException("'uri' must be non-null.")
-    addSource(SourceName.UriName(uri), text, sctx)
-  }
-
-  /**
-    * Adds the source `text` under `name`, replacing any source already registered under it.
-    *
-    * @param name the name of the source: a path or a URI. The entries of packages are registered by
-    *             the constructor and cannot be added.
-    * @param text the Flix source code.
-    * @param sctx the security context the source is compiled under.
-    */
-  def addSource(name: SourceName, text: String, sctx: SecurityContext): Flix = {
-    if (name == null)
-      throw new IllegalArgumentException("'name' must be non-null.")
     if (text == null)
       throw new IllegalArgumentException("'text' must be non-null.")
     if (sctx == null)
       throw new IllegalArgumentException("'sctx' must be non-null.")
-    name match {
-      case SourceName.PathName(_) => ()
-      case SourceName.UriName(_) => ()
-      case SourceName.PackageEntry(_, _) => throw new IllegalArgumentException(s"'$name' is an entry of a package and cannot be added.")
-    }
-    register(Source.fromString(name, Origin.User, sctx, text))
+    register(Source.fromString(SourceName.UriName(uri), Origin.User, sctx, text))
     this
   }
 
@@ -319,7 +305,8 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   def remSource(p: Path): Flix = {
     if (p == null)
       throw new IllegalArgumentException("'p' must be non-null.")
-    remSource(SourceName.PathName(p))
+    unregister(SourceName.PathName(p))
+    this
   }
 
   /**
@@ -328,16 +315,7 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   def remSource(uri: URI): Flix = {
     if (uri == null)
       throw new IllegalArgumentException("'uri' must be non-null.")
-    remSource(SourceName.UriName(uri))
-  }
-
-  /**
-    * Removes the source named `name`, if any.
-    */
-  def remSource(name: SourceName): Flix = {
-    if (name == null)
-      throw new IllegalArgumentException("'name' must be non-null.")
-    unregister(name)
+    unregister(SourceName.UriName(uri))
     this
   }
 

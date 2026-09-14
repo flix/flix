@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.{CompilerLog, CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, SourceName}
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
@@ -212,7 +212,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * Adds the given source code to the compiler under `name`.
     */
   private def addSource(name: SourceName, src: String): Unit = {
-    flix.addSource(name, src, SecurityContext.Unrestricted)
+    ClientUri.addSource(flix, name, src)
     sources += (name -> src)
   }
 
@@ -220,7 +220,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * Removes the source named `name` from the compiler.
     */
   private def remSource(name: SourceName): Unit = {
-    flix.remSource(name)
+    ClientUri.remSource(flix, name)
     sources -= name
   }
 
@@ -230,7 +230,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   private def mkFlix(): Flix = {
     val flix = new Flix(jars = jars.toList).setFormatter(NoFormatter).setOptions(o)
     for ((name, src) <- sources) {
-      flix.addSource(name, src, SecurityContext.Unrestricted)
+      ClientUri.addSource(flix, name, src)
     }
     flix
   }

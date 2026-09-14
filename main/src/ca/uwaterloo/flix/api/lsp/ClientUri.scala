@@ -15,8 +15,10 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.ast.shared.SourceName
+import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, SourceName}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.net.URI
 import java.nio.file.Path
@@ -72,6 +74,25 @@ object ClientUri {
     * Returns the string the client uses for the source of `loc`.
     */
   def fromLocation(loc: SourceLocation): String = fromSourceName(loc.source.sourceName)
+
+  /**
+    * Adds the source `text` to `flix` under `name`, which a client has produced through
+    * [[toSourceName]] and is therefore a path or a URI.
+    */
+  def addSource(flix: Flix, name: SourceName, text: String): Unit = name match {
+    case SourceName.PathName(path) => flix.addSource(path, text, SecurityContext.Unrestricted)
+    case SourceName.UriName(uri) => flix.addSource(uri, text, SecurityContext.Unrestricted)
+    case SourceName.PackageEntry(_, _) => throw InternalCompilerException(s"Unexpected package entry '$name' from a client.", SourceLocation.Unknown)
+  }
+
+  /**
+    * Removes the source named `name`, which a client has produced through [[toSourceName]], from `flix`.
+    */
+  def remSource(flix: Flix, name: SourceName): Unit = name match {
+    case SourceName.PathName(path) => flix.remSource(path)
+    case SourceName.UriName(uri) => flix.remSource(uri)
+    case SourceName.PackageEntry(_, _) => throw InternalCompilerException(s"Unexpected package entry '$name' from a client.", SourceLocation.Unknown)
+  }
 
   /**
     * Parses the client URI `uri` into a source name, without remembering it.
