@@ -53,7 +53,6 @@ object PrettyPrinter {
     case TreeKind.Decl.Redef => prettyDef(tree)
     case TreeKind.Decl.Signature => prettyDef(tree)
     case TreeKind.Decl.Op => prettyDef(tree)
-    case TreeKind.Decl.Law => prettyDef(tree)
     case TreeKind.Decl.Module => prettyModule(tree)
     case TreeKind.Decl.Enum => prettyEnum(tree)
     case TreeKind.Decl.Instance => prettyInstance(tree)
