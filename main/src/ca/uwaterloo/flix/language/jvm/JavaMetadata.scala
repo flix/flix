@@ -27,10 +27,12 @@ import java.lang.constant.ConstantDescs.{CD_Object, CD_Throwable}
 /**
   * Java class-file metadata queries for the phases that run after the Resolver.
   *
-  * The Resolver reports a class whose metadata cannot be read as a compilation error, so a class that
-  * reaches a later phase has already been read once. A failure here is therefore a compiler bug, and
-  * every query throws an [[InternalCompilerException]] at the given location instead of returning a
-  * `Result`.
+  * A class whose metadata cannot be read is reported as a compilation error before it reaches these
+  * phases: the Resolver checks every class it resolves along with its supertypes (see
+  * [[JavaHierarchy.supertypes]]), and [[JavaMemberResolver]] checks the signature of every member it
+  * resolves. Every class that occurs in a Flix type, or in the signature of a resolved member, has
+  * therefore been read once along with its supertypes. A failure here is a compiler bug, and every
+  * query throws an [[InternalCompilerException]] at the given location instead of returning a `Result`.
   */
 object JavaMetadata {
 
