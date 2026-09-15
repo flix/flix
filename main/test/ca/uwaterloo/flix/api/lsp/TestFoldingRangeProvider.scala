@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider.FoldingRangeProvider
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, SourceName}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -39,7 +39,7 @@ class TestFoldingRangeProvider extends AnyFunSuite {
     *
     * Every test uses the same uri so that adding a new source with this uri replaces the old one.
     */
-  private val Uri = CompilerConstants.VirtualTestFile.toString
+  private val Name = SourceName.PathName(CompilerConstants.VirtualTestFile)
 
   /**
     * Returns the folding ranges for the given `program`.
@@ -48,7 +48,7 @@ class TestFoldingRangeProvider extends AnyFunSuite {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
     Flix.addSource(CompilerConstants.VirtualTestFile, program, sctx)
     Flix.check() match {
-      case (Some(root), _) => FoldingRangeProvider.getFoldingRanges(Uri)(root)
+      case (Some(root), _) => FoldingRangeProvider.getFoldingRanges(Name)(root)
       case (None, _) => fail("Compilation failed: a root is expected.")
     }
   }

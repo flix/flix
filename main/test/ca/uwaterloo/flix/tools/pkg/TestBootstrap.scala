@@ -115,7 +115,7 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildPkg()(Formatter.getDefault)
+    b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault)
 
     val packageName = p.getFileName.toString
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
@@ -128,7 +128,7 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildPkg()(Formatter.getDefault)
+    b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault)
 
     val packageName = p.getFileName.toString
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
@@ -150,17 +150,32 @@ class TestBootstrap extends AnyFunSuite {
     val flix = PkgTestUtils.mkFlix(b)
     b.build(flix)
 
-    b.buildPkg()(Formatter.getDefault)
+    b.buildPkg(flix)(Formatter.getDefault)
 
     val hash1 = calcHash(packagePath)
 
-    b.buildPkg()(Formatter.getDefault)
+    b.buildPkg(flix)(Formatter.getDefault)
 
     val hash2 = calcHash(packagePath)
 
     assert(
       hash1 == hash2,
       s"Two file hashes are not same: $hash1 and $hash2")
+  }
+
+  test("build-pkg refuses a project that does not check") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    // A public module in a file whose path does not match its name.
+    Files.writeString(p.resolve("src").resolve("Bar.flix"), "pub mod Foo { pub def f(): Int32 = 1 }")
+
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    val result = b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault)
+    assert(result.toOption.isEmpty)
+
+    val packageName = p.getFileName.toString
+    val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
+    assert(!Files.exists(packagePath))
   }
 
   test("run") {

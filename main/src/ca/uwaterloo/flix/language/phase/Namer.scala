@@ -217,11 +217,12 @@ object Namer {
           case (p, name) => p.resolve(name)
         }.resolve(qname.ident.name + ".flix")
 
-        // The check applies to the user's own sources and to the library, never to package entries.
+        // The check applies to every real source: the user's own, the library's, and the entries of
+        // packages, whose names are paths relative to the package root.
         val optPath = loc.source.origin match {
           case Origin.User => loc.source.sourceName.toPath
           case Origin.Library => loc.source.sourceName.toPath
-          case Origin.Package => None
+          case Origin.Package => loc.source.sourceName.toPath
           case Origin.Unknown => None
         }
 

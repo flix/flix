@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import java.nio.file.Path
 import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.language.ast.shared.{Origin, SecurityContext, Source, SourceName}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
@@ -22,7 +23,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class VisitorSuite extends AnyFunSuite {
   val source: Source = Source.empty(SourceName.PathName(CompilerConstants.VirtualTestFile), Origin.User, SecurityContext.Unrestricted)
-  val uri = CompilerConstants.VirtualTestFile.toString
+  val name: SourceName = SourceName.PathName(CompilerConstants.VirtualTestFile)
 
   test("inside when strictly within lines") {
     val loc = SourceLocation(
@@ -33,7 +34,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(5, 5)
 
-    assert(Visitor.inside(uri, pos)(loc))
+    assert(Visitor.inside(name, pos)(loc))
   }
 
   test("inside when on start line and after start character") {
@@ -45,7 +46,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val  pos = Position(3, 5)
 
-    assert(Visitor.inside(uri, pos)(loc))
+    assert(Visitor.inside(name, pos)(loc))
   }
 
   test("inside when on start line and at start character") {
@@ -57,7 +58,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val  pos = Position(3, 4)
 
-    assert(Visitor.inside(uri, pos)(loc))
+    assert(Visitor.inside(name, pos)(loc))
   }
 
   test("inside when on end line and before end character") {
@@ -69,7 +70,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val  pos = Position(5, 1)
 
-    assert(Visitor.inside(uri, pos)(loc))
+    assert(Visitor.inside(name, pos)(loc))
   }
 
   test("inside when on end line and right before end character") {
@@ -81,7 +82,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val  pos = Position(5, 2)
 
-    assert(Visitor.inside(uri, pos)(loc))
+    assert(Visitor.inside(name, pos)(loc))
   }
 
   test("inside when on start and end line and within characters") {
@@ -93,7 +94,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val  pos = Position(5, 4)
 
-    assert(Visitor.inside(uri, pos)(loc))
+    assert(Visitor.inside(name, pos)(loc))
   }
 
   test("inside when on start and end line and at start character") {
@@ -105,7 +106,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val  pos = Position(5, 2)
 
-    assert(Visitor.inside(uri, pos)(loc))
+    assert(Visitor.inside(name, pos)(loc))
   }
 
   test("inside when on start and end line and right before end character") {
@@ -117,7 +118,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val  pos = Position(5, 9)
 
-    assert(Visitor.inside(uri, pos)(loc))
+    assert(Visitor.inside(name, pos)(loc))
   }
 
   test("not inside when before start line") {
@@ -129,7 +130,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(3, 7)
 
-    assert(!Visitor.inside(uri, pos)(loc))
+    assert(!Visitor.inside(name, pos)(loc))
   }
 
   test("not inside when after end line") {
@@ -141,7 +142,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(7, 4)
 
-    assert(!Visitor.inside(uri, pos)(loc))
+    assert(!Visitor.inside(name, pos)(loc))
   }
 
   test("not inside when on start line but before start character (column)") {
@@ -153,7 +154,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(2, 6)
 
-    assert(!Visitor.inside(uri, pos)(loc))
+    assert(!Visitor.inside(name, pos)(loc))
   }
 
   test("not inside when on end line but after end character (column)") {
@@ -165,7 +166,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(6, 11)
 
-    assert(!Visitor.inside(uri, pos)(loc))
+    assert(!Visitor.inside(name, pos)(loc))
 
   }
 
@@ -178,7 +179,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(5, 3)
 
-    assert(!Visitor.inside(uri, pos)(loc))
+    assert(!Visitor.inside(name, pos)(loc))
   }
 
   test("not inside when on start and end line but before start character") {
@@ -190,7 +191,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(6, 3)
 
-    assert(!Visitor.inside(uri, pos)(loc))
+    assert(!Visitor.inside(name, pos)(loc))
   }
 
   test("not inside when on start and end line but after end character") {
@@ -202,7 +203,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(6, 9)
 
-    assert(!Visitor.inside(uri, pos)(loc))
+    assert(!Visitor.inside(name, pos)(loc))
   }
 
   test("not inside when on start and end line but on end character") {
@@ -214,7 +215,7 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(6, 8)
 
-    assert(!Visitor.inside(uri, pos)(loc))
+    assert(!Visitor.inside(name, pos)(loc))
   }
 
   test("not inside if uri doesn't match source") {
@@ -226,6 +227,6 @@ class VisitorSuite extends AnyFunSuite {
     )
     val pos = Position(4, 4)
 
-    assert(!Visitor.inside("wrong!", pos)(loc))
+    assert(!Visitor.inside(SourceName.PathName(Path.of("wrong!")), pos)(loc))
   }
 }

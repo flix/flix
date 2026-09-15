@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{LspUtil, Position}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.errors.ResolutionError.UndefinedName
 
@@ -54,10 +55,10 @@ object ExprContext {
   case object Unknown extends ExprContext
 
   /**
-    * Returns the expression context at the given `uri` and position `pos`.
+    * Returns the expression context at the given `name` and position `pos`.
     */
-  def getExprContext(uri: String, pos: Position)(implicit root: Root, flix: Flix): ExprContext = {
-    val stack = LspUtil.getStack(uri, pos)
+  def getExprContext(name: SourceName, pos: Position)(implicit root: Root, flix: Flix): ExprContext = {
+    val stack = LspUtil.getStack(name, pos)
     // The stack contains the path of expressions from the leaf to the root.
     stack match {
       case Expr.Error(UndefinedName(_, _, _, _), _, _) :: Expr.ApplyClo(_, _, _, _, _, _) :: _ =>

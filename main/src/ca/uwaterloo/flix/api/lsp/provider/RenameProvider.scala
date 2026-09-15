@@ -16,10 +16,12 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
+import ca.uwaterloo.flix.api.lsp.ClientUri
 import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Consumer, Position, Range, TextEdit, Visitor, WorkspaceEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import org.json4s.JsonAST.JObject
@@ -28,9 +30,9 @@ object RenameProvider {
 
   /**
     * Handles a Rename LSP request by constructing a corresponding LSP response for when the cursor is
-    * at [[Position]] `pos` in the file given by `uri`.
+    * at [[Position]] `pos` in the file given by `name`.
     *
-    * Note that the LSP request should provide both `pos` and `uri`. Additionally, `pos` is interpreted
+    * Note that the LSP request should provide both `pos` and `name`. Additionally, `pos` is interpreted
     * as the [[Position]] to the immediate right of the thin cursor.
     *
     * The Rename LSP response takes one of two forms: a "success" response or an "invalid request" response.
@@ -46,7 +48,7 @@ object RenameProvider {
     * If there is no [[Symbol]] under the cursor or Flix doesn't support renaming for it, then we get an "invalid request"
     * LSP response of the form
     *
-    * `{'status': "invalid_request", 'result': "Nothing found in <uri> at <pos>."}`.
+    * `{'status': "invalid_request", 'result': "Nothing found in <name> at <pos>."}`.
     *
     * Since a thin cursor exists between character positions, it's associated with both
     * the [[Position]] to its immediate left and right. This means we need to consider what's under
@@ -54,14 +56,14 @@ object RenameProvider {
     * we rename occurrences of the one on the right.
     *
     * @param newName The new name for the [[Symbol]] we're renaming.
-    * @param uri     The URI of the file where the cursor is, provided by the LSP request.
-    * @param pos     The [[Position]] of the cursor within the file given by `uri`, provided by the LSP request.
+    * @param name     The URI of the file where the cursor is, provided by the LSP request.
+    * @param pos     The [[Position]] of the cursor within the file given by `name`, provided by the LSP request.
     * @param root    The root AST node of the Flix project.
     * @return A [[JObject]] representing a Rename LSP response.
     */
-  def processRename(newName: String, uri: String, pos: Position)(implicit root: Root): Option[WorkspaceEdit] = {
-    val left = searchLeftOfCursor(uri, pos).flatMap(getOccurs)
-    val right = searchRightOfCursor(uri, pos).flatMap(getOccurs)
+  def processRename(newName: String, name: SourceName, pos: Position)(implicit root: Root): Option[WorkspaceEdit] = {
+    val left = searchLeftOfCursor(name, pos).flatMap(getOccurs)
+    val right = searchRightOfCursor(name, pos).flatMap(getOccurs)
 
     right.orElse(left)
       .map(rename(newName))
@@ -74,14 +76,14 @@ object RenameProvider {
     *
     * Note that this search filters out AST nodes synthetic [[SourceLocation]]s
     *
-    * @param uri  The URI of the path of the file where the cursor is.
+    * @param name  The URI of the path of the file where the cursor is.
     * @param pos  The space to the immediate right of the cursor.
     * @param root The root AST node of the Flix project.
     * @return Returns the most precise AST node under the space immediately left of the thin cursor.
     */
-  private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+  private def searchLeftOfCursor(name: SourceName, pos: Position)(implicit root: Root): Option[AnyRef] = {
     if (pos.character >= 2) {
-      search(uri, Position(pos.line, pos.character - 1))
+      search(name, Position(pos.line, pos.character - 1))
     } else {
       None
     }
@@ -94,24 +96,24 @@ object RenameProvider {
     *
     * Note that this search filters out AST node of the Flix project.
     *
-    * @param uri  The URI of the path of the file where the cursor is.
+    * @param name  The URI of the path of the file where the cursor is.
     * @param pos  The [[Position]] to the immediate right of the thin cursor.
     * @param root The root AST node of the Flix project.
     * @return Returns the most precise AST node under the space immediately right of the thin cursor.
     */
-  private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = search(uri, pos)
+  private def searchRightOfCursor(name: SourceName, pos: Position)(implicit root: Root): Option[AnyRef] = search(name, pos)
 
   /**
     * Returns the most precise AST node under a given [[Position]] `pos`.
     *
-    * @param uri  The URI of the path of the file where the cursor is.
+    * @param name  The URI of the path of the file where the cursor is.
     * @param pos  The [[Position]] that we are looking for the most precise AST under.
     * @param root The root AST node of the Flix project.
     * @return The most precise AST node udner a given [[Position]] `pos`.
     */
-  private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
+  private def search(name: SourceName, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer()
-    Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
+    Visitor.visitRoot(root, consumer, InsideAcceptor(name, pos))
     consumer.getStack.find(isReal)
   }
 
@@ -240,12 +242,12 @@ object RenameProvider {
     // Convert the set of occurrences to a sorted list.
     val targets = occurrences.toList.sorted
 
-    // Group by URI.
-    val groupedByUri = targets.groupBy(_.source.name)
+    // Group by source.
+    val groupedBySource = targets.groupBy(_.source.sourceName)
 
-    // Construct text edits.
-    val textEdits = groupedByUri map {
-      case (uri, locs) => uri -> locs.map(loc => TextEdit(Range.from(loc), newName))
+    // Construct text edits, keyed by the URI the client uses for each source.
+    val textEdits = groupedBySource map {
+      case (name, locs) => ClientUri.fromSourceName(name) -> locs.map(loc => TextEdit(Range.from(loc), newName))
     }
 
     WorkspaceEdit(textEdits)

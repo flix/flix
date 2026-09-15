@@ -98,6 +98,8 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private val Uri = CompilerConstants.VirtualTestFile.toString
 
+  private val Name = SourceName.PathName(CompilerConstants.VirtualTestFile)
+
   /**
     * A limit on the maximum number of inputs tested by each property.
     *
@@ -417,7 +419,7 @@ class TestCompletionProvider extends AnyFunSuite {
   /**
     * Returns all autocomplete suggestions at the given position `pos` for the given AST `root` with the given `errors`.
     */
-  private def autoComplete(pos: Position, root: Root, errors: List[CompilationMessage]): List[Completion] = CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix)
+  private def autoComplete(pos: Position, root: Root, errors: List[CompilationMessage]): List[Completion] = CompletionProvider.getCompletions(Name, pos, errors)(root, Flix)
 
   /**
     * Returns all *block comment* tokens in the given program `prg` associated with the given AST `root`.
@@ -610,7 +612,7 @@ class TestCompletionProvider extends AnyFunSuite {
       }
     }
 
-    Visitor.visitRoot(root, DefSymUseConsumer, FileAcceptor(Uri))
+    Visitor.visitRoot(root, DefSymUseConsumer, FileAcceptor(Name))
 
     occurs.toList
   }
@@ -628,7 +630,7 @@ class TestCompletionProvider extends AnyFunSuite {
       }
     }
 
-    Visitor.visitRoot(root, VarConsumer, FileAcceptor(Uri))
+    Visitor.visitRoot(root, VarConsumer, FileAcceptor(Name))
 
     occurs.toList
   }

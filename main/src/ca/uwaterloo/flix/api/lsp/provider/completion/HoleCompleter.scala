@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Position, Visitor}
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 
@@ -28,12 +29,12 @@ object HoleCompleter {
   /**
     * Gets completions for when the cursor position is on a hole expression with an expression
     */
-  def getHoleCompletion(uri: String, pos: Position)(implicit root: TypedAst.Root, flix: Flix): Iterable[Completion] = {
+  def getHoleCompletion(name: SourceName, pos: Position)(implicit root: TypedAst.Root, flix: Flix): Iterable[Completion] = {
     val stack = StackConsumer()
 
     if (pos.character >= 2) {
       val leftPos = Position(pos.line, pos.character - 1)
-      Visitor.visitRoot(root, stack, InsideAcceptor(uri, leftPos))
+      Visitor.visitRoot(root, stack, InsideAcceptor(name, leftPos))
     }
 
     stack.getStack.headOption match {

@@ -20,12 +20,13 @@ import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.PredicateCompletion
 import ca.uwaterloo.flix.api.lsp.{Consumer, Range, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.{Name, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
 object PredicateCompleter {
 
-  def getCompletions(uri: String, range: Range)(implicit root: Root, flix: Flix): Iterable[PredicateCompletion] = {
+  def getCompletions(name: SourceName, range: Range)(implicit root: Root, flix: Flix): Iterable[PredicateCompletion] = {
 
     //
     // Find all predicates together with their type and source location.
@@ -43,7 +44,7 @@ object PredicateCompleter {
     //
     // Select all predicate symbols that occur in the same file.
     //
-    Visitor.visitRoot(root, PredConsumer, FileAcceptor(uri))
+    Visitor.visitRoot(root, PredConsumer, FileAcceptor(name))
 
     predsWithTypeAndLoc.map {
       case (predName, tpe) =>
