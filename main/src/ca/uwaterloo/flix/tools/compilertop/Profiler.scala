@@ -94,7 +94,7 @@ object Profiler {
     * @param allocBytes   total compiler-side heap allocation (Hotspot per-thread allocated bytes) summed across `track` calls for this sym. 0 when the JVM doesn't support [[com.sun.management.ThreadMXBean.getThreadAllocatedBytes]].
     * @param loc          the source location of the def's body, used to compute LOC.
     */
-  final case class DefnStats(sym: Symbol.DefnSym, isActive: Boolean, totalNanos: Long, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], cns: Long, tvars: Long, evars: Long, inlined: Long, classBytes: Long, allocBytes: Long, loc: SourceLocation) {
+  final case class DefnStats(sym: Symbol.DefnSym, isActive: Boolean, totalNanos: Long, byPhase: Map[String, Long], byPhaseCount: Map[String, Long], byPhaseAlloc: Map[String, Long], cns: Long, tvars: Long, evars: Long, reduces: Long, inlined: Long, classBytes: Long, allocBytes: Long, loc: SourceLocation) {
     /** Returns the phase that consumed the most time, or None if empty. */
     def dominantPhase: Option[String] =
       if (byPhase.isEmpty) None else Some(byPhase.maxBy(_._2)._1)
@@ -116,7 +116,7 @@ object Profiler {
     * @param allocBytes    accumulator: summed Hotspot per-thread allocation deltas across `track` calls for this sym. Captures compiler-side heap pressure, independent of wall time.
     * @param loc           set on first `track` call; carries the def-body span so we can show LOC.
     */
-  private final case class Counters(inFlight: AtomicReference[InFlight], totalNanos: AtomicLong, perPhaseNanos: ConcurrentHashMap[String, AtomicLong], perPhaseCount: ConcurrentHashMap[String, AtomicLong], perPhaseAlloc: ConcurrentHashMap[String, AtomicLong], constraints: AtomicLong, tvars: AtomicLong, evars: AtomicLong, inlined: AtomicLong, classBytes: AtomicLong, allocBytes: AtomicLong, loc: AtomicReference[SourceLocation])
+  private final case class Counters(inFlight: AtomicReference[InFlight], totalNanos: AtomicLong, perPhaseNanos: ConcurrentHashMap[String, AtomicLong], perPhaseCount: ConcurrentHashMap[String, AtomicLong], perPhaseAlloc: ConcurrentHashMap[String, AtomicLong], constraints: AtomicLong, tvars: AtomicLong, evars: AtomicLong, reduces: AtomicLong, inlined: AtomicLong, classBytes: AtomicLong, allocBytes: AtomicLong, loc: AtomicReference[SourceLocation])
 
   /**
     * A marker for the outermost in-flight `track` call: the wall-clock start
@@ -235,6 +235,10 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
       val (tv, ev) = Profiler.countVars(tconstrs)
       c.tvars.set(tv)
       c.evars.set(ev)
+    case FlixEvent.SolverWorkDef(sym, reduces) =>
+      // `set` mirrors NewConstraintsDef: a re-typing replaces rather than
+      // doubles the reading.
+      countersFor(sym).reduces.set(reduces)
     case FlixEvent.InlinedDef(sym) =>
       countersFor(sym).inlined.incrementAndGet()
     case FlixEvent.EmittedClass(sym, bytes) =>
@@ -324,7 +328,7 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
       val loc = Option(c.loc.get()).getOrElse(key.loc)
       Profiler.DefnStats(key.sym, isActive = inFlight.isDefined,
         committed + liveNanos, byPhase, byPhaseCount, byPhaseAlloc,
-        c.constraints.get(), c.tvars.get(), c.evars.get(), c.inlined.get(), c.classBytes.get(), c.allocBytes.get(), loc)
+        c.constraints.get(), c.tvars.get(), c.evars.get(), c.reduces.get(), c.inlined.get(), c.classBytes.get(), c.allocBytes.get(), loc)
     }.toVector
   }
 
@@ -342,6 +346,7 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
       constraints = new AtomicLong(0L),
       tvars = new AtomicLong(0L),
       evars = new AtomicLong(0L),
+      reduces = new AtomicLong(0L),
       inlined = new AtomicLong(0L),
       classBytes = new AtomicLong(0L),
       allocBytes = new AtomicLong(0L),

@@ -43,6 +43,35 @@ object Formatting {
   def hotnessMsPerLine(nanos: Long, lines: Int): Double =
     if (lines <= 0) 0.0 else (nanos / 1_000_000L).toDouble / lines
 
+  /**
+    * Floor on `reduces` below which the `rpv` density score is suppressed.
+    * Like the `MinSkewableNanos` floor from earlier cohort experiments, this
+    * keeps tiny wrapper defs (a couple-line combinator doing a few hundred
+    * reductions over very few variables) out of the ranking — a raw ratio
+    * would otherwise reward those small denominators rather than the defs
+    * doing genuinely disproportionate type-reduction work.
+    */
+  val MinDensityReduces: Long = 3000L
+
+  /**
+    * The `rpv` ("reductions per variable") density score: deterministic
+    * constraint-solver `reduces` divided by the def's `tvars + evars` (the
+    * static type/effect variable counts). Surfaces defs whose bodies drive
+    * far more type reduction than their variable count implies — orthogonal
+    * to `cns` / `tv` / `ev` and to wall time. `None` (rendered `-`, sorted to
+    * the bottom) when `reduces` is below [[MinDensityReduces]].
+    *
+    * Single source of truth for both the `rpv` sort key and its rendered cell
+    * so the displayed and sorted values can't drift.
+    */
+  def densityScore(reduces: Long, tvars: Long, evars: Long): Option[Double] =
+    if (reduces < MinDensityReduces) None
+    else Some(reduces.toDouble / (tvars + evars + 1L).toDouble)
+
+  /** Renders [[densityScore]] as a right-padded integer, or `-` when unscored. */
+  def formatDensity(reduces: Long, tvars: Long, evars: Long): String =
+    densityScore(reduces, tvars, evars).map(d => f"$d%.0f").getOrElse("-")
+
   // -- Formatting helpers -------------------------------------------------
 
   /** Renders a [[SourceLocation]] as `file:line`, or `?` if synthetic. */
