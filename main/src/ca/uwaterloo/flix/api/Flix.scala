@@ -770,6 +770,13 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   }
 
   /**
+    * Returns `true` if any event listeners are registered. Callers can use
+    * this to avoid eagerly computing an event payload (which is constructed
+    * at the call site, before `emitEvent` runs) when nobody is listening.
+    */
+  def hasListeners: Boolean = listeners.nonEmpty
+
+  /**
     * Emits the given Flix event to all registered listeners.
     */
   def emitEvent(e: FlixEvent): Unit = {
