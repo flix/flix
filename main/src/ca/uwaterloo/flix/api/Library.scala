@@ -174,7 +174,6 @@ object Library {
     "Formattable.flix" -> LocalResource.get("/src/library/Formattable.flix"),
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
-    "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Group.flix" -> LocalResource.get("/src/library/Group.flix"),
     "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
     "Indexable.flix" -> LocalResource.get("/src/library/Indexable.flix"),
