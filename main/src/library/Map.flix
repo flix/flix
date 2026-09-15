@@ -123,7 +123,7 @@ pub mod Map {
 
     instance Iterable[Map[k, v]] {
         type Elm = (k, v)
-        pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ r = Map.iterator(rc, m)
+        pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), {}, r] \ r = Map.iterator(rc, m)
     }
 
     instance ForEach[Map[k, v]] {
@@ -879,20 +879,20 @@ pub mod Map {
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ r =
+    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), {}, r] \ r =
         let Map(t) = m;
         RedBlackTree.iterator(rc, t)
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
-    pub def iteratorKeys(rc: Region[r], m: Map[k, v]): Iterator[k, r, r] \ r =
+    pub def iteratorKeys(rc: Region[r], m: Map[k, v]): Iterator[k, {}, r] \ r =
         iterator(rc, m) |> Iterator.map(fst)
 
     ///
     /// Returns an iterator over values in `m`.
     ///
-    pub def iteratorValues(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r =
+    pub def iteratorValues(rc: Region[r], m: Map[k, v]): Iterator[v, {}, r] \ r =
         iterator(rc, m) |> Iterator.map(snd)
 
     ///

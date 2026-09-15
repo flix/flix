@@ -34,7 +34,7 @@ pub mod MutPriorityQueue {
     instance Iterable[MutPriorityQueue[a, r]] {
         type Elm = a
         type Aef = r
-        pub def iterator(rc: Region[r1], q: MutPriorityQueue[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutPriorityQueue.iterator(rc, q)
+        pub def iterator(rc: Region[r1], q: MutPriorityQueue[a, r]): Iterator[a, r, r1] \ (r + r1) = MutPriorityQueue.iterator(rc, q)
     }
 
     instance ForEach[MutPriorityQueue[a, r]] {
@@ -155,7 +155,7 @@ pub mod MutPriorityQueue {
     ///
     /// Modifying `mq` during iteration is undefined and not recommended.
     ///
-    pub def iterator(rc: Region[r1], mq: MutPriorityQueue[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], mq: MutPriorityQueue[a, r2]): Iterator[a, r2, r1] \ { r1, r2 } =
         let it1 = Iterator.range(rc, 0, mq->size);
         Iterator.map(x -> Array.get(x, mq->values), it1)
 
