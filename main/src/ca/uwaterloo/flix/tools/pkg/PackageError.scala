@@ -209,6 +209,31 @@ object PackageError {
   }
 
   /**
+    * An error raised to indicate that the package `identifier` is required at more than
+    * one version in the dependency graph.
+    *
+    * @param identifier   the package that is required at multiple versions.
+    * @param requirements every dependent that requires the package, paired with the
+    *                     dependency declaration that states the required version.
+    */
+  case class MultipleVersions(identifier: String, requirements: List[(Manifest, FlixDependency)]) extends PackageError {
+    override def message(f: Formatter): String = {
+      val versions = requirements.map { case (_, dep) => dep.version }.distinct
+      val lines = requirements.map {
+        case (dependent, dep) => s"    ${f.bold(dep.version.toString)} required by '${dependent.name}'"
+      }
+      s"""${f.underline("Found multiple versions of the same package in the dependency graph:")}
+         |  The package '${f.red(identifier)}' is required at ${versions.length} different versions:
+         |
+         |${lines.mkString(System.lineSeparator())}
+         |
+         |  A package may occur at exactly one version in the dependency graph.
+         |  Update the dependents so that they agree on a single version.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that the version number declared in `manifest`
     * does not match the targeted version in `dependency`.
     *
