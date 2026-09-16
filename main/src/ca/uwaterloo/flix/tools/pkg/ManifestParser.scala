@@ -365,21 +365,21 @@ object ManifestParser {
           for (
             ver <- getFlixVersion(deps, depKey, p);
             mount <- getDefaultMount(depKey, projectName, p)
-          ) yield FlixDependency(repo, username, projectName, ver, SecurityContext.Plain, mount)
+          ) yield FlixDependency(repo, username, projectName, ver, mount, SecurityContext.Plain)
 
           // If the dependency maps to a table, get the version, security, and mount.
         } else if (deps.isTable(depKey)) {
           val depTbl = deps.getTable(depKey)
           val verKey = "version"
-          val securityKey = "security"
           val mountKey = "mount"
+          val securityKey = "security"
 
           for (
-            _ <- checkDependencyKeys(depTbl, depKey, Set(verKey, securityKey, mountKey), p);
+            _ <- checkDependencyKeys(depTbl, depKey, Set(verKey, mountKey, securityKey), p);
             ver <- getFlixVersion(depTbl, verKey, p);
-            security <- getSecurity(depTbl, securityKey, p);
-            mount <- getMount(depTbl, mountKey, depKey, projectName, p)
-          ) yield FlixDependency(repo, username, projectName, ver, security, mount)
+            mount <- getMount(depTbl, mountKey, depKey, projectName, p);
+            security <- getSecurity(depTbl, securityKey, p)
+          ) yield FlixDependency(repo, username, projectName, ver, mount, security)
         } else {
           Err(ManifestError.VersionTypeError(Option.apply(p), depKey, deps.get(depKey)))
         }

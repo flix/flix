@@ -96,14 +96,14 @@ object Manifest {
   private def mkFlixDependency(dep: Dependency.FlixDependency): TomlEntry = {
     val key = TomlKey(dep.identifier)
     val version = TomlEntry.Present(TomlKey("version"), TomlExp.TomlValue(dep.version))
-    // The default security context and the default mount are not rendered.
+    // The default mount and the default security context are not rendered.
+    val mount = if (dep.hasDefaultMount) TomlEntry.Absent else TomlEntry.Present(TomlKey("mount"), TomlExp.TomlValue(dep.mount))
     val security = dep.sctx match {
       case SecurityContext.Default => TomlEntry.Absent
       case sctx => TomlEntry.Present(TomlKey("security"), TomlExp.TomlValue(sctx))
     }
-    val mount = if (dep.hasDefaultMount) TomlEntry.Absent else TomlEntry.Present(TomlKey("mount"), TomlExp.TomlValue(dep.mount))
     // A record with only the version is rendered as the bare version string.
-    val values = TomlExp.TomlRecord(List(version, security, mount).collect { case e: TomlEntry.Present => e })
+    val values = TomlExp.TomlRecord(List(version, mount, security).collect { case e: TomlEntry.Present => e })
     TomlEntry.Present(key, values)
   }
 

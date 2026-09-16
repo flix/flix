@@ -129,7 +129,7 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""The Flix dependency ${f.bold(lib)} has an entry named ${f.red(key)}, which is not allowed.
          |Allowed entry names in a Flix dependency:
-         |  version, security, mount
+         |  version, mount, security
          |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
          |""".stripMargin
   }

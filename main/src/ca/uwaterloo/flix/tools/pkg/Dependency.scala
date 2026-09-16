@@ -28,7 +28,7 @@ object Dependency {
     *
     * @param mount the name of the top-level module under which the package is visible to the dependent.
     */
-  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, sctx: SecurityContext, mount: String) extends Dependency {
+  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, mount: String, sctx: SecurityContext) extends Dependency {
     val identifier: String = {
       val r = repo.toString.toLowerCase
       s"$r:$username/$projectName"
@@ -38,8 +38,8 @@ object Dependency {
     def hasDefaultMount: Boolean = FlixDependency.defaultMount(projectName).contains(mount)
 
     override def toString: String = {
-      val mountStr = if (hasDefaultMount) "" else s", mount = \"$mount\""
-      s"\"$identifier\" = { version = \"$version\", security = \"$sctx\"$mountStr }"
+      val mountStr = if (hasDefaultMount) "" else s"mount = \"$mount\", "
+      s"\"$identifier\" = { version = \"$version\", ${mountStr}security = \"$sctx\" }"
     }
   }
 
