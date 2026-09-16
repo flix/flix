@@ -36,6 +36,11 @@ sealed trait Request {
 object Request {
 
   /**
+    * A request to add the workspace root at the given uri.
+    */
+  case class AddWorkspace(requestId: String, uri: URI) extends Request
+
+  /**
     * A request to add (or update) the given uri with the given source code.
     */
   case class AddUri(requestId: String, name: SourceName, src: String) extends Request
@@ -69,6 +74,11 @@ object Request {
     * A request for the compiler version.
     */
   case class Version(requestId: String) extends Request
+
+  /**
+    * A request to load the project again and start over with a fresh compiler.
+    */
+  case class Restart(requestId: String) extends Request
 
   /**
     * A request to shutdown the language server.
@@ -173,6 +183,16 @@ object Request {
   case class FoldingRange(requestId: String, name: SourceName) extends Request
 
   /**
+    * Tries to parse the given `json` value as a [[AddWorkspace]] request.
+    */
+  def parseAddWorkspace(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+    } yield Request.AddWorkspace(id, uri)
+  }
+
+  /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
     */
   def parseAddUri(json: json4s.JValue): Result[Request, String] = {
@@ -254,6 +274,15 @@ object Request {
     for {
       id <- parseId(json)
     } yield Request.Version(id)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Restart]] request.
+    */
+  def parseRestart(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+    } yield Request.Restart(id)
   }
 
   /**
