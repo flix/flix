@@ -174,25 +174,24 @@ object Main {
           // running the given files loads the compiled program into the JVM.
           featureNotSupportedInNativeImage()
 
-          // partition the given files by extension.
+          // collect the given source files. Packages and JARs are declared in `flix.toml`.
           val sctx: SecurityContext = SecurityContext.Unrestricted
           val flixFiles = mutable.ArrayBuffer.empty[Path]
-          val pkgFiles = mutable.ArrayBuffer.empty[(Path, SecurityContext)]
-          val jarFiles = mutable.ArrayBuffer.empty[Path]
           for (file <- cmdOpts.files) {
             val ext = file.getName.split('.').last
             ext match {
               case "flix" => flixFiles += file.toPath
-              case "fpkg" => pkgFiles += (file.toPath -> sctx)
-              case "jar" => jarFiles += file.toPath
+              case "fpkg" | "jar" =>
+                Console.println(s"Cannot load '${file.getName}'. Flix packages and Java archives must be declared in '${Bootstrap.FLIX_TOML}'.")
+                System.exit(1)
               case _ =>
                 Console.println(s"Unrecognized file extension: '$ext'.")
                 System.exit(1)
             }
           }
 
-          // configure Flix with the packages and JARs, and add the source files.
-          val flix = new Flix(pkgs = pkgFiles.toList, jars = jarFiles.toList)
+          // configure Flix and add the source files.
+          val flix = new Flix()
           flix.setOptions(options)
           for (p <- flixFiles) {
             flix.addFile(p, sctx)
@@ -786,7 +785,7 @@ object Main {
       arg[File]("<file>...").action((x, c) => c.copy(files = c.files :+ x))
         .optional()
         .unbounded()
-        .text("input Flix source code files, Flix packages, and Java archives.")
+        .text("input Flix source code files.")
 
     }
 

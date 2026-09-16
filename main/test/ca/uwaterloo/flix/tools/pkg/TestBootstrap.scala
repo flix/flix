@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Version}
+import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.{FileOps, Formatter, Result}
 import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
@@ -108,6 +109,32 @@ class TestBootstrap extends AnyFunSuite {
     assert(
       hash1 == hash2,
       s"Two file hashes are not same: $hash1 and $hash2")
+  }
+
+  test("directory mode ignores packages in lib") {
+    // Build a package that defines the module `Dep`, and nothing else.
+    val src = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(src)(System.out)
+    Files.delete(src.resolve("src").resolve("Main.flix"))
+    Files.delete(src.resolve("test").resolve("TestMain.flix"))
+    FileOps.writeString(src.resolve("src").resolve("Dep.flix"), "pub mod Dep { pub def answer(): Int32 = 42 }")
+    val srcBootstrap = Bootstrap.bootstrap(src, None)(Formatter.getDefault, System.out).unsafeGet
+    srcBootstrap.buildPkg(PkgTestUtils.mkFlix(srcBootstrap))(Formatter.getDefault)
+    val pkg = src.resolve("artifact").resolve(src.getFileName.toString + ".fpkg")
+
+    // Put the package in `lib/` of a project that has no `flix.toml`, and use it.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Files.createDirectories(p.resolve("lib"))
+    Files.copy(pkg, p.resolve("lib").resolve("dep.fpkg"))
+    FileOps.writeString(p.resolve("Main.flix"), "def main(): Unit \\ IO = println(Dep.answer())")
+
+    // The package is not loaded, so `Dep.answer` does not resolve.
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    val (_, errors) = PkgTestUtils.mkFlix(b).check()
+    assert(
+      errors.exists(_.isInstanceOf[ResolutionError]),
+      s"expected the package in 'lib/' to be ignored and 'Dep.answer' to be unresolved, but found: $errors"
+    )
   }
 
   test("build-pkg") {

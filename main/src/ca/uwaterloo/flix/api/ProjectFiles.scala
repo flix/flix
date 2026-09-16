@@ -36,10 +36,4 @@ case class ProjectFiles(sources: List[Path], pkgs: List[(Path, SecurityContext)]
   def isDependency(path: Path): Boolean =
     pkgs.exists { case (p, _) => p == path } || jars.contains(path)
 
-  /**
-    * Returns the paths of the packages and JARs.
-    */
-  def dependencies: Set[Path] =
-    pkgs.map { case (p, _) => p }.toSet ++ jars
-
 }

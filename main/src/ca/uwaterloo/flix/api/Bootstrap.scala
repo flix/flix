@@ -513,26 +513,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Scans the project directory for source files and the `lib/` directory for packages and JARs.
+    * Scans the project directory for source files.
+    *
+    * Without a `flix.toml` the project has no dependencies: packages and JARs are loaded only
+    * when a manifest declares them, so the `lib/` directory is not scanned.
     */
   private def directoryMode(): Result[Unit, BootstrapError] = {
-    files = scan(Map.empty)
+    files = ProjectFiles(scanSources(), Nil, Nil)
     Result.Ok(())
-  }
-
-  /**
-    * Returns the files of the project as found on disk: the source files, the `.fpkg` files in
-    * `lib/`, and the `.jar` files in `lib/cache/` (Maven) followed by those in `lib/external/`.
-    *
-    * A package gets its security context from `securityLevels`, or [[SecurityContext.Plain]] if absent.
-    */
-  private def scan(securityLevels: Map[Path, SecurityContext]): ProjectFiles = {
-    val libDir = Bootstrap.getLibraryDirectory(projectPath)
-    val pkgPaths = FileOps.getFilesWithExtIn(libDir, EXT_FPKG, Int.MaxValue)
-    val mavenJars = FileOps.getFilesWithExtIn(libDir.resolve(MavenPackageManager.DirName), EXT_JAR, Int.MaxValue)
-    val externalJars = FileOps.getFilesWithExtIn(libDir.resolve(JarPackageManager.DirName), EXT_JAR, Int.MaxValue)
-    val pkgs = pkgPaths.map(p => (p, securityLevels.getOrElse(p, SecurityContext.Plain)))
-    ProjectFiles(scanSources(), pkgs, mavenJars ::: externalJars)
   }
 
   /**
@@ -604,53 +592,47 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // The source files after applying the events.
     var sources = files.sources
-    // Whether a package or JAR appeared or disappeared.
-    var libsChanged = false
-    // Whether a package or JAR of the project was modified in place.
-    var dependencyModified = false
+    // Whether the source files must be re-scanned, e.g. after a directory was deleted.
+    var rescanSources = false
+    // Whether a dependency of the project was modified in place or removed.
+    var dependencyChanged = false
     for (event <- events) event match {
       case Created(path) =>
         if (FileOps.checkExt(path, EXT_FLIX)) {
           sources = path :: sources
           flix.addFile(path, SecurityContext.Unrestricted)
-        } else if (isDependencyFile(path)) {
-          libsChanged = true
         }
+      // A package or JAR that appears on disk is ignored: the dependencies are those the manifest declares.
 
       case Modified(path) =>
         if (FileOps.checkExt(path, EXT_FLIX)) {
           flix.addFile(path, SecurityContext.Unrestricted)
         } else if (files.isDependency(path)) {
-          dependencyModified = true
+          dependencyChanged = true
         }
 
       case Deleted(path) =>
         if (path.getFileName.toString.endsWith(s".$EXT_FLIX")) {
           sources = sources.filterNot(_ == path)
           flix.remFile(path)
-        } else if (isDependencyFile(path)) {
-          libsChanged = true
-        } else {
+        } else if (files.isDependency(path)) {
+          // A declared dependency was removed from disk. The caller must construct a new instance,
+          // so that the missing file is reported the next time the project is compiled.
+          dependencyChanged = true
+        } else if (!isDependencyFile(path)) {
           // No recognized file extension — likely a directory deletion.
-          // Remove all tracked source files that were children of this path and re-scan the project.
+          // Remove all tracked source files that were children of this path and re-scan the sources.
           val deletedFlix = sources.filter(_.startsWith(path))
           sources = sources.filterNot(_.startsWith(path))
           for (p <- deletedFlix) flix.remFile(p)
-          libsChanged = true
+          rescanSources = true
         }
 
       case Overflow => // already handled above
     }
 
-    if (libsChanged) {
-      val rescanned = rescan()
-      val dependenciesChanged = rescanned.dependencies != files.dependencies
-      files = rescanned
-      dependencyModified || dependenciesChanged
-    } else {
-      files = files.copy(sources = sources)
-      dependencyModified
-    }
+    files = if (rescanSources) rescan() else files.copy(sources = sources)
+    dependencyChanged
   }
 
   /**
@@ -662,9 +644,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Re-scans the project, keeping the known security contexts of the packages.
+    * Re-scans the source files of the project, keeping its dependencies.
+    *
+    * The dependencies are those the manifest declares, and they are fixed for the lifetime of
+    * this instance.
     */
-  private def rescan(): ProjectFiles = scan(files.pkgs.toMap)
+  private def rescan(): ProjectFiles = files.copy(sources = scanSources())
 
   // -- Flix Instance Section --
 
