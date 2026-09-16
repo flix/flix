@@ -29,16 +29,3 @@ import java.nio.file.Path
   *               each mount to the identifier of the dependency it names.
   */
 case class InstalledPackage(path: Path, id: String, sctx: SecurityContext, mounts: Map[String, String])
-
-object InstalledPackage {
-
-  /**
-    * Returns a package that was found on disk rather than resolved from a manifest.
-    *
-    * The language servers scan for packages instead of resolving them, so they have no identifier
-    * and no mount table to give. The file name stands in for the identifier.
-    */
-  def unresolved(path: Path, sctx: SecurityContext): InstalledPackage =
-    InstalledPackage(path, path.getFileName.toString, sctx, Map.empty)
-
-}
