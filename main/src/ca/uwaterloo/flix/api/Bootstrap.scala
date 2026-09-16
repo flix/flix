@@ -654,6 +654,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   // -- Flix Instance Section --
 
   /**
+    * Returns the files of this project: its source files, packages, and JARs.
+    */
+  def projectFiles: ProjectFiles = files
+
+  /**
     * Returns a new Flix instance with the source files, packages, and JARs of this project.
     *
     * The packages and JARs are fixed for the lifetime of the instance. Later changes to the

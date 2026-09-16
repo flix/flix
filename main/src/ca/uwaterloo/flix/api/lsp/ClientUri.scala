@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, SourceName}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.net.URI
-import java.nio.file.Path
+import java.nio.file.{FileSystemNotFoundException, Path}
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -54,6 +54,19 @@ object ClientUri {
     val name = parse(uri)
     spellings.put(name, uri.toString)
     name
+  }
+
+  /**
+    * Returns the path the client URI `uri` denotes, or `None` if it denotes no path.
+    *
+    * Used for a directory a client names, such as a workspace root. A source is named with
+    * [[toSourceName]] instead, which keeps a URI that denotes no path as a name of its own.
+    */
+  def toPath(uri: URI): Option[Path] = try {
+    Some(Path.of(uri).normalize())
+  } catch {
+    case _: IllegalArgumentException => None
+    case _: FileSystemNotFoundException => None
   }
 
   /**

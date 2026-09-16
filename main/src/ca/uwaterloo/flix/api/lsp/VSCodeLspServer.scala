@@ -16,11 +16,10 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider.*
-import ca.uwaterloo.flix.api.{CompilerLog, CrashHandler, Flix, InstalledPackage, Version}
+import ca.uwaterloo.flix.api.{CompilerLog, CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, SourceName}
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
@@ -36,10 +35,8 @@ import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
 import java.net.InetSocketAddress
-import java.nio.file.{Files, Path}
 import java.text.SimpleDateFormat
 import java.util.Date
-import scala.collection.mutable
 
 /**
   * A Compiler Interface for the Language Server Protocol.
@@ -51,6 +48,7 @@ import scala.collection.mutable
   *
   * $ wscat -c ws://localhost:8000
   *
+  * > {"id": "0", "request": "api/addWorkspace", "uri": "file:///path/to/project"}
   * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(): Unit \ IO = println(\"Hello World\")"}
   * > {"id": "2", "request": "lsp/check"}
   * > {"id": "3", "request": "lsp/hover", "uri": "foo.flix", "position": {"line": 1, "character": 25}}
@@ -72,32 +70,14 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   private val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
   /**
-    * A map from source names to source code.
+    * The project served by this server.
     */
-  private val sources: mutable.Map[SourceName, String] = mutable.Map.empty
+  private val project: LspProject = new LspProject(o)
 
   /**
-    * The packages added with `api/addPkg` and not removed with `api/remPkg`, in insertion order.
+    * Returns the Flix instance of the project.
     */
-  private val pkgs: mutable.LinkedHashSet[Path] = mutable.LinkedHashSet.empty
-
-  /**
-    * The JARs added with `api/addJar` and not removed with `api/remJar`, in insertion order.
-    */
-  private val jars: mutable.LinkedHashSet[Path] = mutable.LinkedHashSet.empty
-
-  /**
-    * Whether [[pkgs]] or [[jars]] changed since [[flix]] was constructed.
-    */
-  private var dependenciesChanged: Boolean = false
-
-  /**
-    * The Flix instance (the same instance is used for incremental compilation).
-    *
-    * Replaced by a new instance when the packages or JARs change (see [[processCheck]]), since
-    * the packages and JARs are fixed for the lifetime of an instance.
-    */
-  private var flix: Flix = mkFlix()
+  private def flix: Flix = project.compiler
 
   /**
     * The current AST root. The root is null until the source code is compiled.
@@ -175,6 +155,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
 
     // Determine the type of request.
     json \\ "request" match {
+      case JString("api/addWorkspace") => Request.parseAddWorkspace(json)
       case JString("api/addUri") => Request.parseAddUri(json)
       case JString("api/remUri") => Request.parseRemUri(json)
       case JString("api/addPkg") => Request.parseAddPkg(json)
@@ -182,6 +163,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       case JString("api/addJar") => Request.parseAddJar(json)
       case JString("api/remJar") => Request.parseRemJar(json)
       case JString("api/version") => Request.parseVersion(json)
+      case JString("api/restart") => Request.parseRestart(json)
       case JString("api/shutdown") => Request.parseShutdown(json)
       case JString("api/disconnect") => Request.parseDisconnect(json)
 
@@ -211,85 +193,38 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   }
 
   /**
-    * Adds the given source code to the compiler under `name`.
-    */
-  private def addSource(name: SourceName, src: String): Unit = {
-    ClientUri.addSource(flix, name, src)
-    sources += (name -> src)
-  }
-
-  /**
-    * Removes the source named `name` from the compiler.
-    */
-  private def remSource(name: SourceName): Unit = {
-    ClientUri.remSource(flix, name)
-    sources -= name
-  }
-
-  /**
-    * Returns a new Flix instance with the current [[pkgs]], [[jars]], and [[sources]].
-    */
-  private def mkFlix(): Flix = {
-    val pkgsWithSctx = pkgs.toList.map(p => InstalledPackage.unresolved(p, SecurityContext.Unrestricted))
-    val flix = new Flix(pkgs = pkgsWithSctx, jars = jars.toList).setFormatter(NoFormatter).setOptions(o)
-    for ((name, src) <- sources) {
-      ClientUri.addSource(flix, name, src)
-    }
-    flix
-  }
-
-  /**
     * Process the request.
     */
   private def processRequest(request: Request)(implicit ws: WebSocket, root: Root): JValue = request match {
 
+    case Request.AddWorkspace(id, uri) =>
+      ClientUri.toPath(uri) match {
+        case Some(path) =>
+          project.addWorkspace(path)
+          ("id" -> id) ~ ("status" -> ResponseStatus.Success)
+        case None =>
+          ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"The uri '$uri' does not denote a directory.")
+      }
+
     case Request.AddUri(id, name, src) =>
-      addSource(name, src)
+      project.addSource(name, src)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.RemUri(id, name) =>
-      remSource(name)
+      project.remSource(name)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
-    case Request.AddPkg(id, uri) =>
-      val path = Path.of(uri)
-      FileOps.isValidFpkgFile(path) match {
-        case Ok(()) =>
-          // The package takes effect at the next check, which constructs a new Flix instance.
-          pkgs += path
-          dependenciesChanged = true
-          ("id" -> id) ~ ("status" -> ResponseStatus.Success)
-        case Err(ex) =>
-          ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> ex.getMessage)
-      }
+    case Request.AddPkg(id, _) => processDependencyChange(id)
 
-    case Request.RemPkg(id, uri) =>
-      val path = Path.of(uri)
-      if (pkgs.remove(path)) {
-        dependenciesChanged = true
-      }
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success)
+    case Request.RemPkg(id, _) => processDependencyChange(id)
 
-    case Request.AddJar(id, uri) =>
-      val path = Path.of(uri)
-      FileOps.isValidJarFile(path) match {
-        case Ok(()) =>
-          // The JAR takes effect at the next check, which constructs a new Flix instance.
-          jars += path
-          dependenciesChanged = true
-          ("id" -> id) ~ ("status" -> ResponseStatus.Success)
-        case Err(ex) =>
-          ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> ex.getMessage)
-      }
+    case Request.AddJar(id, _) => processDependencyChange(id)
 
-    case Request.RemJar(id, uri) =>
-      val path = Path.of(uri)
-      if (jars.remove(path)) {
-        dependenciesChanged = true
-      }
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success)
+    case Request.RemJar(id, _) => processDependencyChange(id)
 
     case Request.Version(id) => processVersion(id)
+
+    case Request.Restart(id) => processRestart(id)
 
     case Request.Shutdown(_) => processShutdown()
 
@@ -373,25 +308,36 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   }
 
   /**
+    * Processes a request that reports a change to the packages or JARs of the project.
+    *
+    * The dependencies of the project are those its manifest declares, so the change itself is
+    * ignored: it only means that the project must be loaded again at the next check.
+    */
+  private def processDependencyChange(requestId: String): JValue = {
+    project.markDependenciesChanged()
+    ("id" -> requestId) ~ ("status" -> ResponseStatus.Success)
+  }
+
+  /**
+    * Processes a restart request: loads the project again and starts over with a fresh compiler.
+    */
+  private def processRestart(requestId: String): JValue = project.restart() match {
+    case None =>
+      ("id" -> requestId) ~ ("status" -> ResponseStatus.Success)
+    case Some(err) =>
+      ("id" -> requestId) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> err.message(NoFormatter))
+  }
+
+  /**
     * Processes a validate request.
     */
   private def processCheck(requestId: String): JValue = {
-    // The packages and JARs are fixed for the lifetime of a Flix instance: if they changed, replace
-    // the instance. A package or JAR that disappeared without a `api/remPkg` or `api/remJar`
-    // request is dropped.
-    if (dependenciesChanged) {
-      pkgs.filterInPlace(path => Files.isRegularFile(path))
-      jars.filterInPlace(path => Files.isRegularFile(path))
-      flix.close()
-      flix = mkFlix()
-      dependenciesChanged = false
-    }
-
     // Measure elapsed time.
     val t = System.nanoTime()
     try {
-      // Run the compiler up to the type checking phase.
-      flix.check() match {
+      // Run the compiler up to the type checking phase. The project is loaded again first if its
+      // packages or JARs changed.
+      project.check() match {
         case (Some(r), Nil) =>
           // Case 1: Compilation was successful. Build the reverse index.
           processSuccessfulCheck(requestId, r, List.empty, t)
@@ -434,7 +380,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     // println(s"lsp/check: ${e / 1_000_000}ms")
 
     // Compute Code Quality hints.
-    val codeHints = CodeHinter.run(sources.keySet.toSet)(root)
+    val codeHints = CodeHinter.run(project.sourceNames)(root)
 
     // Determine the status based on whether there are errors.
     // Merge by URI so that errors and code hints for the same file are combined into one entry rather than
@@ -450,7 +396,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * Processes a shutdown request.
     */
   private def processShutdown(): Nothing = {
-    flix.close()
+    project.close()
     System.exit(0)
     throw null // unreachable
   }
