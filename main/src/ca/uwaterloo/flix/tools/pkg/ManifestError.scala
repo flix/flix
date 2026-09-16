@@ -91,6 +91,49 @@ object ManifestError {
     }
   }
 
+  case class FlixDependencyMountType(path: Path, lib: String, mount: AnyRef) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""Unexpected mount type for Flix dependency ${f.bold(lib)}.
+         |Expected ${f.bold("String")} but found ${f.bold(f.red(mount.getClass.toString))}.
+         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |""".stripMargin
+  }
+
+  case class FlixDependencyIllegalMount(path: Path, lib: String, mount: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""Illegal mount for Flix dependency ${f.bold(lib)}: ${f.red(mount)}.
+         |A mount must be the name of a top-level module: an uppercase letter followed by letters, digits, or underscores.
+         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |""".stripMargin
+  }
+
+  case class FlixDependencyMissingMount(path: Path, lib: String, projectName: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""No mount could be derived for Flix dependency ${f.bold(lib)}.
+         |The project name ${f.red(projectName)} is not a valid module name once capitalized, so the dependency must specify one:
+         |  $lib = { version = "x.y.z", mount = "ModuleName" }
+         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |""".stripMargin
+  }
+
+  case class FlixDependencyDuplicateMount(path: Path, mount: String, lib1: String, lib2: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""The Flix dependencies ${f.bold(lib1)} and ${f.bold(lib2)} share the mount ${f.red(mount)}.
+         |Every Flix dependency must have a distinct mount. Specify one explicitly:
+         |  "$lib2" = { version = "x.y.z", mount = "ModuleName" }
+         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |""".stripMargin
+  }
+
+  case class IllegalDependencyKeyFound(path: Path, lib: String, key: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""The Flix dependency ${f.bold(lib)} has an entry named ${f.red(key)}, which is not allowed.
+         |Allowed entry names in a Flix dependency:
+         |  version, security, mount
+         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |""".stripMargin
+  }
+
   case class RepositoryFormatError(path: Path, repository: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""A reference to a repository should be formatted like so: 'github:username/projectname'.
