@@ -23,11 +23,18 @@ import ca.uwaterloo.flix.util.collection.Nel
 
 object NamedAst {
 
+  /**
+    * The named AST.
+    *
+    * `mounts` maps the root namespace of the root project, and of each package, to its mount table:
+    * the name of each mount to the root namespace of the package that mount names.
+    */
   case class Root(symbols: Map[Name.NName, Map[String, List[Declaration]]],
                   instances: Map[Name.NName, Map[String, List[Declaration.Instance]]],
                   uses: Map[Name.NName, List[UseOrImport]],
                   units: Map[Source, CompilationUnit],
                   modules: Map[Symbol.ModuleSym, Declaration.Mod],
+                  mounts: Map[Name.NName, Map[String, Name.NName]],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   tokens: Map[Source, Array[Token]])

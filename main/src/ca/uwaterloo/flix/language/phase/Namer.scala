@@ -66,7 +66,9 @@ object Namer {
       val modules = buildModuleMap(units)
 
       val errors = sctx.errors.asScala.toList ++ checkOrphanModules(symbols)
-      (NamedAst.Root(symbols, instances, uses, units, modules, program.mainEntryPoint, locations, program.tokens), errors)
+      // The mount tables are empty until declarations of a package are named under its own root.
+      val mounts = Map.empty[Name.NName, Map[String, Name.NName]]
+      (NamedAst.Root(symbols, instances, uses, units, modules, mounts, program.mainEntryPoint, locations, program.tokens), errors)
     }
 
   /**
