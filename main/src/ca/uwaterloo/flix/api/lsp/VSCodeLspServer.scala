@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider.*
-import ca.uwaterloo.flix.api.{CompilerLog, CrashHandler, Flix, Version}
+import ca.uwaterloo.flix.api.{CompilerLog, CrashHandler, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -75,11 +75,6 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   private val project: LspProject = new LspProject(o)
 
   /**
-    * Returns the Flix instance of the project.
-    */
-  private def flix: Flix = project.compiler
-
-  /**
     * The current AST root. The root is null until the source code is compiled.
     */
   private var root: Root = TypedAst.empty
@@ -134,7 +129,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   } catch {
     case ex: Throwable =>
       // We try to scream everywhere to ensure the message is shown.
-      CrashHandler.handleCrash(ex)(flix)
+      CrashHandler.handleCrash(ex)(project.compiler)
       ex.printStackTrace(System.out)
       ex.printStackTrace(System.err)
   }
@@ -238,8 +233,8 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     case Request.Complete(id, name, pos) =>
       // Find the source of the given URI (which should always exist).
       val completions = CompletionProvider
-        .getCompletions(name, pos, currentErrors)(root, flix)
-        .map(_.toCompletionItem(flix))
+        .getCompletions(name, pos, currentErrors)(root, project.compiler)
+        .map(_.toCompletionItem(project.compiler))
       val completionList = CompletionList(isIncomplete = true, completions)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> completionList.toJSON)
 
@@ -251,7 +246,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
         ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON).toList))
 
     case Request.Hover(id, name, pos) =>
-      HoverProvider.processHover(name, pos)(root, flix) match {
+      HoverProvider.processHover(name, pos)(root, project.compiler) match {
         case Some(hover) => ("id" -> id) ~ hover.toJSON
         case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this hover.")
       }
@@ -284,7 +279,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> SemanticTokensProvider.provideSemanticTokens(name)(root)))
 
     case Request.Signature(id, name, pos) =>
-      SignatureHelpProvider.provideSignatureHelp(name, pos)(root, flix) match {
+      SignatureHelpProvider.provideSignatureHelp(name, pos)(root, project.compiler) match {
         case Some(signature) => ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> signature.toJSON)
         case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this signature.")
       }
@@ -293,13 +288,13 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.getInlayHints(name, range, currentErrors).map(_.toJSON))
 
     case Request.ShowAst(id) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("path" -> ShowAstProvider.showAst()(flix).toAbsolutePath.toString))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("path" -> ShowAstProvider.showAst()(project.compiler).toAbsolutePath.toString))
 
     case Request.CodeAction(id, name, range, _) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(name, range, currentErrors)(root, flix).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(name, range, currentErrors)(root, project.compiler).map(_.toJSON))
 
     case Request.Formatting(id, name, options) =>
-      val edits = FormattingProvider.formatDocument(name, options)(flix).map(_.toJSON)
+      val edits = FormattingProvider.formatDocument(name, options)(project.compiler).map(_.toJSON)
       ("id" -> id) ~ ("uri" -> ClientUri.fromSourceName(name)) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(edits))
 
     case Request.FoldingRange(id, name) =>
@@ -358,7 +353,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       }
     } catch {
       case ex: Throwable =>
-        val reportPath = CrashHandler.handleCrash(ex)(flix)
+        val reportPath = CrashHandler.handleCrash(ex)(project.compiler)
         ("id" -> requestId) ~
           ("status" -> ResponseStatus.CompilerError) ~
           ("result" -> ("reportPath" -> reportPath.map(_.toString)))
