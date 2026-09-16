@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.{Stat, Tester}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageModules, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Options, Result}
@@ -432,17 +432,30 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Requires network access.
     */
   private def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Result[FlixPackageManager.SecureResolution, BootstrapError] = {
-    FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey).map(FlixPackageManager.resolveSecurityLevels) match {
+    FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
       case Err(e) => Err(BootstrapError.FlixPackageError(e))
-      case Ok(securityMap) =>
-        val securityResolutionErrors = FlixPackageManager.checkSecurity(securityMap)
-        if (securityResolutionErrors.isEmpty) {
-          Ok(securityMap)
+      case Ok(resolution) =>
+        // A package must occur at exactly one version before anything is installed.
+        val versionErrors = FlixPackageManager.checkSingleVersion(resolution.manifests)
+        if (versionErrors.nonEmpty) {
+          Err(toBootstrapError(versionErrors))
         } else {
-          Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.message(formatter)).mkString(System.lineSeparator())))
+          val securityMap = FlixPackageManager.resolveSecurityLevels(resolution)
+          val securityErrors = FlixPackageManager.checkSecurity(securityMap)
+          if (securityErrors.isEmpty) {
+            Ok(securityMap)
+          } else {
+            Err(toBootstrapError(securityErrors))
+          }
         }
     }
   }
+
+  /**
+    * Returns the given non-empty list of package errors as a single [[BootstrapError]].
+    */
+  private def toBootstrapError(errors: List[PackageError])(implicit formatter: Formatter): BootstrapError =
+    BootstrapError.GeneralError(errors.map(_.message(formatter)).mkString(System.lineSeparator()))
 
   /**
     * Downloads and installs all `.fpkg` and `.jar` (maven and urls) dependencies of `resolution`

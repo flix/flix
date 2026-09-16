@@ -95,6 +95,33 @@ object FlixPackageManager {
   }
 
   /**
+    * Finds every package that is required at more than one version in `manifests`.
+    *
+    * A package may occur at exactly one version in the dependency graph. Two dependents
+    * that require different versions of the same package is an error: both versions would
+    * otherwise be installed and compiled together, which duplicates every definition the
+    * package declares.
+    */
+  def checkSingleVersion(manifests: List[Manifest]): List[PackageError] = {
+    // Pair every dependency declaration with the manifest that declares it.
+    val requirements = manifests.flatMap(m => findFlixDependencies(m).map(dep => (m, dep)))
+
+    // Report every package that is required at more than one version.
+    val byPackage = requirements.groupBy { case (_, dep) => dep.identifier }
+    byPackage.toList.sortBy { case (identifier, _) => identifier }.flatMap {
+      case (identifier, reqs) =>
+        val versions = reqs.map { case (_, dep) => dep.version }.distinct
+        if (versions.sizeIs > 1) {
+          // Order by version, and then by dependent, so the message is deterministic.
+          val sorted = reqs.sortBy { case (dependent, dep) => (dep.version, dependent.name) }
+          Some(PackageError.MultipleVersions(identifier, sorted))
+        } else {
+          None
+        }
+    }
+  }
+
+  /**
     * Finds the Flix dependencies in a Manifest.
     */
   def findFlixDependencies(manifest: Manifest): List[FlixDependency] = {

@@ -660,6 +660,49 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
+  test("checkSingleVersion.01") {
+    // Two dependents that agree on the version of the same package.
+    val alpha = mkManifest("alpha", """"github:flix/museum-clerk" = "1.1.0"""")
+    val beta = mkManifest("beta", """"github:flix/museum-clerk" = "1.1.0"""")
+    assertResult(expected = Nil)(actual = FlixPackageManager.checkSingleVersion(List(alpha, beta)))
+  }
+
+  test("checkSingleVersion.02") {
+    // Two dependents that disagree on the version of the same package.
+    val alpha = mkManifest("alpha", """"github:flix/museum-clerk" = "1.0.0"""")
+    val beta = mkManifest("beta", """"github:flix/museum-clerk" = "1.1.0"""")
+    FlixPackageManager.checkSingleVersion(List(alpha, beta)) match {
+      case List(PackageError.MultipleVersions(identifier, requirements)) =>
+        assertResult(expected = "github:flix/museum-clerk")(actual = identifier)
+        assertResult(expected = List(("alpha", SemVer(1, 0, 0)), ("beta", SemVer(1, 1, 0))))(
+          actual = requirements.map { case (dependent, dep) => (dependent.name, dep.version) }
+        )
+      case other => fail(s"expected one MultipleVersions error, but found: $other")
+    }
+  }
+
+  /**
+    * Returns a manifest named `name` with the given Flix dependency declarations `deps`.
+    */
+  private def mkManifest(name: String, deps: String): Manifest = {
+    val toml =
+      s"""
+         |[package]
+         |name = "$name"
+         |description = "test"
+         |version = "0.1.0"
+         |flix = "0.33.0"
+         |authors = ["flix"]
+         |
+         |[dependencies]
+         |$deps
+         |""".stripMargin
+    ManifestParser.parse(toml, null) match {
+      case Ok(m) => m
+      case Err(e) => fail(e.message(formatter))
+    }
+  }
+
   /**
     * Returns `true` if a [[SafetyError.Forbidden]] error is found.
     * Always returns all compiler messages in the second entry of the tuple.
