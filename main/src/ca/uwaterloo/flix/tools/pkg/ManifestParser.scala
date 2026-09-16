@@ -430,7 +430,7 @@ object ManifestParser {
     val illegalKeys = depTbl.keySet().asScala.toSet.diff(allowed)
     illegalKeys.toList.sorted match {
       case Nil => Ok(())
-      case key :: _ => Err(ManifestError.IllegalDependencyKeyFound(p, depKey, key))
+      case key :: _ => Err(ManifestError.IllegalDependencyKeyFound(Option(p), depKey, key))
     }
   }
 
@@ -443,13 +443,13 @@ object ManifestParser {
     if (!depTbl.contains(key)) {
       getDefaultMount(depKey, projectName, p)
     } else if (!depTbl.isString(key)) {
-      Err(ManifestError.FlixDependencyMountType(p, depKey, depTbl.get(key)))
+      Err(ManifestError.FlixDependencyMountType(Option(p), depKey, depTbl.get(key)))
     } else {
       val mount = depTbl.getString(key)
       if (FlixDependency.isValidMount(mount)) {
         Ok(mount)
       } else {
-        Err(ManifestError.FlixDependencyIllegalMount(p, depKey, mount))
+        Err(ManifestError.FlixDependencyIllegalMount(Option(p), depKey, mount))
       }
     }
   }
@@ -461,7 +461,7 @@ object ManifestParser {
   private def getDefaultMount(depKey: String, projectName: String, p: Path): Result[String, ManifestError] = {
     FlixDependency.defaultMount(projectName) match {
       case Some(mount) => Ok(mount)
-      case None => Err(ManifestError.FlixDependencyMissingMount(p, depKey, projectName))
+      case None => Err(ManifestError.FlixDependencyMissingMount(Option(p), depKey, projectName))
     }
   }
 
@@ -473,7 +473,7 @@ object ManifestParser {
     val seen = mutable.Map.empty[String, FlixDependency]
     for (dep <- flixDeps) {
       seen.get(dep.mount) match {
-        case Some(prev) => return Err(ManifestError.FlixDependencyDuplicateMount(p, dep.mount, prev.identifier, dep.identifier))
+        case Some(prev) => return Err(ManifestError.FlixDependencyDuplicateMount(Option(p), dep.mount, prev.identifier, dep.identifier))
         case None => seen += dep.mount -> dep
       }
     }
