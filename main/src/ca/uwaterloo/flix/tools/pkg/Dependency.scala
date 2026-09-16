@@ -23,14 +23,43 @@ sealed trait Dependency
 
 object Dependency {
 
-  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, sctx: SecurityContext) extends Dependency {
+  /**
+    * A dependency on a Flix package.
+    *
+    * @param mount the name of the top-level module under which the package is visible to the dependent.
+    */
+  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, mount: String, sctx: SecurityContext) extends Dependency {
     val identifier: String = {
       val r = repo.toString.toLowerCase
       s"$r:$username/$projectName"
     }
 
+    /** Returns `true` if `mount` is the default mount derived from `projectName`. */
+    def hasDefaultMount: Boolean = FlixDependency.defaultMount(projectName).contains(mount)
+
     override def toString: String = {
-      s"\"$identifier\" = { version = \"$version\", security = \"$sctx\" }"
+      val mountStr = if (hasDefaultMount) "" else s"mount = \"$mount\", "
+      s"\"$identifier\" = { version = \"$version\", ${mountStr}security = \"$sctx\" }"
+    }
+  }
+
+  object FlixDependency {
+    /** A valid mount: an uppercase letter followed by letters, digits, and underscores. */
+    private val ValidMount = "[A-Z][A-Za-z0-9_]*".r
+
+    /** Returns `true` if `s` can serve as a mount, i.e. as the name of a top-level module. */
+    def isValidMount(s: String): Boolean = ValidMount.matches(s)
+
+    /**
+      * Returns the default mount for the project `projectName`, if one can be derived.
+      *
+      * The hyphen-separated words of the project name are joined with their first letters
+      * uppercased: `flixball` becomes `Flixball` and `tic-tac-toe` becomes `TicTacToe`.
+      * Returns `None` if the result is not a valid mount, e.g. for a name that starts with a digit.
+      */
+    def defaultMount(projectName: String): Option[String] = {
+      val candidate = projectName.split('-').filter(_.nonEmpty).map(_.capitalize).mkString
+      Option.when(isValidMount(candidate))(candidate)
     }
   }
 
