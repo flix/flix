@@ -665,7 +665,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * source files are picked up by [[applyFileChanges]].
     */
   def mkFlix(options: Options, formatter: Formatter): Flix = {
-    val flix = new Flix(pkgs = files.pkgs, jars = files.jars)
+    val flix = new Flix(pkgs = files.pkgs, jars = files.jars, mounts = optManifest.map(_.mounts).getOrElse(Map.empty))
     flix.setOptions(options)
     flix.setFormatter(formatter)
     for (path <- files.sources) {

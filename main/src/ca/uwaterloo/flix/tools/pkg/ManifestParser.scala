@@ -31,11 +31,13 @@ import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}
 
 object ManifestParser {
   /**
-    * Regular expression defining a valid string for username and project name.
-    * Concretely, a valid name is a [[String]] consisting only of alphanumeric characters
-    * or the symbols `.`,`:`,`/`,`_` and `-`.
+    * Regular expression defining a valid string for the username and project name of a Flix
+    * dependency. Concretely, a valid name consists only of alphanumeric characters, `_`, and `-`.
+    *
+    * A `.` is not allowed: the name becomes part of the package's canonical root, which is a JVM
+    * package path, and a `.` is the separator there as well as in a Flix namespace.
     */
-  private val ValidName = "[a-zA-Z0-9.:/_-]+".r
+  private val ValidName = "[A-Za-z0-9_-]+".r
 
   /**
     * Creates a Manifest from the .toml file

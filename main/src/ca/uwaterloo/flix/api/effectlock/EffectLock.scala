@@ -102,7 +102,7 @@ object EffectLock {
   private def isLibraryFunction(src: Source): Boolean = src.origin match {
     case Origin.User => false
     case Origin.Library => true
-    case Origin.Package => true
+    case Origin.Package(_) => true
     case Origin.Unknown => false
   }
 
