@@ -1967,7 +1967,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.UnsupportedRepository](result)
   }
 
-  test("Ok.mount.01") {
+  test("Ok.mount") {
     val toml =
       """[package]
         |name = "hello-world"
@@ -1979,50 +1979,9 @@ class TestManifestParser extends AnyFunSuite {
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Game" }
-        |""".stripMargin
-    assertResult(expected = List("Game"))(actual =
-      ManifestParser.parse(toml, null) match {
-        case Ok(m) => m.flixDependencies.map(_.mount)
-        case Err(e) => e.message(f)
-      }
-    )
-  }
-
-  test("Ok.mount.02") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
-        |""".stripMargin
-    assertResult(expected = List("TicTacToe"))(actual =
-      ManifestParser.parse(toml, null) match {
-        case Ok(m) => m.flixDependencies.map(_.mount)
-        case Err(e) => e.message(f)
-      }
-    )
-  }
-
-  test("Ok.mount.03") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
         |"github:mlutze/flixball" = "3.2.1"
         |""".stripMargin
-    assertResult(expected = List("Flixball"))(actual =
+    assertResult(expected = List("Game", "Flixball"))(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) => m.flixDependencies.map(_.mount)
         case Err(e) => e.message(f)
@@ -2030,105 +1989,7 @@ class TestManifestParser extends AnyFunSuite {
     )
   }
 
-  test("Ok.mount.04") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "paranoid" }
-        |""".stripMargin
-    assertResult(expected = List("TicTacToe"))(actual =
-      ManifestParser.parse(toml, null) match {
-        case Ok(m) => m.flixDependencies.map(_.mount)
-        case Err(e) => e.message(f)
-      }
-    )
-  }
-
-  test("Ok.mount.05") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/my_game" = "1.2.3"
-        |""".stripMargin
-    assertResult(expected = List("My_game"))(actual =
-      ManifestParser.parse(toml, null) match {
-        case Ok(m) => m.flixDependencies.map(_.mount)
-        case Err(e) => e.message(f)
-      }
-    )
-  }
-
-  test("Ok.mount.06") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/Game2D" = "1.2.3"
-        |""".stripMargin
-    assertResult(expected = List("Game2D"))(actual =
-      ManifestParser.parse(toml, null) match {
-        case Ok(m) => m.flixDependencies.map(_.mount)
-        case Err(e) => e.message(f)
-      }
-    )
-  }
-
-  test("Ok.format.mount.01") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Game" }
-        |""".stripMargin
-    val formatted = Manifest.format(ManifestParser.parse(toml, null).unsafeGet)
-    assert(formatted.contains("\"mount\" = \"Game\""), formatted)
-  }
-
-  test("Ok.format.mount.02") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "TicTacToe" }
-        |""".stripMargin
-    val formatted = Manifest.format(ManifestParser.parse(toml, null).unsafeGet)
-    assert(!formatted.contains("mount"), formatted)
-    assert(formatted.contains("\"github:jls/tic-tac-toe\" = \"1.2.3\""), formatted)
-  }
-
-  test("Manifest.Identity.Mount.01") {
+  test("Manifest.Identity.Mount") {
     val toml =
       """[package]
         |name = "hello-world"
@@ -2138,82 +1999,15 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Game" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Game", security = "paranoid" }
+        |"github:mlutze/flixball" = "3.2.1"
         |""".stripMargin
     val manifest1 = ManifestParser.parse(toml, null).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
     assertResult(manifest1)(manifest2)
   }
 
-  test("Manifest.Identity.Mount.02") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "paranoid", mount = "Game" }
-        |""".stripMargin
-    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
-    assertResult(manifest1)(manifest2)
-  }
-
-  test("ManifestError.FlixDependencyMissingMount.01") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/1game" = "1.2.3"
-        |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyMissingMount](result)
-  }
-
-  test("ManifestError.FlixDependencyMissingMount.02") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/tic.tac" = "1.2.3"
-        |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyMissingMount](result)
-  }
-
-  test("ManifestError.FlixDependencyMissingMount.03") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/1game" = { version = "1.2.3" }
-        |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyMissingMount](result)
-  }
-
-  test("ManifestError.FlixDependencyIllegalMount.01") {
+  test("ManifestError.FlixDependencyIllegalMount") {
     val toml =
       """[package]
         |name = "hello-world"
@@ -2228,162 +2022,6 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     val result = ManifestParser.parse(toml, null)
     expectError[ManifestError.FlixDependencyIllegalMount](result)
-  }
-
-  test("ManifestError.FlixDependencyIllegalMount.02") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "game" }
-        |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyIllegalMount](result)
-  }
-
-  test("ManifestError.FlixDependencyIllegalMount.03") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Tic-Tac" }
-        |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyIllegalMount](result)
-  }
-
-  test("ManifestError.FlixDependencyIllegalMount.04") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "" }
-        |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyIllegalMount](result)
-  }
-
-  test("ManifestError.FlixDependencyMountType.01") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = 123 }
-        |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyMountType](result)
-  }
-
-  test("ManifestError.FlixDependencyDuplicateMount.01") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Game" }
-        |"github:mlutze/flixball" = { version = "3.2.1", mount = "Game" }
-        |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyDuplicateMount](result)
-  }
-
-  test("ManifestError.FlixDependencyDuplicateMount.02") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/game" = "1.2.3"
-        |"github:mlutze/game" = "3.2.1"
-        |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyDuplicateMount](result)
-  }
-
-  test("ManifestError.FlixDependencyDuplicateMount.03") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
-        |"github:mlutze/flixball" = { version = "3.2.1", mount = "TicTacToe" }
-        |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyDuplicateMount](result)
-  }
-
-  test("ManifestError.IllegalDependencyKeyFound.01") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mnt = "Game" }
-        |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.IllegalDependencyKeyFound](result)
-  }
-
-  test("ManifestError.IllegalDependencyKeyFound.02") {
-    val toml =
-      """[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "plain", trust = "plain" }
-        |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.IllegalDependencyKeyFound](result)
   }
 
 }
