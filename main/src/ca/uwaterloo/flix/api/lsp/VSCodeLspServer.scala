@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider.*
-import ca.uwaterloo.flix.api.{CompilerLog, CrashHandler, Flix, Version}
+import ca.uwaterloo.flix.api.{CompilerLog, CrashHandler, Flix, InstalledPackage, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -230,7 +230,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * Returns a new Flix instance with the current [[pkgs]], [[jars]], and [[sources]].
     */
   private def mkFlix(): Flix = {
-    val pkgsWithSctx = pkgs.toList.map(p => (p, SecurityContext.Unrestricted))
+    val pkgsWithSctx = pkgs.toList.map(p => InstalledPackage.unresolved(p, SecurityContext.Unrestricted))
     val flix = new Flix(pkgs = pkgsWithSctx, jars = jars.toList).setFormatter(NoFormatter).setOptions(o)
     for ((name, src) <- sources) {
       ClientUri.addSource(flix, name, src)

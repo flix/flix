@@ -465,7 +465,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Returns the installed packages with their security contexts, and the installed JARs
     * (Maven dependencies from `lib/cache/` before URL dependencies from `lib/external/`).
     */
-  private def installDependencies(resolution: FlixPackageManager.SecureResolution)(implicit formatter: Formatter, out: PrintStream): Result[(List[(Path, SecurityContext)], List[Path]), BootstrapError] = {
+  private def installDependencies(resolution: FlixPackageManager.SecureResolution)(implicit formatter: Formatter, out: PrintStream): Result[(List[InstalledPackage], List[Path]), BootstrapError] = {
     for {
       pkgs <- installFlixDependencies(resolution)
       mavenJars <- installMavenDependencies(resolution.manifests)
@@ -481,7 +481,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Requires network access.
     * Returns the paths to the installed dependencies with their security contexts.
     */
-  private def installFlixDependencies(resolution: FlixPackageManager.SecureResolution)(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, SecurityContext)], BootstrapError] = {
+  private def installFlixDependencies(resolution: FlixPackageManager.SecureResolution)(implicit formatter: Formatter, out: PrintStream): Result[List[InstalledPackage], BootstrapError] = {
     FlixPackageManager.installAll(resolution, projectPath, apiKey) match {
       case Ok(pkgs) => Ok(pkgs)
       case Err(e) => Err(BootstrapError.FlixPackageError(e))

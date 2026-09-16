@@ -71,10 +71,10 @@ object Flix {
   * The packages and JARs are immutable: they are registered once at construction and cannot be
   * changed afterwards. If they change, a new Flix compiler instance must be created.
   *
-  * @param pkgs the Flix package files (`.fpkg`) to compile, each paired with its security context.
+  * @param pkgs the Flix packages (`.fpkg`) to compile.
   * @param jars the JAR files whose classes are available to Java interop.
   */
-class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) extends AutoCloseable {
+class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil) extends AutoCloseable {
 
   /**
     * Whether [[close]] has been called. A closed instance cannot compile.
@@ -186,11 +186,11 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   val defaultCharset: Charset = Charset.forName("UTF-8")
 
   // Register the source files of the packages. The packages are read once, here.
-  for ((p, sctx) <- pkgs) {
-    FileOps.isValidFpkgFile(p) match {
+  for (pkg <- pkgs) {
+    FileOps.isValidFpkgFile(pkg.path) match {
       case Result.Err(e: Throwable) => throw e
       case Result.Ok(()) =>
-        for (source <- getSourcesOfPkg(p, sctx)) {
+        for (source <- getSourcesOfPkg(pkg.path, pkg.sctx)) {
           sources += source.sourceName -> source
         }
     }
