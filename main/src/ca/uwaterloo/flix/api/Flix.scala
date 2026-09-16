@@ -71,10 +71,23 @@ object Flix {
   * The packages and JARs are immutable: they are registered once at construction and cannot be
   * changed afterwards. If they change, a new Flix compiler instance must be created.
   *
-  * @param pkgs the Flix packages (`.fpkg`) to compile.
-  * @param jars the JAR files whose classes are available to Java interop.
+  * @param pkgs   the Flix packages (`.fpkg`) to compile.
+  * @param jars   the JAR files whose classes are available to Java interop.
+  * @param mounts the mount table of the root project, as its `flix.toml` declares it. Empty when
+  *               the project has no manifest.
   */
-class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil) extends AutoCloseable {
+class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil, mounts: Map[String, String] = Map.empty) extends AutoCloseable {
+
+  /**
+    * The mount table of the root project: the name of each mount to the identifier of the
+    * dependency it names.
+    */
+  val rootMounts: Map[String, String] = mounts
+
+  /**
+    * The mount table of each package, by package identifier.
+    */
+  val packageMounts: Map[String, Map[String, String]] = pkgs.map(pkg => pkg.id -> pkg.mounts).toMap
 
   /**
     * Whether [[close]] has been called. A closed instance cannot compile.
@@ -190,7 +203,7 @@ class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil) extends A
     FileOps.isValidFpkgFile(pkg.path) match {
       case Result.Err(e: Throwable) => throw e
       case Result.Ok(()) =>
-        for (source <- getSourcesOfPkg(pkg.path, pkg.sctx)) {
+        for (source <- getSourcesOfPkg(pkg)) {
           sources += source.sourceName -> source
         }
     }
@@ -814,9 +827,11 @@ class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil) extends A
   }
 
   /**
-    * Returns the `.flix` source files inside the package at `p`, with the security context `sctx`.
+    * Returns the `.flix` source files inside `pkg`, each stamped with the identifier and the
+    * security context of the package.
     */
-  private def getSourcesOfPkg(p: Path, sctx: SecurityContext): List[Source] = {
+  private def getSourcesOfPkg(pkg: InstalledPackage): List[Source] = {
+    val p = pkg.path
     Using(new ZipFile(p.toFile)) { zip =>
       val result = mutable.ArrayBuffer.empty[Source]
       val iterator = zip.entries()
@@ -826,7 +841,7 @@ class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil) extends A
         if (name.endsWith(".flix")) {
           val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
           val text = new String(bytes, defaultCharset)
-          result += Source.fromString(SourceName.PackageEntry(p, name), Origin.Package, sctx, text)
+          result += Source.fromString(SourceName.PackageEntry(p, name), Origin.Package(pkg.id), pkg.sctx, text)
         }
       }
       result.toList

@@ -30,6 +30,12 @@ case class Manifest(name: String,
                     dependencies: List[Dependency]) {
   def flixDependencies: List[Dependency.FlixDependency] = dependencies.collect { case dep: Dependency.FlixDependency => dep }
 
+  /**
+    * Returns the mount table of this manifest: the name of each mount to the identifier of the
+    * dependency it names.
+    */
+  def mounts: Map[String, String] = flixDependencies.map(dep => dep.mount -> dep.identifier).toMap
+
   def mavenDependencies: List[Dependency.MavenDependency] = dependencies.collect { case dep: Dependency.MavenDependency => dep }
 
   def jarDependencies: List[Dependency.JarDependency] = dependencies.collect { case dep: Dependency.JarDependency => dep }

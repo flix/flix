@@ -222,7 +222,7 @@ object Namer {
         val optPath = loc.source.origin match {
           case Origin.User => loc.source.sourceName.toPath
           case Origin.Library => loc.source.sourceName.toPath
-          case Origin.Package => loc.source.sourceName.toPath
+          case Origin.Package(_) => loc.source.sourceName.toPath
           case Origin.Unknown => None
         }
 

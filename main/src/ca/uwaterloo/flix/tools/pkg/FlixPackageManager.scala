@@ -155,7 +155,7 @@ object FlixPackageManager {
     val installed = resolution.manifestToFlixDeps.map { case (manifest, dep) =>
       val depName: String = s"${dep.username}/${dep.projectName}"
       install(depName, dep.version, "fpkg", projectRoot, apiKey) match {
-        case Ok(p) => InstalledPackage(p, dep.identifier, resolution.security(manifest), mountsOf(manifest))
+        case Ok(p) => InstalledPackage(p, dep.identifier, resolution.security(manifest), manifest.mounts)
         case Err(e) =>
           out.println(s"ERROR: Installation of `$depName' failed.")
           return Err(e)
@@ -164,13 +164,6 @@ object FlixPackageManager {
 
     Ok(installed)
   }
-
-  /**
-    * Returns the mount table of `manifest`: the name of each mount to the identifier of the
-    * dependency it names.
-    */
-  private def mountsOf(manifest: Manifest): Map[String, String] =
-    manifest.flixDependencies.map(dep => dep.mount -> dep.identifier).toMap
 
   /**
     * Installs a flix package from the Github `project`.

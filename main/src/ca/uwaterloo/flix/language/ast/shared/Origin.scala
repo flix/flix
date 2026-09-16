@@ -31,7 +31,7 @@ sealed trait Origin {
   def isUser: Boolean = this match {
     case Origin.User => true
     case Origin.Library => false
-    case Origin.Package => false
+    case Origin.Package(_) => false
     case Origin.Unknown => false
   }
 
@@ -51,8 +51,24 @@ object Origin {
 
   /**
     * A source unpacked from a Flix package the program depends on.
+    *
+    * @param id the identifier of the package, e.g. `github:flix/museum-clerk`.
     */
-  case object Package extends Origin
+  case class Package(id: String) extends Origin
+
+  /**
+    * Returns the namespace the declarations of the package `id` are named under.
+    *
+    * The root is `$` followed by the host, owner, and repository of the identifier, joined by `$`:
+    * `github:flix/museum-clerk` becomes `$pkg$github$flix$museum-clerk`. Every other character is
+    * passed through, so no escaping is needed and no two identifiers share a root: an identifier
+    * may not contain `$`, so the separator can never be confused with content.
+    *
+    * A Flix name may contain `$` but may not start with one, so a root cannot be written in source.
+    * The version is not part of the root: a package occurs at exactly one version in a dependency
+    * graph, and keeping the root stable across versions keeps `effects.lock` comparable.
+    */
+  def canonicalRoot(id: String): String = "$pkg$" + id.replace(':', '$').replace('/', '$')
 
   /**
     * A synthetic source with no origin. Used only by [[Source.Unknown]].
