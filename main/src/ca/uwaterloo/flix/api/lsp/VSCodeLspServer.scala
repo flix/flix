@@ -124,7 +124,9 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
           }
           ws.send(jsonCompact)
         }
-      case Err(msg) => log(msg)(ws)
+      case Err(msg) =>
+        log(msg)(ws)
+        answerUnparsable(data, msg)(ws)
     }
   } catch {
     case ex: Throwable =>
@@ -132,6 +134,32 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       CrashHandler.handleCrash(ex)(project.compiler)
       ex.printStackTrace(System.out)
       ex.printStackTrace(System.err)
+  }
+
+  /**
+    * Answers the message `data`, which could not be parsed as a request, with the error `msg`.
+    *
+    * A client may wait for a response to every message it sends, so a message it can match a
+    * response against is answered even when it is not a request the server knows. A message without
+    * an id is only logged: a response to it could not be matched against anything.
+    */
+  private def answerUnparsable(data: String, msg: String)(implicit ws: WebSocket): Unit = requestId(data) match {
+    case Some(id) if ws.isOpen =>
+      val result: JValue = ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> msg)
+      ws.send(JsonMethods.compact(JsonMethods.render(result)))
+    case _ => // nop
+  }
+
+  /**
+    * Returns the id of the message `data`, if it is JSON with an id.
+    */
+  private def requestId(data: String): Option[String] = try {
+    parse(data) \ "id" match {
+      case JString(id) => Some(id)
+      case _ => None
+    }
+  } catch {
+    case _: ParseException => None
   }
 
   /**
@@ -181,7 +209,10 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       case JString("lsp/formatting") => Request.parseFormatting(json)
       case JString("lsp/foldingRange") => Request.parseFoldingRange(json)
 
-      case _ => Err(s"Unsupported request: '$s'.")
+      // The name of the request is reported on its own: the message it came in is answered with
+      // this text, and a message may carry a whole source file or package.
+      case JString(request) => Err(s"Unsupported request: '$request'.")
+      case _ => Err("Malformed request. The 'request' field is missing or is not a string.")
     }
   } catch {
     case ex: ParseException => Err(s"Malformed request. Unable to parse JSON: '${ex.getMessage}'.")
