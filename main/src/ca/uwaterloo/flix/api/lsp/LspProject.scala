@@ -132,6 +132,11 @@ class LspProject(o: Options) {
   }
 
   /**
+    * Returns `true` if the client has added the document named `name`.
+    */
+  def isOpen(name: SourceName): Boolean = buffers.contains(name)
+
+  /**
     * Removes the document named `name`.
     *
     * A document that is a source file of the project goes back to its contents on disk: the client
