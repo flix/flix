@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-
 import java.nio.file.Path
 
 /**
@@ -25,15 +23,15 @@ import java.nio.file.Path
   * Immutable: a change on disk is represented by a new value, obtained by scanning the project again.
   *
   * @param sources the `.flix` source files.
-  * @param pkgs    the `.fpkg` package files, each paired with its security context.
+  * @param pkgs    the installed Flix packages.
   * @param jars    the `.jar` files, Maven dependencies before external JARs.
   */
-case class ProjectFiles(sources: List[Path], pkgs: List[(Path, SecurityContext)], jars: List[Path]) {
+case class ProjectFiles(sources: List[Path], pkgs: List[InstalledPackage], jars: List[Path]) {
 
   /**
     * Returns `true` if `path` is one of the packages or JARs.
     */
   def isDependency(path: Path): Boolean =
-    pkgs.exists { case (p, _) => p == path } || jars.contains(path)
+    pkgs.exists(_.path == path) || jars.contains(path)
 
 }

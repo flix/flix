@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider.*
 import ca.uwaterloo.flix.api.lsp.{ClientUri, CompletionList, FormattingOptions, Position, PublishDiagnosticsParams, Range}
-import ca.uwaterloo.flix.api.{CrashHandler, Flix}
+import ca.uwaterloo.flix.api.{CrashHandler, Flix, InstalledPackage}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -199,8 +199,8 @@ object LspServer {
       *
       * A file that is not a valid JAR or package (for example one that is still being written) is skipped.
       */
-    private def scanDependencies(): (List[(Path, SecurityContext)], List[Path]) = {
-      val pkgs = mutable.ArrayBuffer.empty[(Path, SecurityContext)]
+    private def scanDependencies(): (List[InstalledPackage], List[Path]) = {
+      val pkgs = mutable.ArrayBuffer.empty[InstalledPackage]
       val jars = mutable.ArrayBuffer.empty[Path]
       for (path <- workspaceRoots) {
         for (p <- FileOps.getFilesIn(path.resolve("lib"), Int.MaxValue)) {
@@ -211,7 +211,7 @@ object LspServer {
             }
           } else if (FileOps.checkExt(p, "fpkg")) {
             FileOps.isValidFpkgFile(p) match {
-              case Result.Ok(()) => pkgs += (p -> SecurityContext.Unrestricted)
+              case Result.Ok(()) => pkgs += InstalledPackage.unresolved(p, SecurityContext.Unrestricted)
               case Result.Err(ex) => System.err.println(s"Skipping package: ${ex.getMessage}")
             }
           }

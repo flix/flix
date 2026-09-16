@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
+import ca.uwaterloo.flix.api.{Bootstrap, Flix, InstalledPackage, Version}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.{Formatter, Options}
 
@@ -45,7 +45,7 @@ object PkgTestUtils {
   /**
     * Returns a new [[Flix]] object with the given packages that has the GitHub token of the CI runner set if available.
     */
-  def mkFlix(pkgs: List[(Path, SecurityContext)]): Flix = {
+  def mkFlix(pkgs: List[InstalledPackage]): Flix = {
     val flix = new Flix(pkgs = pkgs)
     flix.setOptions(flix.options.copy(githubToken = gitHubToken, progress = false))
   }
