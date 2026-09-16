@@ -47,9 +47,9 @@ class LspProject(o: Options) {
   private val out: PrintStream = System.err
 
   /**
-    * The workspace roots the client has added, in insertion order.
+    * The workspace root the client has added, if it has added one.
     */
-  private val roots: mutable.LinkedHashSet[Path] = mutable.LinkedHashSet.empty
+  private var root: Option[Path] = None
 
   /**
     * The contents of the documents the client has open, by source name.
@@ -81,25 +81,30 @@ class LspProject(o: Options) {
   def compiler: Flix = flix
 
   /**
-    * Returns the path of the project: the first workspace root the client has added, or the
-    * working directory of the server if it has added none.
+    * Returns the path of the project: the workspace root the client has added, or the working
+    * directory of the server if it has added none.
     */
-  def projectPath: Path = roots.headOption.getOrElse(LspProject.WorkingDirectory)
+  def projectPath: Path = root.getOrElse(LspProject.WorkingDirectory)
 
   /**
-    * Adds `root` as a workspace root.
+    * Adds `path` as the workspace root.
     *
-    * Only the first root is used: [[Bootstrap]] loads a single project.
+    * Only the first root is kept: [[Bootstrap]] loads a single project.
     */
-  def addWorkspace(root: Path): Unit = {
-    val path = root.toAbsolutePath.normalize()
-    val previous = projectPath
-    roots.add(path)
-    if (projectPath != previous) {
-      // The project moved: load it again before the next check.
-      stale = true
-    } else if (path != projectPath) {
-      out.println(s"Ignoring the workspace root '$path'. The project is '$projectPath'.")
+  def addWorkspace(path: Path): Unit = {
+    val newRoot = path.toAbsolutePath.normalize()
+    root match {
+      case Some(currentRoot) =>
+        if (currentRoot != newRoot) {
+          out.println(s"Ignoring the workspace root '$newRoot'. The project is '$currentRoot'.")
+        }
+      case None =>
+        val previous = projectPath
+        root = Some(newRoot)
+        if (newRoot != previous) {
+          // The project moved: load it again before the next check.
+          stale = true
+        }
     }
   }
 
