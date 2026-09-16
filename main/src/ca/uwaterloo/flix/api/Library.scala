@@ -238,6 +238,7 @@ object Library {
     "Net/TcpSocket.flix" -> LocalResource.get("/src/library/Net/TcpSocket.flix"),
     "Nec.flix" -> LocalResource.get("/src/library/Nec.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
+    "Nes.flix" -> LocalResource.get("/src/library/Nes.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
     "OutOfBounds.flix" -> LocalResource.get("/src/library/OutOfBounds.flix"),
