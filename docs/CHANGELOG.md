@@ -1,5 +1,8 @@
 # Changelog
 
+Version 0.76.1:
+- Compiler: Restructure LSP internals (thanks Magnus!)
+
 Version 0.76.0:
 - Compiler: Added support for building the compiler as a Graal native image (thanks Magnus!)
 - Compiler: Reimplemented bytecode generation to use nominal class descriptors (thanks Magnus!)
