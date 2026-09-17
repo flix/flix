@@ -71,6 +71,19 @@ object Origin {
   def canonicalRoot(id: String): String = "$pkg$" + id.replace(':', '$').replace('/', '$')
 
   /**
+    * Returns the identifier of the package whose canonical root is `ns`, if `ns` is one.
+    *
+    * The inverse of [[canonicalRoot]]. It is total on the roots that function produces, because an
+    * identifier may not contain the `$` the root is built from, so the split cannot be ambiguous.
+    */
+  def packageOf(ns: String): Option[String] =
+    if (!ns.startsWith("$pkg$")) None
+    else ns.stripPrefix("$pkg$").split('$') match {
+      case Array(host, owner, repo) => Some(s"$host:$owner/$repo")
+      case _ => None
+    }
+
+  /**
     * A synthetic source with no origin. Used only by [[Source.Unknown]].
     */
   case object Unknown extends Origin
