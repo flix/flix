@@ -60,6 +60,33 @@ class TestMounts extends AnyFunSuite {
     assertResult(Nil)(check(pkg, mounts, "def main(): Unit \\ IO = println(Secret.hidden())"))
   }
 
+  test("collision.library") {
+    // A mount that shadows a library module is rejected: 'List.map' inside the mounting code
+    // would resolve into the dependency.
+    val pkg = mkPkg()
+    val errors = check(pkg, Map("List" -> Id), "def main(): Unit \\ IO = println(1)")
+    assert(errors.contains("MountShadowsLibrary"), errors)
+  }
+
+  test("collision.own-declaration") {
+    // A mount that shadows a declaration of the mounting code is rejected: the name would mean
+    // the declaration at the top level and the dependency inside a nested module.
+    val pkg = mkPkg()
+    val main =
+      """
+        |pub mod Game { pub def size(): Int32 = 1 }
+        |def main(): Unit \\ IO = println(Game.size())
+        |""".stripMargin
+    val errors = check(pkg, Map("Game" -> Id), main)
+    assert(errors.contains("MountShadowsDeclaration"), errors)
+  }
+
+  test("collision.other-package-allowed") {
+    // A mount that shadows a module of another package is allowed: the author asked for the name.
+    val pkg = mkPkg()
+    assertResult(Nil)(check(pkg, Map("Game" -> Id), "def main(): Unit \\ IO = println(Game.Board.place())"))
+  }
+
   test("mounted.private-not-reachable") {
     val pkg = mkPkg()
     val mounts = Map("Game" -> Id)

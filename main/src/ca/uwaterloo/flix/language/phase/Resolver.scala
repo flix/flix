@@ -3027,7 +3027,12 @@ object Resolver {
   private def mountsOf(loc: SourceLocation, root: NamedAst.Root): Map[String, Name.NName] =
     loc.source.origin match {
       case Origin.Package(id) => root.mounts.getOrElse(id, Map.empty)
-      case _ => root.rootMounts
+      case Origin.User => root.rootMounts
+      // The bundled library declares no dependencies, so the mounts of the project it is compiled
+      // with must not reach it: a project that mounts something at `List` would otherwise change
+      // what `List.map` means inside the library itself.
+      case Origin.Library => Map.empty
+      case Origin.Unknown => Map.empty
     }
 
   /**
