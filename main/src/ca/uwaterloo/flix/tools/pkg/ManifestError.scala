@@ -201,9 +201,9 @@ object ManifestError {
          |""".stripMargin
   }
 
-  case class AuthorNameError(path: Path) extends ManifestError {
+  case class ArrayElementNotString(path: Path, property: String) extends ManifestError {
     override def message(f: Formatter): String =
-      s"""There was an author name which was not of type String:
+      s"""The property ${f.bold(property)} has an element which is not of type ${f.bold("String")}.
          |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }

@@ -20,13 +20,10 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 
 case class Manifest(name: String,
-                    description: String,
                     version: SemVer,
                     repository: Option[GitHub.Project],
                     modules: PackageModules,
                     flix: SemVer,
-                    license: Option[String],
-                    authors: List[String],
                     dependencies: List[Dependency]) {
   def flixDependencies: List[Dependency.FlixDependency] = dependencies.collect { case dep: Dependency.FlixDependency => dep }
 
@@ -66,24 +63,17 @@ object Manifest {
       case PackageModules.Selected(included) =>
         TomlEntry.Present(TomlKey("modules"), TomlExp.TomlArray(included.toList.map(TomlExp.TomlValue.apply)))
     }
-    val license = manifest.license.map(license => TomlEntry.Present(TomlKey("license"), TomlExp.TomlValue(license)))
-      .getOrElse(TomlEntry.Absent)
     val name = TomlEntry.Present(TomlKey("name"), TomlExp.TomlValue(manifest.name))
-    val description = TomlEntry.Present(TomlKey("description"), TomlExp.TomlValue(manifest.description))
     val version = TomlEntry.Present(TomlKey("version"), TomlExp.TomlValue(manifest.version))
     val flixVersion = TomlEntry.Present(TomlKey("flix"), TomlExp.TomlValue(manifest.flix))
-    val authors = TomlEntry.Present(TomlKey("authors"), TomlExp.TomlArray(manifest.authors.map(TomlExp.TomlValue.apply)))
 
     TomlSection("package",
       List(
         name,
-        description,
         version,
         repository,
         modules,
         flixVersion,
-        license,
-        authors,
       )
     )
   }
