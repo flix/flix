@@ -362,12 +362,11 @@ object ManifestParser {
         if (!projectName.matches(s"^$ValidName$$"))
           return Err(ManifestError.IllegalName(p, depKey))
 
-        // If the dependency maps to a string, parse the version and derive the mount.
+        // If the dependency maps to a string, it declares only a version and has no mount.
         if (deps.isString(depKey)) {
           for (
-            ver <- getFlixVersion(deps, depKey, p);
-            mount <- getDefaultMount(depKey, projectName, p)
-          ) yield FlixDependency(repo, username, projectName, ver, mount, SecurityContext.Plain)
+            ver <- getFlixVersion(deps, depKey, p)
+          ) yield FlixDependency(repo, username, projectName, ver, None, SecurityContext.Plain)
 
           // If the dependency maps to a table, get the version, security, and mount.
         } else if (deps.isTable(depKey)) {
@@ -379,7 +378,7 @@ object ManifestParser {
           for (
             _ <- checkDependencyKeys(depTbl, depKey, Set(verKey, mountKey, securityKey), p);
             ver <- getFlixVersion(depTbl, verKey, p);
-            mount <- getMount(depTbl, mountKey, depKey, projectName, p);
+            mount <- getMount(depTbl, mountKey, depKey, p);
             security <- getSecurity(depTbl, securityKey, p)
           ) yield FlixDependency(repo, username, projectName, ver, mount, security)
         } else {
@@ -439,17 +438,17 @@ object ManifestParser {
   /**
     * Retrieves the mount of the dependency `depKey` from the table `depTbl` at `key`.
     *
-    * If the key is absent, the mount is derived from `projectName`.
+    * A dependency that declares no mount has none: its modules are reachable unqualified.
     */
-  private def getMount(depTbl: TomlTable, key: String, depKey: String, projectName: String, p: Path): Result[String, ManifestError] = {
+  private def getMount(depTbl: TomlTable, key: String, depKey: String, p: Path): Result[Option[String], ManifestError] = {
     if (!depTbl.contains(key)) {
-      getDefaultMount(depKey, projectName, p)
+      Ok(None)
     } else if (!depTbl.isString(key)) {
       Err(ManifestError.FlixDependencyMountType(Option(p), depKey, depTbl.get(key)))
     } else {
       val mount = depTbl.getString(key)
       if (FlixDependency.isValidMount(mount)) {
-        Ok(mount)
+        Ok(Some(mount))
       } else {
         Err(ManifestError.FlixDependencyIllegalMount(Option(p), depKey, mount))
       }
@@ -457,26 +456,15 @@ object ManifestParser {
   }
 
   /**
-    * Returns the default mount of the dependency `depKey` derived from `projectName`,
-    * or an error if no valid mount can be derived.
-    */
-  private def getDefaultMount(depKey: String, projectName: String, p: Path): Result[String, ManifestError] = {
-    FlixDependency.defaultMount(projectName) match {
-      case Some(mount) => Ok(mount)
-      case None => Err(ManifestError.FlixDependencyMissingMount(Option(p), depKey, projectName))
-    }
-  }
-
-  /**
     * Returns an error if two Flix dependencies in `deps` share a mount.
     */
   private def checkDuplicateMounts(deps: List[Dependency], p: Path): Result[Unit, ManifestError] = {
-    val flixDeps = deps.collect { case dep: FlixDependency => dep }
+    val mountedDeps = deps.collect { case dep: FlixDependency if dep.mount.isDefined => (dep.mount.get, dep) }
     val seen = mutable.Map.empty[String, FlixDependency]
-    for (dep <- flixDeps) {
-      seen.get(dep.mount) match {
-        case Some(prev) => return Err(ManifestError.FlixDependencyDuplicateMount(Option(p), dep.mount, prev.identifier, dep.identifier))
-        case None => seen += dep.mount -> dep
+    for ((mount, dep) <- mountedDeps) {
+      seen.get(mount) match {
+        case Some(prev) => return Err(ManifestError.FlixDependencyDuplicateMount(Option(p), mount, prev.identifier, dep.identifier))
+        case None => seen += mount -> dep
       }
     }
     Ok(())

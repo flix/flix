@@ -32,9 +32,10 @@ case class Manifest(name: String,
 
   /**
     * Returns the mount table of this manifest: the name of each mount to the identifier of the
-    * dependency it names.
+    * dependency it names. A dependency that declares no mount does not appear.
     */
-  def mounts: Map[String, String] = flixDependencies.map(dep => dep.mount -> dep.identifier).toMap
+  def mounts: Map[String, String] =
+    flixDependencies.flatMap(dep => dep.mount.map(_ -> dep.identifier)).toMap
 
   def mavenDependencies: List[Dependency.MavenDependency] = dependencies.collect { case dep: Dependency.MavenDependency => dep }
 
@@ -103,7 +104,7 @@ object Manifest {
     val key = TomlKey(dep.identifier)
     val version = TomlEntry.Present(TomlKey("version"), TomlExp.TomlValue(dep.version))
     // The default mount and the default security context are not rendered.
-    val mount = if (dep.hasDefaultMount) TomlEntry.Absent else TomlEntry.Present(TomlKey("mount"), TomlExp.TomlValue(dep.mount))
+    val mount = dep.mount.map(m => TomlEntry.Present(TomlKey("mount"), TomlExp.TomlValue(m))).getOrElse(TomlEntry.Absent)
     val security = dep.sctx match {
       case SecurityContext.Default => TomlEntry.Absent
       case sctx => TomlEntry.Present(TomlKey("security"), TomlExp.TomlValue(sctx))

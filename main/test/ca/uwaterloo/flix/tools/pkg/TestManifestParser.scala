@@ -188,8 +188,8 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), "TicTacToe", SecurityContext.Plain),
-      Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), "Flixball", SecurityContext.Plain),
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), None, SecurityContext.Plain),
+      Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), None, SecurityContext.Plain),
       Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
       Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
       Dependency.JarDependency("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar", "myJar.jar")))(actual = {
@@ -1981,7 +1981,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Game" }
         |"github:mlutze/flixball" = "3.2.1"
         |""".stripMargin
-    assertResult(expected = List("Game", "Flixball"))(actual =
+    assertResult(expected = List(Some("Game"), None))(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) => m.flixDependencies.map(_.mount)
         case Err(e) => e.message(f)

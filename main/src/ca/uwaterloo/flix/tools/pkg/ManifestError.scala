@@ -114,15 +114,6 @@ object ManifestError {
          |""".stripMargin
   }
 
-  case class FlixDependencyMissingMount(path: Option[Path], lib: String, projectName: String) extends ManifestError {
-    override def message(f: Formatter): String =
-      s"""No mount could be derived for Flix dependency ${f.bold(lib)}.
-         |The project name ${f.red(projectName)} is not a valid module name once capitalized, so the dependency must specify one:
-         |  $lib = { version = "x.y.z", mount = "ModuleName" }
-         |The toml file was found at ${f.cyan(formatPath(path))}.
-         |""".stripMargin
-  }
-
   case class FlixDependencyDuplicateMount(path: Option[Path], mount: String, lib1: String, lib2: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""The Flix dependencies ${f.bold(lib1)} and ${f.bold(lib2)} share the mount ${f.red(mount)}.
