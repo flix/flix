@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub
 case class Manifest(name: String,
                     version: SemVer,
                     repository: Option[GitHub.Project],
-                    modules: PackageModules,
                     flix: SemVer,
                     dependencies: List[Dependency]) {
   def flixDependencies: List[Dependency.FlixDependency] = dependencies.collect { case dep: Dependency.FlixDependency => dep }
@@ -58,11 +57,6 @@ object Manifest {
   private def mkPackageSection(manifest: Manifest): TomlSection = {
     val repository = manifest.repository.map(proj => TomlEntry.Present(TomlKey("repository"), TomlExp.TomlValue(s"github:$proj")))
       .getOrElse(TomlEntry.Absent)
-    val modules = manifest.modules match {
-      case PackageModules.All => TomlEntry.Absent
-      case PackageModules.Selected(included) =>
-        TomlEntry.Present(TomlKey("modules"), TomlExp.TomlArray(included.toList.map(TomlExp.TomlValue.apply)))
-    }
     val name = TomlEntry.Present(TomlKey("name"), TomlExp.TomlValue(manifest.name))
     val version = TomlEntry.Present(TomlKey("version"), TomlExp.TomlValue(manifest.version))
     val flixVersion = TomlEntry.Present(TomlKey("flix"), TomlExp.TomlValue(manifest.flix))
@@ -72,7 +66,6 @@ object Manifest {
         name,
         version,
         repository,
-        modules,
         flixVersion,
       )
     )

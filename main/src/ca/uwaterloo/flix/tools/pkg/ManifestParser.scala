@@ -94,10 +94,6 @@ object ManifestParser {
       repository <- getOptionalStringProperty("package.repository", parser, p);
       githubProject <- Result.traverseOpt(repository)(r => toGithubProject(r, p));
 
-      modules <- getOptionalArrayProperty("package.modules", parser, p);
-      moduleStrings <- Result.traverseOpt(modules)(m => convertTomlArrayToStringList(m, "package.modules", p));
-      packageModules <- toPackageModules(moduleStrings);
-
       flix <- getRequiredStringProperty("package.flix", parser, p);
       flixSemVer <- toFlixVer(flix, p);
 
@@ -111,7 +107,7 @@ object ManifestParser {
       jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
       jarDepsList <- collectDependencies(jarDeps, flixDep = false, jarDep = true, p)
 
-    ) yield Manifest(name, versionSemVer, githubProject, packageModules, flixSemVer, depsList ++ mvnDepsList ++ jarDepsList)
+    ) yield Manifest(name, versionSemVer, githubProject, flixSemVer, depsList ++ mvnDepsList ++ jarDepsList)
   }
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
@@ -163,20 +159,6 @@ object ManifestParser {
     } catch {
       case _: IllegalArgumentException => Ok(None)
       case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "String", e.getMessage))
-    }
-  }
-
-  /**
-    * Parses an Array which might be at `prop`
-    * and returns the Array as an Option.
-    */
-  private def getOptionalArrayProperty(prop: String, parser: TomlParseResult, p: Path): Result[Option[TomlArray], ManifestError] = {
-    try {
-      val array = parser.getArray(prop)
-      Ok(Option(array))
-    } catch {
-      case _: IllegalArgumentException => Ok(None)
-      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "Array", e.getMessage))
     }
   }
 
@@ -512,34 +494,6 @@ object ManifestParser {
       Ok(name)
     else
       Err(ManifestError.IllegalName(p, name))
-  }
-
-  /**
-    * Converts a TomlArray to a list of Strings. Returns
-    * an error if anything in the array is not a String.
-    */
-  private def convertTomlArrayToStringList(array: TomlArray, prop: String, p: Path): Result[List[String], ManifestError] = {
-    val strings = array.toList.asScala.toList.map({
-      case s: String => s
-      case _ => return Err(ManifestError.ArrayElementNotString(p, prop))
-    })
-    Ok(strings)
-  }
-
-  /**
-    * Creates the `PackageModules` object from `optList`.
-    */
-  private def toPackageModules(optList: Option[List[String]]): Result[PackageModules, ManifestError] = {
-    optList match {
-      case None =>
-        Ok(PackageModules.All)
-      case Some(list) =>
-        val moduleSet = list.map { string =>
-          val namespace = string.split('.').toList
-          Symbol.mkModuleSym(namespace)
-        }.toSet
-        Ok(PackageModules.Selected(moduleSet))
-    }
   }
 
 }

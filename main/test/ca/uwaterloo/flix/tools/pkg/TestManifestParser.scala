@@ -1,6 +1,5 @@
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -136,35 +135,6 @@ class TestManifestParser extends AnyFunSuite {
     assertResult(expected = None)(actual =
       ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m.repository
-        case Err(e) => e.message(f)
-      }
-    )
-  }
-
-  test("Ok.modules.Some") {
-    assertResult(expected = PackageModules.Selected(Set(Symbol.mkModuleSym(List("FirstMod")), Symbol.mkModuleSym(List("SecondMod", "Foo")))))(actual = {
-      ManifestParser.parse(tomlCorrect, ManifestPath) match {
-        case Ok(manifest) => manifest.modules
-        case Err(e) => e.message(f)
-      }
-    })
-  }
-
-  test("Ok.modules.None") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |""".stripMargin
-    }
-    assertResult(expected = PackageModules.All)(actual =
-      ManifestParser.parse(toml, ManifestPath) match {
-        case Ok(m) => m.modules
         case Err(e) => e.message(f)
       }
     )
@@ -1054,24 +1024,6 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
-  test("ManifestError.RequiredPropertyHasWrongType.04") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |modules = 123
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |""".stripMargin
-    }
-    val result = ManifestParser.parse(toml, ManifestPath)
-    expectError[ManifestError.RequiredPropertyHasWrongType](result)
-  }
-
   //Flix
   test("ManifestError.MissingRequiredProperty.04") {
     val toml = {
@@ -1244,21 +1196,6 @@ class TestManifestParser extends AnyFunSuite {
     }
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalPackageKeyFound](result)
-  }
-
-  test("ManifestError.ArrayElementNotString.01") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |modules = [12345678]
-        |
-        |""".stripMargin
-    }
-    val result = ManifestParser.parse(toml, ManifestPath)
-    expectError[ManifestError.ArrayElementNotString](result)
   }
 
   //Dependencies
