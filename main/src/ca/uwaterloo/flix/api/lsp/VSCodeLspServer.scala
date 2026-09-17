@@ -181,10 +181,6 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       case JString("api/addWorkspace") => Request.parseAddWorkspace(json)
       case JString("api/addUri") => Request.parseAddUri(json)
       case JString("api/remUri") => Request.parseRemUri(json)
-      case JString("api/addPkg") => Request.parseAddPkg(json)
-      case JString("api/remPkg") => Request.parseRemPkg(json)
-      case JString("api/addJar") => Request.parseAddJar(json)
-      case JString("api/remJar") => Request.parseRemJar(json)
       case JString("api/version") => Request.parseVersion(json)
       case JString("api/restart") => Request.parseRestart(json)
       case JString("api/shutdown") => Request.parseShutdown(json)
@@ -239,14 +235,6 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     case Request.RemUri(id, name) =>
       project.remSource(name)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
-
-    case Request.AddPkg(id, _) => processDependencyChange(id)
-
-    case Request.RemPkg(id, _) => processDependencyChange(id)
-
-    case Request.AddJar(id, _) => processDependencyChange(id)
-
-    case Request.RemJar(id, _) => processDependencyChange(id)
 
     case Request.Version(id) => processVersion(id)
 
@@ -331,17 +319,6 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     case Request.FoldingRange(id, name) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(FoldingRangeProvider.getFoldingRanges(name)(root).map(_.toJSON)))
 
-  }
-
-  /**
-    * Processes a request that reports a change to the packages or JARs of the project.
-    *
-    * The dependencies of the project are those its manifest declares, so the change itself is
-    * ignored: it only means that the project must be loaded again at the next check.
-    */
-  private def processDependencyChange(requestId: String): JValue = {
-    project.markDependenciesChanged()
-    ("id" -> requestId) ~ ("status" -> ResponseStatus.Success)
   }
 
   /**

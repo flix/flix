@@ -50,25 +50,7 @@ object Request {
     */
   case class RemUri(requestId: String, name: SourceName) extends Request
 
-  /**
-    * A request to add (or update) the package at the given uri.
-    */
-  case class AddPkg(requestId: String, uri: URI) extends Request
 
-  /**
-    * A request to remove the package at the given uri.
-    */
-  case class RemPkg(requestId: String, uri: URI) extends Request
-
-  /**
-    * A request to add (or update) the JAR at the given uri.
-    */
-  case class AddJar(requestId: String, uri: URI) extends Request
-
-  /**
-    * A request to remove the package at the given uri.
-    */
-  case class RemJar(requestId: String, uri: URI) extends Request
 
   /**
     * A request for the compiler version.
@@ -217,55 +199,8 @@ object Request {
     } yield Request.RemUri(id, name)
   }
 
-  /**
-    * Tries to parse the given `json` value as a [[AddPkg]] request.
-    *
-    * The package is read from the file at the uri. Older clients also send the contents of the
-    * package in a `base64` field, which is ignored.
-    */
-  def parseAddPkg(json: json4s.JValue): Result[Request, String] = {
-    for {
-      id <- parseId(json)
-      uri <- parseUri(json)
-    } yield Request.AddPkg(id, uri)
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[RemPkg]] request.
-    */
-  def parseRemPkg(json: json4s.JValue): Result[Request, String] = {
-    for {
-      id <- parseId(json)
-      uri <- parseUri(json)
-    } yield Request.RemPkg(id, uri)
-  }
 
 
-  /**
-    * Tries to parse the given `json` value as a [[AddJar]] request.
-    */
-  def parseAddJar(json: json4s.JValue): Result[Request, String] = {
-    try {
-      for {
-        id <- parseId(json)
-        uri <- parseUri(json)
-      } yield {
-        Request.AddJar(id, uri)
-      }
-    } catch {
-      case ex: IllegalArgumentException => Result.Err(ex.getMessage)
-    }
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[RemJar]] request.
-    */
-  def parseRemJar(json: json4s.JValue): Result[Request, String] = {
-    for {
-      id <- parseId(json)
-      uri <- parseUri(json)
-    } yield Request.RemJar(id, uri)
-  }
 
   /**
     * Tries to parse the given `json` value as a [[Version]] request.
