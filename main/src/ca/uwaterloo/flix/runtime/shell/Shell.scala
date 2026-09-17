@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.runtime.shell
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, CompilerConstants, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{Origin, SecurityContext}
 import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.*
@@ -179,7 +179,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.BuildPkg => execBootstrap(bootstrap.buildPkg(flix))
       case Command.Release => execBootstrap(bootstrap.release(flix))
       case Command.Check => execBootstrap(bootstrap.check(flix))
-      case Command.Doc => execBootstrap(bootstrap.doc(flix))
+      case Command.Doc => execBootstrap(bootstrap.doc(flix, Origin.User))
       case Command.Format => execBootstrap(bootstrap.format(flix))
       case Command.Test => execBootstrap(bootstrap.test(flix))
       case Command.Outdated => execBootstrap(bootstrap.outdated(flix))

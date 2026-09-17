@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, 
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
 import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{Origin, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.{Stat, Tester}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageModules, ReleaseError, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageError, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Options, Result}
@@ -1114,22 +1114,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   // -- Tooling Section --
 
   /**
-    * Generates API documentation.
+    * Generates API documentation for the declarations that come from a source with the origin
+    * `origin`: the project's own code, or the bundled library.
     */
-  def doc(flix: Flix): Result[Unit, BootstrapError] = {
-    typeCheck(flix).map(HtmlDocumentor.run(_, getPackageModules, Bootstrap.getDocumentationDirectory(projectPath))(flix))
+  def doc(flix: Flix, origin: Origin): Result[Unit, BootstrapError] = {
+    typeCheck(flix).map(HtmlDocumentor.run(_, origin, Bootstrap.getDocumentationDirectory(projectPath))(flix))
   }
 
-  /**
-    * Returns the modules of the package if manifest is present.
-    * Returns [[PackageModules.All]] if manifest is not present.
-    */
-  private def getPackageModules: PackageModules = {
-    optManifest match {
-      case None => PackageModules.All
-      case Some(manifest) => manifest.modules
-    }
-  }
 
   /**
     * Formats all source files in the project.

@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
-import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.LocalResource
 import ca.uwaterloo.flix.util.collection.Nel
 import org.commonmark.ext.gfm.tables.TablesExtension
@@ -92,9 +91,9 @@ object HtmlDocumentor {
   /**
     * Generates the API documentation for `root` and writes it to `outputDir`.
     */
-  def run(root: TypedAst.Root, packageModules: PackageModules, outputDir: Path)(implicit flix: Flix): Unit = {
+  def run(root: TypedAst.Root, origin: Origin, outputDir: Path)(implicit flix: Flix): Unit = {
     val modulesRoot = splitModules(root)
-    val filteredModulesRoot = filterModules(modulesRoot, packageModules)
+    val filteredModulesRoot = filterModules(modulesRoot, origin)
     val pairedModulesRoot = pairModules(filteredModulesRoot)
 
     visitMod(pairedModulesRoot, outputDir)
@@ -341,8 +340,8 @@ object HtmlDocumentor {
   /**
     * Filter the module, `mod`, and its children, removing all items and empty modules, which shouldn't appear in the documentation.
     */
-  private def filterModules(mod: Module, packageModules: PackageModules): Module = {
-    filterEmpty(filterContents(mod, packageModules))
+  private def filterModules(mod: Module, origin: Origin): Module = {
+    filterEmpty(filterContents(mod, origin))
   }
 
   /**
@@ -352,43 +351,30 @@ object HtmlDocumentor {
     * Note: This function assumes that companion modules are unpopulated,
     * i.e. this should be called before `pairModules`.
     */
-  private def filterContents(mod: Module, packageModules: PackageModules): Module = mod match {
+  private def filterContents(mod: Module, origin: Origin): Module = mod match {
     case Module(sym, doc, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
-      val included = packageModules.contains(sym)
-      if (included) {
-        Module(
-          sym,
-          doc,
-          parent,
-          uses,
-          submodules.map(m => filterContents(m, PackageModules.All)),
-          traits.filter(c => c.decl.mod.isPublic).map(c => filterTrait(c)),
-          effects.filter(e => e.decl.mod.isPublic).map(e => filterEffect(e)),
-          enums.filter(e => e.decl.mod.isPublic).map(e => filterEnum(e)),
-          typeAliases.filter(t => t.mod.isPublic),
-          defs.filter(d => d.spec.mod.isPublic),
-        )
-      } else {
-        // Keep the 'spine' of the tree if a module further down is included
-        val sm = submodules ++
-          traits.flatMap(c => c.companionMod) ++
-          effects.flatMap(e => e.companionMod) ++
-          enums.flatMap(e => e.companionMod)
-
-        Module(
-          sym,
-          doc,
-          parent,
-          Nil,
-          sm.map(m => filterContents(m, packageModules)),
-          Nil,
-          Nil,
-          Nil,
-          Nil,
-          Nil,
-        )
-      }
+      Module(
+        sym,
+        doc,
+        parent,
+        uses,
+        submodules.map(m => filterContents(m, origin)),
+        traits.filter(c => c.decl.mod.isPublic && isFrom(origin, c.decl.sym.loc)).map(c => filterTrait(c)),
+        effects.filter(e => e.decl.mod.isPublic && isFrom(origin, e.decl.sym.loc)).map(e => filterEffect(e)),
+        enums.filter(e => e.decl.mod.isPublic && isFrom(origin, e.decl.sym.loc)).map(e => filterEnum(e)),
+        typeAliases.filter(t => t.mod.isPublic && isFrom(origin, t.sym.loc)),
+        defs.filter(d => d.spec.mod.isPublic && isFrom(origin, d.sym.loc)),
+      )
   }
+
+  /**
+    * Returns `true` if the declaration at `loc` comes from a source with the origin `origin`.
+    *
+    * A module carries no location of its own, so what is documented is decided per declaration.
+    * A module whose declarations are all filtered out is then pruned by [[filterEmpty]], which is
+    * how the bundled library and every dependency drop out of a project's documentation.
+    */
+  private def isFrom(origin: Origin, loc: SourceLocation): Boolean = loc.source.origin == origin
 
   /**
     * Returns a `Trait` corresponding to the given `trt`,
