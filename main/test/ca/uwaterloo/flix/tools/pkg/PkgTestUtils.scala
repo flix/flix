@@ -38,6 +38,14 @@ object PkgTestUtils {
   }
 
   /**
+    * The path a manifest parsed from a string is reported as coming from.
+    *
+    * A test holds a manifest as a literal rather than as a file, but an error still has to say
+    * where the manifest came from, so it names the file a manifest normally lives in.
+    */
+  val ManifestPath: Path = Path.of("flix.toml")
+
+  /**
     * Returns a new [[Flix]] object that has the GitHub token of the CI runner set if available.
     */
   def mkFlix: Flix = mkFlix(Nil)

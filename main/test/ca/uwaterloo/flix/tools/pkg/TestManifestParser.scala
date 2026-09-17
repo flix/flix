@@ -6,6 +6,7 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Formatter, Result}
 import org.scalatest.DoNotDiscover
+import ca.uwaterloo.flix.tools.pkg.PkgTestUtils.ManifestPath
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
@@ -57,7 +58,7 @@ class TestManifestParser extends AnyFunSuite {
 
   test("Ok.name") {
     assertResult(expected = "hello-world")(actual = {
-      ManifestParser.parse(tomlCorrect, null) match {
+      ManifestParser.parse(tomlCorrect, ManifestPath) match {
         case Ok(manifest) => manifest.name
         case Err(e) => e.message(f)
       }
@@ -66,7 +67,7 @@ class TestManifestParser extends AnyFunSuite {
 
   test("Ok.description") {
     assertResult(expected = "A simple program")(actual = {
-      ManifestParser.parse(tomlCorrect, null) match {
+      ManifestParser.parse(tomlCorrect, ManifestPath) match {
         case Ok(manifest) => manifest.description
         case Err(e) => e.message(f)
       }
@@ -75,7 +76,7 @@ class TestManifestParser extends AnyFunSuite {
 
   test("Ok.version") {
     assertResult(expected = SemVer(0, 1, 0))(actual = {
-      ManifestParser.parse(tomlCorrect, null) match {
+      ManifestParser.parse(tomlCorrect, ManifestPath) match {
         case Ok(manifest) => manifest.version
         case Err(e) => e.message(f)
       }
@@ -84,7 +85,7 @@ class TestManifestParser extends AnyFunSuite {
 
   test("Ok.repository.Some") {
     assertResult(expected = Some(GitHub.Project("johnDoe", "hello-world")))(actual = {
-      ManifestParser.parse(tomlCorrect, null) match {
+      ManifestParser.parse(tomlCorrect, ManifestPath) match {
         case Ok(manifest) => manifest.repository
         case Err(e) => e.message(f)
       }
@@ -104,7 +105,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = None)(actual =
-      ManifestParser.parse(toml, null) match {
+      ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m.repository
         case Err(e) => e.message(f)
       }
@@ -113,7 +114,7 @@ class TestManifestParser extends AnyFunSuite {
 
   test("Ok.modules.Some") {
     assertResult(expected = PackageModules.Selected(Set(Symbol.mkModuleSym(List("FirstMod")), Symbol.mkModuleSym(List("SecondMod", "Foo")))))(actual = {
-      ManifestParser.parse(tomlCorrect, null) match {
+      ManifestParser.parse(tomlCorrect, ManifestPath) match {
         case Ok(manifest) => manifest.modules
         case Err(e) => e.message(f)
       }
@@ -133,7 +134,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = PackageModules.All)(actual =
-      ManifestParser.parse(toml, null) match {
+      ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m.modules
         case Err(e) => e.message(f)
       }
@@ -142,7 +143,7 @@ class TestManifestParser extends AnyFunSuite {
 
   test("Ok.flix") {
     assertResult(expected = SemVer(0, 33, 0))(actual = {
-      ManifestParser.parse(tomlCorrect, null) match {
+      ManifestParser.parse(tomlCorrect, ManifestPath) match {
         case Ok(manifest) => manifest.flix
         case Err(e) => e.message(f)
       }
@@ -151,7 +152,7 @@ class TestManifestParser extends AnyFunSuite {
 
   test("Ok.license.Some") {
     assertResult(expected = Some("Apache-2.0"))(actual = {
-      ManifestParser.parse(tomlCorrect, null) match {
+      ManifestParser.parse(tomlCorrect, ManifestPath) match {
         case Ok(manifest) => manifest.license
         case Err(e) => e.message(f)
       }
@@ -171,7 +172,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = None)(actual =
-      ManifestParser.parse(toml, null) match {
+      ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m.license
         case Err(e) => e.message(f)
       }
@@ -180,7 +181,7 @@ class TestManifestParser extends AnyFunSuite {
 
   test("Ok.authors") {
     assertResult(expected = List("John Doe <john@example.com>"))(actual = {
-      ManifestParser.parse(tomlCorrect, null) match {
+      ManifestParser.parse(tomlCorrect, ManifestPath) match {
         case Ok(manifest) => manifest.authors
         case Err(e) => e.message(f)
       }
@@ -193,7 +194,7 @@ class TestManifestParser extends AnyFunSuite {
       Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
       Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
       Dependency.JarDependency("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar", "myJar.jar")))(actual = {
-      ManifestParser.parse(tomlCorrect, null) match {
+      ManifestParser.parse(tomlCorrect, ManifestPath) match {
         case Ok(manifest) => manifest.dependencies
         case Err(e) => e.message(f)
       }
@@ -218,7 +219,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
-      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "470")))(ManifestParser.parse(toml, null) match {
+      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "470")))(ManifestParser.parse(toml, ManifestPath) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -242,7 +243,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
-      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "47")))(ManifestParser.parse(toml, null) match {
+      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "47")))(ManifestParser.parse(toml, ManifestPath) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -266,7 +267,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
-      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "a.7.0")))(ManifestParser.parse(toml, null) match {
+      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "a.7.0")))(ManifestParser.parse(toml, ManifestPath) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -290,7 +291,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = Set(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
-      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.b.0")))(ManifestParser.parse(toml, null) match {
+      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.b.0")))(ManifestParser.parse(toml, ManifestPath) match {
       case Ok(manifest) => manifest.dependencies.toSet
       case Err(e) => e.message(f)
     })
@@ -314,7 +315,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
-      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.c")))(ManifestParser.parse(toml, null) match {
+      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.c")))(ManifestParser.parse(toml, ManifestPath) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -335,7 +336,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = SecurityContext.Plain)(actual =
-      ManifestParser.parse(toml, null) match {
+      ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) =>
           m.dependencies
             .head
@@ -361,7 +362,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = SecurityContext.Plain)(actual =
-      ManifestParser.parse(toml, null) match {
+      ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) =>
           m.dependencies
             .head
@@ -387,7 +388,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = SecurityContext.Paranoid)(actual =
-      ManifestParser.parse(toml, null) match {
+      ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) =>
           m.dependencies
             .head
@@ -413,7 +414,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = SecurityContext.Plain)(actual =
-      ManifestParser.parse(toml, null) match {
+      ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) =>
           m.dependencies
             .head
@@ -439,7 +440,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = SecurityContext.Unrestricted)(actual =
-      ManifestParser.parse(toml, null) match {
+      ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) =>
           m.dependencies
             .head
@@ -453,8 +454,8 @@ class TestManifestParser extends AnyFunSuite {
   // Identity tests / parse-render-parse
   test("Manifest.Identity.01") {
     val toml = tomlCorrect
-    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertResult(manifest1)(manifest2)
   }
 
@@ -470,8 +471,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertResult(manifest1)(manifest2)
   }
 
@@ -492,8 +493,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertResult(manifest1)(manifest2)
   }
 
@@ -514,8 +515,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertResult(manifest1)(manifest2)
   }
 
@@ -536,8 +537,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertResult(manifest1)(manifest2)
   }
 
@@ -558,8 +559,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertResult(manifest1)(manifest2)
   }
 
@@ -580,8 +581,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertResult(manifest1)(manifest2)
   }
 
@@ -599,8 +600,8 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = "1.2.3"
         |""".stripMargin
     }
-    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertResult(manifest1)(manifest2)
   }
 
@@ -618,8 +619,8 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3" }
         |""".stripMargin
     }
-    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertResult(manifest1)(manifest2)
   }
 
@@ -637,8 +638,8 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "paranoid" }
         |""".stripMargin
     }
-    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertResult(manifest1)(manifest2)
   }
 
@@ -656,8 +657,8 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "plain" }
         |""".stripMargin
     }
-    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertResult(manifest1)(manifest2)
   }
 
@@ -675,8 +676,8 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
         |""".stripMargin
     }
-    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertResult(manifest1)(manifest2)
   }
 
@@ -694,8 +695,8 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
         |""".stripMargin
     }
-    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertResult(manifest1)(manifest2)
   }
 
@@ -723,7 +724,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.MissingRequiredProperty](result)
   }
 
@@ -740,7 +741,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
@@ -757,7 +758,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
@@ -774,7 +775,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.MissingRequiredProperty](result)
   }
 
@@ -791,7 +792,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
@@ -808,7 +809,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
@@ -825,7 +826,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.MissingRequiredProperty](result)
   }
 
@@ -842,7 +843,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
@@ -859,7 +860,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
@@ -876,7 +877,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixVersionHasWrongLength](result)
   }
 
@@ -893,7 +894,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixVersionHasWrongLength](result)
   }
 
@@ -910,7 +911,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.VersionNumberWrong](result)
   }
 
@@ -927,7 +928,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.VersionNumberWrong](result)
   }
 
@@ -944,7 +945,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.VersionNumberWrong](result)
   }
 
@@ -963,7 +964,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
@@ -981,7 +982,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.RepositoryFormatError](result)
   }
 
@@ -999,7 +1000,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.RepositoryFormatError](result)
   }
 
@@ -1017,7 +1018,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.RepositoryFormatError](result)
   }
 
@@ -1035,7 +1036,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.RepositoryFormatError](result)
   }
 
@@ -1053,7 +1054,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.RepositoryFormatError](result)
   }
 
@@ -1071,7 +1072,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.RepositoryFormatError](result)
   }
 
@@ -1090,7 +1091,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
@@ -1108,7 +1109,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
@@ -1125,7 +1126,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.MissingRequiredProperty](result)
   }
 
@@ -1142,7 +1143,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
@@ -1159,7 +1160,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
@@ -1176,7 +1177,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixVersionHasWrongLength](result)
   }
 
@@ -1193,7 +1194,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixVersionHasWrongLength](result)
   }
 
@@ -1210,7 +1211,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.VersionNumberWrong](result)
   }
 
@@ -1227,7 +1228,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.VersionNumberWrong](result)
   }
 
@@ -1244,7 +1245,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.VersionNumberWrong](result)
   }
 
@@ -1262,7 +1263,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
@@ -1279,7 +1280,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
@@ -1296,7 +1297,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.MissingRequiredProperty](result)
   }
 
@@ -1313,7 +1314,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
@@ -1330,7 +1331,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
@@ -1347,7 +1348,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.AuthorNameError](result)
   }
 
@@ -1364,7 +1365,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.AuthorNameError](result)
   }
 
@@ -1386,7 +1387,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.VersionTypeError](result)
   }
 
@@ -1407,7 +1408,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalTableFound](result)
   }
   test("ManifestError.IllegalName.01") {
@@ -1427,7 +1428,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalName](result)
   }
 
@@ -1448,7 +1449,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalName](result)
   }
 
@@ -1469,7 +1470,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixVersionFormatError](result)
   }
 
@@ -1490,7 +1491,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixVersionFormatError](result)
   }
 
@@ -1511,7 +1512,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencyFormatError](result)
   }
 
@@ -1532,7 +1533,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencyFormatError](result)
   }
 
@@ -1553,7 +1554,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixVersionFormatError](result)
   }
 
@@ -1574,7 +1575,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixVersionFormatError](result)
   }
 
@@ -1595,7 +1596,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixVersionFormatError](result)
   }
 
@@ -1617,7 +1618,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.DependencyFormatError](result)
   }
 
@@ -1638,7 +1639,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalTableFound](result)
   }
 
@@ -1659,7 +1660,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalName](result)
   }
 
@@ -1680,7 +1681,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalName](result)
   }
 
@@ -1702,7 +1703,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.MavenDependencyFormatError](result)
   }
 
@@ -1723,7 +1724,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.MavenDependencyFormatError](result)
   }
 
@@ -1744,7 +1745,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.JarUrlTypeError](result)
   }
 
@@ -1764,7 +1765,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalTableFound](result)
   }
 
@@ -1784,7 +1785,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.JarUrlFileNameError](result)
   }
 
@@ -1804,7 +1805,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.JarUrlExtensionError](result)
   }
 
@@ -1824,7 +1825,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.JarUrlFormatError](result)
   }
 
@@ -1844,7 +1845,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.WrongUrlFormat](result)
   }
 
@@ -1861,7 +1862,7 @@ class TestManifestParser extends AnyFunSuite {
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "" }
         |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixUnknownSecurityValue](result)
   }
 
@@ -1878,7 +1879,7 @@ class TestManifestParser extends AnyFunSuite {
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "abc" }
         |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixUnknownSecurityValue](result)
   }
 
@@ -1895,7 +1896,7 @@ class TestManifestParser extends AnyFunSuite {
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = [] }
         |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencySecurityType](result)
   }
 
@@ -1912,7 +1913,7 @@ class TestManifestParser extends AnyFunSuite {
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = ["plain"] }
         |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencySecurityType](result)
   }
 
@@ -1929,7 +1930,7 @@ class TestManifestParser extends AnyFunSuite {
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = true }
         |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencySecurityType](result)
   }
 
@@ -1946,7 +1947,7 @@ class TestManifestParser extends AnyFunSuite {
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = 42 }
         |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencySecurityType](result)
   }
 
@@ -1963,7 +1964,7 @@ class TestManifestParser extends AnyFunSuite {
         |[dependencies]
         |"hubgit:jls/tic-tac-toe" = "1.2.3"
         |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.UnsupportedRepository](result)
   }
 
@@ -1982,7 +1983,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:mlutze/flixball" = "3.2.1"
         |""".stripMargin
     assertResult(expected = List(Some("Game"), None))(actual =
-      ManifestParser.parse(toml, null) match {
+      ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m.flixDependencies.map(_.mount)
         case Err(e) => e.message(f)
       }
@@ -2002,8 +2003,8 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Game", security = "paranoid" }
         |"github:mlutze/flixball" = "3.2.1"
         |""".stripMargin
-    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertResult(manifest1)(manifest2)
   }
 
@@ -2020,7 +2021,7 @@ class TestManifestParser extends AnyFunSuite {
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Foo.Bar" }
         |""".stripMargin
-    val result = ManifestParser.parse(toml, null)
+    val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencyIllegalMount](result)
   }
 

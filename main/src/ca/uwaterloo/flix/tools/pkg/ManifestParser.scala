@@ -382,7 +382,7 @@ object ManifestParser {
             security <- getSecurity(depTbl, securityKey, p)
           ) yield FlixDependency(repo, username, projectName, ver, mount, security)
         } else {
-          Err(ManifestError.VersionTypeError(Option.apply(p), depKey, deps.get(depKey)))
+          Err(ManifestError.VersionTypeError(p, depKey, deps.get(depKey)))
         }
       case _ => Err(ManifestError.FlixDependencyFormatError(p, depKey))
     }
@@ -394,12 +394,12 @@ object ManifestParser {
   private def getFlixVersion(deps: TomlTable, depKey: String, p: Path): Result[SemVer, ManifestError] = {
     // Ensure the version is a String.
     if (!deps.isString(depKey)) {
-      Err(ManifestError.VersionTypeError(Option.apply(p), depKey, deps.get(depKey)))
+      Err(ManifestError.VersionTypeError(p, depKey, deps.get(depKey)))
     } else {
       val depVer = deps.getString(depKey)
       SemVer.ofString(depVer) match {
         case Some(v) => Ok(v)
-        case None => Err(ManifestError.FlixVersionFormatError(Option.apply(p), depKey, depVer))
+        case None => Err(ManifestError.FlixVersionFormatError(p, depKey, depVer))
       }
     }
   }
@@ -414,7 +414,7 @@ object ManifestParser {
     }
     if (!depTbl.isString(key)) {
       val perms = depTbl.get(key)
-      Err(ManifestError.FlixDependencySecurityType(Some(path), key, perms))
+      Err(ManifestError.FlixDependencySecurityType(path, key, perms))
     } else {
       val value = depTbl.getString(key)
       SecurityContext.fromString(value) match {
@@ -431,7 +431,7 @@ object ManifestParser {
     val illegalKeys = depTbl.keySet().asScala.toSet.diff(allowed)
     illegalKeys.toList.sorted match {
       case Nil => Ok(())
-      case key :: _ => Err(ManifestError.IllegalDependencyKeyFound(Option(p), depKey, key))
+      case key :: _ => Err(ManifestError.IllegalDependencyKeyFound(p, depKey, key))
     }
   }
 
@@ -444,13 +444,13 @@ object ManifestParser {
     if (!depTbl.contains(key)) {
       Ok(None)
     } else if (!depTbl.isString(key)) {
-      Err(ManifestError.FlixDependencyMountType(Option(p), depKey, depTbl.get(key)))
+      Err(ManifestError.FlixDependencyMountType(p, depKey, depTbl.get(key)))
     } else {
       val mount = depTbl.getString(key)
       if (FlixDependency.isValidMount(mount)) {
         Ok(Some(mount))
       } else {
-        Err(ManifestError.FlixDependencyIllegalMount(Option(p), depKey, mount))
+        Err(ManifestError.FlixDependencyIllegalMount(p, depKey, mount))
       }
     }
   }
@@ -463,7 +463,7 @@ object ManifestParser {
     val seen = mutable.Map.empty[String, FlixDependency]
     for ((mount, dep) <- mountedDeps) {
       seen.get(mount) match {
-        case Some(prev) => return Err(ManifestError.FlixDependencyDuplicateMount(Option(p), mount, prev.identifier, dep.identifier))
+        case Some(prev) => return Err(ManifestError.FlixDependencyDuplicateMount(p, mount, prev.identifier, dep.identifier))
         case None => seen += mount -> dep
       }
     }

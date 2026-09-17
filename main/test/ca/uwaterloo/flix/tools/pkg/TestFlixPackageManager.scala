@@ -8,6 +8,7 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.{BeforeAndAfter, DoNotDiscover}
+import ca.uwaterloo.flix.tools.pkg.PkgTestUtils.ManifestPath
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.{File, PrintStream}
@@ -50,7 +51,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |""".stripMargin
       }
 
-      val manifest = ManifestParser.parse(toml, null) match {
+      val manifest = ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(formatter)) //should not happen
       }
@@ -88,7 +89,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |""".stripMargin
       }
 
-      val manifest = ManifestParser.parse(toml, null) match {
+      val manifest = ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(formatter)) //should not happen
       }
@@ -143,11 +144,11 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |""".stripMargin
       }
 
-      val manifest1 = ManifestParser.parse(toml1, null) match {
+      val manifest1 = ManifestParser.parse(toml1, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(formatter)) //should not happen
       }
-      val manifest2 = ManifestParser.parse(toml2, null) match {
+      val manifest2 = ManifestParser.parse(toml2, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(formatter)) //should not happen
       }
@@ -192,7 +193,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |""".stripMargin
       }
 
-      val manifest = ManifestParser.parse(toml, null) match {
+      val manifest = ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(formatter)) //should not happen
       }
@@ -231,7 +232,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |""".stripMargin
       }
 
-      val manifest = ManifestParser.parse(toml, null) match {
+      val manifest = ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(formatter)) //should not happen
       }
@@ -262,7 +263,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         |""".stripMargin
     }
 
-    val manifest = ManifestParser.parse(toml, null) match {
+    val manifest = ManifestParser.parse(toml, ManifestPath) match {
       case Ok(m) => m
       case Err(e) => fail(e.message(formatter)) //should not happen
     }
@@ -295,7 +296,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |""".stripMargin
       }
 
-      val manifest = ManifestParser.parse(toml, null) match {
+      val manifest = ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(formatter))
       }
@@ -325,7 +326,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |""".stripMargin
       }
 
-      val manifest = ManifestParser.parse(toml, null) match {
+      val manifest = ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(formatter)) //should not happen
       }
@@ -646,7 +647,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         |"github:jaschdoc/flix-test-pkg-mismatched-versions" = "0.1.0"
         |""".stripMargin
     )
-    val manifest = ManifestParser.parse(toml, null) match {
+    val manifest = ManifestParser.parse(toml, ManifestPath) match {
       case Ok(m) => m
       case Err(e) => fail(e.message(formatter))
     }
@@ -696,7 +697,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
          |[dependencies]
          |$deps
          |""".stripMargin
-    ManifestParser.parse(toml, null) match {
+    ManifestParser.parse(toml, ManifestPath) match {
       case Ok(m) => m
       case Err(e) => fail(e.message(formatter))
     }
@@ -710,7 +711,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val path = Files.createTempDirectory("")
     val toml = PkgTestUtils.mkTomlWithDeps(deps)
 
-    val manifest = ManifestParser.parse(toml, null) match {
+    val manifest = ManifestParser.parse(toml, ManifestPath) match {
       case Ok(m) => m
       case Err(e) => fail(e.message(formatter))
     }

@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.DoNotDiscover
+import ca.uwaterloo.flix.tools.pkg.PkgTestUtils.ManifestPath
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
@@ -30,7 +31,7 @@ class TestJarPackageManager extends AnyFunSuite {
           |""".stripMargin
       }
 
-      val manifest = ManifestParser.parse(toml, null) match {
+      val manifest = ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(f))
       }
@@ -62,7 +63,7 @@ class TestJarPackageManager extends AnyFunSuite {
           |""".stripMargin
       }
 
-      val manifest = ManifestParser.parse(toml, null) match {
+      val manifest = ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(f))
       }
