@@ -57,7 +57,6 @@ object ManifestError {
     }
   }
 
-
   case class VersionNumberWrong(path: Path, version: String, message: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""This toml file has a version number which includes things that are not numbers: ${f.red(version)}.
@@ -197,13 +196,6 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""Could not construct a URL from ${f.red(url)}:
          |$message
-         |The toml file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
-  }
-
-  case class ArrayElementNotString(path: Path, property: String) extends ManifestError {
-    override def message(f: Formatter): String =
-      s"""The property ${f.bold(property)} has an element which is not of type ${f.bold("String")}.
          |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
