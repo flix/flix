@@ -65,13 +65,42 @@ class TestManifestParser extends AnyFunSuite {
     })
   }
 
-  test("Ok.description") {
-    assertResult(expected = "A simple program")(actual = {
-      ManifestParser.parse(tomlCorrect, ManifestPath) match {
-        case Ok(manifest) => manifest.description
+  test("Ok.minimal") {
+    // A manifest declares only what something reads.
+    val toml =
+      """
+        |[package]
+        |name = "hello-world"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |""".stripMargin
+    assertResult(expected = "hello-world")(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.name
         case Err(e) => e.message(f)
       }
-    })
+    )
+  }
+
+  test("Ok.ignores-removed-keys") {
+    // A manifest written before these keys were dropped still parses, which is what keeps every
+    // already-published package readable.
+    val toml =
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |""".stripMargin
+    assertResult(expected = "hello-world")(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.name
+        case Err(e) => e.message(f)
+      }
+    )
   }
 
   test("Ok.version") {
@@ -145,44 +174,6 @@ class TestManifestParser extends AnyFunSuite {
     assertResult(expected = SemVer(0, 33, 0))(actual = {
       ManifestParser.parse(tomlCorrect, ManifestPath) match {
         case Ok(manifest) => manifest.flix
-        case Err(e) => e.message(f)
-      }
-    })
-  }
-
-  test("Ok.license.Some") {
-    assertResult(expected = Some("Apache-2.0"))(actual = {
-      ManifestParser.parse(tomlCorrect, ManifestPath) match {
-        case Ok(manifest) => manifest.license
-        case Err(e) => e.message(f)
-      }
-    })
-  }
-
-  test("Ok.license.None") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |""".stripMargin
-    }
-    assertResult(expected = None)(actual =
-      ManifestParser.parse(toml, ManifestPath) match {
-        case Ok(m) => m.license
-        case Err(e) => e.message(f)
-      }
-    )
-  }
-
-  test("Ok.authors") {
-    assertResult(expected = List("John Doe <john@example.com>"))(actual = {
-      ManifestParser.parse(tomlCorrect, ManifestPath) match {
-        case Ok(manifest) => manifest.authors
         case Err(e) => e.message(f)
       }
     })
@@ -763,21 +754,6 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   //Description
-  test("ManifestError.MissingRequiredProperty.02") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |""".stripMargin
-    }
-    val result = ManifestParser.parse(toml, ManifestPath)
-    expectError[ManifestError.MissingRequiredProperty](result)
-  }
 
   test("ManifestError.IllegalPackageKeyFound.02") {
     val toml = {
@@ -794,23 +770,6 @@ class TestManifestParser extends AnyFunSuite {
     }
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalPackageKeyFound](result)
-  }
-
-  test("ManifestError.RequiredPropertyHasWrongType.02") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = 2
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |""".stripMargin
-    }
-    val result = ManifestParser.parse(toml, ManifestPath)
-    expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
   //Version
@@ -1250,22 +1209,6 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   //License
-  test("ManifestError.RequiredPropertyHasWrongType.06") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = 123
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |""".stripMargin
-    }
-    val result = ManifestParser.parse(toml, ManifestPath)
-    expectError[ManifestError.RequiredPropertyHasWrongType](result)
-  }
 
   test("ManifestError.IllegalPackageKeyFound.07") {
     val toml = {
@@ -1285,21 +1228,6 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   //Authors
-  test("ManifestError.MissingRequiredProperty.05") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |
-        |""".stripMargin
-    }
-    val result = ManifestParser.parse(toml, ManifestPath)
-    expectError[ManifestError.MissingRequiredProperty](result)
-  }
 
   test("ManifestError.IllegalPackageKeyFound.08") {
     val toml = {
@@ -1318,55 +1246,19 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
-  test("ManifestError.RequiredPropertyHasWrongType.07") {
+  test("ManifestError.ArrayElementNotString.01") {
     val toml = {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = "John Doe <john@example.com>"
+        |modules = [12345678]
         |
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, ManifestPath)
-    expectError[ManifestError.RequiredPropertyHasWrongType](result)
-  }
-
-  test("ManifestError.AuthorNameError.01") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = [12345678]
-        |
-        |""".stripMargin
-    }
-    val result = ManifestParser.parse(toml, ManifestPath)
-    expectError[ManifestError.AuthorNameError](result)
-  }
-
-  test("ManifestError.AuthorNameError.02") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>", 159]
-        |
-        |""".stripMargin
-    }
-    val result = ManifestParser.parse(toml, ManifestPath)
-    expectError[ManifestError.AuthorNameError](result)
+    expectError[ManifestError.ArrayElementNotString](result)
   }
 
   //Dependencies
@@ -1684,7 +1576,6 @@ class TestManifestParser extends AnyFunSuite {
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalName](result)
   }
-
 
   test("ManifestError.MavenDependencyFormatError.01") {
     val toml = {

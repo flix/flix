@@ -88,8 +88,6 @@ object ManifestParser {
 
       name <- getRequiredStringProperty("package.name", parser, p);
 
-      description <- getRequiredStringProperty("package.description", parser, p);
-
       version <- getRequiredStringProperty("package.version", parser, p);
       versionSemVer <- toFlixVer(version, p);
 
@@ -97,16 +95,11 @@ object ManifestParser {
       githubProject <- Result.traverseOpt(repository)(r => toGithubProject(r, p));
 
       modules <- getOptionalArrayProperty("package.modules", parser, p);
-      moduleStrings <- Result.traverseOpt(modules)(m => convertTomlArrayToStringList(m, p));
+      moduleStrings <- Result.traverseOpt(modules)(m => convertTomlArrayToStringList(m, "package.modules", p));
       packageModules <- toPackageModules(moduleStrings);
 
       flix <- getRequiredStringProperty("package.flix", parser, p);
       flixSemVer <- toFlixVer(flix, p);
-
-      license <- getOptionalStringProperty("package.license", parser, p);
-
-      authors <- getRequiredArrayProperty("package.authors", parser, p);
-      authorsList <- convertTomlArrayToStringList(authors, p);
 
       deps <- getOptionalTableProperty("dependencies", parser, p);
       depsList <- collectDependencies(deps, flixDep = true, jarDep = false, p);
@@ -118,7 +111,7 @@ object ManifestParser {
       jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
       jarDepsList <- collectDependencies(jarDeps, flixDep = false, jarDep = true, p)
 
-    ) yield Manifest(name, description, versionSemVer, githubProject, packageModules, flixSemVer, license, authorsList, depsList ++ mvnDepsList ++ jarDepsList)
+    ) yield Manifest(name, versionSemVer, githubProject, packageModules, flixSemVer, depsList ++ mvnDepsList ++ jarDepsList)
   }
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
@@ -170,24 +163,6 @@ object ManifestParser {
     } catch {
       case _: IllegalArgumentException => Ok(None)
       case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "String", e.getMessage))
-    }
-  }
-
-  /**
-    * Parses an Array which should be at `prop`
-    * and returns the Array or an error if the result
-    * cannot be found.
-    */
-  private def getRequiredArrayProperty(prop: String, parser: TomlParseResult, p: Path): Result[TomlArray, ManifestError] = {
-    try {
-      val array = parser.getArray(prop)
-      if (array == null) {
-        return Err(ManifestError.MissingRequiredProperty(p, prop, None))
-      }
-      Ok(array)
-    } catch {
-      case e: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, prop, Some(e.getMessage)))
-      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "Array", e.getMessage))
     }
   }
 
@@ -543,10 +518,10 @@ object ManifestParser {
     * Converts a TomlArray to a list of Strings. Returns
     * an error if anything in the array is not a String.
     */
-  private def convertTomlArrayToStringList(array: TomlArray, p: Path): Result[List[String], ManifestError] = {
+  private def convertTomlArrayToStringList(array: TomlArray, prop: String, p: Path): Result[List[String], ManifestError] = {
     val strings = array.toList.asScala.toList.map({
       case s: String => s
-      case _ => return Err(ManifestError.AuthorNameError(p))
+      case _ => return Err(ManifestError.ArrayElementNotString(p, prop))
     })
     Ok(strings)
   }

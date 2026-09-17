@@ -88,11 +88,9 @@ object Bootstrap {
 
     FileOps.newFileIfAbsent(manifestFile) {
       s"""[package]
-         |name        = "$packageName"
-         |description = "test"
-         |version     = "0.1.0"
-         |flix        = "${Version.CurrentVersion}"
-         |authors     = ["John Doe <john@example.com>"]
+         |name    = "$packageName"
+         |version = "0.1.0"
+         |flix    = "${Version.CurrentVersion}"
          |""".stripMargin
     }
 
