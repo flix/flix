@@ -435,8 +435,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
       case Err(e) => Err(BootstrapError.FlixPackageError(e))
       case Ok(resolution) =>
-        // A package must occur at exactly one version before anything is installed.
-        val versionErrors = FlixPackageManager.checkSingleVersion(resolution.manifests)
+        // A package must occur at exactly one version, and be mounted by all its dependents or
+        // by none of them, before anything is installed.
+        val versionErrors = FlixPackageManager.checkSingleVersion(resolution.manifests) ++
+          FlixPackageManager.checkConsistentMounts(resolution.manifests)
         if (versionErrors.nonEmpty) {
           Err(toBootstrapError(versionErrors))
         } else {

@@ -45,8 +45,14 @@ object PkgTestUtils {
   /**
     * Returns a new [[Flix]] object with the given packages that has the GitHub token of the CI runner set if available.
     */
-  def mkFlix(pkgs: List[InstalledPackage]): Flix = {
-    val flix = new Flix(pkgs = pkgs)
+  def mkFlix(pkgs: List[InstalledPackage]): Flix = mkFlix(pkgs, Map.empty)
+
+  /**
+    * Returns a new [[Flix]] object with the given packages and root mount table that has the
+    * GitHub token of the CI runner set if available.
+    */
+  def mkFlix(pkgs: List[InstalledPackage], mounts: Map[String, String]): Flix = {
+    val flix = new Flix(pkgs = pkgs, mounts = mounts)
     flix.setOptions(flix.options.copy(githubToken = gitHubToken, progress = false))
   }
 
