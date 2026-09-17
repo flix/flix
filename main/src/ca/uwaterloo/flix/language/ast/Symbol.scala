@@ -475,7 +475,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override val toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
+    override val toString: String = if (namespace.isEmpty) name else Name.nsToString(namespace) + "." + name
   }
 
   /**
@@ -507,7 +507,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
+    override def toString: String = if (namespace.isEmpty) name else Name.nsToString(namespace) + "." + name
 
     /**
       * Returns the source of `this` symbol.
@@ -544,7 +544,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
+    override def toString: String = if (namespace.isEmpty) name else Name.nsToString(namespace) + "." + name
 
     /**
       * Returns the source of `this` symbol.
@@ -580,7 +580,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
+    override def toString: String = if (namespace.isEmpty) name else Name.nsToString(namespace) + "." + name
   }
 
   object CaseSym {
@@ -701,7 +701,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
+    override def toString: String = if (namespace.isEmpty) name else Name.nsToString(namespace) + "." + name
 
     /**
       * Returns the source of `this`.
@@ -785,7 +785,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = "?" + (if (namespace.isEmpty) name else namespace.mkString(".") + "." + name)
+    override def toString: String = "?" + (if (namespace.isEmpty) name else Name.nsToString(namespace) + "." + name)
   }
 
   /**
@@ -808,7 +808,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
+    override def toString: String = if (namespace.isEmpty) name else Name.nsToString(namespace) + "." + name
 
     /**
       * Returns the source of `this`.
@@ -884,7 +884,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
+    override def toString: String = if (namespace.isEmpty) name else Name.nsToString(namespace) + "." + name
   }
 
   /**
@@ -977,7 +977,7 @@ object Symbol {
     /**
       * Human-readable representation.
       */
-    override def toString: String = ns.mkString(".")
+    override def toString: String = Name.nsToString(ns)
 
   }
 

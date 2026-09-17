@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, InstalledPackage}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.{FileOps, Formatter}
 import org.scalatest.funsuite.AnyFunSuite
@@ -29,9 +30,13 @@ class TestMounts extends AnyFunSuite {
     val pkg = InstalledPackage(pkgPath, Id, SecurityContext.Unrestricted, Map.empty)
     val flix = PkgTestUtils.mkFlix(List(pkg), mounts)
     flix.addSource(Path.of("Main.flix"), main, SecurityContext.Unrestricted)
-    val (_, errors) = flix.check()
+    val (root, errors) = flix.check()
+    messages = CompilationMessage.formatAll(errors)(Formatter.NoFormatter, root)
     errors.map(_.getClass.getSimpleName)
   }
+
+  /** The rendered messages of the errors the last [[check]] reported. */
+  private var messages: String = ""
 
   test("mounted.reachable") {
     val pkg = mkPkg()
@@ -92,6 +97,10 @@ class TestMounts extends AnyFunSuite {
     val mounts = Map("Game" -> Id)
     val errors = check(pkg, mounts, "def main(): Unit \\ IO = println(Game.Secret.hidden())")
     assert(errors.nonEmpty, "expected the non-public module of a mounted package to be inaccessible")
+    // The root a package is named under cannot be written in source, so it is shown as the
+    // identifier of the package rather than as the name the compiler gives it.
+    assert(messages.contains(s"${Id}.Secret"), messages)
+    assert(!messages.contains("$pkg$"), messages)
   }
 
 }

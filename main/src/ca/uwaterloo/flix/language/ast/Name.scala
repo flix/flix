@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.shared.Origin
+
 object Name {
 
   /**
@@ -124,6 +126,17 @@ object Name {
     * @param idents the identifiers of the namespace.
     * @param loc    the source location of the namespace.
     */
+  /**
+    * Returns the namespace `parts` as it is shown to a reader.
+    *
+    * A package is named under a root that cannot be written in source, so the root is shown as the
+    * identifier of the package instead of as the name the compiler gives it.
+    */
+  def nsToString(parts: List[String]): String = parts match {
+    case Nil => ""
+    case head :: rest => (Origin.packageOf(head).getOrElse(head) :: rest).mkString(".")
+  }
+
   case class NName(idents: List[Ident], loc: SourceLocation) {
     /**
       * Returns `true` if this is the root namespace.
@@ -166,7 +179,7 @@ object Name {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (idents.isEmpty) "" else idents.mkString(".")
+    override def toString: String = nsToString(parts)
   }
 
   /**
