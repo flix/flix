@@ -28,6 +28,7 @@ object NamedAst {
                   uses: Map[Name.NName, List[UseOrImport]],
                   units: Map[Source, CompilationUnit],
                   modules: Map[Symbol.ModuleSym, Declaration.Mod],
+                  mounts: Map[Name.NName, Map[String, Name.NName]],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   tokens: Map[Source, Array[Token]])

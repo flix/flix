@@ -166,8 +166,9 @@ object Resolver {
     * The uses and imports of the unit are resolved silently: any errors are reported by [[visitUnit]].
     */
   private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): List[ResolvedAst.Declaration.TypeAlias] = unit match {
-    case NamedAst.CompilationUnit(usesAndImports0, decls, _) =>
-      val usesAndImports = usesAndImports0.flatMap(visitUseOrImport(_, Name.RootNS, root).toOption)
+    case NamedAst.CompilationUnit(usesAndImports0, decls, loc) =>
+      val unitRoot = rootOf(loc)
+      val usesAndImports = usesAndImports0.flatMap(visitUseOrImport(_, unitRoot, root).toOption)
       val scp = appendAllUseScp(defaultUses, usesAndImports, root)
       val namespaces = decls.collect {
         case ns: NamedAst.Declaration.Mod => ns
@@ -175,7 +176,7 @@ object Resolver {
       val aliases0 = decls.collect {
         case alias: NamedAst.Declaration.TypeAlias => alias
       }
-      val aliases = aliases0.map(semiResolveTypeAlias(_, scp, Name.RootNS, root))
+      val aliases = aliases0.map(semiResolveTypeAlias(_, scp, unitRoot, root))
       val ns = namespaces.flatMap(semiResolveTypeAliasesInNamespace(_, defaultUses, root))
       aliases ::: ns
   }
@@ -364,9 +365,10 @@ object Resolver {
     */
   private def visitUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.CompilationUnit = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls0, loc) =>
-      val usesAndImports = resolveUsesAndImports(usesAndImports0, Name.RootNS, root)
+      val unitRoot = rootOf(loc)
+      val usesAndImports = resolveUsesAndImports(usesAndImports0, unitRoot, root)
       val scp = appendAllUseScp(defaultUses, usesAndImports, root)
-      val decls = decls0.flatMap(visitDecl(_, scp, Name.RootNS.copy(loc = loc), defaultUses))
+      val decls = decls0.flatMap(visitDecl(_, scp, unitRoot.copy(loc = loc), defaultUses))
       ResolvedAst.CompilationUnit(usesAndImports, decls, loc)
   }
 
@@ -2929,10 +2931,14 @@ object Resolver {
         }
       }
 
-      // 4th priority: names in the root namespace
-      val rootNames = root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration.apply)
+      // 4th priority: names at the root of the package the name occurs in
+      val viewerRoot = rootOf(qname.loc)
+      val packageNames = declarationsIn(viewerRoot, qname.ident.name, root)
 
-      scpNames ::: localNames ::: currentNamespace ::: rootNames
+      // 5th priority: names in the root namespace, where the bundled library is declared
+      val rootNames = if (viewerRoot == Name.RootNS) Nil else declarationsIn(Name.RootNS, qname.ident.name, root)
+
+      scpNames ::: localNames ::: currentNamespace ::: packageNames ::: rootNames
 
     } else {
       // Case 2. Qualified name. Look it up directly.
@@ -2946,7 +2952,7 @@ object Resolver {
   private def tryLookupQualifiedName(qname0: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Option[List[NamedAst.Declaration]] = {
     // First resolve the root of the qualified name
     val head = qname0.namespace.parts.head
-    tryLookupModule(head, scp0, ns0, root) match {
+    tryLookupModule(head, scp0, ns0, root, qname0.loc) match {
       case None => None
       case Some(prefix) =>
         val ns = prefix ::: qname0.namespace.parts.tail
@@ -2958,7 +2964,7 @@ object Resolver {
   /**
     * Looks up the given module in the root.
     */
-  private def tryLookupModule(name: String, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Option[List[String]] = {
+  private def tryLookupModule(name: String, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Option[List[String]] = {
     // First see if there's a module with this name imported into our LocalScope
     scp0(name).collectFirst {
       case Resolution.Declaration(ns: NamedAst.Declaration.Mod) => ns.sym.ns
@@ -2969,26 +2975,58 @@ object Resolver {
       case Resolution.Declaration(eff: NamedAst.Declaration.Effect) => eff.sym.namespace :+ eff.sym.name
     }.orElse {
       // Then see if there's a module with this name declared in our namespace
-      root.symbols.getOrElse(ns0, Map.empty).getOrElse(name, Nil).collectFirst {
-        case Declaration.Mod(_, _, _, sym, _, _, _, _) => sym.ns
-        case Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Effect(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
-      }
+      tryLookupModuleIn(ns0, name, root)
     }.orElse {
-      // Then see if there's a module with this name declared in the root namespace
-      root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(name, Nil).collectFirst {
-        case Declaration.Mod(_, _, _, sym, _, _, _, _) => sym.ns
-        case Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Effect(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
-      }
+      // Then see if the name is a mount of the package the name occurs in
+      mountsOf(loc, root).get(name).map(_.parts)
+    }.orElse {
+      // Then see if there's a module with this name at the root of that package
+      tryLookupModuleIn(rootOf(loc), name, root)
+    }.orElse {
+      // Finally, the root namespace, where the bundled library is declared
+      tryLookupModuleIn(Name.RootNS, name, root)
     }
   }
+
+  /**
+    * Returns the namespace of the module `name` declared in the namespace `ns`, if there is one.
+    */
+  private def tryLookupModuleIn(ns: Name.NName, name: String, root: NamedAst.Root): Option[List[String]] =
+    root.symbols.getOrElse(ns, Map.empty).getOrElse(name, Nil).collectFirst {
+      case Declaration.Mod(_, _, _, sym, _, _, _, _) => sym.ns
+      case Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
+      case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
+      case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
+      case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
+      case Declaration.Effect(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
+    }
+
+  /**
+    * Returns the declarations of `name` in the namespace `ns`.
+    */
+  private def declarationsIn(ns: Name.NName, name: String, root: NamedAst.Root): List[Resolution] =
+    root.symbols.getOrElse(ns, Map.empty).getOrElse(name, Nil).map(Resolution.Declaration.apply)
+
+  /**
+    * Returns the root namespace of the package the source at `loc` belongs to.
+    *
+    * A package is named under its own root, so that a name in one package cannot see the
+    * declarations of another except through a mount. Every source is named under [[Name.RootNS]]
+    * until the declarations of a package are named under its canonical root.
+    */
+  private def rootOf(loc: SourceLocation): Name.NName = loc.source.origin match {
+    case Origin.User => Name.RootNS
+    case Origin.Library => Name.RootNS
+    case Origin.Package(_) => Name.RootNS
+    case Origin.Unknown => Name.RootNS
+  }
+
+  /**
+    * Returns the mount table of the package the source at `loc` belongs to: the name of each mount
+    * to the root namespace of the package that mount names.
+    */
+  private def mountsOf(loc: SourceLocation, root: NamedAst.Root): Map[String, Name.NName] =
+    root.mounts.getOrElse(rootOf(loc), Map.empty)
 
   /**
     * Looks up the qualified name in the given root.
