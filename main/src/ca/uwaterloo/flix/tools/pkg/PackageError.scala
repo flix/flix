@@ -143,12 +143,10 @@ object PackageError {
   }
 
   /**
-    * A file in `lib/` is not the one `flix.lock` records for it.
+    * A file that was already in `lib/` is not the one `flix.lock` records for it.
     *
-    * The two cases say different things, so they are reported differently. A file that was
-    * already in `lib/` has changed since this project downloaded it. A file that was just
-    * downloaded means the published release itself has changed, which GitHub permits: a release
-    * asset can be deleted and uploaded again at the same version.
+    * Nothing downloaded it during this build, so the file has changed on disk since the build
+    * that did. Deleting it is enough to recover: the next build downloads it again.
     *
     * @param identifier the identifier of the package, e.g. `github:flix/museum`.
     * @param version    the version of the package.
@@ -156,29 +154,44 @@ object PackageError {
     * @param path       the path of the file in `lib/`.
     * @param expected   the digest that `flix.lock` records.
     * @param actual     the digest of the file that is there.
-    * @param cached     whether the file was already in `lib/` rather than downloaded just now.
     */
-  case class MismatchedDigest(identifier: String, version: SemVer, extension: String, path: Path, expected: Sha256, actual: Sha256, cached: Boolean) extends PackageError {
-    override def message(f: Formatter): String = {
-      val common =
-        s"""The ${f.bold(extension)} of ${f.bold(identifier)} ${f.bold(version.toString)} is not the one ${f.bold("flix.lock")} records.
-           |  expected ${f.cyan(expected.toString)}
-           |  but found ${f.red(actual.toString)}
-           |""".stripMargin
-      if (cached) {
-        s"""$common
-           |The file at ${f.cyan(path.toString)} has changed since it was downloaded.
-           |Delete it and build again to download it afresh, or update ${f.bold("flix.lock")} if the
-           |change was intended.
-           |""".stripMargin
-      } else {
-        s"""$common
-           |The published release has changed since ${f.bold("flix.lock")} was written. A release asset
-           |can be replaced at the same version, so this may be a supply chain attack.
-           |Update ${f.bold("flix.lock")} only if you know the change was intended.
-           |""".stripMargin
-      }
-    }
+  case class MismatchedCachedDigest(identifier: String, version: SemVer, extension: String, path: Path, expected: Sha256, actual: Sha256) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""The ${f.bold(extension)} of ${f.bold(identifier)} ${f.bold(version.toString)} is not the one ${f.bold("flix.lock")} records.
+         |  expected ${f.cyan(expected.toString)}
+         |  but found ${f.red(actual.toString)}
+         |
+         |The file at ${f.cyan(path.toString)} has changed since it was downloaded.
+         |Delete it and build again to download it afresh, or update ${f.bold("flix.lock")} if the
+         |change was intended.
+         |""".stripMargin
+  }
+
+  /**
+    * A file that was just downloaded is not the one `flix.lock` records for it.
+    *
+    * The published release itself has changed, which GitHub permits: a release asset can be
+    * deleted and uploaded again at the same version. Deleting the file does not help, because
+    * downloading it again produces the same bytes.
+    *
+    * @param identifier the identifier of the package, e.g. `github:flix/museum`.
+    * @param version    the version of the package.
+    * @param extension  the file of the package that does not match, i.e. `toml` or `fpkg`.
+    * @param path       the path the file was downloaded to.
+    * @param expected   the digest that `flix.lock` records.
+    * @param actual     the digest of the file that was downloaded.
+    */
+  case class MismatchedDownloadedDigest(identifier: String, version: SemVer, extension: String, path: Path, expected: Sha256, actual: Sha256) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""The ${f.bold(extension)} of ${f.bold(identifier)} ${f.bold(version.toString)} is not the one ${f.bold("flix.lock")} records.
+         |  expected ${f.cyan(expected.toString)}
+         |  but downloaded ${f.red(actual.toString)}
+         |
+         |The published release has changed since ${f.bold("flix.lock")} was written. A release asset
+         |can be replaced at the same version, so this may be a supply chain attack.
+         |The file was written to ${f.cyan(path.toString)}.
+         |Update ${f.bold("flix.lock")} only if you know the change was intended.
+         |""".stripMargin
   }
 
   /**

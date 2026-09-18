@@ -73,10 +73,9 @@ class TestBootstrap extends AnyFunSuite {
 
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out) match {
       case Ok(_) => fail("Expected the tampered package to be refused.")
-      case Err(BootstrapError.FlixPackageError(e: PackageError.MismatchedDigest)) =>
+      case Err(BootstrapError.FlixPackageError(e: PackageError.MismatchedCachedDigest)) =>
         assert(e.identifier == ClerkIdentifier)
         assert(e.extension == Bootstrap.EXT_FPKG)
-        assert(e.cached)
       case Err(e) => fail(s"Expected a mismatched digest, but got: ${e.message(Formatter.getDefault)}")
     }
   }

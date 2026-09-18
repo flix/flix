@@ -244,7 +244,7 @@ object FlixPackageManager {
 
     if (Files.exists(assetPath)) {
       out.println(s"  Cached `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")}).")
-      verify(assetPath, dep, extension, lockfile, cached = true)
+      verifyCached(assetPath, dep, extension, lockfile)
     } else {
       GitHub.getSpecificRelease(proj, version, apiKey).flatMap { release =>
         val assets = release.assets.filter(_.name.endsWith(s".$extension"))
@@ -282,7 +282,7 @@ object FlixPackageManager {
           }
           if (Files.exists(assetPath)) {
             out.println(s"OK.")
-            verify(assetPath, dep, extension, lockfile, cached = false)
+            verifyDownloaded(assetPath, dep, extension, lockfile)
           } else {
             out.println(s"ERROR: File was not created.")
             Err(PackageError.DownloadError(asset, None))
@@ -309,8 +309,26 @@ object FlixPackageManager {
   }
 
   /**
-    * Returns the file at `path` together with its digest, and an error if `lockfile` records a
-    * different digest for it.
+    * Returns the file at `path`, which was already in `lib/`, together with its digest, and an
+    * error if `lockfile` records a different digest for it.
+    */
+  private def verifyCached(path: Path, dep: FlixDependency, extension: String, lockfile: Lockfile): Result[InstalledFile, PackageError] =
+    verify(path, dep, extension, lockfile) {
+      case (expected, actual) => PackageError.MismatchedCachedDigest(dep.identifier, dep.version, extension, path, expected, actual)
+    }
+
+  /**
+    * Returns the file at `path`, which was just downloaded, together with its digest, and an
+    * error if `lockfile` records a different digest for it.
+    */
+  private def verifyDownloaded(path: Path, dep: FlixDependency, extension: String, lockfile: Lockfile): Result[InstalledFile, PackageError] =
+    verify(path, dep, extension, lockfile) {
+      case (expected, actual) => PackageError.MismatchedDownloadedDigest(dep.identifier, dep.version, extension, path, expected, actual)
+    }
+
+  /**
+    * Returns the file at `path` together with its digest, and `mismatch` applied to the expected
+    * and the actual digest if `lockfile` records a different one for it.
     *
     * The check happens here, as the file lands, rather than once everything is installed: a
     * `flix.toml` is parsed and an `.fpkg` becomes a source of code as soon as they are installed,
@@ -321,11 +339,11 @@ object FlixPackageManager {
     * written, and there is nothing yet to compare it against. It is recorded when the lock file
     * is written again.
     */
-  private def verify(path: Path, dep: FlixDependency, extension: String, lockfile: Lockfile, cached: Boolean): Result[InstalledFile, PackageError] = {
+  private def verify(path: Path, dep: FlixDependency, extension: String, lockfile: Lockfile)(mismatch: (Sha256, Sha256) => PackageError): Result[InstalledFile, PackageError] = {
     digest(path).flatMap { file =>
       recordedDigest(dep, extension, lockfile) match {
         case Some(expected) if expected != file.digest =>
-          Err(PackageError.MismatchedDigest(dep.identifier, dep.version, extension, path, expected, file.digest, cached))
+          Err(mismatch(expected, file.digest))
         case _ =>
           Ok(file)
       }
