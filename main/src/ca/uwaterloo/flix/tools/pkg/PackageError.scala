@@ -158,8 +158,8 @@ object PackageError {
   case class MismatchedCachedDigest(identifier: String, version: SemVer, extension: String, path: Path, expected: Sha256, actual: Sha256) extends PackageError {
     override def message(f: Formatter): String =
       s"""The ${f.bold(extension)} of ${f.bold(identifier)} ${f.bold(version.toString)} is not the one ${f.bold("flix.lock")} records.
-         |  expected ${f.cyan(expected.toString)}
-         |  but found ${f.red(actual.toString)}
+         |   expected: ${f.cyan(expected.toString)}
+         |  but found: ${f.red(actual.toString)}
          |
          |The file at ${f.cyan(path.toString)} has changed since it was downloaded.
          |Delete it and build again to download it afresh, or update ${f.bold("flix.lock")} if the
@@ -184,8 +184,8 @@ object PackageError {
   case class MismatchedDownloadedDigest(identifier: String, version: SemVer, extension: String, path: Path, expected: Sha256, actual: Sha256) extends PackageError {
     override def message(f: Formatter): String =
       s"""The ${f.bold(extension)} of ${f.bold(identifier)} ${f.bold(version.toString)} is not the one ${f.bold("flix.lock")} records.
-         |  expected ${f.cyan(expected.toString)}
-         |  but downloaded ${f.red(actual.toString)}
+         |        expected: ${f.cyan(expected.toString)}
+         |  but downloaded: ${f.red(actual.toString)}
          |
          |The published release has changed since ${f.bold("flix.lock")} was written. A release asset
          |can be replaced at the same version, so this may be a supply chain attack.
