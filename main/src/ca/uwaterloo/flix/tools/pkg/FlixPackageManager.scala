@@ -231,6 +231,10 @@ object FlixPackageManager {
     *
     * Returns the installed file, whether it was downloaded now or was already cached, and an
     * error if it is not the file `lockfile` records.
+    *
+    * The check happens here, as the file lands, rather than once everything is installed: a
+    * `flix.toml` is parsed and an `.fpkg` becomes a source of code as soon as they are installed,
+    * and checking afterwards would mean having already acted on bytes that were never verified.
     */
   private def install(dep: FlixDependency, extension: String, p: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[InstalledFile, PackageError] = {
     val proj = GitHub.Project(dep.username, dep.projectName)
@@ -312,38 +316,26 @@ object FlixPackageManager {
     * Returns the file at `path`, which was already in `lib/`, together with its digest, and an
     * error if `lockfile` records a different digest for it.
     */
-  private def verifyCached(path: Path, dep: FlixDependency, extension: String, lockfile: Lockfile): Result[InstalledFile, PackageError] =
-    verify(path, dep, extension, lockfile) {
-      case (expected, actual) => PackageError.MismatchedCachedDigest(dep.identifier, dep.version, extension, path, expected, actual)
+  private def verifyCached(path: Path, dep: FlixDependency, extension: String, lockfile: Lockfile): Result[InstalledFile, PackageError] = {
+    digest(path).flatMap { file =>
+      recordedDigest(dep, extension, lockfile) match {
+        case Some(expected) if expected != file.digest =>
+          Err(PackageError.MismatchedCachedDigest(dep.identifier, dep.version, extension, path, expected, file.digest))
+        case _ =>
+          Ok(file)
+      }
     }
+  }
 
   /**
     * Returns the file at `path`, which was just downloaded, together with its digest, and an
     * error if `lockfile` records a different digest for it.
     */
-  private def verifyDownloaded(path: Path, dep: FlixDependency, extension: String, lockfile: Lockfile): Result[InstalledFile, PackageError] =
-    verify(path, dep, extension, lockfile) {
-      case (expected, actual) => PackageError.MismatchedDownloadedDigest(dep.identifier, dep.version, extension, path, expected, actual)
-    }
-
-  /**
-    * Returns the file at `path` together with its digest, and `mismatch` applied to the expected
-    * and the actual digest if `lockfile` records a different one for it.
-    *
-    * The check happens here, as the file lands, rather than once everything is installed: a
-    * `flix.toml` is parsed and an `.fpkg` becomes a source of code as soon as they are installed,
-    * and checking afterwards would mean having already acted on bytes that were never verified.
-    *
-    * A package that `lockfile` does not record, or records at another version, is not checked.
-    * That is a dependency that was added or whose version was changed since the lock file was
-    * written, and there is nothing yet to compare it against. It is recorded when the lock file
-    * is written again.
-    */
-  private def verify(path: Path, dep: FlixDependency, extension: String, lockfile: Lockfile)(mismatch: (Sha256, Sha256) => PackageError): Result[InstalledFile, PackageError] = {
+  private def verifyDownloaded(path: Path, dep: FlixDependency, extension: String, lockfile: Lockfile): Result[InstalledFile, PackageError] = {
     digest(path).flatMap { file =>
       recordedDigest(dep, extension, lockfile) match {
         case Some(expected) if expected != file.digest =>
-          Err(mismatch(expected, file.digest))
+          Err(PackageError.MismatchedDownloadedDigest(dep.identifier, dep.version, extension, path, expected, file.digest))
         case _ =>
           Ok(file)
       }
@@ -353,6 +345,11 @@ object FlixPackageManager {
   /**
     * Returns the digest that `lockfile` records for the `extension` file of the package `dep`
     * depends on, if it records one at that version.
+    *
+    * A package that `lockfile` does not record, or records at another version, has no digest
+    * here and so is not checked. That is a dependency that was added or whose version was
+    * changed since the lock file was written, and there is nothing yet to compare it against.
+    * It is recorded when the lock file is written again.
     */
   private def recordedDigest(dep: FlixDependency, extension: String, lockfile: Lockfile): Option[Sha256] = {
     lockfile.packages.get(dep.identifier).filter(_.version == dep.version).flatMap {
