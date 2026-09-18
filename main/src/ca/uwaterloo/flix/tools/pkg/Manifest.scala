@@ -27,11 +27,10 @@ case class Manifest(name: String,
   def flixDependencies: List[Dependency.FlixDependency] = dependencies.collect { case dep: Dependency.FlixDependency => dep }
 
   /**
-    * Returns the mount table of this manifest: the name of each mount to the identifier of the
-    * dependency it names. A dependency that declares no mount does not appear.
+    * Returns the mount table of this manifest: the mount of each Flix dependency to that dependency.
     */
   def mounts: Map[Mountpoint, PackageId] =
-    flixDependencies.flatMap(dep => dep.mount.map(_ -> dep.id)).toMap
+    flixDependencies.map(dep => dep.mount -> dep.id).toMap
 
   def mavenDependencies: List[Dependency.MavenDependency] = dependencies.collect { case dep: Dependency.MavenDependency => dep }
 
@@ -86,8 +85,8 @@ object Manifest {
   private def mkFlixDependency(dep: Dependency.FlixDependency): TomlEntry = {
     val key = TomlKey(dep.id.toString)
     val version = TomlEntry.Present(TomlKey("version"), TomlExp.TomlValue(dep.version))
-    // The default mount and the default security context are not rendered.
-    val mount = dep.mount.map(m => TomlEntry.Present(TomlKey("mount"), TomlExp.TomlValue(m))).getOrElse(TomlEntry.Absent)
+    val mount = TomlEntry.Present(TomlKey("mount"), TomlExp.TomlValue(dep.mount))
+    // The default security context is not rendered.
     val security = dep.sctx match {
       case SecurityContext.Default => TomlEntry.Absent
       case sctx => TomlEntry.Present(TomlKey("security"), TomlExp.TomlValue(sctx))

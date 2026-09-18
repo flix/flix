@@ -75,7 +75,7 @@ object Namer {
       val errors = sctx.errors.asScala.toList ++ checkOrphanModules(symbols) ++
         checkMountCollisions(symbols, rootMounts, mounts)
 
-      (NamedAst.Root(symbols, instances, uses, units, modules, mounts, rootMounts, flix.mountedPackages, program.mainEntryPoint, locations, program.tokens), errors)
+      (NamedAst.Root(symbols, instances, uses, units, modules, mounts, rootMounts, program.mainEntryPoint, locations, program.tokens), errors)
     }
 
   /**
@@ -98,13 +98,11 @@ object Namer {
     */
   private def checkMountCollisions(symbols: Map[Name.NName, Map[String, List[Declaration]]],
                                    rootMounts: Map[Mountpoint, Name.NName],
-                                   mounts: Map[PackageId, Map[Mountpoint, Name.NName]])(implicit flix: Flix): List[NameError] = {
+                                   mounts: Map[PackageId, Map[Mountpoint, Name.NName]]): List[NameError] = {
     // Every viewer: the origin of its own declarations, the namespace it is named under, and its mounts.
     val root = (Origin.User: Origin, Name.RootNS, rootMounts)
     val packages = mounts.toList.sortBy { case (id, _) => id }.map {
-      case (id, table) =>
-        val viewerRoot = if (flix.mountedPackages.contains(id)) packageRoot(id) else Name.RootNS
-        (Origin.Package(id): Origin, viewerRoot, table)
+      case (id, table) => (Origin.Package(id): Origin, packageRoot(id), table)
     }
 
     (root :: packages).flatMap {
@@ -147,12 +145,12 @@ object Namer {
   /**
     * Returns the namespace the declarations of the source at `loc` are named under.
     *
-    * A package that something mounts is named under its own root, so that its declarations are
-    * reached through that mount rather than by sharing a namespace with every other package.
-    * Everything else, including a package that nothing mounts, is named under [[Name.RootNS]].
+    * A package is named under its own root, so that its declarations are reached through its mount
+    * rather than by sharing a namespace with every other package. Everything else is named under
+    * [[Name.RootNS]].
     */
-  private def rootOf(loc: SourceLocation)(implicit flix: Flix): Name.NName = loc.source.origin match {
-    case Origin.Package(id) if flix.mountedPackages.contains(id) => packageRoot(id)
+  private def rootOf(loc: SourceLocation): Name.NName = loc.source.origin match {
+    case Origin.Package(id) => packageRoot(id)
     case _ => Name.RootNS
   }
 

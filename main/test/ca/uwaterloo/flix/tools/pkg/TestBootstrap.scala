@@ -358,8 +358,8 @@ class TestBootstrap extends AnyFunSuite {
     // Override manifest
     val toml = PkgTestUtils.mkTomlWithDeps(
       """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.1", security = "unrestricted" }
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "unrestricted" }
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { mount = "FlixTestPkgTrustTransitiveJava", version = "0.1.1", security = "unrestricted" }
+        |"github:flix/test-pkg-trust-java" = { mount = "TestPkgTrustJava", version = "0.1.0", security = "unrestricted" }
         |""".stripMargin
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
@@ -400,7 +400,7 @@ class TestBootstrap extends AnyFunSuite {
     // Override manifest
     val toml = PkgTestUtils.mkTomlWithDeps(
       """
-        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = "0.1.0"
+        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = { version = "0.1.0", mount = "FlixTestPkgEffUpgrade" }
         |""".stripMargin
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
@@ -409,7 +409,7 @@ class TestBootstrap extends AnyFunSuite {
     val main =
       """
         |pub def main(): Unit \ IO =
-        |    println(Upgr.entrypoint(42))
+        |    println(FlixTestPkgEffUpgrade.Upgr.entrypoint(42))
         |""".stripMargin
     FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
 
@@ -435,7 +435,7 @@ class TestBootstrap extends AnyFunSuite {
     // Override manifest
     val toml = PkgTestUtils.mkTomlWithDeps(
       s"""
-         |"github:$pkgAuthor/$pkgName" = "$vOld"
+         |"github:$pkgAuthor/$pkgName" = { version = "$vOld", mount = "FlixTestPkgEffUpgrade" }
          |""".stripMargin
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
@@ -444,7 +444,7 @@ class TestBootstrap extends AnyFunSuite {
     val main =
       """
         |pub def main(): Unit \ IO =
-        |    println(Upgr.entrypoint(42))
+        |    println(FlixTestPkgEffUpgrade.Upgr.entrypoint(42))
         |""".stripMargin
     FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
 
@@ -454,7 +454,7 @@ class TestBootstrap extends AnyFunSuite {
     // Perform upgrade by overriding manifest
     val tomlUpgr = PkgTestUtils.mkTomlWithDeps(
       s"""
-         |"github:$pkgAuthor/$pkgName" = "$vNew"
+         |"github:$pkgAuthor/$pkgName" = { version = "$vNew", mount = "FlixTestPkgEffUpgrade" }
          |""".stripMargin
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), tomlUpgr)
@@ -487,7 +487,7 @@ class TestBootstrap extends AnyFunSuite {
     // Override manifest
     val toml = PkgTestUtils.mkTomlWithDeps(
       s"""
-         |"github:$pkgAuthor/$pkgName" = "$vUnsafe"
+         |"github:$pkgAuthor/$pkgName" = { version = "$vUnsafe", mount = "FlixTestPkgEffUpgrade" }
          |""".stripMargin
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
@@ -496,7 +496,7 @@ class TestBootstrap extends AnyFunSuite {
     val main =
       """
         |pub def main(): Unit \ IO =
-        |    println(Upgr.entrypoint(42))
+        |    println(FlixTestPkgEffUpgrade.Upgr.entrypoint(42))
         |""".stripMargin
     FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
 
@@ -506,7 +506,7 @@ class TestBootstrap extends AnyFunSuite {
     // Perform upgrade by overriding manifest
     val tomlUpgr = PkgTestUtils.mkTomlWithDeps(
       s"""
-         |"github:$pkgAuthor/$pkgName" = "$vSafe"
+         |"github:$pkgAuthor/$pkgName" = { version = "$vSafe", mount = "FlixTestPkgEffUpgrade" }
          |""".stripMargin
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), tomlUpgr)

@@ -273,27 +273,6 @@ object PackageError {
   }
 
   /**
-    * An error raised to indicate that some dependents of the package `identifier` mount it and
-    * others do not.
-    *
-    * @param identifier the package the dependents disagree about.
-    * @param mounted    the dependents that mount it.
-    * @param unmounted  the dependents that do not.
-    */
-  case class InconsistentMounts(identifier: PackageId, mounted: List[String], unmounted: List[String]) extends PackageError {
-    override def message(f: Formatter): String = {
-      s"""${f.underline("Found a package that is mounted by some of its dependents and not by others:")}
-         |  The package '${f.red(identifier.toString)}' is mounted by: ${mounted.mkString(", ")}
-         |  but not by: ${unmounted.mkString(", ")}
-         |
-         |  A mounted package is reachable only under its mount, so the dependents that do not
-         |  mount it cannot reach it at all. Until a mount is required, every dependent of a
-         |  package must either mount it or leave it unmounted.
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate that the package `identifier` is required at more than
     * one version in the dependency graph.
     *

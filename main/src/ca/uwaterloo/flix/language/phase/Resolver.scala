@@ -3010,13 +3010,11 @@ object Resolver {
   /**
     * Returns the root namespace of the package the source at `loc` belongs to.
     *
-    * A package that something mounts is named under its own root, so that a name in one package
-    * cannot see its declarations except through a mount. Everything else, including a package that
-    * nothing mounts, is named under [[Name.RootNS]].
+    * A package is named under its own root, so that a name in one package cannot see its
+    * declarations except through a mount. Everything else is named under [[Name.RootNS]].
     */
   private def rootOf(loc: SourceLocation, root: NamedAst.Root): Name.NName = loc.source.origin match {
-    case Origin.Package(id) if root.mountedPackages.contains(id) =>
-      Name.mkUnlocatedNName(List(id.canonicalRoot))
+    case Origin.Package(id) => Name.mkUnlocatedNName(List(id.canonicalRoot))
     case _ => Name.RootNS
   }
 

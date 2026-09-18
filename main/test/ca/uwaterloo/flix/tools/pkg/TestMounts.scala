@@ -51,20 +51,6 @@ class TestMounts extends AnyFunSuite {
     assert(errors.exists(_.contains("Undefined")), errors)
   }
 
-  test("flat.reachable") {
-    val pkg = mkPkg()
-    val mounts = Map.empty[Mountpoint, PackageId]
-    assertResult(Nil)(check(pkg, mounts, "def main(): Unit \\ IO = println(Board.place())"))
-  }
-
-  test("flat.private-reachable") {
-    // A package nothing mounts keeps sharing the root namespace, so its non-public modules are
-    // reachable exactly as they were before mounts existed.
-    val pkg = mkPkg()
-    val mounts = Map.empty[Mountpoint, PackageId]
-    assertResult(Nil)(check(pkg, mounts, "def main(): Unit \\ IO = println(Secret.hidden())"))
-  }
-
   test("collision.library") {
     // A mount that shadows a library module is rejected: 'List.map' inside the mounting code
     // would resolve into the dependency.

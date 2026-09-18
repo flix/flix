@@ -30,7 +30,6 @@ object NamedAst {
                   modules: Map[Symbol.ModuleSym, Declaration.Mod],
                   mounts: Map[PackageId, Map[Mountpoint, Name.NName]],
                   rootMounts: Map[Mountpoint, Name.NName],
-                  mountedPackages: Set[PackageId],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   tokens: Map[Source, Array[Token]])

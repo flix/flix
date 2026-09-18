@@ -89,16 +89,6 @@ class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil, mounts: M
   val packageMounts: Map[PackageId, Map[Mountpoint, PackageId]] = pkgs.map(pkg => pkg.id -> pkg.mounts).toMap
 
   /**
-    * The packages that something in the dependency graph mounts.
-    *
-    * A mounted package is named under its own root and is reachable only through its mount. A
-    * package that nothing mounts keeps sharing the root namespace, as it did before mounts
-    * existed. Transitional: every package is mounted once a mount is required.
-    */
-  val mountedPackages: Set[PackageId] =
-    (rootMounts.values ++ packageMounts.values.flatMap(_.values)).toSet
-
-  /**
     * Whether [[close]] has been called. A closed instance cannot compile.
     */
   private var closed: Boolean = false

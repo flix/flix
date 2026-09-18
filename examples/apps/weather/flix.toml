@@ -6,4 +6,4 @@ flix        = "0.75.3"
 authors     = ["Chenhao Gao <chenhaogao123@gmail.com>"]
 
 [dependencies]
-"github:mlutze/flix-json" =  "0.12.17"
+"github:mlutze/flix-json" = { version = "0.12.17", mount = "FlixJson" }

@@ -24,6 +24,19 @@ object Mountpoint {
   def mkMountpoint(s: String): Option[Mountpoint] =
     if (Valid.matches(s)) Some(Mountpoint(s)) else None
 
+  /**
+    * Returns the mountpoint to suggest for a project named `s`.
+    *
+    * The parts of the name are capitalized and joined, so `tic-tac-toe` suggests `TicTacToe`. A
+    * name that yields nothing a module can be called, such as one beginning with a digit, suggests
+    * a placeholder instead, because the suggestion is only ever printed in an error.
+    */
+  def ofProjectName(s: String): Mountpoint =
+    mkMountpoint(s.split("[-_]").filter(_.nonEmpty).map(_.capitalize).mkString).getOrElse(Placeholder)
+
+  /** The mountpoint suggested for a project whose name cannot give one. */
+  private val Placeholder: Mountpoint = Mountpoint("ModuleName")
+
 }
 
 /**

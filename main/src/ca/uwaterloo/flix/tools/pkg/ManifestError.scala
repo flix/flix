@@ -95,6 +95,15 @@ object ManifestError {
          |""".stripMargin
   }
 
+  case class FlixDependencyMissingMount(path: Path, lib: String, version: SemVer, suggestion: Mountpoint) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""No mount for the Flix dependency ${f.bold(lib)}.
+         |Every Flix dependency must declare the module it is mounted at:
+         |  $lib = { version = "$version", mount = "${f.cyan(suggestion.toString)}" }
+         |The toml file was found at ${f.cyan(path.toString)}.
+         |""".stripMargin
+  }
+
   case class FlixDependencyIllegalMount(path: Path, lib: String, mount: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""Illegal mount for Flix dependency ${f.bold(lib)}: ${f.red(mount)}.
