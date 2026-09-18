@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.{Bootstrap, InstalledPackage}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.util.{Formatter, Result}
+import ca.uwaterloo.flix.util.{Formatter, Result, Sha256}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 import ca.uwaterloo.flix.util.collection.ListMap
 
@@ -38,11 +38,15 @@ object FlixPackageManager {
     * @param immediateDependents all immediate dependents / parents of each manifest.
     * @param manifestToFlixDeps  a mapping from [[Manifest]]s to [[FlixDependency]]s.
     *                            A manifest is the resource a flix dependency resolves to.
+    * @param tomlDigests         the digest of the `flix.toml` each manifest was parsed from.
+    *                            [[origin]] does not appear: its manifest is the one in the
+    *                            project directory, which is not downloaded.
     */
   case class Resolution(origin: Manifest,
                         manifests: List[Manifest],
                         immediateDependents: Map[Manifest, List[Manifest]],
-                        manifestToFlixDeps: ListMap[Manifest, FlixDependency])
+                        manifestToFlixDeps: ListMap[Manifest, FlixDependency],
+                        tomlDigests: Map[Manifest, Sha256])
 
   /**
     * Represents the dependency resolution of [[origin]] where the maximum security level has been computed
@@ -52,15 +56,33 @@ object FlixPackageManager {
     * @param security           the maximum allowed security level of each manifest.
     * @param manifestToFlixDeps a mapping from [[Manifest]]s to [[FlixDependency]]s.
     *                           A manifest is the resource a flix dependency resolves to.
+    * @param tomlDigests        the digest of the `flix.toml` each manifest was parsed from.
     */
   case class SecureResolution(origin: Manifest,
                               security: Map[Manifest, SecurityContext],
-                              manifestToFlixDeps: ListMap[Manifest, FlixDependency]) {
+                              manifestToFlixDeps: ListMap[Manifest, FlixDependency],
+                              tomlDigests: Map[Manifest, Sha256]) {
     /**
       * All manifests in the resolution.
       */
     val manifests: List[Manifest] = security.keys.toList
   }
+
+  /**
+    * The Flix packages installed for a project.
+    *
+    * @param packages the installed packages.
+    * @param lockfile what each installed package was, to be recorded in `flix.lock`.
+    */
+  case class Installation(packages: List[InstalledPackage], lockfile: Lockfile)
+
+  /**
+    * A file installed in the `lib/` directory.
+    *
+    * @param path   the path to the file.
+    * @param digest the digest of the contents of the file.
+    */
+  private case class InstalledFile(path: Path, digest: Sha256)
 
   /**
     * Finds all the transitive dependencies for `manifest` and
@@ -71,7 +93,8 @@ object FlixPackageManager {
     out.println("Resolving Flix dependencies...")
     implicit val immediateDependents: mutable.Map[Manifest, List[Manifest]] = mutable.Map(manifest -> List.empty)
     implicit val manifestToFlixDeps: mutable.Map[Manifest, List[FlixDependency]] = mutable.Map(manifest -> List.empty)
-    findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey).map(manifests => Resolution(manifest, manifests, immediateDependents.toMap, ListMap.from(manifestToFlixDeps.flatMap { case (m, deps) => deps.map(d => (m, d)) })))
+    implicit val tomlDigests: mutable.Map[Manifest, Sha256] = mutable.Map.empty
+    findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey).map(manifests => Resolution(manifest, manifests, immediateDependents.toMap, ListMap.from(manifestToFlixDeps.flatMap { case (m, deps) => deps.map(d => (m, d)) }), tomlDigests.toMap))
   }
 
   /**
@@ -81,7 +104,7 @@ object FlixPackageManager {
     implicit val securityContexts: mutable.Map[Manifest, SecurityContext] = mutable.Map(resolution.origin -> SecurityContext.Unrestricted)
     implicit val res: Resolution = resolution
     val manifests = resolution.manifests.map(m => (m, minSecurityLevel(m))).toMap
-    SecureResolution(resolution.origin, manifests, resolution.manifestToFlixDeps)
+    SecureResolution(resolution.origin, manifests, resolution.manifestToFlixDeps, resolution.tomlDigests)
   }
 
   /**
@@ -172,23 +195,27 @@ object FlixPackageManager {
 
   /**
     * Installs all the Flix dependencies of `resolution` into the `lib/` directory of `projectRoot`
-    * and returns the installed packages.
+    * and returns the installed packages together with the lock file that records them.
     */
-  def installAll(resolution: SecureResolution, projectRoot: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[InstalledPackage], PackageError] = {
+  def installAll(resolution: SecureResolution, projectRoot: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Installation, PackageError] = {
     out.println("Downloading Flix dependencies...")
 
     // Every dependency declaration, paired with the manifest of the package it resolves to.
     val installed = resolution.manifestToFlixDeps.map { case (manifest, dep) =>
       val depName: String = s"${dep.username}/${dep.projectName}"
       install(depName, dep.version, "fpkg", projectRoot, apiKey) match {
-        case Ok(p) => InstalledPackage(p, dep.identifier, resolution.security(manifest), manifest.mounts)
+        case Ok(fpkg) =>
+          val pkg = InstalledPackage(fpkg.path, dep.identifier, resolution.security(manifest), manifest.mounts)
+          val entry = LockEntry(dep.version, resolution.tomlDigests(manifest), fpkg.digest)
+          (pkg, dep.identifier -> entry)
         case Err(e) =>
           out.println(s"ERROR: Installation of `$depName' failed.")
           return Err(e)
       }
     }.toList
 
-    Ok(installed)
+    val (packages, entries) = installed.unzip
+    Ok(Installation(packages, Lockfile(entries.toMap)))
   }
 
   /**
@@ -200,9 +227,9 @@ object FlixPackageManager {
     *
     * There should be only one file with the given extension.
     *
-    * Returns the path to the downloaded file.
+    * Returns the installed file, whether it was downloaded now or was already cached.
     */
-  private def install(project: String, version: SemVer, extension: String, p: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Path, PackageError] = {
+  private def install(project: String, version: SemVer, extension: String, p: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[InstalledFile, PackageError] = {
     GitHub.parseProject(project).flatMap { proj =>
       val lib = Bootstrap.getLibraryDirectory(p)
       val assetName = s"${proj.repo}-$version.$extension"
@@ -213,7 +240,7 @@ object FlixPackageManager {
 
       if (Files.exists(assetPath)) {
         out.println(s"  Cached `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")}).")
-        Ok(assetPath)
+        digest(assetPath)
       } else {
         GitHub.getSpecificRelease(proj, version, apiKey).flatMap { release =>
           val assets = release.assets.filter(_.name.endsWith(s".$extension"))
@@ -251,7 +278,7 @@ object FlixPackageManager {
             }
             if (Files.exists(assetPath)) {
               out.println(s"OK.")
-              Ok(assetPath)
+              digest(assetPath)
             } else {
               out.println(s"ERROR: File was not created.")
               Err(PackageError.DownloadError(asset, None))
@@ -263,24 +290,40 @@ object FlixPackageManager {
   }
 
   /**
+    * Returns the file at `path` together with the digest of its contents.
+    *
+    * The digest is taken from the file on disk rather than from the bytes as they are downloaded,
+    * so that it describes what a later build will actually read. A file that was cached by an
+    * earlier build is digested the same way, which is what lets a corrupted or tampered `lib/`
+    * be told apart from an intact one.
+    */
+  private def digest(path: Path): Result[InstalledFile, PackageError] = {
+    try {
+      Ok(InstalledFile(path, Sha256.ofFile(path)))
+    } catch {
+      case e: IOException => Err(PackageError.DigestError(path, e.getMessage))
+    }
+  }
+
+  /**
     * Recursively finds all transitive dependencies of `manifest`.
     * Downloads any missing toml files for found dependencies and
     * parses them to manifests. Returns the list of manifests.
     * `res` is the list of Manifests found so far to avoid duplicates.
     */
-  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest], apiKey: Option[String])(implicit immediateDependents: mutable.Map[Manifest, List[Manifest]], manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]], formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
+  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest], apiKey: Option[String])(implicit immediateDependents: mutable.Map[Manifest, List[Manifest]], manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]], tomlDigests: mutable.Map[Manifest, Sha256], formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
     // find Flix dependencies of the current manifest
     val flixDeps = findFlixDependencies(manifest)
 
     for {
       // download toml files
-      tomlPaths <- traverse(flixDeps) { dep =>
+      tomlFiles <- traverse(flixDeps) { dep =>
         val depName = s"${dep.username}/${dep.projectName}"
-        install(depName, dep.version, Bootstrap.EXT_TOML, path, apiKey).map(p => (p, dep))
+        install(depName, dep.version, Bootstrap.EXT_TOML, path, apiKey).map(toml => (toml, dep))
       }
 
       // parse manifests
-      transitiveManifests <- traverse(tomlPaths) { case (p, d) => validateManifest(p, d) }
+      transitiveManifests <- traverse(tomlFiles) { case (toml, d) => validateManifest(toml, d) }
 
     } yield {
       for (m <- transitiveManifests) {
@@ -302,15 +345,17 @@ object FlixPackageManager {
     }
   }
 
-  /** Parses and validates the manifest at `p`
+  /** Parses and validates the manifest in `toml`
     * w.r.t. `d` by checking that declared and required versions match.
     *
-    * Also mutates `manifestToDep` by adding or updating the mapping `m -> ds` to `m -> d :: ds`.
+    * Also mutates `manifestToDep` by adding or updating the mapping `m -> ds` to `m -> d :: ds`,
+    * and records the digest of the file `m` was parsed from in `tomlDigests`.
     */
-  private def validateManifest(p: Path, flixDep: FlixDependency)(implicit manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]]): Result[Manifest, PackageError] = {
-    parseManifest(p).flatMap {
+  private def validateManifest(toml: InstalledFile, flixDep: FlixDependency)(implicit manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]], tomlDigests: mutable.Map[Manifest, Sha256]): Result[Manifest, PackageError] = {
+    parseManifest(toml.path).flatMap {
       m =>
         manifestToDep.put(m, flixDep :: manifestToDep.getOrElse(m, List.empty))
+        tomlDigests.put(m, toml.digest)
         if (m.version == flixDep.version) {
           Ok(m)
         } else {
