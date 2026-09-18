@@ -45,35 +45,33 @@ object Lockfile {
     * same file, whichever order the packages happened to be installed in.
     */
   def format(lockfile: Lockfile): String = {
-    val lockSection = List(
-      "[lock]",
-      s"version = $CurrentVersion"
-    ).mkString(NewLine)
+    val sb = new StringBuilder()
 
-    val packageSections = lockfile.packages.toList.sortBy {
-      case (identifier, _) => identifier
-    }.map {
-      case (identifier, entry) => formatEntry(identifier, entry)
+    sb.append("[lock]").append(NewLine)
+    sb.append("version = ").append(CurrentVersion).append(NewLine)
+
+    val entries = lockfile.packages.toList.sortBy { case (identifier, _) => identifier }
+    for ((identifier, entry) <- entries) {
+      sb.append(NewLine)
+      appendEntry(sb, identifier, entry)
     }
 
-    (lockSection :: packageSections).mkString(NewLine + NewLine) + NewLine
+    sb.toString
   }
 
   /**
-    * Formats the entry of the package named by `identifier`.
+    * Appends the entry of the package named by `identifier` to `sb`.
     *
     * The identifier is written as a quoted key, so that the `:` and `/` it contains are part of
     * the key rather than separators. It needs no escaping: an identifier is built from a
     * repository name and the two names of a GitHub project, which [[ManifestParser]] has already
     * checked to be alphanumeric.
     */
-  private def formatEntry(identifier: String, entry: LockEntry): String = {
-    List(
-      s"[packages.\"$identifier\"]",
-      s"version = \"${entry.version}\"",
-      s"toml    = \"${entry.toml}\"",
-      s"fpkg    = \"${entry.fpkg}\""
-    ).mkString(NewLine)
+  private def appendEntry(sb: StringBuilder, identifier: String, entry: LockEntry): Unit = {
+    sb.append("[packages.\"").append(identifier).append("\"]").append(NewLine)
+    sb.append("version = \"").append(entry.version).append("\"").append(NewLine)
+    sb.append("toml    = \"").append(entry.toml).append("\"").append(NewLine)
+    sb.append("fpkg    = \"").append(entry.fpkg).append("\"").append(NewLine)
   }
 
 }
