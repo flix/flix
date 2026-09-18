@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.{Stat, Tester}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Lockfile, Manifest, ManifestParser, MavenPackageManager, PackageError, ReleaseError, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Options, Result}
@@ -396,8 +396,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     for {
       manifest <- parseManifest(tomlPath)
       _ <- checkFlixVersion(manifest, tomlPath)
-      deps <- resolveFlixDependencies(manifest)
-      installed <- installDependencies(deps)
+      // Read before anything is resolved, so that every downloaded file can be checked against it
+      // as it lands, rather than once it has already been parsed or compiled.
+      lockfile <- readLockFile()
+      deps <- resolveFlixDependencies(manifest, lockfile)
+      installed <- installDependencies(deps, lockfile)
     } yield {
       val (pkgs, jars) = installed
       files = ProjectFiles(scanSources(), pkgs, jars)
@@ -437,8 +440,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Returns flix manifests of all dependencies of `manifest`. This includes transitive dependencies.
     * Requires network access.
     */
-  private def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Result[FlixPackageManager.SecureResolution, BootstrapError] = {
-    FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
+  private def resolveFlixDependencies(manifest: Manifest, lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[FlixPackageManager.SecureResolution, BootstrapError] = {
+    FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey, lockfile) match {
       case Err(e) => Err(BootstrapError.FlixPackageError(e))
       case Ok(resolution) =>
         // A package must occur at exactly one version, and be mounted by all its dependents or
@@ -473,9 +476,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Returns the installed packages with their security contexts, and the installed JARs
     * (Maven dependencies from `lib/cache/` before URL dependencies from `lib/external/`).
     */
-  private def installDependencies(resolution: FlixPackageManager.SecureResolution)(implicit formatter: Formatter, out: PrintStream): Result[(List[InstalledPackage], List[Path]), BootstrapError] = {
+  private def installDependencies(resolution: FlixPackageManager.SecureResolution, lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[(List[InstalledPackage], List[Path]), BootstrapError] = {
     for {
-      installation <- installFlixDependencies(resolution)
+      installation <- installFlixDependencies(resolution, lockfile)
       mavenJars <- installMavenDependencies(resolution.manifests)
       externalJars <- installJarDependencies(resolution.manifests)
       // Written last, so that a failure part way through leaves the lock file of the previous
@@ -484,6 +487,25 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } yield {
       out.println("Dependency resolution completed.")
       (installation.packages, mavenJars ::: externalJars)
+    }
+  }
+
+  /**
+    * Returns the `flix.lock` file of the project, or an empty lock file if it has none.
+    *
+    * A project with no lock file is one that has never been built by a version of Flix that
+    * writes one. Nothing is known about its dependencies yet, so nothing is checked, and the
+    * lock file that this build writes is what later builds are checked against.
+    */
+  private def readLockFile(): Result[Lockfile, BootstrapError] = {
+    val lockPath = Bootstrap.getLockFile(projectPath)
+    if (!Files.exists(lockPath)) {
+      Ok(Lockfile(Map.empty))
+    } else {
+      LockfileParser.parse(lockPath) match {
+        case Ok(lockfile) => Ok(lockfile)
+        case Err(e) => Err(BootstrapError.LockParseError(e))
+      }
     }
   }
 
@@ -523,8 +545,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Requires network access.
     * Returns the installed packages together with the lock file that records them.
     */
-  private def installFlixDependencies(resolution: FlixPackageManager.SecureResolution)(implicit formatter: Formatter, out: PrintStream): Result[FlixPackageManager.Installation, BootstrapError] = {
-    FlixPackageManager.installAll(resolution, projectPath, apiKey) match {
+  private def installFlixDependencies(resolution: FlixPackageManager.SecureResolution, lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[FlixPackageManager.Installation, BootstrapError] = {
+    FlixPackageManager.installAll(resolution, projectPath, apiKey, lockfile) match {
       case Ok(installation) => Ok(installation)
       case Err(e) => Err(BootstrapError.FlixPackageError(e))
     }

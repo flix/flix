@@ -46,6 +46,12 @@ object PkgTestUtils {
   val ManifestPath: Path = Path.of("flix.toml")
 
   /**
+    * The lock file of a project that has never been built, which records nothing and so checks
+    * nothing. Used by the tests that are not about the lock file.
+    */
+  val NoLock: Lockfile = Lockfile(Map.empty)
+
+  /**
     * Returns a new [[Flix]] object that has the GitHub token of the CI runner set if available.
     */
   def mkFlix: Flix = mkFlix(Nil)

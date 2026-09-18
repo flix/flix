@@ -1,12 +1,12 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Version}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{FileOps, Formatter, Result, Sha256}
 import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path}
-import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipFile
@@ -62,6 +62,62 @@ class TestBootstrap extends AnyFunSuite {
 
     val lockfile = LockfileParser.parse(p.resolve(Bootstrap.FLIX_LOCK)).unsafeGet
     assert(lockfile.packages.isEmpty)
+  }
+
+  test("flix.lock.04") {
+    // A cached file that no longer matches the lock file is refused.
+    val p = mkProjectWithDependency()
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    Files.writeString(clerkFile(p, Bootstrap.EXT_FPKG), "not the package you are looking for")
+
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out) match {
+      case Ok(_) => fail("Expected the tampered package to be refused.")
+      case Err(BootstrapError.FlixPackageError(e: PackageError.MismatchedCachedDigest)) =>
+        assert(e.identifier == ClerkIdentifier)
+        assert(e.extension == Bootstrap.EXT_FPKG)
+      case Err(e) => fail(s"Expected a mismatched digest, but got: ${e.message(Formatter.getDefault)}")
+    }
+  }
+
+  test("flix.lock.05") {
+    // A tampered file leaves the lock file alone, so the digest it recorded is not overwritten
+    // by the digest of whatever is there now.
+    val p = mkProjectWithDependency()
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    val before = Files.readString(p.resolve(Bootstrap.FLIX_LOCK))
+
+    Files.writeString(clerkFile(p, Bootstrap.EXT_FPKG), "not the package you are looking for")
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out)
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_LOCK)) == before)
+  }
+
+  test("flix.lock.06") {
+    // An entry for a package the project does not depend on is dropped, not reported.
+    val p = mkProjectWithDependency()
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    val stale = Lockfile(LockfileParser.parse(p.resolve(Bootstrap.FLIX_LOCK)).unsafeGet.packages
+      + ("github:flix/gone" -> LockEntry(SemVer(9, 9, 9), Sha256("a" * 64), Sha256("b" * 64))))
+    Files.writeString(p.resolve(Bootstrap.FLIX_LOCK), Lockfile.format(stale))
+
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.FLIX_LOCK)).unsafeGet
+    assert(lockfile.packages.keySet == Set(ClerkIdentifier))
+  }
+
+  test("flix.lock.07") {
+    // A lock file that is not a lock file is reported rather than ignored.
+    val p = mkProjectWithDependency()
+    Files.writeString(p.resolve(Bootstrap.FLIX_LOCK), "[lock]\nversion = 99\n")
+
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out) match {
+      case Ok(_) => fail("Expected the unreadable lock file to be refused.")
+      case Err(BootstrapError.LockParseError(_: LockError.UnsupportedLockVersion)) => ()
+      case Err(e) => fail(s"Expected an unsupported lock version, but got: ${e.message(Formatter.getDefault)}")
+    }
   }
 
   test("build") {
@@ -131,14 +187,14 @@ class TestBootstrap extends AnyFunSuite {
     // Use 1 thread for deterministic symbols
     flix1.setOptions(flix1.options.copy(threads = 1))
     b1.buildJar(flix1)
-    val hash1 = calcHash(jarPath)
+    val hash1 = Sha256.ofFile(jarPath)
 
     val b2 = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val flix2 = PkgTestUtils.mkFlix(b2)
     // Use 1 thread for deterministic symbols
     flix2.setOptions(flix2.options.copy(threads = 1))
     b2.buildJar(flix2)
-    val hash2 = calcHash(jarPath)
+    val hash2 = Sha256.ofFile(jarPath)
 
     assert(
       hash1 == hash2,
@@ -187,11 +243,11 @@ class TestBootstrap extends AnyFunSuite {
 
     b.buildPkg(flix)(Formatter.getDefault)
 
-    val hash1 = calcHash(packagePath)
+    val hash1 = Sha256.ofFile(packagePath)
 
     b.buildPkg(flix)(Formatter.getDefault)
 
-    val hash2 = calcHash(packagePath)
+    val hash2 = Sha256.ofFile(packagePath)
 
     assert(
       hash1 == hash2,
@@ -551,10 +607,5 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.getLibraryDirectory(p)
       .resolve("github").resolve("flix").resolve("museum-clerk").resolve("1.1.0")
       .resolve(s"museum-clerk-1.1.0.$ext")
-
-  private def calcHash(p: Path): String = {
-    val sha = MessageDigest.getInstance("SHA-256")
-    sha.digest(Files.readAllBytes(p)).map("%02x".format(_)).mkString
-  }
 
 }

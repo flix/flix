@@ -89,12 +89,12 @@ object FlixPackageManager {
     * returns their manifests. The toml files for the manifests
     * will be put at `path/lib`.
     */
-  def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Resolution, PackageError] = {
+  def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[Resolution, PackageError] = {
     out.println("Resolving Flix dependencies...")
     implicit val immediateDependents: mutable.Map[Manifest, List[Manifest]] = mutable.Map(manifest -> List.empty)
     implicit val manifestToFlixDeps: mutable.Map[Manifest, List[FlixDependency]] = mutable.Map(manifest -> List.empty)
     implicit val tomlDigests: mutable.Map[Manifest, Sha256] = mutable.Map.empty
-    findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey).map(manifests => Resolution(manifest, manifests, immediateDependents.toMap, ListMap.from(manifestToFlixDeps.flatMap { case (m, deps) => deps.map(d => (m, d)) }), tomlDigests.toMap))
+    findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey, lockfile).map(manifests => Resolution(manifest, manifests, immediateDependents.toMap, ListMap.from(manifestToFlixDeps.flatMap { case (m, deps) => deps.map(d => (m, d)) }), tomlDigests.toMap))
   }
 
   /**
@@ -196,14 +196,18 @@ object FlixPackageManager {
   /**
     * Installs all the Flix dependencies of `resolution` into the `lib/` directory of `projectRoot`
     * and returns the installed packages together with the lock file that records them.
+    *
+    * Each package is checked against `lockfile` as it is installed. The lock file that is
+    * returned describes the resolution as it is now, so a dependency that has been added since
+    * `lockfile` was written gains an entry, and one that has been removed loses its own.
     */
-  def installAll(resolution: SecureResolution, projectRoot: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Installation, PackageError] = {
+  def installAll(resolution: SecureResolution, projectRoot: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[Installation, PackageError] = {
     out.println("Downloading Flix dependencies...")
 
     // Every dependency declaration, paired with the manifest of the package it resolves to.
     val installed = resolution.manifestToFlixDeps.map { case (manifest, dep) =>
       val depName: String = s"${dep.username}/${dep.projectName}"
-      install(depName, dep.version, "fpkg", projectRoot, apiKey) match {
+      install(dep, Bootstrap.EXT_FPKG, projectRoot, apiKey, lockfile) match {
         case Ok(fpkg) =>
           val pkg = InstalledPackage(fpkg.path, dep.identifier, resolution.security(manifest), manifest.mounts)
           val entry = LockEntry(dep.version, resolution.tomlDigests(manifest), fpkg.digest)
@@ -219,70 +223,73 @@ object FlixPackageManager {
   }
 
   /**
-    * Installs a flix package from the Github `project`.
-    *
-    * `project` must be of the form `<owner>/<repo>`
+    * Installs the `extension` file of the Github package `dep` depends on.
     *
     * The package is installed at `lib/<owner>/<repo>`
     *
     * There should be only one file with the given extension.
     *
-    * Returns the installed file, whether it was downloaded now or was already cached.
+    * Returns the installed file, whether it was downloaded now or was already cached, and an
+    * error if it is not the file `lockfile` records.
+    *
+    * The check happens here, as the file lands, rather than once everything is installed: a
+    * `flix.toml` is parsed and an `.fpkg` becomes a source of code as soon as they are installed,
+    * and checking afterwards would mean having already acted on bytes that were never verified.
     */
-  private def install(project: String, version: SemVer, extension: String, p: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[InstalledFile, PackageError] = {
-    GitHub.parseProject(project).flatMap { proj =>
-      val lib = Bootstrap.getLibraryDirectory(p)
-      val assetName = s"${proj.repo}-$version.$extension"
-      val dirPath = lib.resolve("github").resolve(proj.owner).resolve(proj.repo).resolve(version.toString)
-      // create the directory if it does not exist
-      Files.createDirectories(dirPath)
-      val assetPath = dirPath.resolve(assetName)
+  private def install(dep: FlixDependency, extension: String, p: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[InstalledFile, PackageError] = {
+    val proj = GitHub.Project(dep.username, dep.projectName)
+    val version = dep.version
+    val lib = Bootstrap.getLibraryDirectory(p)
+    val assetName = s"${proj.repo}-$version.$extension"
+    val dirPath = lib.resolve("github").resolve(proj.owner).resolve(proj.repo).resolve(version.toString)
+    // create the directory if it does not exist
+    Files.createDirectories(dirPath)
+    val assetPath = dirPath.resolve(assetName)
 
-      if (Files.exists(assetPath)) {
-        out.println(s"  Cached `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")}).")
-        digest(assetPath)
-      } else {
-        GitHub.getSpecificRelease(proj, version, apiKey).flatMap { release =>
-          val assets = release.assets.filter(_.name.endsWith(s".$extension"))
-          if (assets.isEmpty) {
-            Err(PackageError.NoSuchFile(project, extension))
-          } else if (assets.length != 1) {
-            Err(PackageError.TooManyFiles(project, extension))
-          } else {
-            // download asset to the directory
-            val asset = assets.head
-            out.print(s"  Downloading `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")})... ")
-            out.flush()
+    if (Files.exists(assetPath)) {
+      out.println(s"  Cached `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")}).")
+      verifyCached(assetPath, dep, extension, lockfile)
+    } else {
+      GitHub.getSpecificRelease(proj, version, apiKey).flatMap { release =>
+        val assets = release.assets.filter(_.name.endsWith(s".$extension"))
+        if (assets.isEmpty) {
+          Err(PackageError.NoSuchFile(proj.toString, extension))
+        } else if (assets.length != 1) {
+          Err(PackageError.TooManyFiles(proj.toString, extension))
+        } else {
+          // download asset to the directory
+          val asset = assets.head
+          out.print(s"  Downloading `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")})... ")
+          out.flush()
+          try {
+            val stream = GitHub.downloadAsset(asset)
             try {
-              val stream = GitHub.downloadAsset(asset)
+              Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
+            } finally {
+              // Best-effort: the stream is already broken if the copy above failed, so a
+              // close failure here must not mask that error.
+              try stream.close() catch { case _: IOException => () }
+            }
+          } catch {
+            case e: IOException =>
+              // Remove a truncated file so the cache check above doesn't trust it next run. A
+              // failure here is attached rather than swallowed, since it means the filesystem
+              // itself is in an unexpected state -- but it must not prevent the original
+              // download error from being reported below.
               try {
-                Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
-              } finally {
-                // Best-effort: the stream is already broken if the copy above failed, so a
-                // close failure here must not mask that error.
-                try stream.close() catch { case _: IOException => () }
+                Files.deleteIfExists(assetPath)
+              } catch {
+                case e2: IOException => e.addSuppressed(e2)
               }
-            } catch {
-              case e: IOException =>
-                // Remove a truncated file so the cache check above doesn't trust it next run. A
-                // failure here is attached rather than swallowed, since it means the filesystem
-                // itself is in an unexpected state -- but it must not prevent the original
-                // download error from being reported below.
-                try {
-                  Files.deleteIfExists(assetPath)
-                } catch {
-                  case e2: IOException => e.addSuppressed(e2)
-                }
-                out.println(s"ERROR: ${e.getMessage}.")
-                return Err(PackageError.DownloadError(asset, Some(e.getMessage)))
-            }
-            if (Files.exists(assetPath)) {
-              out.println(s"OK.")
-              digest(assetPath)
-            } else {
-              out.println(s"ERROR: File was not created.")
-              Err(PackageError.DownloadError(asset, None))
-            }
+              out.println(s"ERROR: ${e.getMessage}.")
+              return Err(PackageError.DownloadError(asset, Some(e.getMessage)))
+          }
+          if (Files.exists(assetPath)) {
+            out.println(s"OK.")
+            verifyDownloaded(assetPath, dep, extension, lockfile)
+          } else {
+            out.println(s"ERROR: File was not created.")
+            Err(PackageError.DownloadError(asset, None))
           }
         }
       }
@@ -306,12 +313,64 @@ object FlixPackageManager {
   }
 
   /**
+    * Returns the file at `path`, which was already in `lib/`, together with its digest, and an
+    * error if `lockfile` records a different digest for it.
+    */
+  private def verifyCached(path: Path, dep: FlixDependency, extension: String, lockfile: Lockfile): Result[InstalledFile, PackageError] = {
+    digest(path).flatMap { file =>
+      recordedDigest(dep, extension, lockfile) match {
+        case Some(expected) if expected != file.digest =>
+          Err(PackageError.MismatchedCachedDigest(dep.identifier, dep.version, extension, path, expected, file.digest))
+        case _ =>
+          Ok(file)
+      }
+    }
+  }
+
+  /**
+    * Returns the file at `path`, which was just downloaded, together with its digest, and an
+    * error if `lockfile` records a different digest for it.
+    */
+  private def verifyDownloaded(path: Path, dep: FlixDependency, extension: String, lockfile: Lockfile): Result[InstalledFile, PackageError] = {
+    digest(path).flatMap { file =>
+      recordedDigest(dep, extension, lockfile) match {
+        case Some(expected) if expected != file.digest =>
+          Err(PackageError.MismatchedDownloadedDigest(dep.identifier, dep.version, extension, path, expected, file.digest))
+        case _ =>
+          Ok(file)
+      }
+    }
+  }
+
+  /**
+    * Returns the digest that `lockfile` records for the `extension` file of the package `dep`
+    * depends on, if it records one at that version.
+    *
+    * A package that `lockfile` does not record, or records at another version, has no digest
+    * here and so is not checked. That is a dependency that was added or whose version was
+    * changed since the lock file was written, and there is nothing yet to compare it against.
+    * It is recorded when the lock file is written again.
+    */
+  private def recordedDigest(dep: FlixDependency, extension: String, lockfile: Lockfile): Option[Sha256] = {
+    lockfile.packages.get(dep.identifier).filter(_.version == dep.version).flatMap {
+      entry =>
+        // A package is installed as exactly these two files, and the lock file holds a digest of
+        // each. Anything else is not something a lock file describes.
+        extension match {
+          case Bootstrap.EXT_TOML => Some(entry.toml)
+          case Bootstrap.EXT_FPKG => Some(entry.fpkg)
+          case _ => None
+        }
+    }
+  }
+
+  /**
     * Recursively finds all transitive dependencies of `manifest`.
     * Downloads any missing toml files for found dependencies and
     * parses them to manifests. Returns the list of manifests.
     * `res` is the list of Manifests found so far to avoid duplicates.
     */
-  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest], apiKey: Option[String])(implicit immediateDependents: mutable.Map[Manifest, List[Manifest]], manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]], tomlDigests: mutable.Map[Manifest, Sha256], formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
+  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest], apiKey: Option[String], lockfile: Lockfile)(implicit immediateDependents: mutable.Map[Manifest, List[Manifest]], manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]], tomlDigests: mutable.Map[Manifest, Sha256], formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
     // find Flix dependencies of the current manifest
     val flixDeps = findFlixDependencies(manifest)
 
@@ -319,7 +378,7 @@ object FlixPackageManager {
       // download toml files
       tomlFiles <- traverse(flixDeps) { dep =>
         val depName = s"${dep.username}/${dep.projectName}"
-        install(depName, dep.version, Bootstrap.EXT_TOML, path, apiKey).map(toml => (toml, dep))
+        install(dep, Bootstrap.EXT_TOML, path, apiKey, lockfile).map(toml => (toml, dep))
       }
 
       // parse manifests
@@ -336,7 +395,7 @@ object FlixPackageManager {
 
       // do recursive calls for all dependencies
       for (m <- newManifests) {
-        findTransitiveDependenciesRec(m, path, newRes, apiKey) match {
+        findTransitiveDependenciesRec(m, path, newRes, apiKey, lockfile) match {
           case Ok(t) => newRes = newRes ++ t.filter(!newRes.contains(_))
           case Err(e) => return Err(e)
         }
