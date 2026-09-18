@@ -50,7 +50,7 @@ object LockfileParser {
     } catch {
       case e: IOException => return Err(LockError.IOError(p, e.getMessage))
     }
-    createLockfile(parser, p)
+    mkLockFile(parser, p)
   }
 
   /**
@@ -64,13 +64,13 @@ object LockfileParser {
     } catch {
       case e: IOException => return Err(LockError.IOError(p, e.getMessage))
     }
-    createLockfile(parser, p)
+    mkLockFile(parser, p)
   }
 
   /**
     * Creates a [[Lockfile]] from `parser`, which should hold the lock file at `p`.
     */
-  private def createLockfile(parser: TomlParseResult, p: Path): Result[Lockfile, LockError] = {
+  private def mkLockFile(parser: TomlParseResult, p: Path): Result[Lockfile, LockError] = {
     val errors = parser.errors
     if (errors.size() > 0) {
       val sb = new StringBuilder()
