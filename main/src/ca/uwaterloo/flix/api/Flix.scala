@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Mountpoint, Origin, SecurityContext, Source, SourceName}
+import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Mountpoint, Origin, PackageId, SecurityContext, Source, SourceName}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.jvm.{ByteBuddyJavaTypeProvider, DependencyClassPath, ExternalJarLoader, JavaTypeProvider}
@@ -76,17 +76,17 @@ object Flix {
   * @param mounts the mount table of the root project, as its `flix.toml` declares it. Empty when
   *               the project has no manifest.
   */
-class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil, mounts: Map[Mountpoint, String] = Map.empty) extends AutoCloseable {
+class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil, mounts: Map[Mountpoint, PackageId] = Map.empty) extends AutoCloseable {
 
   /**
     * The mount table of the root project.
     */
-  val rootMounts: Map[Mountpoint, String] = mounts
+  val rootMounts: Map[Mountpoint, PackageId] = mounts
 
   /**
-    * The mount table of each package, by package identifier.
+    * The mount table of each package.
     */
-  val packageMounts: Map[String, Map[Mountpoint, String]] = pkgs.map(pkg => pkg.id -> pkg.mounts).toMap
+  val packageMounts: Map[PackageId, Map[Mountpoint, PackageId]] = pkgs.map(pkg => pkg.id -> pkg.mounts).toMap
 
   /**
     * The packages that something in the dependency graph mounts.
@@ -95,7 +95,7 @@ class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil, mounts: M
     * package that nothing mounts keeps sharing the root namespace, as it did before mounts
     * existed. Transitional: every package is mounted once a mount is required.
     */
-  val mountedPackages: Set[String] =
+  val mountedPackages: Set[PackageId] =
     (rootMounts.values ++ packageMounts.values.flatMap(_.values)).toSet
 
   /**

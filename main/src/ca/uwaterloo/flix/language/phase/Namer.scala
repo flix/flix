@@ -66,7 +66,7 @@ object Namer {
       val modules = buildModuleMap(units)
 
       // What each viewer, the root project and every package, reaches through its own mounts.
-      def resolveMounts(table: Map[Mountpoint, String]): Map[Mountpoint, Name.NName] =
+      def resolveMounts(table: Map[Mountpoint, PackageId]): Map[Mountpoint, Name.NName] =
         table.map { case (name, id) => name -> packageRoot(id) }
 
       val rootMounts = resolveMounts(flix.rootMounts)
@@ -81,7 +81,7 @@ object Namer {
   /**
     * Returns the namespace the declarations of the package `id` are named under.
     */
-  private def packageRoot(id: String): Name.NName = Name.mkUnlocatedNName(List(Origin.canonicalRoot(id)))
+  private def packageRoot(id: PackageId): Name.NName = Name.mkUnlocatedNName(List(id.canonicalRoot))
 
   /**
     * Finds every mount that shadows a name the mounting code could otherwise reach.
@@ -98,7 +98,7 @@ object Namer {
     */
   private def checkMountCollisions(symbols: Map[Name.NName, Map[String, List[Declaration]]],
                                    rootMounts: Map[Mountpoint, Name.NName],
-                                   mounts: Map[String, Map[Mountpoint, Name.NName]])(implicit flix: Flix): List[NameError] = {
+                                   mounts: Map[PackageId, Map[Mountpoint, Name.NName]])(implicit flix: Flix): List[NameError] = {
     // Every viewer: the origin of its own declarations, the namespace it is named under, and its mounts.
     val root = (Origin.User: Origin, Name.RootNS, rootMounts)
     val packages = mounts.toList.sortBy { case (id, _) => id }.map {

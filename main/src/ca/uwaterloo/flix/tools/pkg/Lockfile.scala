@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.language.ast.shared.PackageId
+
 object Lockfile {
 
   /**
@@ -48,25 +50,24 @@ object Lockfile {
     sb.append("[lock]").append(NewLine)
     sb.append("version = ").append(CurrentVersion).append(NewLine)
 
-    val entries = lockfile.packages.toList.sortBy { case (identifier, _) => identifier }
-    for ((identifier, entry) <- entries) {
+    val entries = lockfile.packages.toList.sortBy { case (id, _) => id }
+    for ((id, entry) <- entries) {
       sb.append(NewLine)
-      appendEntry(sb, identifier, entry)
+      appendEntry(sb, id, entry)
     }
 
     sb.toString
   }
 
   /**
-    * Appends the entry of the package named by `identifier` to `sb`.
+    * Appends the entry of `id` to `sb`.
     *
     * The identifier is written as a quoted key, so that the `:` and `/` it contains are part of
-    * the key rather than separators. It needs no escaping: an identifier is built from a
-    * repository name and the two names of a GitHub project, which [[ManifestParser]] has already
-    * checked to be alphanumeric.
+    * the key rather than separators. It needs no escaping: every part of a [[PackageId]] is
+    * alphanumeric.
     */
-  private def appendEntry(sb: StringBuilder, identifier: String, entry: LockEntry): Unit = {
-    sb.append("[packages.\"").append(identifier).append("\"]").append(NewLine)
+  private def appendEntry(sb: StringBuilder, id: PackageId, entry: LockEntry): Unit = {
+    sb.append("[packages.\"").append(id).append("\"]").append(NewLine)
     sb.append("version = \"").append(entry.version).append("\"").append(NewLine)
     sb.append("toml    = \"").append(entry.toml).append("\"").append(NewLine)
     sb.append("fpkg    = \"").append(entry.fpkg).append("\"").append(NewLine)
@@ -103,7 +104,6 @@ object Lockfile {
   * fpkg    = "sha256:08f86bebb2737f6a6f0fb23c6f5da2cec255404e4fb440034d6608697a8d41be"
   * }}}
   *
-  * @param packages the entry of each package, by the identifier of that package, e.g.
-  *                 `github:flix/museum`.
+  * @param packages the entry of each package, e.g. `github:flix/museum`.
   */
-case class Lockfile(packages: Map[String, LockEntry])
+case class Lockfile(packages: Map[PackageId, LockEntry])

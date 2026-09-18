@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Version}
+import ca.uwaterloo.flix.language.ast.shared.{PackageId, Repository}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{FileOps, Formatter, Result, Sha256}
 import org.scalatest.DoNotDiscover
@@ -99,7 +100,7 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
     val stale = Lockfile(LockfileParser.parse(p.resolve(Bootstrap.FLIX_LOCK)).unsafeGet.packages
-      + ("github:flix/gone" -> LockEntry(SemVer(9, 9, 9), Sha256("a" * 64), Sha256("b" * 64))))
+      + (PackageId(Repository.GitHub, "flix", "gone") -> LockEntry(SemVer(9, 9, 9), Sha256("a" * 64), Sha256("b" * 64))))
     Files.writeString(p.resolve(Bootstrap.FLIX_LOCK), Lockfile.format(stale))
 
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
@@ -578,7 +579,7 @@ class TestBootstrap extends AnyFunSuite {
   /**
     * The identifier of the package the lock file tests depend on.
     */
-  private val ClerkIdentifier: String = "github:flix/museum-clerk"
+  private val ClerkIdentifier: PackageId = PackageId(Repository.GitHub, "flix", "museum-clerk")
 
   /**
     * Returns a new project directory whose manifest declares a single Flix dependency.

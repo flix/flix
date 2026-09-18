@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, SecurityContext}
 
 import java.nio.file.Path
 
@@ -23,9 +23,9 @@ import java.nio.file.Path
   * A Flix package installed on disk.
   *
   * @param path   the path to the `.fpkg` file.
-  * @param id     the identifier of the package, e.g. `github:flix/museum-clerk`.
+  * @param id     the package, e.g. `github:flix/museum-clerk`.
   * @param sctx   the security context the package is compiled under.
   * @param mounts the mount table of the package, as its own manifest declares it: the name of
-  *               each mount to the identifier of the dependency it names.
+  *               each mount to the dependency it names.
   */
-case class InstalledPackage(path: Path, id: String, sctx: SecurityContext, mounts: Map[Mountpoint, String])
+case class InstalledPackage(path: Path, id: PackageId, sctx: SecurityContext, mounts: Map[Mountpoint, PackageId])

@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.language.ast.shared.Mountpoint
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId}
 import ca.uwaterloo.flix.util.Formatter
 
 import java.nio.file.Path
@@ -103,9 +103,9 @@ object ManifestError {
          |""".stripMargin
   }
 
-  case class FlixDependencyDuplicateMount(path: Path, mount: Mountpoint, lib1: String, lib2: String) extends ManifestError {
+  case class FlixDependencyDuplicateMount(path: Path, mount: Mountpoint, lib1: PackageId, lib2: PackageId) extends ManifestError {
     override def message(f: Formatter): String =
-      s"""The Flix dependencies ${f.bold(lib1)} and ${f.bold(lib2)} share the mount ${f.red(mount.toString)}.
+      s"""The Flix dependencies ${f.bold(lib1.toString)} and ${f.bold(lib2.toString)} share the mount ${f.red(mount.toString)}.
          |Every Flix dependency must have a distinct mount. Specify one explicitly:
          |  "$lib2" = { version = "x.y.z", mount = "ModuleName" }
          |The toml file was found at ${f.cyan(path.toString)}.

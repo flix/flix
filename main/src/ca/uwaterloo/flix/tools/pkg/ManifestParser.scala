@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, Repository, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result
@@ -37,8 +37,6 @@ object ManifestParser {
     * A `.` is not allowed: the name becomes part of the package's canonical root, which is a JVM
     * package path, and a `.` is the separator there as well as in a Flix namespace.
     */
-  private val ValidName = "[A-Za-z0-9_-]+".r
-
   /**
     * Creates a Manifest from the .toml file
     * at path `p` and returns an error if
@@ -307,23 +305,25 @@ object ManifestParser {
     depKey match {
       case validPkg(repoStr, username, projectName) =>
         val repo = Repository.mkRepository(repoStr) match {
-          case Ok(r) => r
-          case Err(_) => return Err(ManifestError.UnsupportedRepository(p, repoStr))
+          case Some(r) => r
+          case None => return Err(ManifestError.UnsupportedRepository(p, repoStr))
         }
 
         // Ensure the username is valid.
-        if (!username.matches(s"^$ValidName$$"))
+        if (!PackageId.isValidName(username))
           return Err(ManifestError.IllegalName(p, depKey))
 
         // Ensure the project name is valid.
-        if (!projectName.matches(s"^$ValidName$$"))
+        if (!PackageId.isValidName(projectName))
           return Err(ManifestError.IllegalName(p, depKey))
+
+        val id = PackageId(repo, username, projectName)
 
         // If the dependency maps to a string, it declares only a version and has no mount.
         if (deps.isString(depKey)) {
           for (
             ver <- getFlixVersion(deps, depKey, p)
-          ) yield FlixDependency(repo, username, projectName, ver, None, SecurityContext.Plain)
+          ) yield FlixDependency(id, ver, None, SecurityContext.Plain)
 
           // If the dependency maps to a table, get the version, security, and mount.
         } else if (deps.isTable(depKey)) {
@@ -337,7 +337,7 @@ object ManifestParser {
             ver <- getFlixVersion(depTbl, verKey, p);
             mount <- getMount(depTbl, mountKey, depKey, p);
             security <- getSecurity(depTbl, securityKey, p)
-          ) yield FlixDependency(repo, username, projectName, ver, mount, security)
+          ) yield FlixDependency(id, ver, mount, security)
         } else {
           Err(ManifestError.VersionTypeError(p, depKey, deps.get(depKey)))
         }
@@ -419,7 +419,7 @@ object ManifestParser {
     val seen = mutable.Map.empty[Mountpoint, FlixDependency]
     for ((mount, dep) <- mountedDeps) {
       seen.get(mount) match {
-        case Some(prev) => return Err(ManifestError.FlixDependencyDuplicateMount(p, mount, prev.identifier, dep.identifier))
+        case Some(prev) => return Err(ManifestError.FlixDependencyDuplicateMount(p, mount, prev.id, dep.id))
         case None => seen += mount -> dep
       }
     }

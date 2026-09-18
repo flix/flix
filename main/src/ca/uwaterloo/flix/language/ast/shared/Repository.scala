@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Andreas Stenbæk Larsen
+ * Copyright 2026 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.tools.pkg
+package ca.uwaterloo.flix.language.ast.shared
 
-sealed trait RepositoryError
+/**
+  * A host that Flix packages are published to.
+  */
+sealed trait Repository
 
-object RepositoryError {
-  case class UnsupportedRepositoryError(s: String) extends RepositoryError
+object Repository {
+
+  /** Returns `s` as a repository, if it names one Flix can download a package from. */
+  def mkRepository(s: String): Option[Repository] = s match {
+    case "github" => Some(Repository.GitHub)
+    case _ => None
+  }
+
+  /** A GitHub repository. */
+  case object GitHub extends Repository {
+    override def toString: String = "github"
+  }
+
 }

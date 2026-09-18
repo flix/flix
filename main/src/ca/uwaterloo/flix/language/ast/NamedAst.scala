@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Mountpoint, Polarity, PredicateAndArity, SolveMode, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Mountpoint, PackageId, Polarity, PredicateAndArity, SolveMode, Source}
 import ca.uwaterloo.flix.util.collection.Nel
 
 
@@ -28,9 +28,9 @@ object NamedAst {
                   uses: Map[Name.NName, List[UseOrImport]],
                   units: Map[Source, CompilationUnit],
                   modules: Map[Symbol.ModuleSym, Declaration.Mod],
-                  mounts: Map[String, Map[Mountpoint, Name.NName]],
+                  mounts: Map[PackageId, Map[Mountpoint, Name.NName]],
                   rootMounts: Map[Mountpoint, Name.NName],
-                  mountedPackages: Set[String],
+                  mountedPackages: Set[PackageId],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   tokens: Map[Source, Array[Token]])

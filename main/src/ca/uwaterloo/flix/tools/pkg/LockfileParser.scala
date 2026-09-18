@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.language.ast.shared.PackageId
 import ca.uwaterloo.flix.util.{Result, Sha256}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 import org.tomlj.{Toml, TomlInvalidTypeException, TomlParseResult, TomlTable}
@@ -139,12 +140,12 @@ object LockfileParser {
   }
 
   /**
-    * Returns the entry of every package in the lock file at `p`, by identifier.
+    * Returns the entry of every package in the lock file at `p`.
     *
     * A lock file with no `packages` table records no packages, which is what a project with no
     * Flix dependencies locks.
     */
-  private def collectPackages(parser: TomlParseResult, p: Path): Result[Map[String, LockEntry], LockError] = {
+  private def collectPackages(parser: TomlParseResult, p: Path): Result[Map[PackageId, LockEntry], LockError] = {
     val packages = try {
       parser.getTable("packages")
     } catch {
@@ -157,18 +158,21 @@ object LockfileParser {
       return Ok(Map.empty)
     }
 
-    val identifiers = packages.keySet().asScala.toSet
-    traverse(identifiers)(identifier => collectPackage(packages, identifier, p)).map(_.toMap)
+    // A key that is not an identifier Flix could have written names no package, so it matches no
+    // dependency. It is dropped here, and so is not written back the next time the file is written.
+    val ids = packages.keySet().asScala.toSet.flatMap(PackageId.mkPackageId)
+    traverse(ids)(id => collectPackage(packages, id, p)).map(_.toMap)
   }
 
   /**
-    * Returns the entry that `packages` holds for the package named by `identifier`.
+    * Returns the entry that `packages` holds for `id`.
     *
-    * The identifier is not checked to be one that Flix could have written. A lock file that names
-    * a package the project does not depend on is not an error: the entry is simply not one that
-    * any dependency matches, and it is dropped the next time the file is written.
+    * A lock file that names a package the project does not depend on is not an error: the entry
+    * is simply not one that any dependency matches, and it is dropped the next time the file is
+    * written.
     */
-  private def collectPackage(packages: TomlTable, identifier: String, p: Path): Result[(String, LockEntry), LockError] = {
+  private def collectPackage(packages: TomlTable, id: PackageId, p: Path): Result[(PackageId, LockEntry), LockError] = {
+    val identifier = id.toString
     // The identifier contains `:` and `/`, so it has to be quoted to be looked up as one key.
     val key = s"\"$identifier\""
 
@@ -198,7 +202,7 @@ object LockfileParser {
 
       fpkg <- getRequiredString(entry, identifier, "fpkg", p);
       fpkgDigest <- toDigest(fpkg, identifier, "fpkg", p)
-    ) yield (identifier, LockEntry(semVer, tomlDigest, fpkgDigest))
+    ) yield (id, LockEntry(semVer, tomlDigest, fpkgDigest))
   }
 
   /**

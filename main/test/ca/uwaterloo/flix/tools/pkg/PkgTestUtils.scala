@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, InstalledPackage, Version}
-import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, SecurityContext}
 import ca.uwaterloo.flix.util.{Formatter, Options}
 
 import java.nio.file.Path
@@ -65,7 +65,7 @@ object PkgTestUtils {
     * Returns a new [[Flix]] object with the given packages and root mount table that has the
     * GitHub token of the CI runner set if available.
     */
-  def mkFlix(pkgs: List[InstalledPackage], mounts: Map[Mountpoint, String]): Flix = {
+  def mkFlix(pkgs: List[InstalledPackage], mounts: Map[Mountpoint, PackageId]): Flix = {
     val flix = new Flix(pkgs = pkgs, mounts = mounts)
     flix.setOptions(flix.options.copy(githubToken = gitHubToken, progress = false))
   }

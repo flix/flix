@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.language.ast.shared.PackageId
 import ca.uwaterloo.flix.util.Sha256
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -28,6 +29,9 @@ class TestLockfileParser extends AnyFunSuite {
     * The path a lock file parsed from a string is reported as coming from.
     */
   private val LockPath: Path = Path.of("flix.lock")
+
+  /** Returns `s` as a package identifier. */
+  private def pkg(s: String): PackageId = PackageId.mkPackageId(s).get
 
   /**
     * Returns the digest of `s`, for use as a stand-in for the digest of a real file.
@@ -54,8 +58,8 @@ class TestLockfileParser extends AnyFunSuite {
     * A lock file that records two packages.
     */
   private val TwoPackages: Lockfile = Lockfile(Map(
-    "github:flix/museum" -> LockEntry(SemVer(1, 2, 3), digestOf("museum.toml"), digestOf("museum.fpkg")),
-    "github:flix/museum-clerk" -> LockEntry(SemVer(0, 4, 0), digestOf("clerk.toml"), digestOf("clerk.fpkg"))
+    pkg("github:flix/museum") -> LockEntry(SemVer(1, 2, 3), digestOf("museum.toml"), digestOf("museum.fpkg")),
+    pkg("github:flix/museum-clerk") -> LockEntry(SemVer(0, 4, 0), digestOf("clerk.toml"), digestOf("clerk.fpkg"))
   ))
 
   test("parse.empty.01") {
@@ -84,13 +88,13 @@ class TestLockfileParser extends AnyFunSuite {
       Sha256("0" * 64),
       Sha256("1" * 64)
     )
-    assert(lockfile.packages == Map("github:flix/museum" -> expected))
+    assert(lockfile.packages == Map(pkg("github:flix/museum") -> expected))
   }
 
   test("parse.02") {
     // The identifier keeps the `:` and the `/` it is written with.
     val lockfile = parse(Lockfile.format(TwoPackages))
-    assert(lockfile.packages.keySet == Set("github:flix/museum", "github:flix/museum-clerk"))
+    assert(lockfile.packages.keySet == Set(pkg("github:flix/museum"), pkg("github:flix/museum-clerk")))
   }
 
   test("format.01") {
@@ -99,7 +103,7 @@ class TestLockfileParser extends AnyFunSuite {
 
   test("format.02") {
     val lockfile = Lockfile(Map(
-      "github:flix/museum" -> LockEntry(SemVer(1, 2, 3), Sha256("a" * 64), Sha256("b" * 64))
+      pkg("github:flix/museum") -> LockEntry(SemVer(1, 2, 3), Sha256("a" * 64), Sha256("b" * 64))
     ))
     val expected =
       "[lock]\n" +
@@ -115,12 +119,12 @@ class TestLockfileParser extends AnyFunSuite {
   test("format.03") {
     // Entries are written in order of identifier, whatever order the map holds them in.
     val forwards = Lockfile(Map(
-      "github:flix/a" -> LockEntry(SemVer(1, 0, 0), Sha256("a" * 64), Sha256("a" * 64)),
-      "github:flix/b" -> LockEntry(SemVer(1, 0, 0), Sha256("b" * 64), Sha256("b" * 64))
+      pkg("github:flix/a") -> LockEntry(SemVer(1, 0, 0), Sha256("a" * 64), Sha256("a" * 64)),
+      pkg("github:flix/b") -> LockEntry(SemVer(1, 0, 0), Sha256("b" * 64), Sha256("b" * 64))
     ))
     val backwards = Lockfile(Map(
-      "github:flix/b" -> LockEntry(SemVer(1, 0, 0), Sha256("b" * 64), Sha256("b" * 64)),
-      "github:flix/a" -> LockEntry(SemVer(1, 0, 0), Sha256("a" * 64), Sha256("a" * 64))
+      pkg("github:flix/b") -> LockEntry(SemVer(1, 0, 0), Sha256("b" * 64), Sha256("b" * 64)),
+      pkg("github:flix/a") -> LockEntry(SemVer(1, 0, 0), Sha256("a" * 64), Sha256("a" * 64))
     ))
     assert(Lockfile.format(forwards) == Lockfile.format(backwards))
     assert(Lockfile.format(forwards).indexOf("github:flix/a") < Lockfile.format(forwards).indexOf("github:flix/b"))

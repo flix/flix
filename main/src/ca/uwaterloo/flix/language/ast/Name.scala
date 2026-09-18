@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.Origin
+import ca.uwaterloo.flix.language.ast.shared.PackageId
 
 object Name {
 
@@ -134,7 +134,7 @@ object Name {
     */
   def nsToString(parts: List[String]): String = parts match {
     case Nil => ""
-    case head :: rest => (Origin.packageOf(head).getOrElse(head) :: rest).mkString(".")
+    case head :: rest => (PackageId.ofCanonicalRoot(head).map(_.toString).getOrElse(head) :: rest).mkString(".")
   }
 
   case class NName(idents: List[Ident], loc: SourceLocation) {

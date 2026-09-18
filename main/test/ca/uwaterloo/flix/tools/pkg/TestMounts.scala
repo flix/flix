@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, InstalledPackage}
-import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, Repository, SecurityContext}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.{FileOps, Formatter}
@@ -11,7 +11,7 @@ import java.nio.file.{Files, Path}
 
 class TestMounts extends AnyFunSuite {
 
-  private val Id: String = "github:test/dep"
+  private val Id: PackageId = PackageId(Repository.GitHub, "test", "dep")
 
   /** Builds a package that declares `pub mod Board` and a non-public `mod Secret`. */
   private def mkPkg(): Path = {
@@ -26,7 +26,7 @@ class TestMounts extends AnyFunSuite {
     p.resolve("artifact").resolve(p.getFileName.toString + ".fpkg")
   }
 
-  private def check(pkgPath: Path, mounts: Map[Mountpoint, String], main: String): List[String] = {
+  private def check(pkgPath: Path, mounts: Map[Mountpoint, PackageId], main: String): List[String] = {
     val pkg = InstalledPackage(pkgPath, Id, SecurityContext.Unrestricted, Map.empty)
     val flix = PkgTestUtils.mkFlix(List(pkg), mounts)
     flix.addSource(Path.of("Main.flix"), main, SecurityContext.Unrestricted)
@@ -53,7 +53,7 @@ class TestMounts extends AnyFunSuite {
 
   test("flat.reachable") {
     val pkg = mkPkg()
-    val mounts = Map.empty[Mountpoint, String]
+    val mounts = Map.empty[Mountpoint, PackageId]
     assertResult(Nil)(check(pkg, mounts, "def main(): Unit \\ IO = println(Board.place())"))
   }
 
@@ -61,7 +61,7 @@ class TestMounts extends AnyFunSuite {
     // A package nothing mounts keeps sharing the root namespace, so its non-public modules are
     // reachable exactly as they were before mounts existed.
     val pkg = mkPkg()
-    val mounts = Map.empty[Mountpoint, String]
+    val mounts = Map.empty[Mountpoint, PackageId]
     assertResult(Nil)(check(pkg, mounts, "def main(): Unit \\ IO = println(Secret.hidden())"))
   }
 
