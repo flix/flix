@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{PackageId, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.{Asset, Project}
 import ca.uwaterloo.flix.util.{Formatter, Sha256}
@@ -155,9 +155,9 @@ object PackageError {
     * @param expected   the digest that `flix.lock` records.
     * @param actual     the digest of the file that is there.
     */
-  case class MismatchedCachedDigest(identifier: String, version: SemVer, extension: String, path: Path, expected: Sha256, actual: Sha256) extends PackageError {
+  case class MismatchedCachedDigest(identifier: PackageId, version: SemVer, extension: String, path: Path, expected: Sha256, actual: Sha256) extends PackageError {
     override def message(f: Formatter): String =
-      s"""The ${f.bold(extension)} of ${f.bold(identifier)} ${f.bold(version.toString)} is not the one ${f.bold("flix.lock")} records.
+      s"""The ${f.bold(extension)} of ${f.bold(identifier.toString)} ${f.bold(version.toString)} is not the one ${f.bold("flix.lock")} records.
          |   expected: ${f.cyan(expected.toString)}
          |  but found: ${f.red(actual.toString)}
          |
@@ -181,9 +181,9 @@ object PackageError {
     * @param expected   the digest that `flix.lock` records.
     * @param actual     the digest of the file that was downloaded.
     */
-  case class MismatchedDownloadedDigest(identifier: String, version: SemVer, extension: String, path: Path, expected: Sha256, actual: Sha256) extends PackageError {
+  case class MismatchedDownloadedDigest(identifier: PackageId, version: SemVer, extension: String, path: Path, expected: Sha256, actual: Sha256) extends PackageError {
     override def message(f: Formatter): String =
-      s"""The ${f.bold(extension)} of ${f.bold(identifier)} ${f.bold(version.toString)} is not the one ${f.bold("flix.lock")} records.
+      s"""The ${f.bold(extension)} of ${f.bold(identifier.toString)} ${f.bold(version.toString)} is not the one ${f.bold("flix.lock")} records.
          |        expected: ${f.cyan(expected.toString)}
          |  but downloaded: ${f.red(actual.toString)}
          |
@@ -280,10 +280,10 @@ object PackageError {
     * @param mounted    the dependents that mount it.
     * @param unmounted  the dependents that do not.
     */
-  case class InconsistentMounts(identifier: String, mounted: List[String], unmounted: List[String]) extends PackageError {
+  case class InconsistentMounts(identifier: PackageId, mounted: List[String], unmounted: List[String]) extends PackageError {
     override def message(f: Formatter): String = {
       s"""${f.underline("Found a package that is mounted by some of its dependents and not by others:")}
-         |  The package '${f.red(identifier)}' is mounted by: ${mounted.mkString(", ")}
+         |  The package '${f.red(identifier.toString)}' is mounted by: ${mounted.mkString(", ")}
          |  but not by: ${unmounted.mkString(", ")}
          |
          |  A mounted package is reachable only under its mount, so the dependents that do not
@@ -301,14 +301,14 @@ object PackageError {
     * @param requirements every dependent that requires the package, paired with the
     *                     dependency declaration that states the required version.
     */
-  case class MultipleVersions(identifier: String, requirements: List[(Manifest, FlixDependency)]) extends PackageError {
+  case class MultipleVersions(identifier: PackageId, requirements: List[(Manifest, FlixDependency)]) extends PackageError {
     override def message(f: Formatter): String = {
       val versions = requirements.map { case (_, dep) => dep.version }.distinct
       val lines = requirements.map {
         case (dependent, dep) => s"    ${f.bold(dep.version.toString)} required by '${dependent.name}'"
       }
       s"""${f.underline("Found multiple versions of the same package in the dependency graph:")}
-         |  The package '${f.red(identifier)}' is required at ${versions.length} different versions:
+         |  The package '${f.red(identifier.toString)}' is required at ${versions.length} different versions:
          |
          |${lines.mkString(System.lineSeparator())}
          |
@@ -328,7 +328,7 @@ object PackageError {
   case class MismatchedVersions(manifest: Manifest, dependency: FlixDependency) extends PackageError {
     override def message(f: Formatter): String = {
       s"""Mismatched versions:
-         |  Dependency ${dependency.identifier} required version ${dependency.version}
+         |  Dependency ${dependency.id} required version ${dependency.version}
          |  but the manifest declared version ${manifest.version}
          |
          |  Required: ${dependency.version}

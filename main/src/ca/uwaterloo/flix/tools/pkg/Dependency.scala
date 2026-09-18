@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, SecurityContext}
 
 import java.net.{URI, URL}
 
@@ -30,15 +30,10 @@ object Dependency {
     *              declares one. A dependency without a mount is reachable unqualified instead, as
     *              it was before mounts existed. Transitional: a mount becomes required.
     */
-  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, mount: Option[Mountpoint], sctx: SecurityContext) extends Dependency {
-    val identifier: String = {
-      val r = repo.toString.toLowerCase
-      s"$r:$username/$projectName"
-    }
-
+  case class FlixDependency(id: PackageId, version: SemVer, mount: Option[Mountpoint], sctx: SecurityContext) extends Dependency {
     override def toString: String = {
       val mountStr = mount.map(m => s"mount = \"$m\", ").getOrElse("")
-      s"\"$identifier\" = { version = \"$version\", ${mountStr}security = \"$sctx\" }"
+      s"\"$id\" = { version = \"$version\", ${mountStr}security = \"$sctx\" }"
     }
   }
 

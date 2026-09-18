@@ -1562,7 +1562,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         None
       else
         Some(List(
-          s"${dep.username}/${dep.projectName}",
+          s"${dep.id.owner}/${dep.id.name}",
           dep.version.toString,
           updates.major.map(v => v.toString).getOrElse(""),
           updates.minor.map(v => v.toString).getOrElse(""),

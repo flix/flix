@@ -16,7 +16,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 
 case class Manifest(name: String,
@@ -30,8 +30,8 @@ case class Manifest(name: String,
     * Returns the mount table of this manifest: the name of each mount to the identifier of the
     * dependency it names. A dependency that declares no mount does not appear.
     */
-  def mounts: Map[Mountpoint, String] =
-    flixDependencies.flatMap(dep => dep.mount.map(_ -> dep.identifier)).toMap
+  def mounts: Map[Mountpoint, PackageId] =
+    flixDependencies.flatMap(dep => dep.mount.map(_ -> dep.id)).toMap
 
   def mavenDependencies: List[Dependency.MavenDependency] = dependencies.collect { case dep: Dependency.MavenDependency => dep }
 
@@ -84,7 +84,7 @@ object Manifest {
   }
 
   private def mkFlixDependency(dep: Dependency.FlixDependency): TomlEntry = {
-    val key = TomlKey(dep.identifier)
+    val key = TomlKey(dep.id.toString)
     val version = TomlEntry.Present(TomlKey("version"), TomlExp.TomlValue(dep.version))
     // The default mount and the default security context are not rendered.
     val mount = dep.mount.map(m => TomlEntry.Present(TomlKey("mount"), TomlExp.TomlValue(m))).getOrElse(TomlEntry.Absent)

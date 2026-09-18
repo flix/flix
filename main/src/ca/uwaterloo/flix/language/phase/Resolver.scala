@@ -3016,7 +3016,7 @@ object Resolver {
     */
   private def rootOf(loc: SourceLocation, root: NamedAst.Root): Name.NName = loc.source.origin match {
     case Origin.Package(id) if root.mountedPackages.contains(id) =>
-      Name.mkUnlocatedNName(List(Origin.canonicalRoot(id)))
+      Name.mkUnlocatedNName(List(id.canonicalRoot))
     case _ => Name.RootNS
   }
 

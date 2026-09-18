@@ -130,7 +130,7 @@ object FlixPackageManager {
     val requirements = manifests.flatMap(m => findFlixDependencies(m).map(dep => (m, dep)))
 
     // Report every package that is required at more than one version.
-    val byPackage = requirements.groupBy { case (_, dep) => dep.identifier }
+    val byPackage = requirements.groupBy { case (_, dep) => dep.id }
     byPackage.toList.sortBy { case (identifier, _) => identifier }.flatMap {
       case (identifier, reqs) =>
         val versions = reqs.map { case (_, dep) => dep.version }.distinct
@@ -155,7 +155,7 @@ object FlixPackageManager {
     // Pair every dependency declaration with the manifest that declares it.
     val declarations = manifests.flatMap(m => findFlixDependencies(m).map(dep => (m, dep)))
 
-    declarations.groupBy { case (_, dep) => dep.identifier }.toList.sortBy { case (id, _) => id }.flatMap {
+    declarations.groupBy { case (_, dep) => dep.id }.toList.sortBy { case (id, _) => id }.flatMap {
       case (identifier, decls) =>
         val (mounted, unmounted) = decls.partition { case (_, dep) => dep.mount.isDefined }
         if (mounted.nonEmpty && unmounted.nonEmpty) {
@@ -182,7 +182,7 @@ object FlixPackageManager {
     */
   def findAvailableUpdates(dep: FlixDependency, apiKey: Option[String]): Result[AvailableUpdates, PackageError] = {
     for {
-      githubProject <- GitHub.parseProject(s"${dep.username}/${dep.projectName}")
+      githubProject <- GitHub.parseProject(s"${dep.id.owner}/${dep.id.name}")
       releases <- GitHub.getReleases(githubProject, apiKey)
       availableVersions = releases.map(r => r.version)
 
@@ -206,12 +206,12 @@ object FlixPackageManager {
 
     // Every dependency declaration, paired with the manifest of the package it resolves to.
     val installed = resolution.manifestToFlixDeps.map { case (manifest, dep) =>
-      val depName: String = s"${dep.username}/${dep.projectName}"
+      val depName: String = s"${dep.id.owner}/${dep.id.name}"
       install(dep, Bootstrap.EXT_FPKG, projectRoot, apiKey, lockfile) match {
         case Ok(fpkg) =>
-          val pkg = InstalledPackage(fpkg.path, dep.identifier, resolution.security(manifest), manifest.mounts)
+          val pkg = InstalledPackage(fpkg.path, dep.id, resolution.security(manifest), manifest.mounts)
           val entry = LockEntry(dep.version, resolution.tomlDigests(manifest), fpkg.digest)
-          (pkg, dep.identifier -> entry)
+          (pkg, dep.id -> entry)
         case Err(e) =>
           out.println(s"ERROR: Installation of `$depName' failed.")
           return Err(e)
@@ -237,7 +237,7 @@ object FlixPackageManager {
     * and checking afterwards would mean having already acted on bytes that were never verified.
     */
   private def install(dep: FlixDependency, extension: String, p: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[InstalledFile, PackageError] = {
-    val proj = GitHub.Project(dep.username, dep.projectName)
+    val proj = GitHub.Project(dep.id.owner, dep.id.name)
     val version = dep.version
     val lib = Bootstrap.getLibraryDirectory(p)
     val assetName = s"${proj.repo}-$version.$extension"
@@ -320,7 +320,7 @@ object FlixPackageManager {
     digest(path).flatMap { file =>
       recordedDigest(dep, extension, lockfile) match {
         case Some(expected) if expected != file.digest =>
-          Err(PackageError.MismatchedCachedDigest(dep.identifier, dep.version, extension, path, expected, file.digest))
+          Err(PackageError.MismatchedCachedDigest(dep.id, dep.version, extension, path, expected, file.digest))
         case _ =>
           Ok(file)
       }
@@ -335,7 +335,7 @@ object FlixPackageManager {
     digest(path).flatMap { file =>
       recordedDigest(dep, extension, lockfile) match {
         case Some(expected) if expected != file.digest =>
-          Err(PackageError.MismatchedDownloadedDigest(dep.identifier, dep.version, extension, path, expected, file.digest))
+          Err(PackageError.MismatchedDownloadedDigest(dep.id, dep.version, extension, path, expected, file.digest))
         case _ =>
           Ok(file)
       }
@@ -352,7 +352,7 @@ object FlixPackageManager {
     * It is recorded when the lock file is written again.
     */
   private def recordedDigest(dep: FlixDependency, extension: String, lockfile: Lockfile): Option[Sha256] = {
-    lockfile.packages.get(dep.identifier).filter(_.version == dep.version).flatMap {
+    lockfile.packages.get(dep.id).filter(_.version == dep.version).flatMap {
       entry =>
         // A package is installed as exactly these two files, and the lock file holds a digest of
         // each. Anything else is not something a lock file describes.
@@ -377,7 +377,7 @@ object FlixPackageManager {
     for {
       // download toml files
       tomlFiles <- traverse(flixDeps) { dep =>
-        val depName = s"${dep.username}/${dep.projectName}"
+        val depName = s"${dep.id.owner}/${dep.id.name}"
         install(dep, Bootstrap.EXT_TOML, path, apiKey, lockfile).map(toml => (toml, dep))
       }
 

@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{PackageId, Repository, SecurityContext}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
 import ca.uwaterloo.flix.util.Formatter
@@ -673,7 +673,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val beta = mkManifest("beta", """"github:flix/museum-clerk" = "1.1.0"""")
     FlixPackageManager.checkSingleVersion(List(alpha, beta)) match {
       case List(PackageError.MultipleVersions(identifier, requirements)) =>
-        assertResult(expected = "github:flix/museum-clerk")(actual = identifier)
+        assertResult(expected = PackageId(Repository.GitHub, "flix", "museum-clerk"))(actual = identifier)
         assertResult(expected = List(("alpha", SemVer(1, 0, 0)), ("beta", SemVer(1, 1, 0))))(
           actual = requirements.map { case (dependent, dep) => (dependent.name, dep.version) }
         )
