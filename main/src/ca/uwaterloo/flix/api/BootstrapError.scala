@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation}
 import ca.uwaterloo.flix.tools.pkg
-import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{LockError, ManifestError, PackageError, SemVer}
 import ca.uwaterloo.flix.util.Formatter
 
 import java.nio.file.Path
@@ -31,6 +31,10 @@ sealed trait BootstrapError {
 
 object BootstrapError {
   case class ManifestParseError(e: ManifestError) extends BootstrapError {
+    override def message(f: Formatter): String = e.message(f)
+  }
+
+  case class LockParseError(e: LockError) extends BootstrapError {
     override def message(f: Formatter): String = e.message(f)
   }
 
