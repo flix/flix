@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Origin, SecurityContext, Source, SourceName}
+import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Mountpoint, Origin, SecurityContext, Source, SourceName}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.jvm.{ByteBuddyJavaTypeProvider, DependencyClassPath, ExternalJarLoader, JavaTypeProvider}
@@ -76,17 +76,17 @@ object Flix {
   * @param mounts the mount table of the root project, as its `flix.toml` declares it. Empty when
   *               the project has no manifest.
   */
-class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil, mounts: Map[String, String] = Map.empty) extends AutoCloseable {
+class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil, mounts: Map[Mountpoint, String] = Map.empty) extends AutoCloseable {
 
   /**
     * The mount table of the root project.
     */
-  val rootMounts: Map[String, String] = mounts
+  val rootMounts: Map[Mountpoint, String] = mounts
 
   /**
     * The mount table of each package, by package identifier.
     */
-  val packageMounts: Map[String, Map[String, String]] = pkgs.map(pkg => pkg.id -> pkg.mounts).toMap
+  val packageMounts: Map[String, Map[Mountpoint, String]] = pkgs.map(pkg => pkg.id -> pkg.mounts).toMap
 
   /**
     * The packages that something in the dependency graph mounts.

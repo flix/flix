@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result
@@ -397,17 +397,16 @@ object ManifestParser {
     *
     * A dependency that declares no mount has none: its modules are reachable unqualified.
     */
-  private def getMount(depTbl: TomlTable, key: String, depKey: String, p: Path): Result[Option[String], ManifestError] = {
+  private def getMount(depTbl: TomlTable, key: String, depKey: String, p: Path): Result[Option[Mountpoint], ManifestError] = {
     if (!depTbl.contains(key)) {
       Ok(None)
     } else if (!depTbl.isString(key)) {
       Err(ManifestError.FlixDependencyMountType(p, depKey, depTbl.get(key)))
     } else {
       val mount = depTbl.getString(key)
-      if (FlixDependency.isValidMount(mount)) {
-        Ok(Some(mount))
-      } else {
-        Err(ManifestError.FlixDependencyIllegalMount(p, depKey, mount))
+      Mountpoint.mkMountpoint(mount) match {
+        case Some(m) => Ok(Some(m))
+        case None => Err(ManifestError.FlixDependencyIllegalMount(p, depKey, mount))
       }
     }
   }
@@ -417,7 +416,7 @@ object ManifestParser {
     */
   private def checkDuplicateMounts(deps: List[Dependency], p: Path): Result[Unit, ManifestError] = {
     val mountedDeps = deps.collect { case dep: FlixDependency if dep.mount.isDefined => (dep.mount.get, dep) }
-    val seen = mutable.Map.empty[String, FlixDependency]
+    val seen = mutable.Map.empty[Mountpoint, FlixDependency]
     for ((mount, dep) <- mountedDeps) {
       seen.get(mount) match {
         case Some(prev) => return Err(ManifestError.FlixDependencyDuplicateMount(p, mount, prev.identifier, dep.identifier))

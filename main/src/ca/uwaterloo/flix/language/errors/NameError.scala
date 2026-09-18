@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
+import ca.uwaterloo.flix.language.ast.shared.Mountpoint
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
@@ -148,14 +149,14 @@ object NameError {
     * @param mount the name the dependency is mounted at.
     * @param loc   the location of the library module it shadows.
     */
-  case class MountShadowsLibrary(mount: String, loc: SourceLocation) extends NameError {
+  case class MountShadowsLibrary(mount: Mountpoint, loc: SourceLocation) extends NameError {
     def code: ErrorCode = ErrorCode.E5432
 
     def summary: String = s"Mount '$mount' shadows a module of the library."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mount '${red(mount)}' shadows a module of the library.
+      s""">> Mount '${red(mount.toString)}' shadows a module of the library.
          |
          |${highlight(loc, s"shadowed module in ${loc.source.name}", fmt)}
          |
@@ -173,14 +174,14 @@ object NameError {
     * @param mount the name the dependency is mounted at.
     * @param loc   the location of the declaration it shadows.
     */
-  case class MountShadowsDeclaration(mount: String, loc: SourceLocation) extends NameError {
+  case class MountShadowsDeclaration(mount: Mountpoint, loc: SourceLocation) extends NameError {
     def code: ErrorCode = ErrorCode.E5448
 
     def summary: String = s"Mount '$mount' shadows a declaration of this package."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mount '${red(mount)}' shadows a declaration of this package.
+      s""">> Mount '${red(mount.toString)}' shadows a declaration of this package.
          |
          |${highlight(loc, s"shadowed declaration in ${loc.source.name}", fmt)}
          |
