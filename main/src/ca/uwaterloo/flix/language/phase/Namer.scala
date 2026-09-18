@@ -66,7 +66,7 @@ object Namer {
       val modules = buildModuleMap(units)
 
       // What each viewer, the root project and every package, reaches through its own mounts.
-      def resolveMounts(table: Map[String, String]): Map[String, Name.NName] =
+      def resolveMounts(table: Map[Mountpoint, String]): Map[Mountpoint, Name.NName] =
         table.map { case (name, id) => name -> packageRoot(id) }
 
       val rootMounts = resolveMounts(flix.rootMounts)
@@ -97,8 +97,8 @@ object Namer {
     * would make one manifest valid or invalid depending on what else the consumer depends on.
     */
   private def checkMountCollisions(symbols: Map[Name.NName, Map[String, List[Declaration]]],
-                                   rootMounts: Map[String, Name.NName],
-                                   mounts: Map[String, Map[String, Name.NName]])(implicit flix: Flix): List[NameError] = {
+                                   rootMounts: Map[Mountpoint, Name.NName],
+                                   mounts: Map[String, Map[Mountpoint, Name.NName]])(implicit flix: Flix): List[NameError] = {
     // Every viewer: the origin of its own declarations, the namespace it is named under, and its mounts.
     val root = (Origin.User: Origin, Name.RootNS, rootMounts)
     val packages = mounts.toList.sortBy { case (id, _) => id }.map {
@@ -113,7 +113,7 @@ object Namer {
         // namespace, where the library and every unmounted package are declared.
         val searched = if (viewerRoot == Name.RootNS) List(Name.RootNS) else List(viewerRoot, Name.RootNS)
         table.keys.toList.sorted.flatMap { mount =>
-          val shadowed = searched.flatMap(ns => symbols.getOrElse(ns, Map.empty).getOrElse(mount, Nil))
+          val shadowed = searched.flatMap(ns => symbols.getOrElse(ns, Map.empty).getOrElse(mount.name, Nil))
           shadowed.flatMap(mountCollision(mount, own, _)).headOption
         }
     }
@@ -122,7 +122,7 @@ object Namer {
   /**
     * Returns the error for `mount` shadowing `decl`, if shadowing it is an error.
     */
-  private def mountCollision(mount: String, own: Origin, decl: Declaration): Option[NameError] =
+  private def mountCollision(mount: Mountpoint, own: Origin, decl: Declaration): Option[NameError] =
     moduleLikeLoc(decl).flatMap { loc =>
       loc.source.origin match {
         case Origin.Library => Some(NameError.MountShadowsLibrary(mount, loc))

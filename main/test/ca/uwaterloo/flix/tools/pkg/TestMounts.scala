@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, InstalledPackage}
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, SecurityContext}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.{FileOps, Formatter}
@@ -26,7 +26,7 @@ class TestMounts extends AnyFunSuite {
     p.resolve("artifact").resolve(p.getFileName.toString + ".fpkg")
   }
 
-  private def check(pkgPath: Path, mounts: Map[String, String], main: String): List[String] = {
+  private def check(pkgPath: Path, mounts: Map[Mountpoint, String], main: String): List[String] = {
     val pkg = InstalledPackage(pkgPath, Id, SecurityContext.Unrestricted, Map.empty)
     val flix = PkgTestUtils.mkFlix(List(pkg), mounts)
     flix.addSource(Path.of("Main.flix"), main, SecurityContext.Unrestricted)
@@ -40,20 +40,20 @@ class TestMounts extends AnyFunSuite {
 
   test("mounted.reachable") {
     val pkg = mkPkg()
-    val mounts = Map("Game" -> Id)
+    val mounts = Map(Mountpoint("Game") -> Id)
     assertResult(Nil)(check(pkg, mounts, "def main(): Unit \\ IO = println(Game.Board.place())"))
   }
 
   test("mounted.not-reachable-unqualified") {
     val pkg = mkPkg()
-    val mounts = Map("Game" -> Id)
+    val mounts = Map(Mountpoint("Game") -> Id)
     val errors = check(pkg, mounts, "def main(): Unit \\ IO = println(Board.place())")
     assert(errors.exists(_.contains("Undefined")), errors)
   }
 
   test("flat.reachable") {
     val pkg = mkPkg()
-    val mounts = Map.empty[String, String]
+    val mounts = Map.empty[Mountpoint, String]
     assertResult(Nil)(check(pkg, mounts, "def main(): Unit \\ IO = println(Board.place())"))
   }
 
@@ -61,7 +61,7 @@ class TestMounts extends AnyFunSuite {
     // A package nothing mounts keeps sharing the root namespace, so its non-public modules are
     // reachable exactly as they were before mounts existed.
     val pkg = mkPkg()
-    val mounts = Map.empty[String, String]
+    val mounts = Map.empty[Mountpoint, String]
     assertResult(Nil)(check(pkg, mounts, "def main(): Unit \\ IO = println(Secret.hidden())"))
   }
 
@@ -69,7 +69,7 @@ class TestMounts extends AnyFunSuite {
     // A mount that shadows a library module is rejected: 'List.map' inside the mounting code
     // would resolve into the dependency.
     val pkg = mkPkg()
-    val errors = check(pkg, Map("List" -> Id), "def main(): Unit \\ IO = println(1)")
+    val errors = check(pkg, Map(Mountpoint("List") -> Id), "def main(): Unit \\ IO = println(1)")
     assert(errors.contains("MountShadowsLibrary"), errors)
   }
 
@@ -82,19 +82,19 @@ class TestMounts extends AnyFunSuite {
         |pub mod Game { pub def size(): Int32 = 1 }
         |def main(): Unit \\ IO = println(Game.size())
         |""".stripMargin
-    val errors = check(pkg, Map("Game" -> Id), main)
+    val errors = check(pkg, Map(Mountpoint("Game") -> Id), main)
     assert(errors.contains("MountShadowsDeclaration"), errors)
   }
 
   test("collision.other-package-allowed") {
     // A mount that shadows a module of another package is allowed: the author asked for the name.
     val pkg = mkPkg()
-    assertResult(Nil)(check(pkg, Map("Game" -> Id), "def main(): Unit \\ IO = println(Game.Board.place())"))
+    assertResult(Nil)(check(pkg, Map(Mountpoint("Game") -> Id), "def main(): Unit \\ IO = println(Game.Board.place())"))
   }
 
   test("mounted.private-not-reachable") {
     val pkg = mkPkg()
-    val mounts = Map("Game" -> Id)
+    val mounts = Map(Mountpoint("Game") -> Id)
     val errors = check(pkg, mounts, "def main(): Unit \\ IO = println(Game.Secret.hidden())")
     assert(errors.nonEmpty, "expected the non-public module of a mounted package to be inaccessible")
     // The root a package is named under cannot be written in source, so it is shown as the

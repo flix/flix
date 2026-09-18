@@ -16,7 +16,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 
 case class Manifest(name: String,
@@ -30,7 +30,7 @@ case class Manifest(name: String,
     * Returns the mount table of this manifest: the name of each mount to the identifier of the
     * dependency it names. A dependency that declares no mount does not appear.
     */
-  def mounts: Map[String, String] =
+  def mounts: Map[Mountpoint, String] =
     flixDependencies.flatMap(dep => dep.mount.map(_ -> dep.identifier)).toMap
 
   def mavenDependencies: List[Dependency.MavenDependency] = dependencies.collect { case dep: Dependency.MavenDependency => dep }

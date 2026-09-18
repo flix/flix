@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Formatter, Result}
@@ -1810,7 +1810,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Game" }
         |"github:mlutze/flixball" = "3.2.1"
         |""".stripMargin
-    assertResult(expected = List(Some("Game"), None))(actual =
+    assertResult(expected = List(Some(Mountpoint("Game")), None))(actual =
       ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m.flixDependencies.map(_.mount)
         case Err(e) => e.message(f)

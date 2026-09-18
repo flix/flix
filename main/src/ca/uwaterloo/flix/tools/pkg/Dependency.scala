@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, SecurityContext}
 
 import java.net.{URI, URL}
 
@@ -30,7 +30,7 @@ object Dependency {
     *              declares one. A dependency without a mount is reachable unqualified instead, as
     *              it was before mounts existed. Transitional: a mount becomes required.
     */
-  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, mount: Option[String], sctx: SecurityContext) extends Dependency {
+  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, mount: Option[Mountpoint], sctx: SecurityContext) extends Dependency {
     val identifier: String = {
       val r = repo.toString.toLowerCase
       s"$r:$username/$projectName"
@@ -40,14 +40,6 @@ object Dependency {
       val mountStr = mount.map(m => s"mount = \"$m\", ").getOrElse("")
       s"\"$identifier\" = { version = \"$version\", ${mountStr}security = \"$sctx\" }"
     }
-  }
-
-  object FlixDependency {
-    /** A valid mount: an uppercase letter followed by letters, digits, and underscores. */
-    private val ValidMount = "[A-Z][A-Za-z0-9_]*".r
-
-    /** Returns `true` if `s` can serve as a mount, i.e. as the name of a top-level module. */
-    def isValidMount(s: String): Boolean = ValidMount.matches(s)
   }
 
   case class MavenDependency(groupId: String, artifactId: String, versionTag: String) extends Dependency {

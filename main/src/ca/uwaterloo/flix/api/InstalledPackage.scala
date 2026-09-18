@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, SecurityContext}
 
 import java.nio.file.Path
 
@@ -28,4 +28,4 @@ import java.nio.file.Path
   * @param mounts the mount table of the package, as its own manifest declares it: the name of
   *               each mount to the identifier of the dependency it names.
   */
-case class InstalledPackage(path: Path, id: String, sctx: SecurityContext, mounts: Map[String, String])
+case class InstalledPackage(path: Path, id: String, sctx: SecurityContext, mounts: Map[Mountpoint, String])

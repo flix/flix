@@ -2978,7 +2978,7 @@ object Resolver {
       tryLookupModuleIn(ns0, name, root)
     }.orElse {
       // Then see if the name is a mount of the package the name occurs in
-      mountsOf(loc, root).get(name).map(_.parts)
+      mountsOf(loc, root).get(Mountpoint(name)).map(_.parts)
     }.orElse {
       // Then see if there's a module with this name at the root of that package
       tryLookupModuleIn(rootOf(loc, root), name, root)
@@ -3024,7 +3024,7 @@ object Resolver {
     * Returns the mount table of the package the source at `loc` belongs to: the name of each mount
     * to the root namespace of the package that mount names.
     */
-  private def mountsOf(loc: SourceLocation, root: NamedAst.Root): Map[String, Name.NName] =
+  private def mountsOf(loc: SourceLocation, root: NamedAst.Root): Map[Mountpoint, Name.NName] =
     loc.source.origin match {
       case Origin.Package(id) => root.mounts.getOrElse(id, Map.empty)
       case Origin.User => root.rootMounts
