@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Version}
-import ca.uwaterloo.flix.util.{FileOps, Formatter, Result}
+import ca.uwaterloo.flix.util.{FileOps, Formatter, Result, Sha256}
 import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -27,6 +27,41 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.check(PkgTestUtils.mkFlix(b))
+  }
+
+  test("flix.lock.01") {
+    val p = mkProjectWithDependency()
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.FLIX_LOCK)).unsafeGet
+    val entry = lockfile.packages(ClerkIdentifier)
+
+    assert(entry.version == SemVer(1, 1, 0))
+    assert(entry.toml == Sha256.ofFile(clerkFile(p, Bootstrap.EXT_TOML)))
+    assert(entry.fpkg == Sha256.ofFile(clerkFile(p, Bootstrap.EXT_FPKG)))
+  }
+
+  test("flix.lock.02") {
+    // The second bootstrap finds every dependency cached, and must digest the cached files to
+    // arrive at the same lock file rather than leaving the entries out.
+    val p = mkProjectWithDependency()
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    val first = Files.readString(p.resolve(Bootstrap.FLIX_LOCK))
+
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    val second = Files.readString(p.resolve(Bootstrap.FLIX_LOCK))
+
+    assert(first == second)
+  }
+
+  test("flix.lock.03") {
+    // A project with no Flix dependencies still locks, and locks nothing.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.FLIX_LOCK)).unsafeGet
+    assert(lockfile.packages.isEmpty)
   }
 
   test("build") {
@@ -483,6 +518,39 @@ class TestBootstrap extends AnyFunSuite {
        |authors = ["flix"]
        |""".stripMargin
   }
+
+  /**
+    * The identifier of the package the lock file tests depend on.
+    */
+  private val ClerkIdentifier: String = "github:flix/museum-clerk"
+
+  /**
+    * Returns a new project directory whose manifest declares a single Flix dependency.
+    */
+  private def mkProjectWithDependency(): Path = {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |name = "test"
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |"$ClerkIdentifier" = { version = "1.1.0", mount = "Clerk" }
+         |""".stripMargin)
+    p
+  }
+
+  /**
+    * Returns the path that the dependency of [[mkProjectWithDependency]] is installed at in the
+    * project at `p`, with the given extension.
+    */
+  private def clerkFile(p: Path, ext: String): Path =
+    Bootstrap.getLibraryDirectory(p)
+      .resolve("github").resolve("flix").resolve("museum-clerk").resolve("1.1.0")
+      .resolve(s"museum-clerk-1.1.0.$ext")
 
   private def calcHash(p: Path): String = {
     val sha = MessageDigest.getInstance("SHA-256")

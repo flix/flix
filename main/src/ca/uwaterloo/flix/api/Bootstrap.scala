@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
+import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_LOCK, FLIX_TOML, LICENSE, README}
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
 import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.{Stat, Tester}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageError, ReleaseError, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Lockfile, Manifest, ManifestParser, MavenPackageManager, PackageError, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Options, Result}
@@ -193,6 +193,9 @@ object Bootstrap {
   /** The manifest / flix toml file name. */
   val FLIX_TOML: String = s"flix.$EXT_TOML"
 
+  /** The lock file name. */
+  val FLIX_LOCK: String = "flix.lock"
+
   /** The license file name. */
   private val LICENSE: String = "LICENSE.md"
 
@@ -309,6 +312,11 @@ object Bootstrap {
     * Returns the path to the Manifest file relative to the given path `p`.
     */
   private def getManifestFile(p: Path): Path = p.resolve(s"./$FLIX_TOML").normalize()
+
+  /**
+    * Returns the path to the lock file relative to the given path `p`.
+    */
+  private def getLockFile(p: Path): Path = p.resolve(s"./$FLIX_LOCK").normalize()
 
   /**
     * Returns the path to the .gitignore file relative to the given path `p`.
@@ -467,23 +475,57 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   private def installDependencies(resolution: FlixPackageManager.SecureResolution)(implicit formatter: Formatter, out: PrintStream): Result[(List[InstalledPackage], List[Path]), BootstrapError] = {
     for {
-      pkgs <- installFlixDependencies(resolution)
+      installation <- installFlixDependencies(resolution)
       mavenJars <- installMavenDependencies(resolution.manifests)
       externalJars <- installJarDependencies(resolution.manifests)
+      // Written last, so that a failure part way through leaves the lock file of the previous
+      // build rather than one that records a resolution that was never fully installed.
+      _ <- writeLockFile(installation.lockfile)
     } yield {
       out.println("Dependency resolution completed.")
-      (pkgs, mavenJars ::: externalJars)
+      (installation.packages, mavenJars ::: externalJars)
+    }
+  }
+
+  /**
+    * Writes `lockfile` to the `flix.lock` file of the project.
+    *
+    * The file is written to a temporary file in the project directory and then moved into place,
+    * so that a build which is interrupted part way through leaves either the previous lock file
+    * or the new one, and never half of either.
+    */
+  private def writeLockFile(lockfile: Lockfile): Result[Unit, BootstrapError] = {
+    val lockPath = Bootstrap.getLockFile(projectPath)
+    try {
+      val tmpPath = Files.createTempFile(lockPath.getParent, FLIX_LOCK, ".tmp")
+      try {
+        Files.writeString(tmpPath, Lockfile.format(lockfile))
+        Files.move(tmpPath, lockPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+      } catch {
+        case e: IOException =>
+          // Leave no temporary file behind. A failure to remove it means the filesystem is in an
+          // unexpected state, but it must not replace the error that actually stopped the write.
+          try {
+            Files.deleteIfExists(tmpPath)
+          } catch {
+            case e2: IOException => e.addSuppressed(e2)
+          }
+          throw e
+      }
+      Ok(())
+    } catch {
+      case e: IOException => Err(BootstrapError.FileError(s"Unable to write '$FLIX_LOCK': ${e.getMessage}"))
     }
   }
 
   /**
     * Downloads and installs all `.fpkg` dependencies defined by `dependencyManifests` into the `lib/` directory.
     * Requires network access.
-    * Returns the paths to the installed dependencies with their security contexts.
+    * Returns the installed packages together with the lock file that records them.
     */
-  private def installFlixDependencies(resolution: FlixPackageManager.SecureResolution)(implicit formatter: Formatter, out: PrintStream): Result[List[InstalledPackage], BootstrapError] = {
+  private def installFlixDependencies(resolution: FlixPackageManager.SecureResolution)(implicit formatter: Formatter, out: PrintStream): Result[FlixPackageManager.Installation, BootstrapError] = {
     FlixPackageManager.installAll(resolution, projectPath, apiKey) match {
-      case Ok(pkgs) => Ok(pkgs)
+      case Ok(installation) => Ok(installation)
       case Err(e) => Err(BootstrapError.FlixPackageError(e))
     }
   }

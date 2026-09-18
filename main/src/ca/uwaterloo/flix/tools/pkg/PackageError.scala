@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.util.Formatter
 
 import java.io.IOException
 import java.net.URL
+import java.nio.file.Path
 
 sealed trait PackageError {
   /**
@@ -138,6 +139,17 @@ object PackageError {
           case None => ""
         }
       }
+         |""".stripMargin
+  }
+
+  /**
+    * A file in `lib/` could not be read to compute its digest. The file was there a moment ago,
+    * so this means the filesystem is in an unexpected state rather than that a download failed.
+    */
+  case class DigestError(path: Path, message: String) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""An I/O error occurred while reading ${f.cyan(path.toString)}.
+         |Error: ${f.red(message)}
          |""".stripMargin
   }
 
