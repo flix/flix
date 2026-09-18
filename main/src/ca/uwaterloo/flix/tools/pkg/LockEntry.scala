@@ -27,6 +27,15 @@ import ca.uwaterloo.flix.util.Sha256
   * An entry does not carry the identifier of the package it describes. A [[Lockfile]] holds its
   * entries by identifier, so carrying it here would be a second place for it to disagree.
   *
+  * An entry is written as one table in the lock file, under the identifier of its package:
+  *
+  * {{{
+  * [packages."github:flix/museum"]
+  * version = "1.2.3"
+  * toml    = "sha256:d440e50454f31af3176813e02ea68ef786e4d3cea27d26934b484e73cf575dca"
+  * fpkg    = "sha256:d6ba2b0aee0ca923732881584d8c4fa2815d2802827283e0ad84173581569969"
+  * }}}
+  *
   * @param version the version of the package.
   * @param toml    the digest of the `flix.toml` of the package.
   * @param fpkg    the digest of the `.fpkg` of the package.

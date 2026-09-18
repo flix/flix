@@ -86,6 +86,23 @@ object Lockfile {
   * [[Lockfile.CurrentVersion]], and [[LockfileParser]] refuses to read a file written in any
   * other, so there is no version for a caller to choose.
   *
+  * A project that depends on two packages locks them like so:
+  *
+  * {{{
+  * [lock]
+  * version = 1
+  *
+  * [packages."github:flix/museum"]
+  * version = "1.2.3"
+  * toml    = "sha256:a4c123b1612dd272d1371c17149d439536b3216fdaeeb975729fae923d5a4fd1"
+  * fpkg    = "sha256:2aabfe228f219e9cb0eb53f16947ccf25ec84d8dbc74254770f58904dba41ecc"
+  *
+  * [packages."github:flix/museum-clerk"]
+  * version = "0.4.0"
+  * toml    = "sha256:cc3fc1626e53a13043b026c48bbf33feff9243a8f506b40928b5b7a767c76fb0"
+  * fpkg    = "sha256:08f86bebb2737f6a6f0fb23c6f5da2cec255404e4fb440034d6608697a8d41be"
+  * }}}
+  *
   * @param packages the entry of each package, by the identifier of that package, e.g.
   *                 `github:flix/museum`.
   */
