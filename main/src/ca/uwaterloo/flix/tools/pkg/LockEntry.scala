@@ -20,14 +20,7 @@ import ca.uwaterloo.flix.util.Sha256
 /**
   * What one Flix package was, as of the last time it was downloaded.
   *
-  * A package is downloaded as two files, and each one gets its own digest: a change to the
-  * `.toml` and a change to the `.fpkg` are different events, and the two are worth telling apart
-  * when one of them turns out to be unexpected.
-  *
-  * An entry does not carry the identifier of the package it describes. A [[Lockfile]] holds its
-  * entries by identifier, so carrying it here would be a second place for it to disagree.
-  *
-  * An entry is written as one table in the lock file, under the identifier of its package:
+  * An entry is written as one table in the lock file:
   *
   * {{{
   * [packages."github:flix/museum"]
