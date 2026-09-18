@@ -73,9 +73,14 @@ object LockfileParser {
   private def createLockfile(parser: TomlParseResult, p: Path): Result[Lockfile, LockError] = {
     val errors = parser.errors
     if (errors.size() > 0) {
-      var errorString = ""
-      errors.forEach(error => errorString = errorString + error.toString + ", ")
-      return Err(LockError.LockParseError(p, errorString))
+      val sb = new StringBuilder()
+      errors.forEach { error =>
+        if (sb.nonEmpty) {
+          sb.append(", ")
+        }
+        sb.append(error.toString)
+      }
+      return Err(LockError.LockParseError(p, sb.toString))
     }
 
     for (
