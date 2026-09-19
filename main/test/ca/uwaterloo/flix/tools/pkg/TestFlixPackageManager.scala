@@ -7,6 +7,7 @@ import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.collection.ListMap
 import org.scalatest.{BeforeAndAfter, DoNotDiscover}
 import ca.uwaterloo.flix.tools.pkg.PkgTestUtils.ManifestPath
 import org.scalatest.funsuite.AnyFunSuite
@@ -639,6 +640,83 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     } else {
       succeed
     }
+  }
+
+  test("transitive.diamond.security.level.01") {
+    // The project allows test-pkg-trust-plain to be unrestricted, and the other dependent of it,
+    // flix-test-pkg-trust-transitive-plain, only allows it to be plain. The strictest of the two
+    // is what it gets.
+    val toml = PkgTestUtils.mkTomlWithDeps(
+      """
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.1", security = "unrestricted" }
+        |"github:flix/test-pkg-trust-plain" = { version = "0.1.1", security = "unrestricted" }
+        |""".stripMargin
+    )
+    val manifest = ManifestParser.parse(toml, ManifestPath) match {
+      case Ok(m) => m
+      case Err(e) => fail(e.message(formatter))
+    }
+
+    val path = Files.createTempDirectory("")
+    val resolution = FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+      case Ok(r) => r
+      case Err(e) => fail(e.message(formatter))
+    }
+
+    // Both declarations of the package are kept, one for each of its dependents.
+    val plain = resolution.manifests.find(_.name == "test-pkg-trust-plain").get
+    assertResult(expected = List(SecurityContext.Plain, SecurityContext.Unrestricted))(
+      actual = resolution.manifestToFlixDeps(plain).map(_.sctx).sortBy(_.toString)
+    )
+    assertResult(expected = SecurityContext.Plain)(
+      actual = FlixPackageManager.resolveSecurityLevels(resolution).security(plain)
+    )
+  }
+
+  test("resolveSecurityLevels.strictest.01") {
+    // A package that one dependent declares paranoid is paranoid, whatever another declares.
+    assertResult(expected = SecurityContext.Paranoid)(actual = levelOfShared("paranoid", "unrestricted"))
+  }
+
+  test("resolveSecurityLevels.strictest.02") {
+    // The order in which the dependents are met makes no difference.
+    assertResult(expected = SecurityContext.Paranoid)(actual = levelOfShared("unrestricted", "paranoid"))
+  }
+
+  test("resolveSecurityLevels.strictest.03") {
+    assertResult(expected = SecurityContext.Plain)(actual = levelOfShared("unrestricted", "plain"))
+  }
+
+  test("resolveSecurityLevels.strictest.04") {
+    assertResult(expected = SecurityContext.Unrestricted)(actual = levelOfShared("unrestricted", "unrestricted"))
+  }
+
+  /**
+    * Returns the security context of a package that two dependents declare, the first with the
+    * security context `left` and the second with `right`. The project allows both dependents to
+    * be unrestricted.
+    */
+  private def levelOfShared(left: String, right: String): SecurityContext = {
+    val origin = mkManifest("origin",
+      """"github:flix/left" = { version = "1.0.0", security = "unrestricted" }
+        |"github:flix/right" = { version = "1.0.0", security = "unrestricted" }""".stripMargin)
+    val l = mkManifest("left", s""""github:flix/shared" = { version = "1.0.0", security = "$left" }""")
+    val r = mkManifest("right", s""""github:flix/shared" = { version = "1.0.0", security = "$right" }""")
+    val shared = mkManifest("shared", "")
+
+    val List(toLeft, toRight) = FlixPackageManager.findFlixDependencies(origin)
+    val resolution = FlixPackageManager.Resolution(
+      origin = origin,
+      manifests = List(origin, l, r, shared),
+      immediateDependents = Map(origin -> Nil, l -> List(origin), r -> List(origin), shared -> List(l, r)),
+      manifestToFlixDeps = ListMap(Map(
+        l -> List(toLeft),
+        r -> List(toRight),
+        shared -> (FlixPackageManager.findFlixDependencies(l) ::: FlixPackageManager.findFlixDependencies(r))
+      )),
+      tomlDigests = Map.empty
+    )
+    FlixPackageManager.resolveSecurityLevels(resolution).security(shared)
   }
 
   test("mismatched-versions") {
