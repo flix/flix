@@ -714,6 +714,68 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     )
   }
 
+  // The example in the documentation of `findTransitiveDependencies`:
+  //
+  //   project  requires  A 1.0.0  and  B 1.0.0
+  //   A 1.0.0  requires  C 1.1.1
+  //   B 1.0.0  requires  C 1.1.2
+  //   C 1.1.1  requires  X 1.0.0
+  //   C 1.1.2  requires  nothing
+  private val A = PackageId(Repository.GitHub, "flix", "a")
+  private val B = PackageId(Repository.GitHub, "flix", "b")
+  private val C = PackageId(Repository.GitHub, "flix", "c")
+  private val X = PackageId(Repository.GitHub, "flix", "x")
+
+  private val ExampleNodes = List(
+    (A, SemVer(1, 0, 0)), (B, SemVer(1, 0, 0)), (C, SemVer(1, 1, 1)), (C, SemVer(1, 1, 2)), (X, SemVer(1, 0, 0))
+  )
+
+  private val ExampleRequires = Map(
+    (A, SemVer(1, 0, 0)) -> List(C),
+    (B, SemVer(1, 0, 0)) -> List(C),
+    (C, SemVer(1, 1, 1)) -> List(X)
+  )
+
+  test("selectVersions.01") {
+    // Every package is given the greatest version it is required at.
+    assertResult(expected = Ok(Map(A -> SemVer(1, 0, 0), B -> SemVer(1, 0, 0), C -> SemVer(1, 1, 2), X -> SemVer(1, 0, 0))))(
+      actual = FlixPackageManager.selectVersions(ExampleNodes)
+    )
+  }
+
+  test("selectVersions.02") {
+    // A package whose versions do not share a major has no version to be given.
+    assertResult(expected = Err(C))(
+      actual = FlixPackageManager.selectVersions((C, SemVer(2, 0, 0)) :: ExampleNodes)
+    )
+  }
+
+  test("findLive.01") {
+    // X is required only by C 1.1.1, which is not the selected version of C.
+    val selected = Map(A -> SemVer(1, 0, 0), B -> SemVer(1, 0, 0), C -> SemVer(1, 1, 2), X -> SemVer(1, 0, 0))
+    assertResult(expected = Set(A, B, C))(
+      actual = FlixPackageManager.findLive(List(A, B), selected, ExampleRequires)
+    )
+  }
+
+  test("findLive.02") {
+    // X is live if the selected version of C requires it too.
+    val selected = Map(A -> SemVer(1, 0, 0), B -> SemVer(1, 0, 0), C -> SemVer(1, 1, 2), X -> SemVer(1, 0, 0))
+    val requires = ExampleRequires + ((C, SemVer(1, 1, 2)) -> List(X))
+    assertResult(expected = Set(A, B, C, X))(
+      actual = FlixPackageManager.findLive(List(A, B), selected, requires)
+    )
+  }
+
+  test("findLive.03") {
+    // A cycle among the selected versions ends the walk.
+    val selected = Map(A -> SemVer(1, 0, 0), B -> SemVer(1, 0, 0))
+    val requires = Map((A, SemVer(1, 0, 0)) -> List(B), (B, SemVer(1, 0, 0)) -> List(A))
+    assertResult(expected = Set(A, B))(
+      actual = FlixPackageManager.findLive(List(A), selected, requires)
+    )
+  }
+
   /**
     * Returns a manifest named `name` with the given Flix dependency declarations `deps`.
     */
