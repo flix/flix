@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_LOCK, FLIX_TOML, LICENSE, README}
+import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, PACKAGES_LOCK, README}
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
 import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -194,7 +194,7 @@ object Bootstrap {
   val FLIX_TOML: String = s"flix.$EXT_TOML"
 
   /** The lock file name. */
-  val FLIX_LOCK: String = "flix.lock"
+  val PACKAGES_LOCK: String = "packages.lock"
 
   /** The license file name. */
   private val LICENSE: String = "LICENSE.md"
@@ -316,7 +316,7 @@ object Bootstrap {
   /**
     * Returns the path to the lock file relative to the given path `p`.
     */
-  private def getLockFile(p: Path): Path = p.resolve(s"./$FLIX_LOCK").normalize()
+  private def getLockFile(p: Path): Path = p.resolve(s"./$PACKAGES_LOCK").normalize()
 
   /**
     * Returns the path to the .gitignore file relative to the given path `p`.
@@ -491,7 +491,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Returns the `flix.lock` file of the project, or an empty lock file if it has none.
+    * Returns the `packages.lock` file of the project, or an empty lock file if it has none.
     *
     * A project with no lock file is one that has never been built by a version of Flix that
     * writes one. Nothing is known about its dependencies yet, so nothing is checked, and the
@@ -510,7 +510,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Writes `lockfile` to the `flix.lock` file of the project.
+    * Writes `lockfile` to the `packages.lock` file of the project.
     *
     * The file is written to a temporary file in the project directory and then moved into place,
     * so that a build which is interrupted part way through leaves either the previous lock file
@@ -519,7 +519,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private def writeLockFile(lockfile: Lockfile): Result[Unit, BootstrapError] = {
     val lockPath = Bootstrap.getLockFile(projectPath)
     try {
-      val tmpPath = Files.createTempFile(lockPath.getParent, FLIX_LOCK, ".tmp")
+      val tmpPath = Files.createTempFile(lockPath.getParent, PACKAGES_LOCK, ".tmp")
       try {
         Files.writeString(tmpPath, Lockfile.format(lockfile))
         Files.move(tmpPath, lockPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
@@ -536,7 +536,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
       Ok(())
     } catch {
-      case e: IOException => Err(BootstrapError.FileError(s"Unable to write '$FLIX_LOCK': ${e.getMessage}"))
+      case e: IOException => Err(BootstrapError.FileError(s"Unable to write '$PACKAGES_LOCK': ${e.getMessage}"))
     }
   }
 
