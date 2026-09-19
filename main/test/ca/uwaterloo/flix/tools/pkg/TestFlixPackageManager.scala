@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.{PackageId, Repository, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
@@ -93,6 +94,34 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         case Err(e) => e
       }
     })
+  }
+
+  test("Install falls back to the release listing") {
+    // The address of a release asset is guessed before the listing is read, which costs a
+    // request against the API rate limit. `jaschdoc/flix-test-pkg-eff-upgrade` publishes its
+    // package as `test-pkg-eff-upgrade.fpkg`, which is neither the fixed name nor the name of
+    // the repository, so it is found only by reading the listing.
+    val toml = PkgTestUtils.mkTomlWithDeps(
+      """
+        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = "0.1.1"
+        |""".stripMargin
+    )
+    val manifest = ManifestParser.parse(toml, ManifestPath) match {
+      case Ok(m) => m
+      case Err(e) => fail(e.message(formatter))
+    }
+
+    val path = Files.createTempDirectory("")
+    val resolution = FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
+      case Ok(r) => r
+      case Err(e) => fail(e.message(formatter))
+    }
+
+    FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+      case Ok(installation) =>
+        assert(installation.packages.exists(_.path.endsWith(s"flix-test-pkg-eff-upgrade-0.1.1.${Bootstrap.EXT_FPKG}")))
+      case Err(e) => fail(e.message(formatter))
+    }
   }
 
   test("Install missing dependencies from list of manifests") {
