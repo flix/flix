@@ -1,4 +1,0 @@
-[package]
-version    = "0.1.0"                            # The semantic version of the package.
-repository = "github:john-doe/hello-library"    # The repository the package is published as.
-flix       = "0.75.3"                           # The required version of the Flix compiler.
