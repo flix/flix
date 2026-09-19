@@ -33,11 +33,9 @@ object Dependency {
     *              declares one. A dependency without a mount is reachable unqualified instead, as
     *              it was before mounts existed. Transitional: a mount becomes required.
     */
-  case class FlixDependency(id: PackageId, version: SemVer, mount: Option[Mountpoint], sctx: SecurityContext) extends Dependency {
-    override def toString: String = {
-      val mountStr = mount.map(m => s"mount = \"$m\", ").getOrElse("")
-      s"\"$id\" = { version = \"$version\", ${mountStr}security = \"$sctx\" }"
-    }
+  case class FlixDependency(id: PackageId, version: SemVer, mount: Mountpoint, sctx: SecurityContext) extends Dependency {
+    override def toString: String =
+      s"\"$id\" = { version = \"$version\", mount = \"$mount\", security = \"$sctx\" }"
   }
 
   case class MavenDependency(groupId: String, artifactId: String, versionTag: String) extends Dependency {

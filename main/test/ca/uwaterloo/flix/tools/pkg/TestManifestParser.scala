@@ -42,7 +42,7 @@ class TestManifestParser extends AnyFunSuite {
       |authors = ["John Doe <john@example.com>"]
       |
       |[dependencies]
-      |"github:jls/tic-tac-toe" = "1.2.3"
+      |"github:jls/tictactoe" = "1.2.3"
       |"github:mlutze/flixball" = "3.2.1"
       |
       |[mvn-dependencies]
@@ -150,8 +150,8 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(PackageId(Repository.GitHub, "jls", "tic-tac-toe"), SemVer(1, 2, 3), None, SecurityContext.Plain),
-      Dependency.FlixDependency(PackageId(Repository.GitHub, "mlutze", "flixball"), SemVer(3, 2, 1), None, SecurityContext.Plain),
+    assertResult(expected = List(Dependency.FlixDependency(PackageId(Repository.GitHub, "jls", "tictactoe"), SemVer(1, 2, 3), Mountpoint("tictactoe"), SecurityContext.Plain),
+      Dependency.FlixDependency(PackageId(Repository.GitHub, "mlutze", "flixball"), SemVer(3, 2, 1), Mountpoint("flixball"), SecurityContext.Plain),
       Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
       Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
       Dependency.JarDependency("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar", "myJar.jar")))(actual = {
@@ -293,7 +293,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:jls/tictactoe" = "1.2.3"
         |""".stripMargin
     }
     assertResult(expected = SecurityContext.Plain)(actual =
@@ -319,7 +319,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3" }
+        |"github:jls/tictactoe" = { version = "1.2.3" }
         |""".stripMargin
     }
     assertResult(expected = SecurityContext.Plain)(actual =
@@ -345,7 +345,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "paranoid" }
+        |"github:jls/tictactoe" = { version = "1.2.3", security = "paranoid" }
         |""".stripMargin
     }
     assertResult(expected = SecurityContext.Paranoid)(actual =
@@ -371,7 +371,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "plain" }
+        |"github:jls/tictactoe" = { version = "1.2.3", security = "plain" }
         |""".stripMargin
     }
     assertResult(expected = SecurityContext.Plain)(actual =
@@ -397,7 +397,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
+        |"github:jls/tictactoe" = { version = "1.2.3", security = "unrestricted" }
         |""".stripMargin
     }
     assertResult(expected = SecurityContext.Unrestricted)(actual =
@@ -558,7 +558,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:jls/tictactoe" = "1.2.3"
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
@@ -577,7 +577,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3" }
+        |"github:jls/tictactoe" = { version = "1.2.3" }
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
@@ -596,7 +596,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "paranoid" }
+        |"github:jls/tictactoe" = { version = "1.2.3", security = "paranoid" }
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
@@ -615,7 +615,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "plain" }
+        |"github:jls/tictactoe" = { version = "1.2.3", security = "plain" }
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
@@ -634,7 +634,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
+        |"github:jls/tictactoe" = { version = "1.2.3", security = "unrestricted" }
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
@@ -653,7 +653,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
+        |"github:jls/tictactoe" = { version = "1.2.3", security = "unrestricted" }
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
@@ -1211,7 +1211,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = 123
+        |"github:jls/tictactoe" = 123
         |"github:mlutze/flixball" = "3.2.1"
         |
         |""".stripMargin
@@ -1232,7 +1232,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[depandencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:jls/tictactoe" = "1.2.3"
         |"github:mlutze/flixball" = "3.2.1"
         |
         |""".stripMargin
@@ -1252,7 +1252,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:jls/tictactoe" = "1.2.3"
         |"github:ml&tze/flixball" = "3.2.1"
         |
         |""".stripMargin
@@ -1294,7 +1294,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = "123"
+        |"github:jls/tictactoe" = "123"
         |"github:mlutze/flixball" = "3.2.1"
         |
         |""".stripMargin
@@ -1315,7 +1315,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = "1.23"
+        |"github:jls/tictactoe" = "1.23"
         |"github:mlutze/flixball" = "3.2.1"
         |
         |""".stripMargin
@@ -1378,7 +1378,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:jls/tictactoe" = "1.2.3"
         |"github:mlutze/flixball" = "a.2.1"
         |
         |""".stripMargin
@@ -1399,7 +1399,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:jls/tictactoe" = "1.2.3"
         |"github:mlutze/flixball" = "3.b.1"
         |
         |""".stripMargin
@@ -1420,7 +1420,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:jls/tictactoe" = "1.2.3"
         |"github:mlutze/flixball" = "3.2.c"
         |
         |""".stripMargin
@@ -1688,7 +1688,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "" }
+        |"github:jls/tictactoe" = { version = "1.2.3", security = "" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixUnknownSecurityValue](result)
@@ -1705,7 +1705,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "abc" }
+        |"github:jls/tictactoe" = { version = "1.2.3", security = "abc" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixUnknownSecurityValue](result)
@@ -1722,7 +1722,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = [] }
+        |"github:jls/tictactoe" = { version = "1.2.3", security = [] }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencySecurityType](result)
@@ -1739,7 +1739,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = ["plain"] }
+        |"github:jls/tictactoe" = { version = "1.2.3", security = ["plain"] }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencySecurityType](result)
@@ -1756,7 +1756,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = true }
+        |"github:jls/tictactoe" = { version = "1.2.3", security = true }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencySecurityType](result)
@@ -1773,7 +1773,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = 42 }
+        |"github:jls/tictactoe" = { version = "1.2.3", security = 42 }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencySecurityType](result)
@@ -1807,10 +1807,10 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Game" }
+        |"github:jls/tictactoe" = { version = "1.2.3", mount = "Game" }
         |"github:mlutze/flixball" = "3.2.1"
         |""".stripMargin
-    assertResult(expected = List(Some(Mountpoint("Game")), None))(actual =
+    assertResult(expected = List(Mountpoint("Game"), Mountpoint("flixball")))(actual =
       ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m.flixDependencies.map(_.mount)
         case Err(e) => e.message(f)
@@ -1829,14 +1829,170 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "game" }
+        |"github:jls/tictactoe" = { version = "1.2.3", mount = "game" }
         |""".stripMargin
-    assertResult(expected = List(Some(Mountpoint("game"))))(actual =
+    assertResult(expected = List(Mountpoint("game")))(actual =
       ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m.flixDependencies.map(_.mount)
         case Err(e) => e.message(f)
       }
     )
+  }
+
+  test("Ok.mount.derived.01") {
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:mlutze/flixball" = "3.2.1"
+        |""".stripMargin
+    assertResult(expected = List(Mountpoint("flixball")))(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.flixDependencies.map(_.mount)
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
+  test("Ok.mount.derived.02") {
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:mlutze/flixball" = { version = "3.2.1", security = "paranoid" }
+        |""".stripMargin
+    assertResult(expected = List(Mountpoint("flixball")))(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.flixDependencies.map(_.mount)
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
+  test("Ok.mount.derived.03") {
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:flix/Flix" = "1.0.0"
+        |""".stripMargin
+    assertResult(expected = List(Mountpoint("Flix")))(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.flixDependencies.map(_.mount)
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
+  test("Ok.mount.derived.04") {
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe" }
+        |""".stripMargin
+    assertResult(expected = List(Mountpoint("ticTacToe")))(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.flixDependencies.map(_.mount)
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
+  test("ManifestError.FlixDependencyUnderivableMount.Hyphen.01") {
+    // The name of the repository is never folded into a mount.
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = "1.2.3"
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyUnderivableMount](result)
+  }
+
+  test("ManifestError.FlixDependencyUnderivableMount.Hyphen.02") {
+    // Nor in the table form.
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "plain" }
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyUnderivableMount](result)
+  }
+
+  test("ManifestError.FlixDependencyUnderivableMount.Digit.01") {
+    // A mount begins with a letter.
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:gabrielecirulli/2048" = "1.0.0"
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyUnderivableMount](result)
+  }
+
+  test("ManifestError.FlixDependencyUnderivableMount.Keyword.01") {
+    // A keyword is read before a name, so it cannot be written before `::`.
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:someone/type" = "1.0.0"
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyUnderivableMount](result)
   }
 
   test("Manifest.Identity.Mount") {
@@ -1849,12 +2005,51 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Game", security = "paranoid" }
+        |"github:jls/tictactoe" = { version = "1.2.3", mount = "Game", security = "paranoid" }
         |"github:mlutze/flixball" = "3.2.1"
         |""".stripMargin
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertResult(manifest1)(manifest2)
+  }
+
+  test("Manifest.Identity.Mount.Derived") {
+    // A derived mount is not rendered, so the shorthand survives a round trip.
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:mlutze/flixball" = "3.2.1"
+        |""".stripMargin
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val rendered = Manifest.format(manifest1)
+    assert(!rendered.contains("mount"), rendered)
+    assertResult(manifest1)(ManifestParser.parse(rendered, ManifestPath).unsafeGet)
+  }
+
+  test("ManifestError.FlixDependencyDuplicateMount.Derived") {
+    // Two repositories with one name derive one mount.
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:alice/json" = "1.0.0"
+        |"github:bob/json" = "2.0.0"
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyDuplicateMount](result)
   }
 
   test("ManifestError.FlixDependencyDuplicateMount") {
@@ -1869,7 +2064,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "game" }
+        |"github:jls/tictactoe" = { version = "1.2.3", mount = "game" }
         |"github:mlutze/flixball" = { version = "3.2.1", mount = "game" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
@@ -1887,7 +2082,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Foo.Bar" }
+        |"github:jls/tictactoe" = { version = "1.2.3", mount = "Foo.Bar" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencyIllegalMount](result)
@@ -1905,7 +2100,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "type" }
+        |"github:jls/tictactoe" = { version = "1.2.3", mount = "type" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencyIllegalMount](result)
@@ -1923,7 +2118,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "type-level" }
+        |"github:jls/tictactoe" = { version = "1.2.3", mount = "type-level" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencyIllegalMount](result)
@@ -1941,7 +2136,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "2048" }
+        |"github:jls/tictactoe" = { version = "1.2.3", mount = "2048" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencyIllegalMount](result)
@@ -1959,7 +2154,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "utf-8" }
+        |"github:jls/tictactoe" = { version = "1.2.3", mount = "utf-8" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencyIllegalMount](result)
@@ -1977,7 +2172,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "json-" }
+        |"github:jls/tictactoe" = { version = "1.2.3", mount = "json-" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencyIllegalMount](result)
@@ -1995,7 +2190,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "flix--json" }
+        |"github:jls/tictactoe" = { version = "1.2.3", mount = "flix--json" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencyIllegalMount](result)
@@ -2013,7 +2208,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "tic-tac-toe" }
+        |"github:jls/tictactoe" = { version = "1.2.3", mount = "tic-tac-toe" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencyIllegalMount](result)

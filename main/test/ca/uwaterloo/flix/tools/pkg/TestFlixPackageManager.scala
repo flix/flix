@@ -31,7 +31,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:flix/museum-clerk" = "1.1.0"
+          |"github:flix/museum-clerk" = { version = "1.1.0", mount = "clerk" }
           |
           |[mvn-dependencies]
           |
@@ -69,7 +69,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:flix/museum-giftshop" = "1.1.0"
+          |"github:flix/museum-giftshop" = { version = "2.0.0", mount = "giftshop" }
           |
           |[mvn-dependencies]
           |
@@ -88,8 +88,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           case Err(e) => fail(e.message(formatter))
         }
       FlixPackageManager.installAll(manifests, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
-        case Ok(l) => l.packages.exists(_.path.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg")) &&
-          l.packages.exists(_.path.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg"))
+        case Ok(l) => l.packages.exists(_.path.endsWith(s"flix${s}museum-giftshop${s}2.0.0${s}museum-giftshop-2.0.0.fpkg")) &&
+          l.packages.exists(_.path.endsWith(s"flix${s}museum-clerk${s}2.0.0${s}museum-clerk-2.0.0.fpkg"))
         case Err(e) => e
       }
     })
@@ -107,7 +107,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:flix/museum-clerk" = "1.1.0"
+          |"github:flix/museum-clerk" = { version = "2.0.0", mount = "clerk" }
           |
           |[mvn-dependencies]
           |
@@ -124,7 +124,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:flix/museum-giftshop" = "1.1.0"
+          |"github:flix/museum-giftshop" = { version = "2.0.0", mount = "giftshop" }
           |
           |[mvn-dependencies]
           |
@@ -154,8 +154,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
 
       FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
-        case Ok(l) => l.packages.exists(_.path.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg")) &&
-          l.packages.exists(_.path.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg"))
+        case Ok(l) => l.packages.exists(_.path.endsWith(s"flix${s}museum-giftshop${s}2.0.0${s}museum-giftshop-2.0.0.fpkg")) &&
+          l.packages.exists(_.path.endsWith(s"flix${s}museum-clerk${s}2.0.0${s}museum-clerk-2.0.0.fpkg"))
         case Err(e) => e.message(formatter)
       }
     })
@@ -173,7 +173,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:flix/museum-giftshop" = "1.1.0"
+          |"github:flix/museum-giftshop" = { version = "2.0.0", mount = "giftshop" }
           |
           |[mvn-dependencies]
           |
@@ -194,7 +194,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) // installs the dependency
       FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match { // does nothing
         case Ok(l) =>
-          l.packages.exists(_.path.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg"))
+          l.packages.exists(_.path.endsWith(s"flix${s}museum-giftshop${s}2.0.0${s}museum-giftshop-2.0.0.fpkg"))
         case Err(e) => e.message(formatter)
       }
     })
@@ -212,7 +212,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:flix/museum-entrance" = "1.2.0"
+          |"github:flix/museum-entrance" = { version = "2.0.0", mount = "entrance" }
           |
           |[mvn-dependencies]
           |
@@ -243,7 +243,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         |authors = ["Anna Blume"]
         |
         |[dependencies]
-        |"github:flix/does-not-exist" = "1.0.0"
+        |"github:flix/does-not-exist" = { version = "1.0.0", mount = "missing" }
         |
         |[mvn-dependencies]
         |
@@ -308,7 +308,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:flix/museum" = "1.4.0"
+          |"github:flix/museum" = "2.1.0"
           |
           |""".stripMargin
       }
@@ -326,11 +326,11 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       }
       FlixPackageManager.installAll(manifests, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
         case Ok(l) =>
-          l.packages.exists(_.path.endsWith(s"flix${s}museum${s}1.4.0${s}museum-1.4.0.fpkg")) &&
-            l.packages.exists(_.path.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg")) &&
-            l.packages.exists(_.path.endsWith(s"flix${s}museum-entrance${s}1.2.0${s}museum-entrance-1.2.0.fpkg")) &&
-            l.packages.exists(_.path.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg")) &&
-            l.packages.exists(_.path.endsWith(s"flix${s}museum-restaurant${s}1.1.0${s}museum-restaurant-1.1.0.fpkg"))
+          l.packages.exists(_.path.endsWith(s"flix${s}museum${s}2.1.0${s}museum-2.1.0.fpkg")) &&
+            l.packages.exists(_.path.endsWith(s"flix${s}museum-clerk${s}2.1.0${s}museum-clerk-2.1.0.fpkg")) &&
+            l.packages.exists(_.path.endsWith(s"flix${s}museum-entrance${s}2.0.0${s}museum-entrance-2.0.0.fpkg")) &&
+            l.packages.exists(_.path.endsWith(s"flix${s}museum-giftshop${s}2.0.0${s}museum-giftshop-2.0.0.fpkg")) &&
+            l.packages.exists(_.path.endsWith(s"flix${s}museum-restaurant${s}2.0.0${s}museum-restaurant-2.0.0.fpkg"))
         case Err(e) => e.message(formatter)
       }
     })
@@ -435,7 +435,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   test("builtVersions.01") {
     // A package is built at the version of the manifest its declarations resolve to, which here
     // is greater than the version that is declared.
-    val origin = mkManifest("origin", """"github:flix/museum-clerk" = "1.0.0"""")
+    val origin = mkManifest("origin", """"github:flix/museum-clerk" = { version = "1.0.0", mount = "clerk" }""")
     val clerk = mkManifest("museum-clerk", "").copy(version = SemVer(1, 1, 0))
     val resolution = FlixPackageManager.SecureResolution(
       origin = origin,
@@ -469,7 +469,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   test("mismatched-versions") {
     val toml = PkgTestUtils.mkTomlWithDeps(
       """
-        |"github:jaschdoc/flix-test-pkg-mismatched-versions" = "0.1.0"
+        |"github:jaschdoc/flix-test-pkg-mismatched-versions" = { version = "0.1.0", mount = "mismatched" }
         |""".stripMargin
     )
     val manifest = ManifestParser.parse(toml, ManifestPath) match {
@@ -487,9 +487,9 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
   test("mkIncompatibleVersions.01") {
     // The requirements are ordered by version, and then by dependent.
-    val beta = mkManifest("beta", """"github:flix/museum-clerk" = "2.0.0"""")
-    val alpha = mkManifest("alpha", """"github:flix/museum-clerk" = "2.0.0"""")
-    val gamma = mkManifest("gamma", """"github:flix/museum-clerk" = "1.1.0"""")
+    val beta = mkManifest("beta", """"github:flix/museum-clerk" = { version = "2.0.0", mount = "clerk" }""")
+    val alpha = mkManifest("alpha", """"github:flix/museum-clerk" = { version = "2.0.0", mount = "clerk" }""")
+    val gamma = mkManifest("gamma", """"github:flix/museum-clerk" = { version = "1.1.0", mount = "clerk" }""")
     val id = PackageId(Repository.GitHub, "flix", "museum-clerk")
     val requirements = List(beta, alpha, gamma).map(m => (m, FlixPackageManager.findFlixDependencies(m).head))
     val error = FlixPackageManager.mkIncompatibleVersions(id, requirements)
@@ -500,12 +500,11 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   }
 
   test("resolve.raise.01") {
-    // museum-giftshop 1.0.0 requires museum-clerk 1.0.0 and museum-entrance 1.2.0 requires
-    // museum-clerk 1.1.0, so museum-clerk is built at 1.1.0, and at no other version.
+    // museum 2.1.0 requires museum-clerk 2.1.0, and its museum-entrance and museum-giftshop require
+    // museum-clerk 2.0.0, so museum-clerk is built at 2.1.0, and at no other version.
     val toml = PkgTestUtils.mkTomlWithDeps(
       """
-        |"github:flix/museum-giftshop" = "1.0.0"
-        |"github:flix/museum-entrance" = "1.2.0"
+        |"github:flix/museum" = "2.1.0"
         |""".stripMargin
     )
     val manifest = ManifestParser.parse(toml, ManifestPath) match {
@@ -516,7 +515,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val path = Files.createTempDirectory("")
     FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
       case Ok(resolution) =>
-        assertResult(expected = List(SemVer(1, 1, 0)))(
+        assertResult(expected = List(SemVer(2, 1, 0)))(
           actual = resolution.manifests.filter(_.name == "museum-clerk").map(_.version)
         )
       case Err(e) => fail(e.message(formatter))
@@ -527,8 +526,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     // What is installed and locked is the version that was selected, not a version that was declared.
     val toml = PkgTestUtils.mkTomlWithDeps(
       """
-        |"github:flix/museum-giftshop" = "1.0.0"
-        |"github:flix/museum-entrance" = "1.2.0"
+        |"github:flix/museum" = "2.1.0"
         |""".stripMargin
     )
     val manifest = ManifestParser.parse(toml, ManifestPath) match {
@@ -546,9 +544,9 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         val clerk = PackageId(Repository.GitHub, "flix", "museum-clerk")
         // Both versions are locked, since the manifest of each was read to resolve the graph. Only
         // the package that was downloaded records an fpkg.
-        assertResult(expected = Some(true))(actual = installation.lockfile.packages.get((clerk, SemVer(1, 1, 0))).map(_.fpkg.isDefined))
-        assertResult(expected = Some(false))(actual = installation.lockfile.packages.get((clerk, SemVer(1, 0, 0))).map(_.fpkg.isDefined))
-        assertResult(expected = List(s"museum-clerk-1.1.0.fpkg"))(
+        assertResult(expected = Some(true))(actual = installation.lockfile.packages.get((clerk, SemVer(2, 1, 0))).map(_.fpkg.isDefined))
+        assertResult(expected = Some(false))(actual = installation.lockfile.packages.get((clerk, SemVer(2, 0, 0))).map(_.fpkg.isDefined))
+        assertResult(expected = List(s"museum-clerk-2.1.0.fpkg"))(
           actual = installation.packages.filter(_.id == clerk).map(_.path.getFileName.toString).distinct
         )
       case Err(e) => fail(e.message(formatter))

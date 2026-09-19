@@ -396,32 +396,6 @@ object FlixPackageManager {
   }
 
   /**
-    * Finds every package that some of its dependents mount and others do not.
-    *
-    * A mounted package is named under its own root and is reachable only through its mount, so a
-    * dependent that leaves it unmounted cannot reach it at all. Transitional: the question goes
-    * away once every dependency must declare a mount.
-    */
-  def checkConsistentMounts(manifests: List[Manifest]): List[PackageError] = {
-    // Pair every dependency declaration with the manifest that declares it.
-    val declarations = manifests.flatMap(m => findFlixDependencies(m).map(dep => (m, dep)))
-
-    declarations.groupBy { case (_, dep) => dep.id }.toList.sortBy { case (id, _) => id }.flatMap {
-      case (identifier, decls) =>
-        val (mounted, unmounted) = decls.partition { case (_, dep) => dep.mount.isDefined }
-        if (mounted.nonEmpty && unmounted.nonEmpty) {
-          Some(PackageError.InconsistentMounts(
-            identifier,
-            mounted.map { case (dependent, _) => dependent.name }.sorted,
-            unmounted.map { case (dependent, _) => dependent.name }.sorted
-          ))
-        } else {
-          None
-        }
-    }
-  }
-
-  /**
     * Finds every package in `resolution` that requires a newer version of Flix than `current`.
     *
     * Only the packages that are built are checked, since a package that is not built is not
