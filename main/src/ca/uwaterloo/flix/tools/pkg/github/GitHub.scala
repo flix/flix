@@ -56,6 +56,12 @@ object GitHub {
 
   /**
     * Lists the project's releases.
+    *
+    * The status is read before the body is: a project that does not exist, and a request that is
+    * refused, both answer with a body that is not a listing, and reporting either as a body that
+    * could not be parsed says nothing about what went wrong. Kept apart, as in [[download]]: no
+    * such project (404), a refusal (403/429, usually a rate limit), any other unexpected status,
+    * and never reaching a server at all.
     */
   def getReleases(project: Project, apiKey: Option[String]): Result[List[Release], PackageError] = {
     val url = releasesUrl(project)
@@ -63,11 +69,22 @@ object GitHub {
     // add the API key as bearer if needed
     apiKey.foreach(key => reqBuilder.header("Authorization", "Bearer " + key))
     val req = reqBuilder.GET().build()
-    val json = try {
-      Client.sendRequest(req).body()
+    val response = try {
+      Client.sendRequest(req)
     } catch {
-      case ex: IOException => return Err(PackageError.ProjectNotFound(url, project, ex))
+      case ex: IOException => return Err(PackageError.ProjectUnreachable(url, project, ex))
     }
+
+    val status = response.statusCode()
+    if (status < 200 || status >= 300) {
+      return status match {
+        case 404 => Err(PackageError.ProjectDoesNotExist(project, url))
+        case 403 | 429 => Err(PackageError.DownloadRefused(url, status, retryAfter(response)))
+        case _ => Err(PackageError.DownloadFailed(url, status))
+      }
+    }
+
+    val json = response.body()
     val releaseJsons = try {
       parse(json).asInstanceOf[JArray]
     } catch {
@@ -267,7 +284,7 @@ object GitHub {
   /**
     * Returns `response`'s `Retry-After` header, if it has one.
     */
-  private def retryAfter(response: HttpResponse[InputStream]): Option[String] = {
+  private def retryAfter(response: HttpResponse[?]): Option[String] = {
     val header = response.headers().firstValue("Retry-After")
     if (header.isPresent) Some(header.get()) else None
   }
