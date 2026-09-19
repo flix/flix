@@ -432,6 +432,40 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     )
   }
 
+  test("builtVersions.01") {
+    // A package is built at the version of the manifest its declarations resolve to, which here
+    // is greater than the version that is declared.
+    val origin = mkManifest("origin", """"github:flix/museum-clerk" = "1.0.0"""")
+    val clerk = mkManifest("museum-clerk", "").copy(version = SemVer(1, 1, 0))
+    val resolution = FlixPackageManager.SecureResolution(
+      origin = origin,
+      security = Map(origin -> SecurityContext.Unrestricted, clerk -> SecurityContext.Plain),
+      manifestToFlixDeps = ListMap(Map(clerk -> FlixPackageManager.findFlixDependencies(origin))),
+      tomlDigests = Map.empty
+    )
+    assertResult(expected = Map(PackageId(Repository.GitHub, "flix", "museum-clerk") -> SemVer(1, 1, 0)))(
+      actual = FlixPackageManager.builtVersions(resolution)
+    )
+  }
+
+  test("findAvailableUpdates.01") {
+    // museum-clerk has a release newer than 1.0.0 in the same major version.
+    val clerk = PackageId(Repository.GitHub, "flix", "museum-clerk")
+    FlixPackageManager.findAvailableUpdates(clerk, SemVer(1, 0, 0), PkgTestUtils.gitHubToken) match {
+      case Ok(updates) => assert(updates.minor.exists(_ >= SemVer(1, 1, 0)))
+      case Err(e) => fail(e.message(formatter))
+    }
+  }
+
+  test("findAvailableUpdates.02") {
+    // Nothing is newer than a version that is greater than every release.
+    val clerk = PackageId(Repository.GitHub, "flix", "museum-clerk")
+    FlixPackageManager.findAvailableUpdates(clerk, SemVer(999, 0, 0), PkgTestUtils.gitHubToken) match {
+      case Ok(updates) => assert(updates.isEmpty)
+      case Err(e) => fail(e.message(formatter))
+    }
+  }
+
   test("mismatched-versions") {
     val toml = PkgTestUtils.mkTomlWithDeps(
       """

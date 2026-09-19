@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, 
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
 import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{Origin, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{Origin, PackageId, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -379,6 +379,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   // The `flix.toml` manifest if in project mode, otherwise `None`
   private var optManifest: Option[Manifest] = None
 
+  // The version that every Flix package of the project is built at. Replaced as a whole whenever
+  // the dependencies are resolved.
+  private var builtVersions: Map[PackageId, SemVer] = Map.empty
+
   // The source files, packages, and JARs of the project. Replaced as a whole whenever the project is scanned.
   private var files: ProjectFiles = ProjectFiles(Nil, Nil, Nil)
 
@@ -403,6 +407,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       installed <- installDependencies(deps, lockfile)
     } yield {
       val (pkgs, jars) = installed
+      builtVersions = FlixPackageManager.builtVersions(deps)
       files = ProjectFiles(scanSources(), pkgs, jars)
     }
   }
@@ -1548,6 +1553,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Show dependencies which have newer versions available.
     *
+    * A dependency is compared by the version it is built at, which can be greater than the
+    * version the project declares, since a declaration is only the least version the project can
+    * be built with. A dependency that is built at its newest release is up to date, whatever the
+    * project declares.
+    *
     * @return `true` if any outdated dependencies were found, `false` if everything is up to date.
     */
   def outdated(flix: Flix)(implicit out: PrintStream): Result[Boolean, BootstrapError] = {
@@ -1556,7 +1566,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val flixDeps = optManifest.map(FlixPackageManager.findFlixDependencies).getOrElse(Nil)
 
     val rows = flixDeps.flatMap { dep =>
-      val updates = FlixPackageManager.findAvailableUpdates(dep, flix.options.githubToken) match {
+      // A dependency that has not been resolved is built at no version, and is compared by the
+      // version that is declared.
+      val built = builtVersions.getOrElse(dep.id, dep.version)
+      val updates = FlixPackageManager.findAvailableUpdates(dep.id, built, flix.options.githubToken) match {
         case Ok(u) => u
         case Err(e) => return Result.Err(BootstrapError.FlixPackageError(e))
       }
@@ -1567,6 +1580,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         Some(List(
           s"${dep.id.owner}/${dep.id.name}",
           dep.version.toString,
+          built.toString,
           updates.major.map(v => v.toString).getOrElse(""),
           updates.minor.map(v => v.toString).getOrElse(""),
           updates.patch.map(v => v.toString).getOrElse(""),
@@ -1583,8 +1597,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } else {
       out.println("")
       out.println(formatter.table(
-        List("package", "current", "major", "minor", "patch"),
-        List(formatter.blue, formatter.cyan, formatter.yellow, formatter.yellow, formatter.yellow),
+        List("package", "declared", "built", "major", "minor", "patch"),
+        List(formatter.blue, formatter.cyan, formatter.cyan, formatter.yellow, formatter.yellow, formatter.yellow),
         rows
       ))
       out.println("")

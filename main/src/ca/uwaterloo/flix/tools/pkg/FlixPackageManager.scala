@@ -446,18 +446,36 @@ object FlixPackageManager {
   }
 
   /**
-    * Finds the most relevant available updates for the given dependency.
+    * Returns the version that every package in `resolution` is built at.
+    *
+    * It is the version of the manifest that the declarations of the package resolve to, and not
+    * a version that any of them declares: a package is built at the greatest version that is
+    * required of it, see [[resolve]].
     */
-  def findAvailableUpdates(dep: FlixDependency, apiKey: Option[String]): Result[AvailableUpdates, PackageError] = {
+  def builtVersions(resolution: SecureResolution): Map[PackageId, SemVer] = {
+    resolution.manifestToFlixDeps.m.collect {
+      // Any of the declarations that resolve to the package will do, since they all name it.
+      case (manifest, dep :: _) => dep.id -> manifest.version
+    }
+  }
+
+  /**
+    * Finds the most relevant available updates of the package `id`, which are the releases of it
+    * that are newer than `version`.
+    *
+    * `version` is what to compare against. For a package that is built, it should be the version
+    * it is built at, see [[builtVersions]], and not the version a dependent declares, which is
+    * only the least version that dependent can be built with.
+    */
+  def findAvailableUpdates(id: PackageId, version: SemVer, apiKey: Option[String]): Result[AvailableUpdates, PackageError] = {
     for {
-      githubProject <- GitHub.parseProject(s"${dep.id.owner}/${dep.id.name}")
+      githubProject <- GitHub.parseProject(s"${id.owner}/${id.name}")
       releases <- GitHub.getReleases(githubProject, apiKey)
       availableVersions = releases.map(r => r.version)
 
-      ver = dep.version
-      major = ver.majorUpdate(availableVersions)
-      minor = ver.minorUpdate(availableVersions)
-      patch = ver.patchUpdate(availableVersions)
+      major = version.majorUpdate(availableVersions)
+      minor = version.minorUpdate(availableVersions)
+      patch = version.patchUpdate(availableVersions)
     } yield AvailableUpdates(major, minor, patch)
   }
 

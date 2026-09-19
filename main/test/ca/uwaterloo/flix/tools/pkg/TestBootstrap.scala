@@ -7,6 +7,7 @@ import ca.uwaterloo.flix.util.{FileOps, Formatter, Result, Sha256}
 import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
 
+import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.file.{Files, Path}
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -117,6 +118,42 @@ class TestBootstrap extends AnyFunSuite {
       case Ok(_) => fail("Expected the unreadable lock file to be refused.")
       case Err(BootstrapError.LockParseError(_: LockError.UnsupportedLockVersion)) => ()
       case Err(e) => fail(s"Expected an unsupported lock version, but got: ${e.message(Formatter.getDefault)}")
+    }
+  }
+
+  test("outdated.01") {
+    // The project declares museum-clerk 1.0.0, and museum-entrance 1.1.0 requires museum-clerk
+    // 1.1.0, so museum-clerk is built at 1.1.0. It is compared by the version it is built at.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |name = "test"
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |"github:flix/museum-clerk" = "1.0.0"
+         |"github:flix/museum-entrance" = "1.1.0"
+         |""".stripMargin)
+    val b = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    val bytes = new ByteArrayOutputStream()
+    b.outdated(PkgTestUtils.mkFlix(b))(new PrintStream(bytes)).unsafeGet
+    val lines = bytes.toString.linesIterator.map(_.trim.split("\\s+").toList).toList
+
+    // The table says what is declared and what is built.
+    assert(lines.exists(_.take(3) == List("package", "declared", "built")))
+
+    // museum-entrance is built at the version that is declared, and has a newer release.
+    assert(lines.exists(_.take(3) == List("flix/museum-entrance", "1.1.0", "1.1.0")))
+
+    // museum-clerk is built at 1.1.0. If it is listed at all, which it is once it has a newer
+    // release, it is listed as built at 1.1.0, and 1.1.0 is not offered as an update.
+    for (clerk <- lines.filter(_.headOption.contains("flix/museum-clerk"))) {
+      assert(clerk.take(3) == List("flix/museum-clerk", "1.0.0", "1.1.0"))
+      assert(!clerk.drop(3).contains("1.1.0"))
     }
   }
 
