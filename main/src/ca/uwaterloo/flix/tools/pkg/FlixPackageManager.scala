@@ -186,6 +186,90 @@ object FlixPackageManager {
   }
 
   /**
+    * Follows every dependency declaration that can be reached from `origin`, and returns them in
+    * the order they were followed.
+    *
+    * The graph is walked with a worklist of the manifests whose declarations are yet to be
+    * followed. A package is visited once for every version it is required at, however many
+    * dependents require it, which is also what ends the walk on a cycle.
+    */
+  private def reach(origin: Manifest, path: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[List[Edge], PackageError] = {
+    val edges: mutable.ListBuffer[Edge] = mutable.ListBuffer.empty
+
+    // Every package version that has been visited. A visit is identified by the package and the
+    // version, which is what a dependency declaration states, so whether a declaration leads
+    // somewhere new is known without comparing manifests.
+    val visited: mutable.Set[(PackageId, SemVer)] = mutable.Set.empty
+
+    // The manifests whose declarations are yet to be followed. What a manifest depends on is
+    // followed before the manifests that were found beside it, so the walk is depth first.
+    var worklist: List[(Option[(PackageId, SemVer)], Manifest)] = List((None, origin))
+
+    while (worklist.nonEmpty) {
+      val (source, dependent) = worklist.head
+      follow(source, dependent, path, apiKey, lockfile) match {
+        case Err(e) => return Err(e)
+        case Ok(found) =>
+          // Every declaration is an edge of the graph, whether or not it leads somewhere new.
+          edges ++= found
+          val unvisited = found.collect {
+            case e if visited.add((e.dep.id, e.dep.version)) => (Option((e.dep.id, e.dep.version)), e.target)
+          }
+          worklist = unvisited ::: worklist.tail
+      }
+    }
+
+    Ok(edges.toList)
+  }
+
+  /**
+    * Follows every Flix dependency that `dependent` declares: downloads and parses the manifest
+    * of the package at the declared version.
+    *
+    * Every `flix.toml` is installed before any of them is parsed.
+    */
+  private def follow(source: Option[(PackageId, SemVer)], dependent: Manifest, path: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[List[Edge], PackageError] = {
+    for {
+      // download toml files
+      tomlFiles <- traverse(findFlixDependencies(dependent)) { dep =>
+        install(dep, dep.version, Bootstrap.EXT_TOML, path, apiKey, lockfile).map(toml => (toml, dep))
+      }
+
+      // parse manifests
+      edges <- traverse(tomlFiles) {
+        case (toml, dep) => validateManifest(toml, dep, dep.version).map(target => Edge(source, dependent, dep, target, toml.digest))
+      }
+    } yield edges
+  }
+
+  /** Parses and validates the manifest in `toml` by checking that it declares `version`, the
+    * version that was downloaded.
+    *
+    * `version` is passed rather than read off `flixDep` for the reason given on [[install]].
+    */
+  private def validateManifest(toml: InstalledFile, flixDep: FlixDependency, version: SemVer): Result[Manifest, PackageError] = {
+    parseManifest(toml.path).flatMap {
+      m =>
+        if (m.version == version) {
+          Ok(m)
+        } else {
+          Err(PackageError.MismatchedVersions(m, flixDep))
+        }
+    }
+  }
+
+  /**
+    * Parses the toml file at `path` into a Manifest,
+    * and converts any error to a PackageError.
+    */
+  private def parseManifest(path: Path): Result[Manifest, PackageError] = {
+    ManifestParser.parse(path) match {
+      case Ok(t) => Ok(t)
+      case Err(e) => Err(PackageError.ManifestParseError(e))
+    }
+  }
+
+  /**
     * Returns the version that every package in `nodes` is given: the one [[selectVersion]] picks among
     * the versions the package occurs at in `nodes`.
     *
@@ -200,6 +284,26 @@ object FlixPackageManager {
         case None => Err(id)
       }
     }.map(_.toMap)
+  }
+
+  /**
+    * Returns the version minimal version selection picks for a package required at `versions`,
+    * if there is one.
+    *
+    * The pick is the greatest of `versions`. Read as a lower bound, a requirement is satisfied by
+    * any version at or above it, so the greatest is the least version that satisfies them all.
+    *
+    * Versions that do not share a major have no such pick. A major is a compatibility boundary,
+    * so the greater of two majors is not a version the other dependent can be given, and there is
+    * nothing to select.
+    *
+    * `versions` must be non-empty.
+    */
+  def selectVersion(versions: List[SemVer]): Option[SemVer] = {
+    if (versions.map(_.major).distinct.sizeIs > 1)
+      None
+    else
+      versions.maxOption
   }
 
   /**
@@ -276,26 +380,6 @@ object FlixPackageManager {
     val sorted = requirements.sortBy { case (dependent, dep) => (dep.version, dependent.name) }
     val versions = requirements.map { case (_, dep) => dep.version }.distinct
     PackageError.MultipleVersions(id, sorted, selectVersion(versions))
-  }
-
-  /**
-    * Returns the version minimal version selection picks for a package required at `versions`,
-    * if there is one.
-    *
-    * The pick is the greatest of `versions`. Read as a lower bound, a requirement is satisfied by
-    * any version at or above it, so the greatest is the least version that satisfies them all.
-    *
-    * Versions that do not share a major have no such pick. A major is a compatibility boundary,
-    * so the greater of two majors is not a version the other dependent can be given, and there is
-    * nothing to select.
-    *
-    * `versions` must be non-empty.
-    */
-  def selectVersion(versions: List[SemVer]): Option[SemVer] = {
-    if (versions.map(_.major).distinct.sizeIs > 1)
-      None
-    else
-      versions.maxOption
   }
 
   /**
@@ -525,79 +609,6 @@ object FlixPackageManager {
   }
 
   /**
-    * Follows every dependency declaration that can be reached from `origin`, and returns them in
-    * the order they were followed.
-    *
-    * The graph is walked with a worklist of the manifests whose declarations are yet to be
-    * followed. A package is visited once for every version it is required at, however many
-    * dependents require it, which is also what ends the walk on a cycle.
-    */
-  private def reach(origin: Manifest, path: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[List[Edge], PackageError] = {
-    val edges: mutable.ListBuffer[Edge] = mutable.ListBuffer.empty
-
-    // Every package version that has been visited. A visit is identified by the package and the
-    // version, which is what a dependency declaration states, so whether a declaration leads
-    // somewhere new is known without comparing manifests.
-    val visited: mutable.Set[(PackageId, SemVer)] = mutable.Set.empty
-
-    // The manifests whose declarations are yet to be followed. What a manifest depends on is
-    // followed before the manifests that were found beside it, so the walk is depth first.
-    var worklist: List[(Option[(PackageId, SemVer)], Manifest)] = List((None, origin))
-
-    while (worklist.nonEmpty) {
-      val (source, dependent) = worklist.head
-      follow(source, dependent, path, apiKey, lockfile) match {
-        case Err(e) => return Err(e)
-        case Ok(found) =>
-          // Every declaration is an edge of the graph, whether or not it leads somewhere new.
-          edges ++= found
-          val unvisited = found.collect {
-            case e if visited.add((e.dep.id, e.dep.version)) => (Option((e.dep.id, e.dep.version)), e.target)
-          }
-          worklist = unvisited ::: worklist.tail
-      }
-    }
-
-    Ok(edges.toList)
-  }
-
-  /**
-    * Follows every Flix dependency that `dependent` declares: downloads and parses the manifest
-    * of the package at the declared version.
-    *
-    * Every `flix.toml` is installed before any of them is parsed.
-    */
-  private def follow(source: Option[(PackageId, SemVer)], dependent: Manifest, path: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[List[Edge], PackageError] = {
-    for {
-      // download toml files
-      tomlFiles <- traverse(findFlixDependencies(dependent)) { dep =>
-        install(dep, dep.version, Bootstrap.EXT_TOML, path, apiKey, lockfile).map(toml => (toml, dep))
-      }
-
-      // parse manifests
-      edges <- traverse(tomlFiles) {
-        case (toml, dep) => validateManifest(toml, dep, dep.version).map(target => Edge(source, dependent, dep, target, toml.digest))
-      }
-    } yield edges
-  }
-
-  /** Parses and validates the manifest in `toml` by checking that it declares `version`, the
-    * version that was downloaded.
-    *
-    * `version` is passed rather than read off `flixDep` for the reason given on [[install]].
-    */
-  private def validateManifest(toml: InstalledFile, flixDep: FlixDependency, version: SemVer): Result[Manifest, PackageError] = {
-    parseManifest(toml.path).flatMap {
-      m =>
-        if (m.version == version) {
-          Ok(m)
-        } else {
-          Err(PackageError.MismatchedVersions(m, flixDep))
-        }
-    }
-  }
-
-  /**
     * Computes the maximum allowed security level for `manifest` which is the minimum / greatest lower bound of both
     *   1. the [[minSecurityLevel]] of all (transitive) dependent / parent manifests and
     *   1. the security levels with which `manifest` is depended upon,
@@ -659,17 +670,6 @@ object FlixPackageManager {
         case d: MavenDependency => d
         case d: JarDependency => d
       }.map(d => PackageError.IllegalJavaDependencyForSctx(m, d, sctx))
-  }
-
-  /**
-    * Parses the toml file at `path` into a Manifest,
-    * and converts any error to a PackageError.
-    */
-  private def parseManifest(path: Path): Result[Manifest, PackageError] = {
-    ManifestParser.parse(path) match {
-      case Ok(t) => Ok(t)
-      case Err(e) => Err(PackageError.ManifestParseError(e))
-    }
   }
 
 }
