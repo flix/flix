@@ -256,6 +256,64 @@ object Bootstrap {
   }
 
   /**
+    * Changes the version of the package `spec` in the dependencies of the project at `p`.
+    *
+    * `spec` is a package identifier with an optional version, e.g. `flix/museum-clerk` or
+    * `flix/museum-clerk@1.1.0`, see [[PackageSpec.mkPackageSpec]]. A package that is asked for
+    * at no particular version is moved to the newest release that shares a major with the
+    * version it is declared at, see [[selectUpgradeVersion]]. A version that is asked for is
+    * taken as it is asked for, which includes another major, and a version below the one that is
+    * declared: a declaration is a version to pin as well as a version to raise.
+    *
+    * Only the version changes. The mount and the security context are the ones that were
+    * declared, which is what this command has over removing the package and adding it again, and
+    * the declaration stays where it is in the file.
+    *
+    * Only what the project declares can be changed: the version of a package that is reached
+    * through another dependency is that dependency's to declare.
+    *
+    * The manifest is rewritten as a whole, see [[install]], and a failure puts back the bytes
+    * that were there. A package that already declares the version it would be given is left
+    * alone entirely, so a command that changes nothing rewrites nothing.
+    */
+  def upgrade(p: Path, spec: String, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+    val pkg = PackageSpec.mkPackageSpec(spec) match {
+      case Some(s) => s
+      case None => return Err(BootstrapError.IllegalPackageSpec(spec))
+    }
+
+    val tomlPath = getManifestFile(p)
+    if (!Files.exists(tomlPath)) {
+      return Err(BootstrapError.NoProject(tomlPath))
+    }
+
+    for {
+      manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
+      dep <- findDeclared(manifest, pkg.id)
+      version <- selectUpgradeVersion(pkg, dep, apiKey)
+      _ <- if (version == dep.version) {
+        out.println(formatter.green(s"'${pkg.id}' already declares v$version."))
+        Ok(())
+      } else {
+        rewriteManifest(p, manifest.copy(dependencies = replaceVersion(manifest.dependencies, dep, version)), apiKey,
+          s"Now declares '${pkg.id}' v$version, was v${dep.version}.")
+      }
+    } yield ()
+  }
+
+  /**
+    * Returns `dependencies` with `dep` declared at `version`.
+    *
+    * The declaration is replaced where it is, rather than dropped and added, so that everything
+    * it declares besides the version is kept, and so that it stays where it is in the file.
+    */
+  private def replaceVersion(dependencies: List[Dependency], dep: Dependency.FlixDependency, version: SemVer): List[Dependency] =
+    dependencies.map {
+      case d if d == dep => dep.copy(version = version)
+      case d => d
+    }
+
+  /**
     * Returns an error if `manifest` already declares a dependency on `id`.
     *
     * A package occurs at most once in `[dependencies]`, so a package that is already there is
@@ -270,9 +328,9 @@ object Bootstrap {
   /**
     * Returns the dependency on `id` that `manifest` declares, or an error if it declares none.
     *
-    * A package that the project does not declare is not one it can drop, whether it is unknown
-    * or is reached through another dependency: what that dependency requires is its own to
-    * declare.
+    * A package that the project does not declare is not one it can drop or change, whether it is
+    * unknown or is reached through another dependency: what that dependency requires is its own
+    * to declare.
     */
   private def findDeclared(manifest: Manifest, id: PackageId): Result[Dependency.FlixDependency, BootstrapError] =
     manifest.flixDependencies.find(dep => dep.id == id) match {
@@ -294,14 +352,51 @@ object Bootstrap {
     case Some(version) => Ok(version)
     case None =>
       for {
-        project <- GitHub.parseProject(s"${pkg.id.owner}/${pkg.id.name}").mapErr(BootstrapError.FlixPackageError.apply)
-        releases <- GitHub.getReleases(project, apiKey).mapErr(BootstrapError.FlixPackageError.apply)
-        version <- releases.map(r => r.version).maxOption match {
+        versions <- releaseVersions(pkg.id, apiKey)
+        version <- versions.maxOption match {
           case Some(v) => Ok(v)
           case None => Err(BootstrapError.NoReleases(pkg.id))
         }
       } yield version
   }
+
+  /**
+    * Returns the version to declare `dep` at: the one that `pkg` asks for, if it asks for one,
+    * and otherwise the newest release that shares a major with the version that is declared.
+    *
+    * A major is a compatibility boundary, both for what a package can be built alongside -- see
+    * [[FlixPackageManager.selectVersion]] -- and for what the code that uses it can expect, so
+    * an upgrade that is not asked for a version stays within the major that is declared. A newer
+    * major is reported rather than taken: it is there to move to, but not without being asked
+    * for by name.
+    *
+    * The version that is declared is never lowered, whatever was released: a package whose
+    * declared version is newer than any release of its major stays where it is.
+    */
+  private def selectUpgradeVersion(pkg: PackageSpec, dep: Dependency.FlixDependency, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[SemVer, BootstrapError] = pkg.version match {
+    case Some(version) => Ok(version)
+    case None =>
+      releaseVersions(pkg.id, apiKey).flatMap { versions =>
+        if (versions.isEmpty) {
+          Err(BootstrapError.NoReleases(pkg.id))
+        } else {
+          versions.filter(v => v.major > dep.version.major).maxOption.foreach { newer =>
+            out.println(s"A newer major of ${formatter.blue(pkg.id.toString)} is available: ${formatter.yellow(s"v$newer")}.")
+            out.println(s"Ask for it by name to move to it: ${formatter.cyan(s"flix upgrade ${pkg.id.owner}/${pkg.id.name}@$newer")}.")
+          }
+          Ok((dep.version :: versions.filter(v => v.major == dep.version.major)).max)
+        }
+      }
+  }
+
+  /**
+    * Returns the versions of `id` that have been released.
+    */
+  private def releaseVersions(id: PackageId, apiKey: Option[String]): Result[List[SemVer], BootstrapError] =
+    for {
+      project <- GitHub.parseProject(s"${id.owner}/${id.name}").mapErr(BootstrapError.FlixPackageError.apply)
+      releases <- GitHub.getReleases(project, apiKey).mapErr(BootstrapError.FlixPackageError.apply)
+    } yield releases.map(r => r.version)
 
   /**
     * Returns the mount to declare the dependency on `id` under.
