@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Command, CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat, LspUtil, Position, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
-import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, QualifiedSym}
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
@@ -36,6 +36,26 @@ sealed trait Completion {
     * Returns the [[Priority]] of `this` completion.
     */
   def priority: Priority
+
+  /**
+    * Returns `false` if `this` completion names a symbol the project cannot reach: a symbol of a
+    * package that the project does not mount (see [[CompletionUtils.usePathOf]]).
+    */
+  def isReachable(implicit flix: Flix): Boolean = this match {
+    case c: Completion.DefCompletion => CompletionUtils.usePathOf(c.decl.sym).isDefined
+    case c: Completion.EnumCompletion => CompletionUtils.usePathOf(c.enm.sym).isDefined
+    case c: Completion.StructCompletion => CompletionUtils.usePathOf(c.struct.sym).isDefined
+    case c: Completion.TraitCompletion => CompletionUtils.usePathOf(c.trt.sym).isDefined
+    case c: Completion.InstanceCompletion => CompletionUtils.usePathOf(c.trt.sym).isDefined
+    case c: Completion.EffectCompletion => CompletionUtils.usePathOf(c.effect.sym).isDefined
+    case c: Completion.HandlerCompletion => CompletionUtils.usePathOf(c.effect.sym).isDefined
+    case c: Completion.TypeAliasCompletion => CompletionUtils.usePathOf(c.typeAlias.sym).isDefined
+    case c: Completion.OpCompletion => CompletionUtils.usePathOf(c.decl.sym).isDefined
+    case c: Completion.SigCompletion => CompletionUtils.usePathOf(c.decl.sym).isDefined
+    case c: Completion.EnumTagCompletion => CompletionUtils.usePathOf(c.tag.sym).isDefined
+    case c: Completion.ModuleCompletion => CompletionUtils.usePathOf(c.module.ns).isDefined
+    case _ => true
+  }
 
   /**
     * Returns the LSP [[CompletionItem]] for `this` completion.
@@ -181,7 +201,7 @@ sealed trait Completion {
       )
 
     case Completion.DefCompletion(decl, namespace, range, priority, ap, qualified, inScope, ectx) =>
-      val qualifiedName = if (namespace.nonEmpty) s"$namespace.${decl.sym.name}" else decl.sym.toString
+      val qualifiedName = if (namespace.nonEmpty) s"$namespace.${decl.sym.name}" else Completion.usePathOf(decl.sym)
       val label = if (qualified) qualifiedName else decl.sym.name
       val snippet = LspUtil.mkSpecSnippet(label, decl.spec, ectx)
       val description = if (!qualified) {
@@ -204,7 +224,7 @@ sealed trait Completion {
       )
 
     case Completion.EnumCompletion(enm, range, priority, ap, qualified, inScope, withTypeParameters) =>
-      val qualifiedName = enm.sym.toString
+      val qualifiedName = Completion.usePathOf(enm.sym)
       val name = if (qualified) qualifiedName else enm.sym.name
       val description = if (!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
@@ -232,7 +252,7 @@ sealed trait Completion {
       )
 
     case Completion.StructCompletion(struct, range, priority, ap, qualified, inScope) =>
-      val qualifiedName = struct.sym.toString
+      val qualifiedName = Completion.usePathOf(struct.sym)
       val name = if (qualified) qualifiedName else struct.sym.name
       val label = name + CompletionUtils.formatTParams(struct.tparams)
       val snippet = name + CompletionUtils.formatTParamsSnippet(struct.tparams)
@@ -253,7 +273,7 @@ sealed trait Completion {
       )
 
     case Completion.TraitCompletion(trt, range, priority, ap, qualified, inScope, withTypeParameter) =>
-      val qualifiedName = trt.sym.toString
+      val qualifiedName = Completion.usePathOf(trt.sym)
       val name = if (qualified) qualifiedName else trt.sym.name
       val description = if (!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
@@ -274,7 +294,7 @@ sealed trait Completion {
       )
 
     case Completion.InstanceCompletion(trt, range, priority, ap, qualified, inScope) =>
-      val qualifiedName = trt.sym.toString
+      val qualifiedName = Completion.usePathOf(trt.sym)
       val name = if (qualified) qualifiedName else trt.sym.name
       val label = name + CompletionUtils.formatTParams(List(trt.tparam))
       val description = if (!qualified) {
@@ -295,7 +315,7 @@ sealed trait Completion {
       )
 
     case Completion.EffectCompletion(effect, range, priority, ap, qualified, inScope) =>
-      val qualifiedName = effect.sym.toString
+      val qualifiedName = Completion.usePathOf(effect.sym)
       val name = if (qualified) qualifiedName else effect.sym.name
       val description = if (!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
@@ -313,7 +333,7 @@ sealed trait Completion {
       )
 
     case Completion.HandlerCompletion(effect, range, priority, ap, qualified, inScope) =>
-      val qualifiedName = effect.sym.toString
+      val qualifiedName = Completion.usePathOf(effect.sym)
       val name = if (qualified) qualifiedName else effect.sym.name
       val description = if (!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
@@ -333,7 +353,7 @@ sealed trait Completion {
       )
 
     case Completion.TypeAliasCompletion(typeAlias, range, priority, ap, qualified, inScope) =>
-      val qualifiedName = typeAlias.sym.toString
+      val qualifiedName = Completion.usePathOf(typeAlias.sym)
       val name = if (qualified) qualifiedName else typeAlias.sym.name
       val label = name + CompletionUtils.formatTParams(typeAlias.tparams)
       val snippet = name + CompletionUtils.formatTParamsSnippet(typeAlias.tparams)
@@ -357,7 +377,7 @@ sealed trait Completion {
       val qualifiedName = if (namespace.nonEmpty)
         s"$namespace.${op.sym.name}"
       else
-        op.sym.toString
+        Completion.usePathOf(op.sym)
       val name = if (qualified) qualifiedName else op.sym.name
       val snippet = LspUtil.mkSpecSnippet(name, op.spec, ectx)
       val description = if (!qualified) {
@@ -398,7 +418,7 @@ sealed trait Completion {
       val qualifiedName = if (namespace.nonEmpty)
         s"$namespace.${sig.sym.name}"
       else
-        sig.sym.toString
+        Completion.usePathOf(sig.sym)
       val name = if (qualified) qualifiedName else sig.sym.name
       val snippet = LspUtil.mkSpecSnippet(name, sig.spec, ectx)
       val description = if (!qualified) {
@@ -423,7 +443,7 @@ sealed trait Completion {
       val qualifiedName = if (namespace.nonEmpty)
         s"$namespace.${tag.sym.name}"
       else
-        tag.sym.toString
+        Completion.usePathOf(tag.sym)
       val name = if (qualified) qualifiedName else tag.sym.name
       val snippet = ectx match {
         case ExprContext.InsideApply => name
@@ -450,7 +470,7 @@ sealed trait Completion {
       )
 
     case Completion.ModuleCompletion(module, range, priority, ap, qualified, inScope) =>
-      val qualifiedName = module.toString
+      val qualifiedName = CompletionUtils.usePathOf(module.ns).getOrElse(module.toString)
       val name = if (qualified) qualifiedName else module.ns.last
       val description = if (!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
@@ -546,6 +566,13 @@ sealed trait Completion {
 }
 
 object Completion {
+
+  /**
+    * Returns `sym` as the project writes it in a use, e.g. `flixball::Game.Board` for a symbol of a
+    * package. A symbol that cannot be written is not [[Completion.isReachable]] and is never offered.
+    */
+  private def usePathOf(sym: QualifiedSym)(implicit flix: Flix): String =
+    CompletionUtils.usePathOf(sym).getOrElse(sym.toString)
 
   /**
     * Represents an annotation completion.

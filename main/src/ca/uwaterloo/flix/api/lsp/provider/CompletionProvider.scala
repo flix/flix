@@ -42,7 +42,13 @@ object CompletionProvider {
   /**
     * Returns all completions in the given `name` at the given position `pos`.
     */
-  def getCompletions(name: SourceName, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
+  def getCompletions(name: SourceName, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] =
+    getAllCompletions(name, pos, currentErrors).filter(_.isReachable)
+
+  /**
+    * Returns all completions, including those for symbols of packages the project does not mount.
+    */
+  private def getAllCompletions(name: SourceName, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
     if (currentErrors.isEmpty)
       HoleCompleter.getHoleCompletion(name, pos).toList
     else
