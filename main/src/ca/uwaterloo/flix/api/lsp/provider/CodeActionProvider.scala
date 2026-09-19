@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Diagnostic, Positi
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SourceName
-import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, EffSymOrRigidVar}
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, EffSymOrRigidVar, PackageId, QualifiedSym}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError}
 
@@ -166,7 +166,7 @@ object CodeActionProvider {
     *   use List.map;
     * }}}
     */
-  private def mkUseDef(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+  private def mkUseDef(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root, flix: Flix): List[CodeAction] = {
     val syms = root.defs.collect {
       case (sym, defn) if CompletionUtils.isAvailable(defn) => sym
     }
@@ -176,7 +176,7 @@ object CodeActionProvider {
   /**
     * Returns a code action that proposes to `use` a trait.
     */
-  private def mkUseTrait(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+  private def mkUseTrait(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root, flix: Flix): List[CodeAction] = {
     val syms = root.traits.collect {
       case (sym, trt) if CompletionUtils.isAvailable(trt) => sym
     }
@@ -186,7 +186,7 @@ object CodeActionProvider {
   /**
     * Returns a code action that proposes to `use` an effect.
     */
-  private def mkUseEffect(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+  private def mkUseEffect(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root, flix: Flix): List[CodeAction] = {
     val syms = root.effects.collect {
       case (sym, eff) if CompletionUtils.isAvailable(eff) => sym
     }
@@ -209,15 +209,18 @@ object CodeActionProvider {
     *   use Color.Red
     * }}}
     */
-  private def mkUseTag(tagName: String, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+  private def mkUseTag(tagName: String, uri: String, ap: AnchorPosition)(implicit root: Root, flix: Flix): List[CodeAction] = {
     val candidateEnums = root.enums.filter { case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isAvailable(enm) }
-    candidateEnums.keys.map { enumName =>
-      CodeAction(
-        title = s"use '$enumName.$tagName'",
-        kind = CodeActionKind.QuickFix,
-        edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"use $enumName.$tagName"))))),
-        command = None
-      )
+    candidateEnums.keys.flatMap { enumSym =>
+      // An enum of a package is written under its mount. One the project cannot reach is not offered.
+      CompletionUtils.usePathOf(enumSym.namespace :+ enumSym.name :+ tagName).map { path =>
+        CodeAction(
+          title = s"use '$path'",
+          kind = CodeActionKind.QuickFix,
+          edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"use $path"))))),
+          command = None
+        )
+      }
     }.toList
   }
 
@@ -238,7 +241,8 @@ object CodeActionProvider {
     * }}}
     */
   private def mkQualifyTag(tagName: String, uri: String, loc: SourceLocation)(implicit root: Root): List[CodeAction] = {
-    val candidateEnums = root.enums.filter { case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isAvailable(enm) }
+    // An enum of a package has no qualified name that can be written in a pattern or an expression.
+    val candidateEnums = root.enums.filter { case (sym, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isAvailable(enm) && !isInPackage(sym) }
     candidateEnums.keys.map { enumName =>
       CodeAction(
         title = s"Prefix with '$enumName.'",
@@ -252,7 +256,7 @@ object CodeActionProvider {
   /**
     * Returns a code action that proposes to `use` a type.
     */
-  private def mkUseType(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+  private def mkUseType(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root, flix: Flix): List[CodeAction] = {
     val enumNames = root.enums.collect { case (sym, enm) if CompletionUtils.isAvailable(enm) => sym.name }
     val enumSyms = root.enums.collect { case (sym, enm) if CompletionUtils.isAvailable(enm) => sym }
 
@@ -274,7 +278,7 @@ object CodeActionProvider {
   /**
     * Returns a code action that proposes to `use` a struct.
     */
-  private def mkUseStruct(ident: Name.Ident, uri: String, position: AnchorPosition)(implicit root: Root): List[CodeAction] = {
+  private def mkUseStruct(ident: Name.Ident, uri: String, position: AnchorPosition)(implicit root: Root, flix: Flix): List[CodeAction] = {
     val syms = root.structs.map {
       case (sym, _) => sym
     }
@@ -326,16 +330,26 @@ object CodeActionProvider {
     * @param uri   URI of the document the change should be made in.
     */
   // Names have to be included separately because symbols aren't guaranteed to have a name
-  private def mkUseSym(ident: Name.Ident, names: Iterable[String], syms: Iterable[Symbol], uri: String, ap: AnchorPosition): List[CodeAction] =
+  private def mkUseSym(ident: Name.Ident, names: Iterable[String], syms: Iterable[QualifiedSym], uri: String, ap: AnchorPosition)(implicit flix: Flix): List[CodeAction] =
     syms.zip(names).collect {
-      case (sym, name) if name == ident.name =>
+      case (sym, name) if name == ident.name => sym
+    }.flatMap { sym =>
+      // A symbol of a package is written under its mount. One the project cannot reach is not offered.
+      CompletionUtils.usePathOf(sym).map { path =>
         CodeAction(
-          title = s"use '$sym'",
+          title = s"use '$path'",
           kind = CodeActionKind.QuickFix,
-          edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"use $sym;"))))),
+          edit = Some(WorkspaceEdit(Map(uri -> List(mkTextEdit(ap, s"use $path;"))))),
           command = None
         )
+      }
     }.toList.sortBy(_.title)
+
+  /**
+    * Returns `true` if `sym` is declared by a package, which names its declarations under a root that cannot be written.
+    */
+  private def isInPackage(sym: QualifiedSym): Boolean =
+    sym.namespace.headOption.exists(PackageId.ofCanonicalRoot(_).isDefined)
 
   /**
     * Returns a code action that proposes to import the corresponding Java class.

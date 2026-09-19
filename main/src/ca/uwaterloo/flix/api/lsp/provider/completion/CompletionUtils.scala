@@ -103,6 +103,27 @@ object CompletionUtils {
   }
 
   /**
+    * Returns `sym` as the project writes it in a use, if it can be written.
+    *
+    * A symbol of a package is named under a root that cannot be written. It is written under the
+    * mount the project gives that package, e.g. `flixball::Game.Board`. A package the project does
+    * not mount cannot be reached, so its symbols have no spelling.
+    */
+  def usePathOf(sym: QualifiedSym)(implicit flix: Flix): Option[String] =
+    usePathOf(sym.namespace :+ sym.name)
+
+  /**
+    * Returns the name `parts` as the project writes it in a use, if it can be written (see [[usePathOf]]).
+    */
+  def usePathOf(parts: List[String])(implicit flix: Flix): Option[String] = parts match {
+    case Nil => None
+    case head :: rest => PackageId.ofCanonicalRoot(head) match {
+      case None => Some(parts.mkString("."))
+      case Some(id) => flix.rootMounts.collectFirst { case (mount, `id`) => s"$mount::${rest.mkString(".")}" }
+    }
+  }
+
+  /**
     * Checks if we should offer AutoUseCompletion or AutoImportCompletion.
     * Currently, we will only offer them if at least three characters have been typed.
     */
