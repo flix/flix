@@ -672,13 +672,46 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val alpha = mkManifest("alpha", """"github:flix/museum-clerk" = "1.0.0"""")
     val beta = mkManifest("beta", """"github:flix/museum-clerk" = "1.1.0"""")
     FlixPackageManager.checkSingleVersion(List(alpha, beta)) match {
-      case List(PackageError.MultipleVersions(identifier, requirements)) =>
+      case List(PackageError.MultipleVersions(identifier, requirements, selection)) =>
         assertResult(expected = PackageId(Repository.GitHub, "flix", "museum-clerk"))(actual = identifier)
         assertResult(expected = List(("alpha", SemVer(1, 0, 0)), ("beta", SemVer(1, 1, 0))))(
           actual = requirements.map { case (dependent, dep) => (dependent.name, dep.version) }
         )
+        assertResult(expected = Some(SemVer(1, 1, 0)))(actual = selection)
       case other => fail(s"expected one MultipleVersions error, but found: $other")
     }
+  }
+
+  test("checkSingleVersion.03") {
+    // Two dependents that disagree on the major version of the same package.
+    val alpha = mkManifest("alpha", """"github:flix/museum-clerk" = "1.1.0"""")
+    val beta = mkManifest("beta", """"github:flix/museum-clerk" = "2.0.0"""")
+    FlixPackageManager.checkSingleVersion(List(alpha, beta)) match {
+      case List(PackageError.MultipleVersions(_, _, selection)) =>
+        assertResult(expected = None)(actual = selection)
+      case other => fail(s"expected one MultipleVersions error, but found: $other")
+    }
+  }
+
+  test("select.01") {
+    // The greatest of the required versions is the least one that satisfies them all.
+    assertResult(expected = Some(SemVer(1, 5, 1)))(
+      actual = FlixPackageManager.select(List(SemVer(1, 2, 0), SemVer(1, 5, 1), SemVer(1, 3, 9)))
+    )
+  }
+
+  test("select.02") {
+    // Versions that do not share a major have nothing to select.
+    assertResult(expected = None)(
+      actual = FlixPackageManager.select(List(SemVer(1, 2, 0), SemVer(2, 0, 0)))
+    )
+  }
+
+  test("select.03") {
+    // A pre-1.0 package is selected across a minor, since both versions have major 0.
+    assertResult(expected = Some(SemVer(0, 4, 2)))(
+      actual = FlixPackageManager.select(List(SemVer(0, 3, 0), SemVer(0, 4, 2)))
+    )
   }
 
   /**
