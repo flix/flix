@@ -443,6 +443,13 @@ object Main {
           }
           exitOnResult(Bootstrap.remove(cwd, pkg, options.githubToken))
 
+        case Command.Upgrade(pkg) =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'upgrade' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult(Bootstrap.upgrade(cwd, pkg, options.githubToken))
+
         case Command.Outdated =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'outdated' command does not support file arguments.")
@@ -596,6 +603,8 @@ object Main {
 
     case class Remove(pkg: String) extends Command
 
+    case class Upgrade(pkg: String) extends Command
+
     case object Outdated extends Command
 
     case object Stat extends Command
@@ -701,6 +710,13 @@ object Main {
           arg[String]("package").action((pkg, c) => c.copy(command = Command.Remove(pkg)))
             .required()
             .text("the package to remove, e.g. 'flix/museum-clerk'.")
+        )
+
+      cmd("upgrade").text("  declares a dependency of the current project at another version.")
+        .children(
+          arg[String]("package").action((pkg, c) => c.copy(command = Command.Upgrade(pkg)))
+            .required()
+            .text("the package to upgrade, e.g. 'flix/museum-clerk' or 'flix/museum-clerk@1.1.0'.")
         )
 
       cmd("outdated").text("  shows dependencies which have newer versions available.")

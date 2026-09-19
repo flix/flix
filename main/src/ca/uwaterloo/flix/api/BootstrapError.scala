@@ -83,6 +83,7 @@ object BootstrapError {
   case class DependencyAlreadyDeclared(id: PackageId, version: SemVer) extends BootstrapError {
     override def message(f: Formatter): String =
       s"""${f.red(id.toString)} is already a dependency of this project, at version ${f.bold(version.toString)}.
+         |Use ${f.bold("flix upgrade")} to declare it at another version.
          |""".stripMargin
   }
 
