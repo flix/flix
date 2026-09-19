@@ -101,4 +101,29 @@ mod Test.Exp.Match.List {
         case _                               => fail("unexpected match on wildcard")
     }
 
+    @Test
+    def matchListTight01(): Unit \ Assert = match 1::Nil {
+        case Nil    => fail("unexpected match on Nil")
+        case x::Nil => assertEq(expected = 1, x)
+        case _      => fail("unexpected match on wildcard")
+    }
+
+    @Test
+    def matchListTight02(): Unit \ Assert = match 1::2::3::Nil {
+        case Nil   => fail("unexpected match on Nil")
+        case x::xs => assertTrue(x == 1 and List.length(xs) == 2)
+    }
+
+    @Test
+    def matchListTight03(): Unit \ Assert = match 1::2::Nil {
+        case x::y::Nil => assertTrue(x + 1 == y)
+        case _         => fail("unexpected match on wildcard")
+    }
+
+    @Test
+    def matchListTight04(): Unit \ Assert = match (1::Nil)::(2::Nil)::Nil {
+        case (x::Nil)::(y :: Nil)::Nil => assertTrue(x + 1 == y)
+        case _                         => fail("unexpected match on wildcard")
+    }
+
 }

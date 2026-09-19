@@ -50,6 +50,7 @@ sealed trait TokenKind {
       case TokenKind.Colon => "':'"
       case TokenKind.ColonColon => "'::'"
       case TokenKind.ColonColonColon => "':::'"
+      case TokenKind.ColonColonTight => "'::'"
       case TokenKind.ColonMinus => "':-'"
       case TokenKind.Comma => "','"
       case TokenKind.CommentBlock => "<block comment>"
@@ -732,6 +733,8 @@ object TokenKind {
   case object ColonColon extends TokenKind
 
   case object ColonColonColon extends TokenKind
+
+  case object ColonColonTight extends TokenKind
 
   case object ColonMinus extends TokenKind
 

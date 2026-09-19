@@ -59,4 +59,19 @@ mod Test.Exp.List {
     @CompileTest
     def testListAppend06(): List[Int32] = 1 :: Nil ::: 2 :: Nil ::: 3 :: Nil
 
+    @CompileTest
+    def testListTight01(): List[Int32] = 1::Nil
+
+    @CompileTest
+    def testListTight02(): List[Int32] = 1::2::Nil
+
+    @CompileTest
+    def testListTight03(): List[Int32] = 1::2 :: 3::Nil
+
+    @CompileTest
+    def testListTight04(): List[List[Int32]] = (1::Nil)::(2::Nil)::Nil
+
+    @CompileTest
+    def testListTight05(): List[Int32] = 1::Nil ::: 2::Nil
+
 }

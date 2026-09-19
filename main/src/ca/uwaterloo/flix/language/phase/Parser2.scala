@@ -1643,6 +1643,7 @@ object Parser2 {
         case TokenKind.AngledPlus => Some(BinaryOp.AngledPlus)
         case TokenKind.BangEqual => Some(BinaryOp.BangEqual)
         case TokenKind.ColonColon => Some(BinaryOp.ColonColon)
+        case TokenKind.ColonColonTight => Some(BinaryOp.ColonColon)
         case TokenKind.EqualEqual => Some(BinaryOp.EqualEqual)
         case TokenKind.KeywordAnd => Some(BinaryOp.And)
         case TokenKind.KeywordInstanceOf => Some(BinaryOp.InstanceOf)
@@ -1669,6 +1670,7 @@ object Parser2 {
       TokenKind.BangEqual,
       TokenKind.ColonColon,
       TokenKind.ColonColonColon,
+      TokenKind.ColonColonTight,
       TokenKind.EqualEqual,
       TokenKind.GenericOperator,
       TokenKind.KeywordAnd,
@@ -3299,7 +3301,7 @@ object Parser2 {
           closeWithError(mark, error)
       }
       // Handle FCons.
-      if (eat(TokenKind.ColonColon)) {
+      if (eat(TokenKind.ColonColon) || eat(TokenKind.ColonColonTight)) {
         lhs = close(openBefore(lhs), TreeKind.Pattern.Pattern)
         pattern()
         close(openBefore(lhs), TreeKind.Pattern.FCons)

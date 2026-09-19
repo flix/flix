@@ -1205,7 +1205,7 @@ object Weeder2 {
                 // Special cases that create different AST nodes
                 case Token(TokenKind.KeywordAnd, _, _, _, _, _) => Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc)
                 case Token(TokenKind.KeywordOr, _, _, _, _, _) => Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc)
-                case Token(TokenKind.ColonColon, _, _, _, _, _) => Expr.FCons(e1, e2, tree.loc)
+                case Token(TokenKind.ColonColon | TokenKind.ColonColonTight, _, _, _, _, _) => Expr.FCons(e1, e2, tree.loc)
                 case Token(TokenKind.AngledPlus, _, _, _, _, _) => Expr.FixpointMerge(e1, e2, tree.loc)
                 case Token(TokenKind.KeywordInstanceOf, _, _, _, _, _) =>
                   tryPickQName(exprs(1)) match {
