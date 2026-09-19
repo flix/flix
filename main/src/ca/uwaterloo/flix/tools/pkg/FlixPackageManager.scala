@@ -38,15 +38,17 @@ object FlixPackageManager {
     * @param immediateDependents all immediate dependents / parents of each manifest.
     * @param manifestToFlixDeps  a mapping from [[Manifest]]s to [[FlixDependency]]s.
     *                            A manifest is the resource a flix dependency resolves to.
-    * @param tomlDigests         the digest of the `flix.toml` each manifest was parsed from.
-    *                            [[origin]] does not appear: its manifest is the one in the
-    *                            project directory, which is not downloaded.
+    * @param tomlDigests         the digest of the `flix.toml` of every package at every version
+    *                            that the dependency graph requires, whether or not the package
+    *                            is built at that version: each of them is read to resolve the
+    *                            graph. [[origin]] does not appear: its manifest is the one in
+    *                            the project directory, which is not downloaded.
     */
   case class Resolution(origin: Manifest,
                         manifests: List[Manifest],
                         immediateDependents: Map[Manifest, List[Manifest]],
                         manifestToFlixDeps: ListMap[Manifest, FlixDependency],
-                        tomlDigests: Map[Manifest, Sha256])
+                        tomlDigests: Map[(PackageId, SemVer), Sha256])
 
   /**
     * Represents the dependency resolution of [[origin]] where the maximum security level has been computed
@@ -56,12 +58,13 @@ object FlixPackageManager {
     * @param security           the maximum allowed security level of each manifest.
     * @param manifestToFlixDeps a mapping from [[Manifest]]s to [[FlixDependency]]s.
     *                           A manifest is the resource a flix dependency resolves to.
-    * @param tomlDigests        the digest of the `flix.toml` each manifest was parsed from.
+    * @param tomlDigests        the digest of the `flix.toml` of every package at every version
+    *                           that the dependency graph requires, see [[Resolution]].
     */
   case class SecureResolution(origin: Manifest,
                               security: Map[Manifest, SecurityContext],
                               manifestToFlixDeps: ListMap[Manifest, FlixDependency],
-                              tomlDigests: Map[Manifest, Sha256]) {
+                              tomlDigests: Map[(PackageId, SemVer), Sha256]) {
     /**
       * All manifests in the resolution.
       */
@@ -179,7 +182,7 @@ object FlixPackageManager {
 
           val built = nodes.filter(isBuilt).map(edgeTo)
           val manifests = manifest :: built.map(_.target)
-          val tomlDigests = built.map(e => e.target -> e.digest).toMap
+          val tomlDigests = nodes.map(n => n -> edgeTo(n).digest).toMap
           Ok(Resolution(manifest, manifests, immediateDependents.toMap, ListMap.from(manifestToFlixDeps.flatMap { case (m, deps) => deps.map(d => (m, d)) }), tomlDigests))
       }
     }
@@ -444,6 +447,9 @@ object FlixPackageManager {
     * Each package is checked against `lockfile` as it is installed. The lock file that is
     * returned describes the resolution as it is now, so a dependency that has been added since
     * `lockfile` was written gains an entry, and one that has been removed loses its own.
+    *
+    * It records the `flix.toml` of every package at every version that the graph requires, and
+    * the `.fpkg` of the packages that are installed, which are those that are built.
     */
   def installAll(resolution: SecureResolution, projectRoot: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[Installation, PackageError] = {
     out.println("Downloading Flix dependencies...")
@@ -458,16 +464,19 @@ object FlixPackageManager {
       install(dep, manifest.version, Bootstrap.EXT_FPKG, projectRoot, apiKey, lockfile) match {
         case Ok(fpkg) =>
           val pkg = InstalledPackage(fpkg.path, dep.id, resolution.security(manifest), manifest.mounts)
-          val entry = LockEntry(manifest.version, resolution.tomlDigests(manifest), fpkg.digest)
-          (pkg, dep.id -> entry)
+          (pkg, (dep.id, manifest.version) -> fpkg.digest)
         case Err(e) =>
           out.println(s"ERROR: Installation of `$depName' failed.")
           return Err(e)
       }
     }.toList
 
-    val (packages, entries) = installed.unzip
-    Ok(Installation(packages, Lockfile(entries.toMap)))
+    val (packages, fpkgs) = installed.unzip
+    val fpkgDigests = fpkgs.toMap
+    val entries = resolution.tomlDigests.map {
+      case (node, toml) => node -> LockEntry(toml, fpkgDigests.get(node))
+    }
+    Ok(Installation(packages, Lockfile(entries)))
   }
 
   /**
@@ -594,21 +603,21 @@ object FlixPackageManager {
 
   /**
     * Returns the digest that `lockfile` records for the `extension` file of the package `dep`
-    * depends on, if it records one at `version`.
+    * depends on, at `version`, if it records one.
     *
-    * A package that `lockfile` does not record, or records at another version, has no digest
-    * here and so is not checked. That is a dependency that was added or whose version was
-    * changed since the lock file was written, and there is nothing yet to compare it against.
-    * It is recorded when the lock file is written again.
+    * A package that `lockfile` does not record at `version` has no digest here and so is not
+    * checked. That is a dependency that was added, or that is required or built at a version it
+    * was not when the lock file was written, and there is nothing yet to compare it against. It
+    * is recorded when the lock file is written again.
     */
   private def recordedDigest(dep: FlixDependency, version: SemVer, extension: String, lockfile: Lockfile): Option[Sha256] = {
-    lockfile.packages.get(dep.id).filter(_.version == version).flatMap {
+    lockfile.packages.get((dep.id, version)).flatMap {
       entry =>
         // A package is installed as exactly these two files, and the lock file holds a digest of
         // each. Anything else is not something a lock file describes.
         extension match {
           case Bootstrap.EXT_TOML => Some(entry.toml)
-          case Bootstrap.EXT_FPKG => Some(entry.fpkg)
+          case Bootstrap.EXT_FPKG => entry.fpkg
           case _ => None
         }
     }

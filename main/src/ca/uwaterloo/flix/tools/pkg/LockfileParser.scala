@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.shared.PackageId
 import ca.uwaterloo.flix.util.{Result, Sha256}
-import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
+import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse, traverseOpt}
 import org.tomlj.{Toml, TomlInvalidTypeException, TomlParseResult, TomlTable}
 
 import java.io.{IOException, StringReader}
@@ -37,9 +37,9 @@ object LockfileParser {
   private val AllowedLockKeys: Set[String] = Set("lock.version")
 
   /**
-    * The keys the entry of a package may contain.
+    * The keys the entry of a package at a version may contain.
     */
-  private val AllowedPackageKeys: Set[String] = Set("version", "toml", "fpkg")
+  private val AllowedEntryKeys: Set[String] = Set("toml", "fpkg")
 
   /**
     * Creates a [[Lockfile]] from the toml file at `p`, and returns an error if the file cannot be
@@ -140,12 +140,12 @@ object LockfileParser {
   }
 
   /**
-    * Returns the entry of every package in the lock file at `p`.
+    * Returns the entry of every package at every version in the lock file at `p`.
     *
     * A lock file with no `packages` table records no packages, which is what a project with no
     * Flix dependencies locks.
     */
-  private def collectPackages(parser: TomlParseResult, p: Path): Result[Map[PackageId, LockEntry], LockError] = {
+  private def collectPackages(parser: TomlParseResult, p: Path): Result[Map[(PackageId, SemVer), LockEntry], LockError] = {
     val packages = try {
       parser.getTable("packages")
     } catch {
@@ -160,23 +160,23 @@ object LockfileParser {
 
     // A key that is not an identifier Flix could have written names no package, so it matches no
     // dependency. It is dropped here, and so is not written back the next time the file is written.
-    val ids = packages.keySet().asScala.toSet.flatMap(PackageId.mkPackageId)
-    traverse(ids)(id => collectPackage(packages, id, p)).map(_.toMap)
+    val ids = packages.keySet().asScala.toList.flatMap(PackageId.mkPackageId).sorted
+    traverse(ids)(id => collectVersions(packages, id, p)).map(_.flatten.toMap)
   }
 
   /**
-    * Returns the entry that `packages` holds for `id`.
+    * Returns the entry that `packages` holds for every version of `id`.
     *
     * A lock file that names a package the project does not depend on is not an error: the entry
     * is simply not one that any dependency matches, and it is dropped the next time the file is
     * written.
     */
-  private def collectPackage(packages: TomlTable, id: PackageId, p: Path): Result[(PackageId, LockEntry), LockError] = {
+  private def collectVersions(packages: TomlTable, id: PackageId, p: Path): Result[List[((PackageId, SemVer), LockEntry)], LockError] = {
     val identifier = id.toString
     // The identifier contains `:` and `/`, so it has to be quoted to be looked up as one key.
     val key = s"\"$identifier\""
 
-    val entry = try {
+    val versions = try {
       packages.getTable(key)
     } catch {
       case _: IllegalArgumentException => null
@@ -184,43 +184,68 @@ object LockfileParser {
         return Err(LockError.PropertyHasWrongType(p, identifier, "Table", e.getMessage))
     }
 
-    if (entry == null) {
+    if (versions == null) {
       return Err(LockError.PropertyHasWrongType(p, identifier, "Table", s"$identifier is not a table"))
     }
 
-    val illegalKeys = entry.keySet().asScala.toSet.diff(AllowedPackageKeys)
+    traverse(versions.keySet().asScala.toList.sorted) { versionKey =>
+      for (
+        version <- toSemVer(versionKey, identifier, p);
+        entry <- collectEntry(versions, identifier, versionKey, p)
+      ) yield ((id, version), entry)
+    }
+  }
+
+  /**
+    * Returns the entry that `versions`, the table of the package `identifier`, holds for the
+    * version written as `versionKey`.
+    */
+  private def collectEntry(versions: TomlTable, identifier: String, versionKey: String, p: Path): Result[LockEntry, LockError] = {
+    val qualified = s"packages.\"$identifier\".\"$versionKey\""
+    // The version contains `.`, so it has to be quoted to be looked up as one key.
+    val key = s"\"$versionKey\""
+
+    val entry = try {
+      versions.getTable(key)
+    } catch {
+      case _: IllegalArgumentException => null
+      case e: TomlInvalidTypeException =>
+        return Err(LockError.PropertyHasWrongType(p, qualified, "Table", e.getMessage))
+    }
+
+    if (entry == null) {
+      return Err(LockError.PropertyHasWrongType(p, qualified, "Table", s"$qualified is not a table"))
+    }
+
+    val illegalKeys = entry.keySet().asScala.toSet.diff(AllowedEntryKeys)
     if (illegalKeys.nonEmpty) {
       return Err(LockError.IllegalPackageKeyFound(p, identifier, illegalKeys.head))
     }
 
     for (
-      version <- getRequiredString(entry, identifier, "version", p);
-      semVer <- toSemVer(version, identifier, p);
-
-      toml <- getRequiredString(entry, identifier, "toml", p);
+      toml <- getString(entry, qualified, "toml", p).flatMap {
+        case Some(digest) => Ok(digest)
+        case None => Err(LockError.MissingRequiredProperty(p, s"$qualified.toml"))
+      };
       tomlDigest <- toDigest(toml, identifier, "toml", p);
 
-      fpkg <- getRequiredString(entry, identifier, "fpkg", p);
-      fpkgDigest <- toDigest(fpkg, identifier, "fpkg", p)
-    ) yield (id, LockEntry(semVer, tomlDigest, fpkgDigest))
+      // An entry records an fpkg only if the package has been downloaded at the version.
+      fpkg <- getString(entry, qualified, "fpkg", p);
+      fpkgDigest <- traverseOpt(fpkg)(toDigest(_, identifier, "fpkg", p))
+    ) yield LockEntry(tomlDigest, fpkgDigest)
   }
 
   /**
-    * Returns the string that `entry` holds at `property`, and an error if it holds nothing there
-    * or holds something that is not a string. The `identifier` names the package `entry` belongs
-    * to, and is used to report errors.
+    * Returns the string that `entry` holds at `property`, if it holds one, and an error if it
+    * holds something that is not a string. The `qualified` name is that of `entry`, and is used
+    * to report errors.
     */
-  private def getRequiredString(entry: TomlTable, identifier: String, property: String, p: Path): Result[String, LockError] = {
-    val qualified = s"packages.\"$identifier\".$property"
+  private def getString(entry: TomlTable, qualified: String, property: String, p: Path): Result[Option[String], LockError] = {
     try {
-      val result = entry.getString(property)
-      if (result == null) {
-        return Err(LockError.MissingRequiredProperty(p, qualified))
-      }
-      Ok(result)
+      Ok(Option(entry.getString(property)))
     } catch {
-      case _: IllegalArgumentException => Err(LockError.MissingRequiredProperty(p, qualified))
-      case e: TomlInvalidTypeException => Err(LockError.PropertyHasWrongType(p, qualified, "String", e.getMessage))
+      case _: IllegalArgumentException => Ok(None)
+      case e: TomlInvalidTypeException => Err(LockError.PropertyHasWrongType(p, s"$qualified.$property", "String", e.getMessage))
     }
   }
 

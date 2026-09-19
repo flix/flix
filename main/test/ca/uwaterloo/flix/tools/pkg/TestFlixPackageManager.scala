@@ -719,7 +719,10 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
       case Ok(installation) =>
         val clerk = PackageId(Repository.GitHub, "flix", "museum-clerk")
-        assertResult(expected = Some(SemVer(1, 1, 0)))(actual = installation.lockfile.packages.get(clerk).map(_.version))
+        // Both versions are locked, since the manifest of each was read to resolve the graph. Only
+        // the package that was downloaded records an fpkg.
+        assertResult(expected = Some(true))(actual = installation.lockfile.packages.get((clerk, SemVer(1, 1, 0))).map(_.fpkg.isDefined))
+        assertResult(expected = Some(false))(actual = installation.lockfile.packages.get((clerk, SemVer(1, 0, 0))).map(_.fpkg.isDefined))
         assertResult(expected = List(s"museum-clerk-1.1.0.fpkg"))(
           actual = installation.packages.filter(_.id == clerk).map(_.path.getFileName.toString).distinct
         )

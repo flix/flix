@@ -35,11 +35,10 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
     val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
-    val entry = lockfile.packages(ClerkIdentifier)
+    val entry = lockfile.packages((ClerkIdentifier, SemVer(1, 1, 0)))
 
-    assert(entry.version == SemVer(1, 1, 0))
     assert(entry.toml == Sha256.ofFile(clerkFile(p, Bootstrap.EXT_TOML)))
-    assert(entry.fpkg == Sha256.ofFile(clerkFile(p, Bootstrap.EXT_FPKG)))
+    assert(entry.fpkg.contains(Sha256.ofFile(clerkFile(p, Bootstrap.EXT_FPKG))))
   }
 
   test("packages.lock.02") {
@@ -100,13 +99,13 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
     val stale = Lockfile(LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet.packages
-      + (PackageId(Repository.GitHub, "flix", "gone") -> LockEntry(SemVer(9, 9, 9), Sha256("a" * 64), Sha256("b" * 64))))
+      + ((PackageId(Repository.GitHub, "flix", "gone"), SemVer(9, 9, 9)) -> LockEntry(Sha256("a" * 64), Some(Sha256("b" * 64)))))
     Files.writeString(p.resolve(Bootstrap.PACKAGES_LOCK), Lockfile.format(stale))
 
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
     val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
-    assert(lockfile.packages.keySet == Set(ClerkIdentifier))
+    assert(lockfile.packages.keySet == Set((ClerkIdentifier, SemVer(1, 1, 0))))
   }
 
   test("packages.lock.07") {
