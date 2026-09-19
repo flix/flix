@@ -55,11 +55,19 @@ class TestLockfileParser extends AnyFunSuite {
   }
 
   /**
-    * A lock file that records two packages.
+    * A lock file that records two packages, each at the one version it is required at.
     */
   private val TwoPackages: Lockfile = Lockfile(Map(
-    pkg("github:flix/museum") -> LockEntry(SemVer(1, 2, 3), digestOf("museum.toml"), digestOf("museum.fpkg")),
-    pkg("github:flix/museum-clerk") -> LockEntry(SemVer(0, 4, 0), digestOf("clerk.toml"), digestOf("clerk.fpkg"))
+    (pkg("github:flix/museum"), SemVer(1, 2, 3)) -> LockEntry(digestOf("museum.toml"), Some(digestOf("museum.fpkg"))),
+    (pkg("github:flix/museum-clerk"), SemVer(0, 4, 0)) -> LockEntry(digestOf("clerk.toml"), Some(digestOf("clerk.fpkg")))
+  ))
+
+  /**
+    * A lock file that records a package at two versions, one of which has been downloaded.
+    */
+  private val TwoVersions: Lockfile = Lockfile(Map(
+    (pkg("github:flix/museum-clerk"), SemVer(0, 4, 0)) -> LockEntry(digestOf("clerk-0.4.0.toml"), None),
+    (pkg("github:flix/museum-clerk"), SemVer(0, 4, 1)) -> LockEntry(digestOf("clerk-0.4.1.toml"), Some(digestOf("clerk-0.4.1.fpkg")))
   ))
 
   test("parse.empty.01") {
@@ -77,24 +85,77 @@ class TestLockfileParser extends AnyFunSuite {
       """[lock]
         |version = 1
         |
-        |[packages."github:flix/museum"]
-        |version = "1.2.3"
+        |[packages."github:flix/museum"."1.2.3"]
         |toml    = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         |fpkg    = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
         |""".stripMargin)
 
-    val expected = LockEntry(
-      SemVer(1, 2, 3),
-      Sha256("0" * 64),
-      Sha256("1" * 64)
-    )
-    assert(lockfile.packages == Map(pkg("github:flix/museum") -> expected))
+    val expected = LockEntry(Sha256("0" * 64), Some(Sha256("1" * 64)))
+    assert(lockfile.packages == Map((pkg("github:flix/museum"), SemVer(1, 2, 3)) -> expected))
   }
 
   test("parse.02") {
-    // The identifier keeps the `:` and the `/` it is written with.
+    // The identifier keeps the `:` and the `/` it is written with, and the version its dots.
     val lockfile = parse(Lockfile.format(TwoPackages))
-    assert(lockfile.packages.keySet == Set(pkg("github:flix/museum"), pkg("github:flix/museum-clerk")))
+    assert(lockfile.packages.keySet == Set(
+      (pkg("github:flix/museum"), SemVer(1, 2, 3)),
+      (pkg("github:flix/museum-clerk"), SemVer(0, 4, 0))
+    ))
+  }
+
+  test("parse.03") {
+    // A version whose package has not been downloaded records no fpkg.
+    val lockfile = parse(
+      """[lock]
+        |version = 1
+        |
+        |[packages."github:flix/museum"."1.2.3"]
+        |toml    = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+        |""".stripMargin)
+
+    assert(lockfile.packages == Map((pkg("github:flix/museum"), SemVer(1, 2, 3)) -> LockEntry(Sha256("0" * 64), None)))
+  }
+
+  test("parse.04") {
+    // A package that is required at two versions has an entry for each.
+    val lockfile = parse(
+      """[lock]
+        |version = 1
+        |
+        |[packages."github:flix/museum"."1.2.3"]
+        |toml    = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+        |
+        |[packages."github:flix/museum"."1.3.0"]
+        |toml    = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        |fpkg    = "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        |""".stripMargin)
+
+    assert(lockfile.packages == Map(
+      (pkg("github:flix/museum"), SemVer(1, 2, 3)) -> LockEntry(Sha256("0" * 64), None),
+      (pkg("github:flix/museum"), SemVer(1, 3, 0)) -> LockEntry(Sha256("1" * 64), Some(Sha256("2" * 64)))
+    ))
+  }
+
+  test("parse.05") {
+    // Two versions of a package may each record an fpkg: an entry says what a file is, and what
+    // is true of one version says nothing of another.
+    val lockfile = parse(
+      """[lock]
+        |version = 1
+        |
+        |[packages."github:flix/museum"."1.2.3"]
+        |toml    = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+        |fpkg    = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        |
+        |[packages."github:flix/museum"."1.3.0"]
+        |toml    = "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        |fpkg    = "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+        |""".stripMargin)
+
+    assert(lockfile.packages == Map(
+      (pkg("github:flix/museum"), SemVer(1, 2, 3)) -> LockEntry(Sha256("0" * 64), Some(Sha256("1" * 64))),
+      (pkg("github:flix/museum"), SemVer(1, 3, 0)) -> LockEntry(Sha256("2" * 64), Some(Sha256("3" * 64)))
+    ))
   }
 
   test("format.01") {
@@ -103,14 +164,13 @@ class TestLockfileParser extends AnyFunSuite {
 
   test("format.02") {
     val lockfile = Lockfile(Map(
-      pkg("github:flix/museum") -> LockEntry(SemVer(1, 2, 3), Sha256("a" * 64), Sha256("b" * 64))
+      (pkg("github:flix/museum"), SemVer(1, 2, 3)) -> LockEntry(Sha256("a" * 64), Some(Sha256("b" * 64)))
     ))
     val expected =
       "[lock]\n" +
         "version = 1\n" +
         "\n" +
-        "[packages.\"github:flix/museum\"]\n" +
-        "version = \"1.2.3\"\n" +
+        "[packages.\"github:flix/museum\".\"1.2.3\"]\n" +
         s"toml    = \"sha256:${"a" * 64}\"\n" +
         s"fpkg    = \"sha256:${"b" * 64}\"\n"
     assert(Lockfile.format(lockfile) == expected)
@@ -119,12 +179,12 @@ class TestLockfileParser extends AnyFunSuite {
   test("format.03") {
     // Entries are written in order of identifier, whatever order the map holds them in.
     val forwards = Lockfile(Map(
-      pkg("github:flix/a") -> LockEntry(SemVer(1, 0, 0), Sha256("a" * 64), Sha256("a" * 64)),
-      pkg("github:flix/b") -> LockEntry(SemVer(1, 0, 0), Sha256("b" * 64), Sha256("b" * 64))
+      (pkg("github:flix/a"), SemVer(1, 0, 0)) -> LockEntry(Sha256("a" * 64), Some(Sha256("a" * 64))),
+      (pkg("github:flix/b"), SemVer(1, 0, 0)) -> LockEntry(Sha256("b" * 64), Some(Sha256("b" * 64)))
     ))
     val backwards = Lockfile(Map(
-      pkg("github:flix/b") -> LockEntry(SemVer(1, 0, 0), Sha256("b" * 64), Sha256("b" * 64)),
-      pkg("github:flix/a") -> LockEntry(SemVer(1, 0, 0), Sha256("a" * 64), Sha256("a" * 64))
+      (pkg("github:flix/b"), SemVer(1, 0, 0)) -> LockEntry(Sha256("b" * 64), Some(Sha256("b" * 64))),
+      (pkg("github:flix/a"), SemVer(1, 0, 0)) -> LockEntry(Sha256("a" * 64), Some(Sha256("a" * 64)))
     ))
     assert(Lockfile.format(forwards) == Lockfile.format(backwards))
     assert(Lockfile.format(forwards).indexOf("github:flix/a") < Lockfile.format(forwards).indexOf("github:flix/b"))
@@ -134,6 +194,30 @@ class TestLockfileParser extends AnyFunSuite {
     // A lock file is committed and rewritten on every build, so its line endings must not depend
     // on the platform that wrote it.
     assert(!Lockfile.format(TwoPackages).contains("\r"))
+  }
+
+  test("format.05") {
+    // An entry that records no fpkg writes no fpkg.
+    val expected =
+      "[lock]\n" +
+        "version = 1\n" +
+        "\n" +
+        "[packages.\"github:flix/museum-clerk\".\"0.4.0\"]\n" +
+        s"toml    = \"${digestOf("clerk-0.4.0.toml")}\"\n" +
+        "\n" +
+        "[packages.\"github:flix/museum-clerk\".\"0.4.1\"]\n" +
+        s"toml    = \"${digestOf("clerk-0.4.1.toml")}\"\n" +
+        s"fpkg    = \"${digestOf("clerk-0.4.1.fpkg")}\"\n"
+    assert(Lockfile.format(TwoVersions) == expected)
+  }
+
+  test("format.06") {
+    // The versions of a package are written in order of version, not of how they are spelled.
+    val lockfile = Lockfile(Map(
+      (pkg("github:flix/museum"), SemVer(1, 10, 0)) -> LockEntry(Sha256("a" * 64), None),
+      (pkg("github:flix/museum"), SemVer(1, 9, 0)) -> LockEntry(Sha256("b" * 64), None)
+    ))
+    assert(Lockfile.format(lockfile).indexOf("\"1.9.0\"") < Lockfile.format(lockfile).indexOf("\"1.10.0\""))
   }
 
   test("roundtrip.01") {
@@ -148,6 +232,10 @@ class TestLockfileParser extends AnyFunSuite {
     // Formatting is stable: a lock file that is read and written again is unchanged.
     val once = Lockfile.format(TwoPackages)
     assert(Lockfile.format(parse(once)) == once)
+  }
+
+  test("roundtrip.04") {
+    assert(parse(Lockfile.format(TwoVersions)) == TwoVersions)
   }
 
   test("version.01") {
@@ -179,13 +267,12 @@ class TestLockfileParser extends AnyFunSuite {
   }
 
   test("keys.03") {
-    // A key in a package entry that Flix never writes.
+    // A key in an entry that Flix never writes.
     val s =
       """[lock]
         |version = 1
         |
-        |[packages."github:flix/museum"]
-        |version = "1.2.3"
+        |[packages."github:flix/museum"."1.2.3"]
         |toml    = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         |fpkg    = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
         |jar     = "sha256:2222222222222222222222222222222222222222222222222222222222222222"
@@ -194,29 +281,27 @@ class TestLockfileParser extends AnyFunSuite {
   }
 
   test("entry.01") {
-    // A package entry with no version.
+    // An entry with no toml digest.
     val s =
       """[lock]
         |version = 1
         |
-        |[packages."github:flix/museum"]
-        |toml = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+        |[packages."github:flix/museum"."1.2.3"]
         |fpkg = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
         |""".stripMargin
     assert(parseErr(s).isInstanceOf[LockError.MissingRequiredProperty])
   }
 
   test("entry.02") {
-    // A package entry with no fpkg digest.
+    // A version that is a string rather than a table.
     val s =
       """[lock]
         |version = 1
         |
         |[packages."github:flix/museum"]
-        |version = "1.2.3"
-        |toml    = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+        |"1.2.3" = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         |""".stripMargin
-    assert(parseErr(s).isInstanceOf[LockError.MissingRequiredProperty])
+    assert(parseErr(s).isInstanceOf[LockError.PropertyHasWrongType])
   }
 
   test("entry.03") {
@@ -225,8 +310,7 @@ class TestLockfileParser extends AnyFunSuite {
       """[lock]
         |version = 1
         |
-        |[packages."github:flix/museum"]
-        |version = "1.2"
+        |[packages."github:flix/museum"."1.2"]
         |toml    = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         |fpkg    = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
         |""".stripMargin
@@ -239,8 +323,7 @@ class TestLockfileParser extends AnyFunSuite {
       """[lock]
         |version = 1
         |
-        |[packages."github:flix/museum"]
-        |version = "1.2.3"
+        |[packages."github:flix/museum"."1.2.3"]
         |toml    = "0000000000000000000000000000000000000000000000000000000000000000"
         |fpkg    = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
         |""".stripMargin
@@ -253,8 +336,7 @@ class TestLockfileParser extends AnyFunSuite {
       """[lock]
         |version = 1
         |
-        |[packages."github:flix/museum"]
-        |version = "1.2.3"
+        |[packages."github:flix/museum"."1.2.3"]
         |toml    = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         |fpkg    = "sha256:1111"
         |""".stripMargin
@@ -279,18 +361,16 @@ class TestLockfileParser extends AnyFunSuite {
   }
 
   test("toml.02") {
-    // The same package twice, which toml itself forbids.
+    // The same package at the same version twice, which toml itself forbids.
     val s =
       """[lock]
         |version = 1
         |
-        |[packages."github:flix/museum"]
-        |version = "1.2.3"
+        |[packages."github:flix/museum"."1.2.3"]
         |toml    = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         |fpkg    = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
         |
-        |[packages."github:flix/museum"]
-        |version = "2.0.0"
+        |[packages."github:flix/museum"."1.2.3"]
         |toml    = "sha256:2222222222222222222222222222222222222222222222222222222222222222"
         |fpkg    = "sha256:3333333333333333333333333333333333333333333333333333333333333333"
         |""".stripMargin
