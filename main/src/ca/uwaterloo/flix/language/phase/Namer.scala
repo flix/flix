@@ -72,8 +72,7 @@ object Namer {
       val rootMounts = resolveMounts(flix.rootMounts)
       val mounts = flix.packageMounts.map { case (id, table) => id -> resolveMounts(table) }
 
-      val errors = sctx.errors.asScala.toList ++ checkOrphanModules(symbols) ++
-        checkMountCollisions(symbols, rootMounts, mounts)
+      val errors = sctx.errors.asScala.toList ++ checkOrphanModules(symbols)
 
       (NamedAst.Root(symbols, instances, uses, units, modules, mounts, rootMounts, flix.mountedPackages, program.mainEntryPoint, locations, program.tokens), errors)
     }
@@ -82,67 +81,6 @@ object Namer {
     * Returns the namespace the declarations of the package `id` are named under.
     */
   private def packageRoot(id: PackageId): Name.NName = Name.mkUnlocatedNName(List(id.canonicalRoot))
-
-  /**
-    * Finds every mount that shadows a name the mounting code could otherwise reach.
-    *
-    * A mount binds the first name of a qualified name, and it is consulted after the enclosing
-    * namespace but before the root of the mounting code and before [[Name.RootNS]]. So a mount
-    * that has the same name as a declaration already in scope changes what that name means, and
-    * changes it differently depending on how deeply nested the use site is.
-    *
-    * Two collisions are reported. A mount that shadows the bundled library, which cannot be
-    * renamed. And a mount that shadows a declaration of the mounting code itself. A mount that
-    * shadows a *different* package is allowed: the author asked for that name, and reporting it
-    * would make one manifest valid or invalid depending on what else the consumer depends on.
-    */
-  private def checkMountCollisions(symbols: Map[Name.NName, Map[String, List[Declaration]]],
-                                   rootMounts: Map[Mountpoint, Name.NName],
-                                   mounts: Map[PackageId, Map[Mountpoint, Name.NName]])(implicit flix: Flix): List[NameError] = {
-    // Every viewer: the origin of its own declarations, the namespace it is named under, and its mounts.
-    val root = (Origin.User: Origin, Name.RootNS, rootMounts)
-    val packages = mounts.toList.sortBy { case (id, _) => id }.map {
-      case (id, table) =>
-        val viewerRoot = if (flix.mountedPackages.contains(id)) packageRoot(id) else Name.RootNS
-        (Origin.Package(id): Origin, viewerRoot, table)
-    }
-
-    (root :: packages).flatMap {
-      case (own, viewerRoot, table) =>
-        // The namespaces the mount is found before: the root of the mounting code, and the root
-        // namespace, where the library and every unmounted package are declared.
-        val searched = if (viewerRoot == Name.RootNS) List(Name.RootNS) else List(viewerRoot, Name.RootNS)
-        table.keys.toList.sorted.flatMap { mount =>
-          val shadowed = searched.flatMap(ns => symbols.getOrElse(ns, Map.empty).getOrElse(mount.name, Nil))
-          shadowed.flatMap(mountCollision(mount, own, _)).headOption
-        }
-    }
-  }
-
-  /**
-    * Returns the error for `mount` shadowing `decl`, if shadowing it is an error.
-    */
-  private def mountCollision(mount: Mountpoint, own: Origin, decl: Declaration): Option[NameError] =
-    moduleLikeLoc(decl).flatMap { loc =>
-      loc.source.origin match {
-        case Origin.Library => Some(NameError.MountShadowsLibrary(mount, loc))
-        case origin if origin == own => Some(NameError.MountShadowsDeclaration(mount, loc))
-        case _ => None
-      }
-    }
-
-  /**
-    * Returns where `decl` is declared, if it is one of the declarations a qualified name can begin with.
-    */
-  private def moduleLikeLoc(decl: Declaration): Option[SourceLocation] = decl match {
-    case Declaration.Mod(_, _, _, _, nameLoc, _, _, _) => Some(nameLoc)
-    case Declaration.Trait(_, _, _, sym, _, _, _, _, _) => Some(sym.loc)
-    case Declaration.Enum(_, _, _, sym, _, _, _, _) => Some(sym.loc)
-    case Declaration.Struct(_, _, _, sym, _, _, _) => Some(sym.loc)
-    case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => Some(sym.loc)
-    case Declaration.Effect(_, _, _, sym, _, _, _) => Some(sym.loc)
-    case _ => None
-  }
 
   /**
     * Returns the namespace the declarations of the source at `loc` are named under.
