@@ -44,12 +44,29 @@ object PackageError {
          |""".stripMargin
   }
 
-  case class ProjectNotFound(url: URL, project: Project, exception: IOException) extends PackageError {
+  /**
+    * A request about a project never reached a server at all.
+    */
+  case class ProjectUnreachable(url: URL, project: Project, exception: IOException) extends PackageError {
     override def message(f: Formatter): String =
       s"""An I/O error occurred while trying to read the following url:
          |${f.cyan(url.toString)}
          |Project: ${f.bold(project.toString)}
          |Error: ${f.red(exception.getMessage)}
+         |""".stripMargin
+  }
+
+  /**
+    * A project that GitHub answers 404 for.
+    *
+    * A private project answers the same way to whoever cannot see it, so the message names both
+    * possibilities: GitHub does not say which of the two it is.
+    */
+  case class ProjectDoesNotExist(project: Project, url: URL) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""There is no project ${f.red(project.toString)} to read releases from.
+         |Either it does not exist, or it is private and the API token in use cannot see it.
+         |Looked at ${f.cyan(url.toString)}.
          |""".stripMargin
   }
 

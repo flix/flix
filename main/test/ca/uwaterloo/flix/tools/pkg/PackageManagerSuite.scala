@@ -10,5 +10,6 @@ class PackageManagerSuite extends Suites(
   new TestLockfileParser,
   new TestPackageSpec,
   new TestFlixPackageManager,
+  new TestGitHub,
   new TestJarPackageManager
 )
