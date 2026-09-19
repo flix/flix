@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, TraitUsageKind}
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Mountpoint, TraitUsageKind}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
@@ -1230,23 +1230,68 @@ object ResolutionError {
   /**
     * Undefined Use Error (unrecoverable).
     *
+    * @param pkg the package the name was looked up in, if the use names one.
     * @param qn  the unresolved name.
     * @param ns  the current namespace.
     * @param env the variables in the scope.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedUse(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
+  case class UndefinedUse(pkg: Option[Name.Ident], qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3138
 
-    def summary: String = s"Undefined use: '${qn.toString}'."
+    def summary: String = s"Undefined use: '$path'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Undefined use '${red(qn.toString)}'.
+      s""">> Undefined use '${red(path)}'.
          |
          |${highlight(loc, "name not found", fmt)}
          |""".stripMargin
     }
+
+    /** The path as it was written, e.g. `flixball::Game.Board`. */
+    private def path: String = pkg match {
+      case Some(ident) => s"${ident.name}::$qn"
+      case None => qn.toString
+    }
+  }
+
+  /**
+    * An error raised to indicate that the package of a use, e.g. `flixball` in `use flixball::Board`, is not defined.
+    *
+    * @param pkg       the unresolved package.
+    * @param qn        the name that follows the package.
+    * @param available the packages that are defined where the use occurs.
+    * @param isModule  whether `pkg` names a module or a declaration with members, i.e. `::` was written where `.` was meant.
+    * @param loc       the location where the error occurred.
+    */
+  case class UndefinedPackage(pkg: Name.Ident, qn: Name.QName, available: List[Mountpoint], isModule: Boolean, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E3142
+
+    def summary: String = s"Undefined package: '${pkg.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Undefined package '${red(pkg.name)}'.
+         |
+         |${highlight(loc, "package not found", fmt)}
+         |
+         |${underline("Explanation:")} $explanation
+         |""".stripMargin
+    }
+
+    private def explanation: String =
+      if (isModule) {
+        s"""'${pkg.name}' is not a package. A '::' only follows a package.
+           |Everything else is separated by '.':
+           |
+           |  use ${pkg.name}.$qn
+           |""".stripMargin
+      } else if (available.isEmpty) {
+        "No packages are available here. A package is a dependency mounted in 'flix.toml'."
+      } else {
+        s"The packages available here are: ${available.sorted.map(m => s"'$m'").mkString(", ")}."
+      }
   }
 
   /**

@@ -13,7 +13,7 @@ class TestMounts extends AnyFunSuite {
 
   private val Id: PackageId = PackageId(Repository.GitHub, "test", "dep")
 
-  /** Builds a package that declares `pub mod Board` and a non-public `mod Secret`. */
+  /** Builds a package that declares `pub mod Board`, `pub mod Game`, `pub mod Game.Rules` and a non-public `mod Secret`. */
   private def mkPkg(): Path = {
     val p = Files.createTempDirectory("flix-mount-dep-")
     Bootstrap.init(p)(System.out)
@@ -21,6 +21,9 @@ class TestMounts extends AnyFunSuite {
     Files.delete(p.resolve("test").resolve("TestMain.flix"))
     FileOps.writeString(p.resolve("src").resolve("Board.flix"), "pub mod Board { pub def place(): Int32 = 42 }")
     FileOps.writeString(p.resolve("src").resolve("Secret.flix"), "mod Secret { pub def hidden(): Int32 = 1 }")
+    FileOps.writeString(p.resolve("src").resolve("Game.flix"), "pub mod Game { pub def name(): String = \"flixball\" }")
+    Files.createDirectories(p.resolve("src").resolve("Game"))
+    FileOps.writeString(p.resolve("src").resolve("Game").resolve("Rules.flix"), "pub mod Game.Rules { pub def players(): Int32 = 2 }")
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault).unsafeGet
     p.resolve("artifact").resolve(p.getFileName.toString + ".fpkg")
@@ -90,6 +93,140 @@ class TestMounts extends AnyFunSuite {
     // A mount that shadows a module of another package is allowed: the author asked for the name.
     val pkg = mkPkg()
     assertResult(Nil)(check(pkg, Map(Mountpoint("Game") -> Id), "def main(): Unit \\ IO = println(Game.Board.place())"))
+  }
+
+  test("package-use.module") {
+    val pkg = mkPkg()
+    val mounts = Map(Mountpoint("Flixball") -> Id)
+    val main =
+      """
+        |use Flixball::Board
+        |def main(): Unit \ IO = println(Board.place())
+        |""".stripMargin
+    assertResult(Nil)(check(pkg, mounts, main))
+  }
+
+  test("package-use.nested-module") {
+    val pkg = mkPkg()
+    val mounts = Map(Mountpoint("Flixball") -> Id)
+    val main =
+      """
+        |use Flixball::Game.Rules
+        |def main(): Unit \ IO = println(Rules.players())
+        |""".stripMargin
+    assertResult(Nil)(check(pkg, mounts, main))
+  }
+
+  test("package-use.def") {
+    val pkg = mkPkg()
+    val mounts = Map(Mountpoint("Flixball") -> Id)
+    val main =
+      """
+        |use Flixball::Game.Rules.players
+        |def main(): Unit \ IO = println(players())
+        |""".stripMargin
+    assertResult(Nil)(check(pkg, mounts, main))
+  }
+
+  test("package-use.many") {
+    val pkg = mkPkg()
+    val mounts = Map(Mountpoint("Flixball") -> Id)
+    val main =
+      """
+        |use Flixball::{Game, Board}
+        |def main(): Unit \ IO = println(Board.place() + Game.Rules.players())
+        |""".stripMargin
+    assertResult(Nil)(check(pkg, mounts, main))
+  }
+
+  test("package-use.many-after-path") {
+    val pkg = mkPkg()
+    val mounts = Map(Mountpoint("Flixball") -> Id)
+    val main =
+      """
+        |use Flixball::Game.Rules.{players => count}
+        |def main(): Unit \ IO = println(count())
+        |""".stripMargin
+    assertResult(Nil)(check(pkg, mounts, main))
+  }
+
+  test("package-use.expression") {
+    val pkg = mkPkg()
+    val mounts = Map(Mountpoint("Flixball") -> Id)
+    val main =
+      """
+        |def main(): Unit \ IO = {
+        |    use Flixball::Board.place;
+        |    println(place())
+        |}
+        |""".stripMargin
+    assertResult(Nil)(check(pkg, mounts, main))
+  }
+
+  test("package-use.not-shadowed") {
+    // A package-qualified use is looked up in the package, not through what is in scope: the
+    // project's own 'Board.place' is a String, so this only type checks against the package's.
+    val pkg = mkPkg()
+    val mounts = Map(Mountpoint("Flixball") -> Id)
+    val main =
+      """
+        |use Flixball::Board
+        |mod Board { pub def place(): String = "own" }
+        |def main(): Unit \ IO = println(Board.place() + 1)
+        |""".stripMargin
+    assertResult(Nil)(check(pkg, mounts, main))
+  }
+
+  test("package-use.undefined-package") {
+    // A mount absent from the table is reported together with the ones that are there.
+    val pkg = mkPkg()
+    val mounts = Map(Mountpoint("Flixball") -> Id)
+    val main =
+      """
+        |use Flyball::Board
+        |def main(): Unit \ IO = println(1)
+        |""".stripMargin
+    assertResult(List("UndefinedPackage"))(check(pkg, mounts, main))
+    assert(messages.contains("'Flixball'"), messages)
+  }
+
+  test("package-use.undefined-use") {
+    // A good mount with a bad path. The path is shown as it was written.
+    val pkg = mkPkg()
+    val mounts = Map(Mountpoint("Flixball") -> Id)
+    val main =
+      """
+        |use Flixball::Game.Rulez
+        |def main(): Unit \ IO = println(1)
+        |""".stripMargin
+    assertResult(List("UndefinedUse"))(check(pkg, mounts, main))
+    assert(messages.contains("Flixball::Game.Rulez"), messages)
+  }
+
+  test("package-use.private-not-reachable") {
+    // Accessibility is enforced where a name is used, so the test has to call into the module.
+    val pkg = mkPkg()
+    val mounts = Map(Mountpoint("Flixball") -> Id)
+    val main =
+      """
+        |use Flixball::Secret
+        |def main(): Unit \ IO = println(Secret.hidden())
+        |""".stripMargin
+    val errors = check(pkg, mounts, main)
+    assert(errors.nonEmpty, "expected the non-public module of a package to be inaccessible")
+  }
+
+  test("package-use.private-def-not-reachable") {
+    // A def of a non-public module, used directly rather than through the module.
+    val pkg = mkPkg()
+    val mounts = Map(Mountpoint("Flixball") -> Id)
+    val main =
+      """
+        |use Flixball::Secret.hidden
+        |def main(): Unit \ IO = println(hidden())
+        |""".stripMargin
+    val errors = check(pkg, mounts, main)
+    assert(errors.nonEmpty, "expected a def of a non-public module of a package to be inaccessible")
   }
 
   test("mounted.private-not-reachable") {

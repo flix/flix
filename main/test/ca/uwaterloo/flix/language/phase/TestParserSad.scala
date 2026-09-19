@@ -653,4 +653,55 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val error = check(input, Options.TestWithLibNix)
     expectError[ParseError.MissingBinaryOperator](error)
   }
+
+  test("ParseError.Use.Package.01") {
+    // A `::` only follows the package.
+    val input =
+      """
+        |use flixball::Game::Board
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("ParseError.Use.Package.02") {
+    val input =
+      """
+        |use flixball::Game::Board::{empty, size}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("ParseError.Use.Package.03") {
+    // A `::` with whitespace around it is not a package separator.
+    val input =
+      """
+        |use flixball :: Game
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.Malformed](result)
+  }
+
+  test("ParseError.Use.Package.04") {
+    val input =
+      """
+        |use flixball:: Game
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.Malformed](result)
+  }
+
+  test("ParseError.Use.Package.05") {
+    val input =
+      """
+        |def foo(): Int32 = {
+        |    use flixball::Game::Board;
+        |    1
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
 }
