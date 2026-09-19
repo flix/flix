@@ -66,13 +66,14 @@ object EnumTagCompleter {
     * We need to first find the fully qualified namespace by looking up the local scope, then use it to provide completions.
     */
   private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, ectx: ExprContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    val fullyQualifiedNamespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
-      case Some(Resolution.Declaration(Enum(_, _, _, sym, _, _, _, _))) => sym.toString
-      case Some(Resolution.Declaration(Mod(_, _, _, name, _, _, _, _))) => name.toString
+    // The namespace is taken from the symbol and not from how it prints: a symbol of a package
+    // prints under the identifier of the package, which is not the namespace it is named under.
+    val namespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
+      case Some(Resolution.Declaration(Enum(_, _, _, sym, _, _, _, _))) => sym.namespace :+ sym.name
+      case Some(Resolution.Declaration(Mod(_, _, _, sym, _, _, _, _))) => sym.ns
       case _ => return Nil
     }
-    val namespaceTail = qn.namespace.idents.tail.map(_.name).mkString(".")
-    val fullyQualifiedEnum = if (namespaceTail.isEmpty) fullyQualifiedNamespaceHead else s"$fullyQualifiedNamespaceHead.$namespaceTail"
+    val fullyQualifiedEnum = (namespaceHead ::: qn.namespace.idents.tail.map(_.name)).mkString(".")
     for {
       enm <- root.enums.get(Symbol.mkEnumSym(fullyQualifiedEnum)).toList
       tag <- enm.cases.values

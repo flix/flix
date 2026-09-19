@@ -62,14 +62,14 @@ object DefCompleter {
     *   - If `Net.Http.get` is fully qualified, then `Http.get` is partially qualified
     */
   private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, ectx: ExprContext)(implicit root: Root): Iterable[Completion] = {
-    val fullyQualifiedNamespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
-      case Some(Resolution.Declaration(Mod(_, _, _, name, _, _, _, _))) => name.toString
-      case Some(Resolution.Declaration(Effect(_, _, _, name, _, _, _))) => name.toString
+    // The namespace is taken from the symbol and not from how it prints: a symbol of a package
+    // prints under the identifier of the package, which is not the namespace it is named under.
+    val namespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
+      case Some(Resolution.Declaration(Mod(_, _, _, sym, _, _, _, _))) => sym.ns
+      case Some(Resolution.Declaration(Effect(_, _, _, sym, _, _, _))) => sym.namespace :+ sym.name
       case _ => return Nil
     }
-    val namespaceTail = qn.namespace.idents.tail.map(_.name).mkString(".")
-    val fullyQualifiedModule = if (namespaceTail.isEmpty) fullyQualifiedNamespaceHead else s"$fullyQualifiedNamespaceHead.$namespaceTail"
-    val moduleNamespace = fullyQualifiedModule.split('.').toList
+    val moduleNamespace = namespaceHead ::: qn.namespace.idents.tail.map(_.name)
     for {
       decl <- root.defs.values
       if CompletionUtils.isAvailable(decl.spec)

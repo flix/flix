@@ -68,13 +68,14 @@ object OpCompleter {
     * We assume the user is trying to type a partially qualified name and will only match against partially qualified names.
     */
   private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, ectx: ExprContext)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
-    val fullyQualifiedNamespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
-      case Some(Resolution.Declaration(Effect(_, _, _, name, _, _, _))) => name.toString
-      case Some(Resolution.Declaration(Mod(_, _, _, name, _, _, _, _))) => name.toString
+    // The namespace is taken from the symbol and not from how it prints: a symbol of a package
+    // prints under the identifier of the package, which is not the namespace it is named under.
+    val namespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
+      case Some(Resolution.Declaration(Effect(_, _, _, sym, _, _, _))) => sym.namespace :+ sym.name
+      case Some(Resolution.Declaration(Mod(_, _, _, sym, _, _, _, _))) => sym.ns
       case _ => return Nil
     }
-    val namespaceTail = qn.namespace.idents.tail.map(_.name).mkString(".")
-    val fullyQualifiedEffect = if (namespaceTail.isEmpty) fullyQualifiedNamespaceHead else s"$fullyQualifiedNamespaceHead.$namespaceTail"
+    val fullyQualifiedEffect = (namespaceHead ::: qn.namespace.idents.tail.map(_.name)).mkString(".")
     for {
       eff <- root.effects.get(Symbol.mkEffSym(fullyQualifiedEffect)).toList
       op <- eff.ops
