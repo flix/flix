@@ -436,6 +436,13 @@ object Main {
           }
           exitOnResult(Bootstrap.install(cwd, pkg, options.githubToken, options.assumeYes))
 
+        case Command.Remove(pkg) =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'remove' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult(Bootstrap.remove(cwd, pkg, options.githubToken))
+
         case Command.Outdated =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'outdated' command does not support file arguments.")
@@ -587,6 +594,8 @@ object Main {
 
     case class Install(pkg: String) extends Command
 
+    case class Remove(pkg: String) extends Command
+
     case object Outdated extends Command
 
     case object Stat extends Command
@@ -685,6 +694,13 @@ object Main {
           arg[String]("package").action((pkg, c) => c.copy(command = Command.Install(pkg)))
             .required()
             .text("the package to add, e.g. 'flix/museum-clerk' or 'flix/museum-clerk@1.1.0'.")
+        )
+
+      cmd("remove").text("  removes a dependency from the current project.")
+        .children(
+          arg[String]("package").action((pkg, c) => c.copy(command = Command.Remove(pkg)))
+            .required()
+            .text("the package to remove, e.g. 'flix/museum-clerk'.")
         )
 
       cmd("outdated").text("  shows dependencies which have newer versions available.")

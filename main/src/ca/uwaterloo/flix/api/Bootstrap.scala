@@ -211,7 +211,47 @@ object Bootstrap {
       _ <- checkUndeclared(manifest, pkg.id)
       version <- selectVersion(pkg, apiKey)
       mount <- selectMount(manifest, pkg.id, assumeYes)
-      _ <- addDependency(p, manifest, pkg.id, version, mount, apiKey)
+      dep = Dependency.FlixDependency(pkg.id, version, Some(mount), SecurityContext.Default)
+      _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies :+ dep), apiKey,
+        s"Added '${pkg.id}' v$version, mounted at '$mount'.")
+    } yield ()
+  }
+
+  /**
+    * Removes the package `spec` from the dependencies of the project at `p`.
+    *
+    * `spec` is a package identifier, e.g. `flix/museum-clerk` or `github:flix/museum-clerk`. It
+    * carries no version: a package is declared at one version, so there is nothing to choose
+    * between.
+    *
+    * The declaration is dropped from `flix.toml` and the project is then bootstrapped, so that
+    * `packages.lock` describes the project as it is now declared. Only what the project declares
+    * can be removed: a package that is reached through another dependency is that dependency's
+    * to declare, and stays.
+    *
+    * What the removed package left in `lib/` stays as well. A package is loaded because the
+    * resolution installs it and not because it is on disk, so what is left is inert.
+    *
+    * The manifest is rewritten as a whole, see [[install]], and a failure puts back the bytes
+    * that were there.
+    */
+  def remove(p: Path, spec: String, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+    val pkg = PackageSpec.mkPackageSpec(spec) match {
+      case Some(s) if s.version.isDefined => return Err(BootstrapError.UnexpectedVersion(spec))
+      case Some(s) => s
+      case None => return Err(BootstrapError.IllegalPackageSpec(spec))
+    }
+
+    val tomlPath = getManifestFile(p)
+    if (!Files.exists(tomlPath)) {
+      return Err(BootstrapError.NoProject(tomlPath))
+    }
+
+    for {
+      manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
+      dep <- findDeclared(manifest, pkg.id)
+      _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies.filterNot(d => d == dep)), apiKey,
+        s"Removed '${pkg.id}' v${dep.version}${dep.mount.map(mount => s", which was mounted at '$mount'").getOrElse("")}.")
     } yield ()
   }
 
@@ -225,6 +265,19 @@ object Bootstrap {
     manifest.flixDependencies.find(dep => dep.id == id) match {
       case Some(dep) => Err(BootstrapError.DependencyAlreadyDeclared(id, dep.version))
       case None => Ok(())
+    }
+
+  /**
+    * Returns the dependency on `id` that `manifest` declares, or an error if it declares none.
+    *
+    * A package that the project does not declare is not one it can drop, whether it is unknown
+    * or is reached through another dependency: what that dependency requires is its own to
+    * declare.
+    */
+  private def findDeclared(manifest: Manifest, id: PackageId): Result[Dependency.FlixDependency, BootstrapError] =
+    manifest.flixDependencies.find(dep => dep.id == id) match {
+      case Some(dep) => Ok(dep)
+      case None => Err(BootstrapError.DependencyNotDeclared(id))
     }
 
   /**
@@ -330,15 +383,15 @@ object Bootstrap {
   }
 
   /**
-    * Writes `manifest`, with the dependency added to it, to the `flix.toml` of the project at
-    * `p`, and then bootstraps the project so that its dependencies are the ones it now declares.
+    * Writes `updated` to the `flix.toml` of the project at `p`, and then bootstraps the project
+    * so that its dependencies are the ones it now declares. Reports `success` once they are.
     *
-    * The manifest that was there is put back if the project does not resolve with the dependency
-    * added, so that an install that fails leaves a project that still builds. What is put back
-    * are the bytes that were read, and not the manifest that was parsed from them, so a failed
-    * install costs neither the comments nor the keys that a rewrite would.
+    * The manifest that was there is put back if the project does not resolve with the
+    * dependencies changed, so that a command that fails leaves a project that still builds. What
+    * is put back are the bytes that were read, and not the manifest that was parsed from them,
+    * so a failure costs neither the comments nor the keys that a rewrite would.
     */
-  private def addDependency(p: Path, manifest: Manifest, id: PackageId, version: SemVer, mount: Mountpoint, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+  private def rewriteManifest(p: Path, updated: Manifest, apiKey: Option[String], success: String)(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
     val tomlPath = getManifestFile(p)
 
     val original = try {
@@ -347,8 +400,6 @@ object Bootstrap {
       case e: IOException => return Err(BootstrapError.FileError(s"Unable to read '$FLIX_TOML': ${e.getMessage}"))
     }
 
-    val dep = Dependency.FlixDependency(id, version, Some(mount), SecurityContext.Default)
-    val updated = manifest.copy(dependencies = manifest.dependencies :+ dep)
     try {
       FileOps.writeString(tomlPath, Manifest.format(updated))
     } catch {
@@ -357,15 +408,15 @@ object Bootstrap {
 
     bootstrap(p, apiKey) match {
       case Ok(_) =>
-        out.println(formatter.green(s"Added '$id' v$version, mounted at '$mount'."))
+        out.println(formatter.green(success))
         Ok(())
       case Err(e) =>
         try {
           FileOps.writeString(tomlPath, original)
         } catch {
-          // The failure that stopped the install is the one to report, but a manifest that could
+          // The failure that stopped the command is the one to report, but a manifest that could
           // not be put back is not something to leave unsaid.
-          case _: IOException => out.println(s"Unable to restore '$FLIX_TOML'. It declares '$id' v$version, which was not installed.")
+          case _: IOException => out.println(s"Unable to restore '$FLIX_TOML'. It no longer declares the dependencies the project was built with.")
         }
         Err(e)
     }

@@ -68,6 +68,12 @@ class TestMain extends AnyFunSuite {
     assert(Main.parseCmdOpts(args).isEmpty)
   }
 
+  test("remove") {
+    val args = Array("remove", "flix/museum-clerk")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Remove("flix/museum-clerk"))
+  }
+
   test("outdated") {
     val args = Array("outdated")
     val opts = Main.parseCmdOpts(args).get
