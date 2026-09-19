@@ -124,17 +124,6 @@ class TestMounts extends AnyFunSuite with TestUtils {
     expectSuccess(check(pkg, mounts, main))
   }
 
-  test("package-use.hyphenated-mount") {
-    val pkg = mkPkg()
-    val mounts = Map(Mountpoint("tic-tac-toe") -> Id)
-    val main =
-      """
-        |use tic-tac-toe::Game.Rules.{players}
-        |def main(): Unit \ IO = println(players())
-        |""".stripMargin
-    expectSuccess(check(pkg, mounts, main))
-  }
-
   test("package-use.nested-module") {
     val pkg = mkPkg()
     val mounts = Map(Mountpoint("Flixball") -> Id)

@@ -313,7 +313,7 @@ object Lexer {
     s.sc.peekAndAdvance() match {
       case 'd' if s.sc.peekIs(_ == '"', outOfBounds = false) => TokenKind.DebugInterpolator
       case 'r' if s.sc.advanceIfMatch("egex\"") => acceptRegex()
-      case c if isFirstNameChar(c) => acceptNameOrHyphenatedName(c.isUpper)
+      case c if isFirstNameChar(c) => acceptName(c.isUpper)
       case '.' =>
         if (s.sc.nth(-2).exists(_.isWhitespace)) {
           // If the dot is prefixed with whitespace we treat that as an error.
@@ -499,59 +499,6 @@ object Lexer {
       TokenKind.NameLowercase
     }
   }
-
-  /**
-    * Moves current position past a name, or past a hyphenated name (e.g. `tic-tac-toe`) if one is
-    * directly followed by a tight `::`.
-    *
-    * Anywhere else a hyphen is a minus, so `tic-tac-toe` on its own is three names.
-    */
-  private def acceptNameOrHyphenatedName(isUpper: Boolean)(implicit s: State): TokenKind = {
-    s.sc.advanceWhile(isNameChar)
-    val n = hyphenGroupsLength()
-    if (n > 0) {
-      s.sc.advanceN(n)
-      TokenKind.NameHyphenated
-    } else {
-      acceptName(isUpper)
-    }
-  }
-
-  /**
-    * Returns the length of the hyphen groups ahead (e.g. `-tac-toe` after `tic`) if they are directly
-    * followed by a tight `::`. Returns `0` otherwise. Consumes nothing.
-    *
-    * A hyphen group is a hyphen, a letter, and then letters, digits and underscores.
-    */
-  private def hyphenGroupsLength()(implicit s: State): Int = {
-    var i = 0
-    while (s.sc.nthIs(i, _ == '-', outOfBounds = false) && s.sc.nthIs(i + 1, isLetter, outOfBounds = false)) {
-      i += 2
-      while (s.sc.nthIs(i, isHyphenGroupChar, outOfBounds = false)) {
-        i += 1
-      }
-    }
-    if (i == 0) {
-      return 0
-    }
-
-    // The groups must be followed by what lexes as `ColonColonTight`: a `::` that is neither the
-    // start of `:::`, nor followed by whitespace, a user operator char, or the end of input.
-    val isTight = s.sc.nthIs(i, _ == ':', outOfBounds = false) &&
-      s.sc.nthIs(i + 1, _ == ':', outOfBounds = false) &&
-      s.sc.nthIs(i + 2, c => c != ':' && !c.isWhitespace && !isUserOp(c), outOfBounds = false)
-    if (!isTight) {
-      return 0
-    }
-
-    // The name lexed so far is the first group, so it must not contain `!` or `$`.
-    val isFirstGroup = (s.startOffset until s.sc.getIndex).forall(j => isHyphenGroupChar(s.src.data(j)))
-    if (isFirstGroup) i else 0
-  }
-
-  /** Returns `true` if `c` is allowed inside a group of a hyphenated name (see [[isNameChar]]). */
-  private def isHyphenGroupChar(c: Char): Boolean =
-    isLetter(c) || isDigit(c) || c == '_'
 
   /**
     * Returns true if `c` is allowed as the first char of a name (see [[isNameChar]]).

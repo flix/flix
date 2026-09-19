@@ -822,7 +822,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedPackage.02") {
     val input =
       """
-        |use tic-tac-toe::Game.Board.{empty, size => boardSize}
+        |use ticTacToe::Game.Board.{empty, size => boardSize}
         |
         |def f(): Int32 = 1
         |""".stripMargin

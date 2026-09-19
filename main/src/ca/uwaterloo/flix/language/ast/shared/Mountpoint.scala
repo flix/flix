@@ -19,20 +19,16 @@ import ca.uwaterloo.flix.language.phase.Lexer
 
 object Mountpoint {
 
-  /** Hyphen-separated groups, each a letter followed by letters, digits, and underscores. */
-  private val Valid = "[A-Za-z][A-Za-z0-9_]*(-[A-Za-z][A-Za-z0-9_]*)*".r
-
-  /** Returns `s` as a mountpoint, if it can be written before `::`. */
-  def mkMountpoint(s: String): Option[Mountpoint] =
-    if (Valid.matches(s) && !startsWithKeyword(s)) Some(Mountpoint(s)) else None
+  /** A letter followed by letters, digits, and underscores. */
+  private val Valid = "[A-Za-z][A-Za-z0-9_]*".r
 
   /**
-    * Returns `true` if the first group of `s` is a keyword.
+    * Returns `s` as a mountpoint, if it can be written before `::`.
     *
-    * The lexer reads a keyword before a name, so `type-level::` lexes as `type`, `-`, `level`.
+    * A keyword cannot: the lexer reads `type::` as `type` and not as a mount.
     */
-  def startsWithKeyword(s: String): Boolean =
-    Lexer.isKeyword(s.takeWhile(_ != '-'))
+  def mkMountpoint(s: String): Option[Mountpoint] =
+    if (Valid.matches(s) && !Lexer.isKeyword(s)) Some(Mountpoint(s)) else None
 
 }
 
