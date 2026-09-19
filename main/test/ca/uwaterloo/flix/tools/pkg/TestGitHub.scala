@@ -47,6 +47,19 @@ class TestGitHub extends AnyFunSuite {
     }
   }
 
+  test("downloadReleaseAsset.01") {
+    // A release asset is downloaded with whatever token is held, and a release address ignores a
+    // token it does not accept rather than refusing the request. A token that has gone stale in
+    // the environment therefore does not break a build that would have worked without one.
+    val project = GitHub.Project("flix", "museum-clerk")
+    val stream = GitHub.downloadReleaseAsset(project, SemVer(1, 1, 0), "flix.toml", Some("not-a-token")).unsafeGet
+    try {
+      assert(stream.readAllBytes().nonEmpty)
+    } finally {
+      stream.close()
+    }
+  }
+
   test("mayReceiveToken.01") {
     // The hosts a token is for: the API, the addresses releases are downloaded from, and the
     // one assets are uploaded to.
