@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.api.{Bootstrap, InstalledPackage}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, Repository, SecurityContext}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.errors.{NameError, ResolutionError}
+import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.{FileOps, Formatter}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -79,34 +79,25 @@ class TestMounts extends AnyFunSuite with TestUtils {
     expectSuccess(check(pkg, mounts, "def main(): Unit \\ IO = println(Secret.hidden())"))
   }
 
-  test("collision.library") {
-    // A mount that shadows a library module is rejected: 'List.map' inside the mounting code
-    // would resolve into the dependency.
-    val pkg = mkPkg()
-    val result = check(pkg, Map(Mountpoint("List") -> Id), "def main(): Unit \\ IO = println(1)")
-    expectError[NameError.MountShadowsLibrary](result)
-  }
-
-  test("collision.own-declaration") {
-    // A mount that shadows a declaration of the mounting code is rejected: the name would mean
-    // the declaration at the top level and the dependency inside a nested module.
+  test("mount.named-like-library-module") {
+    // A mount is only read before `::`, so it shadows nothing: `List` is still the library's.
     val pkg = mkPkg()
     val main =
       """
-        |pub mod Game { pub def size(): Int32 = 1 }
-        |def main(): Unit \\ IO = println(Game.size())
+        |use List::Board
+        |def main(): Unit \ IO = println(Board.place() + List.length(1 :: Nil))
         |""".stripMargin
-    val result = check(pkg, Map(Mountpoint("Game") -> Id), main)
-    expectError[NameError.MountShadowsDeclaration](result)
+    expectSuccess(check(pkg, Map(Mountpoint("List") -> Id), main))
   }
 
-  test("collision.other-package-allowed") {
-    // A mount that shadows a module of another package is allowed: the author asked for the name.
+  test("mount.named-like-own-module") {
+    // Nor does it shadow a module of the mounting code: `Game.size` is the project's own.
     val pkg = mkPkg()
     val main =
       """
-        |use Game::Game.Rules
-        |def main(): Unit \ IO = println(Rules.players())
+        |use Game::Board
+        |mod Game { pub def size(): Int32 = 1 }
+        |def main(): Unit \ IO = println(Board.place() + Game.size())
         |""".stripMargin
     expectSuccess(check(pkg, Map(Mountpoint("Game") -> Id), main))
   }

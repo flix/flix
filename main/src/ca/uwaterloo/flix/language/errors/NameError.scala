@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.shared.Mountpoint
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
@@ -141,56 +140,6 @@ object NameError {
     }
 
     def loc: SourceLocation = loc1
-  }
-
-  /**
-    * An error raised to indicate that the mount `mount` shadows a module of the bundled library.
-    *
-    * @param mount the name the dependency is mounted at.
-    * @param loc   the location of the library module it shadows.
-    */
-  case class MountShadowsLibrary(mount: Mountpoint, loc: SourceLocation) extends NameError {
-    def code: ErrorCode = ErrorCode.E5432
-
-    def summary: String = s"Mount '$mount' shadows a module of the library."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Mount '${red(mount.toString)}' shadows a module of the library.
-         |
-         |${highlight(loc, s"shadowed module in ${loc.source.name}", fmt)}
-         |
-         |${underline("Explanation:")} A mount binds the first name of a qualified name, and it is
-         |found before the library. Inside the package that declares this mount, '$mount.f' resolves
-         |into the dependency rather than into the library, and nothing at the use site says so.
-         |The library cannot be renamed, so rename the mount in 'flix.toml'.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that the mount `mount` shadows a declaration of the same code.
-    *
-    * @param mount the name the dependency is mounted at.
-    * @param loc   the location of the declaration it shadows.
-    */
-  case class MountShadowsDeclaration(mount: Mountpoint, loc: SourceLocation) extends NameError {
-    def code: ErrorCode = ErrorCode.E5448
-
-    def summary: String = s"Mount '$mount' shadows a declaration of this package."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Mount '${red(mount.toString)}' shadows a declaration of this package.
-         |
-         |${highlight(loc, s"shadowed declaration in ${loc.source.name}", fmt)}
-         |
-         |${underline("Explanation:")} A mount binds the first name of a qualified name, but a
-         |declaration of the enclosing namespace is found before it. At the top level '$mount.f'
-         |is this declaration, and inside a nested module the same text is the dependency. Rename
-         |either the declaration or the mount in 'flix.toml'.
-         |""".stripMargin
-    }
   }
 
   /**
