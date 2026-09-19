@@ -1198,6 +1198,13 @@ object Weeder2 {
                   val error = ParseError.MissingBinaryOperator(SyntacticContext.Expr.OtherExpr, betweenLoc)
                   sctx.errors.add(error)
                   Expr.LetMatch(Pattern.Wild(tree.loc.asSynthetic), None, e1, e2, tree.loc)
+                // Infix function with a malformed name, e.g. 1 `checked_cast` 2.
+                // The parser has already reported the error, so we recover with an error operator and keep both operands.
+                case Token(TokenKind.Tick, _, _, _, _, _) =>
+                  val opExpr = op.children.collectFirst {
+                    case Tree(TreeKind.ErrorTree(err), _, _) => Expr.Error(err)
+                  }.getOrElse(throw InternalCompilerException("Expr.Binary infix function without a name", op.loc))
+                  Expr.Infix(e1, opExpr, e2, tree.loc)
                 // Standard operators.
                 case Token(kind, _, _, _, _, _) if tokenOperatorToName(kind).isDefined =>
                   mkApply(tokenOperatorToName(kind).get)
