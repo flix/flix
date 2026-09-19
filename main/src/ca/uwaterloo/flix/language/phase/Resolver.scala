@@ -2981,9 +2981,6 @@ object Resolver {
       // Then see if there's a module with this name declared in our namespace
       tryLookupModuleIn(ns0, name, root)
     }.orElse {
-      // Then see if the name is a mount of the package the name occurs in
-      mountsOf(loc, root).get(Mountpoint(name)).map(_.parts)
-    }.orElse {
       // Then see if there's a module with this name at the root of that package
       tryLookupModuleIn(rootOf(loc, root), name, root)
     }.orElse {
@@ -3033,8 +3030,7 @@ object Resolver {
       case Origin.Package(id) => root.mounts.getOrElse(id, Map.empty)
       case Origin.User => root.rootMounts
       // The bundled library declares no dependencies, so the mounts of the project it is compiled
-      // with must not reach it: a project that mounts something at `List` would otherwise change
-      // what `List.map` means inside the library itself.
+      // with must not reach it.
       case Origin.Library => Map.empty
       case Origin.Unknown => Map.empty
     }
