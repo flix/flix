@@ -87,13 +87,10 @@ object Bootstrap {
     FileOps.newDirectoryIfAbsent(workflowsDirectory)
 
     FileOps.newFileIfAbsent(manifestFile) {
-      // The repository is written out commented: it cannot be guessed here, and a package must
-      // declare it before it can be built, since the `.fpkg` is named after it.
       s"""[package]
          |version = "0.1.0"
          |flix    = "${Version.CurrentVersion}"
          |
-         |# The repository the package is published as. Required to publish it with `release`.
          |# repository = "github:<owner>/$packageName"
          |""".stripMargin
     }
@@ -347,10 +344,6 @@ object Bootstrap {
 
   /**
     * Returns the path to the pkg file based on the given path `p`.
-    *
-    * The file is named [[PACKAGE_FPKG]], and not after the directory it is built in: a release
-    * asset has to be found again by whoever depends on the package, and only a fixed name
-    * follows from the repository and the version alone.
     */
   private def getPkgFile(p: Path): Path =
     getArtifactDirectory(p).resolve(PACKAGE_FPKG).normalize()

@@ -84,9 +84,7 @@ object ManifestParser {
     for (
       _ <- checkKeys(parser, p);
 
-      // `package.name` is still accepted, but it is not read: a package is named by the
-      // repository it is published as, which is what a dependent addresses it by. A `name` that
-      // disagreed with the repository named nothing at all.
+      // For backwards compatibility -- for now -- we still accept the `name` field.
 
       version <- getRequiredStringProperty("package.version", parser, p);
       versionSemVer <- toFlixVer(version, p);
