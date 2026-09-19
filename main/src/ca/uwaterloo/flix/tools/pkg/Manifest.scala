@@ -51,6 +51,9 @@ object Manifest {
   /** How a package that declares no repository is named in a message. */
   val Unnamed: String = "<unnamed>"
 
+  /** The keys that TOML reads as they are written. */
+  private val BareKey = "[A-Za-z0-9_-]+".r
+
   /**
     * Formats `manifest` as a string / a valid `.toml` file.
     * Parsing the output yields the original manifest, i.e., `manifest`.
@@ -60,7 +63,9 @@ object Manifest {
     val flixDepSection = mkFlixDependencySection(manifest)
     val mvnDepSection = mkMavenDependencySection(manifest)
     val jarDepSection = mkJarDependencySection(manifest)
+    // A section that declares nothing is left out rather than written empty.
     List(packageSection, flixDepSection, mvnDepSection, jarDepSection)
+      .filter(section => section.entries.exists { case _: TomlEntry.Present => true; case TomlEntry.Absent => false })
       .map(formatTomlSection)
       .mkString(System.lineSeparator())
   }
@@ -147,15 +152,26 @@ object Manifest {
 
   private def formatTomlKey(key0: TomlKey): String = {
     val padding = List.range(0, key0.padding).map(_ => " ").mkString
-    s"\"${key0.k}\"$padding"
+    s"${renderTomlKey(key0.k)}$padding"
   }
+
+  /**
+    * Returns `k` as TOML reads it back as one key.
+    *
+    * A key is quoted only when it must be: a package identifier holds `:` and `/`, and the name
+    * of a jar holds `.`, none of which TOML reads as part of a bare key.
+    */
+  private def renderTomlKey(k: String): String =
+    if (BareKey.matches(k)) k else s"\"${escape(k)}\""
 
   /** Returns the list of entries, where the padding has been adjusted to account for the longest key. */
   private def padKeys(entries: List[TomlEntry.Present]): List[TomlEntry.Present] = {
-    val optLongestKey = entries.map(_.key.k.length).maxOption
+    // A key is padded by how it is rendered, since a quoted key is two characters wider than it
+    // reads.
+    val optLongestKey = entries.map(e => renderTomlKey(e.key.k).length).maxOption
     optLongestKey match {
       case Some(longestKey) => entries.map {
-        case TomlEntry.Present(TomlKey(key, _), texp) => TomlEntry.Present(TomlKey(key, longestKey - key.length), texp)
+        case TomlEntry.Present(TomlKey(key, _), texp) => TomlEntry.Present(TomlKey(key, longestKey - renderTomlKey(key).length), texp)
       }
       case None => entries
     }

@@ -429,6 +429,13 @@ object Main {
             }
           }
 
+        case Command.Install(pkg) =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'install' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult(Bootstrap.install(cwd, pkg, options.githubToken, options.assumeYes))
+
         case Command.Outdated =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'outdated' command does not support file arguments.")
@@ -578,6 +585,8 @@ object Main {
 
     case object Release extends Command
 
+    case class Install(pkg: String) extends Command
+
     case object Outdated extends Command
 
     case object Stat extends Command
@@ -670,6 +679,13 @@ object Main {
 
       cmd("release").text("  releases a new version to GitHub.")
         .action((_, c) => c.copy(command = Command.Release))
+
+      cmd("install").text("  adds a dependency to the current project.")
+        .children(
+          arg[String]("package").action((pkg, c) => c.copy(command = Command.Install(pkg)))
+            .required()
+            .text("the package to add, e.g. 'flix/museum-clerk' or 'flix/museum-clerk@1.1.0'.")
+        )
 
       cmd("outdated").text("  shows dependencies which have newer versions available.")
         .action((_, c) => c.copy(command = Command.Outdated))

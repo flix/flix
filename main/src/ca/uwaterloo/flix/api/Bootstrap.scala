@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, 
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
 import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{Origin, PackageId, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, Origin, PackageId, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.{Stat, Tester}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, ReleaseError, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageSpec, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Options, Result}
@@ -38,6 +38,7 @@ import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Options, Result}
 import java.io.{IOException, PrintStream}
 import java.nio.file.{FileSystems, Files, LinkOption, Path, StandardCopyOption}
 import java.util.zip.{ZipInputStream, ZipOutputStream}
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.io.StdIn.readLine
 import scala.jdk.CollectionConverters.IterableHasAsScala
@@ -174,6 +175,200 @@ object Bootstrap {
         |""").stripMargin
     }
     Result.Ok(())
+  }
+
+  /**
+    * Adds the package `spec` to the dependencies of the project at `p` and installs it.
+    *
+    * `spec` is a package identifier with an optional version, e.g. `flix/museum-clerk` or
+    * `flix/museum-clerk@1.1.0`, see [[PackageSpec.mkPackageSpec]]. A package that is asked for at
+    * no particular version is added at its newest release. The version is a lower bound, so the
+    * package may still be built at a newer one if another dependency requires it.
+    *
+    * The dependency is written to `flix.toml` and the project is then bootstrapped, so that
+    * `lib/` and `packages.lock` describe the project as it is now declared.
+    *
+    * The manifest is written as a whole rather than edited in place, so comments and the keys
+    * that [[Manifest]] does not model -- `description`, `authors`, `license`, `modules`, and the
+    * dead `name` -- do not survive. `flix.toml` is the package manager's file to write.
+    *
+    * A project that does not resolve cannot be built, so a resolution that fails with the
+    * dependency added puts the manifest that was there back, as does any failure before it.
+    */
+  def install(p: Path, spec: String, apiKey: Option[String], assumeYes: Boolean)(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+    val pkg = PackageSpec.mkPackageSpec(spec) match {
+      case Some(s) => s
+      case None => return Err(BootstrapError.IllegalPackageSpec(spec))
+    }
+
+    val tomlPath = getManifestFile(p)
+    if (!Files.exists(tomlPath)) {
+      return Err(BootstrapError.NoProject(tomlPath))
+    }
+
+    for {
+      manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
+      _ <- checkUndeclared(manifest, pkg.id)
+      version <- selectVersion(pkg, apiKey)
+      mount <- selectMount(manifest, pkg.id, assumeYes)
+      _ <- addDependency(p, manifest, pkg.id, version, mount, apiKey)
+    } yield ()
+  }
+
+  /**
+    * Returns an error if `manifest` already declares a dependency on `id`.
+    *
+    * A package occurs at most once in `[dependencies]`, so a package that is already there is
+    * one to change the version of, and not one to add again.
+    */
+  private def checkUndeclared(manifest: Manifest, id: PackageId): Result[Unit, BootstrapError] =
+    manifest.flixDependencies.find(dep => dep.id == id) match {
+      case Some(dep) => Err(BootstrapError.DependencyAlreadyDeclared(id, dep.version))
+      case None => Ok(())
+    }
+
+  /**
+    * Returns the version of `pkg` to declare: the one it asks for, if it asks for one, and the
+    * newest release of the package otherwise.
+    *
+    * A version that is asked for is taken as it is asked for, and not checked against the
+    * releases. Reading the listing costs a request against the API rate limit, and a version
+    * that was never released is reported by the resolution that follows anyway, which finds no
+    * manifest to download. A package that is asked for at no version has to be looked up, since
+    * the newest release is not knowable without the listing.
+    */
+  private def selectVersion(pkg: PackageSpec, apiKey: Option[String]): Result[SemVer, BootstrapError] = pkg.version match {
+    case Some(version) => Ok(version)
+    case None =>
+      for {
+        project <- GitHub.parseProject(s"${pkg.id.owner}/${pkg.id.name}").mapErr(BootstrapError.FlixPackageError.apply)
+        releases <- GitHub.getReleases(project, apiKey).mapErr(BootstrapError.FlixPackageError.apply)
+        version <- releases.map(r => r.version).maxOption match {
+          case Some(v) => Ok(v)
+          case None => Err(BootstrapError.NoReleases(pkg.id))
+        }
+      } yield version
+  }
+
+  /**
+    * Returns the mount to declare the dependency on `id` under.
+    *
+    * The name of the package is used when it can be: it is what the package is known as. It
+    * cannot always, since a package name may hold `-` and may begin with a digit, neither of
+    * which a mount may. The user is then asked, and is offered the name with its separators
+    * removed and its parts capitalized -- `museum-clerk` becomes `MuseumClerk` -- when that is a
+    * mount. They are asked as well when the name is taken by another dependency, since only they
+    * know which of the two should be reached under it.
+    *
+    * A run that cannot ask, because it was told to assume yes, takes the offer it would have
+    * made, and fails if it has none.
+    */
+  private def selectMount(manifest: Manifest, id: PackageId, assumeYes: Boolean)(implicit formatter: Formatter, out: PrintStream): Result[Mountpoint, BootstrapError] = {
+    val taken = manifest.mounts.keySet
+
+    def available(s: String): Option[Mountpoint] = Mountpoint.mkMountpoint(s).filter(m => !taken.contains(m))
+
+    available(id.name) match {
+      case Some(mount) => Ok(mount)
+      case None =>
+        val offer = available(mkMountName(id.name))
+        if (assumeYes) {
+          offer match {
+            case Some(mount) => Ok(mount)
+            case None => Err(BootstrapError.NoMount(id))
+          }
+        } else {
+          askMount(id, offer, taken)
+        }
+    }
+  }
+
+  /**
+    * Returns `s` with its separators removed and its parts capitalized: `museum-clerk` becomes
+    * `MuseumClerk`.
+    *
+    * The result is not always a mount either: a name that begins with a digit still does.
+    */
+  private def mkMountName(s: String): String =
+    s.split("[-_]").filter(part => part.nonEmpty).map(part => part.capitalize).mkString
+
+  /**
+    * Asks which mount to declare the dependency on `id` under, until the answer is one that can
+    * be written before `::` and that no other dependency is mounted at.
+    *
+    * An empty answer takes `offer`, if there is one. An answer that cannot be given, because the
+    * input has ended, is not one to wait for.
+    */
+  private def askMount(id: PackageId, offer: Option[Mountpoint], taken: Set[Mountpoint])(implicit formatter: Formatter, out: PrintStream): Result[Mountpoint, BootstrapError] = {
+    val example = offer.map(mount => mount.toString).getOrElse("Clerk")
+    out.println(s"${formatter.blue(id.toString)} is reached through a mount, as in '${formatter.cyan(s"use $example::greet")}'.")
+
+    @tailrec
+    def loop(): Result[Mountpoint, BootstrapError] = {
+      out.print(s"Mount${offer.map(m => s" [$m]").getOrElse("")}: ")
+      val line = readLine()
+      if (line == null) {
+        Err(BootstrapError.NoMount(id))
+      } else line.trim match {
+        case "" => offer match {
+          case Some(mount) => Ok(mount)
+          case None => loop()
+        }
+        case answer => Mountpoint.mkMountpoint(answer) match {
+          case None =>
+            out.println(s"${formatter.red(answer)} cannot be written before '::': a mount is a letter followed by letters, digits, and underscores, and is not a keyword.")
+            loop()
+          case Some(mount) if taken.contains(mount) =>
+            out.println(s"${formatter.red(mount.toString)} is already the mount of another dependency.")
+            loop()
+          case Some(mount) => Ok(mount)
+        }
+      }
+    }
+
+    loop()
+  }
+
+  /**
+    * Writes `manifest`, with the dependency added to it, to the `flix.toml` of the project at
+    * `p`, and then bootstraps the project so that its dependencies are the ones it now declares.
+    *
+    * The manifest that was there is put back if the project does not resolve with the dependency
+    * added, so that an install that fails leaves a project that still builds. What is put back
+    * are the bytes that were read, and not the manifest that was parsed from them, so a failed
+    * install costs neither the comments nor the keys that a rewrite would.
+    */
+  private def addDependency(p: Path, manifest: Manifest, id: PackageId, version: SemVer, mount: Mountpoint, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+    val tomlPath = getManifestFile(p)
+
+    val original = try {
+      Files.readString(tomlPath)
+    } catch {
+      case e: IOException => return Err(BootstrapError.FileError(s"Unable to read '$FLIX_TOML': ${e.getMessage}"))
+    }
+
+    val dep = Dependency.FlixDependency(id, version, Some(mount), SecurityContext.Default)
+    val updated = manifest.copy(dependencies = manifest.dependencies :+ dep)
+    try {
+      FileOps.writeString(tomlPath, Manifest.format(updated))
+    } catch {
+      case e: IOException => return Err(BootstrapError.FileError(s"Unable to write '$FLIX_TOML': ${e.getMessage}"))
+    }
+
+    bootstrap(p, apiKey) match {
+      case Ok(_) =>
+        out.println(formatter.green(s"Added '$id' v$version, mounted at '$mount'."))
+        Ok(())
+      case Err(e) =>
+        try {
+          FileOps.writeString(tomlPath, original)
+        } catch {
+          // The failure that stopped the install is the one to report, but a manifest that could
+          // not be put back is not something to leave unsaid.
+          case _: IOException => out.println(s"Unable to restore '$FLIX_TOML'. It declares '$id' v$version, which was not installed.")
+        }
+        Err(e)
+    }
   }
 
   /** The class file extension. Does not contain leading '.' */
