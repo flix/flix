@@ -57,7 +57,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       }
 
       val path = Files.createTempDirectory("")
-      val resolution = FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
+      val resolution = FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
         case Ok(res) => res
         case Err(e) => fail(e.message(formatter))
       }
@@ -96,7 +96,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
       val path = Files.createTempDirectory("")
       val manifests =
-        FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+        FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
           case Ok(resolution) => FlixPackageManager.resolveSecurityLevels(resolution)
           case Err(e) => fail(e.message(formatter))
         }
@@ -155,11 +155,11 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
       val path = Files.createTempDirectory("")
 
-      val resolution1 = FlixPackageManager.findTransitiveDependencies(manifest1, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
+      val resolution1 = FlixPackageManager.resolve(manifest1, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
         case Ok(res) => res
         case Err(e) => fail(e.message(formatter))
       }
-      val resolution2 = FlixPackageManager.findTransitiveDependencies(manifest2, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
+      val resolution2 = FlixPackageManager.resolve(manifest2, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
         case Ok(res) => res
         case Err(e) => fail(e.message(formatter))
       }
@@ -200,7 +200,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
       val path = Files.createTempDirectory("")
 
-      val resolution = FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
+      val resolution = FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
         case Ok(res) => res
         case Err(e) => fail(e.message(formatter))
       }
@@ -238,7 +238,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       }
 
       val path = Files.createTempDirectory("")
-      FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+      FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
         case Ok(resolution) => resolution.manifests.contains(manifest) && resolution.manifests.exists(m => m.name == "museum-clerk")
         case Err(e) => e.message(formatter)
       }
@@ -269,7 +269,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
 
     val path = Files.createTempDirectory("")
-    FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
+    FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
       case Ok(res) => fail(res.toString)
       case Err(e) =>
         e.message(formatter)
@@ -302,7 +302,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       }
 
       val path = Files.createTempDirectory("")
-      FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
+      FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
         case Ok(res) => res
         case Err(e) => e.message(formatter)
       }
@@ -333,7 +333,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
       val path = Files.createTempDirectory("")
 
-      val manifests = FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+      val manifests = FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
         case Ok(resolution) => FlixPackageManager.resolveSecurityLevels(resolution)
         case Err(e) => fail(e.message(formatter))
       }
@@ -653,7 +653,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
 
     val path = Files.createTempDirectory("")
-    FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+    FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
       case Ok(_) => fail("expected error, got success")
       case Err(_: PackageError.MismatchedVersions) => succeed
       case Err(e) => fail(e.message(formatter))
@@ -693,28 +693,28 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
-  test("select.01") {
+  test("selectVersion.01") {
     // The greatest of the required versions is the least one that satisfies them all.
     assertResult(expected = Some(SemVer(1, 5, 1)))(
-      actual = FlixPackageManager.select(List(SemVer(1, 2, 0), SemVer(1, 5, 1), SemVer(1, 3, 9)))
+      actual = FlixPackageManager.selectVersion(List(SemVer(1, 2, 0), SemVer(1, 5, 1), SemVer(1, 3, 9)))
     )
   }
 
-  test("select.02") {
+  test("selectVersion.02") {
     // Versions that do not share a major have nothing to select.
     assertResult(expected = None)(
-      actual = FlixPackageManager.select(List(SemVer(1, 2, 0), SemVer(2, 0, 0)))
+      actual = FlixPackageManager.selectVersion(List(SemVer(1, 2, 0), SemVer(2, 0, 0)))
     )
   }
 
-  test("select.03") {
+  test("selectVersion.03") {
     // A pre-1.0 package is selected across a minor, since both versions have major 0.
     assertResult(expected = Some(SemVer(0, 4, 2)))(
-      actual = FlixPackageManager.select(List(SemVer(0, 3, 0), SemVer(0, 4, 2)))
+      actual = FlixPackageManager.selectVersion(List(SemVer(0, 3, 0), SemVer(0, 4, 2)))
     )
   }
 
-  // The example in the documentation of `findTransitiveDependencies`:
+  // The example in the documentation of `resolve`:
   //
   //   project  requires  A 1.0.0  and  B 1.0.0
   //   A 1.0.0  requires  C 1.1.1
@@ -736,43 +736,43 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     (C, SemVer(1, 1, 1)) -> List(X)
   )
 
-  test("selectVersions.01") {
+  test("select.01") {
     // Every package is given the greatest version it is required at.
     assertResult(expected = Ok(Map(A -> SemVer(1, 0, 0), B -> SemVer(1, 0, 0), C -> SemVer(1, 1, 2), X -> SemVer(1, 0, 0))))(
-      actual = FlixPackageManager.selectVersions(ExampleNodes)
+      actual = FlixPackageManager.select(ExampleNodes)
     )
   }
 
-  test("selectVersions.02") {
+  test("select.02") {
     // A package whose versions do not share a major has no version to be given.
     assertResult(expected = Err(C))(
-      actual = FlixPackageManager.selectVersions((C, SemVer(2, 0, 0)) :: ExampleNodes)
+      actual = FlixPackageManager.select((C, SemVer(2, 0, 0)) :: ExampleNodes)
     )
   }
 
-  test("findLive.01") {
+  test("live.01") {
     // X is required only by C 1.1.1, which is not the selected version of C.
     val selected = Map(A -> SemVer(1, 0, 0), B -> SemVer(1, 0, 0), C -> SemVer(1, 1, 2), X -> SemVer(1, 0, 0))
     assertResult(expected = Set(A, B, C))(
-      actual = FlixPackageManager.findLive(List(A, B), selected, ExampleRequires)
+      actual = FlixPackageManager.live(List(A, B), selected, ExampleRequires)
     )
   }
 
-  test("findLive.02") {
+  test("live.02") {
     // X is live if the selected version of C requires it too.
     val selected = Map(A -> SemVer(1, 0, 0), B -> SemVer(1, 0, 0), C -> SemVer(1, 1, 2), X -> SemVer(1, 0, 0))
     val requires = ExampleRequires + ((C, SemVer(1, 1, 2)) -> List(X))
     assertResult(expected = Set(A, B, C, X))(
-      actual = FlixPackageManager.findLive(List(A, B), selected, requires)
+      actual = FlixPackageManager.live(List(A, B), selected, requires)
     )
   }
 
-  test("findLive.03") {
+  test("live.03") {
     // A cycle among the selected versions ends the walk.
     val selected = Map(A -> SemVer(1, 0, 0), B -> SemVer(1, 0, 0))
     val requires = Map((A, SemVer(1, 0, 0)) -> List(B), (B, SemVer(1, 0, 0)) -> List(A))
     assertResult(expected = Set(A, B))(
-      actual = FlixPackageManager.findLive(List(A), selected, requires)
+      actual = FlixPackageManager.live(List(A), selected, requires)
     )
   }
 
@@ -811,7 +811,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       case Err(e) => fail(e.message(formatter))
     }
 
-    val allManifests = FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+    val allManifests = FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
       case Ok(ms) => ms
       case Err(e) => fail(e.message(formatter))
     }

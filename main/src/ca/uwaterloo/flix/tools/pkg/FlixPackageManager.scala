@@ -37,7 +37,7 @@ object FlixPackageManager {
     * @param manifests           the manifest of [[origin]] and of every package it is built with.
     * @param reached             the manifest of [[origin]] and of every package at every version
     *                            that the dependency graph requires, whether or not it is built.
-    *                            See [[findTransitiveDependencies]].
+    *                            See [[resolve]].
     * @param immediateDependents all immediate dependents / parents of each manifest.
     * @param manifestToFlixDeps  a mapping from [[Manifest]]s to [[FlixDependency]]s.
     *                            A manifest is the resource a flix dependency resolves to.
@@ -108,17 +108,17 @@ object FlixPackageManager {
     * requires, and an edge for every dependency declaration. It is resolved in three steps.
     * Each step reads the ones before it, and none feeds back into an earlier one:
     *
-    *   1. Reach: every node that can be reached from `manifest` is visited, once, and its
+    *   1. Reach, see [[reach]]: every node that can be reached from `manifest` is visited, once, and its
     *      `flix.toml` is downloaded. A version that is not selected is visited like any other,
     *      and what it requires counts in the next step. Were it skipped, the result would
     *      depend on whether it was met before or after the version selected in its place.
     *
-    *   1. Select: every package is given the greatest version it is required at, see
-    *      [[select]]. This is minimal version selection: read as a lower bound, a requirement
-    *      is satisfied by any version at or above it, so the greatest version required is the
-    *      least one that satisfies every dependent.
+    *   1. Select, see [[select]]: every package is given the greatest version it is required
+    *      at, which is what [[selectVersion]] picks. This is minimal version selection: read as
+    *      a lower bound, a requirement is satisfied by any version at or above it, so the
+    *      greatest version required is the least one that satisfies every dependent.
     *
-    *   1. Live: a package is built only if it can be reached from `manifest` through the
+    *   1. Live, see [[live]]: a package is built only if it can be reached from `manifest` through the
     *      selected versions. A package that is required only by versions that were not selected
     *      is dropped: it is not installed, not locked, and not compiled.
     *
@@ -144,7 +144,7 @@ object FlixPackageManager {
     * Returns an error if a package is required at versions that do not share a major, since
     * then there is no version to select for it.
     */
-  def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[Resolution, PackageError] = {
+  def resolve(manifest: Manifest, path: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[Resolution, PackageError] = {
     out.println("Resolving Flix dependencies...")
     reach(manifest, path, apiKey, lockfile).flatMap { edges =>
       // Every node, in the order it was found, and the first edge that led to it.
@@ -152,7 +152,7 @@ object FlixPackageManager {
       val edgeTo = edges.reverseIterator.map(e => (e.dep.id, e.dep.version) -> e).toMap
       val reached = manifest :: nodes.map(n => edgeTo(n).target)
 
-      selectVersions(nodes) match {
+      select(nodes) match {
         case Err(id) =>
           val requirements = edges.collect { case e if e.dep.id == id => (e.dependent, e.dep) }
           Err(mkMultipleVersions(id, requirements))
@@ -160,11 +160,11 @@ object FlixPackageManager {
         case Ok(selected) =>
           val roots = edges.collect { case e if e.source.isEmpty => e.dep.id }
           val requires = edges.collect { case Edge(Some(source), _, dep, _, _) => source -> dep.id }.groupMap(_._1)(_._2)
-          val live = findLive(roots, selected, requires)
+          val livePackages = live(roots, selected, requires)
 
           // A node is built if its package is live and it is the selected version of it.
           def isBuilt(node: (PackageId, SemVer)): Boolean = node match {
-            case (id, version) => live.contains(id) && selected(id) == version
+            case (id, version) => livePackages.contains(id) && selected(id) == version
           }
 
           // Every declaration made by what is built is an edge of the resolution. It leads to the
@@ -186,16 +186,16 @@ object FlixPackageManager {
   }
 
   /**
-    * Returns the version that every package in `nodes` is given: the one [[select]] picks among
+    * Returns the version that every package in `nodes` is given: the one [[selectVersion]] picks among
     * the versions the package occurs at in `nodes`.
     *
     * Returns the least package, in order of identifier, whose versions do not share a major, if
     * there is one.
     */
-  def selectVersions(nodes: List[(PackageId, SemVer)]): Result[Map[PackageId, SemVer], PackageId] = {
+  def select(nodes: List[(PackageId, SemVer)]): Result[Map[PackageId, SemVer], PackageId] = {
     val byPackage = nodes.groupMap(_._1)(_._2).toList.sortBy { case (id, _) => id }
     traverse(byPackage) {
-      case (id, versions) => select(versions) match {
+      case (id, versions) => selectVersion(versions) match {
         case Some(version) => Ok(id -> version)
         case None => Err(id)
       }
@@ -209,17 +209,17 @@ object FlixPackageManager {
     * through what its selected version requires, and through nothing that another version of it
     * requires.
     */
-  def findLive(roots: List[PackageId], selected: Map[PackageId, SemVer], requires: Map[(PackageId, SemVer), List[PackageId]]): Set[PackageId] = {
-    val live: mutable.Set[PackageId] = mutable.Set.empty
+  def live(roots: List[PackageId], selected: Map[PackageId, SemVer], requires: Map[(PackageId, SemVer), List[PackageId]]): Set[PackageId] = {
+    val found: mutable.Set[PackageId] = mutable.Set.empty
     var worklist: List[PackageId] = roots
     while (worklist.nonEmpty) {
       val id = worklist.head
       worklist = worklist.tail
-      if (live.add(id)) {
+      if (found.add(id)) {
         worklist = requires.getOrElse((id, selected(id)), List.empty) ::: worklist
       }
     }
-    live.toSet
+    found.toSet
   }
 
   /**
@@ -275,7 +275,7 @@ object FlixPackageManager {
     // Order by version, and then by dependent, so the message is deterministic.
     val sorted = requirements.sortBy { case (dependent, dep) => (dep.version, dependent.name) }
     val versions = requirements.map { case (_, dep) => dep.version }.distinct
-    PackageError.MultipleVersions(id, sorted, select(versions))
+    PackageError.MultipleVersions(id, sorted, selectVersion(versions))
   }
 
   /**
@@ -291,7 +291,7 @@ object FlixPackageManager {
     *
     * `versions` must be non-empty.
     */
-  def select(versions: List[SemVer]): Option[SemVer] = {
+  def selectVersion(versions: List[SemVer]): Option[SemVer] = {
     if (versions.map(_.major).distinct.sizeIs > 1)
       None
     else
@@ -546,7 +546,7 @@ object FlixPackageManager {
 
     while (worklist.nonEmpty) {
       val (source, dependent) = worklist.head
-      findDependencies(source, dependent, path, apiKey, lockfile) match {
+      follow(source, dependent, path, apiKey, lockfile) match {
         case Err(e) => return Err(e)
         case Ok(found) =>
           // Every declaration is an edge of the graph, whether or not it leads somewhere new.
@@ -567,7 +567,7 @@ object FlixPackageManager {
     *
     * Every `flix.toml` is installed before any of them is parsed.
     */
-  private def findDependencies(source: Option[(PackageId, SemVer)], dependent: Manifest, path: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[List[Edge], PackageError] = {
+  private def follow(source: Option[(PackageId, SemVer)], dependent: Manifest, path: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[List[Edge], PackageError] = {
     for {
       // download toml files
       tomlFiles <- traverse(findFlixDependencies(dependent)) { dep =>

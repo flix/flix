@@ -441,7 +441,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Requires network access.
     */
   private def resolveFlixDependencies(manifest: Manifest, lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[FlixPackageManager.SecureResolution, BootstrapError] = {
-    FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey, lockfile) match {
+    FlixPackageManager.resolve(manifest, projectPath, apiKey, lockfile) match {
       case Err(e) => Err(BootstrapError.FlixPackageError(e))
       case Ok(resolution) =>
         // A package must occur at exactly one version, and be mounted by all its dependents or
