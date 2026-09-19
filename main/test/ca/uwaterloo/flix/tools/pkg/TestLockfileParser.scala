@@ -28,7 +28,7 @@ class TestLockfileParser extends AnyFunSuite {
   /**
     * The path a lock file parsed from a string is reported as coming from.
     */
-  private val LockPath: Path = Path.of("flix.lock")
+  private val LockPath: Path = Path.of("packages.lock")
 
   /** Returns `s` as a package identifier. */
   private def pkg(s: String): PackageId = PackageId.mkPackageId(s).get

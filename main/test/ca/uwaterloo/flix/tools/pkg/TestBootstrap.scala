@@ -30,11 +30,11 @@ class TestBootstrap extends AnyFunSuite {
     b.check(PkgTestUtils.mkFlix(b))
   }
 
-  test("flix.lock.01") {
+  test("packages.lock.01") {
     val p = mkProjectWithDependency()
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
-    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.FLIX_LOCK)).unsafeGet
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
     val entry = lockfile.packages(ClerkIdentifier)
 
     assert(entry.version == SemVer(1, 1, 0))
@@ -42,30 +42,30 @@ class TestBootstrap extends AnyFunSuite {
     assert(entry.fpkg == Sha256.ofFile(clerkFile(p, Bootstrap.EXT_FPKG)))
   }
 
-  test("flix.lock.02") {
+  test("packages.lock.02") {
     // The second bootstrap finds every dependency cached, and must digest the cached files to
     // arrive at the same lock file rather than leaving the entries out.
     val p = mkProjectWithDependency()
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-    val first = Files.readString(p.resolve(Bootstrap.FLIX_LOCK))
+    val first = Files.readString(p.resolve(Bootstrap.PACKAGES_LOCK))
 
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-    val second = Files.readString(p.resolve(Bootstrap.FLIX_LOCK))
+    val second = Files.readString(p.resolve(Bootstrap.PACKAGES_LOCK))
 
     assert(first == second)
   }
 
-  test("flix.lock.03") {
+  test("packages.lock.03") {
     // A project with no Flix dependencies still locks, and locks nothing.
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
-    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.FLIX_LOCK)).unsafeGet
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
     assert(lockfile.packages.isEmpty)
   }
 
-  test("flix.lock.04") {
+  test("packages.lock.04") {
     // A cached file that no longer matches the lock file is refused.
     val p = mkProjectWithDependency()
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
@@ -81,38 +81,38 @@ class TestBootstrap extends AnyFunSuite {
     }
   }
 
-  test("flix.lock.05") {
+  test("packages.lock.05") {
     // A tampered file leaves the lock file alone, so the digest it recorded is not overwritten
     // by the digest of whatever is there now.
     val p = mkProjectWithDependency()
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-    val before = Files.readString(p.resolve(Bootstrap.FLIX_LOCK))
+    val before = Files.readString(p.resolve(Bootstrap.PACKAGES_LOCK))
 
     Files.writeString(clerkFile(p, Bootstrap.EXT_FPKG), "not the package you are looking for")
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out)
 
-    assert(Files.readString(p.resolve(Bootstrap.FLIX_LOCK)) == before)
+    assert(Files.readString(p.resolve(Bootstrap.PACKAGES_LOCK)) == before)
   }
 
-  test("flix.lock.06") {
+  test("packages.lock.06") {
     // An entry for a package the project does not depend on is dropped, not reported.
     val p = mkProjectWithDependency()
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
-    val stale = Lockfile(LockfileParser.parse(p.resolve(Bootstrap.FLIX_LOCK)).unsafeGet.packages
+    val stale = Lockfile(LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet.packages
       + (PackageId(Repository.GitHub, "flix", "gone") -> LockEntry(SemVer(9, 9, 9), Sha256("a" * 64), Sha256("b" * 64))))
-    Files.writeString(p.resolve(Bootstrap.FLIX_LOCK), Lockfile.format(stale))
+    Files.writeString(p.resolve(Bootstrap.PACKAGES_LOCK), Lockfile.format(stale))
 
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
-    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.FLIX_LOCK)).unsafeGet
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
     assert(lockfile.packages.keySet == Set(ClerkIdentifier))
   }
 
-  test("flix.lock.07") {
+  test("packages.lock.07") {
     // A lock file that is not a lock file is reported rather than ignored.
     val p = mkProjectWithDependency()
-    Files.writeString(p.resolve(Bootstrap.FLIX_LOCK), "[lock]\nversion = 99\n")
+    Files.writeString(p.resolve(Bootstrap.PACKAGES_LOCK), "[lock]\nversion = 99\n")
 
     Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out) match {
       case Ok(_) => fail("Expected the unreadable lock file to be refused.")

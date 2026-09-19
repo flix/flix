@@ -37,7 +37,7 @@ object Lockfile {
   private val NewLine: String = "\n"
 
   /**
-    * Formats `lockfile` as the contents of a `flix.lock` file.
+    * Formats `lockfile` as the contents of a `packages.lock` file.
     *
     * Parsing the output yields the original lock file, i.e. `lockfile`.
     *
@@ -79,7 +79,7 @@ object Lockfile {
   * The digests of every Flix package that a project depends on, as they were when the package was
   * last downloaded.
   *
-  * A project has one lock file, `flix.lock`, next to its `flix.toml`, and it is committed. It
+  * A project has one lock file, `packages.lock`, next to its `flix.toml`, and it is committed. It
   * records what each dependency was, so that a later build can tell that a dependency is no
   * longer the same and refuse to compile it.
   *

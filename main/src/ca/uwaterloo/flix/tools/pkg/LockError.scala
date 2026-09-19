@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.util.Formatter
 import java.nio.file.Path
 
 /**
-  * A common super-type for errors in a `flix.lock` file.
+  * A common super-type for errors in a `packages.lock` file.
   */
 sealed trait LockError {
   /**

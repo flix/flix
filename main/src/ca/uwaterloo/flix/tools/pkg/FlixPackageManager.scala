@@ -72,7 +72,7 @@ object FlixPackageManager {
     * The Flix packages installed for a project.
     *
     * @param packages the installed packages.
-    * @param lockfile what each installed package was, to be recorded in `flix.lock`.
+    * @param lockfile what each installed package was, to be recorded in `packages.lock`.
     */
   case class Installation(packages: List[InstalledPackage], lockfile: Lockfile)
 
