@@ -31,13 +31,10 @@ object FlixPackageManager {
 
   /**
     * Represents the dependency resolution of [[origin]].
-    * All fields should be considered private except [[origin]], [[manifests]], and [[reached]].
+    * All fields should be considered private except [[origin]] and [[manifests]].
     *
     * @param origin              the manifest that corresponds to the current / local project.
     * @param manifests           the manifest of [[origin]] and of every package it is built with.
-    * @param reached             the manifest of [[origin]] and of every package at every version
-    *                            that the dependency graph requires, whether or not it is built.
-    *                            See [[resolve]].
     * @param immediateDependents all immediate dependents / parents of each manifest.
     * @param manifestToFlixDeps  a mapping from [[Manifest]]s to [[FlixDependency]]s.
     *                            A manifest is the resource a flix dependency resolves to.
@@ -47,7 +44,6 @@ object FlixPackageManager {
     */
   case class Resolution(origin: Manifest,
                         manifests: List[Manifest],
-                        reached: List[Manifest],
                         immediateDependents: Map[Manifest, List[Manifest]],
                         manifestToFlixDeps: ListMap[Manifest, FlixDependency],
                         tomlDigests: Map[Manifest, Sha256])
@@ -141,6 +137,9 @@ object FlixPackageManager {
     * requirement would have counted in the selection. A selection can therefore be higher than
     * is strictly needed, but it never depends on which versions were selected.
     *
+    * A package that is built at a greater version than one of its dependents declares is
+    * reported on `out`, with the dependents that require the greater version.
+    *
     * Returns an error if a package is required at versions that do not share a major, since
     * then there is no version to select for it.
     */
@@ -150,12 +149,11 @@ object FlixPackageManager {
       // Every node, in the order it was found, and the first edge that led to it.
       val nodes = edges.map(e => (e.dep.id, e.dep.version)).distinct
       val edgeTo = edges.reverseIterator.map(e => (e.dep.id, e.dep.version) -> e).toMap
-      val reached = manifest :: nodes.map(n => edgeTo(n).target)
 
       select(nodes) match {
         case Err(id) =>
           val requirements = edges.collect { case e if e.dep.id == id => (e.dependent, e.dep) }
-          Err(mkMultipleVersions(id, requirements))
+          Err(mkIncompatibleVersions(id, requirements))
 
         case Ok(selected) =>
           val roots = edges.collect { case e if e.source.isEmpty => e.dep.id }
@@ -177,10 +175,12 @@ object FlixPackageManager {
             manifestToFlixDeps.put(target, e.dep :: manifestToFlixDeps.getOrElse(target, List.empty))
           }
 
+          printRaised(edges, edges.filter(e => e.source.forall(isBuilt)), selected)
+
           val built = nodes.filter(isBuilt).map(edgeTo)
           val manifests = manifest :: built.map(_.target)
           val tomlDigests = built.map(e => e.target -> e.digest).toMap
-          Ok(Resolution(manifest, manifests, reached, immediateDependents.toMap, ListMap.from(manifestToFlixDeps.flatMap { case (m, deps) => deps.map(d => (m, d)) }), tomlDigests))
+          Ok(Resolution(manifest, manifests, immediateDependents.toMap, ListMap.from(manifestToFlixDeps.flatMap { case (m, deps) => deps.map(d => (m, d)) }), tomlDigests))
       }
     }
   }
@@ -243,9 +243,10 @@ object FlixPackageManager {
   }
 
   /** Parses and validates the manifest in `toml` by checking that it declares `version`, the
-    * version that was downloaded.
+    * version of the release it was downloaded from.
     *
-    * `version` is passed rather than read off `flixDep` for the reason given on [[install]].
+    * A release that declares another version than the one it is published as is a mistake in
+    * how the package was released, and not something a dependent can resolve.
     */
   private def validateManifest(toml: InstalledFile, flixDep: FlixDependency, version: SemVer): Result[Manifest, PackageError] = {
     parseManifest(toml.path).flatMap {
@@ -253,7 +254,7 @@ object FlixPackageManager {
         if (m.version == version) {
           Ok(m)
         } else {
-          Err(PackageError.MismatchedVersions(m, flixDep))
+          Err(PackageError.MismatchedVersions(flixDep.id, version, m.version))
         }
     }
   }
@@ -327,6 +328,36 @@ object FlixPackageManager {
   }
 
   /**
+    * Prints a line for every package that is built at a greater version than a declaration in
+    * `built` asks for, where `built` is the declarations made by what is built and `edges` is
+    * every declaration in the graph.
+    *
+    * The line gives the least version that was asked for, the version that was selected, and who
+    * requires the selected version, which is looked for in `edges`: a requirement counts towards
+    * the selection whether or not the package that makes it is built.
+    *
+    * A rise across a minor version of a package whose major version is 0 is printed in yellow,
+    * since a minor version is allowed to break compatibility before 1.0.0.
+    */
+  private def printRaised(edges: List[Edge], built: List[Edge], selected: Map[PackageId, SemVer])(implicit formatter: Formatter, out: PrintStream): Unit = {
+    for ((id, declarations) <- built.groupBy(_.dep.id).toList.sortBy { case (id, _) => id }) {
+      val from = declarations.map(_.dep.version).min
+      val to = selected(id)
+      if (from < to) {
+        val requiredBy = edges.collect {
+          case e if e.dep.id == id && e.dep.version == to => e.source match {
+            case Some((dependent, version)) => s"`${formatter.blue(s"${dependent.owner}/${dependent.name}")}` (${formatter.cyan(s"v$version")})"
+            case None => s"`${formatter.blue(e.dependent.name)}`"
+          }
+        }.distinct.sorted
+        val rise = s"v$from -> v$to"
+        val breaking = to.major == 0 && from.minor != to.minor
+        out.println(s"  Raised `${formatter.blue(s"${id.owner}/${id.name}")}` (${if (breaking) formatter.yellow(rise) else formatter.cyan(rise)}), required by ${requiredBy.mkString(", ")}.")
+      }
+    }
+  }
+
+  /**
     * Resolves the maximal allowed security level for all dependencies in `resolution`.
     */
   def resolveSecurityLevels(resolution: Resolution): SecureResolution = {
@@ -347,39 +378,14 @@ object FlixPackageManager {
   }
 
   /**
-    * Finds every package that is required at more than one version in `manifests`.
-    *
-    * A package may occur at exactly one version in the dependency graph. Two dependents
-    * that require different versions of the same package is an error: both versions would
-    * otherwise be installed and compiled together, which duplicates every definition the
-    * package declares.
+    * Returns the error that the package `id` is required at versions that do not share a major,
+    * where `requirements` is every declaration that requires it, paired with the manifest that
+    * makes it.
     */
-  def checkSingleVersion(manifests: List[Manifest]): List[PackageError] = {
-    // Pair every dependency declaration with the manifest that declares it.
-    val requirements = manifests.flatMap(m => findFlixDependencies(m).map(dep => (m, dep)))
-
-    // Report every package that is required at more than one version.
-    val byPackage = requirements.groupBy { case (_, dep) => dep.id }
-    byPackage.toList.sortBy { case (identifier, _) => identifier }.flatMap {
-      case (identifier, reqs) =>
-        val versions = reqs.map { case (_, dep) => dep.version }.distinct
-        if (versions.sizeIs > 1) {
-          Some(mkMultipleVersions(identifier, reqs))
-        } else {
-          None
-        }
-    }
-  }
-
-  /**
-    * Returns the error that the package `id` is required at more than one version, where
-    * `requirements` is every declaration that requires it, paired with the manifest that makes it.
-    */
-  private def mkMultipleVersions(id: PackageId, requirements: List[(Manifest, FlixDependency)]): PackageError.MultipleVersions = {
+  def mkIncompatibleVersions(id: PackageId, requirements: List[(Manifest, FlixDependency)]): PackageError.IncompatibleVersions = {
     // Order by version, and then by dependent, so the message is deterministic.
     val sorted = requirements.sortBy { case (dependent, dep) => (dep.version, dependent.name) }
-    val versions = requirements.map { case (_, dep) => dep.version }.distinct
-    PackageError.MultipleVersions(id, sorted, selectVersion(versions))
+    PackageError.IncompatibleVersions(id, sorted)
   }
 
   /**

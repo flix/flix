@@ -294,55 +294,48 @@ object PackageError {
   }
 
   /**
-    * An error raised to indicate that the package `identifier` is required at more than
-    * one version in the dependency graph.
+    * An error raised to indicate that the package `identifier` is required at versions that do
+    * not share a major version, so that no version satisfies every dependent.
     *
-    * @param identifier   the package that is required at multiple versions.
+    * @param identifier   the package that is required at incompatible versions.
     * @param requirements every dependent that requires the package, paired with the
     *                     dependency declaration that states the required version.
-    * @param selection    the version that would satisfy every dependent, if there is one.
     */
-  case class MultipleVersions(identifier: PackageId, requirements: List[(Manifest, FlixDependency)], selection: Option[SemVer]) extends PackageError {
+  case class IncompatibleVersions(identifier: PackageId, requirements: List[(Manifest, FlixDependency)]) extends PackageError {
     override def message(f: Formatter): String = {
-      val versions = requirements.map { case (_, dep) => dep.version }.distinct
       val lines = requirements.map {
         case (dependent, dep) => s"    ${f.bold(dep.version.toString)} required by '${dependent.name}'"
       }
-      val advice = selection match {
-        case Some(v) => List(s"  The lowest version that satisfies every dependent is ${f.bold(v.toString)}.")
-        case None => List(
-          "  No version satisfies every dependent as they stand: the requirements do not",
-          "  share a major version, so one of the dependents must move across it."
-        )
-      }
-      s"""${f.underline("Found multiple versions of the same package in the dependency graph:")}
-         |  The package '${f.red(identifier.toString)}' is required at ${versions.length} different versions:
+      s"""${f.underline("Found incompatible versions of the same package in the dependency graph:")}
+         |  The package '${f.red(identifier.toString)}' is required at versions that do not share a major version:
          |
          |${lines.mkString(System.lineSeparator())}
          |
-         |  A package may occur at exactly one version in the dependency graph.
-         |  Update the dependents so that they agree on a single version.
-         |
-         |${advice.mkString(System.lineSeparator())}
+         |  A package is built at one version, which must satisfy every dependent: it must
+         |  be at or above the version the dependent requires, and have the same major version.
+         |  No version satisfies these, so one of the dependents must move across a major version.
          |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that the version number declared in `manifest`
-    * does not match the targeted version in `dependency`.
+    * An error raised to indicate that a release of the package `identifier` contains a manifest
+    * that declares another version than the one it is released as.
     *
-    * @param manifest   the manifest which [[dependency]] resolves to.
-    * @param dependency a valid flix dependency.
+    * @param identifier the package.
+    * @param release    the version the release is published as.
+    * @param declared   the version the manifest in the release declares.
     */
-  case class MismatchedVersions(manifest: Manifest, dependency: FlixDependency) extends PackageError {
+  case class MismatchedVersions(identifier: PackageId, release: SemVer, declared: SemVer) extends PackageError {
     override def message(f: Formatter): String = {
       s"""Mismatched versions:
-         |  Dependency ${dependency.id} required version ${dependency.version}
-         |  but the manifest declared version ${manifest.version}
+         |  The release ${f.bold(s"v$release")} of the package '${f.red(identifier.toString)}'
+         |  contains a manifest that declares version ${f.bold(declared.toString)}.
          |
-         |  Required: ${dependency.version}
-         |  Declared: ${manifest.version}
+         |  Released as: $release
+         |  Declared:    $declared
+         |
+         |  This is a mistake in how the package was released, which its author must fix.
          |""".stripMargin
     }
   }

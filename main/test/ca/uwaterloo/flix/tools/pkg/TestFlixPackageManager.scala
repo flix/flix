@@ -660,36 +660,70 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
-  test("checkSingleVersion.01") {
-    // Two dependents that agree on the version of the same package.
-    val alpha = mkManifest("alpha", """"github:flix/museum-clerk" = "1.1.0"""")
-    val beta = mkManifest("beta", """"github:flix/museum-clerk" = "1.1.0"""")
-    assertResult(expected = Nil)(actual = FlixPackageManager.checkSingleVersion(List(alpha, beta)))
+  test("mkIncompatibleVersions.01") {
+    // The requirements are ordered by version, and then by dependent.
+    val beta = mkManifest("beta", """"github:flix/museum-clerk" = "2.0.0"""")
+    val alpha = mkManifest("alpha", """"github:flix/museum-clerk" = "2.0.0"""")
+    val gamma = mkManifest("gamma", """"github:flix/museum-clerk" = "1.1.0"""")
+    val id = PackageId(Repository.GitHub, "flix", "museum-clerk")
+    val requirements = List(beta, alpha, gamma).map(m => (m, FlixPackageManager.findFlixDependencies(m).head))
+    val error = FlixPackageManager.mkIncompatibleVersions(id, requirements)
+    assertResult(expected = id)(actual = error.identifier)
+    assertResult(expected = List(("gamma", SemVer(1, 1, 0)), ("alpha", SemVer(2, 0, 0)), ("beta", SemVer(2, 0, 0))))(
+      actual = error.requirements.map { case (dependent, dep) => (dependent.name, dep.version) }
+    )
   }
 
-  test("checkSingleVersion.02") {
-    // Two dependents that disagree on the version of the same package.
-    val alpha = mkManifest("alpha", """"github:flix/museum-clerk" = "1.0.0"""")
-    val beta = mkManifest("beta", """"github:flix/museum-clerk" = "1.1.0"""")
-    FlixPackageManager.checkSingleVersion(List(alpha, beta)) match {
-      case List(PackageError.MultipleVersions(identifier, requirements, selection)) =>
-        assertResult(expected = PackageId(Repository.GitHub, "flix", "museum-clerk"))(actual = identifier)
-        assertResult(expected = List(("alpha", SemVer(1, 0, 0)), ("beta", SemVer(1, 1, 0))))(
-          actual = requirements.map { case (dependent, dep) => (dependent.name, dep.version) }
+  test("resolve.raise.01") {
+    // museum-giftshop 1.0.0 requires museum-clerk 1.0.0 and museum-entrance 1.2.0 requires
+    // museum-clerk 1.1.0, so museum-clerk is built at 1.1.0, and at no other version.
+    val toml = PkgTestUtils.mkTomlWithDeps(
+      """
+        |"github:flix/museum-giftshop" = "1.0.0"
+        |"github:flix/museum-entrance" = "1.2.0"
+        |""".stripMargin
+    )
+    val manifest = ManifestParser.parse(toml, ManifestPath) match {
+      case Ok(m) => m
+      case Err(e) => fail(e.message(formatter))
+    }
+
+    val path = Files.createTempDirectory("")
+    FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+      case Ok(resolution) =>
+        assertResult(expected = List(SemVer(1, 1, 0)))(
+          actual = resolution.manifests.filter(_.name == "museum-clerk").map(_.version)
         )
-        assertResult(expected = Some(SemVer(1, 1, 0)))(actual = selection)
-      case other => fail(s"expected one MultipleVersions error, but found: $other")
+      case Err(e) => fail(e.message(formatter))
     }
   }
 
-  test("checkSingleVersion.03") {
-    // Two dependents that disagree on the major version of the same package.
-    val alpha = mkManifest("alpha", """"github:flix/museum-clerk" = "1.1.0"""")
-    val beta = mkManifest("beta", """"github:flix/museum-clerk" = "2.0.0"""")
-    FlixPackageManager.checkSingleVersion(List(alpha, beta)) match {
-      case List(PackageError.MultipleVersions(_, _, selection)) =>
-        assertResult(expected = None)(actual = selection)
-      case other => fail(s"expected one MultipleVersions error, but found: $other")
+  test("resolve.raise.02") {
+    // What is installed and locked is the version that was selected, not a version that was declared.
+    val toml = PkgTestUtils.mkTomlWithDeps(
+      """
+        |"github:flix/museum-giftshop" = "1.0.0"
+        |"github:flix/museum-entrance" = "1.2.0"
+        |""".stripMargin
+    )
+    val manifest = ManifestParser.parse(toml, ManifestPath) match {
+      case Ok(m) => m
+      case Err(e) => fail(e.message(formatter))
+    }
+
+    val path = Files.createTempDirectory("")
+    val resolution = FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+      case Ok(r) => FlixPackageManager.resolveSecurityLevels(r)
+      case Err(e) => fail(e.message(formatter))
+    }
+    FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+      case Ok(installation) =>
+        val clerk = PackageId(Repository.GitHub, "flix", "museum-clerk")
+        assertResult(expected = Some(SemVer(1, 1, 0)))(actual = installation.lockfile.packages.get(clerk).map(_.version))
+        assertResult(expected = List(s"museum-clerk-1.1.0.fpkg"))(
+          actual = installation.packages.filter(_.id == clerk).map(_.path.getFileName.toString).distinct
+        )
+      case Err(e) => fail(e.message(formatter))
     }
   }
 
