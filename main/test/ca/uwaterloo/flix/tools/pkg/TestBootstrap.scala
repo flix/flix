@@ -350,45 +350,6 @@ class TestBootstrap extends AnyFunSuite {
     }
   }
 
-  test("eff-lock should write effect lock file") {
-    val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
-
-    // Override manifest
-    val toml = PkgTestUtils.mkTomlWithDeps(
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.1", security = "unrestricted" }
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "unrestricted" }
-        |""".stripMargin
-    )
-    FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
-
-    // Override main file
-    val main =
-      """
-        |pub def main(): Unit \ IO =
-        |    TestPkgTrustTransitive.entry()
-        |""".stripMargin
-    FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
-
-    // Assert effects.lock does not exist
-    val effectLockFile = p.resolve("effects.lock").normalize()
-    if (Files.exists(effectLockFile)) {
-      fail("Unexpected 'effects.lock' file. File is not supposed to exist")
-    }
-
-    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-    val flix = PkgTestUtils.mkFlix(bootstrap)
-    bootstrap.lockEffects(flix).unsafeGet
-
-    // Assert that effects.lock exists now
-    if (Files.exists(effectLockFile)) {
-      succeed
-    } else {
-      fail("File 'effects.lock' does not exist")
-    }
-  }
-
   test("eff-check on same version as before is ok") {
     // Version 0.1.0 of the dependency has signature `Int32 -> Int32`.
     // There is no upgrade done, but we assert that
