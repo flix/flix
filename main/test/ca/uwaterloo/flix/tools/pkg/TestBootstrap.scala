@@ -397,7 +397,7 @@ class TestBootstrap extends AnyFunSuite {
     // Override manifest
     val toml = PkgTestUtils.mkTomlWithDeps(
       """
-        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = "0.1.0"
+        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = { version = "0.1.0", mount = "effUpgrade" }
         |""".stripMargin
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
@@ -405,6 +405,8 @@ class TestBootstrap extends AnyFunSuite {
     // Override main file
     val main =
       """
+        |use effUpgrade::Upgr
+        |
         |pub def main(): Unit \ IO =
         |    println(Upgr.entrypoint(42))
         |""".stripMargin
@@ -432,7 +434,7 @@ class TestBootstrap extends AnyFunSuite {
     // Override manifest
     val toml = PkgTestUtils.mkTomlWithDeps(
       s"""
-         |"github:$pkgAuthor/$pkgName" = "$vOld"
+         |"github:$pkgAuthor/$pkgName" = { version = "$vOld", mount = "effUpgrade" }
          |""".stripMargin
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
@@ -440,6 +442,8 @@ class TestBootstrap extends AnyFunSuite {
     // Override main file
     val main =
       """
+        |use effUpgrade::Upgr
+        |
         |pub def main(): Unit \ IO =
         |    println(Upgr.entrypoint(42))
         |""".stripMargin
@@ -451,7 +455,7 @@ class TestBootstrap extends AnyFunSuite {
     // Perform upgrade by overriding manifest
     val tomlUpgr = PkgTestUtils.mkTomlWithDeps(
       s"""
-         |"github:$pkgAuthor/$pkgName" = "$vNew"
+         |"github:$pkgAuthor/$pkgName" = { version = "$vNew", mount = "effUpgrade" }
          |""".stripMargin
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), tomlUpgr)
@@ -484,7 +488,7 @@ class TestBootstrap extends AnyFunSuite {
     // Override manifest
     val toml = PkgTestUtils.mkTomlWithDeps(
       s"""
-         |"github:$pkgAuthor/$pkgName" = "$vUnsafe"
+         |"github:$pkgAuthor/$pkgName" = { version = "$vUnsafe", mount = "effUpgrade" }
          |""".stripMargin
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
@@ -492,6 +496,8 @@ class TestBootstrap extends AnyFunSuite {
     // Override main file
     val main =
       """
+        |use effUpgrade::Upgr
+        |
         |pub def main(): Unit \ IO =
         |    println(Upgr.entrypoint(42))
         |""".stripMargin
@@ -503,7 +509,7 @@ class TestBootstrap extends AnyFunSuite {
     // Perform upgrade by overriding manifest
     val tomlUpgr = PkgTestUtils.mkTomlWithDeps(
       s"""
-         |"github:$pkgAuthor/$pkgName" = "$vSafe"
+         |"github:$pkgAuthor/$pkgName" = { version = "$vSafe", mount = "effUpgrade" }
          |""".stripMargin
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), tomlUpgr)

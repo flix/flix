@@ -65,18 +65,13 @@ class TestMounts extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedName](result)
   }
 
-  test("flat.reachable") {
+  test("unmounted.not-reachable") {
+    // A package is named under its own root, so one that the project does not mount is not
+    // reachable, qualified or not. A package that is a dependency of a dependency is like that.
     val pkg = mkPkg()
     val mounts = Map.empty[Mountpoint, PackageId]
-    expectSuccess(check(pkg, mounts, "def main(): Unit \\ IO = println(Board.place())"))
-  }
-
-  test("flat.private-reachable") {
-    // A package nothing mounts keeps sharing the root namespace, so its non-public modules are
-    // reachable exactly as they were before mounts existed.
-    val pkg = mkPkg()
-    val mounts = Map.empty[Mountpoint, PackageId]
-    expectSuccess(check(pkg, mounts, "def main(): Unit \\ IO = println(Secret.hidden())"))
+    val result = check(pkg, mounts, "def main(): Unit \\ IO = println(Board.place())")
+    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("mount.named-like-library-module") {

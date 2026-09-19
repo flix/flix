@@ -167,7 +167,7 @@ object Resolver {
     */
   private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): List[ResolvedAst.Declaration.TypeAlias] = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls, loc) =>
-      val unitRoot = rootOf(loc, root)
+      val unitRoot = rootOf(loc)
       val usesAndImports = usesAndImports0.flatMap(visitUseOrImport(_, unitRoot, root).toOption)
       val scp = appendAllUseScp(defaultUses, usesAndImports, root)
       val namespaces = decls.collect {
@@ -365,7 +365,7 @@ object Resolver {
     */
   private def visitUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.CompilationUnit = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls0, loc) =>
-      val unitRoot = rootOf(loc, root)
+      val unitRoot = rootOf(loc)
       val usesAndImports = resolveUsesAndImports(usesAndImports0, unitRoot, root)
       val scp = appendAllUseScp(defaultUses, usesAndImports, root)
       val decls = decls0.flatMap(visitDecl(_, scp, unitRoot.copy(loc = loc), defaultUses))
@@ -2936,7 +2936,7 @@ object Resolver {
       }
 
       // 4th priority: names at the root of the package the name occurs in
-      val viewerRoot = rootOf(qname.loc, root)
+      val viewerRoot = rootOf(qname.loc)
       val packageNames = declarationsIn(viewerRoot, qname.ident.name, root)
 
       // 5th priority: names in the root namespace, where the bundled library is declared
@@ -2982,7 +2982,7 @@ object Resolver {
       tryLookupModuleIn(ns0, name, root)
     }.orElse {
       // Then see if there's a module with this name at the root of that package
-      tryLookupModuleIn(rootOf(loc, root), name, root)
+      tryLookupModuleIn(rootOf(loc), name, root)
     }.orElse {
       // Finally, the root namespace, where the bundled library is declared
       tryLookupModuleIn(Name.RootNS, name, root)
@@ -3011,13 +3011,11 @@ object Resolver {
   /**
     * Returns the root namespace of the package the source at `loc` belongs to.
     *
-    * A package that something mounts is named under its own root, so that a name in one package
-    * cannot see its declarations except through a mount. Everything else, including a package that
-    * nothing mounts, is named under [[Name.RootNS]].
+    * A package is named under its own root, so that a name in one package cannot see the
+    * declarations of another except through a mount. Everything else is named under [[Name.RootNS]].
     */
-  private def rootOf(loc: SourceLocation, root: NamedAst.Root): Name.NName = loc.source.origin match {
-    case Origin.Package(id) if root.mountedPackages.contains(id) =>
-      Name.mkUnlocatedNName(List(id.canonicalRoot))
+  private def rootOf(loc: SourceLocation): Name.NName = loc.source.origin match {
+    case Origin.Package(id) => Name.mkUnlocatedNName(List(id.canonicalRoot))
     case _ => Name.RootNS
   }
 
