@@ -605,13 +605,13 @@ object FlixPackageManager {
     */
   private def openReleaseAsset(proj: GitHub.Project, version: SemVer, extension: String, apiKey: Option[String]): Result[InputStream, PackageError] = {
     def fromListing(): Result[InputStream, PackageError] =
-      GitHub.findReleaseAsset(proj, version, extension, apiKey).flatMap(asset => GitHub.download(asset.url))
+      GitHub.findReleaseAsset(proj, version, extension, apiKey).flatMap(asset => GitHub.download(asset.url, apiKey))
 
     @tailrec
     def tryNames(names: List[String]): Result[InputStream, PackageError] = names match {
       case Nil => fromListing()
       case name :: rest =>
-        GitHub.downloadReleaseAsset(proj, version, name) match {
+        GitHub.downloadReleaseAsset(proj, version, name, apiKey) match {
           case Err(_: PackageError.ReleaseAssetNotFound) => tryNames(rest)
           case result => result
         }

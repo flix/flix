@@ -253,13 +253,19 @@ object GitHub {
   }
 
   /**
-    * Opens a stream over `url`, following redirects. The caller closes the stream.
+    * Opens a stream over `url`, following redirects, carrying `token` if `url` is an address it
+    * may be sent to. The caller closes the stream.
+    *
+    * A release asset redirects to the storage it is served from, which is not GitHub and
+    * authorizes requests its own way. The JDK drops the `Authorization` header across a redirect,
+    * so the token reaches GitHub and nothing past it; following redirects by hand would have to
+    * do the same.
     *
     * Kept apart: a refusal (403/429, usually a rate limit), any other unexpected status, and never
     * reaching a server at all.
     */
-  def download(url: URL): Result[InputStream, PackageError] = {
-    val request = newRequest(url, None).GET().build()
+  def download(url: URL, token: Option[String]): Result[InputStream, PackageError] = {
+    val request = newRequest(url, token).GET().build()
 
     val response = try {
       Client.sendStreamingRequest(request)
@@ -294,9 +300,9 @@ object GitHub {
     * the REST API -- a release asset's address is fully predictable from owner/repo/tag/name.
     * The caller closes the stream. See [[findReleaseAsset]] for the fallback when this 404s.
     */
-  def downloadReleaseAsset(project: Project, version: SemVer, assetName: String): Result[InputStream, PackageError] = {
+  def downloadReleaseAsset(project: Project, version: SemVer, assetName: String, token: Option[String]): Result[InputStream, PackageError] = {
     val url = releaseAssetUrl(project, version, assetName)
-    download(url) match {
+    download(url, token) match {
       case Err(PackageError.DownloadFailed(_, 404)) =>
         Err(PackageError.ReleaseAssetNotFound(project, version, assetName, url))
       case other => other
