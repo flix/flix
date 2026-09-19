@@ -1,9 +1,6 @@
 [package]
-name        = "weather"
-description = "show the weather in your current position"
-version     = "0.1.0"
-flix        = "0.75.3"
-authors     = ["Chenhao Gao <chenhaogao123@gmail.com>"]
+version = "0.1.0"
+flix    = "0.75.3"
 
 [dependencies]
-"github:mlutze/flix-json" =  "0.12.17"
+"github:mlutze/flix-json" = "0.12.17"

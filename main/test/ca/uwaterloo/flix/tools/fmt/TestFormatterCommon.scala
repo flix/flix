@@ -98,12 +98,12 @@ trait TestFormatterCommon extends AnyFunSuite {
 
   /**
     * Every `.flix` file under `examples/`, used as a corpus for all properties.
-    * `apps` and `package-manager` and `datalog/train-schedule.flix` are excluded.
+    * `apps` and `datalog/train-schedule.flix` are excluded.
     */
   protected val ExampleSamples: List[Sample] =
     findFlixFiles(
       Paths.get("examples"),
-      exclude = Set("apps", "package-manager", "datalog/train-schedule.flix")
+      exclude = Set("apps", "datalog/train-schedule.flix")
     ).map { p =>
       val content = Files.readString(Paths.get(p))
       Sample(p, content, src => reparseAt(exampleFlix, p, src, restoreTo = None))

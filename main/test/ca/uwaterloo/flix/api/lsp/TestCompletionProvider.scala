@@ -42,7 +42,7 @@ class TestCompletionProvider extends AnyFunSuite {
   /**
     * A list of program paths to test invariants on.
     *
-    * Note: files from large-examples and package-manager are not included in this list
+    * Note: files from large-examples are not included in this list
     */
   private val ProgramPathList = List(
     "examples/concurrency-and-parallelism/spawning-threads.flix",

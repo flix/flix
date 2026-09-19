@@ -1,9 +1,6 @@
 [package]
-name        = "langcensus"
-description = "count the lines of adds and dels for every commit from you"
-version     = "0.1.0"
-flix        = "0.75.3"
-authors     = ["chenhaogao123@gmail.com"]
+version = "0.1.0"
+flix    = "0.75.3"
 
 [dependencies]
-"github:mlutze/flix-json" =  "0.12.18"
+"github:mlutze/flix-json" = "0.12.18"

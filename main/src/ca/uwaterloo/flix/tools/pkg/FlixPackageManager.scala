@@ -23,8 +23,9 @@ import ca.uwaterloo.flix.util.{Formatter, Result, Sha256}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 import ca.uwaterloo.flix.util.collection.ListMap
 
-import java.io.{IOException, PrintStream}
+import java.io.{IOException, InputStream, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 object FlixPackageManager {
@@ -550,19 +551,15 @@ object FlixPackageManager {
       out.println(s"  Cached `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")}).")
       verifyCached(assetPath, dep, version, extension, lockfile)
     } else {
-      GitHub.getSpecificRelease(proj, version, apiKey).flatMap { release =>
-        val assets = release.assets.filter(_.name.endsWith(s".$extension"))
-        if (assets.isEmpty) {
-          Err(PackageError.NoSuchFile(proj.toString, extension))
-        } else if (assets.length != 1) {
-          Err(PackageError.TooManyFiles(proj.toString, extension))
-        } else {
-          // download asset to the directory
-          val asset = assets.head
-          out.print(s"  Downloading `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")})... ")
-          out.flush()
+      out.print(s"  Downloading `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")})... ")
+      out.flush()
+      openReleaseAsset(proj, version, extension, apiKey) match {
+        case Err(e) =>
+          out.println("ERROR.")
+          Err(e)
+
+        case Ok(stream) =>
           try {
-            val stream = GitHub.downloadAsset(asset)
             try {
               Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
             } finally {
@@ -582,18 +579,65 @@ object FlixPackageManager {
                 case e2: IOException => e.addSuppressed(e2)
               }
               out.println(s"ERROR: ${e.getMessage}.")
-              return Err(PackageError.DownloadError(asset, Some(e.getMessage)))
+              return Err(PackageError.DownloadError(assetName, Some(e.getMessage)))
           }
           if (Files.exists(assetPath)) {
             out.println(s"OK.")
             verifyDownloaded(assetPath, dep, version, extension, lockfile)
           } else {
             out.println(s"ERROR: File was not created.")
-            Err(PackageError.DownloadError(asset, None))
+            Err(PackageError.DownloadError(assetName, None))
           }
-        }
       }
     }
+  }
+
+  /**
+    * Opens a stream over the `extension` file of `proj`'s `version` release. The caller closes
+    * the stream.
+    *
+    * A release asset's address follows from the repository, the version, and the name, so the
+    * names a package is expected to publish are tried first, each at the cost of one request
+    * that either finds the file or does not. Only if none of them is there is the release
+    * listing read, which costs a request against the API rate limit: 60 an hour for an
+    * anonymous client, shared by every package a build resolves.
+    *
+    * Only a name that is not there is worth another guess. A refusal or an unreachable server
+    * says nothing about the name, and reading the listing would not get any further, so it is
+    * reported as it is.
+    */
+  private def openReleaseAsset(proj: GitHub.Project, version: SemVer, extension: String, apiKey: Option[String]): Result[InputStream, PackageError] = {
+    def fromListing(): Result[InputStream, PackageError] =
+      GitHub.findReleaseAsset(proj, version, extension, apiKey).flatMap(asset => GitHub.download(asset.url))
+
+    @tailrec
+    def tryNames(names: List[String]): Result[InputStream, PackageError] = names match {
+      case Nil => fromListing()
+      case name :: rest =>
+        GitHub.downloadReleaseAsset(proj, version, name) match {
+          case Err(_: PackageError.ReleaseAssetNotFound) => tryNames(rest)
+          case result => result
+        }
+    }
+
+    tryNames(guessedAssetNames(proj, extension))
+  }
+
+  /**
+    * Returns the names the `extension` asset of `proj` is guessed to have, in the order they are
+    * tried. A package whose asset has none of them is found through the release listing instead.
+    */
+  private def guessedAssetNames(proj: GitHub.Project, extension: String): List[String] = extension match {
+    case Bootstrap.EXT_TOML =>
+      List(Bootstrap.FLIX_TOML)
+
+    case Bootstrap.EXT_FPKG =>
+      // A release published before the package was given a fixed name carries the name of the
+      // repository, or of the directory it was built in, which cannot be guessed at all.
+      List(Bootstrap.PACKAGE_FPKG, s"${proj.repo}.$extension")
+
+    case _ =>
+      Nil
   }
 
   /**
