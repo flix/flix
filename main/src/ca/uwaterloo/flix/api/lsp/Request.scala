@@ -58,6 +58,11 @@ object Request {
   case class Version(requestId: String) extends Request
 
   /**
+    * A request for the oldest version of the VSCode extension the compiler can talk to.
+    */
+  case class MinVSCodeVersion(requestId: String) extends Request
+
+  /**
     * A request to load the project again and start over with a fresh compiler.
     */
   case class Restart(requestId: String) extends Request
@@ -209,6 +214,15 @@ object Request {
     for {
       id <- parseId(json)
     } yield Request.Version(id)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[MinVSCodeVersion]] request.
+    */
+  def parseMinVSCodeVersion(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+    } yield Request.MinVSCodeVersion(id)
   }
 
   /**

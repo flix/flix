@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
+import ca.uwaterloo.flix.tools.pkg.SemVer
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -68,6 +69,14 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * The custom date format to use for logging.
     */
   private val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
+
+  /**
+    * The oldest version of the VSCode extension which can talk to this server.
+    *
+    * The extension compares it against its own version and asks the user to update if it is too
+    * old. Must be bumped whenever a change to the protocol requires a newer extension.
+    */
+  private val MinVSCodeVersion: SemVer = SemVer(1, 57, 0)
 
   /**
     * The project served by this server.
@@ -182,6 +191,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       case JString("api/addUri") => Request.parseAddUri(json)
       case JString("api/remUri") => Request.parseRemUri(json)
       case JString("api/version") => Request.parseVersion(json)
+      case JString("api/minVSCodeVersion") => Request.parseMinVSCodeVersion(json)
       case JString("api/restart") => Request.parseRestart(json)
       case JString("api/shutdown") => Request.parseShutdown(json)
       case JString("api/disconnect") => Request.parseDisconnect(json)
@@ -237,6 +247,8 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.Version(id) => processVersion(id)
+
+    case Request.MinVSCodeVersion(id) => processMinVSCodeVersion(id)
 
     case Request.Restart(id) => processRestart(id)
 
@@ -421,6 +433,17 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     val minor = Version.CurrentVersion.minor
     val revision = Version.CurrentVersion.revision
     val version = ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
+    ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> version)
+  }
+
+  /**
+    * Processes the minimum VSCode extension version request.
+    */
+  private def processMinVSCodeVersion(requestId: String): JValue = {
+    val major = MinVSCodeVersion.major
+    val minor = MinVSCodeVersion.minor
+    val patch = MinVSCodeVersion.patch
+    val version = ("major" -> major) ~ ("minor" -> minor) ~ ("patch" -> patch)
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> version)
   }
 
