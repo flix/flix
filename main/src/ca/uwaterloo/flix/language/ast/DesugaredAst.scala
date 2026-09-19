@@ -64,7 +64,7 @@ object DesugaredAst {
 
   object UseOrImport {
 
-    case class Use(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends UseOrImport
+    case class Use(pkg: Option[Name.Ident], qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends UseOrImport
 
     case class Import(name: Name.JavaName, alias: Name.Ident, loc: SourceLocation) extends UseOrImport
   }

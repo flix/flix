@@ -688,6 +688,7 @@ object Parser2 {
   private val NAME_JAVA: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase)
   private val NAME_QNAME: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase)
   private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase, TokenKind.NameMath, TokenKind.GenericOperator)
+  private val NAME_PACKAGE: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase, TokenKind.NameHyphenated)
   private val NAME_FIELD: Set[TokenKind] = Set(TokenKind.NameLowercase)
   private val NAME_LOWERCASE: Set[TokenKind] = Set(TokenKind.NameLowercase)
   // TODO: Static is used as a type in Prelude.flix. Static is also an expression.
@@ -882,25 +883,91 @@ object Parser2 {
     assert(at(TokenKind.KeywordUse))
     val mark = open()
     expect(TokenKind.KeywordUse)
-    nameAllowQualified(NAME_USE, allowTrailingDot = true)
-    // Handle use many case.
-    if (eat(TokenKind.Dot)) {
-      if (at(TokenKind.CurlyL)) {
-        val mark = open()
-        zeroOrMore(
-          namedTokenSet = NamedTokenSet.Name,
-          getItem = () => aliasedName(NAME_USE),
-          checkForItem = NAME_USE.contains,
-          breakWhen = _.isRecoverInUseOrImport,
-          delimiterL = TokenKind.CurlyL,
-          delimiterR = TokenKind.CurlyR,
+    // Handle the package case: `use flixball::Game.Board`.
+    // A `::` with whitespace around it cannot otherwise occur in a use, so it is taken as the separator too.
+    // That is also what a dangling `use flixball::` at the end of a line lexes as.
+    val hasPackage = NAME_PACKAGE.contains(nth(0)) && (nth(1) == TokenKind.ColonColonTight || nth(1) == TokenKind.ColonColon)
+    val pathStart = s.position
+    if (hasPackage) {
+      val markPackage = open()
+      nameUnqualified(NAME_PACKAGE)
+      if (at(TokenKind.ColonColon) && (NAME_USE.contains(nth(1)) || nth(1) == TokenKind.CurlyL)) {
+        // A path follows, so the whitespace is around the `::` and not just the end of the line.
+        val error = Malformed(
+          namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.ColonColonTight)),
+          sctx = sctx,
+          hint = Some(s"Write ${TokenKind.ColonColonTight.display} without whitespace on either side, e.g. 'flixball::Game.Board'."),
+          loc = currentSourceLocation()
         )
-        close(mark, TreeKind.UsesOrImports.UseMany)
+        advanceWithError(error)
       } else {
-        expectAny(Set(TokenKind.NameLowercase, TokenKind.NameUppercase, TokenKind.CurlyL))
+        advance()
+      }
+      close(markPackage, TreeKind.UsesOrImports.Package)
+    }
+    if (hasPackage && at(TokenKind.CurlyL)) {
+      // Handle use many directly after the package: `use flixball::{Game, Board}`.
+      useMany()
+    } else {
+      nameAllowQualified(NAME_USE, allowTrailingDot = true)
+      // Handle use many case.
+      if (eat(TokenKind.Dot)) {
+        if (at(TokenKind.CurlyL)) {
+          useMany()
+        } else {
+          expectAny(Set(TokenKind.NameLowercase, TokenKind.NameUppercase, TokenKind.CurlyL))
+        }
+      }
+      if (hasPackage && at(TokenKind.ColonColonTight)) {
+        secondPackageSeparator(pathStart)
       }
     }
     close(mark, TreeKind.UsesOrImports.Use)
+  }
+
+  private def useMany()(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
+    assert(at(TokenKind.CurlyL))
+    val mark = open()
+    zeroOrMore(
+      namedTokenSet = NamedTokenSet.Name,
+      getItem = () => aliasedName(NAME_USE),
+      checkForItem = NAME_USE.contains,
+      breakWhen = _.isRecoverInUseOrImport,
+      delimiterL = TokenKind.CurlyL,
+      delimiterR = TokenKind.CurlyR,
+    )
+    close(mark, TreeKind.UsesOrImports.UseMany)
+  }
+
+  /**
+    * Reports a second `::` in a use path (e.g. `use flixball::Game::Board`) and consumes the rest of the path.
+    *
+    * A `::` only follows the package, so the hint spells the path with `.` between the modules.
+    *
+    * @param pathStart the position of the first token of the use path.
+    */
+  private def secondPackageSeparator(pathStart: Int)(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
+    assert(at(TokenKind.ColonColonTight))
+    val mark = open()
+    val loc = currentSourceLocation()
+    while (eat(TokenKind.ColonColonTight) || eat(TokenKind.Dot)) {
+      eatAny(NAME_USE)
+    }
+    // Spell the path as it should have been written: every `::` but the first becomes a `.`.
+    val path = s.tokens.slice(pathStart, s.position).filterNot(_.kind.isComment)
+    val firstSeparator = path.indexWhere(_.kind == TokenKind.ColonColonTight)
+    val fixed = path.zipWithIndex.map {
+      case (t, i) if t.kind == TokenKind.ColonColonTight && i != firstSeparator => "."
+      case (t, _) => t.text
+    }.mkString
+    val error = UnexpectedToken(
+      expected = NamedTokenSet.FromKinds(Set(TokenKind.Dot)),
+      actual = Some(TokenKind.ColonColonTight),
+      sctx = sctx,
+      hint = Some(s"${TokenKind.ColonColonTight.display} only follows the package. Separate modules with ${TokenKind.Dot.display}: '$fixed'."),
+      loc = loc
+    )
+    closeWithError(mark, error, Some(TokenKind.ColonColonTight))
   }
 
   private def iimport()(implicit s: State): Mark.Closed = {

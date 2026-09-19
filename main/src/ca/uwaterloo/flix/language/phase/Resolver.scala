@@ -878,9 +878,13 @@ object Resolver {
     case NamedAst.Expr.Use(use, exp, loc) =>
       // Lookup the used name and add it to the scp
       use match {
-        case NamedAst.UseOrImport.Use(qname, alias, _) =>
+        case NamedAst.UseOrImport.Use(pkg, qname, alias, useLoc) =>
           // TODO NS-REFACTOR allowing relative uses here...
-          lookupQualifiedName(qname, scp0, ns0, root) match {
+          val lookup = pkg match {
+            case Some(p) => lookupPackageUse(p, qname, scp0, ns0, root, useLoc)
+            case None => lookupQualifiedName(qname, scp0, ns0, root)
+          }
+          lookup match {
             case Result.Ok(decls) =>
               val scp = decls.foldLeft(scp0) {
                 case (acc, decl) => acc + (alias.name -> Resolution.Declaration(decl))
@@ -3036,6 +3040,28 @@ object Resolver {
     }
 
   /**
+    * Looks up the name `qname` in the package `pkg`, e.g. `Game.Board` in `flixball` for `use flixball::Game.Board`.
+    *
+    * The package is looked up in the mount table of the package the use occurs in. The name is looked
+    * up under the root of the package directly, not through `scp0`, so nothing in scope can shadow it.
+    */
+  private def lookupPackageUse(pkg: Name.Ident, qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Result[List[NamedAst.Declaration], ResolutionError] = {
+    val mounts = mountsOf(pkg.loc, root)
+    mounts.get(Mountpoint(pkg.name)) match {
+      case None =>
+        // The name may be a module, i.e. `use Game::Board` written for `use Game.Board`.
+        val isModule = tryLookupModule(pkg.name, scp0, ns0, root, pkg.loc).isDefined
+        Result.Err(ResolutionError.UndefinedPackage(pkg, qname, mounts.keys.toList, isModule, pkg.loc))
+      case Some(pkgRoot) =>
+        val ns = Name.mkUnlocatedNName(pkgRoot.parts ::: qname.namespace.parts)
+        root.symbols.getOrElse(ns, Map.empty).get(qname.ident.name) match {
+          case Some(decls) if decls.nonEmpty => Result.Ok(decls)
+          case _ => Result.Err(ResolutionError.UndefinedUse(Some(pkg), qname, ns0, Map.empty, loc))
+        }
+    }
+  }
+
+  /**
     * Looks up the qualified name in the given root.
     */
   private def lookupQualifiedName(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Result[List[NamedAst.Declaration], ResolutionError] = {
@@ -3526,9 +3552,16 @@ object Resolver {
     * Resolves the given Use.
     */
   private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Result[UseOrImport, ResolutionError] = useOrImport match {
-    case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, LocalScope.empty, ns, root) match {
+    case NamedAst.UseOrImport.Use(Some(pkg), qname, alias, loc) =>
+      lookupPackageUse(pkg, qname, LocalScope.empty, ns, root, loc) match {
+        // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
+        case Result.Ok(decls) => Result.Ok(UseOrImport.Use(getSym(decls.head), alias, loc))
+        case Result.Err(error) => Result.Err(error)
+      }
+
+    case NamedAst.UseOrImport.Use(None, qname, alias, loc) => tryLookupName(qname, LocalScope.empty, ns, root) match {
       // Case 1: No matches. Error.
-      case Nil => Result.Err(ResolutionError.UndefinedUse(qname, ns, Map.empty, loc))
+      case Nil => Result.Err(ResolutionError.UndefinedUse(None, qname, ns, Map.empty, loc))
       // Case 2: A match. Map it to a use.
       // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
       case Resolution.Declaration(d) :: _ =>
@@ -3551,10 +3584,17 @@ object Resolver {
     * and dropped, so that names it would have brought into scope are simply undefined.
     */
   private def resolveUsesAndImports(usesAndImports0: List[NamedAst.UseOrImport], ns: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): List[UseOrImport] = {
+    // The uses of `use flixball::{Game, Board}` share one package, which is reported once.
+    val undefinedPackages = mutable.Set.empty[SourceLocation]
     usesAndImports0.flatMap {
       u =>
         visitUseOrImport(u, ns, root) match {
           case Result.Ok(useOrImport) => Some(useOrImport)
+          case Result.Err(error: ResolutionError.UndefinedPackage) =>
+            if (undefinedPackages.add(error.loc)) {
+              sctx.errors.add(error)
+            }
+            None
           case Result.Err(error) =>
             sctx.errors.add(error)
             None

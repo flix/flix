@@ -52,8 +52,8 @@ object Desugar {
     * Maps `useOrImport0` to a corresponding [[DesugaredAst.UseOrImport]].
     */
   private def visitUseOrImport(useOrImport0: WeededAst.UseOrImport): DesugaredAst.UseOrImport = useOrImport0 match {
-    case WeededAst.UseOrImport.Use(qname, alias, loc) =>
-      DesugaredAst.UseOrImport.Use(qname, alias, loc)
+    case WeededAst.UseOrImport.Use(pkg, qname, alias, loc) =>
+      DesugaredAst.UseOrImport.Use(pkg, qname, alias, loc)
 
     case WeededAst.UseOrImport.Import(name, alias, loc) =>
       DesugaredAst.UseOrImport.Import(name, alias, loc)

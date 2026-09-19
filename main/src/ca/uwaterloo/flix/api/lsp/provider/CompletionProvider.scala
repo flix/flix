@@ -102,7 +102,8 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedOp => HandlerCompleter.getCompletions(err.op, Range.from(err.loc))
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
         case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err.qn, err.traitUseKind, Range.from(err.loc), err.ap, err.scp)
-        case err: ResolutionError.UndefinedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
+        // A use that names a package is looked up in that package, not in the root namespace.
+        case err: ResolutionError.UndefinedUse if err.pkg.isEmpty => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
 
         case err: TypeError.FieldNotFound =>
           MagicMatchCompleter.getCompletions(err.tpe, Range.from(err.loc), err.base) ++

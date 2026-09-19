@@ -1757,6 +1757,42 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalUse](result)
   }
 
+  test("UnqualifiedUse.Package.01") {
+    // A package counts as qualification.
+    val input =
+      """
+        |use flixball::Board
+        |
+        |def f(): String = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[WeederError.UnqualifiedUse](result)
+  }
+
+  test("UnqualifiedUse.Package.02") {
+    val input =
+      """
+        |def f(): String = {
+        |  use tic-tac-toe::board;
+        |  ???
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[WeederError.UnqualifiedUse](result)
+  }
+
+  test("UnqualifiedUse.Package.03") {
+    // A use many directly after a package must not be empty.
+    val input =
+      """
+        |use flixball::{}
+        |
+        |def f(): String = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
   test("UnqualifiedUse.01") {
     val input =
       """

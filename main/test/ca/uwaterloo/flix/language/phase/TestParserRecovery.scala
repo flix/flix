@@ -1154,4 +1154,65 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     case _ => fail("Expected 'main' to be defined.")
   }
 
+  test("Use.Package.01") {
+    // A dangling package separator.
+    val input =
+      """
+        |use flixball::
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
+  test("Use.Package.02") {
+    val input =
+      """
+        |use flixball::
+        |use tic-tac-toe::
+        |enum Color { case Red }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
+  test("Use.Package.03") {
+    val input =
+      """
+        |use flixball::{Game;
+        |enum Color { case Red }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
+  test("Use.Package.04") {
+    val input =
+      """
+        |use flixball::Game::
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
+  test("Use.Package.05") {
+    val input =
+      """
+        |def main(): Unit = {
+        |    use flixball::;
+        |    ()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
 }

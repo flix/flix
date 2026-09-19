@@ -532,6 +532,8 @@ object SyntaxTree {
 
       case object ImportMany extends UsesOrImports
 
+      case object Package extends UsesOrImports
+
       case object Use extends UsesOrImports
 
       case object UseMany extends UsesOrImports

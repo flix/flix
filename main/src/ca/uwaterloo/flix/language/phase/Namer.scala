@@ -1872,7 +1872,7 @@ object Namer {
     * Performs naming on the given `use`.
     */
   private def visitUseOrImport(use: DesugaredAst.UseOrImport): NamedAst.UseOrImport = use match {
-    case DesugaredAst.UseOrImport.Use(qname, alias, loc) => NamedAst.UseOrImport.Use(qname, alias, loc)
+    case DesugaredAst.UseOrImport.Use(pkg, qname, alias, loc) => NamedAst.UseOrImport.Use(pkg, qname, alias, loc)
     case DesugaredAst.UseOrImport.Import(name, alias, loc) => NamedAst.UseOrImport.Import(name, alias, loc)
   }
 

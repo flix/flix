@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.{NameError, ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Formatter, Options}
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestResolver extends AnyFunSuite with TestUtils {
@@ -806,6 +806,87 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input = "def f(): #{ A[Int32] } = ???"
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedNameUnrecoverable](result)
+  }
+
+  test("UndefinedPackage.01") {
+    val input =
+      """
+        |use flixball::Board
+        |
+        |def f(): Int32 = 1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedPackage](result)
+  }
+
+  test("UndefinedPackage.02") {
+    val input =
+      """
+        |use tic-tac-toe::Game.Board.{empty, size => boardSize}
+        |
+        |def f(): Int32 = 1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedPackage](result)
+  }
+
+  test("UndefinedPackage.03") {
+    // The uses of a use many share one package, which is reported once.
+    val input =
+      """
+        |use flixball::{Game, Board}
+        |
+        |def f(): Int32 = 1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedPackage](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.UndefinedPackage]) == 1)
+  }
+
+  test("UndefinedPackage.04") {
+    val input =
+      """
+        |def f(): Int32 = {
+        |    use flixball::Board.size;
+        |    size()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedPackage](result)
+  }
+
+  test("UndefinedPackage.Module.01") {
+    // A module written with `::`. The message names the `.` form.
+    val input =
+      """
+        |use Game::Board
+        |
+        |mod Game {
+        |    mod Board {
+        |        pub def size(): Int32 = 3
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedPackage](result)
+    assert(result._2.exists(_.messageWithLoc(Formatter.NoFormatter)(None).contains("use Game.Board")))
+  }
+
+  test("UndefinedPackage.Module.02") {
+    val input =
+      """
+        |mod Game {
+        |    pub def size(): Int32 = 3
+        |}
+        |
+        |def f(): Int32 = {
+        |    use Game::size;
+        |    size()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedPackage](result)
+    assert(result._2.exists(_.messageWithLoc(Formatter.NoFormatter)(None).contains("use Game.size")))
   }
 
   test("UndefinedUse.01") {

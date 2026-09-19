@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.{LexerError, ParseError, ResolutionError, WeederError}
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Formatter, Options}
 import org.scalatest.funsuite.AnyFunSuite
 
 /**
@@ -653,4 +653,56 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val error = check(input, Options.TestWithLibNix)
     expectError[ParseError.MissingBinaryOperator](error)
   }
+
+  test("ParseError.Use.Package.01") {
+    // A `::` only follows the package. The hint spells the path with `.` between the modules.
+    val input =
+      """
+        |use flixball::Game::Board
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+    assert(result._2.exists(_.messageWithLoc(Formatter.NoFormatter)(None).contains("'flixball::Game.Board'")))
+  }
+
+  test("ParseError.Use.Package.02") {
+    val input =
+      """
+        |use flixball::Game::Board::{empty, size}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("ParseError.Use.Package.03") {
+    // A `::` with whitespace around it is not a package separator.
+    val input =
+      """
+        |use flixball :: Game
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.Malformed](result)
+  }
+
+  test("ParseError.Use.Package.04") {
+    val input =
+      """
+        |use flixball:: Game
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.Malformed](result)
+  }
+
+  test("ParseError.Use.Package.05") {
+    val input =
+      """
+        |def foo(): Int32 = {
+        |    use flixball::Game::Board;
+        |    1
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
 }
