@@ -444,13 +444,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     FlixPackageManager.resolve(manifest, projectPath, apiKey, lockfile) match {
       case Err(e) => Err(BootstrapError.FlixPackageError(e))
       case Ok(resolution) =>
-        // A package must occur at exactly one version, and be mounted by all its dependents or
-        // by none of them, before anything is installed. Every declaration in the graph is
-        // checked, including those of a package that the resolution does not build.
-        val versionErrors = FlixPackageManager.checkSingleVersion(resolution.reached) ++
-          FlixPackageManager.checkConsistentMounts(resolution.reached)
-        if (versionErrors.nonEmpty) {
-          Err(toBootstrapError(versionErrors))
+        // A package must be mounted by all its dependents or by none of them, before anything
+        // is installed.
+        val mountErrors = FlixPackageManager.checkConsistentMounts(resolution.manifests)
+        if (mountErrors.nonEmpty) {
+          Err(toBootstrapError(mountErrors))
         } else {
           val securityMap = FlixPackageManager.resolveSecurityLevels(resolution)
           val securityErrors = FlixPackageManager.checkSecurity(securityMap)

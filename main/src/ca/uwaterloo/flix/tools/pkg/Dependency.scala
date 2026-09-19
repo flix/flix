@@ -26,6 +26,9 @@ object Dependency {
   /**
     * A dependency on a Flix package.
     *
+    * @param version the least version of the package that the dependent can be built with. The
+    *                version it is built with is the greatest one that any dependent requires,
+    *                which has the same major version, see [[FlixPackageManager.resolve]].
     * @param mount the name of the top-level module the package is visible under, if the dependency
     *              declares one. A dependency without a mount is reachable unqualified instead, as
     *              it was before mounts existed. Transitional: a mount becomes required.
