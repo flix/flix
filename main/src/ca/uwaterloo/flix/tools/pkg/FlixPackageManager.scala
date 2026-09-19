@@ -137,11 +137,31 @@ object FlixPackageManager {
         if (versions.sizeIs > 1) {
           // Order by version, and then by dependent, so the message is deterministic.
           val sorted = reqs.sortBy { case (dependent, dep) => (dep.version, dependent.name) }
-          Some(PackageError.MultipleVersions(identifier, sorted))
+          Some(PackageError.MultipleVersions(identifier, sorted, select(versions)))
         } else {
           None
         }
     }
+  }
+
+  /**
+    * Returns the version minimal version selection picks for a package required at `versions`,
+    * if there is one.
+    *
+    * The pick is the greatest of `versions`. Read as a lower bound, a requirement is satisfied by
+    * any version at or above it, so the greatest is the least version that satisfies them all.
+    *
+    * Versions that do not share a major have no such pick. A major is a compatibility boundary,
+    * so the greater of two majors is not a version the other dependent can be given, and there is
+    * nothing to select.
+    *
+    * `versions` must be non-empty.
+    */
+  def select(versions: List[SemVer]): Option[SemVer] = {
+    if (versions.map(_.major).distinct.sizeIs > 1)
+      None
+    else
+      versions.maxOption
   }
 
   /**

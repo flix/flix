@@ -300,12 +300,20 @@ object PackageError {
     * @param identifier   the package that is required at multiple versions.
     * @param requirements every dependent that requires the package, paired with the
     *                     dependency declaration that states the required version.
+    * @param selection    the version that would satisfy every dependent, if there is one.
     */
-  case class MultipleVersions(identifier: PackageId, requirements: List[(Manifest, FlixDependency)]) extends PackageError {
+  case class MultipleVersions(identifier: PackageId, requirements: List[(Manifest, FlixDependency)], selection: Option[SemVer]) extends PackageError {
     override def message(f: Formatter): String = {
       val versions = requirements.map { case (_, dep) => dep.version }.distinct
       val lines = requirements.map {
         case (dependent, dep) => s"    ${f.bold(dep.version.toString)} required by '${dependent.name}'"
+      }
+      val advice = selection match {
+        case Some(v) => List(s"  The lowest version that satisfies every dependent is ${f.bold(v.toString)}.")
+        case None => List(
+          "  No version satisfies every dependent as they stand: the requirements do not",
+          "  share a major version, so one of the dependents must move across it."
+        )
       }
       s"""${f.underline("Found multiple versions of the same package in the dependency graph:")}
          |  The package '${f.red(identifier.toString)}' is required at ${versions.length} different versions:
@@ -314,6 +322,8 @@ object PackageError {
          |
          |  A package may occur at exactly one version in the dependency graph.
          |  Update the dependents so that they agree on a single version.
+         |
+         |${advice.mkString(System.lineSeparator())}
          |""".stripMargin
     }
   }
