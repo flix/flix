@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.CompilerConstants
-import ca.uwaterloo.flix.language.ast.TokenKind
+import ca.uwaterloo.flix.language.ast.{Token, TokenKind}
 import ca.uwaterloo.flix.language.ast.shared.{Origin, SecurityContext, Source, SourceName}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.Options
@@ -760,11 +760,92 @@ class TestLexer extends AnyFunSuite with TestUtils {
     assertResult(List(TokenKind.NameLowercase, TokenKind.ColonColonColon, TokenKind.NameLowercase))(kindsOf("a ::: b"))
   }
 
+  test("NameHyphenated.01") {
+    assertResult(List(TokenKind.NameHyphenated, TokenKind.ColonColonTight, TokenKind.NameLowercase))(kindsOf("tic-tac-toe::x"))
+  }
+
+  test("NameHyphenated.02") {
+    assertResult(List(TokenKind.NameHyphenated, TokenKind.ColonColonTight, TokenKind.NameUppercase))(kindsOf("Flix-Parser::X"))
+  }
+
+  test("NameHyphenated.03") {
+    assertResult(List(TokenKind.NameHyphenated, TokenKind.ColonColonTight, TokenKind.NameUppercase))(kindsOf("flix-type::X"))
+  }
+
+  test("NameHyphenated.04") {
+    assertResult(List(TokenKind.NameHyphenated, TokenKind.ColonColonTight, TokenKind.NameLowercase))(kindsOf("a_1-b2_c-d::e"))
+  }
+
+  test("NameHyphenated.05") {
+    assertResult(List(TokenKind.KeywordUse, TokenKind.NameHyphenated, TokenKind.ColonColonTight, TokenKind.NameUppercase))(kindsOf("use tic-tac-toe::Board"))
+  }
+
+  test("NameHyphenated.06") {
+    // The token is the name alone, without the `::` that follows it.
+    assertResult(List("tic-tac-toe", "::", "Board"))(textsOf("tic-tac-toe::Board"))
+  }
+
+  test("NameHyphenated.Not.01") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.Minus, TokenKind.NameLowercase, TokenKind.Minus, TokenKind.NameLowercase))(kindsOf("tic-tac-toe"))
+  }
+
+  test("NameHyphenated.Not.02") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.Minus, TokenKind.NameLowercase, TokenKind.ColonColon, TokenKind.NameLowercase))(kindsOf("a-b :: c"))
+  }
+
+  test("NameHyphenated.Not.03") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.Minus, TokenKind.NameLowercase, TokenKind.ColonColon, TokenKind.NameLowercase))(kindsOf("a-b ::c"))
+  }
+
+  test("NameHyphenated.Not.04") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.Minus, TokenKind.NameLowercase, TokenKind.ColonColon, TokenKind.NameLowercase))(kindsOf("a-b:: c"))
+  }
+
+  test("NameHyphenated.Not.05") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.Minus, TokenKind.NameLowercase, TokenKind.ColonColon))(kindsOf("a-b::"))
+  }
+
+  test("NameHyphenated.Not.06") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.Minus, TokenKind.NameLowercase, TokenKind.ColonColonColon, TokenKind.NameLowercase))(kindsOf("a-b:::c"))
+  }
+
+  test("NameHyphenated.Not.07") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.Minus, TokenKind.LiteralInt, TokenKind.ColonColonTight, TokenKind.NameLowercase))(kindsOf("a-1::b"))
+  }
+
+  test("NameHyphenated.Not.08") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.Minus, TokenKind.NameLowercase, TokenKind.ColonColonTight, TokenKind.NameLowercase))(kindsOf("a - b::c"))
+  }
+
+  test("NameHyphenated.Not.09") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.Minus, TokenKind.NameLowercase, TokenKind.Minus, TokenKind.ColonColonTight, TokenKind.NameLowercase))(kindsOf("a-b-::c"))
+  }
+
+  test("NameHyphenated.Not.10") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.Minus, TokenKind.NameLowercase, TokenKind.ColonColonTight, TokenKind.NameLowercase))(kindsOf("a!-b::c"))
+  }
+
+  test("NameHyphenated.Not.11") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.Minus, TokenKind.NameLowercase, TokenKind.ColonColonTight, TokenKind.NameLowercase))(kindsOf("_a-b::c"))
+  }
+
+  test("NameHyphenated.Not.12") {
+    assertResult(List(TokenKind.KeywordType, TokenKind.Minus, TokenKind.NameLowercase, TokenKind.ColonColonTight, TokenKind.NameUppercase))(kindsOf("type-level::X"))
+  }
+
   /** Returns the kinds of the tokens of `s`, without the final [[TokenKind.Eof]]. */
-  private def kindsOf(s: String): List[TokenKind] = {
+  private def kindsOf(s: String): List[TokenKind] =
+    tokensOf(s).map(_.kind)
+
+  /** Returns the texts of the tokens of `s`, without the final [[TokenKind.Eof]]. */
+  private def textsOf(s: String): List[String] =
+    tokensOf(s).map(_.text)
+
+  /** Returns the tokens of `s`, without the final [[TokenKind.Eof]]. */
+  private def tokensOf(s: String): List[Token] = {
     val src = Source.fromString(SourceName.PathName(CompilerConstants.VirtualTestFile), Origin.User, SecurityContext.Unrestricted, s)
     val (tokens, _) = Lexer.lex(src)
-    tokens.toList.map(_.kind).filterNot(_ == TokenKind.Eof)
+    tokens.toList.filterNot(_.kind == TokenKind.Eof)
   }
 
 }
