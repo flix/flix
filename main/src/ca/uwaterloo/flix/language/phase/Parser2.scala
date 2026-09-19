@@ -887,7 +887,6 @@ object Parser2 {
     // A `::` with whitespace around it cannot otherwise occur in a use, so it is taken as the separator too.
     // That is also what a dangling `use flixball::` at the end of a line lexes as.
     val hasPackage = NAME_PACKAGE.contains(nth(0)) && (nth(1) == TokenKind.ColonColonTight || nth(1) == TokenKind.ColonColon)
-    val pathStart = s.position
     if (hasPackage) {
       val markPackage = open()
       nameUnqualified(NAME_PACKAGE)
@@ -918,9 +917,6 @@ object Parser2 {
           expectAny(Set(TokenKind.NameLowercase, TokenKind.NameUppercase, TokenKind.CurlyL))
         }
       }
-      if (hasPackage && at(TokenKind.ColonColonTight)) {
-        secondPackageSeparator(pathStart)
-      }
     }
     close(mark, TreeKind.UsesOrImports.Use)
   }
@@ -937,37 +933,6 @@ object Parser2 {
       delimiterR = TokenKind.CurlyR,
     )
     close(mark, TreeKind.UsesOrImports.UseMany)
-  }
-
-  /**
-    * Reports a second `::` in a use path (e.g. `use flixball::Game::Board`) and consumes the rest of the path.
-    *
-    * A `::` only follows the package, so the hint spells the path with `.` between the modules.
-    *
-    * @param pathStart the position of the first token of the use path.
-    */
-  private def secondPackageSeparator(pathStart: Int)(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
-    assert(at(TokenKind.ColonColonTight))
-    val mark = open()
-    val loc = currentSourceLocation()
-    while (eat(TokenKind.ColonColonTight) || eat(TokenKind.Dot)) {
-      eatAny(NAME_USE)
-    }
-    // Spell the path as it should have been written: every `::` but the first becomes a `.`.
-    val path = s.tokens.slice(pathStart, s.position).filterNot(_.kind.isComment)
-    val firstSeparator = path.indexWhere(_.kind == TokenKind.ColonColonTight)
-    val fixed = path.zipWithIndex.map {
-      case (t, i) if t.kind == TokenKind.ColonColonTight && i != firstSeparator => "."
-      case (t, _) => t.text
-    }.mkString
-    val error = UnexpectedToken(
-      expected = NamedTokenSet.FromKinds(Set(TokenKind.Dot)),
-      actual = Some(TokenKind.ColonColonTight),
-      sctx = sctx,
-      hint = Some(s"${TokenKind.ColonColonTight.display} only follows the package. Separate modules with ${TokenKind.Dot.display}: '$fixed'."),
-      loc = loc
-    )
-    closeWithError(mark, error, Some(TokenKind.ColonColonTight))
   }
 
   private def iimport()(implicit s: State): Mark.Closed = {
