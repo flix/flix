@@ -40,6 +40,61 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("MalformedInfixFunction.01") {
+    val input =
+      """
+        |def foo(): Int32 = 1 `checked_cast` 2
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MalformedInfixFunction.02") {
+    val input =
+      """
+        |def foo(): Int32 = 1 `A.checked_cast` 2
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MalformedInfixFunction.03") {
+    val input =
+      """
+        |def foo(): Int32 = 1 `123` 2
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MalformedInfixFunction.04") {
+    val input =
+      """
+        |def foo(): Int32 = 1 `` 2
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MalformedInfixFunction.05") {
+    val input =
+      """
+        |def foo(): Int32 = 1 `def` 2
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
   test("TrailingComma.01") {
     val input =
       """
