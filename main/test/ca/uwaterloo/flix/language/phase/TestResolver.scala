@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.{NameError, ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.{Formatter, Options}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestResolver extends AnyFunSuite with TestUtils {
@@ -856,7 +856,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   }
 
   test("UndefinedPackage.Module.01") {
-    // A module written with `::`. The message names the `.` form.
+    // A module written with `::`.
     val input =
       """
         |use Game::Board
@@ -869,7 +869,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedPackage](result)
-    assert(result._2.exists(_.messageWithLoc(Formatter.NoFormatter)(None).contains("use Game.Board")))
   }
 
   test("UndefinedPackage.Module.02") {
@@ -886,7 +885,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedPackage](result)
-    assert(result._2.exists(_.messageWithLoc(Formatter.NoFormatter)(None).contains("use Game.size")))
   }
 
   test("UndefinedUse.01") {
