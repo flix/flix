@@ -1,15 +1,17 @@
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{Bootstrap, InstalledPackage}
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, Repository, SecurityContext}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.errors.{NameError, ResolutionError}
 import ca.uwaterloo.flix.util.{FileOps, Formatter}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path}
 
-class TestMounts extends AnyFunSuite {
+class TestMounts extends AnyFunSuite with TestUtils {
 
   private val Id: PackageId = PackageId(Repository.GitHub, "test", "dep")
 
@@ -29,35 +31,31 @@ class TestMounts extends AnyFunSuite {
     p.resolve("artifact").resolve(p.getFileName.toString + ".fpkg")
   }
 
-  private def check(pkgPath: Path, mounts: Map[Mountpoint, PackageId], main: String): List[String] = {
+  /** Checks `main` against the package at `pkgPath`, installed under `mounts`. */
+  private def check(pkgPath: Path, mounts: Map[Mountpoint, PackageId], main: String): (Option[TypedAst.Root], List[CompilationMessage]) = {
     val pkg = InstalledPackage(pkgPath, Id, SecurityContext.Unrestricted, Map.empty)
     val flix = PkgTestUtils.mkFlix(List(pkg), mounts)
     flix.addSource(Path.of("Main.flix"), main, SecurityContext.Unrestricted)
-    val (root, errors) = flix.check()
-    messages = CompilationMessage.formatAll(errors)(Formatter.NoFormatter, root)
-    errors.map(_.getClass.getSimpleName)
+    flix.check()
   }
-
-  /** The rendered messages of the errors the last [[check]] reported. */
-  private var messages: String = ""
 
   test("mounted.reachable") {
     val pkg = mkPkg()
     val mounts = Map(Mountpoint("Game") -> Id)
-    assertResult(Nil)(check(pkg, mounts, "def main(): Unit \\ IO = println(Game.Board.place())"))
+    expectSuccess(check(pkg, mounts, "def main(): Unit \\ IO = println(Game.Board.place())"))
   }
 
   test("mounted.not-reachable-unqualified") {
     val pkg = mkPkg()
     val mounts = Map(Mountpoint("Game") -> Id)
-    val errors = check(pkg, mounts, "def main(): Unit \\ IO = println(Board.place())")
-    assert(errors.exists(_.contains("Undefined")), errors)
+    val result = check(pkg, mounts, "def main(): Unit \\ IO = println(Board.place())")
+    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("flat.reachable") {
     val pkg = mkPkg()
     val mounts = Map.empty[Mountpoint, PackageId]
-    assertResult(Nil)(check(pkg, mounts, "def main(): Unit \\ IO = println(Board.place())"))
+    expectSuccess(check(pkg, mounts, "def main(): Unit \\ IO = println(Board.place())"))
   }
 
   test("flat.private-reachable") {
@@ -65,15 +63,15 @@ class TestMounts extends AnyFunSuite {
     // reachable exactly as they were before mounts existed.
     val pkg = mkPkg()
     val mounts = Map.empty[Mountpoint, PackageId]
-    assertResult(Nil)(check(pkg, mounts, "def main(): Unit \\ IO = println(Secret.hidden())"))
+    expectSuccess(check(pkg, mounts, "def main(): Unit \\ IO = println(Secret.hidden())"))
   }
 
   test("collision.library") {
     // A mount that shadows a library module is rejected: 'List.map' inside the mounting code
     // would resolve into the dependency.
     val pkg = mkPkg()
-    val errors = check(pkg, Map(Mountpoint("List") -> Id), "def main(): Unit \\ IO = println(1)")
-    assert(errors.contains("MountShadowsLibrary"), errors)
+    val result = check(pkg, Map(Mountpoint("List") -> Id), "def main(): Unit \\ IO = println(1)")
+    expectError[NameError.MountShadowsLibrary](result)
   }
 
   test("collision.own-declaration") {
@@ -85,14 +83,14 @@ class TestMounts extends AnyFunSuite {
         |pub mod Game { pub def size(): Int32 = 1 }
         |def main(): Unit \\ IO = println(Game.size())
         |""".stripMargin
-    val errors = check(pkg, Map(Mountpoint("Game") -> Id), main)
-    assert(errors.contains("MountShadowsDeclaration"), errors)
+    val result = check(pkg, Map(Mountpoint("Game") -> Id), main)
+    expectError[NameError.MountShadowsDeclaration](result)
   }
 
   test("collision.other-package-allowed") {
     // A mount that shadows a module of another package is allowed: the author asked for the name.
     val pkg = mkPkg()
-    assertResult(Nil)(check(pkg, Map(Mountpoint("Game") -> Id), "def main(): Unit \\ IO = println(Game.Board.place())"))
+    expectSuccess(check(pkg, Map(Mountpoint("Game") -> Id), "def main(): Unit \\ IO = println(Game.Board.place())"))
   }
 
   test("package-use.module") {
@@ -103,7 +101,7 @@ class TestMounts extends AnyFunSuite {
         |use Flixball::Board
         |def main(): Unit \ IO = println(Board.place())
         |""".stripMargin
-    assertResult(Nil)(check(pkg, mounts, main))
+    expectSuccess(check(pkg, mounts, main))
   }
 
   test("package-use.nested-module") {
@@ -114,7 +112,7 @@ class TestMounts extends AnyFunSuite {
         |use Flixball::Game.Rules
         |def main(): Unit \ IO = println(Rules.players())
         |""".stripMargin
-    assertResult(Nil)(check(pkg, mounts, main))
+    expectSuccess(check(pkg, mounts, main))
   }
 
   test("package-use.def") {
@@ -125,7 +123,7 @@ class TestMounts extends AnyFunSuite {
         |use Flixball::Game.Rules.players
         |def main(): Unit \ IO = println(players())
         |""".stripMargin
-    assertResult(Nil)(check(pkg, mounts, main))
+    expectSuccess(check(pkg, mounts, main))
   }
 
   test("package-use.many") {
@@ -136,7 +134,7 @@ class TestMounts extends AnyFunSuite {
         |use Flixball::{Game, Board}
         |def main(): Unit \ IO = println(Board.place() + Game.Rules.players())
         |""".stripMargin
-    assertResult(Nil)(check(pkg, mounts, main))
+    expectSuccess(check(pkg, mounts, main))
   }
 
   test("package-use.many-after-path") {
@@ -147,7 +145,7 @@ class TestMounts extends AnyFunSuite {
         |use Flixball::Game.Rules.{players => count}
         |def main(): Unit \ IO = println(count())
         |""".stripMargin
-    assertResult(Nil)(check(pkg, mounts, main))
+    expectSuccess(check(pkg, mounts, main))
   }
 
   test("package-use.expression") {
@@ -160,7 +158,7 @@ class TestMounts extends AnyFunSuite {
         |    println(place())
         |}
         |""".stripMargin
-    assertResult(Nil)(check(pkg, mounts, main))
+    expectSuccess(check(pkg, mounts, main))
   }
 
   test("package-use.not-shadowed") {
@@ -174,11 +172,11 @@ class TestMounts extends AnyFunSuite {
         |mod Board { pub def place(): String = "own" }
         |def main(): Unit \ IO = println(Board.place() + 1)
         |""".stripMargin
-    assertResult(Nil)(check(pkg, mounts, main))
+    expectSuccess(check(pkg, mounts, main))
   }
 
   test("package-use.undefined-package") {
-    // A mount absent from the table is reported together with the ones that are there.
+    // A mount absent from the table.
     val pkg = mkPkg()
     val mounts = Map(Mountpoint("Flixball") -> Id)
     val main =
@@ -186,12 +184,11 @@ class TestMounts extends AnyFunSuite {
         |use Flyball::Board
         |def main(): Unit \ IO = println(1)
         |""".stripMargin
-    assertResult(List("UndefinedPackage"))(check(pkg, mounts, main))
-    assert(messages.contains("'Flixball'"), messages)
+    expectError[ResolutionError.UndefinedPackage](check(pkg, mounts, main))
   }
 
   test("package-use.undefined-use") {
-    // A good mount with a bad path. The path is shown as it was written.
+    // A good mount with a bad path.
     val pkg = mkPkg()
     val mounts = Map(Mountpoint("Flixball") -> Id)
     val main =
@@ -199,8 +196,7 @@ class TestMounts extends AnyFunSuite {
         |use Flixball::Game.Rulez
         |def main(): Unit \ IO = println(1)
         |""".stripMargin
-    assertResult(List("UndefinedUse"))(check(pkg, mounts, main))
-    assert(messages.contains("Flixball::Game.Rulez"), messages)
+    expectError[ResolutionError.UndefinedUse](check(pkg, mounts, main))
   }
 
   test("package-use.private-not-reachable") {
@@ -212,8 +208,7 @@ class TestMounts extends AnyFunSuite {
         |use Flixball::Secret
         |def main(): Unit \ IO = println(Secret.hidden())
         |""".stripMargin
-    val errors = check(pkg, mounts, main)
-    assert(errors.nonEmpty, "expected the non-public module of a package to be inaccessible")
+    expectError[ResolutionError.InaccessibleModule](check(pkg, mounts, main))
   }
 
   test("package-use.private-def-not-reachable") {
@@ -225,18 +220,16 @@ class TestMounts extends AnyFunSuite {
         |use Flixball::Secret.hidden
         |def main(): Unit \ IO = println(hidden())
         |""".stripMargin
-    val errors = check(pkg, mounts, main)
-    assert(errors.nonEmpty, "expected a def of a non-public module of a package to be inaccessible")
+    expectError[ResolutionError.InaccessibleModule](check(pkg, mounts, main))
   }
 
   test("mounted.private-not-reachable") {
     val pkg = mkPkg()
     val mounts = Map(Mountpoint("Game") -> Id)
-    val errors = check(pkg, mounts, "def main(): Unit \\ IO = println(Game.Secret.hidden())")
-    assert(errors.nonEmpty, "expected the non-public module of a mounted package to be inaccessible")
-    // The root a package is named under cannot be written in source, so it is shown as the
-    // identifier of the package rather than as the name the compiler gives it.
-    assert(messages.contains(s"${Id}.Secret"), messages)
+    val result = check(pkg, mounts, "def main(): Unit \\ IO = println(Game.Secret.hidden())")
+    expectError[ResolutionError.InaccessibleModule](result)
+    // The root a package is named under cannot be written in source, so it must not be shown.
+    val messages = CompilationMessage.formatAll(result._2)(Formatter.NoFormatter, result._1)
     assert(!messages.contains("$pkg$"), messages)
   }
 
