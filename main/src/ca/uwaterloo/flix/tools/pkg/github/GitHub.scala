@@ -29,11 +29,20 @@ import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{URI, URL, URLEncoder}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import java.util.Locale
 
 /**
   * An interface for the GitHub API.
   */
 object GitHub {
+
+  /**
+    * The hosts a token may be sent to.
+    *
+    * These are matched in full rather than by suffix: a host that merely ends in one of them, as
+    * `github.com.example.com` does, is a different host and is not one of them.
+    */
+  private val TokenHosts: Set[String] = Set("api.github.com", "github.com", "uploads.github.com")
 
   /**
     * A GitHub project.
@@ -63,12 +72,9 @@ object GitHub {
     * such project (404), a refusal (403/429, usually a rate limit), any other unexpected status,
     * and never reaching a server at all.
     */
-  def getReleases(project: Project, apiKey: Option[String]): Result[List[Release], PackageError] = {
+  def getReleases(project: Project, token: Option[String]): Result[List[Release], PackageError] = {
     val url = releasesUrl(project)
-    val reqBuilder = HttpRequest.newBuilder(url.toURI)
-    // add the API key as bearer if needed
-    apiKey.foreach(key => reqBuilder.header("Authorization", "Bearer " + key))
-    val req = reqBuilder.GET().build()
+    val req = newRequest(url, token).GET().build()
     val response = try {
       Client.sendRequest(req)
     } catch {
@@ -97,24 +103,21 @@ object GitHub {
   /**
     * Publish a new release the given project.
     */
-  def publishRelease(project: Project, version: SemVer, artifacts: Iterable[Path], apiKey: String): Result[Unit, ReleaseError] = {
+  def publishRelease(project: Project, version: SemVer, artifacts: Iterable[Path], token: String): Result[Unit, ReleaseError] = {
     for (
-      _ <- verifyRelease(project, version, apiKey);
-      id <- createDraftRelease(project, version, apiKey);
-      _ <- Result.traverse(artifacts)(p => uploadAsset(p, project, id, apiKey));
-      _ <- markReleaseReady(project, version, id, apiKey)
+      _ <- verifyRelease(project, version, token);
+      id <- createDraftRelease(project, version, token);
+      _ <- Result.traverse(artifacts)(p => uploadAsset(p, project, id, token));
+      _ <- markReleaseReady(project, version, id, token)
     ) yield Ok(())
   }
 
   /**
     * Verifies that the release does not already exist.
     */
-  private def verifyRelease(project: Project, version: SemVer, apiKey: String): Result[Unit, ReleaseError] = {
+  private def verifyRelease(project: Project, version: SemVer, token: String): Result[Unit, ReleaseError] = {
     val url = releaseVersionUrl(project, version)
-    val req = HttpRequest.newBuilder(url.toURI)
-      .header("Authorization", "Bearer " + apiKey)
-      .GET()
-      .build()
+    val req = newRequest(url, Some(token)).GET().build()
 
     try {
       // Send request
@@ -137,7 +140,7 @@ object GitHub {
     *
     * Returns the ID of the release if successful.
     */
-  private def createDraftRelease(project: Project, version: SemVer, apiKey: String): Result[String, ReleaseError] = {
+  private def createDraftRelease(project: Project, version: SemVer, token: String): Result[String, ReleaseError] = {
     val content: JValue =
       ("tag_name" -> s"v$version") ~
         ("name" -> s"v$version") ~
@@ -147,8 +150,7 @@ object GitHub {
     val jsonCompact = compact(render(content))
 
     val url = releasesUrl(project)
-    val req = HttpRequest.newBuilder(url.toURI)
-      .header("Authorization", "Bearer " + apiKey)
+    val req = newRequest(url, Some(token))
       .header("Content-Type", "application/json")
       .POST(BodyPublishers.ofByteArray(jsonCompact.getBytes("utf-8")))
       .build()
@@ -185,12 +187,11 @@ object GitHub {
   /**
     * Uploads a single asset.
     */
-  private def uploadAsset(assetPath: Path, project: Project, releaseId: String, apiKey: String): Result[Unit, ReleaseError] = {
+  private def uploadAsset(assetPath: Path, project: Project, releaseId: String, token: String): Result[Unit, ReleaseError] = {
     val assetName = assetPath.getFileName.toString
 
     val url = releaseAssetUploadUrl(project, releaseId, assetName)
-    val req = HttpRequest.newBuilder(url.toURI)
-      .header("Authorization", "Bearer " + apiKey)
+    val req = newRequest(url, Some(token))
       .header("Content-Type", "application/octet-stream")
       .POST(BodyPublishers.ofFile(assetPath))
       .build()
@@ -215,13 +216,12 @@ object GitHub {
   /**
     * Mark the given release as no longer being a draft, making it publicly available.
     */
-  private def markReleaseReady(project: Project, version: SemVer, releaseId: String, apiKey: String): Result[Unit, ReleaseError] = {
+  private def markReleaseReady(project: Project, version: SemVer, releaseId: String, token: String): Result[Unit, ReleaseError] = {
     val content: JValue = "draft" -> false
     val jsonCompact = compact(render(content))
 
     val url = releaseIdUrl(project, releaseId)
-    val req = HttpRequest.newBuilder(url.toURI)
-      .header("Authorization", "Bearer " + apiKey)
+    val req = newRequest(url, Some(token))
       .header("Content-Type", "application/json")
       .method("PATCH", BodyPublishers.ofByteArray(jsonCompact.getBytes("utf-8")))
       .build()
@@ -259,7 +259,7 @@ object GitHub {
     * reaching a server at all.
     */
   def download(url: URL): Result[InputStream, PackageError] = {
-    val request = HttpRequest.newBuilder(url.toURI).GET().build()
+    val request = newRequest(url, None).GET().build()
 
     val response = try {
       Client.sendStreamingRequest(request)
@@ -307,8 +307,8 @@ object GitHub {
     * Finds the single `extension` asset in `project`'s `version` release by reading the REST API --
     * the fallback for when [[downloadReleaseAsset]]'s guessed name 404s.
     */
-  def findReleaseAsset(project: Project, version: SemVer, extension: String, apiKey: Option[String]): Result[Asset, PackageError] = {
-    getReleases(project, apiKey).flatMap { releases =>
+  def findReleaseAsset(project: Project, version: SemVer, extension: String, token: Option[String]): Result[Asset, PackageError] = {
+    getReleases(project, token).flatMap { releases =>
       releases.find(r => r.version == version) match {
         case None => Err(PackageError.VersionDoesNotExist(version, project))
         case Some(release) =>
@@ -397,6 +397,36 @@ object GitHub {
       case Some(semver) => semver
       case _ => throw new RuntimeException(s"Invalid semantic version: $str")
     }
+  }
+
+  /**
+    * Returns `true` if `url` is an address a token may be sent to.
+    *
+    * A token authorizes a request to GitHub, and is offered to nothing else. Not every address
+    * that is requested is GitHub's own: a jar is downloaded from wherever the manifest that
+    * declares it says, and a release asset is served from the storage it lives on rather than
+    * from GitHub itself. The scheme is part of the question, since a token that is sent in the
+    * clear is a token that has been given away.
+    */
+  def mayReceiveToken(url: URL): Boolean = {
+    val host = url.getHost
+    url.getProtocol == "https" && host != null && TokenHosts.contains(host.toLowerCase(Locale.ROOT))
+  }
+
+  /**
+    * Returns a builder for a request to `url`, carrying `token` if there is one to carry and
+    * `url` is an address it may be sent to.
+    *
+    * Every request is built here, so that whether it carries the token is decided in one place
+    * rather than separately at each call. Deciding it at each call is what left the download of
+    * a release asset anonymous while the listing that found it was authorized.
+    */
+  def newRequest(url: URL, token: Option[String]): HttpRequest.Builder = {
+    val builder = HttpRequest.newBuilder(url.toURI)
+    if (mayReceiveToken(url)) {
+      token.foreach(t => builder.header("Authorization", s"Bearer $t"))
+    }
+    builder
   }
 
   /** A thread-safe HTTP Client. */

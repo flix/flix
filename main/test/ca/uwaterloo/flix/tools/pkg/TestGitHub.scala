@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.util.Formatter
 import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
 
+import java.net.{URI, URL}
+
 @DoNotDiscover
 class TestGitHub extends AnyFunSuite {
 
@@ -44,5 +46,59 @@ class TestGitHub extends AnyFunSuite {
       case Err(e) => fail(s"Expected no such project, but got: ${e.message(Formatter.NoFormatter)}")
     }
   }
+
+  test("mayReceiveToken.01") {
+    // The hosts a token is for: the API, the addresses releases are downloaded from, and the
+    // one assets are uploaded to.
+    assert(GitHub.mayReceiveToken(mkUrl("https://api.github.com/repos/flix/museum-clerk/releases")))
+    assert(GitHub.mayReceiveToken(mkUrl("https://github.com/flix/museum-clerk/releases/download/v1.1.0/package.fpkg")))
+    assert(GitHub.mayReceiveToken(mkUrl("https://uploads.github.com/repos/flix/museum-clerk/releases/1/assets?name=package.fpkg")))
+  }
+
+  test("mayReceiveToken.02") {
+    // A host that is not GitHub's, including the storage a release asset is served from, a host
+    // that merely ends in one of GitHub's, and one that merely mentions it.
+    assert(!GitHub.mayReceiveToken(mkUrl("https://objects.githubusercontent.com/github-production-release-asset/1/2")))
+    assert(!GitHub.mayReceiveToken(mkUrl("https://github.com.example.com/flix/museum-clerk")))
+    assert(!GitHub.mayReceiveToken(mkUrl("https://example.com/github.com/flix/museum-clerk")))
+  }
+
+  test("mayReceiveToken.03") {
+    // A token that is sent in the clear is a token that has been given away.
+    assert(!GitHub.mayReceiveToken(mkUrl("http://github.com/flix/museum-clerk/releases/download/v1.1.0/package.fpkg")))
+  }
+
+  test("mayReceiveToken.04") {
+    // A host is the same host however it is written.
+    assert(GitHub.mayReceiveToken(mkUrl("https://API.GitHub.COM/repos/flix/museum-clerk/releases")))
+  }
+
+  test("newRequest.01") {
+    // A request to GitHub carries the token.
+    val url = mkUrl("https://api.github.com/repos/flix/museum-clerk/releases")
+    val req = GitHub.newRequest(url, Some("a-token")).GET().build()
+    assert(req.headers().firstValue("Authorization").orElse("") == "Bearer a-token")
+  }
+
+  test("newRequest.02") {
+    // A request to anywhere else carries none of it, however the token was come by. A jar is
+    // downloaded from wherever the manifest that declares it says, which is not GitHub's to
+    // choose and may be anyone's to write.
+    val url = mkUrl("https://example.com/museum-clerk.jar")
+    val req = GitHub.newRequest(url, Some("a-token")).GET().build()
+    assert(req.headers().firstValue("Authorization").isEmpty)
+  }
+
+  test("newRequest.03") {
+    // A request made without a token is made without authorization, rather than with an empty one.
+    val url = mkUrl("https://api.github.com/repos/flix/museum-clerk/releases")
+    val req = GitHub.newRequest(url, None).GET().build()
+    assert(req.headers().firstValue("Authorization").isEmpty)
+  }
+
+  /**
+    * Returns `s` as a URL.
+    */
+  private def mkUrl(s: String): URL = new URI(s).toURL
 
 }
