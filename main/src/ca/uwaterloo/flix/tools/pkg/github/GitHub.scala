@@ -84,8 +84,10 @@ object GitHub {
     val status = response.statusCode()
     if (status < 200 || status >= 300) {
       return status match {
+        case 401 if isAuthorized(url, token) => Err(PackageError.TokenRejected(url))
+        case 403 => Err(PackageError.DownloadRefused(url, status, retryAfter(response), isAuthorized(url, token)))
         case 404 => Err(PackageError.ProjectDoesNotExist(project, url))
-        case 403 | 429 => Err(PackageError.DownloadRefused(url, status, retryAfter(response)))
+        case 429 => Err(PackageError.DownloadRefused(url, status, retryAfter(response), isAuthorized(url, token)))
         case _ => Err(PackageError.DownloadFailed(url, status))
       }
     }
@@ -280,8 +282,9 @@ object GitHub {
         // A close failure must not shadow the status being reported.
         try response.body().close() catch { case _: IOException => () }
         status match {
-          case 403 => Err(PackageError.DownloadRefused(url, status, retryAfter(response)))
-          case 429 => Err(PackageError.DownloadRefused(url, status, retryAfter(response)))
+          case 401 if isAuthorized(url, token) => Err(PackageError.TokenRejected(url))
+          case 403 => Err(PackageError.DownloadRefused(url, status, retryAfter(response), isAuthorized(url, token)))
+          case 429 => Err(PackageError.DownloadRefused(url, status, retryAfter(response), isAuthorized(url, token)))
           case _ => Err(PackageError.DownloadFailed(url, status))
         }
     }
@@ -418,6 +421,15 @@ object GitHub {
     val host = url.getHost
     url.getProtocol == "https" && host != null && TokenHosts.contains(host.toLowerCase(Locale.ROOT))
   }
+
+  /**
+    * Returns `true` if a request to `url` carries `token`.
+    *
+    * What to say about a refusal turns on it: a client that carries no token can be told to set
+    * one, and a token that was never sent cannot be what a request was refused over.
+    */
+  private def isAuthorized(url: URL, token: Option[String]): Boolean =
+    token.nonEmpty && mayReceiveToken(url)
 
   /**
     * Returns a builder for a request to `url`, carrying `token` if there is one to carry and

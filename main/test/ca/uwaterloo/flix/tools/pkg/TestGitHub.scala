@@ -47,6 +47,29 @@ class TestGitHub extends AnyFunSuite {
     }
   }
 
+  test("getReleases.03") {
+    // A token GitHub will not accept is reported as a rejected token, rather than as a response
+    // nobody expected. The API answers 401 for one, where a request carrying none is let through.
+    val project = GitHub.Project("flix", "museum-clerk")
+    GitHub.getReleases(project, Some("not-a-token")) match {
+      case Ok(releases) => fail(s"Expected a rejected token, but got: $releases")
+      case Err(e: PackageError.TokenRejected) =>
+        // What the token is is not what the user is told.
+        assert(!e.message(Formatter.NoFormatter).contains("not-a-token"))
+      case Err(e) => fail(s"Expected a rejected token, but got: ${e.message(Formatter.NoFormatter)}")
+    }
+  }
+
+  test("downloadRefused.01") {
+    // A refusal tells a client that carries no token how to set one, and does not tell a client
+    // that already holds one to go and get a token it has.
+    val url = mkUrl("https://api.github.com/repos/flix/museum-clerk/releases")
+    val anonymous = PackageError.DownloadRefused(url, 403, None, authorized = false)
+    val authorized = PackageError.DownloadRefused(url, 403, None, authorized = true)
+    assert(anonymous.message(Formatter.NoFormatter).contains("GITHUB_TOKEN"))
+    assert(!authorized.message(Formatter.NoFormatter).contains("GITHUB_TOKEN"))
+  }
+
   test("downloadReleaseAsset.01") {
     // A release asset is downloaded with whatever token is held, and a release address ignores a
     // token it does not accept rather than refusing the request. A token that has gone stale in
