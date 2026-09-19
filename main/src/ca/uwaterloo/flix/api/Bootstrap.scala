@@ -260,9 +260,10 @@ object Bootstrap {
     *
     * `spec` is a package identifier with an optional version, e.g. `flix/museum-clerk` or
     * `flix/museum-clerk@1.1.0`, see [[PackageSpec.mkPackageSpec]]. A package that is asked for
-    * at no particular version is moved to its newest release. A version that is asked for is
-    * taken as it is asked for, which includes a version below the one that is declared: a
-    * declaration is a version to pin as well as a version to raise.
+    * at no particular version is moved to the newest release that shares a major with the
+    * version it is declared at, see [[selectUpgradeVersion]]. A version that is asked for is
+    * taken as it is asked for, which includes another major, and a version below the one that is
+    * declared: a declaration is a version to pin as well as a version to raise.
     *
     * Only the version changes. The mount and the security context are the ones that were
     * declared, which is what this command has over removing the package and adding it again, and
@@ -289,7 +290,7 @@ object Bootstrap {
     for {
       manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
       dep <- findDeclared(manifest, pkg.id)
-      version <- selectVersion(pkg, apiKey)
+      version <- selectUpgradeVersion(pkg, dep, apiKey)
       _ <- if (version == dep.version) {
         out.println(formatter.green(s"'${pkg.id}' already declares v$version."))
         Ok(())
@@ -351,14 +352,51 @@ object Bootstrap {
     case Some(version) => Ok(version)
     case None =>
       for {
-        project <- GitHub.parseProject(s"${pkg.id.owner}/${pkg.id.name}").mapErr(BootstrapError.FlixPackageError.apply)
-        releases <- GitHub.getReleases(project, apiKey).mapErr(BootstrapError.FlixPackageError.apply)
-        version <- releases.map(r => r.version).maxOption match {
+        versions <- releaseVersions(pkg.id, apiKey)
+        version <- versions.maxOption match {
           case Some(v) => Ok(v)
           case None => Err(BootstrapError.NoReleases(pkg.id))
         }
       } yield version
   }
+
+  /**
+    * Returns the version to declare `dep` at: the one that `pkg` asks for, if it asks for one,
+    * and otherwise the newest release that shares a major with the version that is declared.
+    *
+    * A major is a compatibility boundary, both for what a package can be built alongside -- see
+    * [[FlixPackageManager.selectVersion]] -- and for what the code that uses it can expect, so
+    * an upgrade that is not asked for a version stays within the major that is declared. A newer
+    * major is reported rather than taken: it is there to move to, but not without being asked
+    * for by name.
+    *
+    * The version that is declared is never lowered, whatever was released: a package whose
+    * declared version is newer than any release of its major stays where it is.
+    */
+  private def selectUpgradeVersion(pkg: PackageSpec, dep: Dependency.FlixDependency, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[SemVer, BootstrapError] = pkg.version match {
+    case Some(version) => Ok(version)
+    case None =>
+      releaseVersions(pkg.id, apiKey).flatMap { versions =>
+        if (versions.isEmpty) {
+          Err(BootstrapError.NoReleases(pkg.id))
+        } else {
+          versions.filter(v => v.major > dep.version.major).maxOption.foreach { newer =>
+            out.println(s"A newer major of ${formatter.blue(pkg.id.toString)} is available: ${formatter.yellow(s"v$newer")}.")
+            out.println(s"Ask for it by name to move to it: ${formatter.cyan(s"flix upgrade ${pkg.id.owner}/${pkg.id.name}@$newer")}.")
+          }
+          Ok((dep.version :: versions.filter(v => v.major == dep.version.major)).max)
+        }
+      }
+  }
+
+  /**
+    * Returns the versions of `id` that have been released.
+    */
+  private def releaseVersions(id: PackageId, apiKey: Option[String]): Result[List[SemVer], BootstrapError] =
+    for {
+      project <- GitHub.parseProject(s"${id.owner}/${id.name}").mapErr(BootstrapError.FlixPackageError.apply)
+      releases <- GitHub.getReleases(project, apiKey).mapErr(BootstrapError.FlixPackageError.apply)
+    } yield releases.map(r => r.version)
 
   /**
     * Returns the mount to declare the dependency on `id` under.

@@ -388,10 +388,11 @@ class TestBootstrap extends AnyFunSuite {
   }
 
   test("upgrade.02") {
-    // A package that is asked for at no version is declared at its newest release.
+    // A package that is asked for at no version is moved to the newest release of the major it
+    // is declared at, and the newer major is offered rather than taken. museum-clerk is
+    // declared at 1.0.0 and has released 1.1.0 as well as 2.x.
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
-    val pkg = PackageId(Repository.GitHub, "jaschdoc", "flix-test-pkg-eff-upgrade")
     Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
       s"""
          |[package]
@@ -399,13 +400,22 @@ class TestBootstrap extends AnyFunSuite {
          |flix = "${Version.CurrentVersion}"
          |
          |[dependencies]
-         |"$pkg" = { version = "0.1.0", mount = "Eff" }
+         |"$ClerkIdentifier" = { version = "1.0.0", mount = "Clerk" }
          |""".stripMargin)
 
-    upgrade(p, s"jaschdoc/${pkg.name}").unsafeGet
+    val bytes = new ByteArrayOutputStream()
+    Bootstrap.upgrade(p, "flix/museum-clerk", PkgTestUtils.gitHubToken)(Formatter.NoFormatter, new PrintStream(bytes)).unsafeGet
 
-    val releases = GitHub.getReleases(GitHub.Project(pkg.owner, pkg.name), PkgTestUtils.gitHubToken).unsafeGet
-    assert(flixDependency(p, pkg).version == releases.map(r => r.version).max)
+    val releases = GitHub.getReleases(GitHub.Project("flix", "museum-clerk"), PkgTestUtils.gitHubToken).unsafeGet
+    val versions = releases.map(r => r.version)
+    val newestOfMajor = versions.filter(v => v.major == 1).max
+    assert(flixDependency(p, ClerkIdentifier).version == newestOfMajor)
+
+    // The newest release is of a newer major, and is named rather than taken.
+    val newest = versions.max
+    assert(newest.major > 1)
+    assert(flixDependency(p, ClerkIdentifier).version != newest)
+    assert(bytes.toString.contains(s"flix upgrade flix/museum-clerk@$newest"))
   }
 
   test("upgrade.03") {
