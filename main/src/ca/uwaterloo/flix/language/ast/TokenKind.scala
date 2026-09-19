@@ -168,7 +168,6 @@ sealed trait TokenKind {
       case TokenKind.LiteralStringInterpolationR => "'}\"'"
       case TokenKind.MapHash => "'Map#'"
       case TokenKind.Minus => "'-'"
-      case TokenKind.NameHyphenated => "<hyphenated name>"
       case TokenKind.NameLowercase => "<name>"
       case TokenKind.NameMath => "<math name>"
       case TokenKind.NameUppercase => "<Name>"
@@ -969,8 +968,6 @@ object TokenKind {
   case object MapHash extends TokenKind
 
   case object Minus extends TokenKind
-
-  case object NameHyphenated extends TokenKind
 
   case object NameLowercase extends TokenKind
 

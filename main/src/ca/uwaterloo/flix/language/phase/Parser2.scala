@@ -688,7 +688,7 @@ object Parser2 {
   private val NAME_JAVA: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase)
   private val NAME_QNAME: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase)
   private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase, TokenKind.NameMath, TokenKind.GenericOperator)
-  private val NAME_PACKAGE: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase, TokenKind.NameHyphenated)
+  private val NAME_PACKAGE: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase)
   private val NAME_FIELD: Set[TokenKind] = Set(TokenKind.NameLowercase)
   private val NAME_LOWERCASE: Set[TokenKind] = Set(TokenKind.NameLowercase)
   // TODO: Static is used as a type in Prelude.flix. Static is also an expression.

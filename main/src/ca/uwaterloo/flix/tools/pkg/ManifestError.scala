@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId}
+import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Formatter
 
 import java.nio.file.Path
@@ -103,17 +104,17 @@ object ManifestError {
          |""".stripMargin
 
     private def reason: String =
-      if (Mountpoint.startsWithKeyword(mount))
-        s"A mount is written before '::' in a use, where '${mount.takeWhile(_ != '-')}' would be read as a keyword."
+      if (Lexer.isKeyword(mount))
+        s"A mount is written before '::' in a use, where '$mount' would be read as a keyword."
       else
-        "A mount is a letter followed by letters, digits, or underscores. It may continue with groups of the same form, each after a hyphen, e.g. 'tic-tac-toe'."
+        "A mount is a letter followed by letters, digits, or underscores, e.g. 'ticTacToe'."
   }
 
   case class FlixDependencyDuplicateMount(path: Path, mount: Mountpoint, lib1: PackageId, lib2: PackageId) extends ManifestError {
     override def message(f: Formatter): String =
       s"""The Flix dependencies ${f.bold(lib1.toString)} and ${f.bold(lib2.toString)} share the mount ${f.red(mount.toString)}.
          |Every Flix dependency must have a distinct mount. Specify one explicitly:
-         |  "$lib2" = { version = "x.y.z", mount = "other-name" }
+         |  "$lib2" = { version = "x.y.z", mount = "otherName" }
          |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
