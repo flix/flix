@@ -241,7 +241,7 @@ object PackageError {
     // TODO: Maybe collect list of errors that can all be displayed in a single error message.
     override def message(f: Formatter): String = {
       s"""${f.underline("Found security violation in the dependency graph:")}
-         |  Dependency '$dependency' of package ${manifest.name} requires security context '${dependency.sctx}' but context '$sctx' was given.
+         |  Dependency '$dependency' of package ${manifest.displayName} requires security context '${dependency.sctx}' but context '$sctx' was given.
          |
          |  There are several possible actions:
          |    - Remove the offending dependency
@@ -262,7 +262,7 @@ object PackageError {
     // TODO: Maybe collect list of errors that can all be displayed in a single error message.
     override def message(f: Formatter): String = {
       s"""${f.underline("Found security violation in the dependency graph:")}
-         |  Project '${manifest.name}' declares Java dependency '$dependency' which requires security context '${SecurityContext.Unrestricted}' but only $sctx was given.
+         |  Project '${manifest.displayName}' declares Java dependency '$dependency' which requires security context '${SecurityContext.Unrestricted}' but only $sctx was given.
          |
          |  There are several possible actions:
          |    - Remove the offending dependency
@@ -304,7 +304,7 @@ object PackageError {
   case class IncompatibleVersions(identifier: PackageId, requirements: List[(Manifest, FlixDependency)]) extends PackageError {
     override def message(f: Formatter): String = {
       val lines = requirements.map {
-        case (dependent, dep) => s"    ${f.bold(dep.version.toString)} required by '${dependent.name}'"
+        case (dependent, dep) => s"    ${f.bold(dep.version.toString)} required by '${dependent.displayName}'"
       }
       s"""${f.underline("Found incompatible versions of the same package in the dependency graph:")}
          |  The package '${f.red(identifier.toString)}' is required at versions that do not share a major version:

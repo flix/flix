@@ -84,7 +84,9 @@ object ManifestParser {
     for (
       _ <- checkKeys(parser, p);
 
-      name <- getRequiredStringProperty("package.name", parser, p);
+      // `package.name` is still accepted, but it is not read: a package is named by the
+      // repository it is published as, which is what a dependent addresses it by. A `name` that
+      // disagreed with the repository named nothing at all.
 
       version <- getRequiredStringProperty("package.version", parser, p);
       versionSemVer <- toFlixVer(version, p);
@@ -105,7 +107,7 @@ object ManifestParser {
       jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
       jarDepsList <- collectDependencies(jarDeps, flixDep = false, jarDep = true, p)
 
-    ) yield Manifest(name, versionSemVer, githubProject, flixSemVer, depsList ++ mvnDepsList ++ jarDepsList)
+    ) yield Manifest(versionSemVer, githubProject, flixSemVer, depsList ++ mvnDepsList ++ jarDepsList)
   }
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {

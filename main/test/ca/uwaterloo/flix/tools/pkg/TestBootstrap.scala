@@ -19,6 +19,17 @@ class TestBootstrap extends AnyFunSuite {
 
   private val ProjectPrefix: String = "flix-project-"
 
+  /** Returns the path of the package that `build-pkg` builds at `p`. */
+  private def packagePath(p: Path): Path =
+    p.resolve("artifact").resolve(Bootstrap.PACKAGE_FPKG)
+
+  /** Creates a project that can be packaged. Returns the project directory. */
+  private def mkPackageProject(): Path = {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    p
+  }
+
   test("init") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
@@ -239,29 +250,25 @@ class TestBootstrap extends AnyFunSuite {
   }
 
   test("build-pkg") {
-    val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p)(System.out)
+    val p = mkPackageProject()
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault)
+    b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault).unsafeGet
 
-    val packageName = p.getFileName.toString
-    val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
-    assert(Files.exists(packagePath))
-    assert(packagePath.getFileName.toString.startsWith(ProjectPrefix))
+    // The package has a fixed name, and is not named after the directory it is built in: a
+    // release asset has to be found again from the repository and the version alone.
+    assert(Files.exists(packagePath(p)))
+    assert(!packagePath(p).getFileName.toString.startsWith(ProjectPrefix))
   }
 
   test("build-pkg generates ZIP entries with fixed time") {
-    val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p)(System.out)
+    val p = mkPackageProject()
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault)
+    b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault).unsafeGet
 
-    val packageName = p.getFileName.toString
-    val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
     val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-    for (e <- new ZipFile(packagePath.toFile).entries().asScala) {
+    for (e <- new ZipFile(packagePath(p).toFile).entries().asScala) {
       val time = new Date(e.getTime)
       val formatted = format.format(time)
       assert(formatted == "2014-06-27 00:00:00")
@@ -269,22 +276,19 @@ class TestBootstrap extends AnyFunSuite {
   }
 
   test("build-pkg always generates package that is byte-for-byte exactly the same") {
-    val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p)(System.out)
-    val packageName = p.getFileName.toString
-    val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
+    val p = mkPackageProject()
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val flix = PkgTestUtils.mkFlix(b)
     b.build(flix)
 
-    b.buildPkg(flix)(Formatter.getDefault)
+    b.buildPkg(flix)(Formatter.getDefault).unsafeGet
 
-    val hash1 = Sha256.ofFile(packagePath)
+    val hash1 = Sha256.ofFile(packagePath(p))
 
-    b.buildPkg(flix)(Formatter.getDefault)
+    b.buildPkg(flix)(Formatter.getDefault).unsafeGet
 
-    val hash2 = Sha256.ofFile(packagePath)
+    val hash2 = Sha256.ofFile(packagePath(p))
 
     assert(
       hash1 == hash2,
@@ -292,8 +296,7 @@ class TestBootstrap extends AnyFunSuite {
   }
 
   test("build-pkg refuses a project that does not check") {
-    val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p)(System.out)
+    val p = mkPackageProject()
     // A public module in a file whose path does not match its name.
     Files.writeString(p.resolve("src").resolve("Bar.flix"), "pub mod Foo { pub def f(): Int32 = 1 }")
 
@@ -301,9 +304,7 @@ class TestBootstrap extends AnyFunSuite {
     val result = b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault)
     assert(result.toOption.isEmpty)
 
-    val packageName = p.getFileName.toString
-    val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
-    assert(!Files.exists(packagePath))
+    assert(!Files.exists(packagePath(p)))
   }
 
   test("run") {

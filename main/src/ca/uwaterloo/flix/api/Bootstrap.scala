@@ -87,10 +87,14 @@ object Bootstrap {
     FileOps.newDirectoryIfAbsent(workflowsDirectory)
 
     FileOps.newFileIfAbsent(manifestFile) {
+      // The repository is written out commented: it cannot be guessed here, and a package must
+      // declare it before it can be built, since the `.fpkg` is named after it.
       s"""[package]
-         |name    = "$packageName"
          |version = "0.1.0"
          |flix    = "${Version.CurrentVersion}"
+         |
+         |# The repository the package is published as. Required to publish it with `release`.
+         |# repository = "github:<owner>/$packageName"
          |""".stripMargin
     }
 
@@ -192,6 +196,14 @@ object Bootstrap {
 
   /** The manifest / flix toml file name. */
   val FLIX_TOML: String = s"flix.$EXT_TOML"
+
+  /**
+    * The package file name.
+    *
+    * A constant, like [[FLIX_TOML]]: the two assets of a release are found at addresses that
+    * follow from the repository and the version alone, without reading anything.
+    */
+  val PACKAGE_FPKG: String = s"package.$EXT_FPKG"
 
   /** The lock file name. */
   val PACKAGES_LOCK: String = "packages.lock"
@@ -335,8 +347,13 @@ object Bootstrap {
 
   /**
     * Returns the path to the pkg file based on the given path `p`.
+    *
+    * The file is named [[PACKAGE_FPKG]], and not after the directory it is built in: a release
+    * asset has to be found again by whoever depends on the package, and only a fixed name
+    * follows from the repository and the version alone.
     */
-  private def getPkgFile(p: Path): Path = getArtifactDirectory(p).resolve(getPackageName(p) + s".$EXT_FPKG").normalize()
+  private def getPkgFile(p: Path): Path =
+    getArtifactDirectory(p).resolve(PACKAGE_FPKG).normalize()
 
   /**
     * Returns `true` if the given path `p` is a jar-file.
@@ -1210,7 +1227,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def stat(flix: Flix)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
     typeCheck(flix).map { root =>
-      val header = optManifest.map(m => s"${m.name} ${m.version}")
+      val header = optManifest.map(m => s"${m.displayName} ${m.version}")
       out.println(Stat.format(header, Stat.compute(root)))
     }
   }

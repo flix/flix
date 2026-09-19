@@ -19,12 +19,20 @@ package ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 
-case class Manifest(name: String,
-                    version: SemVer,
+case class Manifest(version: SemVer,
                     repository: Option[GitHub.Project],
                     flix: SemVer,
                     dependencies: List[Dependency]) {
   def flixDependencies: List[Dependency.FlixDependency] = dependencies.collect { case dep: Dependency.FlixDependency => dep }
+
+  /**
+    * Returns how this package is named in a message.
+    *
+    * A package is named by the repository it is published as, and by nothing else: that is what
+    * a dependent writes to declare it, and what its release assets are found under. A package
+    * that declares no repository cannot be addressed, and so has no name to give.
+    */
+  def displayName: String = repository.map(_.toString).getOrElse(Manifest.Unnamed)
 
   /**
     * Returns the mount table of this manifest: the name of each mount to the identifier of the
@@ -39,6 +47,9 @@ case class Manifest(name: String,
 }
 
 object Manifest {
+
+  /** How a package that declares no repository is named in a message. */
+  val Unnamed: String = "<unnamed>"
 
   /**
     * Formats `manifest` as a string / a valid `.toml` file.
@@ -57,13 +68,11 @@ object Manifest {
   private def mkPackageSection(manifest: Manifest): TomlSection = {
     val repository = manifest.repository.map(proj => TomlEntry.Present(TomlKey("repository"), TomlExp.TomlValue(s"github:$proj")))
       .getOrElse(TomlEntry.Absent)
-    val name = TomlEntry.Present(TomlKey("name"), TomlExp.TomlValue(manifest.name))
     val version = TomlEntry.Present(TomlKey("version"), TomlExp.TomlValue(manifest.version))
     val flixVersion = TomlEntry.Present(TomlKey("flix"), TomlExp.TomlValue(manifest.flix))
 
     TomlSection("package",
       List(
-        name,
         version,
         repository,
         flixVersion,
