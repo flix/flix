@@ -104,14 +104,20 @@ object Weeder2 {
 
   private def visitUse(tree: Tree)(implicit sctx: SharedContext): List[UseOrImport] = {
     expect(tree, TreeKind.UsesOrImports.Use)
-    val pkg = tryPick(TreeKind.UsesOrImports.Package, tree).map(pickNameIdent)
+    val maybePackage = tryPick(TreeKind.UsesOrImports.Package, tree)
+    val pkg = maybePackage.map(pickNameIdent)
     val maybeUseMany = tryPick(TreeKind.UsesOrImports.UseMany, tree)
     tryPickQName(tree) match {
       // case: No name. The use many follows the package directly, e.g. `use flixball::{Game, Board}`.
       case None => maybeUseMany match {
         case Some(useMany) => visitUseMany(useMany, Name.NName(Nil, useMany.loc), pkg)
-        // The parser has already reported the missing name.
-        case None => List.empty
+        // The parser has already reported the missing name. A dangling `use flixball::` keeps its
+        // package, followed by an empty name, so that the name can be completed.
+        case None => maybePackage.toList.map { t =>
+          val loc = SourceLocation(isReal = true, t.loc.source, t.loc.end, t.loc.end)
+          val ident = Name.Ident("", loc)
+          UseOrImport.Use(pkg, Name.QName(Name.NName(Nil, loc), ident, loc), ident, loc)
+        }
       }
 
       case Some(qname) =>

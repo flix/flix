@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.provider.completion.*
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.SourceName
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, SourceName}
 import ca.uwaterloo.flix.language.ast.shared.{SyntacticContext, TraitUsageKind}
 import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError, WeederError}
 
@@ -51,7 +51,9 @@ object CompletionProvider {
           ExprSnippetCompleter.generateDefaultHandlerSnippet("@DefaultHandler template", Range.from(err.loc)) ::
             AnnotationCompleter.getAnnotations(err.name, Range.from(err.loc))
 
-        case err: WeederError.UnqualifiedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
+        case err: WeederError.UnqualifiedUse =>
+          val range = Range.from(err.loc)
+          UseCompleter.getCompletions(err.qn, range) ++ UseCompleter.getMountCompletions(err.qn.ident.name, range, separator = true)
 
         case err: ResolutionError.UndefinedTag =>
           val ap = err.ap
@@ -102,8 +104,14 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedOp => HandlerCompleter.getCompletions(err.op, Range.from(err.loc))
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
         case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err.qn, err.traitUseKind, Range.from(err.loc), err.ap, err.scp)
-        // A use that names a package is looked up in that package, not in the root namespace.
-        case err: ResolutionError.UndefinedUse if err.pkg.isEmpty => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
+        case err: ResolutionError.UndefinedPackage =>
+          UseCompleter.getMountCompletions(err.pkg.name, Range.from(err.pkg.loc), separator = false)
+
+        case err: ResolutionError.UndefinedUse => err.pkg match {
+          case None => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
+          case Some(pkg) =>
+            flix.rootMounts.get(Mountpoint(pkg.name)).toList.flatMap(id => UseCompleter.getPackageCompletions(pkg, id, err.qn, err.loc))
+        }
 
         case err: TypeError.FieldNotFound =>
           MagicMatchCompleter.getCompletions(err.tpe, Range.from(err.loc), err.base) ++
