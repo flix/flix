@@ -339,4 +339,20 @@ object PackageError {
          |""".stripMargin
     }
   }
+
+  /**
+    * An error raised to indicate that the package `identifier` requires a newer version of Flix
+    * than the one that is running.
+    *
+    * @param identifier the package.
+    * @param version    the version the package is built at.
+    * @param required   the oldest version of Flix the package can be built with.
+    * @param current    the version of Flix that is running.
+    */
+  case class FlixVersionTooOld(identifier: PackageId, version: SemVer, required: SemVer, current: SemVer) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""The package '${f.red(identifier.toString)}' ${f.bold(version.toString)} requires Flix version ${f.bold(required.toString)}, but the current version is ${f.red(current.toString)}.
+         |Please upgrade to Flix ${f.bold(required.toString)} or newer.
+         |""".stripMargin
+  }
 }
