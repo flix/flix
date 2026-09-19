@@ -50,9 +50,10 @@ object GitHub {
   /**
     * An asset from a GitHub project release.
     *
-    * `url` is the link to download the asset.
+    * `url` is its `browser_download_url`; `apiUrl` is its REST API asset URL. See
+    * [[downloadAsset]] for how each is used.
     */
-  case class Asset(name: String, url: URL)
+  case class Asset(name: String, url: URL, apiUrl: URL)
 
   /**
     * Lists the project's releases.
@@ -243,6 +244,13 @@ object GitHub {
     */
   def download(url: URL): Result[InputStream, PackageError] = {
     val request = HttpRequest.newBuilder(url.toURI).GET().build()
+    download(url, request)
+  }
+
+  /**
+    * Sends `request` and returns its streamed body if its response is successful.
+    */
+  private def download(url: URL, request: HttpRequest): Result[InputStream, PackageError] = {
 
     val response = try {
       Client.sendStreamingRequest(request)
@@ -256,12 +264,17 @@ object GitHub {
       case status =>
         // A close failure must not shadow the status being reported.
         try response.body().close() catch { case _: IOException => () }
-        status match {
-          case 403 => Err(PackageError.DownloadRefused(url, status, retryAfter(response)))
-          case 429 => Err(PackageError.DownloadRefused(url, status, retryAfter(response)))
-          case _ => Err(PackageError.DownloadFailed(url, status))
-        }
+        Err(downloadFailure(url, status, retryAfter(response)))
     }
+  }
+
+  /**
+    * Classifies an unsuccessful download response.
+    */
+  private[github] def downloadFailure(url: URL, status: Int, retryAfter: Option[String]): PackageError = status match {
+    case 403 => PackageError.DownloadRefused(url, status, retryAfter)
+    case 429 => PackageError.DownloadRefused(url, status, retryAfter)
+    case _ => PackageError.DownloadFailed(url, status)
   }
 
   /**
@@ -329,9 +342,30 @@ object GitHub {
 
   /**
     * Downloads the given asset.
+    *
+    * Uses the REST API asset endpoint with bearer authentication when `apiKey` is given.
+    * Otherwise, uses the asset's browser download URL. The caller closes the returned stream.
     */
-  def downloadAsset(asset: Asset): InputStream =
-    asset.url.openStream()
+  def downloadAsset(asset: Asset, apiKey: Option[String]): Result[InputStream, PackageError] =
+    tryApiThenPublic(apiKey)(download(asset.url)) { key =>
+      val request = HttpRequest.newBuilder(asset.apiUrl.toURI)
+        .header("Accept", "application/octet-stream")
+        .header("Authorization", "Bearer " + key)
+        .GET()
+        .build()
+      download(asset.apiUrl, request)
+    }
+
+  /**
+    * Returns `apiAttempt` applied to the key when `apiKey` is given, or `publicAttempt` otherwise.
+    *
+    * Package-private to allow testing the selection without network access.
+    */
+  private[github] def tryApiThenPublic[A](apiKey: Option[String])(publicAttempt: => A)(apiAttempt: String => A): A =
+    apiKey match {
+      case None => publicAttempt
+      case Some(key) => apiAttempt(key)
+    }
 
   /**
     * Returns the URL that returns data related to the project's releases.
@@ -378,11 +412,15 @@ object GitHub {
 
   /**
     * Parses an Asset JSON.
+    *
+    * Package-private so the split between the browser and REST API URLs can be tested without a
+    * network.
     */
-  private def parseAsset(asset: JValue): Asset = {
+  private[github] def parseAsset(asset: JValue): Asset = {
     val url = asset \ "browser_download_url"
+    val apiUrl = asset \ "url"
     val name = asset \ "name"
-    Asset(name.values.toString, new URI(url.values.toString).toURL)
+    Asset(name.values.toString, new URI(url.values.toString).toURL, new URI(apiUrl.values.toString).toURL)
   }
 
   /**
