@@ -205,12 +205,16 @@ object FlixPackageManager {
     out.println("Downloading Flix dependencies...")
 
     // Every dependency declaration, paired with the manifest of the package it resolves to.
+    // The version installed is the manifest's own, not the one the declaration asks for: a
+    // declaration says what its dependent requires, and the manifest is what the resolution
+    // settled on. That is also the version recorded in the lock file, since the lock file
+    // describes what was installed.
     val installed = resolution.manifestToFlixDeps.map { case (manifest, dep) =>
       val depName: String = s"${dep.id.owner}/${dep.id.name}"
-      install(dep, Bootstrap.EXT_FPKG, projectRoot, apiKey, lockfile) match {
+      install(dep, manifest.version, Bootstrap.EXT_FPKG, projectRoot, apiKey, lockfile) match {
         case Ok(fpkg) =>
           val pkg = InstalledPackage(fpkg.path, dep.id, resolution.security(manifest), manifest.mounts)
-          val entry = LockEntry(dep.version, resolution.tomlDigests(manifest), fpkg.digest)
+          val entry = LockEntry(manifest.version, resolution.tomlDigests(manifest), fpkg.digest)
           (pkg, dep.id -> entry)
         case Err(e) =>
           out.println(s"ERROR: Installation of `$depName' failed.")
@@ -223,7 +227,10 @@ object FlixPackageManager {
   }
 
   /**
-    * Installs the `extension` file of the Github package `dep` depends on.
+    * Installs the `extension` file of the Github package `dep` depends on, at `version`.
+    *
+    * `version` is the version to install. It is not read off `dep`, because a declaration says
+    * what its dependent requires, which is not in general what the resolution installs.
     *
     * The package is installed at `lib/<owner>/<repo>`
     *
@@ -236,9 +243,8 @@ object FlixPackageManager {
     * `flix.toml` is parsed and an `.fpkg` becomes a source of code as soon as they are installed,
     * and checking afterwards would mean having already acted on bytes that were never verified.
     */
-  private def install(dep: FlixDependency, extension: String, p: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[InstalledFile, PackageError] = {
+  private def install(dep: FlixDependency, version: SemVer, extension: String, p: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[InstalledFile, PackageError] = {
     val proj = GitHub.Project(dep.id.owner, dep.id.name)
-    val version = dep.version
     val lib = Bootstrap.getLibraryDirectory(p)
     val assetName = s"${proj.repo}-$version.$extension"
     val dirPath = lib.resolve("github").resolve(proj.owner).resolve(proj.repo).resolve(version.toString)
@@ -248,7 +254,7 @@ object FlixPackageManager {
 
     if (Files.exists(assetPath)) {
       out.println(s"  Cached `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")}).")
-      verifyCached(assetPath, dep, extension, lockfile)
+      verifyCached(assetPath, dep, version, extension, lockfile)
     } else {
       GitHub.getSpecificRelease(proj, version, apiKey).flatMap { release =>
         val assets = release.assets.filter(_.name.endsWith(s".$extension"))
@@ -286,7 +292,7 @@ object FlixPackageManager {
           }
           if (Files.exists(assetPath)) {
             out.println(s"OK.")
-            verifyDownloaded(assetPath, dep, extension, lockfile)
+            verifyDownloaded(assetPath, dep, version, extension, lockfile)
           } else {
             out.println(s"ERROR: File was not created.")
             Err(PackageError.DownloadError(asset, None))
@@ -316,11 +322,11 @@ object FlixPackageManager {
     * Returns the file at `path`, which was already in `lib/`, together with its digest, and an
     * error if `lockfile` records a different digest for it.
     */
-  private def verifyCached(path: Path, dep: FlixDependency, extension: String, lockfile: Lockfile): Result[InstalledFile, PackageError] = {
+  private def verifyCached(path: Path, dep: FlixDependency, version: SemVer, extension: String, lockfile: Lockfile): Result[InstalledFile, PackageError] = {
     digest(path).flatMap { file =>
-      recordedDigest(dep, extension, lockfile) match {
+      recordedDigest(dep, version, extension, lockfile) match {
         case Some(expected) if expected != file.digest =>
-          Err(PackageError.MismatchedCachedDigest(dep.id, dep.version, extension, path, expected, file.digest))
+          Err(PackageError.MismatchedCachedDigest(dep.id, version, extension, path, expected, file.digest))
         case _ =>
           Ok(file)
       }
@@ -331,11 +337,11 @@ object FlixPackageManager {
     * Returns the file at `path`, which was just downloaded, together with its digest, and an
     * error if `lockfile` records a different digest for it.
     */
-  private def verifyDownloaded(path: Path, dep: FlixDependency, extension: String, lockfile: Lockfile): Result[InstalledFile, PackageError] = {
+  private def verifyDownloaded(path: Path, dep: FlixDependency, version: SemVer, extension: String, lockfile: Lockfile): Result[InstalledFile, PackageError] = {
     digest(path).flatMap { file =>
-      recordedDigest(dep, extension, lockfile) match {
+      recordedDigest(dep, version, extension, lockfile) match {
         case Some(expected) if expected != file.digest =>
-          Err(PackageError.MismatchedDownloadedDigest(dep.id, dep.version, extension, path, expected, file.digest))
+          Err(PackageError.MismatchedDownloadedDigest(dep.id, version, extension, path, expected, file.digest))
         case _ =>
           Ok(file)
       }
@@ -344,15 +350,15 @@ object FlixPackageManager {
 
   /**
     * Returns the digest that `lockfile` records for the `extension` file of the package `dep`
-    * depends on, if it records one at that version.
+    * depends on, if it records one at `version`.
     *
     * A package that `lockfile` does not record, or records at another version, has no digest
     * here and so is not checked. That is a dependency that was added or whose version was
     * changed since the lock file was written, and there is nothing yet to compare it against.
     * It is recorded when the lock file is written again.
     */
-  private def recordedDigest(dep: FlixDependency, extension: String, lockfile: Lockfile): Option[Sha256] = {
-    lockfile.packages.get(dep.id).filter(_.version == dep.version).flatMap {
+  private def recordedDigest(dep: FlixDependency, version: SemVer, extension: String, lockfile: Lockfile): Option[Sha256] = {
+    lockfile.packages.get(dep.id).filter(_.version == version).flatMap {
       entry =>
         // A package is installed as exactly these two files, and the lock file holds a digest of
         // each. Anything else is not something a lock file describes.
@@ -378,11 +384,11 @@ object FlixPackageManager {
       // download toml files
       tomlFiles <- traverse(flixDeps) { dep =>
         val depName = s"${dep.id.owner}/${dep.id.name}"
-        install(dep, Bootstrap.EXT_TOML, path, apiKey, lockfile).map(toml => (toml, dep))
+        install(dep, dep.version, Bootstrap.EXT_TOML, path, apiKey, lockfile).map(toml => (toml, dep))
       }
 
       // parse manifests
-      transitiveManifests <- traverse(tomlFiles) { case (toml, d) => validateManifest(toml, d) }
+      transitiveManifests <- traverse(tomlFiles) { case (toml, d) => validateManifest(toml, d, d.version) }
 
     } yield {
       for (m <- transitiveManifests) {
@@ -404,18 +410,20 @@ object FlixPackageManager {
     }
   }
 
-  /** Parses and validates the manifest in `toml`
-    * w.r.t. `d` by checking that declared and required versions match.
+  /** Parses and validates the manifest in `toml` by checking that it declares `version`, the
+    * version that was downloaded.
+    *
+    * `version` is passed rather than read off `flixDep` for the reason given on [[install]].
     *
     * Also mutates `manifestToDep` by adding or updating the mapping `m -> ds` to `m -> d :: ds`,
     * and records the digest of the file `m` was parsed from in `tomlDigests`.
     */
-  private def validateManifest(toml: InstalledFile, flixDep: FlixDependency)(implicit manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]], tomlDigests: mutable.Map[Manifest, Sha256]): Result[Manifest, PackageError] = {
+  private def validateManifest(toml: InstalledFile, flixDep: FlixDependency, version: SemVer)(implicit manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]], tomlDigests: mutable.Map[Manifest, Sha256]): Result[Manifest, PackageError] = {
     parseManifest(toml.path).flatMap {
       m =>
         manifestToDep.put(m, flixDep :: manifestToDep.getOrElse(m, List.empty))
         tomlDigests.put(m, toml.digest)
-        if (m.version == flixDep.version) {
+        if (m.version == version) {
           Ok(m)
         } else {
           Err(PackageError.MismatchedVersions(m, flixDep))
