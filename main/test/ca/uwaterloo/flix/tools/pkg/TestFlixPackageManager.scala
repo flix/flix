@@ -719,6 +719,56 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     FlixPackageManager.resolveSecurityLevels(resolution).security(shared)
   }
 
+  test("checkFlixVersions.01") {
+    // A package that requires a newer Flix than the one that is running.
+    val resolution = mkResolutionOf(origin = "0.33.0", a = "0.80.0", b = "0.33.0")
+    assertResult(expected = List(PackageError.FlixVersionTooOld(PackageId(Repository.GitHub, "flix", "a"), SemVer(0, 1, 0), SemVer(0, 80, 0), SemVer(0, 76, 0))))(
+      actual = FlixPackageManager.checkFlixVersions(resolution, SemVer(0, 76, 0))
+    )
+  }
+
+  test("checkFlixVersions.02") {
+    // A package that requires the Flix that is running, or an older one, can be built.
+    val resolution = mkResolutionOf(origin = "0.33.0", a = "0.76.0", b = "0.10.0")
+    assertResult(expected = Nil)(actual = FlixPackageManager.checkFlixVersions(resolution, SemVer(0, 76, 0)))
+  }
+
+  test("checkFlixVersions.03") {
+    // The project is not checked here: whoever read its manifest knows where it came from.
+    val resolution = mkResolutionOf(origin = "0.80.0", a = "0.33.0", b = "0.33.0")
+    assertResult(expected = Nil)(actual = FlixPackageManager.checkFlixVersions(resolution, SemVer(0, 76, 0)))
+  }
+
+  test("checkFlixVersions.04") {
+    // Every package that cannot be built is reported, in order of identifier.
+    val resolution = mkResolutionOf(origin = "0.33.0", a = "0.80.0", b = "0.90.0")
+    assertResult(expected = List("github:flix/a", "github:flix/b"))(
+      actual = FlixPackageManager.checkFlixVersions(resolution, SemVer(0, 76, 0)).collect {
+        case e: PackageError.FlixVersionTooOld => e.identifier.toString
+      }
+    )
+  }
+
+  /**
+    * Returns the resolution of a project that requires the packages `a` and `b`, where the
+    * project and the two packages each require the given version of Flix.
+    */
+  private def mkResolutionOf(origin: String, a: String, b: String): FlixPackageManager.Resolution = {
+    val project = mkManifest("origin",
+      """"github:flix/b" = "0.1.0"
+        |"github:flix/a" = "0.1.0"""".stripMargin, flix = origin)
+    val manifestA = mkManifest("a", "", flix = a)
+    val manifestB = mkManifest("b", "", flix = b)
+    val List(toB, toA) = FlixPackageManager.findFlixDependencies(project)
+    FlixPackageManager.Resolution(
+      origin = project,
+      manifests = List(project, manifestB, manifestA),
+      immediateDependents = Map(project -> Nil, manifestA -> List(project), manifestB -> List(project)),
+      manifestToFlixDeps = ListMap(Map(manifestA -> List(toA), manifestB -> List(toB))),
+      tomlDigests = Map.empty
+    )
+  }
+
   test("mismatched-versions") {
     val toml = PkgTestUtils.mkTomlWithDeps(
       """
@@ -892,16 +942,17 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   }
 
   /**
-    * Returns a manifest named `name` with the given Flix dependency declarations `deps`.
+    * Returns a manifest named `name` with the given Flix dependency declarations `deps`, that
+    * requires the version `flix` of Flix.
     */
-  private def mkManifest(name: String, deps: String): Manifest = {
+  private def mkManifest(name: String, deps: String, flix: String = "0.33.0"): Manifest = {
     val toml =
       s"""
          |[package]
          |name = "$name"
          |description = "test"
          |version = "0.1.0"
-         |flix = "0.33.0"
+         |flix = "$flix"
          |authors = ["flix"]
          |
          |[dependencies]

@@ -422,6 +422,23 @@ object FlixPackageManager {
   }
 
   /**
+    * Finds every package in `resolution` that requires a newer version of Flix than `current`.
+    *
+    * Only the packages that are built are checked, since a package that is not built is not
+    * compiled. The project itself is not checked here: it is for whoever read its manifest to
+    * check, since only they know where it was read from.
+    */
+  def checkFlixVersions(resolution: Resolution, current: SemVer): List[PackageError] = {
+    val errors = for {
+      manifest <- resolution.manifests
+      if manifest != resolution.origin && current < manifest.flix
+      // Any of the declarations that resolve to the package will do, since they all name it.
+      dep <- resolution.manifestToFlixDeps(manifest).headOption
+    } yield PackageError.FlixVersionTooOld(dep.id, manifest.version, manifest.flix, current)
+    errors.sortBy(e => e.identifier)
+  }
+
+  /**
     * Finds the Flix dependencies in a Manifest.
     */
   def findFlixDependencies(manifest: Manifest): List[FlixDependency] = {
