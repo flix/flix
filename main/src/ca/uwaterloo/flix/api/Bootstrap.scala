@@ -88,9 +88,10 @@ object Bootstrap {
 
     FileOps.newFileIfAbsent(manifestFile) {
       s"""[package]
-         |name    = "$packageName"
          |version = "0.1.0"
          |flix    = "${Version.CurrentVersion}"
+         |
+         |# repository = "github:<owner>/$packageName"
          |""".stripMargin
     }
 
@@ -192,6 +193,14 @@ object Bootstrap {
 
   /** The manifest / flix toml file name. */
   val FLIX_TOML: String = s"flix.$EXT_TOML"
+
+  /**
+    * The package file name.
+    *
+    * A constant, like [[FLIX_TOML]]: the two assets of a release are found at addresses that
+    * follow from the repository and the version alone, without reading anything.
+    */
+  val PACKAGE_FPKG: String = s"package.$EXT_FPKG"
 
   /** The lock file name. */
   val PACKAGES_LOCK: String = "packages.lock"
@@ -336,7 +345,8 @@ object Bootstrap {
   /**
     * Returns the path to the pkg file based on the given path `p`.
     */
-  private def getPkgFile(p: Path): Path = getArtifactDirectory(p).resolve(getPackageName(p) + s".$EXT_FPKG").normalize()
+  private def getPkgFile(p: Path): Path =
+    getArtifactDirectory(p).resolve(PACKAGE_FPKG).normalize()
 
   /**
     * Returns `true` if the given path `p` is a jar-file.
@@ -1210,7 +1220,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def stat(flix: Flix)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
     typeCheck(flix).map { root =>
-      val header = optManifest.map(m => s"${m.name} ${m.version}")
+      val header = optManifest.map(m => s"${m.displayName} ${m.version}")
       out.println(Stat.format(header, Stat.compute(root)))
     }
   }

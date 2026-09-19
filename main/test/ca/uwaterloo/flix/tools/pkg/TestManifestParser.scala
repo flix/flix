@@ -55,13 +55,58 @@ class TestManifestParser extends AnyFunSuite {
       |""".stripMargin
   }
 
-  test("Ok.name") {
-    assertResult(expected = "hello-world")(actual = {
-      ManifestParser.parse(tomlCorrect, ManifestPath) match {
-        case Ok(manifest) => manifest.name
+  test("Ok.ignores-name") {
+    // A package is named by the repository it is published as, which is what a dependent
+    // addresses it by. `name` is still accepted, and is not read: here it disagrees with the
+    // repository, and the repository is what names the package.
+    val toml =
+      """
+        |[package]
+        |name = "something-else"
+        |version = "0.1.0"
+        |repository = "github:johnDoe/hello-world"
+        |flix = "0.33.0"
+        |""".stripMargin
+    assertResult(expected = "johnDoe/hello-world")(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.displayName
         case Err(e) => e.message(f)
       }
-    })
+    )
+  }
+
+  test("Ok.ignores-name.02") {
+    // `name` is not read at all, so it is not type checked either.
+    val toml =
+      """
+        |[package]
+        |name = 1
+        |version = "0.1.0"
+        |repository = "github:johnDoe/hello-world"
+        |flix = "0.33.0"
+        |""".stripMargin
+    assertResult(expected = "johnDoe/hello-world")(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.displayName
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
+  test("Ok.unnamed") {
+    // A package that declares no repository cannot be addressed, and so has no name.
+    val toml =
+      """
+        |[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |""".stripMargin
+    assertResult(expected = Manifest.Unnamed)(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.displayName
+        case Err(e) => e.message(f)
+      }
+    )
   }
 
   test("Ok.minimal") {
@@ -73,10 +118,10 @@ class TestManifestParser extends AnyFunSuite {
         |version = "0.1.0"
         |flix = "0.33.0"
         |""".stripMargin
-    assertResult(expected = "hello-world")(actual =
+    assertResult(expected = SemVer(0, 1, 0))(actual =
       ManifestParser.parse(toml, ManifestPath) match {
-        case Ok(m) => m.name
-        case Err(e) => e.message(f)
+        case Ok(m) => m.version
+        case Err(e) => fail(e.message(f))
       }
     )
   }
@@ -94,10 +139,10 @@ class TestManifestParser extends AnyFunSuite {
         |license = "Apache-2.0"
         |authors = ["John Doe <john@example.com>"]
         |""".stripMargin
-    assertResult(expected = "hello-world")(actual =
+    assertResult(expected = SemVer(0, 1, 0))(actual =
       ManifestParser.parse(toml, ManifestPath) match {
-        case Ok(m) => m.name
-        case Err(e) => e.message(f)
+        case Ok(m) => m.version
+        case Err(e) => fail(e.message(f))
       }
     )
   }
@@ -672,23 +717,6 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.IOError](result)
   }
 
-  //Name
-  test("ManifestError.MissingRequiredProperty.01") {
-    val toml = {
-      """
-        |[package]
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |""".stripMargin
-    }
-    val result = ManifestParser.parse(toml, ManifestPath)
-    expectError[ManifestError.MissingRequiredProperty](result)
-  }
-
   test("ManifestError.IllegalPackageKeyFound.01") {
     val toml = {
       """
@@ -704,23 +732,6 @@ class TestManifestParser extends AnyFunSuite {
     }
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalPackageKeyFound](result)
-  }
-
-  test("ManifestError.RequiredPropertyHasWrongType.01") {
-    val toml = {
-      """
-        |[package]
-        |name = 1
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |""".stripMargin
-    }
-    val result = ManifestParser.parse(toml, ManifestPath)
-    expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
   //Description

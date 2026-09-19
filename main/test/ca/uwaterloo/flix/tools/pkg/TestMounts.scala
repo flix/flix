@@ -28,7 +28,7 @@ class TestMounts extends AnyFunSuite with TestUtils {
     FileOps.writeString(p.resolve("src").resolve("Game").resolve("Rules.flix"), "pub mod Game.Rules { pub def players(): Int32 = 2 }")
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault).unsafeGet
-    p.resolve("artifact").resolve(p.getFileName.toString + ".fpkg")
+    p.resolve("artifact").resolve(Bootstrap.PACKAGE_FPKG)
   }
 
   /** Checks `main` against the package at `pkgPath`, installed under `mounts`. */

@@ -354,7 +354,7 @@ object FlixPackageManager {
         val requiredBy = edges.collect {
           case e if e.dep.id == id && e.dep.version == to => e.source match {
             case Some((dependent, version)) => s"`${formatter.blue(s"${dependent.owner}/${dependent.name}")}` (${formatter.cyan(s"v$version")})"
-            case None => s"`${formatter.blue(e.dependent.name)}`"
+            case None => s"`${formatter.blue(e.dependent.displayName)}`"
           }
         }.distinct.sorted
         val rise = s"v$from -> v$to"
@@ -391,7 +391,7 @@ object FlixPackageManager {
     */
   def mkIncompatibleVersions(id: PackageId, requirements: List[(Manifest, FlixDependency)]): PackageError.IncompatibleVersions = {
     // Order by version, and then by dependent, so the message is deterministic.
-    val sorted = requirements.sortBy { case (dependent, dep) => (dep.version, dependent.name) }
+    val sorted = requirements.sortBy { case (dependent, dep) => (dep.version, dependent.displayName) }
     PackageError.IncompatibleVersions(id, sorted)
   }
 
@@ -412,8 +412,8 @@ object FlixPackageManager {
         if (mounted.nonEmpty && unmounted.nonEmpty) {
           Some(PackageError.InconsistentMounts(
             identifier,
-            mounted.map { case (dependent, _) => dependent.name }.sorted,
-            unmounted.map { case (dependent, _) => dependent.name }.sorted
+            mounted.map { case (dependent, _) => dependent.displayName }.sorted,
+            unmounted.map { case (dependent, _) => dependent.displayName }.sorted
           ))
         } else {
           None

@@ -226,7 +226,9 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
       val path = Files.createTempDirectory("")
       FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
-        case Ok(resolution) => resolution.manifests.contains(manifest) && resolution.manifests.exists(m => m.name == "museum-clerk")
+        case Ok(resolution) =>
+          val clerk = PackageId(Repository.GitHub, "flix", "museum-clerk")
+          resolution.manifests.contains(manifest) && resolution.tomlDigests.keys.exists { case (id, _) => id == clerk }
         case Err(e) => e.message(formatter)
       }
     })
@@ -494,8 +496,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val requirements = List(beta, alpha, gamma).map(m => (m, FlixPackageManager.findFlixDependencies(m).head))
     val error = FlixPackageManager.mkIncompatibleVersions(id, requirements)
     assertResult(expected = id)(actual = error.identifier)
-    assertResult(expected = List(("gamma", SemVer(1, 1, 0)), ("alpha", SemVer(2, 0, 0)), ("beta", SemVer(2, 0, 0))))(
-      actual = error.requirements.map { case (dependent, dep) => (dependent.name, dep.version) }
+    assertResult(expected = List(("flix/gamma", SemVer(1, 1, 0)), ("flix/alpha", SemVer(2, 0, 0)), ("flix/beta", SemVer(2, 0, 0))))(
+      actual = error.requirements.map { case (dependent, dep) => (dependent.displayName, dep.version) }
     )
   }
 
@@ -514,10 +516,11 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
 
     val path = Files.createTempDirectory("")
-    FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+    FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
       case Ok(resolution) =>
-        assertResult(expected = List(SemVer(1, 1, 0)))(
-          actual = resolution.manifests.filter(_.name == "museum-clerk").map(_.version)
+        val clerk = PackageId(Repository.GitHub, "flix", "museum-clerk")
+        assertResult(expected = Some(SemVer(1, 1, 0)))(
+          actual = FlixPackageManager.builtVersions(resolution).get(clerk)
         )
       case Err(e) => fail(e.message(formatter))
     }
@@ -646,11 +649,9 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val toml =
       s"""
          |[package]
-         |name = "$name"
-         |description = "test"
          |version = "0.1.0"
+         |repository = "github:flix/$name"
          |flix = "$flix"
-         |authors = ["flix"]
          |
          |[dependencies]
          |$deps
