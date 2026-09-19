@@ -60,11 +60,6 @@ object Command {
   case object BuildPkg extends Command
 
   /**
-    * Publishes a release of the current project to GitHub.
-    */
-  case object Release extends Command
-
-  /**
     * Checks the current project for errors.
     */
   case object Check extends Command
@@ -83,11 +78,6 @@ object Command {
     * Runs the tests for the current project.
     */
   case object Test extends Command
-
-  /**
-    * Show dependencies which have newer versions available.
-    */
-  case object Outdated extends Command
 
   /**
     * Terminates the shell.
@@ -139,7 +129,7 @@ object Command {
     if (input == ":check" || input == ":c")
       return Command.Check
 
-    if (input == ":doc" || input == ":d")
+    if (input == ":doc")
       return Command.Doc
 
     if (input == ":format")
@@ -154,14 +144,8 @@ object Command {
     if (input == ":build-pkg")
       return Command.BuildPkg
 
-    if (input == ":release")
-      return Command.Release
-
-    if (input == ":test" || input == ":t")
+    if (input == ":test")
       return Command.Test
-
-    if (input == ":outdated")
-      return Command.Outdated
 
     if (input == ":quit" || input == ":q")
       return Command.Quit
