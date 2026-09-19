@@ -1,6 +1,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.api.CompilerConstants
+import ca.uwaterloo.flix.language.ast.TokenKind
+import ca.uwaterloo.flix.language.ast.shared.{Origin, SecurityContext, Source, SourceName}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -711,6 +714,57 @@ class TestLexer extends AnyFunSuite with TestUtils {
     val input = """ "${"${"${"${"${"${"${"${"${"${"${"${"${"${"${${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${unclosed and deep"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}}"}"}"}"}"}"}"}"}"}"}"}"}"}"}" """
     val result = check(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedStringInterpolation](result)
+  }
+
+  test("ColonColon.Tight.01") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.ColonColonTight, TokenKind.NameLowercase))(kindsOf("a::b"))
+  }
+
+  test("ColonColon.Tight.02") {
+    assertResult(List(TokenKind.LiteralInt, TokenKind.ColonColonTight, TokenKind.NameUppercase))(kindsOf("42::Nil"))
+  }
+
+  test("ColonColon.Tight.03") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.ColonColonTight, TokenKind.NameLowercase, TokenKind.ColonColonTight, TokenKind.NameUppercase))(kindsOf("a::b::Nil"))
+  }
+
+  test("ColonColon.Whitespace.01") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.ColonColon, TokenKind.NameLowercase))(kindsOf("a :: b"))
+  }
+
+  test("ColonColon.Whitespace.02") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.ColonColon, TokenKind.NameLowercase))(kindsOf("a ::b"))
+  }
+
+  test("ColonColon.Whitespace.03") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.ColonColon, TokenKind.NameLowercase))(kindsOf("a:: b"))
+  }
+
+  test("ColonColon.Whitespace.04") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.ColonColon, TokenKind.NameLowercase))(kindsOf("a\n::b"))
+  }
+
+  test("ColonColon.Whitespace.05") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.ColonColon))(kindsOf("a::"))
+  }
+
+  test("ColonColon.Whitespace.06") {
+    assertResult(List(TokenKind.ColonColon, TokenKind.NameLowercase))(kindsOf("::a"))
+  }
+
+  test("ColonColonColon.01") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.ColonColonColon, TokenKind.NameLowercase))(kindsOf("a:::b"))
+  }
+
+  test("ColonColonColon.02") {
+    assertResult(List(TokenKind.NameLowercase, TokenKind.ColonColonColon, TokenKind.NameLowercase))(kindsOf("a ::: b"))
+  }
+
+  /** Returns the kinds of the tokens of `s`, without the final [[TokenKind.Eof]]. */
+  private def kindsOf(s: String): List[TokenKind] = {
+    val src = Source.fromString(SourceName.PathName(CompilerConstants.VirtualTestFile), Origin.User, SecurityContext.Unrestricted, s)
+    val (tokens, _) = Lexer.lex(src)
+    tokens.toList.map(_.kind).filterNot(_ == TokenKind.Eof)
   }
 
 }
