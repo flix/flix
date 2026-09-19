@@ -37,7 +37,9 @@ object FlixPackageManager {
     * @param manifests           the manifest of [[origin]] and of every package it is built with.
     * @param immediateDependents all immediate dependents / parents of each manifest.
     * @param manifestToFlixDeps  a mapping from [[Manifest]]s to [[FlixDependency]]s.
-    *                            A manifest is the resource a flix dependency resolves to.
+    *                            A manifest is the resource a flix dependency resolves to. A
+    *                            manifest maps to every declaration that resolves to it, which
+    *                            is one for each of its dependents.
     * @param tomlDigests         the digest of the `flix.toml` of every package at every version
     *                            that the dependency graph requires, whether or not the package
     *                            is built at that version: each of them is read to resolve the
@@ -171,7 +173,7 @@ object FlixPackageManager {
           // Every declaration made by what is built is an edge of the resolution. It leads to the
           // selected version of the package it names, whichever version it declares.
           val immediateDependents: mutable.Map[Manifest, List[Manifest]] = mutable.Map(manifest -> List.empty)
-          val manifestToFlixDeps: mutable.Map[Manifest, List[FlixDependency]] = mutable.Map(manifest -> List.empty)
+          val manifestToFlixDeps: mutable.Map[Manifest, List[FlixDependency]] = mutable.Map.empty
           for (e <- edges if e.source.forall(isBuilt)) {
             val target = edgeTo((e.dep.id, selected(e.dep.id))).target
             immediateDependents.put(target, e.dependent :: immediateDependents.getOrElse(target, List.empty))
@@ -183,7 +185,9 @@ object FlixPackageManager {
           val built = nodes.filter(isBuilt).map(edgeTo)
           val manifests = manifest :: built.map(_.target)
           val tomlDigests = nodes.map(n => n -> edgeTo(n).digest).toMap
-          Ok(Resolution(manifest, manifests, immediateDependents.toMap, ListMap.from(manifestToFlixDeps.flatMap { case (m, deps) => deps.map(d => (m, d)) }), tomlDigests))
+          // Every declaration is kept, and not one for each package: the security context of a
+          // package is the strictest of those it is declared with, so all of them must be seen.
+          Ok(Resolution(manifest, manifests, immediateDependents.toMap, ListMap(manifestToFlixDeps.toMap), tomlDigests))
       }
     }
   }
@@ -454,12 +458,14 @@ object FlixPackageManager {
   def installAll(resolution: SecureResolution, projectRoot: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[Installation, PackageError] = {
     out.println("Downloading Flix dependencies...")
 
-    // Every dependency declaration, paired with the manifest of the package it resolves to.
+    // Every package, with one of the declarations that resolve to it. A package is installed
+    // once, however many dependents declare it, and any of the declarations will do: they all
+    // name the same package.
+    //
     // The version installed is the manifest's own, not the one the declaration asks for: a
     // declaration says what its dependent requires, and the manifest is what the resolution
-    // settled on. That is also the version recorded in the lock file, since the lock file
-    // describes what was installed.
-    val installed = resolution.manifestToFlixDeps.map { case (manifest, dep) =>
+    // settled on.
+    val installed = resolution.manifestToFlixDeps.m.toList.collect { case (manifest, dep :: _) =>
       val depName: String = s"${dep.id.owner}/${dep.id.name}"
       install(dep, manifest.version, Bootstrap.EXT_FPKG, projectRoot, apiKey, lockfile) match {
         case Ok(fpkg) =>
@@ -469,7 +475,7 @@ object FlixPackageManager {
           out.println(s"ERROR: Installation of `$depName' failed.")
           return Err(e)
       }
-    }.toList
+    }
 
     val (packages, fpkgs) = installed.unzip
     val fpkgDigests = fpkgs.toMap
@@ -628,6 +634,9 @@ object FlixPackageManager {
     *   1. the [[minSecurityLevel]] of all (transitive) dependent / parent manifests and
     *   1. the security levels with which `manifest` is depended upon,
     *      i.e., when `"security" = "..."` occurs in a manifest and that dependency points to `manifest`.
+    *
+    * It is the strictest of them all: a package that one dependent declares `paranoid` is
+    * `paranoid`, whatever its other dependents declare.
     */
   private def minSecurityLevel(manifest: Manifest)(implicit resolution: Resolution, securityLevels: mutable.Map[Manifest, SecurityContext]): SecurityContext = {
     securityLevels.get(manifest) match {
