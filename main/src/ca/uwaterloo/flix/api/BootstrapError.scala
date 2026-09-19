@@ -87,6 +87,26 @@ object BootstrapError {
   }
 
   /**
+    * An error raised to indicate that `spec` carries a version where none is asked for.
+    */
+  case class UnexpectedVersion(spec: String) extends BootstrapError {
+    override def message(f: Formatter): String =
+      s"""${f.red(spec)} names a version, but a package is declared at one version, so there is none to choose.
+         |Write the package on its own, as ${f.cyan("flix/museum-clerk")}.
+         |""".stripMargin
+  }
+
+  /**
+    * An error raised to indicate that `id` is not a dependency of the project.
+    */
+  case class DependencyNotDeclared(id: PackageId) extends BootstrapError {
+    override def message(f: Formatter): String =
+      s"""${f.red(id.toString)} is not a dependency of this project.
+         |A package that is reached through another dependency is declared by that dependency, and not by this project.
+         |""".stripMargin
+  }
+
+  /**
     * An error raised to indicate that `id` has no release to install.
     */
   case class NoReleases(id: PackageId) extends BootstrapError {

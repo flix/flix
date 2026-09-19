@@ -265,6 +265,94 @@ class TestBootstrap extends AnyFunSuite {
   }
 
 
+  test("remove.01") {
+    // A package that is declared is no longer declared, and the lock file no longer records it.
+    // The dependencies that are left are still declared, with their versions and their mounts.
+    val p = mkProjectWithDependency()
+    val other = PackageId(Repository.GitHub, "jaschdoc", "flix-test-pkg-eff-upgrade")
+    install(p, s"jaschdoc/${other.name}@0.1.1").unsafeGet
+
+    remove(p, "flix/museum-clerk").unsafeGet
+
+    val manifest = ManifestParser.parse(p.resolve(Bootstrap.FLIX_TOML)).unsafeGet
+    assert(!manifest.flixDependencies.exists(dep => dep.id == ClerkIdentifier))
+
+    val dep = flixDependency(p, other)
+    assert(dep.version == SemVer(0, 1, 1))
+    assert(dep.mount.contains(Mountpoint("FlixTestPkgEffUpgrade")))
+
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
+    assert(lockfile.packages.keySet == Set((other, SemVer(0, 1, 1))))
+  }
+
+  test("remove.02") {
+    // The only dependency of a project can be removed, which leaves a manifest that declares
+    // none, and that the project still bootstraps from.
+    val p = mkProjectWithDependency()
+    remove(p, "flix/museum-clerk").unsafeGet
+
+    val toml = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+    assert(!toml.contains("[dependencies]"))
+    assert(ManifestParser.parse(toml, Path.of(Bootstrap.FLIX_TOML)).unsafeGet.dependencies.isEmpty)
+
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    assert(LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet.packages.isEmpty)
+  }
+
+  test("remove.03") {
+    // A package that the project does not declare is not one it can drop.
+    val p = mkProjectWithDependency()
+    val before = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+
+    remove(p, "flix/museum-entrance") match {
+      case Ok(_) => fail("Expected the undeclared package to be refused.")
+      case Err(BootstrapError.DependencyNotDeclared(id)) =>
+        assert(id == PackageId(Repository.GitHub, "flix", "museum-entrance"))
+      case Err(e) => fail(s"Expected an undeclared dependency, but got: ${e.message(Formatter.getDefault)}")
+    }
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == before)
+  }
+
+  test("remove.04") {
+    // A package is declared at one version, so a version is not part of a removal.
+    val p = mkProjectWithDependency()
+    val before = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+
+    remove(p, "flix/museum-clerk@1.1.0") match {
+      case Ok(_) => fail("Expected the version to be refused.")
+      case Err(BootstrapError.UnexpectedVersion(spec)) => assert(spec == "flix/museum-clerk@1.1.0")
+      case Err(e) => fail(s"Expected an unexpected version, but got: ${e.message(Formatter.getDefault)}")
+    }
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == before)
+  }
+
+  test("remove.05") {
+    // What another dependency requires stays: museum-entrance requires museum-clerk, so dropping
+    // the declaration of museum-clerk leaves the package itself in the resolution.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |"$ClerkIdentifier" = "1.1.0"
+         |"github:flix/museum-entrance" = "1.1.0"
+         |""".stripMargin)
+
+    remove(p, "flix/museum-clerk").unsafeGet
+
+    val manifest = ManifestParser.parse(p.resolve(Bootstrap.FLIX_TOML)).unsafeGet
+    assert(manifest.flixDependencies.map(dep => dep.id) == List(PackageId(Repository.GitHub, "flix", "museum-entrance")))
+
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
+    assert(lockfile.packages.contains((ClerkIdentifier, SemVer(1, 1, 0))))
+  }
+
   test("build") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
@@ -681,6 +769,12 @@ class TestBootstrap extends AnyFunSuite {
     */
   private def install(p: Path, spec: String): Result[Unit, BootstrapError] =
     Bootstrap.install(p, spec, PkgTestUtils.gitHubToken, assumeYes = true)(Formatter.getDefault, System.out)
+
+  /**
+    * Removes `spec` from the project at `p`.
+    */
+  private def remove(p: Path, spec: String): Result[Unit, BootstrapError] =
+    Bootstrap.remove(p, spec, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out)
 
   /**
     * Returns the dependency on `id` that the manifest of the project at `p` declares.
