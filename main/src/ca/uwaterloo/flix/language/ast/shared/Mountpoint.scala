@@ -15,19 +15,29 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
+import ca.uwaterloo.flix.language.phase.Lexer
+
 object Mountpoint {
 
-  /** An uppercase letter followed by letters, digits, and underscores. */
-  private val Valid = "[A-Z][A-Za-z0-9_]*".r
+  /** Hyphen-separated groups, each a letter followed by letters, digits, and underscores. */
+  private val Valid = "[A-Za-z][A-Za-z0-9_]*(-[A-Za-z][A-Za-z0-9_]*)*".r
 
-  /** Returns `s` as a mountpoint, if it can name a top-level module. */
+  /** Returns `s` as a mountpoint, if it can be written before `::`. */
   def mkMountpoint(s: String): Option[Mountpoint] =
-    if (Valid.matches(s)) Some(Mountpoint(s)) else None
+    if (Valid.matches(s) && !startsWithKeyword(s)) Some(Mountpoint(s)) else None
+
+  /**
+    * Returns `true` if the first group of `s` is a keyword.
+    *
+    * The lexer reads a keyword before a name, so `type-level::` lexes as `type`, `-`, `level`.
+    */
+  def startsWithKeyword(s: String): Boolean =
+    Lexer.isKeyword(s.takeWhile(_ != '-'))
 
 }
 
 /**
-  * The name of the top-level module a dependency is visible under.
+  * The name a dependency is reached under, written before `::` in a use, e.g. `use flixball::Board`.
   */
 case class Mountpoint(name: String) extends Ordered[Mountpoint] {
   override def compare(that: Mountpoint): Int = this.name.compare(that.name)

@@ -1818,6 +1818,69 @@ class TestManifestParser extends AnyFunSuite {
     )
   }
 
+  test("Ok.mount.lowercase") {
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "game" }
+        |""".stripMargin
+    assertResult(expected = List(Some(Mountpoint("game"))))(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.flixDependencies.map(_.mount)
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
+  test("Ok.mount.hyphenated") {
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "tic-tac-toe" }
+        |""".stripMargin
+    assertResult(expected = List(Some(Mountpoint("tic-tac-toe"))))(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.flixDependencies.map(_.mount)
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
+  test("Ok.mount.hyphenated-keyword-later") {
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "flix-type" }
+        |""".stripMargin
+    assertResult(expected = List(Some(Mountpoint("flix-type"))))(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.flixDependencies.map(_.mount)
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
   test("Manifest.Identity.Mount") {
     val toml =
       """[package]
@@ -1848,6 +1911,114 @@ class TestManifestParser extends AnyFunSuite {
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Foo.Bar" }
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyIllegalMount](result)
+  }
+
+  test("ManifestError.FlixDependencyIllegalMount.Keyword.01") {
+    // A keyword is read before a name, so it cannot be written before `::`.
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "type" }
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyIllegalMount](result)
+  }
+
+  test("ManifestError.FlixDependencyIllegalMount.Keyword.02") {
+    // Only the first group matters: the lexer reads `type`, `-`, `level`.
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "type-level" }
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyIllegalMount](result)
+  }
+
+  test("ManifestError.FlixDependencyIllegalMount.Digit.01") {
+    // A mount begins with a letter.
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "2048" }
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyIllegalMount](result)
+  }
+
+  test("ManifestError.FlixDependencyIllegalMount.Digit.02") {
+    // Every group begins with a letter.
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "utf-8" }
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyIllegalMount](result)
+  }
+
+  test("ManifestError.FlixDependencyIllegalMount.Hyphen.01") {
+    // A trailing hyphen.
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "json-" }
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyIllegalMount](result)
+  }
+
+  test("ManifestError.FlixDependencyIllegalMount.Hyphen.02") {
+    // An empty group.
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "flix--json" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencyIllegalMount](result)
