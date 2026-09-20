@@ -1,5 +1,8 @@
 # Changelog
 
+Version 0.76.2:
+- Compiler: Restructure package management internals (thanks Magnus!)
+
 Version 0.76.1:
 - Compiler: Restructure LSP internals (thanks Magnus!)
 
