@@ -17,13 +17,13 @@ object JarPackageManager {
     * Installs all the jar dependencies for a list of Manifests at the /lib/external directory
     * of `path` and returns a list of paths to all the dependencies.
     */
-  def installAll(manifests: List[Manifest], path: Path, apiKey: Option[String])(implicit out: PrintStream): Result[List[Path], PackageError] = {
+  def installAll(manifests: List[Manifest], path: Path, token: Option[String])(implicit out: PrintStream): Result[List[Path], PackageError] = {
     out.println("Downloading external jar dependencies...")
 
     val allJarDeps: List[JarDependency] = manifests.foldLeft(List.empty[JarDependency])((l, m) => l ++ findJarDependencies(m))
 
     val jarPaths = allJarDeps.map(dep => {
-      install(dep, path, apiKey) match {
+      install(dep, path, token) match {
         case Ok(p) => p
         case Err(e) => out.println(s"ERROR: Installation of `${dep.fileName}` from `${dep.url.toString}` failed."); return Err(e)
       }
@@ -38,13 +38,13 @@ object JarPackageManager {
     * The file is installed at lib/external/`dep.fileName`.
     *
     * The address is the dependent's to choose and may be anyone's to serve, so the request is
-    * made the way every other one is: redirects followed, the status read, and `apiKey` offered
+    * made the way every other one is: redirects followed, the status read, and `token` offered
     * only if the address is one it may be sent to. A jar that is published as a GitHub release
     * asset is therefore fetched with the token, and one served from anywhere else without it.
     *
     * Returns the path to the downloaded file.
     */
-  private def install(dep: JarDependency, p: Path, apiKey: Option[String])(implicit out: PrintStream): Result[Path, PackageError] = {
+  private def install(dep: JarDependency, p: Path, token: Option[String])(implicit out: PrintStream): Result[Path, PackageError] = {
     val lib = Bootstrap.getLibraryDirectory(p)
     val dirPath = lib.resolve(DirName)
 
@@ -58,7 +58,7 @@ object JarPackageManager {
     } else {
       out.print(s"  Downloading `${dep.fileName}` from `${dep.url.toString}`... ")
       out.flush()
-      GitHub.download(dep.getUrl, apiKey) match {
+      GitHub.download(dep.getUrl, token) match {
         case Err(e) =>
           out.println("ERROR.")
           Err(e)

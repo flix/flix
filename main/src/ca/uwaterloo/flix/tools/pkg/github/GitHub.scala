@@ -187,7 +187,7 @@ object GitHub {
       val code = resp.statusCode()
       code match {
         case 201 => resp.body()
-        case 401 => return Err(ReleaseError.InvalidApiKeyError)
+        case 401 => return Err(ReleaseError.InvalidToken)
         case 404 => return Err(ReleaseError.RepositoryNotFound(project))
         case _ => return Err(ReleaseError.UnexpectedResponseCode(code, resp.body()))
       }
@@ -228,7 +228,7 @@ object GitHub {
       val code = resp.statusCode()
       code match {
         case 201 => Ok(())
-        case 401 => Err(ReleaseError.InvalidApiKeyError)
+        case 401 => Err(ReleaseError.InvalidToken)
         case _ => Err(ReleaseError.UnexpectedResponseCode(code, resp.body()))
       }
 
@@ -258,7 +258,7 @@ object GitHub {
       val code = resp.statusCode()
       code match {
         case 200 => Ok(())
-        case 401 => Err(ReleaseError.InvalidApiKeyError)
+        case 401 => Err(ReleaseError.InvalidToken)
         case 404 => Err(ReleaseError.RepositoryNotFound(project))
         case 422 => Err(ReleaseError.ReleaseAlreadyExists(project, version))
         case _ => Err(ReleaseError.UnexpectedResponseCode(code, resp.body()))

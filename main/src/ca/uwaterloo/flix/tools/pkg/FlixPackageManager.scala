@@ -149,9 +149,9 @@ object FlixPackageManager {
     * Returns an error if a package is required at versions that do not share a major, since
     * then there is no version to select for it.
     */
-  def resolve(manifest: Manifest, path: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[Resolution, PackageError] = {
+  def resolve(manifest: Manifest, path: Path, token: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[Resolution, PackageError] = {
     out.println("Resolving Flix dependencies...")
-    reach(manifest, path, apiKey, lockfile).flatMap { edges =>
+    reach(manifest, path, token, lockfile).flatMap { edges =>
       // Every node, in the order it was found, and the first edge that led to it.
       val nodes = edges.map(e => (e.dep.id, e.dep.version)).distinct
       val edgeTo = edges.reverseIterator.map(e => (e.dep.id, e.dep.version) -> e).toMap
@@ -201,7 +201,7 @@ object FlixPackageManager {
     * followed. A package is visited once for every version it is required at, however many
     * dependents require it, which is also what ends the walk on a cycle.
     */
-  private def reach(origin: Manifest, path: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[List[Edge], PackageError] = {
+  private def reach(origin: Manifest, path: Path, token: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[List[Edge], PackageError] = {
     val edges: mutable.ListBuffer[Edge] = mutable.ListBuffer.empty
 
     // Every package version that has been visited. A visit is identified by the package and the
@@ -215,7 +215,7 @@ object FlixPackageManager {
 
     while (worklist.nonEmpty) {
       val (source, dependent) = worklist.head
-      follow(source, dependent, path, apiKey, lockfile) match {
+      follow(source, dependent, path, token, lockfile) match {
         case Err(e) => return Err(e)
         case Ok(found) =>
           // Every declaration is an edge of the graph, whether or not it leads somewhere new.
@@ -236,11 +236,11 @@ object FlixPackageManager {
     *
     * Every `flix.toml` is installed before any of them is parsed.
     */
-  private def follow(source: Option[(PackageId, SemVer)], dependent: Manifest, path: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[List[Edge], PackageError] = {
+  private def follow(source: Option[(PackageId, SemVer)], dependent: Manifest, path: Path, token: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[List[Edge], PackageError] = {
     for {
       // download toml files
       tomlFiles <- traverse(findFlixDependencies(dependent)) { dep =>
-        install(dep, dep.version, Bootstrap.EXT_TOML, path, apiKey, lockfile).map(toml => (toml, dep))
+        install(dep, dep.version, Bootstrap.EXT_TOML, path, token, lockfile).map(toml => (toml, dep))
       }
 
       // parse manifests
@@ -465,10 +465,10 @@ object FlixPackageManager {
     * it is built at, see [[builtVersions]], and not the version a dependent declares, which is
     * only the least version that dependent can be built with.
     */
-  def findAvailableUpdates(id: PackageId, version: SemVer, apiKey: Option[String]): Result[AvailableUpdates, PackageError] = {
+  def findAvailableUpdates(id: PackageId, version: SemVer, token: Option[String]): Result[AvailableUpdates, PackageError] = {
     for {
       githubProject <- GitHub.parseProject(s"${id.owner}/${id.name}")
-      releases <- GitHub.getReleases(githubProject, apiKey)
+      releases <- GitHub.getReleases(githubProject, token)
       availableVersions = releases.map(r => r.version)
 
       major = version.majorUpdate(availableVersions)
@@ -488,7 +488,7 @@ object FlixPackageManager {
     * It records the `flix.toml` of every package at every version that the graph requires, and
     * the `.fpkg` of the packages that are installed, which are those that are built.
     */
-  def installAll(resolution: SecureResolution, projectRoot: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[Installation, PackageError] = {
+  def installAll(resolution: SecureResolution, projectRoot: Path, token: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[Installation, PackageError] = {
     out.println("Downloading Flix dependencies...")
 
     // Every package, with one of the declarations that resolve to it. A package is installed
@@ -500,7 +500,7 @@ object FlixPackageManager {
     // settled on.
     val installed = resolution.manifestToFlixDeps.m.toList.collect { case (manifest, dep :: _) =>
       val depName: String = s"${dep.id.owner}/${dep.id.name}"
-      install(dep, manifest.version, Bootstrap.EXT_FPKG, projectRoot, apiKey, lockfile) match {
+      install(dep, manifest.version, Bootstrap.EXT_FPKG, projectRoot, token, lockfile) match {
         case Ok(fpkg) =>
           val pkg = InstalledPackage(fpkg.path, dep.id, resolution.security(manifest), manifest.mounts)
           (pkg, (dep.id, manifest.version) -> fpkg.digest)
@@ -535,7 +535,7 @@ object FlixPackageManager {
     * `flix.toml` is parsed and an `.fpkg` becomes a source of code as soon as they are installed,
     * and checking afterwards would mean having already acted on bytes that were never verified.
     */
-  private def install(dep: FlixDependency, version: SemVer, extension: String, p: Path, apiKey: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[InstalledFile, PackageError] = {
+  private def install(dep: FlixDependency, version: SemVer, extension: String, p: Path, token: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[InstalledFile, PackageError] = {
     val proj = GitHub.Project(dep.id.owner, dep.id.name)
     val lib = Bootstrap.getLibraryDirectory(p)
     val assetName = s"${proj.repo}-$version.$extension"
@@ -550,7 +550,7 @@ object FlixPackageManager {
     } else {
       out.print(s"  Downloading `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")})... ")
       out.flush()
-      openReleaseAsset(proj, version, extension, apiKey) match {
+      openReleaseAsset(proj, version, extension, token) match {
         case Err(e) =>
           out.println("ERROR.")
           Err(e)
@@ -603,15 +603,15 @@ object FlixPackageManager {
     * says nothing about the name, and reading the listing would not get any further, so it is
     * reported as it is.
     */
-  private def openReleaseAsset(proj: GitHub.Project, version: SemVer, extension: String, apiKey: Option[String]): Result[InputStream, PackageError] = {
+  private def openReleaseAsset(proj: GitHub.Project, version: SemVer, extension: String, token: Option[String]): Result[InputStream, PackageError] = {
     def fromListing(): Result[InputStream, PackageError] =
-      GitHub.findReleaseAsset(proj, version, extension, apiKey).flatMap(asset => GitHub.download(asset.url, apiKey))
+      GitHub.findReleaseAsset(proj, version, extension, token).flatMap(asset => GitHub.download(asset.url, token))
 
     @tailrec
     def tryNames(names: List[String]): Result[InputStream, PackageError] = names match {
       case Nil => fromListing()
       case name :: rest =>
-        GitHub.downloadReleaseAsset(proj, version, name, apiKey) match {
+        GitHub.downloadReleaseAsset(proj, version, name, token) match {
           case Err(_: PackageError.ReleaseAssetNotFound) => tryNames(rest)
           case result => result
         }

@@ -76,7 +76,7 @@ object Options {
   * @param build          selects development or production mode.
   * @param compilerTop    shows a live TUI of where the compiler spends its time.
   * @param entryPoint     specifies the main entry point.
-  * @param githubToken    the API key to use for GitHub dependency resolution.
+  * @param githubToken    the token to use for GitHub dependency resolution.
   * @param incremental    enables incremental compilation.
   * @param installDeps    enables automatic installation of dependencies.
   * @param json           enable json output.
