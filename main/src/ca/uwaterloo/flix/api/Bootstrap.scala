@@ -929,7 +929,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Returns the paths to the installed dependencies.
     */
   private def installJarDependencies(dependencyManifests: List[Manifest])(implicit out: PrintStream): Result[List[Path], BootstrapError] = {
-    JarPackageManager.installAll(dependencyManifests, projectPath) match {
+    JarPackageManager.installAll(dependencyManifests, projectPath, apiKey) match {
       case Ok(paths) => Ok(paths)
       case Err(e) => Err(BootstrapError.JarPackageError(e))
     }
