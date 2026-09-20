@@ -54,6 +54,7 @@ jobs:
           - "flix/chalk"
           - "flix/datalog2"
           - "flix/extras"
+          - "flix/museum"
           - "JonathanStarup/Flix-ANSI-Terminal"
           - "JonathanStarup/ListSet"
           - "JonathanStarup/talpin1992-in-flix"
