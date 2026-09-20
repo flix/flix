@@ -7,6 +7,7 @@ import ca.uwaterloo.flix.tools.pkg.PkgTestUtils.ManifestPath
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
+import java.net.URI
 import java.nio.file.Files
 
 @DoNotDiscover
@@ -37,7 +38,7 @@ class TestJarPackageManager extends AnyFunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      JarPackageManager.installAll(List(manifest), path)(System.out) match {
+      JarPackageManager.installAll(List(manifest), path, None)(System.out) match {
         case Ok(l) => l.head.endsWith(s"external${s}junit.jar")
         case Err(e) => e.message(f)
       }
@@ -47,7 +48,10 @@ class TestJarPackageManager extends AnyFunSuite {
   test("Give error for missing dependency") {
     val missingUrl = "https://repo1.maven.org/junit-jupiter-api.jar"
     val missingName = "missing.jar"
-    assertResult(expected = PackageError.DownloadErrorJar(missingUrl, missingName, None).message(f))(actual = {
+    // A jar that is not there is reported as the status the server answered with, rather than
+    // as a file that failed to appear.
+    val expected = PackageError.DownloadFailed(new URI(missingUrl).toURL, 404).message(f)
+    assertResult(expected)(actual = {
       val toml = {
         s"""
           |[package]
@@ -69,7 +73,7 @@ class TestJarPackageManager extends AnyFunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      JarPackageManager.installAll(List(manifest), path)(System.out) match {
+      JarPackageManager.installAll(List(manifest), path, None)(System.out) match {
         case Ok(l) => l
         case Err(e) => e.message(f)
       }

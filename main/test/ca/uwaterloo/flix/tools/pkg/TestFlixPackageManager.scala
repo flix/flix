@@ -413,6 +413,71 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     FlixPackageManager.resolveSecurityLevels(resolution).security(shared)
   }
 
+  test("resolveSecurityLevels.cycle.01") {
+    // Two packages that each require the other. The level the project declares `left` with
+    // reaches `right` around the cycle, whatever `left` declares `right` with.
+    val origin = mkManifest("origin", """"github:flix/left" = { version = "1.0.0", security = "plain" }""")
+    val l = mkManifest("left", """"github:flix/right" = { version = "1.0.0", security = "unrestricted" }""")
+    val r = mkManifest("right", """"github:flix/left" = { version = "1.0.0", security = "unrestricted" }""")
+
+    val List(toLeft) = FlixPackageManager.findFlixDependencies(origin)
+    val List(toRight) = FlixPackageManager.findFlixDependencies(l)
+    val List(backToLeft) = FlixPackageManager.findFlixDependencies(r)
+    val resolution = FlixPackageManager.Resolution(
+      origin = origin,
+      manifests = List(origin, l, r),
+      immediateDependents = Map(origin -> Nil, l -> List(origin, r), r -> List(l)),
+      manifestToFlixDeps = ListMap(Map(l -> List(toLeft, backToLeft), r -> List(toRight))),
+      tomlDigests = Map.empty
+    )
+
+    val security = FlixPackageManager.resolveSecurityLevels(resolution).security
+    assertResult(expected = SecurityContext.Plain)(actual = security(l))
+    assertResult(expected = SecurityContext.Plain)(actual = security(r))
+  }
+
+  test("resolveSecurityLevels.cycle.02") {
+    // A package that requires an older version of itself is its own dependent, since a
+    // declaration leads to the version of the package that is built.
+    val origin = mkManifest("origin", """"github:flix/older" = { version = "1.1.0", security = "paranoid" }""")
+    val older = mkManifest("older", """"github:flix/older" = { version = "1.0.0", security = "unrestricted" }""")
+
+    val List(toOlder) = FlixPackageManager.findFlixDependencies(origin)
+    val List(toItself) = FlixPackageManager.findFlixDependencies(older)
+    val resolution = FlixPackageManager.Resolution(
+      origin = origin,
+      manifests = List(origin, older),
+      immediateDependents = Map(origin -> Nil, older -> List(older, origin)),
+      manifestToFlixDeps = ListMap(Map(older -> List(toOlder, toItself))),
+      tomlDigests = Map.empty
+    )
+
+    assertResult(expected = SecurityContext.Paranoid)(actual = FlixPackageManager.resolveSecurityLevels(resolution).security(older))
+  }
+
+  test("resolveSecurityLevels.cycle.03") {
+    // A cycle that nothing restricts stays unrestricted: a level is lowered only where a
+    // dependent or a declaration asks for it.
+    val origin = mkManifest("origin", """"github:flix/left" = { version = "1.0.0", security = "unrestricted" }""")
+    val l = mkManifest("left", """"github:flix/right" = { version = "1.0.0", security = "unrestricted" }""")
+    val r = mkManifest("right", """"github:flix/left" = { version = "1.0.0", security = "unrestricted" }""")
+
+    val List(toLeft) = FlixPackageManager.findFlixDependencies(origin)
+    val List(toRight) = FlixPackageManager.findFlixDependencies(l)
+    val List(backToLeft) = FlixPackageManager.findFlixDependencies(r)
+    val resolution = FlixPackageManager.Resolution(
+      origin = origin,
+      manifests = List(origin, l, r),
+      immediateDependents = Map(origin -> Nil, l -> List(origin, r), r -> List(l)),
+      manifestToFlixDeps = ListMap(Map(l -> List(toLeft, backToLeft), r -> List(toRight))),
+      tomlDigests = Map.empty
+    )
+
+    val security = FlixPackageManager.resolveSecurityLevels(resolution).security
+    assertResult(expected = SecurityContext.Unrestricted)(actual = security(l))
+    assertResult(expected = SecurityContext.Unrestricted)(actual = security(r))
+  }
+
   test("checkFlixVersions.01") {
     // A package that requires a newer Flix than the one that is running.
     val resolution = mkResolutionOf(origin = "0.33.0", a = "0.80.0", b = "0.33.0")

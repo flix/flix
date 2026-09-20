@@ -44,12 +44,29 @@ object PackageError {
          |""".stripMargin
   }
 
-  case class ProjectNotFound(url: URL, project: Project, exception: IOException) extends PackageError {
+  /**
+    * A request about a project never reached a server at all.
+    */
+  case class ProjectUnreachable(url: URL, project: Project, exception: IOException) extends PackageError {
     override def message(f: Formatter): String =
       s"""An I/O error occurred while trying to read the following url:
          |${f.cyan(url.toString)}
          |Project: ${f.bold(project.toString)}
          |Error: ${f.red(exception.getMessage)}
+         |""".stripMargin
+  }
+
+  /**
+    * A project that GitHub answers 404 for.
+    *
+    * A private project answers the same way to whoever cannot see it, so the message names both
+    * possibilities: GitHub does not say which of the two it is.
+    */
+  case class ProjectDoesNotExist(project: Project, url: URL) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""There is no project ${f.red(project.toString)} to read releases from.
+         |Either it does not exist, or it is private and the API token in use cannot see it.
+         |Looked at ${f.cyan(url.toString)}.
          |""".stripMargin
   }
 
@@ -76,9 +93,27 @@ object PackageError {
   }
 
   /**
-    * A download refused (403/429), which for an anonymous request usually means a rate limit.
+    * A request GitHub answered 401 for, which it does only for a token it was offered and would
+    * not accept.
     */
-  case class DownloadRefused(url: URL, status: Int, retryAfter: Option[String])
+  case class TokenRejected(url: URL) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""GitHub rejected the token (HTTP ${f.red("401")}).
+         |It may have expired, been revoked, or been copied incompletely.
+         |Looked at ${f.cyan(url.toString)}.
+         |A request that carries no token is not refused this way: what is public can be read
+         |without one.
+         |""".stripMargin
+  }
+
+  /**
+    * A download refused (403/429), which for an anonymous request usually means a rate limit.
+    *
+    * `authorized` records whether the request carried a token. It decides whether setting one is
+    * worth suggesting: that is the answer for a client that has run out of anonymous requests,
+    * and noise for one that already holds a token.
+    */
+  case class DownloadRefused(url: URL, status: Int, retryAfter: Option[String], authorized: Boolean)
     extends PackageError {
     override def message(f: Formatter): String = {
       // Retry-After is delta-seconds per RFC 9110, but may also be an HTTP-date.
@@ -87,9 +122,18 @@ object PackageError {
         case Some(s) => s"Retry after $s."
         case None => "This is usually a rate limit."
       }
+      val hint =
+        if (authorized) ""
+        else
+          s"""|An anonymous client is limited more tightly than one with a token, which can be
+              |passed via:
+              |- The --github-token command line option.
+              |- A file named .GITHUB_TOKEN in the project's root.
+              |- The GITHUB_TOKEN environment variable.
+              |""".stripMargin
       s"""Refused (HTTP ${f.red(status.toString)}) by ${f.cyan(url.toString)}.
          |$when
-         |""".stripMargin
+         |$hint""".stripMargin
     }
   }
 

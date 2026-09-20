@@ -369,10 +369,7 @@ object FlixPackageManager {
     * Resolves the maximal allowed security level for all dependencies in `resolution`.
     */
   def resolveSecurityLevels(resolution: Resolution): SecureResolution = {
-    implicit val securityContexts: mutable.Map[Manifest, SecurityContext] = mutable.Map(resolution.origin -> SecurityContext.Unrestricted)
-    implicit val res: Resolution = resolution
-    val manifests = resolution.manifests.map(m => (m, minSecurityLevel(m))).toMap
-    SecureResolution(resolution.origin, manifests, resolution.manifestToFlixDeps, resolution.tomlDigests)
+    SecureResolution(resolution.origin, minSecurityLevels(resolution), resolution.manifestToFlixDeps, resolution.tomlDigests)
   }
 
   /**
@@ -608,13 +605,13 @@ object FlixPackageManager {
     */
   private def openReleaseAsset(proj: GitHub.Project, version: SemVer, extension: String, apiKey: Option[String]): Result[InputStream, PackageError] = {
     def fromListing(): Result[InputStream, PackageError] =
-      GitHub.findReleaseAsset(proj, version, extension, apiKey).flatMap(asset => GitHub.download(asset.url))
+      GitHub.findReleaseAsset(proj, version, extension, apiKey).flatMap(asset => GitHub.download(asset.url, apiKey))
 
     @tailrec
     def tryNames(names: List[String]): Result[InputStream, PackageError] = names match {
       case Nil => fromListing()
       case name :: rest =>
-        GitHub.downloadReleaseAsset(proj, version, name) match {
+        GitHub.downloadReleaseAsset(proj, version, name, apiKey) match {
           case Err(_: PackageError.ReleaseAssetNotFound) => tryNames(rest)
           case result => result
         }
@@ -709,24 +706,38 @@ object FlixPackageManager {
   }
 
   /**
-    * Computes the maximum allowed security level for `manifest` which is the minimum / greatest lower bound of both
-    *   1. the [[minSecurityLevel]] of all (transitive) dependent / parent manifests and
-    *   1. the security levels with which `manifest` is depended upon,
-    *      i.e., when `"security" = "..."` occurs in a manifest and that dependency points to `manifest`.
+    * Computes the maximum allowed security level of every manifest in `resolution`: the strictest
+    * of the levels its (transitive) dependents are given and the levels it is depended upon with,
+    * i.e. the `"security" = "..."` of every declaration that points to it.
     *
-    * It is the strictest of them all: a package that one dependent declares `paranoid` is
-    * `paranoid`, whatever its other dependents declare.
+    * The graph can hold a cycle — two packages can each require the other, and a package that
+    * requires an older version of itself is its own dependent — so the levels are a fixpoint:
+    * every manifest starts unrestricted, and a round lowers it to the strictest of what its
+    * dependents hold and its declarations ask for. A round never raises a level, so they end.
+    *
+    * The project is the root of the graph and is not lowered.
     */
-  private def minSecurityLevel(manifest: Manifest)(implicit resolution: Resolution, securityLevels: mutable.Map[Manifest, SecurityContext]): SecurityContext = {
-    securityLevels.get(manifest) match {
-      case Some(t) => t
-      case None =>
-        val incomingSctxs = resolution.manifestToFlixDeps(manifest).map(_.sctx)
-        val parentSctxs = resolution.immediateDependents(manifest).map(minSecurityLevel)
-        val glb = SecurityContext.glb(parentSctxs ::: incomingSctxs)
-        securityLevels.put(manifest, glb)
-        glb
+  private def minSecurityLevels(resolution: Resolution): Map[Manifest, SecurityContext] = {
+    val levels: mutable.Map[Manifest, SecurityContext] =
+      mutable.Map.from(resolution.manifests.map(m => m -> SecurityContext.Unrestricted))
+
+    var changed = true
+    while (changed) {
+      changed = false
+      for (manifest <- resolution.manifests) {
+        if (manifest != resolution.origin) {
+          val incomingSctxs = resolution.manifestToFlixDeps(manifest).map(_.sctx)
+          val parentSctxs = resolution.immediateDependents(manifest).map(levels)
+          val glb = SecurityContext.glb(parentSctxs ::: incomingSctxs)
+          if (glb != levels(manifest)) {
+            levels.put(manifest, glb)
+            changed = true
+          }
+        }
+      }
     }
+
+    levels.toMap
   }
 
   /**

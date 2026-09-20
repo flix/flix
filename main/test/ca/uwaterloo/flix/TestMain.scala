@@ -57,6 +57,29 @@ class TestMain extends AnyFunSuite {
     assert(opts.command == Main.Command.Release)
   }
 
+  test("install") {
+    val args = Array("install", "flix/museum-clerk")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Install("flix/museum-clerk"))
+  }
+
+  test("install.no-package") {
+    val args = Array("install")
+    assert(Main.parseCmdOpts(args).isEmpty)
+  }
+
+  test("remove") {
+    val args = Array("remove", "flix/museum-clerk")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Remove("flix/museum-clerk"))
+  }
+
+  test("upgrade") {
+    val args = Array("upgrade", "flix/museum-clerk@1.1.0")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Upgrade("flix/museum-clerk@1.1.0"))
+  }
+
   test("outdated") {
     val args = Array("outdated")
     val opts = Main.parseCmdOpts(args).get
