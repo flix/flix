@@ -33,21 +33,10 @@ object ReleaseError {
          |""".stripMargin
   }
 
-  case object InvalidApiKeyError extends ReleaseError {
+  case object InvalidToken extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
-         |The API-key is not valid or does not have the necessary permissions.
-         |""".stripMargin
-  }
-
-  case object MissingApiKey extends ReleaseError {
-    override def message(f: Formatter): String =
-      s"""
-         |Cannot create a release without a GitHub token.
-         |This can be passed via:
-         |- The --github-token command line option.
-         |- A file named .GITHUB_TOKEN in the project's root.
-         |- The GITHUB_TOKEN environment variable.
+         |The token is not valid or does not have the necessary permissions.
          |""".stripMargin
   }
 
@@ -62,6 +51,17 @@ object ReleaseError {
     override def message(f: Formatter): String =
       s"""
          |Cannot create a release without the `package.repository` option in `flix.toml`.
+         |""".stripMargin
+  }
+
+  case object MissingToken extends ReleaseError {
+    override def message(f: Formatter): String =
+      s"""
+         |Cannot create a release without a GitHub token.
+         |This can be passed via:
+         |- The --github-token command line option.
+         |- A file named .GITHUB_TOKEN in the project's root.
+         |- The GITHUB_TOKEN environment variable.
          |""".stripMargin
   }
 

@@ -195,7 +195,7 @@ object Bootstrap {
     * A project that does not resolve cannot be built, so a resolution that fails with the
     * dependency added puts the manifest that was there back, as does any failure before it.
     */
-  def install(p: Path, spec: String, apiKey: Option[String], assumeYes: Boolean)(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+  def install(p: Path, spec: String, token: Option[String], assumeYes: Boolean)(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
     val pkg = PackageSpec.mkPackageSpec(spec) match {
       case Some(s) => s
       case None => return Err(BootstrapError.IllegalPackageSpec(spec))
@@ -209,10 +209,10 @@ object Bootstrap {
     for {
       manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
       _ <- checkUndeclared(manifest, pkg.id)
-      version <- selectVersion(pkg, apiKey)
+      version <- selectVersion(pkg, token)
       mount <- selectMount(manifest, pkg.id, assumeYes)
       dep = Dependency.FlixDependency(pkg.id, version, Some(mount), SecurityContext.Default)
-      _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies :+ dep), apiKey,
+      _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies :+ dep), token,
         s"Added '${pkg.id}' v$version, mounted at '$mount'.")
     } yield ()
   }
@@ -235,7 +235,7 @@ object Bootstrap {
     * The manifest is rewritten as a whole, see [[install]], and a failure puts back the bytes
     * that were there.
     */
-  def remove(p: Path, spec: String, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+  def remove(p: Path, spec: String, token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
     val pkg = PackageSpec.mkPackageSpec(spec) match {
       case Some(s) if s.version.isDefined => return Err(BootstrapError.UnexpectedVersion(spec))
       case Some(s) => s
@@ -250,7 +250,7 @@ object Bootstrap {
     for {
       manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
       dep <- findDeclared(manifest, pkg.id)
-      _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies.filterNot(d => d == dep)), apiKey,
+      _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies.filterNot(d => d == dep)), token,
         s"Removed '${pkg.id}' v${dep.version}${dep.mount.map(mount => s", which was mounted at '$mount'").getOrElse("")}.")
     } yield ()
   }
@@ -276,7 +276,7 @@ object Bootstrap {
     * that were there. A package that already declares the version it would be given is left
     * alone entirely, so a command that changes nothing rewrites nothing.
     */
-  def upgrade(p: Path, spec: String, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+  def upgrade(p: Path, spec: String, token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
     val pkg = PackageSpec.mkPackageSpec(spec) match {
       case Some(s) => s
       case None => return Err(BootstrapError.IllegalPackageSpec(spec))
@@ -290,12 +290,12 @@ object Bootstrap {
     for {
       manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
       dep <- findDeclared(manifest, pkg.id)
-      version <- selectUpgradeVersion(pkg, dep, apiKey)
+      version <- selectUpgradeVersion(pkg, dep, token)
       _ <- if (version == dep.version) {
         out.println(formatter.green(s"'${pkg.id}' already declares v$version."))
         Ok(())
       } else {
-        rewriteManifest(p, manifest.copy(dependencies = replaceVersion(manifest.dependencies, dep, version)), apiKey,
+        rewriteManifest(p, manifest.copy(dependencies = replaceVersion(manifest.dependencies, dep, version)), token,
           s"Now declares '${pkg.id}' v$version, was v${dep.version}.")
       }
     } yield ()
@@ -348,11 +348,11 @@ object Bootstrap {
     * manifest to download. A package that is asked for at no version has to be looked up, since
     * the newest release is not knowable without the listing.
     */
-  private def selectVersion(pkg: PackageSpec, apiKey: Option[String]): Result[SemVer, BootstrapError] = pkg.version match {
+  private def selectVersion(pkg: PackageSpec, token: Option[String]): Result[SemVer, BootstrapError] = pkg.version match {
     case Some(version) => Ok(version)
     case None =>
       for {
-        versions <- releaseVersions(pkg.id, apiKey)
+        versions <- releaseVersions(pkg.id, token)
         version <- versions.maxOption match {
           case Some(v) => Ok(v)
           case None => Err(BootstrapError.NoReleases(pkg.id))
@@ -373,10 +373,10 @@ object Bootstrap {
     * The version that is declared is never lowered, whatever was released: a package whose
     * declared version is newer than any release of its major stays where it is.
     */
-  private def selectUpgradeVersion(pkg: PackageSpec, dep: Dependency.FlixDependency, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[SemVer, BootstrapError] = pkg.version match {
+  private def selectUpgradeVersion(pkg: PackageSpec, dep: Dependency.FlixDependency, token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[SemVer, BootstrapError] = pkg.version match {
     case Some(version) => Ok(version)
     case None =>
-      releaseVersions(pkg.id, apiKey).flatMap { versions =>
+      releaseVersions(pkg.id, token).flatMap { versions =>
         if (versions.isEmpty) {
           Err(BootstrapError.NoReleases(pkg.id))
         } else {
@@ -392,10 +392,10 @@ object Bootstrap {
   /**
     * Returns the versions of `id` that have been released.
     */
-  private def releaseVersions(id: PackageId, apiKey: Option[String]): Result[List[SemVer], BootstrapError] =
+  private def releaseVersions(id: PackageId, token: Option[String]): Result[List[SemVer], BootstrapError] =
     for {
       project <- GitHub.parseProject(s"${id.owner}/${id.name}").mapErr(BootstrapError.FlixPackageError.apply)
-      releases <- GitHub.getReleases(project, apiKey).mapErr(BootstrapError.FlixPackageError.apply)
+      releases <- GitHub.getReleases(project, token).mapErr(BootstrapError.FlixPackageError.apply)
     } yield releases.map(r => r.version)
 
   /**
@@ -486,7 +486,7 @@ object Bootstrap {
     * is put back are the bytes that were read, and not the manifest that was parsed from them,
     * so a failure costs neither the comments nor the keys that a rewrite would.
     */
-  private def rewriteManifest(p: Path, updated: Manifest, apiKey: Option[String], success: String)(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+  private def rewriteManifest(p: Path, updated: Manifest, token: Option[String], success: String)(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
     val tomlPath = getManifestFile(p)
 
     val original = try {
@@ -501,7 +501,7 @@ object Bootstrap {
       case e: IOException => return Err(BootstrapError.FileError(s"Unable to write '$FLIX_TOML': ${e.getMessage}"))
     }
 
-    bootstrap(p, apiKey) match {
+    bootstrap(p, token) match {
       case Ok(_) =>
         out.println(formatter.green(success))
         Ok(())
@@ -707,11 +707,11 @@ object Bootstrap {
     * all .flix source files.
     * Then returns the initialized Bootstrap object or an error.
     */
-  def bootstrap(path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Bootstrap, BootstrapError] = {
+  def bootstrap(path: Path, token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Bootstrap, BootstrapError] = {
     //
     // Determine the mode: If `path/flix.toml` exists then "project" mode else "directory mode".
     //
-    val bootstrap = new Bootstrap(path, apiKey)
+    val bootstrap = new Bootstrap(path, token)
     val tomlPath = getManifestFile(path)
     if (Files.exists(tomlPath)) {
       out.println(s"Found '${formatter.blue(FLIX_TOML)}'. Checking dependencies...")
@@ -723,7 +723,7 @@ object Bootstrap {
   }
 }
 
-class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
+class Bootstrap(val projectPath: Path, token: Option[String]) {
 
   // -- Fields Section --
 
@@ -797,7 +797,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Requires network access.
     */
   private def resolveFlixDependencies(manifest: Manifest, lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[FlixPackageManager.SecureResolution, BootstrapError] = {
-    FlixPackageManager.resolve(manifest, projectPath, apiKey, lockfile) match {
+    FlixPackageManager.resolve(manifest, projectPath, token, lockfile) match {
       case Err(e) => Err(BootstrapError.FlixPackageError(e))
       case Ok(resolution) =>
         // Every package must be one this version of Flix can build, and be mounted by all its
@@ -905,7 +905,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Returns the installed packages together with the lock file that records them.
     */
   private def installFlixDependencies(resolution: FlixPackageManager.SecureResolution, lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[FlixPackageManager.Installation, BootstrapError] = {
-    FlixPackageManager.installAll(resolution, projectPath, apiKey, lockfile) match {
+    FlixPackageManager.installAll(resolution, projectPath, token, lockfile) match {
       case Ok(installation) => Ok(installation)
       case Err(e) => Err(BootstrapError.FlixPackageError(e))
     }
@@ -929,7 +929,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Returns the paths to the installed dependencies.
     */
   private def installJarDependencies(dependencyManifests: List[Manifest])(implicit out: PrintStream): Result[List[Path], BootstrapError] = {
-    JarPackageManager.installAll(dependencyManifests, projectPath, apiKey) match {
+    JarPackageManager.installAll(dependencyManifests, projectPath, token) match {
       case Ok(paths) => Ok(paths)
       case Err(e) => Err(BootstrapError.JarPackageError(e))
     }
@@ -1859,9 +1859,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Check if `--github-token` option is present
-    val githubToken = flix.options.githubToken match {
+    val token = flix.options.githubToken match {
       case Some(k) => k
-      case None => return Result.Err(BootstrapError.ReleaseError(ReleaseError.MissingApiKey))
+      case None => return Result.Err(BootstrapError.ReleaseError(ReleaseError.MissingToken))
     }
 
     if (!flix.options.assumeYes) {
@@ -1885,7 +1885,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Publish to GitHub
     out.println("Publishing a new release...")
     val artifacts = List(Bootstrap.getPkgFile(projectPath), Bootstrap.getManifestFile(projectPath))
-    val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubToken)
+    val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, token)
     publishResult match {
       case Ok(()) => // Continue
       case Err(e) => return Result.Err(BootstrapError.ReleaseError(e))
