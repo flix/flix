@@ -115,7 +115,7 @@ object BootstrapError {
   case class PackageNotInstalled(id: PackageId) extends BootstrapError {
     override def message(f: Formatter): String =
       s"""${f.red(id.toString)} is not installed.
-         |Only a package the project has installed can be locked. Run ${f.bold("flix eff-lock")} on its own to lock every installed package.
+         |Only a package the project has installed can be locked or checked. Run the command on its own to cover every installed package.
          |""".stripMargin
   }
 

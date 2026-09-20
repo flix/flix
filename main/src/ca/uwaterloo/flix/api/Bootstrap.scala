@@ -1571,12 +1571,25 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
   // -- Effect Locking Section --
 
   /**
-    * Returns `Ok(())` if the dependencies are consistent with the `effects.lock` file.
-    * Returns `Err(e)` if an error `e` occurred or if the dependencies are inconsistent with the `effect.lock` file.
+    * Returns `Ok(())` if the signatures that the 'effects.lock' file locks for `spec` are the
+    * ones the dependencies declare.
+    *
+    * `spec` names the package to check, as it does for [[lockEffects]]: a package identifier
+    * without a version, e.g. `flix/museum-clerk` or `github:flix/museum-clerk`, which must be one
+    * the project has installed. Checking no package in particular checks every package the
+    * project has installed.
+    *
+    * A package is checked on its own, so that a package whose signatures have drifted does not
+    * stand in the way of checking another.
     */
-  def checkEffects(flix: Flix): Result[Unit, BootstrapError] = {
+  def checkEffects(flix: Flix, spec: Option[String])(implicit out: PrintStream): Result[Unit, BootstrapError] = {
     if (!isProjectMode) {
       return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-check'"))
+    }
+
+    val targets = targetsOf(spec) match {
+      case Ok(ts) => ts
+      case Err(e) => return Err(e)
     }
 
     FileOps.exists(Bootstrap.getEffectLockFile(projectPath)) match {
@@ -1586,11 +1599,30 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     }
 
     for {
+      // Read before the program is type checked, so that an unreadable file is reported before
+      // the work of compiling the project is done.
       lockfile <- EffectLockfileParser.parse(Bootstrap.getEffectLockFile(projectPath)).mapErr(BootstrapError.EffectLockParseError.apply)
       root <- typeCheck(flix)
-      errors <- reportChangedSignatures(lockfile, root)
+      errors <- reportChangedSignatures(lockfile, root, targets, flix.getFormatter)
     } yield {
       errors
+    }
+  }
+
+  /**
+    * Returns the packages that `spec` names, which is what 'eff-lock' and 'eff-check' act on.
+    *
+    * `spec` is a package identifier, e.g. `flix/museum-clerk` or `github:flix/museum-clerk`. It
+    * carries no version: a package is installed at one version, so there is nothing to choose
+    * between. Naming no package names every package the project has installed.
+    */
+  private def targetsOf(spec: Option[String]): Result[Set[PackageId], BootstrapError] = spec match {
+    case None => Ok(builtVersions.keySet)
+    case Some(s) => PackageSpec.mkPackageSpec(s) match {
+      case Some(pkg) if pkg.version.isDefined => Err(BootstrapError.UnexpectedVersion(s))
+      case Some(pkg) if !builtVersions.contains(pkg.id) => Err(BootstrapError.PackageNotInstalled(pkg.id))
+      case Some(pkg) => Ok(Set(pkg.id))
+      case None => Err(BootstrapError.IllegalPackageSpec(s))
     }
   }
 
@@ -1603,10 +1635,30 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     * Returns `Ok(())` if every locked signature is the one that was locked.
     * Returns `Err(BootstrapError.SignaturesChangedError(changes))` otherwise.
     */
-  private def reportChangedSignatures(lockfile: EffectLockfile, root: TypedAst.Root): Result[Unit, BootstrapError] = {
-    EffectLock.check(lockfile, root) match {
-      case Nil => Ok(())
+  private def reportChangedSignatures(lockfile: EffectLockfile, root: TypedAst.Root, targets: Set[PackageId], f: Formatter)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
+    EffectLock.check(lockfile, root, targets) match {
+      case Nil =>
+        val checked = EffectLockfile(lockfile.packages.filter { case (id, _) => targets.contains(id) })
+        fmtLocked(checked) match {
+          case None => out.println(f.green("Nothing to check: no signature is locked."))
+          case Some(what) => out.println(f.green(s"Checked $what. Nothing has changed."))
+        }
+        Ok(())
       case changes => Err(BootstrapError.SignaturesChangedError(changes))
+    }
+  }
+
+  /**
+    * Returns what `lockfile` records, e.g. `154 signatures of 'github:flix/extras'`, or `None` if
+    * it records nothing.
+    */
+  private def fmtLocked(lockfile: EffectLockfile): Option[String] = {
+    val n = lockfile.packages.values.map(locked => locked.defs.size + locked.sigs.size).sum
+    val signatures = if (n == 1) "1 signature" else s"$n signatures"
+    lockfile.packages.keys.toList.sorted match {
+      case Nil => None
+      case id :: Nil => Some(s"$signatures of '$id'")
+      case ids => Some(s"$signatures of ${ids.length} packages")
     }
   }
 
@@ -1625,19 +1677,14 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     *
     * If the program does not type check, then effect locking is aborted without touching the file system.
     */
-  def lockEffects(flix: Flix, spec: Option[String]): Result[Unit, BootstrapError] = {
+  def lockEffects(flix: Flix, spec: Option[String])(implicit out: PrintStream): Result[Unit, BootstrapError] = {
     if (!isProjectMode) {
       return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-lock'"))
     }
 
-    val targets = spec match {
-      case None => builtVersions.keySet
-      case Some(s) => PackageSpec.mkPackageSpec(s) match {
-        case Some(pkg) if pkg.version.isDefined => return Err(BootstrapError.UnexpectedVersion(s))
-        case Some(pkg) if !builtVersions.contains(pkg.id) => return Err(BootstrapError.PackageNotInstalled(pkg.id))
-        case Some(pkg) => Set(pkg.id)
-        case None => return Err(BootstrapError.IllegalPackageSpec(s))
-      }
+    val targets = targetsOf(spec) match {
+      case Ok(ts) => ts
+      case Err(e) => return Err(e)
     }
 
     for {
@@ -1646,9 +1693,14 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
       previous <- readEffectLockFile(merge = spec.isDefined)
       root <- typeCheck(flix)
     } yield {
-      val locked = EffectLockfile(previous.packages ++ EffectLock.lock(root, targets).packages)
+      val locking = EffectLock.lock(root, targets)
+      val locked = EffectLockfile(previous.packages ++ locking.packages)
       // N.B.: Do not use FileOps.writeTOML, since the lock file is formatted by Flix itself.
       FileOps.writeString(Bootstrap.getEffectLockFile(projectPath), EffectLockfile.format(locked))
+      fmtLocked(locking) match {
+        case None => out.println(flix.getFormatter.green("Locked nothing: no package declares a public signature."))
+        case Some(what) => out.println(flix.getFormatter.green(s"Locked $what."))
+      }
     }
   }
 

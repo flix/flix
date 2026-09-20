@@ -43,18 +43,21 @@ object EffectLock {
   }
 
   /**
-    * Returns the declarations of `root` that `lockfile` locks at a signature they no longer have,
-    * each with the scheme it is declared with now.
+    * Returns the declarations of `targets` in `root` that `lockfile` locks at a signature they no
+    * longer have, each with the scheme it is declared with now.
+    *
+    * A package that `lockfile` locks but that `targets` does not name is not checked, which is
+    * how one package is checked without the drift of another standing in the way.
     *
     * The hash says whether a signature is the one that was locked, and nothing more. A change
     * that only narrows what a declaration may do is reported like any other: telling the two
     * apart would mean holding the signature that was locked, which the lock file does not.
     */
-  def check(lockfile: EffectLockfile, root: TypedAst.Root): List[(PackageId, String, Scheme)] = {
+  def check(lockfile: EffectLockfile, root: TypedAst.Root, targets: Set[PackageId]): List[(PackageId, String, Scheme)] = {
     val defs = root.defs.map { case (sym, defn) => sym.toString -> defn.spec.declaredScheme }
     val sigs = root.sigs.map { case (sym, sig) => sym.toString -> sig.spec.declaredScheme }
 
-    lockfile.packages.toList.sortBy { case (id, _) => id }.flatMap {
+    lockfile.packages.toList.filter { case (id, _) => targets.contains(id) }.sortBy { case (id, _) => id }.flatMap {
       case (id, locked) =>
         val changes = changedSignatures(locked.defs, defs) ::: changedSignatures(locked.sigs, sigs)
         changes.map { case (sym, sc) => (id, sym, sc) }

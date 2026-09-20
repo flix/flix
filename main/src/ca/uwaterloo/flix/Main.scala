@@ -483,15 +483,15 @@ object Main {
             }
           }
 
-        case Command.EffCheck =>
+        case Command.EffCheck(pkg) =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'eff-check' command does not support file arguments.")
             System.exit(1)
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              val flix = bootstrap.mkFlix(options.copy(progress = false), formatter)
-              bootstrap.checkEffects(flix)
+              val flix = bootstrap.mkFlix(options, formatter)
+              bootstrap.checkEffects(flix, pkg)(System.out)
             }
           }
 
@@ -503,8 +503,8 @@ object Main {
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
               bootstrap =>
-                val flix = bootstrap.mkFlix(options.copy(progress = false), formatter)
-                bootstrap.lockEffects(flix, pkg)
+                val flix = bootstrap.mkFlix(options, formatter)
+                bootstrap.lockEffects(flix, pkg)(System.out)
             }
           }
 
@@ -609,7 +609,7 @@ object Main {
 
     case object Stat extends Command
 
-    case object EffCheck extends Command
+    case class EffCheck(pkg: Option[String]) extends Command
 
     case class EffLock(pkg: Option[String]) extends Command
 
@@ -726,7 +726,12 @@ object Main {
         .action((_, c) => c.copy(command = Command.Stat))
 
       cmd("eff-check").text("  checks that dependencies respect the 'effects.lock' file.")
-        .action((_, c) => c.copy(command = Command.EffCheck))
+        .action((_, c) => c.copy(command = Command.EffCheck(None)))
+        .children(
+          arg[String]("package").action((pkg, c) => c.copy(command = Command.EffCheck(Some(pkg))))
+            .optional()
+            .text("the package to check, e.g. 'flix/museum-clerk'. Defaults to every installed package.")
+        )
 
       cmd("eff-lock").text("  locks the current effect signatures.")
         .action((_, c) => c.copy(command = Command.EffLock(None)))
