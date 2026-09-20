@@ -161,167 +161,84 @@ object HashType {
 
   private def visitTypeConstructor(tc0: TypeConstructor)(implicit loc0: SourceLocation): Array[Byte] = tc0 match {
     case TypeConstructor.Void => tcon("Void")
-
     case TypeConstructor.AnyType => tcon("AnyType")
-
     case TypeConstructor.Unit => tcon("Unit")
-
     case TypeConstructor.Null => tcon("Null")
-
     case TypeConstructor.Bool => tcon("Bool")
-
     case TypeConstructor.Char => tcon("Char")
-
     case TypeConstructor.Float32 => tcon("Float32")
-
     case TypeConstructor.Float64 => tcon("Float64")
-
     case TypeConstructor.BigDecimal => tcon("BigDecimal")
-
     case TypeConstructor.Int8 => tcon("Int8")
-
     case TypeConstructor.Int16 => tcon("Int16")
-
     case TypeConstructor.Int32 => tcon("Int32")
-
     case TypeConstructor.Int64 => tcon("Int64")
-
     case TypeConstructor.BigInt => tcon("BigInt")
-
     case TypeConstructor.Str => tcon("Str")
-
     case TypeConstructor.Regex => tcon("Regex")
-
     case TypeConstructor.Arrow(arity) => tcon("Arrow", hashInt(arity))
-
     case TypeConstructor.RecordRowEmpty => tcon("RecordRowEmpty")
-
     case TypeConstructor.RecordRowExtend(label) => tcon("RecordRowExtend", visitLabel(label))
-
     case TypeConstructor.Record => tcon("Record")
-
     case TypeConstructor.Extensible => tcon("Extensible")
-
     case TypeConstructor.SchemaRowEmpty => tcon("SchemaRowEmpty")
-
     case TypeConstructor.SchemaRowExtend(pred) => tcon("SchemaRowExtend", visitPred(pred))
-
     case TypeConstructor.Schema => tcon("Schema")
-
     case TypeConstructor.Sender => tcon("Sender")
-
     case TypeConstructor.Receiver => tcon("Receiver")
-
     case TypeConstructor.Lazy => tcon("Lazy")
-
     case TypeConstructor.Enum(sym, kind) => tcon("Enum", visitEnumSym(sym), visitKind(kind))
-
     case TypeConstructor.Struct(sym, kind) => tcon("Struct", visitStructSym(sym), visitKind(kind))
-
     case TypeConstructor.RestrictableEnum(sym, kind) => tcon("RestrictableEnum", visitRestrictableEnumSym(sym), visitKind(kind))
-
     case TypeConstructor.Native(desc, arity) => tcon("Native", hashString(desc.descriptorString()), hashInt(arity))
-
     case TypeConstructor.Array => tcon("Array")
-
     case TypeConstructor.Vector => tcon("Vector")
-
     case TypeConstructor.Tuple(arity) => tcon("Tuple", hashInt(arity))
-
     case TypeConstructor.Relation(arity) => tcon("Relation", hashInt(arity))
-
     case TypeConstructor.Lattice(arity) => tcon("Lattice", hashInt(arity))
-
     case TypeConstructor.True => tcon("True")
-
     case TypeConstructor.False => tcon("False")
-
     case TypeConstructor.Not => tcon("Not")
-
     case TypeConstructor.And => tcon("And")
-
     case TypeConstructor.Or => tcon("Or")
-
     case TypeConstructor.Pure => tcon("Pure")
-
     case TypeConstructor.Univ => tcon("Univ")
-
     case TypeConstructor.Complement => tcon("Complement")
-
     case TypeConstructor.Union => tcon("Union")
-
     case TypeConstructor.Intersection => tcon("Intersection")
-
     case TypeConstructor.Difference => tcon("Difference")
-
     case TypeConstructor.SymmetricDiff => tcon("SymmetricDiff")
-
     case TypeConstructor.Effect(sym, kind) => tcon("Effect", visitEffSym(sym), visitKind(kind))
-
     case TypeConstructor.CaseComplement(sym) => tcon("CaseComplement", visitRestrictableEnumSym(sym))
-
     case TypeConstructor.CaseUnion(sym) => tcon("CaseUnion", visitRestrictableEnumSym(sym))
-
     case TypeConstructor.CaseIntersection(sym) => tcon("CaseIntersection", visitRestrictableEnumSym(sym))
-
     case TypeConstructor.CaseSymmetricDiff(sym) => tcon("CaseSymmetricDiff", visitRestrictableEnumSym(sym))
-
-    case TypeConstructor.CaseSet(syms, enumSym) =>
-      // N.B.: The symbols are already in a canonical order, since they are held in a sorted set.
-      tcon("CaseSet", seq("CaseSet.Cases", syms.toList.map(visitRestrictableCaseSym)), visitRestrictableEnumSym(enumSym))
-
+    // N.B.: The symbols are already in a canonical order, since they are held in a sorted set.
+    case TypeConstructor.CaseSet(syms, enumSym) => tcon("CaseSet", seq("CaseSet.Cases", syms.toList.map(visitRestrictableCaseSym)), visitRestrictableEnumSym(enumSym))
     case TypeConstructor.Region(sym) => tcon("Region", visitRegionSym(sym))
-
     case TypeConstructor.RegionToStar => tcon("RegionToStar")
-
-    case TypeConstructor.ArrowWithoutEffect(_) =>
-      throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", loc0)
-
-    case TypeConstructor.ArrayWithoutRegion =>
-      throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", loc0)
-
-    case TypeConstructor.RegionWithoutRegion =>
-      throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", loc0)
-
-    case TypeConstructor.JvmConstructor(_) =>
-      throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", loc0)
-
-    case TypeConstructor.JvmMethod(_, _) =>
-      throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", loc0)
-
-    case TypeConstructor.JvmField(_) =>
-      throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", loc0)
-
-    case TypeConstructor.Error(_, _) =>
-      throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", loc0)
+    case TypeConstructor.ArrowWithoutEffect(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", loc0)
+    case TypeConstructor.ArrayWithoutRegion => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", loc0)
+    case TypeConstructor.RegionWithoutRegion => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", loc0)
+    case TypeConstructor.JvmConstructor(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", loc0)
+    case TypeConstructor.JvmMethod(_, _) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", loc0)
+    case TypeConstructor.JvmField(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", loc0)
+    case TypeConstructor.Error(_, _) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", loc0)
   }
 
   private def visitKind(kind0: Kind): Array[Byte] = kind0 match {
     case Kind.Wild => node("Kind.Wild")
-
     case Kind.WildCaseSet => node("Kind.WildCaseSet")
-
     case Kind.Star => node("Kind.Star")
-
     case Kind.Eff => node("Kind.Eff")
-
     case Kind.Bool => node("Kind.Bool")
-
     case Kind.RecordRow => node("Kind.RecordRow")
-
     case Kind.SchemaRow => node("Kind.SchemaRow")
-
     case Kind.Predicate => node("Kind.Predicate")
-
     case Kind.CaseSet(sym) => node("Kind.CaseSet", visitRestrictableEnumSym(sym))
-
     case Kind.Arrow(k1, k2) => node("Kind.Arrow", visitKind(k1), visitKind(k2))
-
-    case Kind.Jvm =>
-      throw InternalCompilerException(s"Unexpected kind: '$kind0'", SourceLocation.Unknown)
-
-    case Kind.Error =>
-      throw InternalCompilerException(s"Unexpected kind: '$kind0'", SourceLocation.Unknown)
+    case Kind.Jvm => throw InternalCompilerException(s"Unexpected kind: '$kind0'", SourceLocation.Unknown)
+    case Kind.Error => throw InternalCompilerException(s"Unexpected kind: '$kind0'", SourceLocation.Unknown)
   }
 
   private def visitAssocTypeSym(sym0: Symbol.AssocTypeSym): Array[Byte] = {
