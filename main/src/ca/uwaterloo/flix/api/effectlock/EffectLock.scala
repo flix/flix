@@ -15,102 +15,79 @@
  */
 package ca.uwaterloo.flix.api.effectlock
 
-import ca.uwaterloo.flix.api.effectlock.serialization.{Deserialize, Serialize}
-import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{Origin, PackageId, Source}
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
+import ca.uwaterloo.flix.util.Sha256
 
 object EffectLock {
 
   /**
-    * The effect lock of one package: the schemes its public defs and sigs were locked at.
-    */
-  case class LockedPackage(defs: Map[Symbol.DefnSym, Scheme], sigs: Map[Symbol.SigSym, Scheme])
-
-  /**
-    * The effect lock as it is written to disk: a map from each package to the serialized schemes
-    * of its public defs and sigs, keyed by the symbol they belong to.
-    *
-    * A package is a section of its own, so the lock of one package can be replaced without
-    * disturbing the lock of another.
-    */
-  type SerializedLock = Map[String, Map[String, serialization.DefOrSig]]
-
-  /**
-    * Returns the schemes of the public defs and sigs of `targets` in `root`.
+    * Returns the hashes of the signatures of the public defs and sigs of `targets` in `root`.
     *
     * Only a package can be locked. The library bundled with the compiler cannot change under a
     * project, because the version of Flix that provides it is fixed by the manifest, so it has no
     * lock of its own.
     */
-  def lock(root: TypedAst.Root, targets: Set[PackageId]): SerializedLock = {
-    val defs = root.defs.toList.flatMap {
-      case (sym, defn) if defn.spec.mod.isPublic =>
-        packageOf(sym.src).filter(targets.contains).map(id => id -> (sym.toString -> Serialize.serializeDef(defn)))
-      case _ => None
+  def lock(root: TypedAst.Root, targets: Set[PackageId]): EffectLockfile = {
+    val defs = hashesOf(root.defs.toList.collect {
+      case (sym, defn) if defn.spec.mod.isPublic => (sym.src, sym.toString, defn.spec.declaredScheme)
+    }, targets)
+    val sigs = hashesOf(root.sigs.toList.collect {
+      case (sym, sig) if sig.spec.mod.isPublic => (sym.src, sym.toString, sig.spec.declaredScheme)
+    }, targets)
+
+    val ids = defs.keySet ++ sigs.keySet
+    EffectLockfile(ids.map {
+      id => id -> LockedPackage(defs.getOrElse(id, Map.empty), sigs.getOrElse(id, Map.empty))
+    }.toMap)
+  }
+
+  /**
+    * Returns the declarations of `root` that `lockfile` locks at a signature they no longer have,
+    * each with the scheme it is declared with now.
+    *
+    * The hash says whether a signature is the one that was locked, and nothing more. A change
+    * that only narrows what a declaration may do is reported like any other: telling the two
+    * apart would mean holding the signature that was locked, which the lock file does not.
+    */
+  def check(lockfile: EffectLockfile, root: TypedAst.Root): List[(PackageId, String, Scheme)] = {
+    val defs = root.defs.map { case (sym, defn) => sym.toString -> defn.spec.declaredScheme }
+    val sigs = root.sigs.map { case (sym, sig) => sym.toString -> sig.spec.declaredScheme }
+
+    lockfile.packages.toList.sortBy { case (id, _) => id }.flatMap {
+      case (id, locked) =>
+        val changes = changedSignatures(locked.defs, defs) ::: changedSignatures(locked.sigs, sigs)
+        changes.map { case (sym, sc) => (id, sym, sc) }
     }
-    val sigs = root.sigs.toList.flatMap {
-      case (sym, sig) if sig.spec.mod.isPublic =>
-        packageOf(sym.src).filter(targets.contains).map(id => id -> (sym.toString -> Serialize.serializeSig(sig)))
-      case _ => None
+  }
+
+  /**
+    * Returns the symbols of `locked` that `current` declares with a signature that hashes to
+    * something other than what was locked.
+    *
+    * A locked declaration that the program no longer has is not an error: it cannot be called,
+    * so it cannot do anything the lock did not allow.
+    */
+  private def changedSignatures(locked: Map[String, Sha256], current: Map[String, Scheme]): List[(String, Scheme)] = {
+    locked.toList.sortBy { case (sym, _) => sym }.flatMap {
+      case (sym, hash) => current.get(sym).filter(sc => HashType.hashScheme(sc) != hash).map(sc => (sym, sc))
     }
-    (defs ::: sigs).groupMap { case (id, _) => id.toString } { case (_, entry) => entry }.map {
+  }
+
+  /**
+    * Returns the hash of the signature of each declaration of `decls` that belongs to one of
+    * `targets`, grouped by the package it belongs to.
+    */
+  private def hashesOf(decls: List[(Source, String, Scheme)], targets: Set[PackageId]): Map[PackageId, Map[String, Sha256]] = {
+    decls.flatMap {
+      case (src, sym, sc) => packageOf(src).filter(targets.contains).map(id => id -> (sym -> HashType.hashScheme(sc)))
+    }.groupMap {
+      case (id, _) => id
+    } {
+      case (_, entry) => entry
+    }.map {
       case (id, entries) => id -> entries.toMap
     }
-  }
-
-  /**
-    * Returns `lock` as a JSON string that may be written directly to a file.
-    */
-  def format(lock: SerializedLock): Result[String, String] = {
-    try {
-      implicit val formats: org.json4s.Formats = serialization.formats
-      Result.Ok(org.json4s.native.Serialization.write(lock))
-    } catch {
-      case e: Exception => Result.Err(s"Invalid AST: ${e.getMessage}")
-    }
-  }
-
-  /**
-    * Returns the lock `json` describes, without deserializing the schemes it holds.
-    *
-    * Used to keep the sections of the packages that are not being locked, so that locking one
-    * package leaves the rest of the file as it was.
-    */
-  def parse(json: String): Result[SerializedLock, String] = {
-    try {
-      implicit val formats: org.json4s.Formats = serialization.formats
-      Result.Ok(org.json4s.native.Serialization.read[SerializedLock](json))
-    } catch {
-      case e: Exception => Result.Err(s"Unexpected JSON: ${e.getMessage}")
-    }
-  }
-
-  /**
-    * Returns the schemes `json` locks, for each package it locks them for.
-    */
-  def deserialize(json: String): Result[Map[PackageId, LockedPackage], String] = {
-    parse(json).flatMap { lock =>
-      Result.traverse(lock) {
-        case (id, entries) => PackageId.mkPackageId(id) match {
-          case None => Result.Err(s"Not a package: '$id'")
-          case Some(pkg) => Result.Ok(pkg -> mkLockedPackage(entries))
-        }
-      }.map(_.toMap)
-    }
-  }
-
-  /**
-    * Returns the schemes of `entries`, split into the defs and the sigs they belong to.
-    */
-  private def mkLockedPackage(entries: Map[String, serialization.DefOrSig]): LockedPackage = {
-    val defs = entries.values.collect {
-      case defn: serialization.SDef => Deserialize.deserializeDef(defn)
-    }
-    val sigs = entries.values.collect {
-      case sig: serialization.SSig => Deserialize.deserializeSig(sig)
-    }
-    LockedPackage(defs.toMap, sigs.toMap)
   }
 
   /**

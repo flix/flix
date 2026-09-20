@@ -15,8 +15,10 @@
  */
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.api.effectlock.EffectLockError
 import ca.uwaterloo.flix.language.ast.shared.PackageId
 import ca.uwaterloo.flix.language.ast.Scheme
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
 import ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.tools.pkg.{LockError, ManifestError, PackageError, SemVer}
 import ca.uwaterloo.flix.util.Formatter
@@ -161,44 +163,61 @@ object BootstrapError {
     override def message(f: Formatter): String = e
   }
 
-  case class EffectUpgradeError(e: List[(PackageId, String, Scheme)]) extends BootstrapError {
+  /**
+    * An error raised when a package no longer has the signatures it was locked at.
+    *
+    * @param e the package, the symbol, and the scheme the symbol is declared with now.
+    */
+  case class SignaturesChangedError(e: List[(PackageId, String, Scheme)]) extends BootstrapError {
     override def message(f: Formatter): String = {
       s"""@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
          |@  WARNING! YOU MAY BE SUBJECT TO A SUPPLY CHAIN ATTACK!  @
          |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-         |            ~~ Effect signatures have changed! ~~
+         |            ~~ Signatures have changed! ~~
          |
-         |The following potentially harmful changes were detected:
-         |$fmtEffectSets
+         |The following declarations are not the ones that were locked:
+         |${fmtChanges(f)}
+         |
+         |Run ${f.bold("flix eff-lock")} to lock them as they are now, once you are satisfied that the
+         |changes are ones you want.
          |""".stripMargin
     }
 
     /**
-      * Returns a formatted string containing each package, each of its symbols that has changed,
-      * and what new effects that symbol has.
+      * Returns a formatted string containing each package, each of its symbols that no longer has
+      * the signature it was locked at, and the signature that symbol has now.
       *
-      * E.g., if `f` of `github:flix/museum-clerk` has effect set `A, B, C` then the string is
+      * E.g., if `f` of `github:flix/museum-clerk` is now `Int32 -> Unit \ IO` then the string is
       * formatted as
       *
       * {{{
       * "  github:flix/museum-clerk:
-      *      + 'f' now uses *{ A, B, C }*
+      *      + 'f' is now Int32 -> Unit \ IO
       * "
       * }}}
       */
-    private def fmtEffectSets: String = e.groupBy {
+    private def fmtChanges(f: Formatter): String = e.groupBy {
       case (id, _, _) => id
     }.toList.sortBy {
       case (id, _) => id
     }.map {
       case (id, changes) =>
-        val formattedPkg = s"  $id:"
+        val formattedPkg = s"  ${f.bold(id.toString)}:"
         val formattedChanges = changes.sortBy { case (_, sym, _) => sym }.map {
-          case (_, sym, upgrade) =>
-            val effs = upgrade.base.effects.mkString("*{ ", ", ", " }*")
-            s"    + '$sym' now uses $effs"
+          case (_, sym, sc) =>
+            val signature = FormatScheme.formatSchemeWithOptions(sc, FormatOptions(FormatOptions.VarName.NameBased))
+            s"    + ${f.bold(sym)} is now ${f.red(signature)}"
         }.mkString(System.lineSeparator())
         s"$formattedPkg${System.lineSeparator()}$formattedChanges"
     }.mkString(System.lineSeparator())
+  }
+
+  /**
+    * An error raised when the `effects.lock` file cannot be read.
+    *
+    * @param e what is wrong with the file.
+    */
+  case class EffectLockParseError(e: EffectLockError) extends BootstrapError {
+    override def message(f: Formatter): String = e.message(f)
   }
 }

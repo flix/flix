@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, PACKAGES_LOCK, README}
-import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade}
+import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectLockfile, EffectLockfileParser}
 import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, Origin, PackageId, SecurityContext}
@@ -545,6 +545,9 @@ object Bootstrap {
   /** The lock file name. */
   val PACKAGES_LOCK: String = "packages.lock"
 
+  /** The effect lock file name. */
+  val EFFECTS_LOCK: String = "effects.lock"
+
   /** The license file name. */
   private val LICENSE: String = "LICENSE.md"
 
@@ -625,7 +628,7 @@ object Bootstrap {
   /**
     * Returns the path to the `effects.lock` relative to the given path `p`.
     */
-  private def getEffectLockFile(p: Path): Path = p.resolve("effects.lock").normalize()
+  private def getEffectLockFile(p: Path): Path = p.resolve(EFFECTS_LOCK).normalize()
 
   /**
     * Returns the path to the LICENSE file relative to the given path `p`.
@@ -1583,10 +1586,9 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     }
 
     for {
-      json <- FileOps.readString(Bootstrap.getEffectLockFile(projectPath)).mapErr(e => BootstrapError.FileError(s"IO error: ${e.getMessage}"))
-      locked <- EffectLock.deserialize(json).mapErr(BootstrapError.FileError.apply)
+      lockfile <- EffectLockfileParser.parse(Bootstrap.getEffectLockFile(projectPath)).mapErr(BootstrapError.EffectLockParseError.apply)
       root <- typeCheck(flix)
-      errors <- reportEffectUpgradeErrors(locked, root)(flix)
+      errors <- reportChangedSignatures(lockfile, root)
     } yield {
       errors
     }
@@ -1598,47 +1600,14 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
   /**
     * Helper function for [[checkEffects]] to be used in for comprehension.
     *
-    * Returns `Ok(())` if no effect upgrade errors are found.
-    * Returns `Err(BootstrapError.EffectUpgradeError(errors))` otherwise.
+    * Returns `Ok(())` if every locked signature is the one that was locked.
+    * Returns `Err(BootstrapError.SignaturesChangedError(changes))` otherwise.
     */
-  private def reportEffectUpgradeErrors(locked: Map[PackageId, EffectLock.LockedPackage], root: TypedAst.Root)(implicit flix: Flix): Result[Unit, BootstrapError] = {
-    // N.B.: We erase the keys of the maps to strings, since maps are invariant in the key
-    val erasedUpgradedDefs = root.defs.map { case (sym, defn) => sym.toString -> defn.spec.declaredScheme }
-    val erasedUpgradedSigs = root.sigs.map { case (sym, sig) => sym.toString -> sig.spec.declaredScheme }
-
-    val allErrors = locked.toList.sortBy { case (id, _) => id }.flatMap {
-      case (id, EffectLock.LockedPackage(lockedDefs, lockedSigs)) =>
-        val erasedLockedDefs = lockedDefs.map { case (sym, scheme) => sym.toString -> scheme }
-        val erasedLockedSigs = lockedSigs.map { case (sym, scheme) => sym.toString -> scheme }
-        val defnErrors = collectUpgradeErrors(erasedLockedDefs, erasedUpgradedDefs)
-        val sigErrors = collectUpgradeErrors(erasedLockedSigs, erasedUpgradedSigs)
-        (defnErrors ::: sigErrors).map { case (sym, scheme) => (id, sym, scheme) }
+  private def reportChangedSignatures(lockfile: EffectLockfile, root: TypedAst.Root): Result[Unit, BootstrapError] = {
+    EffectLock.check(lockfile, root) match {
+      case Nil => Ok(())
+      case changes => Err(BootstrapError.SignaturesChangedError(changes))
     }
-
-    if (allErrors.isEmpty) {
-      Ok(())
-    } else {
-      Err(BootstrapError.EffectUpgradeError(allErrors))
-    }
-  }
-
-  /**
-    * Collects a list of tuples `(sym, scheme)` if the function represented by `sym` is not an effect safe upgrade.
-    *
-    * A locked function that the program no longer declares is not an error: it cannot be called,
-    * so it cannot do anything the lock did not allow.
-    */
-  private def collectUpgradeErrors(lockedFunctions: Map[String, Scheme], upgradeFunctions: Map[String, Scheme])(implicit flix: Flix): List[(String, Scheme)] = {
-    val errors = mutable.ArrayBuffer.empty[(String, Scheme)]
-    for ((sym, lockedScheme) <- lockedFunctions) {
-      if (upgradeFunctions.contains(sym)) {
-        val upgradedScheme = upgradeFunctions(sym)
-        if (!EffectUpgrade.isEffSafeUpgrade(lockedScheme, upgradedScheme)(flix)) {
-          errors.addOne((sym, upgradedScheme))
-        }
-      }
-    }
-    errors.toList
   }
 
   /**
@@ -1676,11 +1645,10 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
       // work of compiling the project is done.
       previous <- readEffectLockFile(merge = spec.isDefined)
       root <- typeCheck(flix)
-      json <- EffectLock.format(previous ++ EffectLock.lock(root, targets))
-        .mapErr(e => BootstrapError.GeneralError(s"Unexpected serialization error: $e"))
     } yield {
-      // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
-      FileOps.writeString(Bootstrap.getEffectLockFile(projectPath), json)
+      val locked = EffectLockfile(previous.packages ++ EffectLock.lock(root, targets).packages)
+      // N.B.: Do not use FileOps.writeTOML, since the lock file is formatted by Flix itself.
+      FileOps.writeString(Bootstrap.getEffectLockFile(projectPath), EffectLockfile.format(locked))
     }
   }
 
@@ -1694,19 +1662,15 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     * A file that cannot be read is an error rather than one to overwrite: it may hold the lock of
     * a package that is not being locked, and overwriting it would drop that lock silently.
     */
-  private def readEffectLockFile(merge: Boolean): Result[EffectLock.SerializedLock, BootstrapError] = {
+  private def readEffectLockFile(merge: Boolean): Result[EffectLockfile, BootstrapError] = {
     val path = Bootstrap.getEffectLockFile(projectPath)
     if (!merge) {
-      return Ok(Map.empty)
+      return Ok(EffectLockfile(Map.empty))
     }
     FileOps.exists(path) match {
       case Err(e) => Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
-      case Ok(false) => Ok(Map.empty)
-      case Ok(true) =>
-        for {
-          json <- FileOps.readString(path).mapErr(e => BootstrapError.FileError(s"IO error: ${e.getMessage}"))
-          lock <- EffectLock.parse(json).mapErr(BootstrapError.FileError.apply)
-        } yield lock
+      case Ok(false) => Ok(EffectLockfile(Map.empty))
+      case Ok(true) => EffectLockfileParser.parse(path).mapErr(BootstrapError.EffectLockParseError.apply)
     }
   }
 
