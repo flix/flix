@@ -26,7 +26,7 @@ import org.json4s.native.JsonMethods.{compact, parse, render}
 import java.io.{IOException, InputStream}
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import java.net.{URI, URL, URLEncoder}
+import java.net.{MalformedURLException, URI, URISyntaxException, URL, URLEncoder}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.util.Locale
@@ -114,7 +114,7 @@ object GitHub {
 
       case _: ClassCastException => return Err(PackageError.JsonError(json, project))
     }
-    Ok(releaseJsons.arr.map(parseRelease))
+    Ok(releaseJsons.arr.flatMap(parseRelease))
   }
 
   /**
@@ -389,38 +389,51 @@ object GitHub {
   }
 
   /**
-    * Parses a Release JSON.
-    */
-  private def parseRelease(json: JValue): Release = {
-    val version = parseSemVer((json \ "tag_name").values.toString)
-    val assetJsons = (json \ "assets").asInstanceOf[JArray]
-    val assets = assetJsons.arr.map(parseAsset)
-    Release(version, assets)
-  }
-
-  /**
-    * Parses an Asset JSON.
-    */
-  private def parseAsset(asset: JValue): Asset = {
-    val url = asset \ "browser_download_url"
-    val name = asset \ "name"
-    Asset(name.values.toString, new URI(url.values.toString).toURL)
-  }
-
-  /**
-    * Parses a semantic version, starting with v, e.g.
+    * Parses a release JSON, if it is a release of the package.
     *
-    * * `v2.3.4`
+    * A repository's releases are its own to tag, and only the ones tagged as a version are
+    * versions of the package: a repository may release something that is not a Flix package at
+    * all, or may have released one before it was one. Such a release is passed over rather than
+    * read as a version, and rather than -- as it once was -- thrown out of the listing as an
+    * exception, which took down every build that read a repository holding one.
     */
-  private def parseSemVer(str: String): SemVer = {
+  private def parseRelease(json: JValue): Option[Release] = json \ "tag_name" match {
+    case JString(tag) => parseSemVer(tag).map(version => Release(version, parseAssets(json \ "assets")))
+    case _ => None
+  }
+
+  /**
+    * Parses the assets of a release, passing over the ones that cannot be read.
+    *
+    * An asset that has no address is no use to a build that wants to download it, and is not
+    * worth failing a listing that may well hold the asset it was looking for.
+    */
+  private def parseAssets(json: JValue): List[Asset] = json match {
+    case JArray(assets) => assets.flatMap(parseAsset)
+    case _ => Nil
+  }
+
+  /**
+    * Parses an asset JSON, if it names a file at an address.
+    */
+  private def parseAsset(asset: JValue): Option[Asset] = {
+    val name = asset \ "name"
+    val url = asset \ "browser_download_url"
+    try {
+      Some(Asset(name.values.toString, new URI(url.values.toString).toURL))
+    } catch {
+      case _: URISyntaxException => None
+      case _: MalformedURLException => None
+      case _: IllegalArgumentException => None
+    }
+  }
+
+  /**
+    * Parses a semantic version that starts with `v`, e.g. `v2.3.4`, if `str` is one.
+    */
+  private def parseSemVer(str: String): Option[SemVer] = {
     val (v, num) = str.splitAt(1)
-    if (v != "v") {
-      throw new RuntimeException(s"Invalid semantic version: $str")
-    }
-    SemVer.ofString(num) match {
-      case Some(semver) => semver
-      case _ => throw new RuntimeException(s"Invalid semantic version: $str")
-    }
+    if (v == "v") SemVer.ofString(num) else None
   }
 
   /**
