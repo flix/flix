@@ -45,6 +45,8 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
 
   private val clerk: PackageId = PackageId.mkPackageId("github:flix/museum-clerk").get
 
+  private val museum: PackageId = PackageId.mkPackageId("github:flix/museum").get
+
   private val other: Sha256 = Sha256.parse("sha256:" + "1" * 64).get
 
   /** A program whose `f` is pure. */
@@ -81,14 +83,14 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     // A signature that is the one that was locked is not reported.
     val root = rootOf("pub def f(x: Int32): Int32 = x")
     val lockfile = lockOf(defs = Map("f" -> hashOf("f", root)))
-    assert(EffectLock.check(lockfile, root).isEmpty)
+    assert(EffectLock.check(lockfile, root, Set(clerk)).isEmpty)
   }
 
   test("check.02") {
     // A signature that is not the one that was locked is reported.
     val root = rootOf("pub def f(x: Int32): Int32 = x")
     val lockfile = lockOf(defs = Map("f" -> other))
-    assert(EffectLock.check(lockfile, root).map { case (_, sym, _) => sym } == List("f"))
+    assert(EffectLock.check(lockfile, root, Set(clerk)).map { case (_, sym, _) => sym } == List("f"))
   }
 
   test("check.03") {
@@ -96,21 +98,21 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     // so it cannot do anything the lock did not allow.
     val root = rootOf("pub def f(x: Int32): Int32 = x")
     val lockfile = lockOf(defs = Map("g" -> other))
-    assert(EffectLock.check(lockfile, root).isEmpty)
+    assert(EffectLock.check(lockfile, root, Set(clerk)).isEmpty)
   }
 
   test("check.04") {
     // A declaration the lock does not mention is not reported.
     val root = rootOf("pub def f(x: Int32): Int32 = x\npub def g(x: Bool): Bool = x")
     val lockfile = lockOf(defs = Map("f" -> hashOf("f", root)))
-    assert(EffectLock.check(lockfile, root).isEmpty)
+    assert(EffectLock.check(lockfile, root, Set(clerk)).isEmpty)
   }
 
   test("check.05") {
     // Changes are reported in order of symbol.
     val root = rootOf("pub def f(x: Int32): Int32 = x\npub def g(x: Bool): Bool = x")
     val lockfile = lockOf(defs = Map("g" -> other, "f" -> other))
-    assert(EffectLock.check(lockfile, root).map { case (_, sym, _) => sym } == List("f", "g"))
+    assert(EffectLock.check(lockfile, root, Set(clerk)).map { case (_, sym, _) => sym } == List("f", "g"))
   }
 
   test("check.06") {
@@ -123,20 +125,20 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val root = rootOf(input)
     val lockfile = lockOf(sigs = Map("Sellable.price" -> other))
-    assert(EffectLock.check(lockfile, root).map { case (_, sym, _) => sym } == List("Sellable.price"))
+    assert(EffectLock.check(lockfile, root, Set(clerk)).map { case (_, sym, _) => sym } == List("Sellable.price"))
   }
 
   test("check.07") {
     // A widening of the effects of a declaration is reported.
     val lockfile = lockOf(defs = Map("f" -> hashOf("f", rootOf(Pure))))
-    assert(EffectLock.check(lockfile, rootOf(Effectful)).map { case (_, sym, _) => sym } == List("f"))
+    assert(EffectLock.check(lockfile, rootOf(Effectful), Set(clerk)).map { case (_, sym, _) => sym } == List("f"))
   }
 
   test("check.08") {
     // A narrowing of the effects of a declaration is reported too. The lock says whether a
     // signature is the one that was locked, not whether the change to it was a safe one.
     val lockfile = lockOf(defs = Map("f" -> hashOf("f", rootOf(Effectful))))
-    assert(EffectLock.check(lockfile, rootOf(Pure)).map { case (_, sym, _) => sym } == List("f"))
+    assert(EffectLock.check(lockfile, rootOf(Pure), Set(clerk)).map { case (_, sym, _) => sym } == List("f"))
   }
 
   test("check.09") {
@@ -144,7 +146,34 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     val locked = rootOf("pub def f(x: a): a = x")
     val upgrade = rootOf("pub def f(x: b): b = x")
     val lockfile = lockOf(defs = Map("f" -> hashOf("f", locked)))
-    assert(EffectLock.check(lockfile, upgrade).isEmpty)
+    assert(EffectLock.check(lockfile, upgrade, Set(clerk)).isEmpty)
+  }
+
+  test("check.10") {
+    // A package that the targets do not name is not checked.
+    val root = rootOf("pub def f(x: Int32): Int32 = x")
+    val lockfile = lockOf(defs = Map("f" -> other))
+    assert(EffectLock.check(lockfile, root, Set(museum)).isEmpty)
+  }
+
+  test("check.11") {
+    // Naming one package checks that one and no other, so that a package whose signatures have
+    // drifted does not stand in the way of checking another.
+    val root = rootOf("pub def f(x: Int32): Int32 = x\npub def g(x: Bool): Bool = x")
+    val lockfile = EffectLockfile(Map(
+      clerk -> LockedPackage(Map("f" -> other), Map.empty),
+      museum -> LockedPackage(Map("g" -> other), Map.empty)
+    ))
+    assert(EffectLock.check(lockfile, root, Set(clerk)).map { case (id, sym, _) => (id, sym) } == List((clerk, "f")))
+    assert(EffectLock.check(lockfile, root, Set(museum)).map { case (id, sym, _) => (id, sym) } == List((museum, "g")))
+    assert(EffectLock.check(lockfile, root, Set(clerk, museum)).map { case (id, sym, _) => sym } == List("g", "f"))
+  }
+
+  test("check.12") {
+    // Naming no package checks nothing, since nothing is a target.
+    val root = rootOf("pub def f(x: Int32): Int32 = x")
+    val lockfile = lockOf(defs = Map("f" -> other))
+    assert(EffectLock.check(lockfile, root, Set.empty).isEmpty)
   }
 
   //
@@ -167,8 +196,23 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(extras.defs.contains("Extras.Graph.closure"))
     assert(extras.sigs.isEmpty)
 
-    // Nothing has changed since the signatures were locked, so the check passes.
-    bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap)).unsafeGet
+    // Nothing has changed since the signatures were locked, so the check passes, whether every
+    // package is checked or only the one.
+    bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), None).unsafeGet
+    bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/extras")).unsafeGet
+  }
+
+  test("effects.lock.02") {
+    // A package the project has not installed can be neither locked nor checked, and both
+    // commands say so in the same way.
+    val p = Files.createTempDirectory("flix-project-")
+    Bootstrap.init(p)(System.out)
+
+    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.NoFormatter, System.out).unsafeGet
+    bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), None).unsafeGet
+
+    assert(bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/extras")).toOption.isEmpty)
+    assert(bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/extras")).toOption.isEmpty)
   }
 
   /**
