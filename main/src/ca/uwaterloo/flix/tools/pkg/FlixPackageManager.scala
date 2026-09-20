@@ -34,8 +34,13 @@ object FlixPackageManager {
     * Represents the dependency resolution of [[origin]].
     * All fields should be considered private except [[origin]] and [[manifests]].
     *
+    * A package is identified by its [[PackageId]] and the version it is built at, and not by the
+    * [[Manifest]] it resolves to: a manifest carries no identity of its own, since the repository
+    * it declares is optional and nothing else in it names the package, so two packages whose
+    * manifests happen to agree would otherwise be one.
+    *
     * @param origin              the manifest that corresponds to the current / local project.
-    * @param manifests           the manifest of [[origin]] and of every package it is built with.
+    * @param packages            the manifest of every package that [[origin]] is built with.
     * @param immediateDependents all immediate dependents / parents of each manifest.
     * @param manifestToFlixDeps  a mapping from [[Manifest]]s to [[FlixDependency]]s.
     *                            A manifest is the resource a flix dependency resolves to. A
@@ -48,31 +53,44 @@ object FlixPackageManager {
     *                            the project directory, which is not downloaded.
     */
   case class Resolution(origin: Manifest,
-                        manifests: List[Manifest],
+                        packages: Map[(PackageId, SemVer), Manifest],
                         immediateDependents: Map[Manifest, List[Manifest]],
                         manifestToFlixDeps: ListMap[Manifest, FlixDependency],
-                        tomlDigests: Map[(PackageId, SemVer), Sha256])
+                        tomlDigests: Map[(PackageId, SemVer), Sha256]) {
+    /**
+      * The manifest of [[origin]] and of every package it is built with.
+      */
+    def manifests: List[Manifest] = origin :: manifestsOf(packages)
+  }
 
   /**
     * Represents the dependency resolution of [[origin]] where the maximum security level has been computed
-    * for each manifest.
+    * for each package.
     *
-    * @param origin             the manifest that corresponds to the current / local project.
-    * @param security           the maximum allowed security level of each manifest.
+    * @param origin      the manifest that corresponds to the current / local project.
+    * @param packages    the manifest of every package that [[origin]] is built with, see [[Resolution]].
+    * @param security    the maximum allowed security level of each manifest.
     * @param manifestToFlixDeps a mapping from [[Manifest]]s to [[FlixDependency]]s.
-    *                           A manifest is the resource a flix dependency resolves to.
-    * @param tomlDigests        the digest of the `flix.toml` of every package at every version
-    *                           that the dependency graph requires, see [[Resolution]].
+    *                    A manifest is the resource a flix dependency resolves to.
+    * @param tomlDigests the digest of the `flix.toml` of every package at every version
+    *                    that the dependency graph requires, see [[Resolution]].
     */
   case class SecureResolution(origin: Manifest,
+                              packages: Map[(PackageId, SemVer), Manifest],
                               security: Map[Manifest, SecurityContext],
                               manifestToFlixDeps: ListMap[Manifest, FlixDependency],
                               tomlDigests: Map[(PackageId, SemVer), Sha256]) {
     /**
       * All manifests in the resolution.
       */
-    val manifests: List[Manifest] = security.keys.toList
+    def manifests: List[Manifest] = origin :: manifestsOf(packages)
   }
+
+  /**
+    * Returns the manifests in `packages`, in order of the package each of them describes.
+    */
+  private def manifestsOf(packages: Map[(PackageId, SemVer), Manifest]): List[Manifest] =
+    packages.toList.sortBy { case (pkg, _) => pkg }.map { case (_, manifest) => manifest }
 
   /**
     * The Flix packages installed for a project.
@@ -183,12 +201,11 @@ object FlixPackageManager {
 
           printRaised(edges, edges.filter(e => e.source.forall(isBuilt)), selected)
 
-          val built = nodes.filter(isBuilt).map(edgeTo)
-          val manifests = manifest :: built.map(_.target)
+          val packages = nodes.filter(isBuilt).map(n => n -> edgeTo(n).target).toMap
           val tomlDigests = nodes.map(n => n -> edgeTo(n).digest).toMap
           // Every declaration is kept, and not one for each package: the security context of a
           // package is the strictest of those it is declared with, so all of them must be seen.
-          Ok(Resolution(manifest, manifests, immediateDependents.toMap, ListMap(manifestToFlixDeps.toMap), tomlDigests))
+          Ok(Resolution(manifest, packages, immediateDependents.toMap, ListMap(manifestToFlixDeps.toMap), tomlDigests))
       }
     }
   }
@@ -369,7 +386,7 @@ object FlixPackageManager {
     * Resolves the maximal allowed security level for all dependencies in `resolution`.
     */
   def resolveSecurityLevels(resolution: Resolution): SecureResolution = {
-    SecureResolution(resolution.origin, minSecurityLevels(resolution), resolution.manifestToFlixDeps, resolution.tomlDigests)
+    SecureResolution(resolution.origin, resolution.packages, minSecurityLevels(resolution), resolution.manifestToFlixDeps, resolution.tomlDigests)
   }
 
   /**
@@ -428,11 +445,9 @@ object FlixPackageManager {
     */
   def checkFlixVersions(resolution: Resolution, current: SemVer): List[PackageError] = {
     val errors = for {
-      manifest <- resolution.manifests
-      if manifest != resolution.origin && current < manifest.flix
-      // Any of the declarations that resolve to the package will do, since they all name it.
-      dep <- resolution.manifestToFlixDeps(manifest).headOption
-    } yield PackageError.FlixVersionTooOld(dep.id, manifest.version, manifest.flix, current)
+      ((id, _), manifest) <- resolution.packages.toList
+      if current < manifest.flix
+    } yield PackageError.FlixVersionTooOld(id, manifest.version, manifest.flix, current)
     errors.sortBy(e => e.identifier)
   }
 
@@ -446,15 +461,11 @@ object FlixPackageManager {
   /**
     * Returns the version that every package in `resolution` is built at.
     *
-    * It is the version of the manifest that the declarations of the package resolve to, and not
-    * a version that any of them declares: a package is built at the greatest version that is
-    * required of it, see [[resolve]].
+    * It is the version the package resolved to, and not a version that any declaration of it
+    * asks for: a package is built at the greatest version that is required of it, see [[resolve]].
     */
   def builtVersions(resolution: SecureResolution): Map[PackageId, SemVer] = {
-    resolution.manifestToFlixDeps.m.collect {
-      // Any of the declarations that resolve to the package will do, since they all name it.
-      case (manifest, dep :: _) => dep.id -> manifest.version
-    }
+    resolution.packages.keys.toMap
   }
 
   /**
@@ -491,23 +502,19 @@ object FlixPackageManager {
   def installAll(resolution: SecureResolution, projectRoot: Path, token: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[Installation, PackageError] = {
     out.println("Downloading Flix dependencies...")
 
-    // Every package, with one of the declarations that resolve to it. A package is installed
-    // once, however many dependents declare it, and any of the declarations will do: they all
-    // name the same package.
-    //
-    // The version installed is the manifest's own, not the one the declaration asks for: a
-    // declaration says what its dependent requires, and the manifest is what the resolution
-    // settled on.
-    val installed = resolution.manifestToFlixDeps.m.toList.collect { case (manifest, dep :: _) =>
-      val depName: String = s"${dep.id.owner}/${dep.id.name}"
-      install(dep.id, manifest.version, Bootstrap.EXT_FPKG, projectRoot, token, lockfile) match {
-        case Ok(fpkg) =>
-          val pkg = InstalledPackage(fpkg.path, dep.id, resolution.security(manifest), manifest.mounts)
-          (pkg, (dep.id, manifest.version) -> fpkg.digest)
-        case Err(e) =>
-          out.println(s"ERROR: Installation of `$depName' failed.")
-          return Err(e)
-      }
+    // Every package is installed once, however many dependents declare it, and at the version
+    // it resolved to rather than at one that a declaration asks for: a declaration says what its
+    // dependent requires, and the node is what the resolution settled on.
+    val installed = resolution.packages.toList.sortBy { case (node, _) => node }.map {
+      case (node@(id, version), manifest) =>
+        install(id, version, Bootstrap.EXT_FPKG, projectRoot, token, lockfile) match {
+          case Ok(fpkg) =>
+            val pkg = InstalledPackage(fpkg.path, id, resolution.security(manifest), manifest.mounts)
+            (pkg, node -> fpkg.digest)
+          case Err(e) =>
+            out.println(s"ERROR: Installation of `${id.owner}/${id.name}' failed.")
+            return Err(e)
+        }
     }
 
     val (packages, fpkgs) = installed.unzip
@@ -520,9 +527,6 @@ object FlixPackageManager {
 
   /**
     * Installs the `extension` file of the Github package `id` at `version`.
-    *
-    * `version` is passed rather than read off a declaration, because a declaration says what its
-    * dependent requires, which is not in general what the resolution installs.
     *
     * The package is installed at `lib/<owner>/<repo>`
     *
@@ -706,13 +710,13 @@ object FlixPackageManager {
   }
 
   /**
-    * Computes the maximum allowed security level of every manifest in `resolution`: the strictest
+    * Computes the maximum allowed security level of every package in `resolution`: the strictest
     * of the levels its (transitive) dependents are given and the levels it is depended upon with,
     * i.e. the `"security" = "..."` of every declaration that points to it.
     *
     * The graph can hold a cycle — two packages can each require the other, and a package that
     * requires an older version of itself is its own dependent — so the levels are a fixpoint:
-    * every manifest starts unrestricted, and a round lowers it to the strictest of what its
+    * every package starts unrestricted, and a round lowers it to the strictest of what its
     * dependents hold and its declarations ask for. A round never raises a level, so they end.
     *
     * The project is the root of the graph and is not lowered.
