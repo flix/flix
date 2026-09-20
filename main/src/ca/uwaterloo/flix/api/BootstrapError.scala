@@ -176,7 +176,7 @@ object BootstrapError {
          |            ~~ Signatures have changed! ~~
          |
          |The following declarations are not the ones that were locked:
-         |$fmtChanges
+         |${fmtChanges(f)}
          |
          |Run ${f.bold("flix eff-lock")} to lock them as they are now, once you are satisfied that the
          |changes are ones you want.
@@ -192,21 +192,21 @@ object BootstrapError {
       *
       * {{{
       * "  github:flix/museum-clerk:
-      *      + 'f' is now *Int32 -> Unit \ IO*
+      *      + 'f' is now Int32 -> Unit \ IO
       * "
       * }}}
       */
-    private def fmtChanges: String = e.groupBy {
+    private def fmtChanges(f: Formatter): String = e.groupBy {
       case (id, _, _) => id
     }.toList.sortBy {
       case (id, _) => id
     }.map {
       case (id, changes) =>
-        val formattedPkg = s"  $id:"
+        val formattedPkg = s"  ${f.bold(id.toString)}:"
         val formattedChanges = changes.sortBy { case (_, sym, _) => sym }.map {
           case (_, sym, sc) =>
             val signature = FormatScheme.formatSchemeWithOptions(sc, FormatOptions(FormatOptions.VarName.NameBased))
-            s"    + '$sym' is now *$signature*"
+            s"    + ${f.bold(sym)} is now ${f.red(signature)}"
         }.mkString(System.lineSeparator())
         s"$formattedPkg${System.lineSeparator()}$formattedChanges"
     }.mkString(System.lineSeparator())
