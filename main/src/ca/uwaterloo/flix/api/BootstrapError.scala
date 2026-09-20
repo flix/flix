@@ -17,8 +17,8 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.effectlock.EffectLockError
 import ca.uwaterloo.flix.language.ast.shared.PackageId
-import ca.uwaterloo.flix.language.ast.Scheme
-import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatSignature}
 import ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.tools.pkg.{LockError, ManifestError, PackageError, SemVer}
 import ca.uwaterloo.flix.util.Formatter
@@ -166,9 +166,9 @@ object BootstrapError {
   /**
     * An error raised when a package no longer has the signatures it was locked at.
     *
-    * @param e the package, the symbol, and the scheme the symbol is declared with now.
+    * @param e the package, the symbol, and the spec the symbol is declared with now.
     */
-  case class SignaturesChangedError(e: List[(PackageId, String, Scheme)]) extends BootstrapError {
+  case class SignaturesChangedError(e: List[(PackageId, String, TypedAst.Spec)]) extends BootstrapError {
     override def message(f: Formatter): String = {
       s"""@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
          |@  WARNING! YOU MAY BE SUBJECT TO A SUPPLY CHAIN ATTACK!  @
@@ -193,9 +193,13 @@ object BootstrapError {
       * the signature it was locked at, and the signature that symbol has now.
       *
       * The symbol is named under the package it belongs to, so its name is written without the
-      * package, which the line above it already gives. The signature goes on a line of its own:
-      * a polymorphic signature with constraints is long, and putting it after the name of the
+      * package, which the line above it already gives. The declaration goes on a line of its own:
+      * a polymorphic declaration with constraints is long, and putting it after the name of the
       * symbol leaves it nowhere to fit.
+      *
+      * The declaration is written as it would be written in a source file, rather than as the
+      * type scheme it gives rise to, since that is the form the reader is being asked to look at
+      * the source and compare against.
       *
       * E.g., if `Clerk.work` of `github:flix/museum-clerk` is now `Unit -> Unit \ IO` then the
       * string is formatted as
@@ -203,7 +207,7 @@ object BootstrapError {
       * {{{
       * "  github:flix/museum-clerk:
       *     Clerk.work
-      *       Unit -> Unit \ IO
+      *       def work(): Unit \ IO
       * "
       * }}}
       */
@@ -215,12 +219,19 @@ object BootstrapError {
       case (id, changes) =>
         val formattedPkg = s"  ${f.bold(id.toString)}:"
         val formattedChanges = changes.sortBy { case (_, sym, _) => sym }.map {
-          case (_, sym, sc) =>
-            val signature = FormatScheme.formatSchemeWithOptions(sc, FormatOptions(FormatOptions.VarName.NameBased))
-            s"    ${f.bold(sym.stripPrefix(s"$id."))}${System.lineSeparator()}      ${f.red(signature)}"
+          case (_, sym, spec) =>
+            val name = sym.stripPrefix(s"$id.")
+            val declaration = FormatSignature.formatSpecWithOptions(shortNameOf(name), spec, FormatOptions(FormatOptions.VarName.NameBased))
+            s"    ${f.bold(name)}${System.lineSeparator()}      ${f.red(declaration)}"
         }.mkString(System.lineSeparator())
         s"$formattedPkg${System.lineSeparator()}$formattedChanges"
     }.mkString(System.lineSeparator())
+
+    /**
+      * Returns the name of `sym` without the modules it is declared in, which is how a
+      * declaration names itself.
+      */
+    private def shortNameOf(sym: String): String = sym.substring(sym.lastIndexOf('.') + 1)
   }
 
   /**
