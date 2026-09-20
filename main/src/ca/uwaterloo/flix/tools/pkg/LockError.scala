@@ -46,8 +46,7 @@ object LockError {
     override def message(f: Formatter): String =
       s"""The ${f.bold(property)} digest of ${f.bold(identifier)} should be formatted like so: 'sha256:' followed by 64 lowercase hexadecimal characters.
          |Instead found: ${f.red(digest)}.
-         |The lock file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The lock file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
   /**
@@ -60,8 +59,7 @@ object LockError {
     override def message(f: Formatter): String =
       s"""The ${f.bold("lock")} table should only contain the key ${f.bold("version")}.
          |Instead found: ${f.red(key)}.
-         |The lock file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The lock file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
   /**
@@ -75,8 +73,7 @@ object LockError {
     override def message(f: Formatter): String =
       s"""The entry for ${f.bold(identifier)} should only contain the keys ${f.bold("version")}, ${f.bold("toml")}, and ${f.bold("fpkg")}.
          |Instead found: ${f.red(key)}.
-         |The lock file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The lock file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
   /**
@@ -89,8 +86,7 @@ object LockError {
     override def message(f: Formatter): String =
       s"""A lock file should only contain the tables ${f.bold("lock")} and ${f.bold("packages")}.
          |Instead found: ${f.red(key)}.
-         |The lock file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The lock file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
   /**
@@ -104,8 +100,7 @@ object LockError {
     override def message(f: Formatter): String =
       s"""The version of ${f.bold(identifier)} should be formatted like so: 'x.x.x'.
          |Instead found: ${f.red(version)}.
-         |The lock file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The lock file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
   /**
@@ -117,8 +112,7 @@ object LockError {
   case class IOError(path: Path, message: String) extends LockError {
     override def message(f: Formatter): String =
       s"""An I/O error occurred while reading the lock file at ${f.cyan(path.toString)}.
-         |Error: ${f.red(message)}
-         |""".stripMargin
+         |Error: ${f.red(message)}""".stripMargin
   }
 
   /**
@@ -130,8 +124,7 @@ object LockError {
   case class LockParseError(path: Path, message: String) extends LockError {
     override def message(f: Formatter): String =
       s"""The lock file at ${f.cyan(path.toString)} is not valid toml.
-         |Error: ${f.red(message)}
-         |""".stripMargin
+         |Error: ${f.red(message)}""".stripMargin
   }
 
   /**
@@ -146,8 +139,7 @@ object LockError {
   case class MissingRequiredProperty(path: Path, property: String) extends LockError {
     override def message(f: Formatter): String =
       s"""The lock file does not contain a required property called ${f.bold(property)}.
-         |The lock file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The lock file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
   /**
@@ -164,8 +156,7 @@ object LockError {
     override def message(f: Formatter): String =
       s"""The property ${f.bold(property)} is required to have a value of type ${f.bold(requiredType)}.
          |Error: ${f.red(message)}
-         |The lock file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The lock file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
   /**
@@ -182,8 +173,7 @@ object LockError {
     override def message(f: Formatter): String =
       s"""The lock file is written in version ${f.bold(version.toString)} of the lock file format.
          |This version of Flix understands version ${f.bold(Lockfile.CurrentVersion.toString)}.
-         |The lock file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The lock file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
 }

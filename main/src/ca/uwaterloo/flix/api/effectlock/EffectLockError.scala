@@ -46,8 +46,7 @@ object EffectLockError {
     override def message(f: Formatter): String =
       s"""The hash of ${f.bold(symbol)} of ${f.bold(identifier)} should be formatted like so: 'sha256:' followed by 64 lowercase hexadecimal characters.
          |Instead found: ${f.red(hash)}.
-         |The lock file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The lock file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
   /**
@@ -60,8 +59,7 @@ object EffectLockError {
     override def message(f: Formatter): String =
       s"""The ${f.bold("lock")} table should hold no key other than ${f.bold("version")}.
          |Instead found: ${f.red(key)}.
-         |The lock file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The lock file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
   /**
@@ -75,8 +73,7 @@ object EffectLockError {
     override def message(f: Formatter): String =
       s"""The entry of ${f.bold(identifier)} should hold no table other than ${f.bold("defs")} and ${f.bold("sigs")}.
          |Instead found: ${f.red(key)}.
-         |The lock file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The lock file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
   /**
@@ -89,8 +86,7 @@ object EffectLockError {
     override def message(f: Formatter): String =
       s"""The lock file should hold no table other than ${f.bold("lock")} and ${f.bold("packages")}.
          |Instead found: ${f.red(key)}.
-         |The lock file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The lock file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
   /**
@@ -102,8 +98,7 @@ object EffectLockError {
   case class IOError(path: Path, message: String) extends EffectLockError {
     override def message(f: Formatter): String =
       s"""The lock file at ${f.cyan(path.toString)} could not be read.
-         |${f.red(message)}
-         |""".stripMargin
+         |${f.red(message)}""".stripMargin
   }
 
   /**
@@ -115,8 +110,7 @@ object EffectLockError {
   case class LockParseError(path: Path, message: String) extends EffectLockError {
     override def message(f: Formatter): String =
       s"""The lock file at ${f.cyan(path.toString)} is not a valid toml file.
-         |${f.red(message)}
-         |""".stripMargin
+         |${f.red(message)}""".stripMargin
   }
 
   /**
@@ -128,8 +122,7 @@ object EffectLockError {
   case class MissingRequiredProperty(path: Path, property: String) extends EffectLockError {
     override def message(f: Formatter): String =
       s"""The lock file should hold the property ${f.bold(property)}, but does not.
-         |The lock file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The lock file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
   /**
@@ -144,8 +137,7 @@ object EffectLockError {
     override def message(f: Formatter): String =
       s"""The property ${f.bold(property)} should be of type ${f.bold(requiredType)}.
          |${f.red(message)}
-         |The lock file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The lock file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
   /**
@@ -159,8 +151,7 @@ object EffectLockError {
     override def message(f: Formatter): String =
       s"""The lock file is written in version ${f.red(version.toString)} of the format, but this version of Flix writes version ${f.bold(EffectLockfile.CurrentVersion.toString)}.
          |Run ${f.bold("flix eff-lock")} to write it anew, after checking that the signatures it records are the ones you expect.
-         |The lock file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The lock file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
 }

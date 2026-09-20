@@ -40,8 +40,7 @@ object PackageError {
   case class InvalidProjectName(projectString: String) extends PackageError {
     override def message(f: Formatter): String =
       s"""A GitHub project should be formatted like so: 'owner/repository'.
-         |Instead found: ${f.red(projectString)}.
-         |""".stripMargin
+         |Instead found: ${f.red(projectString)}.""".stripMargin
   }
 
   /**
@@ -52,8 +51,7 @@ object PackageError {
       s"""An I/O error occurred while trying to read the following url:
          |${f.cyan(url.toString)}
          |Project: ${f.bold(project.toString)}
-         |Error: ${f.red(exception.getMessage)}
-         |""".stripMargin
+         |Error: ${f.red(exception.getMessage)}""".stripMargin
   }
 
   /**
@@ -66,16 +64,14 @@ object PackageError {
     override def message(f: Formatter): String =
       s"""There is no project ${f.red(project.toString)} to read releases from.
          |Either it does not exist, or it is private and the API token in use cannot see it.
-         |Looked at ${f.cyan(url.toString)}.
-         |""".stripMargin
+         |Looked at ${f.cyan(url.toString)}.""".stripMargin
   }
 
   case class JsonError(json: String, project: Project) extends PackageError {
     override def message(f: Formatter): String =
       s"""An error occurred while trying to parse the following as JSON:
          |${f.cyan(json)}
-         |Project: ${f.bold(project.toString)}
-         |""".stripMargin
+         |Project: ${f.bold(project.toString)}""".stripMargin
   }
 
   /**
@@ -88,8 +84,7 @@ object PackageError {
       s"""Could not find ${f.bold(assetName)} in release ${f.bold(s"v$version")}
          |of ${f.bold(project.toString)}.
          |Either the release does not exist, or it does not publish that file.
-         |Looked at ${f.cyan(url.toString)}.
-         |""".stripMargin
+         |Looked at ${f.cyan(url.toString)}.""".stripMargin
   }
 
   /**
@@ -102,8 +97,7 @@ object PackageError {
          |It may have expired, been revoked, or been copied incompletely.
          |Looked at ${f.cyan(url.toString)}.
          |A request that carries no token is not refused this way: what is public can be read
-         |without one.
-         |""".stripMargin
+         |without one.""".stripMargin
   }
 
   /**
@@ -129,8 +123,7 @@ object PackageError {
               |passed via:
               |- The --github-token command line option.
               |- A file named .GITHUB_TOKEN in the project's root.
-              |- The GITHUB_TOKEN environment variable.
-              |""".stripMargin
+              |- The GITHUB_TOKEN environment variable.""".stripMargin
       s"""Refused (HTTP ${f.red(status.toString)}) by ${f.cyan(url.toString)}.
          |$when
          |$hint""".stripMargin
@@ -147,8 +140,7 @@ object PackageError {
           "The address redirected somewhere that could not be followed."
         else "Unexpected response."
       s"""Could not download ${f.cyan(url.toString)}: HTTP ${f.red(status.toString)}.
-         |$detail
-         |""".stripMargin
+         |$detail""".stripMargin
     }
   }
 
@@ -158,8 +150,7 @@ object PackageError {
   case class DownloadUnreachable(url: URL, message: String) extends PackageError {
     override def message(f: Formatter): String =
       s"""Could not reach ${f.cyan(url.toString)}.
-         |$message
-         |""".stripMargin
+         |$message""".stripMargin
   }
 
   case class DownloadError(name: String, message: Option[String]) extends PackageError {
@@ -170,8 +161,7 @@ object PackageError {
           case Some(e) => e
           case None => ""
         }
-      }
-         |""".stripMargin
+      }""".stripMargin
   }
 
   case class DownloadErrorJar(url: String, fileName: String, message: Option[String]) extends PackageError {
@@ -182,8 +172,7 @@ object PackageError {
           case Some(e) => e
           case None => ""
         }
-      }
-         |""".stripMargin
+      }""".stripMargin
   }
 
   /**
@@ -207,8 +196,7 @@ object PackageError {
          |
          |The file at ${f.cyan(path.toString)} has changed since it was downloaded.
          |Delete it and build again to download it afresh, or update ${f.bold("packages.lock")} if the
-         |change was intended.
-         |""".stripMargin
+         |change was intended.""".stripMargin
   }
 
   /**
@@ -234,8 +222,7 @@ object PackageError {
          |The published release has changed since ${f.bold("packages.lock")} was written. A release asset
          |can be replaced at the same version, so this may be a supply chain attack.
          |The file was written to ${f.cyan(path.toString)}.
-         |Update ${f.bold("packages.lock")} only if you know the change was intended.
-         |""".stripMargin
+         |Update ${f.bold("packages.lock")} only if you know the change was intended.""".stripMargin
   }
 
   /**
@@ -245,28 +232,24 @@ object PackageError {
   case class DigestError(path: Path, message: String) extends PackageError {
     override def message(f: Formatter): String =
       s"""An I/O error occurred while reading ${f.cyan(path.toString)}.
-         |Error: ${f.red(message)}
-         |""".stripMargin
+         |Error: ${f.red(message)}""".stripMargin
   }
 
   case class CoursierError(errorMsg: String) extends PackageError {
     override def message(f: Formatter): String =
       s"""An error occurred with Coursier:
-         |$errorMsg
-         |""".stripMargin
+         |$errorMsg""".stripMargin
   }
 
   case class NoSuchFile(project: String, extension: String) extends PackageError {
     override def message(f: Formatter): String =
-      s"""There are no files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
-         |""".stripMargin
+      s"""There are no files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.""".stripMargin
   }
 
   case class TooManyFiles(project: String, extension: String) extends PackageError {
     override def message(f: Formatter): String =
       s"""There are too many files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
-         |There should only be one $extension file in each project.
-         |""".stripMargin
+         |There should only be one $extension file in each project.""".stripMargin
   }
 
   case class ManifestParseError(e: ManifestError) extends PackageError {
@@ -290,8 +273,7 @@ object PackageError {
          |  There are several possible actions:
          |    - Remove the offending dependency
          |    - Use a different dependency.
-         |    - Increase security level. ${f.yellow("WARNING")}: This can be dangerous and may expose you to supply chain attacks.
-         |""".stripMargin
+         |    - Increase security level. ${f.yellow("WARNING")}: This can be dangerous and may expose you to supply chain attacks.""".stripMargin
     }
   }
 
@@ -311,8 +293,7 @@ object PackageError {
          |  There are several possible actions:
          |    - Remove the offending dependency
          |    - Use a different dependency.
-         |    - Increase security level. ${f.yellow("WARNING")}: This can be dangerous and may expose you to supply chain attacks.
-         |""".stripMargin
+         |    - Increase security level. ${f.yellow("WARNING")}: This can be dangerous and may expose you to supply chain attacks.""".stripMargin
     }
   }
 
@@ -332,8 +313,7 @@ object PackageError {
          |
          |  A mounted package is reachable only under its mount, so the dependents that do not
          |  mount it cannot reach it at all. Until a mount is required, every dependent of a
-         |  package must either mount it or leave it unmounted.
-         |""".stripMargin
+         |  package must either mount it or leave it unmounted.""".stripMargin
     }
   }
 
@@ -357,8 +337,7 @@ object PackageError {
          |
          |  A package is built at one version, which must satisfy every dependent: it must
          |  be at or above the version the dependent requires, and have the same major version.
-         |  No version satisfies these, so one of the dependents must move across a major version.
-         |""".stripMargin
+         |  No version satisfies these, so one of the dependents must move across a major version.""".stripMargin
     }
   }
 
@@ -379,8 +358,7 @@ object PackageError {
          |  Released as: $release
          |  Declared:    $declared
          |
-         |  This is a mistake in how the package was released, which its author must fix.
-         |""".stripMargin
+         |  This is a mistake in how the package was released, which its author must fix.""".stripMargin
     }
   }
 
@@ -396,7 +374,6 @@ object PackageError {
   case class FlixVersionTooOld(identifier: PackageId, version: SemVer, required: SemVer, current: SemVer) extends PackageError {
     override def message(f: Formatter): String =
       s"""The package '${f.red(identifier.toString)}' ${f.bold(version.toString)} requires Flix version ${f.bold(required.toString)}, but the current version is ${f.red(current.toString)}.
-         |Please upgrade to Flix ${f.bold(required.toString)} or newer.
-         |""".stripMargin
+         |Please upgrade to Flix ${f.bold(required.toString)} or newer.""".stripMargin
   }
 }

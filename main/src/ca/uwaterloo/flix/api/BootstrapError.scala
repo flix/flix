@@ -53,8 +53,7 @@ object BootstrapError {
     override def message(f: Formatter): String =
       s"""The project requires Flix version ${f.bold(required.toString)}, but the current version is ${f.red(current.toString)}.
          |Please upgrade to Flix ${f.bold(required.toString)} or newer.
-         |The project file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
+         |The project file was found at ${f.cyan(path.toString)}.""".stripMargin
   }
 
   /**
@@ -64,8 +63,7 @@ object BootstrapError {
   case class NoProject(p: Path) extends BootstrapError {
     override def message(f: Formatter): String =
       s"""No ${f.cyan(p.toString)} found.
-         |Run ${f.bold("flix init")} to create a project.
-         |""".stripMargin
+         |Run ${f.bold("flix init")} to create a project.""".stripMargin
   }
 
   /**
@@ -75,8 +73,7 @@ object BootstrapError {
     override def message(f: Formatter): String =
       s"""${f.red(spec)} does not name a package.
          |A package is written as ${f.bold("<owner>/<name>")}, optionally followed by ${f.bold("@<version>")}.
-         |For example: ${f.cyan("flix/museum-clerk")} or ${f.cyan("flix/museum-clerk@1.1.0")}.
-         |""".stripMargin
+         |For example: ${f.cyan("flix/museum-clerk")} or ${f.cyan("flix/museum-clerk@1.1.0")}.""".stripMargin
   }
 
   /**
@@ -85,8 +82,7 @@ object BootstrapError {
   case class DependencyAlreadyDeclared(id: PackageId, version: SemVer) extends BootstrapError {
     override def message(f: Formatter): String =
       s"""${f.red(id.toString)} is already a dependency of this project, at version ${f.bold(version.toString)}.
-         |Use ${f.bold("flix upgrade")} to declare it at another version.
-         |""".stripMargin
+         |Use ${f.bold("flix upgrade")} to declare it at another version.""".stripMargin
   }
 
   /**
@@ -95,8 +91,7 @@ object BootstrapError {
   case class UnexpectedVersion(spec: String) extends BootstrapError {
     override def message(f: Formatter): String =
       s"""${f.red(spec)} names a version, but a package is declared at one version, so there is none to choose.
-         |Write the package on its own, as ${f.cyan("flix/museum-clerk")}.
-         |""".stripMargin
+         |Write the package on its own, as ${f.cyan("flix/museum-clerk")}.""".stripMargin
   }
 
   /**
@@ -105,8 +100,7 @@ object BootstrapError {
   case class DependencyNotDeclared(id: PackageId) extends BootstrapError {
     override def message(f: Formatter): String =
       s"""${f.red(id.toString)} is not a dependency of this project.
-         |A package that is reached through another dependency is declared by that dependency, and not by this project.
-         |""".stripMargin
+         |A package that is reached through another dependency is declared by that dependency, and not by this project.""".stripMargin
   }
 
   /**
@@ -115,8 +109,7 @@ object BootstrapError {
   case class PackageNotInstalled(id: PackageId) extends BootstrapError {
     override def message(f: Formatter): String =
       s"""${f.red(id.toString)} is not installed.
-         |Only a package the project has installed can be locked or checked. Run the command on its own to cover every installed package.
-         |""".stripMargin
+         |Only a package the project has installed can be locked or checked. Run the command on its own to cover every installed package.""".stripMargin
   }
 
   /**
@@ -124,8 +117,7 @@ object BootstrapError {
     */
   case class NoReleases(id: PackageId) extends BootstrapError {
     override def message(f: Formatter): String =
-      s"""${f.red(id.toString)} has no releases.
-         |""".stripMargin
+      s"""${f.red(id.toString)} has no releases.""".stripMargin
   }
 
   /**
@@ -135,8 +127,7 @@ object BootstrapError {
   case class NoMount(id: PackageId) extends BootstrapError {
     override def message(f: Formatter): String =
       s"""Unable to choose a mount for ${f.red(id.toString)}.
-         |Run ${f.bold("flix install")} without ${f.bold("--yes")} to choose one, or add the dependency to ${f.cyan(Bootstrap.FLIX_TOML)} by hand.
-         |""".stripMargin
+         |Run ${f.bold("flix install")} without ${f.bold("--yes")} to choose one, or add the dependency to ${f.cyan(Bootstrap.FLIX_TOML)} by hand.""".stripMargin
   }
 
   case class FlixPackageError(e: PackageError) extends BootstrapError {
@@ -184,8 +175,7 @@ object BootstrapError {
          |the version you are building, and what changed in it.
          |
          |Record the new signatures with ${f.bold("flix eff-lock")} only once you are certain the
-         |change is one the author made, and one you want.
-         |""".stripMargin
+         |change is one the author made, and one you want.""".stripMargin
     }
 
     /**

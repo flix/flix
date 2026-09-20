@@ -825,9 +825,12 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
 
   /**
     * Returns the given non-empty list of package errors as a single [[BootstrapError]].
+    *
+    * A message does not end with a line separator, since the caller that prints one adds it, so
+    * a blank line is what puts two messages apart here.
     */
   private def toBootstrapError(errors: List[PackageError])(implicit formatter: Formatter): BootstrapError =
-    BootstrapError.GeneralError(errors.map(_.message(formatter)).mkString(System.lineSeparator()))
+    BootstrapError.GeneralError(errors.map(_.message(formatter)).mkString(System.lineSeparator() * 2))
 
   /**
     * Downloads and installs all `.fpkg` and `.jar` (maven and urls) dependencies of `resolution`
