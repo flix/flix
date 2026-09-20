@@ -45,6 +45,13 @@ object GitHub {
   private val TokenHosts: Set[String] = Set("api.github.com", "github.com", "uploads.github.com")
 
   /**
+    * How many releases to ask for at once.
+    *
+    * The API answers 30 unless asked otherwise, and 100 is the most it will give.
+    */
+  private val ReleasesPerPage: Int = 100
+
+  /**
     * The media type the REST API is asked to answer in.
     */
   private val ApiMediaType: String = "application/vnd.github+json"
@@ -88,7 +95,7 @@ object GitHub {
     * and never reaching a server at all.
     */
   def getReleases(project: Project, token: Option[String]): Result[List[Release], PackageError] = {
-    val url = releasesUrl(project)
+    val url = releaseListingUrl(project)
     val req = newApiRequest(url, token).GET().build()
     val response = try {
       Client.sendRequest(req)
@@ -360,6 +367,19 @@ object GitHub {
     */
   private def releasesUrl(project: Project): URL = {
     new URI(s"https://api.github.com/repos/${project.owner}/${project.repo}/releases").toURL
+  }
+
+  /**
+    * Returns the URL of the project's releases, asking for as many at once as the API will give.
+    *
+    * A project with more than that is read short -- `upgrade` and `outdated` can be wrong about
+    * it -- and the answer names the rest in a `Link` header.
+    *
+    * Kept apart from [[releasesUrl]], which a page size cannot go on: a release is created
+    * there, and a single release's address is built by appending to it.
+    */
+  private def releaseListingUrl(project: Project): URL = {
+    new URI(s"${releasesUrl(project).toString}?per_page=$ReleasesPerPage").toURL
   }
 
   /**
