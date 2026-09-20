@@ -175,11 +175,16 @@ object BootstrapError {
          |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
          |            ~~ Signatures have changed! ~~
          |
-         |The following declarations are not the ones that were locked:
+         |These declarations are not the ones that were locked. A dependency may now
+         |be able to do things it could not do when you locked it.
+         |
          |${fmtChanges(f)}
          |
-         |Run ${f.bold("flix eff-lock")} to lock them as they are now, once you are satisfied that the
-         |changes are ones you want.
+         |Do not build or run this project until you know why. Find out who published
+         |the version you are building, and what changed in it.
+         |
+         |Record the new signatures with ${f.bold("flix eff-lock")} only once you are certain the
+         |change is one the author made, and one you want.
          |""".stripMargin
     }
 
@@ -187,12 +192,18 @@ object BootstrapError {
       * Returns a formatted string containing each package, each of its symbols that no longer has
       * the signature it was locked at, and the signature that symbol has now.
       *
-      * E.g., if `f` of `github:flix/museum-clerk` is now `Int32 -> Unit \ IO` then the string is
-      * formatted as
+      * The symbol is named under the package it belongs to, so its name is written without the
+      * package, which the line above it already gives. The signature goes on a line of its own:
+      * a polymorphic signature with constraints is long, and putting it after the name of the
+      * symbol leaves it nowhere to fit.
+      *
+      * E.g., if `Clerk.work` of `github:flix/museum-clerk` is now `Unit -> Unit \ IO` then the
+      * string is formatted as
       *
       * {{{
       * "  github:flix/museum-clerk:
-      *      + 'f' is now Int32 -> Unit \ IO
+      *     Clerk.work
+      *       Unit -> Unit \ IO
       * "
       * }}}
       */
@@ -206,7 +217,7 @@ object BootstrapError {
         val formattedChanges = changes.sortBy { case (_, sym, _) => sym }.map {
           case (_, sym, sc) =>
             val signature = FormatScheme.formatSchemeWithOptions(sc, FormatOptions(FormatOptions.VarName.NameBased))
-            s"    + ${f.bold(sym)} is now ${f.red(signature)}"
+            s"    ${f.bold(sym.stripPrefix(s"$id."))}${System.lineSeparator()}      ${f.red(signature)}"
         }.mkString(System.lineSeparator())
         s"$formattedPkg${System.lineSeparator()}$formattedChanges"
     }.mkString(System.lineSeparator())
