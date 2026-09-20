@@ -132,6 +132,24 @@ class TestGitHub extends AnyFunSuite {
     assert(req.headers().firstValue("Authorization").isEmpty)
   }
 
+  test("newApiRequest.01") {
+    // An API request names the media type it expects and the version of the API it was written
+    // against, so that a later version of the API is something to move to rather than something
+    // that arrives unannounced.
+    val url = mkUrl("https://api.github.com/repos/flix/museum-clerk/releases")
+    val req = GitHub.newApiRequest(url, None).GET().build()
+    assert(req.headers().firstValue("Accept").orElse("") == "application/vnd.github+json")
+    assert(req.headers().firstValue("X-GitHub-Api-Version").orElse("") == "2022-11-28")
+  }
+
+  test("newApiRequest.02") {
+    // A file is fetched from an address, and what it is is not the API's to say.
+    val url = mkUrl("https://github.com/flix/museum-clerk/releases/download/v1.1.0/flix.toml")
+    val req = GitHub.newRequest(url, None).GET().build()
+    assert(req.headers().firstValue("Accept").isEmpty)
+    assert(req.headers().firstValue("X-GitHub-Api-Version").isEmpty)
+  }
+
   /**
     * Returns `s` as a URL.
     */

@@ -45,6 +45,21 @@ object GitHub {
   private val TokenHosts: Set[String] = Set("api.github.com", "github.com", "uploads.github.com")
 
   /**
+    * The media type the REST API is asked to answer in.
+    */
+  private val ApiMediaType: String = "application/vnd.github+json"
+
+  /**
+    * The version of the REST API to speak.
+    *
+    * GitHub dates its API and asks every request to name the one it was written against. A
+    * request that names none is served by whichever version is current, so a breaking change to
+    * the API arrives as a build that stopped working; naming one means it arrives as a version
+    * to move off when we choose to.
+    */
+  private val ApiVersion: String = "2022-11-28"
+
+  /**
     * A GitHub project.
     */
   case class Project(owner: String, repo: String) {
@@ -74,7 +89,7 @@ object GitHub {
     */
   def getReleases(project: Project, token: Option[String]): Result[List[Release], PackageError] = {
     val url = releasesUrl(project)
-    val req = newRequest(url, token).GET().build()
+    val req = newApiRequest(url, token).GET().build()
     val response = try {
       Client.sendRequest(req)
     } catch {
@@ -119,7 +134,7 @@ object GitHub {
     */
   private def verifyRelease(project: Project, version: SemVer, token: String): Result[Unit, ReleaseError] = {
     val url = releaseVersionUrl(project, version)
-    val req = newRequest(url, Some(token)).GET().build()
+    val req = newApiRequest(url, Some(token)).GET().build()
 
     try {
       // Send request
@@ -152,7 +167,7 @@ object GitHub {
     val jsonCompact = compact(render(content))
 
     val url = releasesUrl(project)
-    val req = newRequest(url, Some(token))
+    val req = newApiRequest(url, Some(token))
       .header("Content-Type", "application/json")
       .POST(BodyPublishers.ofByteArray(jsonCompact.getBytes("utf-8")))
       .build()
@@ -193,7 +208,7 @@ object GitHub {
     val assetName = assetPath.getFileName.toString
 
     val url = releaseAssetUploadUrl(project, releaseId, assetName)
-    val req = newRequest(url, Some(token))
+    val req = newApiRequest(url, Some(token))
       .header("Content-Type", "application/octet-stream")
       .POST(BodyPublishers.ofFile(assetPath))
       .build()
@@ -223,7 +238,7 @@ object GitHub {
     val jsonCompact = compact(render(content))
 
     val url = releaseIdUrl(project, releaseId)
-    val req = newRequest(url, Some(token))
+    val req = newApiRequest(url, Some(token))
       .header("Content-Type", "application/json")
       .method("PATCH", BodyPublishers.ofByteArray(jsonCompact.getBytes("utf-8")))
       .build()
@@ -430,6 +445,18 @@ object GitHub {
     */
   private def isAuthorized(url: URL, token: Option[String]): Boolean =
     token.nonEmpty && mayReceiveToken(url)
+
+  /**
+    * Returns a builder for a REST API request to `url`, as [[newRequest]] does, naming the media
+    * type and the API version the answer is expected to follow.
+    *
+    * Only the API is asked these: a release asset and a jar are files served from an address,
+    * and what they are is not GitHub's to say.
+    */
+  def newApiRequest(url: URL, token: Option[String]): HttpRequest.Builder =
+    newRequest(url, token)
+      .header("Accept", ApiMediaType)
+      .header("X-GitHub-Api-Version", ApiVersion)
 
   /**
     * Returns a builder for a request to `url`, carrying `token` if there is one to carry and
