@@ -183,7 +183,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         origin = manifest1,
         packages = resolution1.packages ++ resolution2.packages,
         security = resolution1.security ++ resolution2.security,
-        manifestToFlixDeps = resolution1.manifestToFlixDeps ++ resolution2.manifestToFlixDeps,
+        flixDeps = resolution1.flixDeps ++ resolution2.flixDeps,
         tomlDigests = resolution1.tomlDigests ++ resolution2.tomlDigests)
 
 
@@ -407,15 +407,15 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val resolution = FlixPackageManager.Resolution(
       origin = origin,
       packages = Map(nodeOf(l) -> l, nodeOf(r) -> r, nodeOf(shared) -> shared),
-      immediateDependents = Map(origin -> Nil, l -> List(origin), r -> List(origin), shared -> List(l, r)),
-      manifestToFlixDeps = ListMap(Map(
-        l -> List(toLeft),
-        r -> List(toRight),
-        shared -> (FlixPackageManager.findFlixDependencies(l) ::: FlixPackageManager.findFlixDependencies(r))
+      immediateDependents = Map(nodeOf(l) -> Nil, nodeOf(r) -> Nil, nodeOf(shared) -> List(nodeOf(l), nodeOf(r))),
+      flixDeps = ListMap(Map(
+        nodeOf(l) -> List(toLeft),
+        nodeOf(r) -> List(toRight),
+        nodeOf(shared) -> (FlixPackageManager.findFlixDependencies(l) ::: FlixPackageManager.findFlixDependencies(r))
       )),
       tomlDigests = Map.empty
     )
-    FlixPackageManager.resolveSecurityLevels(resolution).security(shared)
+    FlixPackageManager.resolveSecurityLevels(resolution).security(nodeOf(shared))
   }
 
   test("resolveSecurityLevels.cycle.01") {
@@ -431,14 +431,14 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val resolution = FlixPackageManager.Resolution(
       origin = origin,
       packages = Map(nodeOf(l) -> l, nodeOf(r) -> r),
-      immediateDependents = Map(origin -> Nil, l -> List(origin, r), r -> List(l)),
-      manifestToFlixDeps = ListMap(Map(l -> List(toLeft, backToLeft), r -> List(toRight))),
+      immediateDependents = Map(nodeOf(l) -> List(nodeOf(r)), nodeOf(r) -> List(nodeOf(l))),
+      flixDeps = ListMap(Map(nodeOf(l) -> List(toLeft, backToLeft), nodeOf(r) -> List(toRight))),
       tomlDigests = Map.empty
     )
 
     val security = FlixPackageManager.resolveSecurityLevels(resolution).security
-    assertResult(expected = SecurityContext.Plain)(actual = security(l))
-    assertResult(expected = SecurityContext.Plain)(actual = security(r))
+    assertResult(expected = SecurityContext.Plain)(actual = security(nodeOf(l)))
+    assertResult(expected = SecurityContext.Plain)(actual = security(nodeOf(r)))
   }
 
   test("resolveSecurityLevels.cycle.02") {
@@ -452,12 +452,12 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val resolution = FlixPackageManager.Resolution(
       origin = origin,
       packages = Map(nodeOf(older) -> older),
-      immediateDependents = Map(origin -> Nil, older -> List(older, origin)),
-      manifestToFlixDeps = ListMap(Map(older -> List(toOlder, toItself))),
+      immediateDependents = Map(nodeOf(older) -> List(nodeOf(older))),
+      flixDeps = ListMap(Map(nodeOf(older) -> List(toOlder, toItself))),
       tomlDigests = Map.empty
     )
 
-    assertResult(expected = SecurityContext.Paranoid)(actual = FlixPackageManager.resolveSecurityLevels(resolution).security(older))
+    assertResult(expected = SecurityContext.Paranoid)(actual = FlixPackageManager.resolveSecurityLevels(resolution).security(nodeOf(older)))
   }
 
   test("resolveSecurityLevels.cycle.03") {
@@ -473,14 +473,14 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val resolution = FlixPackageManager.Resolution(
       origin = origin,
       packages = Map(nodeOf(l) -> l, nodeOf(r) -> r),
-      immediateDependents = Map(origin -> Nil, l -> List(origin, r), r -> List(l)),
-      manifestToFlixDeps = ListMap(Map(l -> List(toLeft, backToLeft), r -> List(toRight))),
+      immediateDependents = Map(nodeOf(l) -> List(nodeOf(r)), nodeOf(r) -> List(nodeOf(l))),
+      flixDeps = ListMap(Map(nodeOf(l) -> List(toLeft, backToLeft), nodeOf(r) -> List(toRight))),
       tomlDigests = Map.empty
     )
 
     val security = FlixPackageManager.resolveSecurityLevels(resolution).security
-    assertResult(expected = SecurityContext.Unrestricted)(actual = security(l))
-    assertResult(expected = SecurityContext.Unrestricted)(actual = security(r))
+    assertResult(expected = SecurityContext.Unrestricted)(actual = security(nodeOf(l)))
+    assertResult(expected = SecurityContext.Unrestricted)(actual = security(nodeOf(r)))
   }
 
   test("checkFlixVersions.01") {
@@ -527,8 +527,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     FlixPackageManager.Resolution(
       origin = project,
       packages = Map(nodeOf(manifestA) -> manifestA, nodeOf(manifestB) -> manifestB),
-      immediateDependents = Map(project -> Nil, manifestA -> List(project), manifestB -> List(project)),
-      manifestToFlixDeps = ListMap(Map(manifestA -> List(toA), manifestB -> List(toB))),
+      immediateDependents = Map(nodeOf(manifestA) -> Nil, nodeOf(manifestB) -> Nil),
+      flixDeps = ListMap(Map(nodeOf(manifestA) -> List(toA), nodeOf(manifestB) -> List(toB))),
       tomlDigests = Map.empty
     )
   }
@@ -541,8 +541,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val resolution = FlixPackageManager.SecureResolution(
       origin = origin,
       packages = Map(nodeOf(clerk) -> clerk),
-      security = Map(origin -> SecurityContext.Unrestricted, clerk -> SecurityContext.Plain),
-      manifestToFlixDeps = ListMap(Map(clerk -> FlixPackageManager.findFlixDependencies(origin))),
+      security = Map(nodeOf(clerk) -> SecurityContext.Plain),
+      flixDeps = ListMap(Map(nodeOf(clerk) -> FlixPackageManager.findFlixDependencies(origin))),
       tomlDigests = Map.empty
     )
     assertResult(expected = Map(PackageId(Repository.GitHub, "flix", "museum-clerk") -> SemVer(1, 1, 0)))(
@@ -639,13 +639,17 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     cacheToml(path, B, SemVer(0, 1, 0), toml)
 
     val origin = mkOrigin(
-      """"github:flix/a" = "0.1.0"
+      """"github:flix/a" = { version = "0.1.0", security = "paranoid" }
         |"github:flix/b" = "0.1.0"""".stripMargin)
 
     FlixPackageManager.resolve(origin, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
       case Ok(resolution) =>
+        // Both are built, and each is given the security context it is declared with.
         assertResult(expected = Map(A -> SemVer(0, 1, 0), B -> SemVer(0, 1, 0)))(
           actual = FlixPackageManager.builtVersions(resolution)
+        )
+        assertResult(expected = Map((A, SemVer(0, 1, 0)) -> SecurityContext.Paranoid, (B, SemVer(0, 1, 0)) -> SecurityContext.Plain))(
+          actual = resolution.security
         )
       case Err(e) => fail(e.message(formatter))
     }
