@@ -16,7 +16,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, Repository, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 
 case class Manifest(version: SemVer,
@@ -33,6 +33,14 @@ case class Manifest(version: SemVer,
     * that declares no repository cannot be addressed, and so has no name to give.
     */
   def displayName: String = repository.map(_.toString).getOrElse(Manifest.Unnamed)
+
+  /**
+    * Returns the package this manifest declares itself to be, if it declares a repository.
+    *
+    * A manifest that declares none says nothing about which package it describes: the field is
+    * optional, so a package released before it was written carries no identity of its own.
+    */
+  def packageId: Option[PackageId] = repository.map(p => PackageId(Repository.GitHub, p.owner, p.repo))
 
   /**
     * Returns the mount table of this manifest: the name of each mount to the identifier of the

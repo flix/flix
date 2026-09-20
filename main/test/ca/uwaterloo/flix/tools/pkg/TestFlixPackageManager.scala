@@ -587,6 +587,44 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
+  test("mismatched-repository") {
+    // A release whose manifest names another repository than the one it was downloaded from
+    // describes some other package, and is refused.
+    val path = Files.createTempDirectory("")
+    cacheToml(path, Clerk, SemVer(1, 1, 0),
+      """[package]
+        |version    = "1.1.0"
+        |repository = "github:flix/museum-giftshop"
+        |flix       = "0.33.0"
+        |""".stripMargin)
+
+    FlixPackageManager.resolve(mkOrigin(""""github:flix/museum-clerk" = "1.1.0""""), path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+      case Err(PackageError.MismatchedRepository(id, release, declared)) =>
+        assertResult(expected = (Clerk, SemVer(1, 1, 0), PackageId(Repository.GitHub, "flix", "museum-giftshop")))(
+          actual = (id, release, declared)
+        )
+      case Ok(_) => fail("expected error, got success")
+      case Err(e) => fail(e.message(formatter))
+    }
+  }
+
+  test("matched-repository") {
+    // A release whose manifest names the repository it was downloaded from is the package that
+    // was asked for.
+    val path = Files.createTempDirectory("")
+    cacheToml(path, Clerk, SemVer(1, 1, 0),
+      """[package]
+        |version    = "1.1.0"
+        |repository = "github:flix/museum-clerk"
+        |flix       = "0.33.0"
+        |""".stripMargin)
+
+    FlixPackageManager.resolve(mkOrigin(""""github:flix/museum-clerk" = "1.1.0""""), path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+      case Ok(resolution) => assertResult(expected = Set((Clerk, SemVer(1, 1, 0))))(actual = resolution.packages.keySet)
+      case Err(e) => fail(e.message(formatter))
+    }
+  }
+
   test("resolve.equal-manifests") {
     // Two packages whose manifests agree in every field are still two packages: a manifest that
     // declares no repository carries no identity of its own, so what tells them apart is the
@@ -767,6 +805,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     )
   }
 
+  private val Clerk = PackageId(Repository.GitHub, "flix", "museum-clerk")
+
   /**
     * Returns the manifest of a project that declares the Flix dependencies `deps`.
     */
@@ -792,8 +832,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     * Returns the node of `manifest`, which is the package it declares itself to be, at the
     * version it declares.
     */
-  private def nodeOf(manifest: Manifest): (PackageId, SemVer) = manifest.repository match {
-    case Some(project) => (PackageId(Repository.GitHub, project.owner, project.repo), manifest.version)
+  private def nodeOf(manifest: Manifest): (PackageId, SemVer) = manifest.packageId match {
+    case Some(id) => (id, manifest.version)
     case None => fail(s"the manifest of '${manifest.displayName}' declares no repository")
   }
 
