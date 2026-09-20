@@ -16,11 +16,11 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, PACKAGES_LOCK, README}
-import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
+import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade}
 import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, Origin, PackageId, SecurityContext}
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.jvm.JvmClass
@@ -32,7 +32,6 @@ import ca.uwaterloo.flix.tools.{Stat, Tester}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageSpec, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Options, Result}
 
 import java.io.{IOException, PrintStream}
@@ -1585,9 +1584,9 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
 
     for {
       json <- FileOps.readString(Bootstrap.getEffectLockFile(projectPath)).mapErr(e => BootstrapError.FileError(s"IO error: ${e.getMessage}"))
-      (lockedDefs, lockedSigs) <- EffectLock.deserialize(json).mapErr(BootstrapError.FileError.apply)
+      locked <- EffectLock.deserialize(json).mapErr(BootstrapError.FileError.apply)
       root <- typeCheck(flix)
-      errors <- reportEffectUpgradeErrors(lockedDefs, lockedSigs, root)(flix)
+      errors <- reportEffectUpgradeErrors(locked, root)(flix)
     } yield {
       errors
     }
@@ -1602,23 +1601,19 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     * Returns `Ok(())` if no effect upgrade errors are found.
     * Returns `Err(BootstrapError.EffectUpgradeError(errors))` otherwise.
     */
-  private def reportEffectUpgradeErrors(lockedDefs: Map[Symbol.DefnSym, Scheme], lockedSigs: Map[Symbol.SigSym, Scheme], root: TypedAst.Root)(implicit flix: Flix): Result[Unit, BootstrapError] = {
-    // Compute the inverted use graph to get `f -> g` if `f` is used in `g`.
-    val useGraph = ListMap.from(UseGraph.computeGraph(root).invert.map {
-      case (UseGraph.UsedSym.DefnSym(f), UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
-      case (UseGraph.UsedSym.DefnSym(f), UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
-      case (UseGraph.UsedSym.SigSym(f), UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
-      case (UseGraph.UsedSym.SigSym(f), UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
-    })
-
+  private def reportEffectUpgradeErrors(locked: Map[PackageId, EffectLock.LockedPackage], root: TypedAst.Root)(implicit flix: Flix): Result[Unit, BootstrapError] = {
     // N.B.: We erase the keys of the maps to strings, since maps are invariant in the key
-    val erasedLockedDefs = lockedDefs.map { case (sym, scheme) => sym.toString -> scheme }
     val erasedUpgradedDefs = root.defs.map { case (sym, defn) => sym.toString -> defn.spec.declaredScheme }
-    val erasedLockedSigs = lockedSigs.map { case (sym, scheme) => sym.toString -> scheme }
     val erasedUpgradedSigs = root.sigs.map { case (sym, sig) => sym.toString -> sig.spec.declaredScheme }
-    val defnErrors = collectUpgradeErrors(erasedLockedDefs, erasedUpgradedDefs, useGraph)
-    val sigErrors = collectUpgradeErrors(erasedLockedSigs, erasedUpgradedSigs, useGraph)
-    val allErrors = defnErrors ::: sigErrors
+
+    val allErrors = locked.toList.sortBy { case (id, _) => id }.flatMap {
+      case (id, EffectLock.LockedPackage(lockedDefs, lockedSigs)) =>
+        val erasedLockedDefs = lockedDefs.map { case (sym, scheme) => sym.toString -> scheme }
+        val erasedLockedSigs = lockedSigs.map { case (sym, scheme) => sym.toString -> scheme }
+        val defnErrors = collectUpgradeErrors(erasedLockedDefs, erasedUpgradedDefs)
+        val sigErrors = collectUpgradeErrors(erasedLockedSigs, erasedUpgradedSigs)
+        (defnErrors ::: sigErrors).map { case (sym, scheme) => (id, sym, scheme) }
+    }
 
     if (allErrors.isEmpty) {
       Ok(())
@@ -1628,16 +1623,18 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
   }
 
   /**
-    * Collects a list of tuples `(sym, scheme, uses)` if function represented by `sym` is not an effect safe upgrade.
+    * Collects a list of tuples `(sym, scheme)` if the function represented by `sym` is not an effect safe upgrade.
+    *
+    * A locked function that the program no longer declares is not an error: it cannot be called,
+    * so it cannot do anything the lock did not allow.
     */
-  private def collectUpgradeErrors(lockedFunctions: Map[String, Scheme], upgradeFunctions: Map[String, Scheme], useGraph: ListMap[String, SourceLocation])(implicit flix: Flix): List[(String, Scheme, List[SourceLocation])] = {
-    val errors = mutable.ArrayBuffer.empty[(String, Scheme, List[SourceLocation])]
+  private def collectUpgradeErrors(lockedFunctions: Map[String, Scheme], upgradeFunctions: Map[String, Scheme])(implicit flix: Flix): List[(String, Scheme)] = {
+    val errors = mutable.ArrayBuffer.empty[(String, Scheme)]
     for ((sym, lockedScheme) <- lockedFunctions) {
       if (upgradeFunctions.contains(sym)) {
         val upgradedScheme = upgradeFunctions(sym)
-        val uses = useGraph.get(sym)
-        if (!(uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(lockedScheme, upgradedScheme)(flix))) {
-          errors.addOne((sym, upgradedScheme, uses))
+        if (!EffectUpgrade.isEffSafeUpgrade(lockedScheme, upgradedScheme)(flix)) {
+          errors.addOne((sym, upgradedScheme))
         }
       }
     }
@@ -1645,23 +1642,71 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
   }
 
   /**
-    * Type checks the program and performs effect locking, overwriting the current 'effects.lock' file if it exists.
+    * Type checks the program and locks the public defs and sigs of `spec`, writing them to the
+    * 'effects.lock' file.
+    *
+    * `spec` is a package identifier, e.g. `flix/museum-clerk` or `github:flix/museum-clerk`. It
+    * carries no version: a package is installed at one version, so there is nothing to choose
+    * between. The package must be one the project has installed.
+    *
+    * A package is locked on its own: what `spec` locks replaces what was locked for that package
+    * and leaves every other package of the file as it was. Locking no package in particular locks
+    * every package the project has installed, and the file is then written as a whole, so that a
+    * package the project no longer depends on is dropped from it.
+    *
     * If the program does not type check, then effect locking is aborted without touching the file system.
     */
-  def lockEffects(flix: Flix): Result[Unit, BootstrapError] = {
+  def lockEffects(flix: Flix, spec: Option[String]): Result[Unit, BootstrapError] = {
     if (!isProjectMode) {
       return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-lock'"))
     }
-    for {
-      root <- typeCheck(flix)
-    } yield {
-      EffectLock.lock(root) match {
-        case Err(e) => return Err(BootstrapError.GeneralError(s"Unexpected serialization error: $e"))
-        case Ok(json) =>
-          val path = Bootstrap.getEffectLockFile(projectPath)
-          // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
-          FileOps.writeString(path, json)
+
+    val targets = spec match {
+      case None => builtVersions.keySet
+      case Some(s) => PackageSpec.mkPackageSpec(s) match {
+        case Some(pkg) if pkg.version.isDefined => return Err(BootstrapError.UnexpectedVersion(s))
+        case Some(pkg) if !builtVersions.contains(pkg.id) => return Err(BootstrapError.PackageNotInstalled(pkg.id))
+        case Some(pkg) => Set(pkg.id)
+        case None => return Err(BootstrapError.IllegalPackageSpec(s))
       }
+    }
+
+    for {
+      // Read before the program is type checked, so that an unreadable file is reported before the
+      // work of compiling the project is done.
+      previous <- readEffectLockFile(merge = spec.isDefined)
+      root <- typeCheck(flix)
+      json <- EffectLock.format(previous ++ EffectLock.lock(root, targets))
+        .mapErr(e => BootstrapError.GeneralError(s"Unexpected serialization error: $e"))
+    } yield {
+      // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
+      FileOps.writeString(Bootstrap.getEffectLockFile(projectPath), json)
+    }
+  }
+
+  /**
+    * Returns the packages the 'effects.lock' file locks, if what it locks is to be merged into.
+    *
+    * The file is merged into when one package is locked, because the packages that are not being
+    * locked must stay as they are. It is not merged into when every package is locked, because
+    * each one is then written anew.
+    *
+    * A file that cannot be read is an error rather than one to overwrite: it may hold the lock of
+    * a package that is not being locked, and overwriting it would drop that lock silently.
+    */
+  private def readEffectLockFile(merge: Boolean): Result[EffectLock.SerializedLock, BootstrapError] = {
+    val path = Bootstrap.getEffectLockFile(projectPath)
+    if (!merge) {
+      return Ok(Map.empty)
+    }
+    FileOps.exists(path) match {
+      case Err(e) => Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
+      case Ok(false) => Ok(Map.empty)
+      case Ok(true) =>
+        for {
+          json <- FileOps.readString(path).mapErr(e => BootstrapError.FileError(s"IO error: ${e.getMessage}"))
+          lock <- EffectLock.parse(json).mapErr(BootstrapError.FileError.apply)
+        } yield lock
     }
   }
 

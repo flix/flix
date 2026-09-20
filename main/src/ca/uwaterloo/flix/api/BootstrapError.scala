@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.shared.PackageId
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation}
+import ca.uwaterloo.flix.language.ast.Scheme
 import ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.tools.pkg.{LockError, ManifestError, PackageError, SemVer}
 import ca.uwaterloo.flix.util.Formatter
@@ -108,6 +108,16 @@ object BootstrapError {
   }
 
   /**
+    * An error raised to indicate that `id` is not installed, and so cannot be locked.
+    */
+  case class PackageNotInstalled(id: PackageId) extends BootstrapError {
+    override def message(f: Formatter): String =
+      s"""${f.red(id.toString)} is not installed.
+         |Only a package the project has installed can be locked. Run ${f.bold("flix eff-lock")} on its own to lock every installed package.
+         |""".stripMargin
+  }
+
+  /**
     * An error raised to indicate that `id` has no release to install.
     */
   case class NoReleases(id: PackageId) extends BootstrapError {
@@ -151,7 +161,7 @@ object BootstrapError {
     override def message(f: Formatter): String = e
   }
 
-  case class EffectUpgradeError(e: List[(String, Scheme, List[SourceLocation])]) extends BootstrapError {
+  case class EffectUpgradeError(e: List[(PackageId, String, Scheme)]) extends BootstrapError {
     override def message(f: Formatter): String = {
       s"""@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
          |@  WARNING! YOU MAY BE SUBJECT TO A SUPPLY CHAIN ATTACK!  @
@@ -160,42 +170,35 @@ object BootstrapError {
          |
          |The following potentially harmful changes were detected:
          |$fmtEffectSets
-         |
-         |The functions are used in these places:
-         |$fmtUses
          |""".stripMargin
     }
 
     /**
-      * Returns a formatted string containing each symbol and what new effects it has.
+      * Returns a formatted string containing each package, each of its symbols that has changed,
+      * and what new effects that symbol has.
       *
-      * E.g.,if `f` has effect set `A, B, C` then the string is formatted as
-      *
-      * {{{"  + 'f' now uses *{ A, B, C }*"}}}
-      */
-    private def fmtEffectSets: String = e.map {
-      case (sym, upgrade, _) =>
-        val effs = upgrade.base.effects.mkString("*{ ", ", ", " }*")
-        s"  + '$sym' now uses $effs"
-    }.mkString(System.lineSeparator())
-
-    /**
-      * Returns a formatted string containing each symbol and where it is used.
-      *
-      * E.g.,if `f` is used in `main` and `mainHelper` then the string is formatted as
+      * E.g., if `f` of `github:flix/museum-clerk` has effect set `A, B, C` then the string is
+      * formatted as
       *
       * {{{
-      * "  + 'f':
-      *      - main:13:2
-      *      - mainHelper:2:42
+      * "  github:flix/museum-clerk:
+      *      + 'f' now uses *{ A, B, C }*
       * "
       * }}}
       */
-    private def fmtUses: String = e.map {
-      case (sym, _, uses) =>
-        val formattedSym = s"  + '$sym':"
-        val formattedUses = uses.map(loc => s"    - $loc").mkString(System.lineSeparator())
-        s"$formattedSym${System.lineSeparator()}$formattedUses"
+    private def fmtEffectSets: String = e.groupBy {
+      case (id, _, _) => id
+    }.toList.sortBy {
+      case (id, _) => id
+    }.map {
+      case (id, changes) =>
+        val formattedPkg = s"  $id:"
+        val formattedChanges = changes.sortBy { case (_, sym, _) => sym }.map {
+          case (_, sym, upgrade) =>
+            val effs = upgrade.base.effects.mkString("*{ ", ", ", " }*")
+            s"    + '$sym' now uses $effs"
+        }.mkString(System.lineSeparator())
+        s"$formattedPkg${System.lineSeparator()}$formattedChanges"
     }.mkString(System.lineSeparator())
   }
 }
