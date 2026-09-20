@@ -73,50 +73,17 @@ object HashType {
     * not, so a scheme that leaves a variable free hashes as though the variable were one of its
     * own. A declared scheme is closed, so this does not arise for one.
     */
-  def hashScheme(sc0: Scheme): Sha256 = versioned(visitScheme(sc0)(new Env))
+  def hashScheme(sc0: Scheme): Sha256 = versioned(visitScheme(sc0)(new LocalContext))
 
   /**
     * Returns the hash of `tpe0`, with every type variable it contains treated as bound by it.
     */
-  def hashType(tpe0: Type): Sha256 = versioned(visitType(tpe0)(new Env))
+  def hashType(tpe0: Type): Sha256 = versioned(visitType(tpe0)(new LocalContext))
 
   /**
     * Returns the hash of `kind0`.
     */
   def hashKind(kind0: Kind): Sha256 = versioned(visitKind(kind0))
-
-  /**
-    * The canonical index of each type variable met so far.
-    *
-    * A variable is named by the position at which it was first met, rather than by its symbol,
-    * because the identifier of a type variable is handed out by a counter that runs over the whole
-    * program: it is stable within one compilation and nowhere else. Numbering the variables as
-    * they are met is what makes the hash both stable across compilations and blind to the renaming
-    * of a type parameter.
-    *
-    * The numbering is shared by every kind, and the hash of a variable covers its kind as well as
-    * its index, so two variables of different kinds cannot be confused.
-    */
-  private final class Env(indices: mutable.Map[Symbol.KindedTypeVarSym, Int]) {
-
-    def this() = this(mutable.Map.empty)
-
-    /**
-      * Returns the index of `sym`, giving it the next one if it has none.
-      */
-    def indexOf(sym: Symbol.KindedTypeVarSym): Int = indices.getOrElseUpdate(sym, indices.size)
-
-    /**
-      * Returns the index of `sym`, or `None` if `sym` has not been met.
-      */
-    def indexOpt(sym: Symbol.KindedTypeVarSym): Option[Int] = indices.get(sym)
-
-    /**
-      * Returns a copy of `this`, which numbers the variables it meets without affecting `this`.
-      */
-    def fork(): Env = new Env(indices.clone())
-
-  }
 
   /**
     * Returns the hash of `sc0`.
@@ -127,12 +94,12 @@ object HashType {
     * hashed as it stands, because its order comes from the identifiers of the variables and so is
     * not stable. A quantifier that the scheme does not use does not affect the hash.
     */
-  private def visitScheme(sc0: Scheme)(implicit env: Env): Array[Byte] = sc0 match {
+  private def visitScheme(sc0: Scheme)(implicit lctx: LocalContext): Array[Byte] = sc0 match {
     case Scheme(quantifiers, tconstrs, econstrs, base) =>
       val h1 = visitType(base)
       val h2 = visitConstraints("Scheme.TraitConstraints", tconstrs, visitTraitConstraint)
       val h3 = visitConstraints("Scheme.EqualityConstraints", econstrs, visitEqualityConstraint)
-      val h4 = seq("Scheme.Quantifiers", quantifiers.flatMap(env.indexOpt).sorted.map(hashInt))
+      val h4 = seq("Scheme.Quantifiers", quantifiers.flatMap(lctx.indexOpt).sorted.map(hashInt))
       node("Scheme", h1, h2, h3, h4)
   }
 
@@ -148,26 +115,26 @@ object HashType {
     * against the numbering itself, in that order, so that a variable which occurs in more than one
     * constraint is numbered once.
     */
-  private def visitConstraints[A](tag: String, constrs: List[A], visit: (A, Env) => Array[Byte])(implicit env: Env): Array[Byte] = {
-    val ordered = constrs.sortBy(constr => visit(constr, env.fork()))(ByHash)
-    seq(tag, ordered.map(constr => visit(constr, env)).sorted(ByHash))
+  private def visitConstraints[A](tag: String, constrs: List[A], visit: (A, LocalContext) => Array[Byte])(implicit lctx: LocalContext): Array[Byte] = {
+    val ordered = constrs.sortBy(constr => visit(constr, lctx.fork()))(ByHash)
+    seq(tag, ordered.map(constr => visit(constr, lctx)).sorted(ByHash))
   }
 
-  private def visitTraitConstraint(tconstr0: TraitConstraint, env: Env): Array[Byte] = tconstr0 match {
+  private def visitTraitConstraint(tconstr0: TraitConstraint, lctx: LocalContext): Array[Byte] = tconstr0 match {
     case TraitConstraint(symUse, arg, _) =>
-      node("TraitConstraint", visitTraitSym(symUse.sym), visitType(arg)(env))
+      node("TraitConstraint", visitTraitSym(symUse.sym), visitType(arg)(lctx))
   }
 
-  private def visitEqualityConstraint(econstr0: EqualityConstraint, env: Env): Array[Byte] = econstr0 match {
+  private def visitEqualityConstraint(econstr0: EqualityConstraint, lctx: LocalContext): Array[Byte] = econstr0 match {
     case EqualityConstraint(symUse, tpe1, tpe2, _) =>
-      node("EqualityConstraint", visitAssocTypeSym(symUse.sym), visitType(tpe1)(env), visitType(tpe2)(env))
+      node("EqualityConstraint", visitAssocTypeSym(symUse.sym), visitType(tpe1)(lctx), visitType(tpe2)(lctx))
   }
 
-  private def visitType(tpe0: Type)(implicit env: Env): Array[Byte] = tpe0 match {
+  private def visitType(tpe0: Type)(implicit lctx: LocalContext): Array[Byte] = tpe0 match {
     case Type.Var(sym, _) =>
       // N.B.: Only the index and the kind of the variable are hashed. Its name, its identifier,
       // and whether it is slack are not: none of them changes which type this is.
-      node("Type.Var", hashInt(env.indexOf(sym)), visitKind(sym.kind))
+      node("Type.Var", hashInt(lctx.indexOf(sym)), visitKind(sym.kind))
 
     case Type.Cst(tc, loc) =>
       node("Type.Cst", visitTypeConstructor(tc)(loc))
@@ -473,6 +440,39 @@ object HashType {
     */
   private def versioned(digest: Array[Byte]): Sha256 = {
     Sha256.ofBytes(Array.concat(hashInt(Version), digest))
+  }
+
+  /**
+    * The canonical index of each type variable met so far.
+    *
+    * A variable is named by the position at which it was first met, rather than by its symbol,
+    * because the identifier of a type variable is handed out by a counter that runs over the whole
+    * program: it is stable within one compilation and nowhere else. Numbering the variables as
+    * they are met is what makes the hash both stable across compilations and blind to the renaming
+    * of a type parameter.
+    *
+    * The numbering is shared by every kind, and the hash of a variable covers its kind as well as
+    * its index, so two variables of different kinds cannot be confused.
+    */
+  private final class LocalContext(indices: mutable.Map[Symbol.KindedTypeVarSym, Int]) {
+
+    def this() = this(mutable.Map.empty)
+
+    /**
+      * Returns the index of `sym`, giving it the next one if it has none.
+      */
+    def indexOf(sym: Symbol.KindedTypeVarSym): Int = indices.getOrElseUpdate(sym, indices.size)
+
+    /**
+      * Returns the index of `sym`, or `None` if `sym` has not been met.
+      */
+    def indexOpt(sym: Symbol.KindedTypeVarSym): Option[Int] = indices.get(sym)
+
+    /**
+      * Returns a copy of `this`, which numbers the variables it meets without affecting `this`.
+      */
+    def fork(): LocalContext = new LocalContext(indices.clone())
+
   }
 
 }
