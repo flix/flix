@@ -12,7 +12,7 @@ import ca.uwaterloo.flix.tools.pkg.PkgTestUtils.ManifestPath
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.{File, PrintStream}
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 
 @DoNotDiscover
 class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
@@ -179,7 +179,12 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         case Ok(res) => res
         case Err(e) => fail(e.message(formatter))
       }
-      val resolution = FlixPackageManager.SecureResolution(origin = manifest1, security = resolution1.security ++ resolution2.security, manifestToFlixDeps = resolution1.manifestToFlixDeps ++ resolution2.manifestToFlixDeps, tomlDigests = resolution1.tomlDigests ++ resolution2.tomlDigests)
+      val resolution = FlixPackageManager.SecureResolution(
+        origin = manifest1,
+        packages = resolution1.packages ++ resolution2.packages,
+        security = resolution1.security ++ resolution2.security,
+        flixDeps = resolution1.flixDeps ++ resolution2.flixDeps,
+        tomlDigests = resolution1.tomlDigests ++ resolution2.tomlDigests)
 
 
       FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
@@ -401,16 +406,20 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val List(toLeft, toRight) = FlixPackageManager.findFlixDependencies(origin)
     val resolution = FlixPackageManager.Resolution(
       origin = origin,
-      manifests = List(origin, l, r, shared),
-      immediateDependents = Map(origin -> Nil, l -> List(origin), r -> List(origin), shared -> List(l, r)),
-      manifestToFlixDeps = ListMap(Map(
-        l -> List(toLeft),
-        r -> List(toRight),
-        shared -> (FlixPackageManager.findFlixDependencies(l) ::: FlixPackageManager.findFlixDependencies(r))
+      packages = Map(nodeOf(l) -> l, nodeOf(r) -> r, nodeOf(shared) -> shared),
+      immediateDependents = Map(
+        nodeOf(l) -> List(None),
+        nodeOf(r) -> List(None),
+        nodeOf(shared) -> List(Some(nodeOf(l)), Some(nodeOf(r)))
+      ),
+      flixDeps = ListMap(Map(
+        nodeOf(l) -> List(toLeft),
+        nodeOf(r) -> List(toRight),
+        nodeOf(shared) -> (FlixPackageManager.findFlixDependencies(l) ::: FlixPackageManager.findFlixDependencies(r))
       )),
       tomlDigests = Map.empty
     )
-    FlixPackageManager.resolveSecurityLevels(resolution).security(shared)
+    FlixPackageManager.resolveSecurityLevels(resolution).security(nodeOf(shared))
   }
 
   test("resolveSecurityLevels.cycle.01") {
@@ -425,15 +434,15 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val List(backToLeft) = FlixPackageManager.findFlixDependencies(r)
     val resolution = FlixPackageManager.Resolution(
       origin = origin,
-      manifests = List(origin, l, r),
-      immediateDependents = Map(origin -> Nil, l -> List(origin, r), r -> List(l)),
-      manifestToFlixDeps = ListMap(Map(l -> List(toLeft, backToLeft), r -> List(toRight))),
+      packages = Map(nodeOf(l) -> l, nodeOf(r) -> r),
+      immediateDependents = Map(nodeOf(l) -> List(None, Some(nodeOf(r))), nodeOf(r) -> List(Some(nodeOf(l)))),
+      flixDeps = ListMap(Map(nodeOf(l) -> List(toLeft, backToLeft), nodeOf(r) -> List(toRight))),
       tomlDigests = Map.empty
     )
 
     val security = FlixPackageManager.resolveSecurityLevels(resolution).security
-    assertResult(expected = SecurityContext.Plain)(actual = security(l))
-    assertResult(expected = SecurityContext.Plain)(actual = security(r))
+    assertResult(expected = SecurityContext.Plain)(actual = security(nodeOf(l)))
+    assertResult(expected = SecurityContext.Plain)(actual = security(nodeOf(r)))
   }
 
   test("resolveSecurityLevels.cycle.02") {
@@ -446,13 +455,13 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val List(toItself) = FlixPackageManager.findFlixDependencies(older)
     val resolution = FlixPackageManager.Resolution(
       origin = origin,
-      manifests = List(origin, older),
-      immediateDependents = Map(origin -> Nil, older -> List(older, origin)),
-      manifestToFlixDeps = ListMap(Map(older -> List(toOlder, toItself))),
+      packages = Map(nodeOf(older) -> older),
+      immediateDependents = Map(nodeOf(older) -> List(Some(nodeOf(older)), None)),
+      flixDeps = ListMap(Map(nodeOf(older) -> List(toOlder, toItself))),
       tomlDigests = Map.empty
     )
 
-    assertResult(expected = SecurityContext.Paranoid)(actual = FlixPackageManager.resolveSecurityLevels(resolution).security(older))
+    assertResult(expected = SecurityContext.Paranoid)(actual = FlixPackageManager.resolveSecurityLevels(resolution).security(nodeOf(older)))
   }
 
   test("resolveSecurityLevels.cycle.03") {
@@ -467,15 +476,15 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val List(backToLeft) = FlixPackageManager.findFlixDependencies(r)
     val resolution = FlixPackageManager.Resolution(
       origin = origin,
-      manifests = List(origin, l, r),
-      immediateDependents = Map(origin -> Nil, l -> List(origin, r), r -> List(l)),
-      manifestToFlixDeps = ListMap(Map(l -> List(toLeft, backToLeft), r -> List(toRight))),
+      packages = Map(nodeOf(l) -> l, nodeOf(r) -> r),
+      immediateDependents = Map(nodeOf(l) -> List(None, Some(nodeOf(r))), nodeOf(r) -> List(Some(nodeOf(l)))),
+      flixDeps = ListMap(Map(nodeOf(l) -> List(toLeft, backToLeft), nodeOf(r) -> List(toRight))),
       tomlDigests = Map.empty
     )
 
     val security = FlixPackageManager.resolveSecurityLevels(resolution).security
-    assertResult(expected = SecurityContext.Unrestricted)(actual = security(l))
-    assertResult(expected = SecurityContext.Unrestricted)(actual = security(r))
+    assertResult(expected = SecurityContext.Unrestricted)(actual = security(nodeOf(l)))
+    assertResult(expected = SecurityContext.Unrestricted)(actual = security(nodeOf(r)))
   }
 
   test("checkFlixVersions.01") {
@@ -521,9 +530,9 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val List(toB, toA) = FlixPackageManager.findFlixDependencies(project)
     FlixPackageManager.Resolution(
       origin = project,
-      manifests = List(project, manifestB, manifestA),
-      immediateDependents = Map(project -> Nil, manifestA -> List(project), manifestB -> List(project)),
-      manifestToFlixDeps = ListMap(Map(manifestA -> List(toA), manifestB -> List(toB))),
+      packages = Map(nodeOf(manifestA) -> manifestA, nodeOf(manifestB) -> manifestB),
+      immediateDependents = Map(nodeOf(manifestA) -> List(None), nodeOf(manifestB) -> List(None)),
+      flixDeps = ListMap(Map(nodeOf(manifestA) -> List(toA), nodeOf(manifestB) -> List(toB))),
       tomlDigests = Map.empty
     )
   }
@@ -535,8 +544,9 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val clerk = mkManifest("museum-clerk", "").copy(version = SemVer(1, 1, 0))
     val resolution = FlixPackageManager.SecureResolution(
       origin = origin,
-      security = Map(origin -> SecurityContext.Unrestricted, clerk -> SecurityContext.Plain),
-      manifestToFlixDeps = ListMap(Map(clerk -> FlixPackageManager.findFlixDependencies(origin))),
+      packages = Map(nodeOf(clerk) -> clerk),
+      security = Map(nodeOf(clerk) -> SecurityContext.Plain),
+      flixDeps = ListMap(Map(nodeOf(clerk) -> FlixPackageManager.findFlixDependencies(origin))),
       tomlDigests = Map.empty
     )
     assertResult(expected = Map(PackageId(Repository.GitHub, "flix", "museum-clerk") -> SemVer(1, 1, 0)))(
@@ -577,6 +587,36 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
       case Ok(_) => fail("expected error, got success")
       case Err(_: PackageError.MismatchedVersions) => succeed
+      case Err(e) => fail(e.message(formatter))
+    }
+  }
+
+  test("resolve.equal-manifests") {
+    // Two packages whose manifests agree in every field are still two packages: a manifest that
+    // declares no repository carries no identity of its own, so what tells them apart is the
+    // declaration that led to each of them.
+    val path = Files.createTempDirectory("")
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix    = "0.33.0"
+        |""".stripMargin
+    cacheToml(path, A, SemVer(0, 1, 0), toml)
+    cacheToml(path, B, SemVer(0, 1, 0), toml)
+
+    val origin = mkOrigin(
+      """"github:flix/a" = { version = "0.1.0", security = "paranoid" }
+        |"github:flix/b" = "0.1.0"""".stripMargin)
+
+    FlixPackageManager.resolve(origin, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
+      case Ok(resolution) =>
+        // Both are built, and each is given the security context it is declared with.
+        assertResult(expected = Map(A -> SemVer(0, 1, 0), B -> SemVer(0, 1, 0)))(
+          actual = FlixPackageManager.builtVersions(resolution)
+        )
+        assertResult(expected = Map((A, SemVer(0, 1, 0)) -> SecurityContext.Paranoid, (B, SemVer(0, 1, 0)) -> SecurityContext.Plain))(
+          actual = resolution.security
+        )
       case Err(e) => fail(e.message(formatter))
     }
   }
@@ -733,6 +773,36 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     assertResult(expected = Set(A, B))(
       actual = FlixPackageManager.live(List(A), selected, requires)
     )
+  }
+
+  /**
+    * Returns the manifest of a project that declares the Flix dependencies `deps`.
+    */
+  private def mkOrigin(deps: String): Manifest = {
+    ManifestParser.parse(PkgTestUtils.mkTomlWithDeps(deps), ManifestPath) match {
+      case Ok(m) => m
+      case Err(e) => fail(e.message(formatter))
+    }
+  }
+
+  /**
+    * Writes `toml` where the `flix.toml` of the package `id` at `version` is installed, so that
+    * resolving a dependency on it reads that file instead of downloading a release.
+    */
+  private def cacheToml(projectRoot: Path, id: PackageId, version: SemVer, toml: String): Unit = {
+    val dir = Bootstrap.getLibraryDirectory(projectRoot)
+      .resolve("github").resolve(id.owner).resolve(id.name).resolve(version.toString)
+    Files.createDirectories(dir)
+    Files.writeString(dir.resolve(s"${id.name}-$version.${Bootstrap.EXT_TOML}"), toml)
+  }
+
+  /**
+    * Returns the node of `manifest`, which is the package it declares itself to be, at the
+    * version it declares.
+    */
+  private def nodeOf(manifest: Manifest): FlixPackageManager.Node = manifest.repository match {
+    case Some(project) => (PackageId(Repository.GitHub, project.owner, project.repo), manifest.version)
+    case None => fail(s"the manifest of '${manifest.displayName}' declares no repository")
   }
 
   /**
