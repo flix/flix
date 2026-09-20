@@ -53,9 +53,17 @@ object Sha256 {
   /**
     * Returns the SHA-256 digest of `bytes`.
     */
-  def ofBytes(bytes: Array[Byte]): Sha256 = {
+  def ofBytes(bytes: Array[Byte]): Sha256 = Sha256(toHex(rawOfBytes(bytes)))
+
+  /**
+    * Returns the SHA-256 digest of `bytes`, as the bytes of the digest itself.
+    *
+    * Used where a digest is combined with other digests before it is rendered, as when hashing a
+    * tree. Prefer [[ofBytes]], which returns a [[Sha256]] and so carries the invariant on `hex`.
+    */
+  def rawOfBytes(bytes: Array[Byte]): Array[Byte] = {
     val digest = MessageDigest.getInstance(Algorithm)
-    Sha256(toHex(digest.digest(bytes)))
+    digest.digest(bytes)
   }
 
   /**
