@@ -70,6 +70,16 @@ class TestGitHub extends AnyFunSuite {
     assert(!authorized.message(Formatter.NoFormatter).contains("GITHUB_TOKEN"))
   }
 
+  test("getReleases.04") {
+    // A repository whose releases are not tagged as versions of a package is read as holding
+    // none of them, rather than throwing out of the listing and taking the build with it.
+    // `microsoft/vscode` tags its releases `1.138.0`, without the leading `v`, which is a common
+    // enough way to tag a release that a Flix package may well depend on a repository doing it.
+    val project = GitHub.Project("microsoft", "vscode")
+    val releases = GitHub.getReleases(project, PkgTestUtils.gitHubToken).unsafeGet
+    assert(releases.isEmpty)
+  }
+
   test("downloadReleaseAsset.01") {
     // A release asset is downloaded with whatever token is held, and a release address ignores a
     // token it does not accept rather than refusing the request. A token that has gone stale in
