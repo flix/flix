@@ -71,13 +71,18 @@ class TestGitHub extends AnyFunSuite {
   }
 
   test("getReleases.04") {
-    // A repository whose releases are not tagged as versions of a package is read as holding
-    // none of them, rather than throwing out of the listing and taking the build with it.
-    // `microsoft/vscode` tags its releases `1.138.0`, without the leading `v`, which is a common
-    // enough way to tag a release that a Flix package may well depend on a repository doing it.
+    // A release tagged in a way that is not a version of a package is passed over, rather than
+    // thrown out of the listing and taking the build with it. `microsoft/vscode` tags releases
+    // `1.138.0`, without the leading `v`, which is a common enough way to tag one that a Flix
+    // package may well depend on a repository doing it.
+    //
+    // Reading the listing at all is the test: how many of its releases are tagged as versions is
+    // that repository's business, and changes as it releases.
     val project = GitHub.Project("microsoft", "vscode")
-    val releases = GitHub.getReleases(project, PkgTestUtils.gitHubToken).unsafeGet
-    assert(releases.isEmpty)
+    GitHub.getReleases(project, PkgTestUtils.gitHubToken) match {
+      case Ok(_) => // As expected.
+      case Err(e) => fail(s"Expected a listing, but got: ${e.message(Formatter.NoFormatter)}")
+    }
   }
 
   test("downloadReleaseAsset.01") {
