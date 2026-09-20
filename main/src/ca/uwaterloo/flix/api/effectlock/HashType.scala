@@ -52,9 +52,9 @@ import scala.collection.mutable
   *   - Source locations are never hashed.
   *
   * The hash is structural, so it does not see that two types are equal for a reason the shape of
-  * the type does not show. `A + B` and `B + A` denote the same effect but hash differently. Equal
-  * hashes therefore mean that two signatures are the same, whereas different hashes mean only that
-  * they may differ.
+  * the type does not show. `A + B` and `B + A` denote the same effect but hash differently, as do
+  * two schemes that differ only in the order of their constraints. Equal hashes therefore mean
+  * that two signatures are the same, whereas different hashes mean only that they may differ.
   */
 object HashType {
 
@@ -97,37 +97,20 @@ object HashType {
   private def visitScheme(sc0: Scheme)(implicit lctx: LocalContext): Array[Byte] = sc0 match {
     case Scheme(quantifiers, tconstrs, econstrs, base) =>
       val h1 = visitType(base)
-      val h2 = visitConstraints("Scheme.TraitConstraints", tconstrs, visitTraitConstraint)
-      val h3 = visitConstraints("Scheme.EqualityConstraints", econstrs, visitEqualityConstraint)
+      val h2 = seq("Scheme.TraitConstraints", tconstrs.map(visitTraitConstraint))
+      val h3 = seq("Scheme.EqualityConstraints", econstrs.map(visitEqualityConstraint))
       val h4 = seq("Scheme.Quantifiers", quantifiers.flatMap(lctx.indexOpt).sorted.map(hashInt))
       node("Scheme", h1, h2, h3, h4)
   }
 
-  /**
-    * Returns the hash of the constraints `constrs`, each of which is hashed by `visit`.
-    *
-    * A scheme does not hold its constraints in a stable order: two compilations of one program may
-    * give them in different orders. They are therefore hashed as a set, by hashing each constraint
-    * on its own and then sorting the hashes.
-    *
-    * Each constraint is hashed twice. It is first hashed against a copy of the numbering, to put
-    * the constraints in an order that does not depend on the order they came in. It is then hashed
-    * against the numbering itself, in that order, so that a variable which occurs in more than one
-    * constraint is numbered once.
-    */
-  private def visitConstraints[A](tag: String, constrs: List[A], visit: (A, LocalContext) => Array[Byte])(implicit lctx: LocalContext): Array[Byte] = {
-    val ordered = constrs.sortBy(constr => visit(constr, lctx.fork()))(ByHash)
-    seq(tag, ordered.map(constr => visit(constr, lctx)).sorted(ByHash))
-  }
-
-  private def visitTraitConstraint(tconstr0: TraitConstraint, lctx: LocalContext): Array[Byte] = tconstr0 match {
+  private def visitTraitConstraint(tconstr0: TraitConstraint)(implicit lctx: LocalContext): Array[Byte] = tconstr0 match {
     case TraitConstraint(symUse, arg, _) =>
-      node("TraitConstraint", visitTraitSym(symUse.sym), visitType(arg)(lctx))
+      node("TraitConstraint", visitTraitSym(symUse.sym), visitType(arg))
   }
 
-  private def visitEqualityConstraint(econstr0: EqualityConstraint, lctx: LocalContext): Array[Byte] = econstr0 match {
+  private def visitEqualityConstraint(econstr0: EqualityConstraint)(implicit lctx: LocalContext): Array[Byte] = econstr0 match {
     case EqualityConstraint(symUse, tpe1, tpe2, _) =>
-      node("EqualityConstraint", visitAssocTypeSym(symUse.sym), visitType(tpe1)(lctx), visitType(tpe2)(lctx))
+      node("EqualityConstraint", visitAssocTypeSym(symUse.sym), visitType(tpe1), visitType(tpe2))
   }
 
   private def visitType(tpe0: Type)(implicit lctx: LocalContext): Array[Byte] = tpe0 match {
@@ -330,13 +313,6 @@ object HashType {
   }
 
   /**
-    * Orders hashes by their bytes, so that a set of hashes can be put into a canonical order.
-    */
-  private val ByHash: Ordering[Array[Byte]] = new Ordering[Array[Byte]] {
-    override def compare(x: Array[Byte], y: Array[Byte]): Int = java.util.Arrays.compare(x, y)
-  }
-
-  /**
     * Returns the hash of `n`.
     */
   private def hashInt(n: Int): Array[Byte] = {
@@ -371,9 +347,12 @@ object HashType {
     * The numbering is shared by every kind, and the hash of a variable covers its kind as well as
     * its index, so two variables of different kinds cannot be confused.
     */
-  private final class LocalContext(indices: mutable.Map[Symbol.KindedTypeVarSym, Int]) {
+  private final class LocalContext {
 
-    def this() = this(mutable.Map.empty)
+    /**
+      * The index of each variable, in the order the variables were met.
+      */
+    private val indices: mutable.Map[Symbol.KindedTypeVarSym, Int] = mutable.Map.empty
 
     /**
       * Returns the index of `sym`, giving it the next one if it has none.
@@ -384,11 +363,6 @@ object HashType {
       * Returns the index of `sym`, or `None` if `sym` has not been met.
       */
     def indexOpt(sym: Symbol.KindedTypeVarSym): Option[Int] = indices.get(sym)
-
-    /**
-      * Returns a copy of `this`, which numbers the variables it meets without affecting `this`.
-      */
-    def fork(): LocalContext = new LocalContext(indices.clone())
 
   }
 

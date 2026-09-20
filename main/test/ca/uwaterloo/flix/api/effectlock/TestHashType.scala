@@ -28,6 +28,22 @@ class TestHashType extends AnyFunSuite with TestUtils {
 
   private val scope: RegionScope = RegionScope.Top
 
+  /**
+    * The options the programs of this suite are checked with.
+    *
+    * The chaos monkey is off. It randomly permutes the trait and equality constraints of a
+    * declaration in [[ca.uwaterloo.flix.language.phase.Namer]], to expose code that depends on
+    * the order of a collection it should not depend on. The hash of a scheme does depend on that
+    * order, deliberately: the hash is structural, and the compiler itself does not permute the
+    * constraints of a declaration. Leaving the chaos monkey on would therefore make the tests
+    * below fail at random, and what they would be reporting is the chaos monkey rather than
+    * anything about the program being hashed.
+    */
+  private val TestOptions: Options = Options.TestWithLibNix.copy(xchaosMonkey = false)
+
+  /** As [[TestOptions]], but with the standard library. */
+  private val TestOptionsWithLib: Options = Options.TestWithLibAll.copy(xchaosMonkey = false)
+
   //
   // Determinism.
   //
@@ -156,7 +172,7 @@ class TestHashType extends AnyFunSuite with TestUtils {
         |eff Ef { def op(): Void }
         |""".stripMargin
 
-    val (root, errors) = check(input, Options.TestWithLibNix)
+    val (root, errors) = check(input, TestOptions)
     expectSuccess((root, errors))
     val hashes = root.get.defs.values.toList.map(d => HashType.hashScheme(d.spec.declaredScheme))
     assert(hashes.length == 30)
@@ -274,18 +290,18 @@ class TestHashType extends AnyFunSuite with TestUtils {
   }
 
   test("scheme.04") {
-    // The order of the trait constraints is not hashed: a scheme does not hold them in a stable
-    // order, so they are hashed as a set.
+    // The order of the trait constraints is hashed: the hash is structural, so equal hashes mean
+    // that two schemes are the same, whereas different hashes mean only that they may differ.
     val sym = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, isSlack = false, scope, loc)
     val tpe = Type.Var(sym, loc)
     val tconstr1 = TraitConstraint(TraitSymUse(new Symbol.TraitSym(Nil, "Eq", loc), loc), tpe, loc)
     val tconstr2 = TraitConstraint(TraitSymUse(new Symbol.TraitSym(Nil, "Order", loc), loc), tpe, loc)
-    assert(HashType.hashScheme(Scheme(List(sym), List(tconstr1, tconstr2), Nil, tpe)) ==
+    assert(HashType.hashScheme(Scheme(List(sym), List(tconstr1, tconstr2), Nil, tpe)) !=
       HashType.hashScheme(Scheme(List(sym), List(tconstr2, tconstr1), Nil, tpe)))
   }
 
   test("scheme.05") {
-    // Which trait constraints a scheme has is hashed, even though their order is not.
+    // Which trait constraints a scheme has is hashed.
     val sym = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, isSlack = false, scope, loc)
     val tpe = Type.Var(sym, loc)
     val tconstr1 = TraitConstraint(TraitSymUse(new Symbol.TraitSym(Nil, "Eq", loc), loc), tpe, loc)
@@ -295,8 +311,8 @@ class TestHashType extends AnyFunSuite with TestUtils {
   }
 
   test("scheme.06") {
-    // Two constraints on different variables are kept apart, although the constraints are hashed
-    // as a set and the two schemes differ only in which variable each constraint is on.
+    // Two constraints on different variables are kept apart when the two schemes differ only in
+    // which variable each constraint is on.
     val sym1 = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, isSlack = false, scope, loc)
     val sym2 = new Symbol.KindedTypeVarSym(2, VarText.Absent, Kind.Star, isSlack = false, scope, loc)
     val tpe1 = Type.Var(sym1, loc)
@@ -340,7 +356,7 @@ class TestHashType extends AnyFunSuite with TestUtils {
     * Returns the hash of the declared scheme of the def named `name` in `input`.
     */
   private def hashDef(name: String, input: String): Sha256 = {
-    val (root, errors) = check(input, Options.TestWithLibNix)
+    val (root, errors) = check(input, TestOptions)
     expectSuccess((root, errors))
     val defn = root.get.defs.collectFirst { case (sym, defn) if sym.text == name => defn }.get
     HashType.hashScheme(defn.spec.declaredScheme)
@@ -350,7 +366,7 @@ class TestHashType extends AnyFunSuite with TestUtils {
     * Returns the hash of the declared scheme of every def and sig of the standard library.
     */
   private def hashLibrary(): Map[String, Sha256] = {
-    val (root, errors) = check("", Options.TestWithLibAll)
+    val (root, errors) = check("", TestOptionsWithLib)
     expectSuccess((root, errors))
     val defs = root.get.defs.map { case (sym, defn) => sym.toString -> HashType.hashScheme(defn.spec.declaredScheme) }
     val sigs = root.get.sigs.map { case (sym, sig) => sym.toString -> HashType.hashScheme(sig.spec.declaredScheme) }
