@@ -1582,7 +1582,7 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     * A package is checked on its own, so that a package whose signatures have drifted does not
     * stand in the way of checking another.
     */
-  def checkEffects(flix: Flix, spec: Option[String]): Result[Unit, BootstrapError] = {
+  def checkEffects(flix: Flix, spec: Option[String])(implicit out: PrintStream): Result[Unit, BootstrapError] = {
     if (!isProjectMode) {
       return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-check'"))
     }
@@ -1603,7 +1603,7 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
       // the work of compiling the project is done.
       lockfile <- EffectLockfileParser.parse(Bootstrap.getEffectLockFile(projectPath)).mapErr(BootstrapError.EffectLockParseError.apply)
       root <- typeCheck(flix)
-      errors <- reportChangedSignatures(lockfile, root, targets)
+      errors <- reportChangedSignatures(lockfile, root, targets, flix.getFormatter)
     } yield {
       errors
     }
@@ -1635,10 +1635,30 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     * Returns `Ok(())` if every locked signature is the one that was locked.
     * Returns `Err(BootstrapError.SignaturesChangedError(changes))` otherwise.
     */
-  private def reportChangedSignatures(lockfile: EffectLockfile, root: TypedAst.Root, targets: Set[PackageId]): Result[Unit, BootstrapError] = {
+  private def reportChangedSignatures(lockfile: EffectLockfile, root: TypedAst.Root, targets: Set[PackageId], f: Formatter)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
     EffectLock.check(lockfile, root, targets) match {
-      case Nil => Ok(())
+      case Nil =>
+        val checked = EffectLockfile(lockfile.packages.filter { case (id, _) => targets.contains(id) })
+        fmtLocked(checked) match {
+          case None => out.println(f.green("Nothing to check: no signature is locked."))
+          case Some(what) => out.println(f.green(s"Checked $what. Nothing has changed."))
+        }
+        Ok(())
       case changes => Err(BootstrapError.SignaturesChangedError(changes))
+    }
+  }
+
+  /**
+    * Returns what `lockfile` records, e.g. `154 signatures of 'github:flix/extras'`, or `None` if
+    * it records nothing.
+    */
+  private def fmtLocked(lockfile: EffectLockfile): Option[String] = {
+    val n = lockfile.packages.values.map(locked => locked.defs.size + locked.sigs.size).sum
+    val signatures = if (n == 1) "1 signature" else s"$n signatures"
+    lockfile.packages.keys.toList.sorted match {
+      case Nil => None
+      case id :: Nil => Some(s"$signatures of '$id'")
+      case ids => Some(s"$signatures of ${ids.length} packages")
     }
   }
 
@@ -1657,7 +1677,7 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     *
     * If the program does not type check, then effect locking is aborted without touching the file system.
     */
-  def lockEffects(flix: Flix, spec: Option[String]): Result[Unit, BootstrapError] = {
+  def lockEffects(flix: Flix, spec: Option[String])(implicit out: PrintStream): Result[Unit, BootstrapError] = {
     if (!isProjectMode) {
       return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-lock'"))
     }
@@ -1673,9 +1693,14 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
       previous <- readEffectLockFile(merge = spec.isDefined)
       root <- typeCheck(flix)
     } yield {
-      val locked = EffectLockfile(previous.packages ++ EffectLock.lock(root, targets).packages)
+      val locking = EffectLock.lock(root, targets)
+      val locked = EffectLockfile(previous.packages ++ locking.packages)
       // N.B.: Do not use FileOps.writeTOML, since the lock file is formatted by Flix itself.
       FileOps.writeString(Bootstrap.getEffectLockFile(projectPath), EffectLockfile.format(locked))
+      fmtLocked(locking) match {
+        case None => out.println(flix.getFormatter.green("Locked nothing: no package declares a public signature."))
+        case Some(what) => out.println(flix.getFormatter.green(s"Locked $what."))
+      }
     }
   }
 

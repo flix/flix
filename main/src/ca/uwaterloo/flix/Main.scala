@@ -490,8 +490,8 @@ object Main {
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              val flix = bootstrap.mkFlix(options.copy(progress = false), formatter)
-              bootstrap.checkEffects(flix, pkg)
+              val flix = bootstrap.mkFlix(options, formatter)
+              bootstrap.checkEffects(flix, pkg)(System.out)
             }
           }
 
@@ -503,8 +503,8 @@ object Main {
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
               bootstrap =>
-                val flix = bootstrap.mkFlix(options.copy(progress = false), formatter)
-                bootstrap.lockEffects(flix, pkg)
+                val flix = bootstrap.mkFlix(options, formatter)
+                bootstrap.lockEffects(flix, pkg)(System.out)
             }
           }
 

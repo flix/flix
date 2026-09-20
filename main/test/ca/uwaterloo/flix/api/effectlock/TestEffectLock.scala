@@ -189,7 +189,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
       """"github:flix/extras" = { version = "0.2.0", security = "unrestricted" }"""))
 
     val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.NoFormatter, System.out).unsafeGet
-    bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), None).unsafeGet
+    bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), None)(System.out).unsafeGet
 
     val lockfile = EffectLockfileParser.parse(p.resolve(Bootstrap.EFFECTS_LOCK)).unsafeGet
     val extras = lockfile.packages(PackageId.mkPackageId("github:flix/extras").get)
@@ -198,8 +198,8 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
 
     // Nothing has changed since the signatures were locked, so the check passes, whether every
     // package is checked or only the one.
-    bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), None).unsafeGet
-    bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/extras")).unsafeGet
+    bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), None)(System.out).unsafeGet
+    bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/extras"))(System.out).unsafeGet
   }
 
   test("effects.lock.02") {
@@ -209,10 +209,10 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     Bootstrap.init(p)(System.out)
 
     val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.NoFormatter, System.out).unsafeGet
-    bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), None).unsafeGet
+    bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), None)(System.out).unsafeGet
 
-    assert(bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/extras")).toOption.isEmpty)
-    assert(bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/extras")).toOption.isEmpty)
+    assert(bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/extras"))(System.out).toOption.isEmpty)
+    assert(bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/extras"))(System.out).toOption.isEmpty)
   }
 
   /**
