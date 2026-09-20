@@ -545,6 +545,9 @@ object Bootstrap {
   /** The lock file name. */
   val PACKAGES_LOCK: String = "packages.lock"
 
+  /** The effect lock file name. */
+  val EFFECTS_LOCK: String = "effects.lock"
+
   /** The license file name. */
   private val LICENSE: String = "LICENSE.md"
 
@@ -625,7 +628,7 @@ object Bootstrap {
   /**
     * Returns the path to the `effects.lock` relative to the given path `p`.
     */
-  private def getEffectLockFile(p: Path): Path = p.resolve("effects.lock").normalize()
+  private def getEffectLockFile(p: Path): Path = p.resolve(EFFECTS_LOCK).normalize()
 
   /**
     * Returns the path to the LICENSE file relative to the given path `p`.

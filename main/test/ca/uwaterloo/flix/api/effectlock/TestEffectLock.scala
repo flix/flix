@@ -16,11 +16,24 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.language.ast.shared.PackageId
 import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
-import ca.uwaterloo.flix.util.{Options, Sha256}
+import ca.uwaterloo.flix.tools.pkg.PkgTestUtils
+import ca.uwaterloo.flix.util.{FileOps, Formatter, Options, Sha256}
+import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
 
+import java.nio.file.Files
+
+/**
+  * The tests of effect locking.
+  *
+  * Not discovered, and run as part of [[ca.uwaterloo.flix.tools.pkg.PackageManagerSuite]]: the
+  * end to end test downloads a package from GitHub, which is the same reason the tests of the
+  * package manager are not run with the rest.
+  */
+@DoNotDiscover
 class TestEffectLock extends AnyFunSuite with TestUtils {
 
   /**
@@ -132,6 +145,30 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     val upgrade = rootOf("pub def f(x: b): b = x")
     val lockfile = lockOf(defs = Map("f" -> hashOf("f", locked)))
     assert(EffectLock.check(lockfile, upgrade).isEmpty)
+  }
+
+  //
+  // End to end.
+  //
+
+  test("effects.lock.01") {
+    // Lock the signatures of a package that is really downloaded, and check them.
+    val p = Files.createTempDirectory("flix-project-")
+    Bootstrap.init(p)(System.out)
+    // N.B.: `extras` calls Java, which the default security context forbids.
+    FileOps.writeString(p.resolve(Bootstrap.FLIX_TOML), PkgTestUtils.mkTomlWithDeps(
+      """"github:flix/extras" = { version = "0.2.0", security = "unrestricted" }"""))
+
+    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.NoFormatter, System.out).unsafeGet
+    bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), None).unsafeGet
+
+    val lockfile = EffectLockfileParser.parse(p.resolve(Bootstrap.EFFECTS_LOCK)).unsafeGet
+    val extras = lockfile.packages(PackageId.mkPackageId("github:flix/extras").get)
+    assert(extras.defs.contains("Extras.Graph.closure"))
+    assert(extras.sigs.isEmpty)
+
+    // Nothing has changed since the signatures were locked, so the check passes.
+    bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap)).unsafeGet
   }
 
   /**
