@@ -495,7 +495,7 @@ object Main {
             }
           }
 
-        case Command.EffLock =>
+        case Command.EffLock(pkg) =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'eff-lock' command does not support file arguments.")
             System.exit(1)
@@ -504,7 +504,7 @@ object Main {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
               bootstrap =>
                 val flix = bootstrap.mkFlix(options.copy(progress = false), formatter)
-                bootstrap.lockEffects(flix)
+                bootstrap.lockEffects(flix, pkg)
             }
           }
 
@@ -611,7 +611,7 @@ object Main {
 
     case object EffCheck extends Command
 
-    case object EffLock extends Command
+    case class EffLock(pkg: Option[String]) extends Command
 
     case object CompilerPerf extends Command
 
@@ -729,7 +729,12 @@ object Main {
         .action((_, c) => c.copy(command = Command.EffCheck))
 
       cmd("eff-lock").text("  locks the current effect signatures.")
-        .action((_, c) => c.copy(command = Command.EffLock))
+        .action((_, c) => c.copy(command = Command.EffLock(None)))
+        .children(
+          arg[String]("package").action((pkg, c) => c.copy(command = Command.EffLock(Some(pkg))))
+            .optional()
+            .text("the package to lock, e.g. 'flix/museum-clerk'. Defaults to every installed package.")
+        )
 
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
         opt[Unit]("frontend")

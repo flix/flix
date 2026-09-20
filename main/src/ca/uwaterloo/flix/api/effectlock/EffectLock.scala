@@ -17,111 +17,112 @@ package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.api.effectlock.serialization.{Deserialize, Serialize}
 import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, TypedAst}
-import ca.uwaterloo.flix.api.effectlock.UseGraph.UsedSym
-import ca.uwaterloo.flix.language.ast.shared.{Origin, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Origin, PackageId, Source}
 import ca.uwaterloo.flix.util.Result
 
 object EffectLock {
 
   /**
-    * Deserializes `json` to a collection of schemes pointed to by either a def or sig.
+    * The effect lock of one package: the schemes its public defs and sigs were locked at.
     */
-  def deserialize(json: String): Result[(Map[Symbol.DefnSym, Scheme], Map[Symbol.SigSym, Scheme]), String] = {
-    try {
-      implicit val formats: org.json4s.Formats = serialization.formats
-      val serializableAST = org.json4s.native.Serialization.read[Map[String, serialization.DefOrSig]](json)
-      val sdefs = serializableAST.collect {
-        case (_, defn: serialization.SDef) => defn
-      }
-      val ssigs = serializableAST.collect {
-        case (_, sig: serialization.SSig) => sig
-      }
-      val defs = sdefs.map(Deserialize.deserializeDef).toMap
-      val sigs = ssigs.map(Deserialize.deserializeSig).toMap
-      Result.Ok((defs, sigs))
-    } catch {
-      case e: Exception => Result.Err(s"Unexpected JSON: ${e.getMessage}")
+  case class LockedPackage(defs: Map[Symbol.DefnSym, Scheme], sigs: Map[Symbol.SigSym, Scheme])
+
+  /**
+    * The effect lock as it is written to disk: a map from each package to the serialized schemes
+    * of its public defs and sigs, keyed by the symbol they belong to.
+    *
+    * A package is a section of its own, so the lock of one package can be replaced without
+    * disturbing the lock of another.
+    */
+  type SerializedLock = Map[String, Map[String, serialization.DefOrSig]]
+
+  /**
+    * Returns the schemes of the public defs and sigs of `targets` in `root`.
+    *
+    * Only a package can be locked. The library bundled with the compiler cannot change under a
+    * project, because the version of Flix that provides it is fixed by the manifest, so it has no
+    * lock of its own.
+    */
+  def lock(root: TypedAst.Root, targets: Set[PackageId]): SerializedLock = {
+    val defs = root.defs.toList.flatMap {
+      case (sym, defn) if defn.spec.mod.isPublic =>
+        packageOf(sym.src).filter(targets.contains).map(id => id -> (sym.toString -> Serialize.serializeDef(defn)))
+      case _ => None
+    }
+    val sigs = root.sigs.toList.flatMap {
+      case (sym, sig) if sig.spec.mod.isPublic =>
+        packageOf(sym.src).filter(targets.contains).map(id => id -> (sym.toString -> Serialize.serializeSig(sig)))
+      case _ => None
+    }
+    (defs ::: sigs).groupMap { case (id, _) => id.toString } { case (_, entry) => entry }.map {
+      case (id, entries) => id -> entries.toMap
     }
   }
 
   /**
-    * Serializes the relevant functions  for effect locking in `root` and returns a JSON string.
-    * If it returns `Ok(json)`, then `json` may be written directly to a file.
+    * Returns `lock` as a JSON string that may be written directly to a file.
     */
-  def lock(root: TypedAst.Root): Result[String, String] = {
+  def format(lock: SerializedLock): Result[String, String] = {
     try {
-      val serializableAST = mkSerialization(root)
-      val typeHints = serialization.formats
-      val res = org.json4s.native.Serialization.write(serializableAST)(typeHints)
-      Result.Ok(res)
+      implicit val formats: org.json4s.Formats = serialization.formats
+      Result.Ok(org.json4s.native.Serialization.write(lock))
     } catch {
       case e: Exception => Result.Err(s"Invalid AST: ${e.getMessage}")
     }
   }
 
   /**
-    * Returns a map of defs and signatures in `root` that must be effect locked.
-    * The map may directly be converted to a string using [[serialization.formats]] for type hints.
+    * Returns the lock `json` describes, without deserializing the schemes it holds.
+    *
+    * Used to keep the sections of the packages that are not being locked, so that locking one
+    * package leaves the rest of the file as it was.
     */
-  private def mkSerialization(root: TypedAst.Root): Map[String, serialization.DefOrSig] = {
-    val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_, root)).map { case (_, libDefn) => libDefn }
-    val defs = useGraph.flatMap(getLibraryDefn(_, root)).toMap
-    val defSerialization = defs.map { case (sym, defn) => sym.toString -> Serialize.serializeDef(defn) }
-    val sigs = useGraph.flatMap(getLibrarySig(_, root)).toMap
-    val sigSerialization = sigs.map { case (sym, sig) => sym.toString -> Serialize.serializeSig(sig) }
-    defSerialization ++ sigSerialization
+  def parse(json: String): Result[SerializedLock, String] = {
+    try {
+      implicit val formats: org.json4s.Formats = serialization.formats
+      Result.Ok(org.json4s.native.Serialization.read[SerializedLock](json))
+    } catch {
+      case e: Exception => Result.Err(s"Unexpected JSON: ${e.getMessage}")
+    }
   }
-
-  /** Returns `true` if for the edge `f -> g`, `f` occurs in the source project and `g` occurs in a library and `g` is public. */
-  private def isPublicLibraryCall(graphEdge: (UsedSym, UsedSym), root: TypedAst.Root): Boolean = graphEdge match {
-    case (src, UsedSym.DefnSym(dst)) =>
-      isFromLocalProject(getSource(src)) &&
-        isLibraryFunction(dst.src) &&
-        root.defs.get(dst).exists(_.spec.mod.isPublic)
-
-    case (src, UsedSym.SigSym(dst)) =>
-      isFromLocalProject(getSource(src)) &&
-        isLibraryFunction(dst.src) &&
-        root.sigs.get(dst).exists(_.spec.mod.isPublic)
-  }
-
-  /** Returns the source of `sym0`. This is a helper function to reduce repetition. */
-  private def getSource(sym0: UsedSym): Source = sym0 match {
-    case UsedSym.DefnSym(sym) => sym.src
-    case UsedSym.SigSym(sym) => sym.src
-  }
-
-  /** Returns `true` if `src` is in the source project, i.e. was supplied by the user. */
-  private def isFromLocalProject(src: Source): Boolean = src.origin.isUser
 
   /**
-    * Returns `true` if `src` is in a library: the library bundled with the compiler or a package.
-    *
-    * A synthetic source with an unknown origin is in no library.
+    * Returns the schemes `json` locks, for each package it locks them for.
     */
-  private def isLibraryFunction(src: Source): Boolean = src.origin match {
-    case Origin.User => false
-    case Origin.Library => true
-    case Origin.Package(_) => true
-    case Origin.Unknown => false
+  def deserialize(json: String): Result[Map[PackageId, LockedPackage], String] = {
+    parse(json).flatMap { lock =>
+      Result.traverse(lock) {
+        case (id, entries) => PackageId.mkPackageId(id) match {
+          case None => Result.Err(s"Not a package: '$id'")
+          case Some(pkg) => Result.Ok(pkg -> mkLockedPackage(entries))
+        }
+      }.map(_.toMap)
+    }
   }
 
-  /** Returns the definition of `sym0` w.r.t. `root`. */
-  private def getLibraryDefn(sym0: UsedSym, root: TypedAst.Root): Option[(Symbol.DefnSym, TypedAst.Def)] = sym0 match {
-    case UsedSym.DefnSym(sym) =>
-      Some(sym -> root.defs(sym))
-
-    case UsedSym.SigSym(_) =>
-      None
+  /**
+    * Returns the schemes of `entries`, split into the defs and the sigs they belong to.
+    */
+  private def mkLockedPackage(entries: Map[String, serialization.DefOrSig]): LockedPackage = {
+    val defs = entries.values.collect {
+      case defn: serialization.SDef => Deserialize.deserializeDef(defn)
+    }
+    val sigs = entries.values.collect {
+      case sig: serialization.SSig => Deserialize.deserializeSig(sig)
+    }
+    LockedPackage(defs.toMap, sigs.toMap)
   }
 
-  /** Returns the definition of `sym0` w.r.t. `root`. */
-  private def getLibrarySig(graphEdge: UsedSym, root: TypedAst.Root): Option[(Symbol.SigSym, TypedAst.Sig)] = graphEdge match {
-    case UsedSym.DefnSym(_) =>
-      None
-
-    case UsedSym.SigSym(sym) =>
-      Some(sym -> root.sigs(sym))
+  /**
+    * Returns the package `src` belongs to, if it belongs to one.
+    *
+    * A source of the user or of the bundled library belongs to no package.
+    */
+  private def packageOf(src: Source): Option[PackageId] = src.origin match {
+    case Origin.User => None
+    case Origin.Library => None
+    case Origin.Package(id) => Some(id)
+    case Origin.Unknown => None
   }
 
 }
