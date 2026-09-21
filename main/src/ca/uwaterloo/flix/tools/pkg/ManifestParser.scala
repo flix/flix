@@ -323,7 +323,7 @@ object ManifestParser {
         if (deps.isString(depKey)) {
           for (
             ver <- getFlixVersion(deps, depKey, p)
-          ) yield FlixDependency(id, ver, None, SecurityContext.Plain)
+          ) yield FlixDependency(id, ver, None, SecurityContext.Default)
 
           // If the dependency maps to a table, get the version, security, and mount.
         } else if (deps.isTable(depKey)) {
