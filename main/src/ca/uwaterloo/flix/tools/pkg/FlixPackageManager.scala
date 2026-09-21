@@ -250,20 +250,25 @@ object FlixPackageManager {
     } yield edges
   }
 
-  /** Parses and validates the manifest in `toml`, which was downloaded for the package `id`, by
-    * checking that it declares `version`, the version of the release it was downloaded from.
+  /** Parses and validates the manifest in `toml`, which was downloaded for the package `id` at
+    * `version`, by checking that it declares both: `version`, the version of the release it was
+    * downloaded from, and `id`, the repository it was downloaded from.
     *
-    * A release that declares another version than the one it is published as is a mistake in
-    * how the package was released, and not something a dependent can resolve.
+    * A release that declares anything else is a mistake in how the package was released, and not
+    * something a dependent can resolve.
+    *
+    * The repository is required here, and not of every manifest, because a project that is not
+    * published has no repository to declare. A package does: it is what identifies it, and so
+    * no two packages in a resolution can have equal manifests.
     */
   private def validateManifest(toml: InstalledFile, id: PackageId, version: SemVer): Result[Manifest, PackageError] = {
     parseManifest(toml.path).flatMap {
-      m =>
-        if (m.version == version) {
-          Ok(m)
-        } else {
-          Err(PackageError.MismatchedVersions(id, version, m.version))
-        }
+      case m if m.version != version => Err(PackageError.MismatchedVersions(id, version, m.version))
+      case m => m.packageId match {
+        case Some(declared) if declared == id => Ok(m)
+        case Some(declared) => Err(PackageError.MismatchedRepository(id, version, declared))
+        case None => Err(PackageError.MissingRepository(id, version))
+      }
     }
   }
 

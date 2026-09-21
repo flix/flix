@@ -16,7 +16,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, Repository, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import org.tomlj.Toml
@@ -35,6 +35,11 @@ case class Manifest(version: SemVer,
     * that declares no repository cannot be addressed, and so has no name to give.
     */
   def displayName: String = repository.map(_.toString).getOrElse(Manifest.Unnamed)
+
+  /**
+    * Returns the package this manifest declares itself to be, if it declares a repository.
+    */
+  def packageId: Option[PackageId] = repository.map(p => PackageId(Repository.GitHub, p.owner, p.repo))
 
   /**
     * Returns the mount table of this manifest: the name of each mount to the identifier of the
