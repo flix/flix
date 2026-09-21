@@ -23,6 +23,15 @@ class TestFormatSignature extends AnyFunSuite with TestUtils {
 
   private val fmt: FormatOptions = FormatOptions(FormatOptions.VarName.NameBased)
 
+  /**
+    * The options the programs of this suite are checked with.
+    *
+    * The chaos monkey is off. It randomly permutes the trait and equality constraints of a
+    * declaration in [[ca.uwaterloo.flix.language.phase.Namer]], and the tests below check that
+    * the constraints are written in the order they were declared.
+    */
+  private val TestOptions: Options = Options.TestWithLibMin.copy(xchaosMonkey = false)
+
   test("formatSpec.01") {
     assert(declarationOf("f", "pub def f(): Unit = ()") == "def f(): Unit")
   }
@@ -92,7 +101,7 @@ class TestFormatSignature extends AnyFunSuite with TestUtils {
     * Returns the declaration of the def named `name` in `input`, which must compile.
     */
   private def declarationOf(name: String, input: String): String = {
-    val (root, errors) = check(input, Options.TestWithLibMin)
+    val (root, errors) = check(input, TestOptions)
     expectSuccess((root, errors))
     val defn = root.get.defs.collectFirst { case (sym, defn) if sym.text == name => defn }.get
     FormatSignature.formatSpecWithOptions(name, defn.spec, fmt)
