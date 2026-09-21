@@ -518,13 +518,18 @@ object Bootstrap {
 
   /**
     * Deletes all compiled `.class` files, generated documentation, and pretty printed ASTs under
-    * the build directory of the project at `p` and removes any now-empty directories (including the
-    * `build` directory itself). Performs safety checks to ensure:
+    * the build directory of the project at `p`, and all jars and packages under its artifact
+    * directory, and removes any now-empty directories (including the `build` and `artifact`
+    * directories themselves). Performs safety checks to ensure:
     *  - `p` is a Flix project (manifest present),
     *  - no root or home directories are targeted,
     *  - no ancestor of the project directory is targeted,
     *  - every file in the build directory is a valid class file, a generated documentation file, or
-    *    a pretty printed AST.
+    *    a pretty printed AST,
+    *  - every file in the artifact directory is a jar, a package, or the manifest copied there by
+    *    `build-pkg`.
+    *
+    * Every file in both directories is checked before any file is deleted.
     *
     * The project is not bootstrapped: its manifest is not read, and its dependencies are neither
     * resolved nor installed. A project is cleaned without the network, and can be cleaned when its
@@ -556,6 +561,7 @@ object Bootstrap {
     val classDir = getClassDirectory(p)
     val docDir = getDocumentationDirectory(p)
     val astDir = getAstDirectory(p)
+    val artifactDir = getArtifactDirectory(p)
 
     // Ensure `buildDir` is not dangerous
     checkForDangerousPath(buildDir, p) match {
@@ -563,9 +569,15 @@ object Bootstrap {
       case Ok(()) => ()
     }
 
+    // Ensure `artifactDir` is not dangerous
+    checkForDangerousPath(artifactDir, p) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
     // Ensure all files in `buildDir` are valid class files, documentation files, or AST files.
-    val files = FileOps.getFilesIn(buildDir, Int.MaxValue).map(_.normalize())
-    for (file <- files) {
+    val buildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue).map(_.normalize())
+    for (file <- buildFiles) {
       if (file.startsWith(classDir)) {
         if (!FileOps.checkExt(file, "class")) {
           return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${p.relativize(file)}'"))
@@ -594,6 +606,32 @@ object Bootstrap {
       }
     }
 
+    // Ensure all files in `artifactDir` are jar files, package files, or the copied manifest.
+    val artifactFiles = FileOps.getFilesIn(artifactDir, Int.MaxValue).map(_.normalize())
+    for (file <- artifactFiles) {
+      isValidArtifactFile(file, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+
+      checkForDangerousPath(file, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+    }
+
+    // Delete only once every file in both directories has been checked.
+    for {
+      _ <- deleteDirectory(buildDir, buildFiles, p)
+      _ <- deleteDirectory(artifactDir, artifactFiles, p)
+    } yield ()
+  }
+
+  /**
+    * Deletes `files`, which are the files in `dir`, and then every directory in `dir`, innermost
+    * first, including `dir` itself.
+    */
+  private def deleteDirectory(dir: Path, files: List[Path], p: Path): Result[Unit, BootstrapError] = {
     // Delete files
     for (file <- files) {
       FileOps.delete(file) match {
@@ -604,15 +642,15 @@ object Bootstrap {
 
     // Delete empty directories
     // Visit in reverse order to delete the innermost directories first
-    val directories = FileOps.getDirectoriesIn(buildDir, Int.MaxValue).map(_.normalize())
-    for (dir <- directories.reverse) {
-      checkForDangerousPath(dir, p) match {
+    val directories = FileOps.getDirectoriesIn(dir, Int.MaxValue).map(_.normalize())
+    for (d <- directories.reverse) {
+      checkForDangerousPath(d, p) match {
         case Err(e) => return Err(e)
         case Ok(()) => ()
       }
 
-      FileOps.delete(dir) match {
-        case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete directory '$dir': $e"))
+      FileOps.delete(d) match {
+        case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete directory '$d': $e"))
         case Ok(_) => ()
       }
     }
@@ -707,6 +745,29 @@ object Bootstrap {
       return Ok(())
     }
     if (inAstDir && FileOps.checkExt(path, Flix.IrFileExtension)) {
+      return Ok(())
+    }
+
+    Err(BootstrapError.FileError(s"Unexpected file '${p.relativize(path)}'. Refusing to run 'clean'."))
+  }
+
+  /**
+    * Returns `Err` if `path` is not a file that could be produced by `build-jar`, `build-fatjar`, or
+    * `build-pkg` in the project at `p`.
+    *
+    * Any jar and any package in the artifact directory is accepted, not only the ones the project
+    * builds now: the jar is named after the project directory, which may have been renamed, and
+    * older versions of Flix named the package after it too.
+    */
+  private def isValidArtifactFile(path: Path, p: Path): Result[Unit, BootstrapError] = {
+    val inArtifactDir = path.getParent == getArtifactDirectory(p)
+    if (inArtifactDir && path.getFileName.toString == FLIX_TOML) {
+      return Ok(())
+    }
+    if (inArtifactDir && isJarFile(path)) {
+      return Ok(())
+    }
+    if (inArtifactDir && isPkgFile(path)) {
       return Ok(())
     }
 
