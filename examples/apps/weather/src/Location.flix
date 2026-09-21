@@ -1,8 +1,13 @@
 mod Location {
-    use Json.JsonError.JsonError
-    use Json.FromJson.{fromJson, fromJsonAt}
-    use Json.Path.{Path, !!}
-    use Json.{getAtKey, JsonElement, JsonError}
+    use Net.Http
+    use Util.Json
+    use Util.Json.FromJson
+    use Util.Json.FromJson.decodeAtKey
+    use Util.Json.JsonError
+
+    pub eff Location {
+        def getLocation(): Result[WeatherError, Loc]
+    }
 
     pub enum Loc(String, String, Float64, Float64)
 
@@ -16,35 +21,30 @@ mod Location {
 
     }
 
-    instance Json.FromJson[Loc] {
+    instance FromJson[Loc] {
 
-        pub def fromJsonAt(p: Path, json: JsonElement): Result[JsonError, Loc] = {
+        pub def fromJson(json: Json): Result[JsonError, Loc] = {
             forM (
-                map <- fromJsonAt(p, json);
-                city <- getAtKey(p, "city", map);
-                country <- getAtKey(p, "country", map);
-                lat <- getAtKey(p, "lat", map);
-                lon <- getAtKey(p, "lon", map)
+                city <- decodeAtKey("city", json);
+                country <- decodeAtKey("country", json);
+                lat <- decodeAtKey("lat", json);
+                lon <- decodeAtKey("lon", json)
             ) yield Loc.Loc(city, country, lat, lon)
         }
 
     }
 
-    pub eff Location {
-        def getLocation(): Result[WeatherError, Loc]
-    }
-
     ///
     /// Handles Location effect by sending http request to ip-api.com
     ///
-    pub def locationWithHttp(f: Unit -> a \ ef): a \ ef - Location + HttpWithResult + IO = {
+    pub def locationWithHttp(f: Unit -> a \ ef): a \ ef - Location + Http = {
         run {
             f()
         } with handler Location {
             def getLocation(resume) =
                 let url = "http://ip-api.com/json";
-                let loc = Util.getAndParse(url, Map.empty()) |> Result.flatMap ( resJson ->
-                    fromJson(resJson) |> Result.mapErr( err ->
+                let loc = Fetch.getJson(url) |> Result.flatMap ( resJson ->
+                    FromJson.fromJson(resJson) |> Result.mapErr( err ->
                         WeatherError.JsonError(err)
                     )
                 );
