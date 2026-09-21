@@ -89,14 +89,25 @@ object HtmlDocumentor {
   )
 
   /**
-    * Generates the API documentation for `root` and writes it to `outputDir`.
+    * The repository that the user's code is published in, which its declarations link to.
+    *
+    * @param url  the URL that a path in the repository is appended to, ending in `/`,
+    *             e.g. `https://github.com/flix/museum/blob/v1.0.0/`.
+    * @param root the directory on disk that is the root of the repository.
     */
-  def run(root: TypedAst.Root, origin: Origin, outputDir: Path)(implicit flix: Flix): Unit = {
+  case class SourceRepository(url: String, root: Path)
+
+  /**
+    * Generates the API documentation for `root` and writes it to `outputDir`.
+    *
+    * The declarations of the user's code link to their source in `repo`, if it is given.
+    */
+  def run(root: TypedAst.Root, origin: Origin, repo: Option[SourceRepository], outputDir: Path)(implicit flix: Flix): Unit = {
     val modulesRoot = splitModules(root)
     val filteredModulesRoot = filterModules(modulesRoot, origin)
     val pairedModulesRoot = pairModules(filteredModulesRoot)
 
-    visitMod(pairedModulesRoot, outputDir)
+    visitMod(pairedModulesRoot, outputDir)(flix, repo)
 
     writeAssets(outputDir)
   }
@@ -106,7 +117,7 @@ object HtmlDocumentor {
     *
     * Returns a list of the names of the generated files.
     */
-  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix): List[String] = {
+  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): List[String] = {
     val out = documentModule(mod)
     writeDocFile(mod.fileName, out, outputDir)
 
@@ -124,7 +135,7 @@ object HtmlDocumentor {
     *
     * Returns a list of the names of the generated files.
     */
-  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix): List[String] = {
+  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): List[String] = {
     val out = documentTrait(trt)
     writeDocFile(trt.fileName, out, outputDir)
 
@@ -144,7 +155,7 @@ object HtmlDocumentor {
     *
     * Returns a list of the names of the generated files.
     */
-  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix): List[String] = {
+  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): List[String] = {
     val out = documentEffect(eff)
     writeDocFile(eff.fileName, out, outputDir)
 
@@ -164,7 +175,7 @@ object HtmlDocumentor {
     *
     * Returns a list of the names of the generated files.
     */
-  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix): List[String] = {
+  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): List[String] = {
     val out = documentEnum(enm)
     writeDocFile(enm.fileName, out, outputDir)
 
@@ -541,7 +552,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Module`, `mod`, returning a string of HTML.
     */
-  private def documentModule(mod: Module)(implicit flix: Flix): String = {
+  private def documentModule(mod: Module)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedTraits = mod.traits.sortBy(_.name)
@@ -599,7 +610,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Trait`, `trt`, returning a string of HTML.
     */
-  private def documentTrait(trt: Trait)(implicit flix: Flix): String = {
+  private def documentTrait(trt: Trait)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedAssocs = trt.decl.assocs.sortBy(_.sym.name)
@@ -693,7 +704,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Effect`, `eff`, returning a string of HTML.
     */
-  private def documentEffect(eff: Effect)(implicit flix: Flix): String = {
+  private def documentEffect(eff: Effect)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedOps = eff.decl.ops.sortBy(_.sym.name)
@@ -774,7 +785,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Enum`, `enm`, returning a string of HTML.
     */
-  private def documentEnum(enm: Enum)(implicit flix: Flix): String = {
+  private def documentEnum(enm: Enum)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedInstances = enm.instances.sortBy(_.trt.sym.name)
@@ -1047,7 +1058,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='ta-${esc(ta.sym.name)}'>")
     sb.append("<div class='decl'>")
     sb.append("<code>")
@@ -1068,7 +1079,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docDef(defn: TypedAst.Def)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='def-${esc(defn.sym.name)}'>")
     docSpec(defn.sym.name, defn.spec, defn.loc, Some(s"def-${esc(defn.sym.name)}"))
     sb.append("</div>")
@@ -1079,7 +1090,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='sig-${esc(sig.sym.name)}'>")
     docSpec(sig.sym.name, sig.spec, sig.loc, Some(s"sig-${esc(sig.sym.name)}"))
     sb.append("</div>")
@@ -1090,7 +1101,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docOp(op: TypedAst.Op)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docOp(op: TypedAst.Op)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='op-${esc(op.sym.name)}'>")
     docSpec(op.sym.name, op.spec, op.loc, Some(s"op-${esc(op.sym.name)}"))
     sb.append("</div>")
@@ -1102,7 +1113,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSpec(name: String, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSpec(name: String, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
     docAnnotations(spec.ann)
     sb.append("<div class='decl'>")
     sb.append(s"<code>")
@@ -1125,7 +1136,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docAssoc(assoc: TypedAst.AssocTypeSig)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docAssoc(assoc: TypedAst.AssocTypeSig)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
     sb.append("<div>")
     sb.append("<div class='decl'>")
     sb.append("<code>")
@@ -1145,7 +1156,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
     sb.append("<div>")
     docAnnotations(instance.ann)
     sb.append("<div class='decl'>")
@@ -1346,12 +1357,12 @@ object HtmlDocumentor {
   }
 
   /**
-    * Document the given `SourceLocation`, `loc`, in the form of a link.
+    * Document the given `SourceLocation`, `loc`, in the form of a link, if it has one.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSourceLocation(loc: SourceLocation)(implicit sb: StringBuilder): Unit = {
-    sb.append(s"<a class='source' href='${createLink(loc)}'>Source</a>")
+  private def docSourceLocation(loc: SourceLocation)(implicit repo: Option[SourceRepository], sb: StringBuilder): Unit = {
+    createLink(loc).foreach(link => sb.append(s"<a class='source' href='$link'>Source</a>"))
   }
 
   /**
@@ -1363,7 +1374,7 @@ object HtmlDocumentor {
     *               If `None`, the button will not be included.
     * @param loc    The source location that the 'source' button will refer to.
     */
-  private def docActions(linkId: Option[String], loc: SourceLocation)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docActions(linkId: Option[String], loc: SourceLocation)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
     sb.append("<span class='actions'>")
     linkId.foreach(docLink)
     docSourceLocation(loc)
@@ -1542,15 +1553,33 @@ object HtmlDocumentor {
   private def readResourceString(path: String): String = LocalResource.get(path)
 
   /**
-    * Create a raw link to the given `SourceLocation`.
+    * Create a raw link to the given `SourceLocation`, if it has one.
+    *
+    * The bundled library links to the Flix repository, and the user's code to `repo`. Code that
+    * lies outside `repo`, or that comes from anywhere else, has no link.
     *
     * The URL is already escaped.
     */
-  private def createLink(loc: SourceLocation): String = {
-    // TODO make it also work for local user code
-    val path = loc.source.name.split("[\\\\/]").map(escUrl).mkString("/")
-    s"$LibraryGitHub$path#L${loc.startLine}-L${loc.endLine}"
+  private def createLink(loc: SourceLocation)(implicit repo: Option[SourceRepository]): Option[String] = {
+    val lines = s"#L${loc.startLine}-L${loc.endLine}"
+    loc.source.origin match {
+      case Origin.Library =>
+        Some(LibraryGitHub + escPath(loc.source.name) + lines)
+      case Origin.User =>
+        for {
+          r <- repo
+          path <- loc.source.sourceName.toPath.map(_.toAbsolutePath.normalize())
+          if path.startsWith(r.root)
+        } yield r.url + escPath(r.root.relativize(path).toString) + lines
+      case Origin.Package(_) => None
+      case Origin.Unknown => None
+    }
   }
+
+  /**
+    * Escape each segment of the given path, `p`, for inclusion in a URL, joining them with `/`.
+    */
+  private def escPath(p: String): String = p.split("[\\\\/]").map(escUrl).mkString("/")
 
   /**
     * Escape any HTML in the string.
