@@ -517,13 +517,14 @@ object Bootstrap {
   }
 
   /**
-    * Deletes all compiled `.class` files and generated documentation under the build directory of
-    * the project at `p` and removes any now-empty directories (including the `build` directory
-    * itself). Performs safety checks to ensure:
+    * Deletes all compiled `.class` files, generated documentation, and pretty printed ASTs under
+    * the build directory of the project at `p` and removes any now-empty directories (including the
+    * `build` directory itself). Performs safety checks to ensure:
     *  - `p` is a Flix project (manifest present),
     *  - no root or home directories are targeted,
     *  - no ancestor of the project directory is targeted,
-    *  - every file in the build directory is a valid class file or a generated documentation file.
+    *  - every file in the build directory is a valid class file, a generated documentation file, or
+    *    a pretty printed AST.
     *
     * The project is not bootstrapped: its manifest is not read, and its dependencies are neither
     * resolved nor installed. A project is cleaned without the network, and can be cleaned when its
@@ -554,6 +555,7 @@ object Bootstrap {
     val buildDir = getBuildDirectory(p)
     val classDir = getClassDirectory(p)
     val docDir = getDocumentationDirectory(p)
+    val astDir = getAstDirectory(p)
 
     // Ensure `buildDir` is not dangerous
     checkForDangerousPath(buildDir, p) match {
@@ -561,7 +563,7 @@ object Bootstrap {
       case Ok(()) => ()
     }
 
-    // Ensure all files in `buildDir` are valid class files or documentation files.
+    // Ensure all files in `buildDir` are valid class files, documentation files, or AST files.
     val files = FileOps.getFilesIn(buildDir, Int.MaxValue).map(_.normalize())
     for (file <- files) {
       if (file.startsWith(classDir)) {
@@ -574,6 +576,11 @@ object Bootstrap {
         }
       } else if (file.startsWith(docDir)) {
         isValidDocumentFile(file, p) match {
+          case Err(e) => return Err(e)
+          case Ok(()) => ()
+        }
+      } else if (file.startsWith(astDir)) {
+        isValidAstFile(file, p) match {
           case Err(e) => return Err(e)
           case Ok(()) => ()
         }
@@ -693,6 +700,19 @@ object Bootstrap {
     Err(BootstrapError.FileError(s"Unexpected file '${p.relativize(path)}'. Refusing to run 'clean'."))
   }
 
+  /** Returns `Err` if `path` is not a file that could be produced by `AstPrinter` in the project at `p`. */
+  private def isValidAstFile(path: Path, p: Path): Result[Unit, BootstrapError] = {
+    val inAstDir = path.getParent == getAstDirectory(p)
+    if (inAstDir && path.getFileName.toString == "0phases.txt") {
+      return Ok(())
+    }
+    if (inAstDir && FileOps.checkExt(path, Flix.IrFileExtension)) {
+      return Ok(())
+    }
+
+    Err(BootstrapError.FileError(s"Unexpected file '${p.relativize(path)}'. Refusing to run 'clean'."))
+  }
+
   /** The class file extension. Does not contain leading '.' */
   private val EXT_CLASS: String = "class"
 
@@ -796,6 +816,11 @@ object Bootstrap {
     * Returns the directory of the generated documentation files relative to the given path `p`.
     */
   def getDocumentationDirectory(p: Path): Path = getBuildDirectory(p).resolve("./doc/").normalize()
+
+  /**
+    * Returns the directory of the pretty printed ASTs (see `--Xprint-phases`) relative to the given path `p`.
+    */
+  private def getAstDirectory(p: Path): Path = p.resolve(CompilerConstants.AstDirectory).normalize()
 
   /**
     * Returns the path to the artifact directory relative to the given path `p`.

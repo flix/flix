@@ -665,7 +665,7 @@ object Main {
 
       cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  builds a fpkg-file from the current project.")
 
-      cmd("clean").action((_, c) => c.copy(command = Command.Clean)).text("  removes the build directory (class files and generated documentation).")
+      cmd("clean").action((_, c) => c.copy(command = Command.Clean)).text("  removes the build directory (class files, generated documentation, and printed ASTs).")
 
       cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
         .children(
