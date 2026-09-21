@@ -25,7 +25,6 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val toml = {
         """
           |[package]
-          |name = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
           |
@@ -61,7 +60,6 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val toml = {
         """
           |[package]
-          |name = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
           |
@@ -125,7 +123,6 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val toml1 = {
         """
           |[package]
-          |name = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
           |
@@ -140,7 +137,6 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val toml2 = {
         """
           |[package]
-          |name = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
           |
@@ -187,7 +183,6 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val toml = {
         """
           |[package]
-          |name = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
           |
@@ -224,7 +219,6 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val toml = {
         """
           |[package]
-          |name = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
           |
@@ -255,7 +249,6 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val toml = {
       """
         |[package]
-        |name = "test"
         |version = "0.0.0"
         |flix = "0.0.0"
         |
@@ -286,7 +279,6 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val toml = {
         """
           |[package]
-          |name = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
           |
@@ -316,7 +308,6 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val toml = {
         """
           |[package]
-          |name = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
           |

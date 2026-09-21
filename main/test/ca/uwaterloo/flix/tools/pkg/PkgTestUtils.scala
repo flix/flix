@@ -79,7 +79,6 @@ object PkgTestUtils {
   def mkTomlWithDeps(deps: String): String = {
     s"""
        |[package]
-       |name = "test"
        |version = "0.1.0"
        |flix = "${Version.CurrentVersion}"
        |

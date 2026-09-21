@@ -20,7 +20,6 @@ class TestJarPackageManager extends AnyFunSuite {
       val toml = {
         """
           |[package]
-          |name = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
           |
@@ -53,7 +52,6 @@ class TestJarPackageManager extends AnyFunSuite {
       val toml = {
         s"""
           |[package]
-          |name = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
           |
