@@ -38,7 +38,7 @@ class TestManifestParser extends AnyFunSuite {
       |flix = "0.33.0"
       |
       |[dependencies]
-      |"github:jls/tic-tac-toe" = "1.2.3"
+      |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe" }
       |"github:mlutze/flixball" = "3.2.1"
       |
       |[mvn-dependencies]
@@ -189,7 +189,7 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(PackageId(Repository.GitHub, "jls", "tic-tac-toe"), SemVer(1, 2, 3), None, SecurityContext.Plain),
+    assertResult(expected = List(Dependency.FlixDependency(PackageId(Repository.GitHub, "jls", "tic-tac-toe"), SemVer(1, 2, 3), Some(Mountpoint("ticTacToe")), SecurityContext.Plain),
       Dependency.FlixDependency(PackageId(Repository.GitHub, "mlutze", "flixball"), SemVer(3, 2, 1), None, SecurityContext.Plain),
       Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
       Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
@@ -315,7 +315,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe" }
         |""".stripMargin
     }
     assertResult(expected = SecurityContext.Plain)(actual =
@@ -339,7 +339,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe" }
         |""".stripMargin
     }
     assertResult(expected = SecurityContext.Plain)(actual =
@@ -363,7 +363,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "paranoid" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe", security = "paranoid" }
         |""".stripMargin
     }
     assertResult(expected = SecurityContext.Paranoid)(actual =
@@ -387,7 +387,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "plain" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe", security = "plain" }
         |""".stripMargin
     }
     assertResult(expected = SecurityContext.Plain)(actual =
@@ -411,7 +411,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe", security = "unrestricted" }
         |""".stripMargin
     }
     assertResult(expected = SecurityContext.Unrestricted)(actual =
@@ -553,7 +553,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe" }
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
@@ -570,7 +570,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe" }
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
@@ -587,7 +587,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "paranoid" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe", security = "paranoid" }
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
@@ -604,7 +604,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "plain" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe", security = "plain" }
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
@@ -621,7 +621,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe", security = "unrestricted" }
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
@@ -638,7 +638,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe", security = "unrestricted" }
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
@@ -1096,7 +1096,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[depandencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe" }
         |"github:mlutze/flixball" = "3.2.1"
         |
         |""".stripMargin
@@ -1113,7 +1113,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe" }
         |"github:ml&tze/flixball" = "3.2.1"
         |
         |""".stripMargin
@@ -1221,7 +1221,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe" }
         |"github:mlutze/flixball" = "a.2.1"
         |
         |""".stripMargin
@@ -1239,7 +1239,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe" }
         |"github:mlutze/flixball" = "3.b.1"
         |
         |""".stripMargin
@@ -1257,7 +1257,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe" }
         |"github:mlutze/flixball" = "3.2.c"
         |
         |""".stripMargin
@@ -1486,7 +1486,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe", security = "" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixUnknownSecurityValue](result)
@@ -1500,7 +1500,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "abc" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe", security = "abc" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixUnknownSecurityValue](result)
@@ -1514,7 +1514,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = [] }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe", security = [] }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencySecurityType](result)
@@ -1528,7 +1528,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = ["plain"] }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe", security = ["plain"] }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencySecurityType](result)
@@ -1542,7 +1542,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = true }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe", security = true }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencySecurityType](result)
@@ -1556,7 +1556,7 @@ class TestManifestParser extends AnyFunSuite {
         |flix = "0.33.0"
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = 42 }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe", security = 42 }
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.FlixDependencySecurityType](result)

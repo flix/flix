@@ -30,7 +30,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |flix = "0.0.0"
           |
           |[dependencies]
-          |"github:flix/museum-clerk" = "2.1.2"
+          |"github:flix/museum-clerk" = { version = "2.1.2", mount = "clerk" }
           |
           |[mvn-dependencies]
           |
@@ -66,7 +66,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |flix = "0.0.0"
           |
           |[dependencies]
-          |"github:flix/museum-giftshop" = "2.0.2"
+          |"github:flix/museum-giftshop" = { version = "2.0.2", mount = "giftshop" }
           |
           |[mvn-dependencies]
           |
@@ -99,7 +99,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     // the repository, so it is found only by reading the listing.
     val toml = PkgTestUtils.mkTomlWithDeps(
       """
-        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = "0.1.1"
+        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = { version = "0.1.1", mount = "effUpgrade" }
         |""".stripMargin
     )
     val manifest = ManifestParser.parse(toml, ManifestPath) match {
@@ -130,7 +130,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |flix = "0.0.0"
           |
           |[dependencies]
-          |"github:flix/museum-clerk" = "2.1.2"
+          |"github:flix/museum-clerk" = { version = "2.1.2", mount = "clerk" }
           |
           |[mvn-dependencies]
           |
@@ -145,7 +145,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |flix = "0.0.0"
           |
           |[dependencies]
-          |"github:flix/museum-giftshop" = "2.0.2"
+          |"github:flix/museum-giftshop" = { version = "2.0.2", mount = "giftshop" }
           |
           |[mvn-dependencies]
           |
@@ -192,7 +192,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |flix = "0.0.0"
           |
           |[dependencies]
-          |"github:flix/museum-giftshop" = "2.0.2"
+          |"github:flix/museum-giftshop" = { version = "2.0.2", mount = "giftshop" }
           |
           |[mvn-dependencies]
           |
@@ -229,7 +229,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
           |flix = "0.0.0"
           |
           |[dependencies]
-          |"github:flix/museum-entrance" = "2.0.2"
+          |"github:flix/museum-entrance" = { version = "2.0.2", mount = "entrance" }
           |
           |[mvn-dependencies]
           |
@@ -260,7 +260,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         |flix = "0.0.0"
         |
         |[dependencies]
-        |"github:flix/does-not-exist" = "1.0.0"
+        |"github:flix/does-not-exist" = { version = "1.0.0", mount = "missing" }
         |
         |[mvn-dependencies]
         |
@@ -513,7 +513,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   test("builtVersions.01") {
     // A package is built at the version of the manifest its declarations resolve to, which here
     // is greater than the version that is declared.
-    val origin = mkManifest("origin", """"github:flix/museum-clerk" = "1.0.0"""")
+    val origin = mkManifest("origin", """"github:flix/museum-clerk" = { version = "1.0.0", mount = "clerk" }""")
     val clerk = mkManifest("museum-clerk", "").copy(version = SemVer(1, 1, 0))
     val resolution = FlixPackageManager.SecureResolution(
       origin = origin,
@@ -590,9 +590,9 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
   test("mkIncompatibleVersions.01") {
     // The requirements are ordered by version, and then by dependent.
-    val beta = mkManifest("beta", """"github:flix/museum-clerk" = "2.0.0"""")
-    val alpha = mkManifest("alpha", """"github:flix/museum-clerk" = "2.0.0"""")
-    val gamma = mkManifest("gamma", """"github:flix/museum-clerk" = "1.1.0"""")
+    val beta = mkManifest("beta", """"github:flix/museum-clerk" = { version = "2.0.0", mount = "clerk" }""")
+    val alpha = mkManifest("alpha", """"github:flix/museum-clerk" = { version = "2.0.0", mount = "clerk" }""")
+    val gamma = mkManifest("gamma", """"github:flix/museum-clerk" = { version = "1.1.0", mount = "clerk" }""")
     val id = PackageId(Repository.GitHub, "flix", "museum-clerk")
     val requirements = List(beta, alpha, gamma).map(m => (m, FlixPackageManager.findFlixDependencies(m).head))
     val error = FlixPackageManager.mkIncompatibleVersions(id, requirements)
