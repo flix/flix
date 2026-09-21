@@ -1382,6 +1382,57 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.JarUrlFileNameError](result)
   }
 
+  test("ManifestError.JarUrlFileNameError.02") {
+    // A relative path would save the jar outside `lib/external/`.
+    val toml = {
+      """
+        |[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[jar-dependencies]
+        |"../../myJar.jar" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+        |
+        |""".stripMargin
+    }
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.JarUrlFileNameError](result)
+  }
+
+  test("ManifestError.JarUrlFileNameError.03") {
+    // An absolute path would save the jar outside `lib/external/`.
+    val toml = {
+      """
+        |[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[jar-dependencies]
+        |"/tmp/myJar.jar" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+        |
+        |""".stripMargin
+    }
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.JarUrlFileNameError](result)
+  }
+
+  test("ManifestError.JarUrlFileNameError.04") {
+    // A name with a drive would save the jar outside `lib/external/` on Windows.
+    val toml = {
+      """
+        |[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[jar-dependencies]
+        |"C:myJar.jar" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+        |
+        |""".stripMargin
+    }
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.JarUrlFileNameError](result)
+  }
+
   test("ManifestError.JarUrlExtensionError.01") {
     val toml = {
       """

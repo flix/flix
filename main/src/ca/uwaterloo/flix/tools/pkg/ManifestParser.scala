@@ -470,13 +470,19 @@ object ManifestParser {
     * Retrieves the file name for a jar dependency
     * and returns an error if it is not formatted correctly
     * or has characters that are not allowed.
+    *
+    * The jar is saved under this name in `lib/external/`, so it must be a file name and not a
+    * path: a name such as `../x.jar`, `/x.jar`, or `C:x.jar` would save it outside that directory.
     */
   private def getFileName(depName: String, p: Path): Result[String, ManifestError] = {
     val split = depName.split('.')
     if (split.length >= 2) {
       val extension = split.apply(split.length - 1)
       if (extension == "jar") {
-        checkNameCharacters(depName, p)
+        if (depName.contains('/') || depName.contains(':'))
+          Err(ManifestError.JarUrlFileNameError(p, depName))
+        else
+          checkNameCharacters(depName, p)
       } else {
         Err(ManifestError.JarUrlExtensionError(p, depName, extension))
       }
