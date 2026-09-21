@@ -300,11 +300,7 @@ object Main {
             println("The 'clean' command does not support file arguments.")
             System.exit(1)
           }
-          exitOnResult {
-            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              bootstrap.clean()
-            }
-          }
+          exitOnResult(Bootstrap.clean(cwd))
 
         case Command.Doc =>
           if (cmdOpts.files.isEmpty) {

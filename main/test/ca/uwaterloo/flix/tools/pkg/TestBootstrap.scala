@@ -649,7 +649,7 @@ class TestBootstrap extends AnyFunSuite {
            |${buildFiles.mkString(System.lineSeparator())}
            |""".stripMargin)
     }
-    b.clean()
+    Bootstrap.clean(p)
     val newBuildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
     if (newBuildFiles.nonEmpty || Files.exists(buildDir)) {
       fail(
@@ -666,7 +666,7 @@ class TestBootstrap extends AnyFunSuite {
     b.buildClasses(PkgTestUtils.mkFlix(b))
     val buildDir = p.resolve("./build/").normalize()
     FileOps.writeString(buildDir.resolve("./other.txt").normalize(), "hello")
-    b.clean() match {
+    Bootstrap.clean(p) match {
       case Result.Ok(_) => fail("expected clean to abort")
       case Result.Err(_) => succeed
     }
@@ -675,12 +675,11 @@ class TestBootstrap extends AnyFunSuite {
   test("clean-should-succeed-on-non-existent-build-dir") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet
-    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val buildDir = p.resolve("./build/").normalize()
     if (Files.exists(buildDir)) {
       fail("did not expected build directory to exist")
     }
-    b.clean() match {
+    Bootstrap.clean(p) match {
       case Result.Ok(_) => succeed
       case Result.Err(_) => fail("expected success")
     }
@@ -692,15 +691,49 @@ class TestBootstrap extends AnyFunSuite {
       """
         |def main(): Unit = ()
         |""".stripMargin)
-    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val buildDir = p.resolve("./build/").normalize()
     if (Files.exists(buildDir)) {
       fail("did not expected build directory to exist")
     }
-    b.clean() match {
+    Bootstrap.clean(p) match {
       case Result.Ok(_) => fail("expected failure in directory mode")
-      case Result.Err(_) => succeed
+      case Result.Err(_: BootstrapError.NoProject) => succeed
+      case Result.Err(e) => fail(s"Expected BootstrapError.NoProject, but got: ${e.message(Formatter.NoFormatter)}")
     }
+  }
+
+  test("clean-should-not-resolve-dependencies") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out).unsafeGet
+    // N.B.: The project does not resolve: it requires a newer Flix and depends on a package that does not exist.
+    FileOps.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      """
+        |[package]
+        |version = "0.1.0"
+        |flix = "999.0.0"
+        |
+        |[dependencies]
+        |"github:flix/does-not-exist" = { version = "1.0.0", mount = "Missing" }
+        |""".stripMargin)
+    Bootstrap.clean(p) match {
+      case Result.Ok(_) => // Expected.
+      case Result.Err(e) => fail(s"Expected success, but got: ${e.message(Formatter.NoFormatter)}")
+    }
+    assert(!Files.exists(Bootstrap.getLibraryDirectory(p)), "clean installed dependencies.")
+    assert(!Files.exists(p.resolve(Bootstrap.PACKAGES_LOCK)), "clean wrote a lock file.")
+  }
+
+  test("clean-should-succeed-on-malformed-manifest") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out).unsafeGet
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    b.buildClasses(PkgTestUtils.mkFlix(b))
+    FileOps.writeString(p.resolve(Bootstrap.FLIX_TOML), "this is not a manifest")
+    Bootstrap.clean(p) match {
+      case Result.Ok(_) => // Expected.
+      case Result.Err(e) => fail(s"Expected success, but got: ${e.message(Formatter.NoFormatter)}")
+    }
+    assert(!Files.exists(p.resolve("./build/").normalize()), "clean left the build directory.")
   }
 
   test("flix-version.current") {
