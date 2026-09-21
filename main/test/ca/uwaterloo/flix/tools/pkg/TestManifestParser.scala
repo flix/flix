@@ -33,13 +33,9 @@ class TestManifestParser extends AnyFunSuite {
     """
       |[package]
       |name = "hello-world"
-      |description = "A simple program"
       |version = "0.1.0"
       |repository = "github:johnDoe/hello-world"
-      |modules = ["FirstMod", "SecondMod.Foo"]
       |flix = "0.33.0"
-      |license = "Apache-2.0"
-      |authors = ["John Doe <john@example.com>"]
       |
       |[dependencies]
       |"github:jls/tic-tac-toe" = "1.2.3"
@@ -170,10 +166,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -212,11 +206,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
@@ -236,11 +227,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
@@ -260,11 +248,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
@@ -284,11 +269,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
@@ -308,11 +290,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
@@ -332,10 +311,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = "1.2.3"
@@ -358,10 +335,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3" }
@@ -384,10 +359,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "paranoid" }
@@ -410,10 +383,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "plain" }
@@ -436,10 +407,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
@@ -470,10 +439,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -487,11 +454,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
@@ -509,11 +473,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
@@ -531,11 +492,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
@@ -553,11 +511,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
@@ -575,11 +530,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
@@ -597,10 +549,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = "1.2.3"
@@ -616,10 +566,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3" }
@@ -635,10 +583,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "paranoid" }
@@ -654,10 +600,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "plain" }
@@ -673,10 +617,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
@@ -692,10 +634,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world\""
-        |description = "A simple program\\\"\""
         |version = "0.1.0"
         |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
@@ -722,11 +662,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |mane = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -744,8 +681,6 @@ class TestManifestParser extends AnyFunSuite {
         |desciption = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -759,10 +694,7 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -775,11 +707,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |varsion = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -792,11 +721,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = ["0.1.0"]
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -809,11 +735,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "010"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -826,11 +749,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0.1"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -843,11 +763,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "a.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -860,11 +777,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.b.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -877,11 +791,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.c"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -895,12 +806,9 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |repsository = "github:johnDoe/hello-world"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -913,12 +821,9 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |repository = "hello-world"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -931,12 +836,9 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |repository = "johnDoe/hello-world"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -949,12 +851,9 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |repository = "github:github/johnDoe/hello-world"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -967,12 +866,9 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |repository = "github:johnDoe/"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -985,12 +881,9 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |repository = "github:/hello-world"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -1003,12 +896,9 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |repository = "github:/"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -1022,12 +912,9 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |modjules = ["FirsMod", "SecondMod"]
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -1041,10 +928,7 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -1057,11 +941,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flux = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -1074,11 +955,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = 330
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -1091,11 +969,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0330"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -1108,11 +983,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0,33,0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -1125,11 +997,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "?.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -1142,11 +1011,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.?.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -1159,11 +1025,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.?"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -1178,11 +1041,9 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
         |licence = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
     }
@@ -1197,10 +1058,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
         |authars = ["John Doe <john@example.com>"]
         |
         |""".stripMargin
@@ -1215,11 +1074,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = 123
@@ -1236,11 +1092,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[depandencies]
         |"github:jls/tic-tac-toe" = "1.2.3"
@@ -1256,11 +1109,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = "1.2.3"
@@ -1277,11 +1127,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic#tac-toe" = "1.2.3"
@@ -1298,11 +1145,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = "123"
@@ -1319,11 +1163,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = "1.23"
@@ -1340,11 +1181,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls:tic-tac-toe" = "1.2.3"
@@ -1361,11 +1199,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github/jls/tic-tac-toe" = "1.2.3"
@@ -1382,11 +1217,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = "1.2.3"
@@ -1403,11 +1235,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = "1.2.3"
@@ -1424,11 +1253,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = "1.2.3"
@@ -1446,11 +1272,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
@@ -1467,11 +1290,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mwn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
@@ -1488,11 +1308,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
         |"org.po)tgresql:postgresql" = "1.2.3"
@@ -1509,11 +1326,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
         |"org.postgresql:post¤resql" = "1.2.3"
@@ -1530,11 +1344,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
@@ -1551,11 +1362,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
@@ -1573,11 +1381,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[jar-dependencies]
         |"myJar.jar" = ["url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"]
@@ -1593,11 +1398,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[jar-dependences]
         |"myJar.jar" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
@@ -1613,11 +1415,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[jar-dependencies]
         |"myJar" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
@@ -1633,11 +1432,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[jar-dependencies]
         |"myJar.jsr" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
@@ -1653,11 +1449,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[jar-dependencies]
         |"myJar.jar" = "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
@@ -1673,11 +1466,8 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[jar-dependencies]
         |"myJar.jar" = "url:repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
@@ -1692,11 +1482,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "" }
@@ -1709,11 +1496,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "abc" }
@@ -1726,11 +1510,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = [] }
@@ -1743,11 +1524,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = ["plain"] }
@@ -1760,11 +1538,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = true }
@@ -1777,11 +1552,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = 42 }
@@ -1794,11 +1566,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"hubgit:jls/tic-tac-toe" = "1.2.3"
@@ -1811,11 +1580,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Game" }
@@ -1833,11 +1599,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "game" }
@@ -1854,10 +1617,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Game", security = "paranoid" }
@@ -1873,11 +1634,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "game" }
@@ -1891,11 +1649,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Foo.Bar" }
@@ -1909,11 +1664,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "type" }
@@ -1927,11 +1679,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "type-level" }
@@ -1945,11 +1694,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "2048" }
@@ -1963,11 +1709,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "utf-8" }
@@ -1981,11 +1724,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "json-" }
@@ -1999,11 +1739,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "flix--json" }
@@ -2017,11 +1754,8 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """[package]
         |name = "hello-world"
-        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "tic-tac-toe" }

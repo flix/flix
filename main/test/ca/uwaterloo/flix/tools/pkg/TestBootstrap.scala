@@ -747,10 +747,8 @@ class TestBootstrap extends AnyFunSuite {
     s"""
        |[package]
        |name = "test"
-       |description = "test"
        |version = "0.1.0"
        |flix = "$v"
-       |authors = ["flix"]
        |""".stripMargin
   }
 
