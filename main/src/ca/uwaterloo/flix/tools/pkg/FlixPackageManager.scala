@@ -516,10 +516,10 @@ object FlixPackageManager {
     val assetPath = dirPath.resolve(assetName)
 
     if (Files.exists(assetPath)) {
-      out.println(s"  Cached `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")}).")
+      out.println(s"  Cached `${publishedName(extension)}` from `${formatter.blue(s"${proj.owner}/${proj.repo}")}` (${formatter.cyan(s"v$version")}).")
       verifyCached(assetPath, id, version, extension, lockfile)
     } else {
-      out.print(s"  Downloading `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")})... ")
+      out.print(s"  Downloading `${publishedName(extension)}` from `${formatter.blue(s"${proj.owner}/${proj.repo}")}` (${formatter.cyan(s"v$version")})... ")
       out.flush()
       openReleaseAsset(proj, version, extension, token) match {
         case Err(e) =>
