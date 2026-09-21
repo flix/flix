@@ -186,7 +186,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     Bootstrap.init(p)(System.out)
     // N.B.: `extras` calls Java, which the default security context forbids.
     FileOps.writeString(p.resolve(Bootstrap.FLIX_TOML), PkgTestUtils.mkTomlWithDeps(
-      """"github:flix/extras" = { version = "0.2.0", security = "unrestricted" }"""))
+      """"github:flix/extras" = { version = "0.3.0", security = "unrestricted" }"""))
 
     val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.NoFormatter, System.out).unsafeGet
     bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), None)(System.out).unsafeGet
