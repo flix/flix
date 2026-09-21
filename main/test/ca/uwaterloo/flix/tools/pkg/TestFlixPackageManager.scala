@@ -26,10 +26,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         """
           |[package]
           |name = "test"
-          |description = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
-          |authors = ["Anna Blume"]
           |
           |[dependencies]
           |"github:flix/museum-clerk" = "1.1.0"
@@ -64,10 +62,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         """
           |[package]
           |name = "test"
-          |description = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
-          |authors = ["Anna Blume"]
           |
           |[dependencies]
           |"github:flix/museum-giftshop" = "1.1.0"
@@ -130,10 +126,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         """
           |[package]
           |name = "test"
-          |description = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
-          |authors = ["Anna Blume"]
           |
           |[dependencies]
           |"github:flix/museum-clerk" = "1.1.0"
@@ -147,10 +141,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         """
           |[package]
           |name = "test"
-          |description = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
-          |authors = ["Anna Blume"]
           |
           |[dependencies]
           |"github:flix/museum-giftshop" = "1.1.0"
@@ -196,10 +188,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         """
           |[package]
           |name = "test"
-          |description = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
-          |authors = ["Anna Blume"]
           |
           |[dependencies]
           |"github:flix/museum-giftshop" = "1.1.0"
@@ -235,10 +225,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         """
           |[package]
           |name = "test"
-          |description = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
-          |authors = ["Anna Blume"]
           |
           |[dependencies]
           |"github:flix/museum-entrance" = "1.2.0"
@@ -268,10 +256,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       """
         |[package]
         |name = "test"
-        |description = "test"
         |version = "0.0.0"
         |flix = "0.0.0"
-        |authors = ["Anna Blume"]
         |
         |[dependencies]
         |"github:flix/does-not-exist" = "1.0.0"
@@ -301,10 +287,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         """
           |[package]
           |name = "test"
-          |description = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
-          |authors = ["Anna Blume"]
           |
           |[dependencies]
           |"github:flix/museum" = "0.0.1"
@@ -333,10 +317,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         """
           |[package]
           |name = "test"
-          |description = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
-          |authors = ["Anna Blume"]
           |
           |[dependencies]
           |"github:flix/museum" = "1.4.0"

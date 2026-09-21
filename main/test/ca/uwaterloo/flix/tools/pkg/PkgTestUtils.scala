@@ -80,10 +80,8 @@ object PkgTestUtils {
     s"""
        |[package]
        |name = "test"
-       |description = "test"
        |version = "0.1.0"
        |flix = "${Version.CurrentVersion}"
-       |authors = ["flix"]
        |
        |[dependencies]
        |$deps
