@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.api.{Bootstrap, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.{PackageId, Repository, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.util.{Formatter, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import org.scalatest.{BeforeAndAfter, DoNotDiscover}
@@ -556,6 +556,55 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
+  test("missing-repository") {
+    // A release whose manifest declares no repository does not say which package it is, and is
+    // refused.
+    resolveClerkWith(
+      s"""[package]
+         |version = "$ClerkVersion"
+         |flix = "${Version.CurrentVersion}"
+         |""".stripMargin) match {
+      case Ok(_) => fail("expected error, got success")
+      case Err(e: PackageError.MissingRepository) =>
+        assert(e.identifier == Clerk)
+        assert(e.release == ClerkVersion)
+      case Err(e) => fail(e.message(formatter))
+    }
+  }
+
+  test("mismatched-repository") {
+    // A release whose manifest declares another repository than the one it was downloaded from
+    // describes some other package, and is refused.
+    val other = PackageId(Repository.GitHub, "flix", "museum-giftshop")
+    resolveClerkWith(
+      s"""[package]
+         |version = "$ClerkVersion"
+         |repository = "$other"
+         |flix = "${Version.CurrentVersion}"
+         |""".stripMargin) match {
+      case Ok(_) => fail("expected error, got success")
+      case Err(e: PackageError.MismatchedRepository) =>
+        assert(e.identifier == Clerk)
+        assert(e.release == ClerkVersion)
+        assert(e.declared == other)
+      case Err(e) => fail(e.message(formatter))
+    }
+  }
+
+  test("matched-repository") {
+    // A release whose manifest declares the repository it was downloaded from is the package that
+    // was asked for.
+    resolveClerkWith(
+      s"""[package]
+         |version = "$ClerkVersion"
+         |repository = "$Clerk"
+         |flix = "${Version.CurrentVersion}"
+         |""".stripMargin) match {
+      case Ok(resolution) => assert(resolution.manifests.exists(_.packageId.contains(Clerk)))
+      case Err(e) => fail(e.message(formatter))
+    }
+  }
+
   test("mkIncompatibleVersions.01") {
     // The requirements are ordered by version, and then by dependent.
     val beta = mkManifest("beta", """"github:flix/museum-clerk" = { version = "2.0.0", mount = "clerk" }""")
@@ -706,6 +755,28 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     assertResult(expected = Set(A, B))(
       actual = FlixPackageManager.live(List(A), selected, requires)
     )
+  }
+
+  private val Clerk = PackageId(Repository.GitHub, "flix", "museum-clerk")
+
+  private val ClerkVersion = SemVer(2, 1, 2)
+
+  /**
+    * Resolves a project that requires `museum-clerk` at [[ClerkVersion]], whose `flix.toml` is
+    * `toml`. The manifest is put in the cache rather than downloaded, as in `mismatched-versions`.
+    */
+  private def resolveClerkWith(toml: String): Result[FlixPackageManager.Resolution, PackageError] = {
+    val path = Files.createTempDirectory("")
+    val dir = Bootstrap.getLibraryDirectory(path)
+      .resolve("github").resolve(Clerk.owner).resolve(Clerk.name).resolve(ClerkVersion.toString)
+    Files.createDirectories(dir)
+    Files.writeString(dir.resolve(s"${Clerk.name}-$ClerkVersion.${Bootstrap.EXT_TOML}"), toml)
+
+    val project = ManifestParser.parse(PkgTestUtils.mkTomlWithDeps(s""""$Clerk" = { version = "$ClerkVersion", mount = "clerk" }"""), ManifestPath) match {
+      case Ok(m) => m
+      case Err(e) => fail(e.message(formatter))
+    }
+    FlixPackageManager.resolve(project, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock)
   }
 
   /**
