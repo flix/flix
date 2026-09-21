@@ -141,7 +141,6 @@ class TestBootstrap extends AnyFunSuite {
     Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
       s"""
          |[package]
-         |name = "test"
          |version = "0.1.0"
          |flix = "${Version.CurrentVersion}"
          |
@@ -173,6 +172,11 @@ class TestBootstrap extends AnyFunSuite {
     // derived from its name, and is installed. The dependencies that are already declared are
     // still declared afterwards, with the versions and the mounts they were declared with.
     val p = mkProjectWithDependency()
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""${Files.readString(p.resolve(Bootstrap.FLIX_TOML))}
+         |# The clerk of the museum.
+         |""".stripMargin)
+
     val added = PackageId(Repository.GitHub, "flix", "museum-giftshop")
     install(p, s"flix/${added.name}@2.0.2").unsafeGet
 
@@ -189,9 +193,8 @@ class TestBootstrap extends AnyFunSuite {
     val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
     assert(lockfile.packages.contains((added, SemVer(2, 0, 2))))
 
-    // The manifest is rewritten as a whole, so the keys it does not model do not survive. The
-    // 'name' of a package is one of them, and is dead: nothing reads it.
-    assert(!Files.readString(p.resolve(Bootstrap.FLIX_TOML)).contains("name"))
+    // The manifest is rewritten as a whole rather than edited, so the comment does not survive.
+    assert(!Files.readString(p.resolve(Bootstrap.FLIX_TOML)).contains("The clerk of the museum"))
   }
 
   test("install.02") {
@@ -748,7 +751,6 @@ class TestBootstrap extends AnyFunSuite {
   private def mkTomlWithFlixVersion(v: String): String = {
     s"""
        |[package]
-       |name = "test"
        |version = "0.1.0"
        |flix = "$v"
        |""".stripMargin
@@ -802,7 +804,6 @@ class TestBootstrap extends AnyFunSuite {
     Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
       s"""
          |[package]
-         |name = "test"
          |version = "0.1.0"
          |flix = "${Version.CurrentVersion}"
          |

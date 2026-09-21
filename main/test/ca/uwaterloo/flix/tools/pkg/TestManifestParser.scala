@@ -32,7 +32,6 @@ class TestManifestParser extends AnyFunSuite {
   val tomlCorrect: String = {
     """
       |[package]
-      |name = "hello-world"
       |version = "0.1.0"
       |repository = "github:johnDoe/hello-world"
       |flix = "0.33.0"
@@ -49,6 +48,24 @@ class TestManifestParser extends AnyFunSuite {
       |"myJar.jar" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
       |
       |""".stripMargin
+  }
+
+  test("Ok.named-by-its-repository") {
+    // A package is named by the repository it is published as, which is what a dependent
+    // addresses it by.
+    val toml =
+      """
+        |[package]
+        |version = "0.1.0"
+        |repository = "github:johnDoe/hello-world"
+        |flix = "0.33.0"
+        |""".stripMargin
+    assertResult(expected = "johnDoe/hello-world")(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.displayName
+        case Err(e) => e.message(f)
+      }
+    )
   }
 
   test("Ok.ignores-name") {
@@ -110,7 +127,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml =
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |""".stripMargin
@@ -165,7 +181,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -205,7 +220,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -226,7 +240,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -247,7 +260,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -268,7 +280,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -289,7 +300,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -310,7 +320,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -334,7 +343,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -358,7 +366,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -382,7 +389,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -406,7 +412,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -438,7 +443,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -453,7 +457,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -472,7 +475,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -491,7 +493,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -510,7 +511,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -529,7 +529,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -548,7 +547,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -565,7 +563,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -582,7 +579,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -599,7 +595,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -616,7 +611,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -633,7 +627,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world\""
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -677,7 +670,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |desciption = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
@@ -693,7 +685,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |flix = "0.33.0"
         |
         |""".stripMargin
@@ -706,7 +697,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |varsion = "0.1.0"
         |flix = "0.33.0"
         |
@@ -720,7 +710,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = ["0.1.0"]
         |flix = "0.33.0"
         |
@@ -734,7 +723,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "010"
         |flix = "0.33.0"
         |
@@ -748,7 +736,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0.1"
         |flix = "0.33.0"
         |
@@ -762,7 +749,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "a.1.0"
         |flix = "0.33.0"
         |
@@ -776,7 +762,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.b.0"
         |flix = "0.33.0"
         |
@@ -790,7 +775,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.c"
         |flix = "0.33.0"
         |
@@ -805,7 +789,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |repsository = "github:johnDoe/hello-world"
         |flix = "0.33.0"
@@ -820,7 +803,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |repository = "hello-world"
         |flix = "0.33.0"
@@ -835,7 +817,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |repository = "johnDoe/hello-world"
         |flix = "0.33.0"
@@ -850,7 +831,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |repository = "github:github/johnDoe/hello-world"
         |flix = "0.33.0"
@@ -865,7 +845,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |repository = "github:johnDoe/"
         |flix = "0.33.0"
@@ -880,7 +859,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |repository = "github:/hello-world"
         |flix = "0.33.0"
@@ -895,7 +873,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |repository = "github:/"
         |flix = "0.33.0"
@@ -911,7 +888,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |modjules = ["FirsMod", "SecondMod"]
         |flix = "0.33.0"
@@ -927,7 +903,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |
         |""".stripMargin
@@ -940,7 +915,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flux = "0.33.0"
         |
@@ -954,7 +928,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = 330
         |
@@ -968,7 +941,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0330"
         |
@@ -982,7 +954,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0,33,0"
         |
@@ -996,7 +967,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "?.33.0"
         |
@@ -1010,7 +980,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.?.0"
         |
@@ -1024,7 +993,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.?"
         |
@@ -1040,7 +1008,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |licence = "Apache-2.0"
@@ -1057,7 +1024,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |authars = ["John Doe <john@example.com>"]
@@ -1073,7 +1039,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1091,7 +1056,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1108,7 +1072,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1126,7 +1089,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1144,7 +1106,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1162,7 +1123,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1180,7 +1140,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1198,7 +1157,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1216,7 +1174,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1234,7 +1191,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1252,7 +1208,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1271,7 +1226,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1289,7 +1243,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1307,7 +1260,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1325,7 +1277,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1343,7 +1294,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1361,7 +1311,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1380,7 +1329,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1397,7 +1345,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1414,7 +1361,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1431,7 +1377,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1448,7 +1393,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1465,7 +1409,6 @@ class TestManifestParser extends AnyFunSuite {
     val toml = {
       """
         |[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1481,7 +1424,6 @@ class TestManifestParser extends AnyFunSuite {
   test("ManifestError.FlixUnknownSecurityValue.01") {
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1495,7 +1437,6 @@ class TestManifestParser extends AnyFunSuite {
   test("ManifestError.FlixUnknownSecurityValue.02") {
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1509,7 +1450,6 @@ class TestManifestParser extends AnyFunSuite {
   test("ManifestError.FlixDependencySecurityType.01") {
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1523,7 +1463,6 @@ class TestManifestParser extends AnyFunSuite {
   test("ManifestError.FlixDependencySecurityType.02") {
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1537,7 +1476,6 @@ class TestManifestParser extends AnyFunSuite {
   test("ManifestError.FlixDependencySecurityType.03") {
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1551,7 +1489,6 @@ class TestManifestParser extends AnyFunSuite {
   test("ManifestError.FlixDependencySecurityType.04") {
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1565,7 +1502,6 @@ class TestManifestParser extends AnyFunSuite {
   test("ManifestError.UnsupportedRepository.01") {
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1579,7 +1515,6 @@ class TestManifestParser extends AnyFunSuite {
   test("Ok.mount") {
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1598,7 +1533,6 @@ class TestManifestParser extends AnyFunSuite {
   test("Ok.mount.lowercase") {
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1616,7 +1550,6 @@ class TestManifestParser extends AnyFunSuite {
   test("Manifest.Identity.Mount") {
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1633,7 +1566,6 @@ class TestManifestParser extends AnyFunSuite {
     // Two dependencies under one mount. Without the error one of them would silently win.
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1648,7 +1580,6 @@ class TestManifestParser extends AnyFunSuite {
   test("ManifestError.FlixDependencyIllegalMount") {
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1663,7 +1594,6 @@ class TestManifestParser extends AnyFunSuite {
     // A keyword is read before a name, so it cannot be written before `::`.
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1678,7 +1608,6 @@ class TestManifestParser extends AnyFunSuite {
     // Only the first group matters: the lexer reads `type`, `-`, `level`.
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1693,7 +1622,6 @@ class TestManifestParser extends AnyFunSuite {
     // A mount begins with a letter.
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1708,7 +1636,6 @@ class TestManifestParser extends AnyFunSuite {
     // Every group begins with a letter.
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1723,7 +1650,6 @@ class TestManifestParser extends AnyFunSuite {
     // A trailing hyphen.
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1738,7 +1664,6 @@ class TestManifestParser extends AnyFunSuite {
     // A repeated hyphen.
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -1753,7 +1678,6 @@ class TestManifestParser extends AnyFunSuite {
     // A hyphen anywhere in a mount.
     val toml =
       """[package]
-        |name = "hello-world"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
