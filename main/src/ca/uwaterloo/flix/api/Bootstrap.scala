@@ -1543,8 +1543,24 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     * `origin`: the project's own code, or the bundled library.
     */
   def doc(flix: Flix, origin: Origin): Result[Unit, BootstrapError] = {
-    typeCheck(flix).map(HtmlDocumentor.run(_, origin, Bootstrap.getDocumentationDirectory(projectPath))(flix))
+    typeCheck(flix).map(HtmlDocumentor.run(_, origin, sourceRepository, Bootstrap.getDocumentationDirectory(projectPath))(flix))
   }
+
+  /**
+    * Returns the repository that the project is published as, at the tag of its version, if the
+    * manifest declares one.
+    *
+    * The tag is the one that [[release]] creates, and like a release, the links assume that the
+    * project is the root of its repository.
+    */
+  private def sourceRepository: Option[HtmlDocumentor.SourceRepository] =
+    for {
+      manifest <- optManifest
+      project <- manifest.repository
+    } yield HtmlDocumentor.SourceRepository(
+      s"https://github.com/${project.owner}/${project.repo}/blob/v${manifest.version}/",
+      projectPath.toAbsolutePath.normalize()
+    )
 
 
   /**
