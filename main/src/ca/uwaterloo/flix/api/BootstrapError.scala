@@ -58,8 +58,8 @@ object BootstrapError {
   }
 
   /**
-    * An error raised to indicate that `p` is not a Flix project, and so has no dependencies to
-    * add to.
+    * An error raised to indicate that `p` is not a Flix project: there is no manifest to add
+    * dependencies to, and no build output to clean.
     */
   case class NoProject(p: Path) extends BootstrapError {
     override def message(f: Formatter): String =

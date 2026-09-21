@@ -649,7 +649,7 @@ class TestBootstrap extends AnyFunSuite {
            |${buildFiles.mkString(System.lineSeparator())}
            |""".stripMargin)
     }
-    b.clean()
+    Bootstrap.clean(p)
     val newBuildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
     if (newBuildFiles.nonEmpty || Files.exists(buildDir)) {
       fail(
@@ -666,7 +666,7 @@ class TestBootstrap extends AnyFunSuite {
     b.buildClasses(PkgTestUtils.mkFlix(b))
     val buildDir = p.resolve("./build/").normalize()
     FileOps.writeString(buildDir.resolve("./other.txt").normalize(), "hello")
-    b.clean() match {
+    Bootstrap.clean(p) match {
       case Result.Ok(_) => fail("expected clean to abort")
       case Result.Err(_) => succeed
     }
@@ -675,12 +675,11 @@ class TestBootstrap extends AnyFunSuite {
   test("clean-should-succeed-on-non-existent-build-dir") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet
-    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val buildDir = p.resolve("./build/").normalize()
     if (Files.exists(buildDir)) {
       fail("did not expected build directory to exist")
     }
-    b.clean() match {
+    Bootstrap.clean(p) match {
       case Result.Ok(_) => succeed
       case Result.Err(_) => fail("expected success")
     }
@@ -692,14 +691,14 @@ class TestBootstrap extends AnyFunSuite {
       """
         |def main(): Unit = ()
         |""".stripMargin)
-    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val buildDir = p.resolve("./build/").normalize()
     if (Files.exists(buildDir)) {
       fail("did not expected build directory to exist")
     }
-    b.clean() match {
+    Bootstrap.clean(p) match {
       case Result.Ok(_) => fail("expected failure in directory mode")
-      case Result.Err(_) => succeed
+      case Result.Err(_: BootstrapError.NoProject) => succeed
+      case Result.Err(e) => fail(s"Expected BootstrapError.NoProject, but got: ${e.message(Formatter.NoFormatter)}")
     }
   }
 
