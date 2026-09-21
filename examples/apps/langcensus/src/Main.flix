@@ -1,3 +1,6 @@
+use Net.Http
+use Sys.{Env, Exit}
+
 ///
 /// Gets the language usage statistics for the user.
 ///
@@ -6,9 +9,7 @@
 ///   - The total adds and dels of the user for each language.
 ///   - The total bytes of code for each language for all the reporitorites the user has participated in.
 ///
-use Sys.{Env, Exit}
-
-def main(): Unit \ IO + Sys + Net =
+def main(): Unit \ IO =
     run {
         let repos = Github.getRepos();
         let repoShaMap = Github.getCommits(repos);
@@ -21,7 +22,7 @@ def main(): Unit \ IO + Sys + Net =
     with Analyse.runWithGithub
     with Github.runWithConfigHttp
     with Config.runWithEnv
-    with HttpWithResult.runWithIO
+    with Http.runWithIO
     with Env.runWithIO
     with AnalysisFailure.handleAnalysisFailure
     with Exit.runWithIO

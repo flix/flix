@@ -1,5 +1,5 @@
-use Util.Stat
-use Util.Stats
+use Common.Stat
+use Common.Stats
 
 ///
 /// The effect to analyse a user's github data.
@@ -17,8 +17,7 @@ eff Analyse {
 }
 
 mod Analyse {
-    use Util.Stat
-    use Json.JsonElement
+    use Common.Stat
 
     ///
     /// Handles analysis effect through Github Effect.
@@ -28,18 +27,18 @@ mod Analyse {
             f()
         } with handler Analyse {
             def analyseByRepo(commits, resume) =
-                let allStats : List[(String, Stat)] = foreach (
-                    (repo, shas) <- commits;
+                let allStats : List[(String, Stat)] = forM (
+                    (repo, shas) <- Map.toList(commits);
                     sha <- shas
                 ) yield commitToAddsDels(repo, sha);
                 mergeStats(allStats) |> resume
 
             def analyseByByte(repos, resume) = {
-                let allStats: List[(String, BigInt)] = foreach (
+                let allStats: List[(String, BigInt)] = forM (
                     repo <- repos;
                     languageStat = Github.getLanguages(repo);
-                    languageStatMap = Util.fromJson(languageStat);
-                    (lang, size) <- (languageStatMap: Map[String, BigInt])
+                    languageStatMap = Common.fromJson(languageStat);
+                    (lang, size) <- Map.toList((languageStatMap: Map[String, BigInt]))
                 ) yield (lang, size);
                 mergeStatsByByte(allStats) |> resume
             }
@@ -50,14 +49,14 @@ mod Analyse {
     /// Collect adds and dels from all changed valid files in a commit.
     ///
     def commitToAddsDels(repo: String, sha: String): (String, Stat) \ AnalysisFailure + Github = {
-        let stat = Github.getCommit(repo, sha) |> Util.accessJson("files") |> List.foldLeft((acc, file) -> {
-            let filename =  Util.accessJson("filename", file);
-            let extOpt =  filename |> Util.extractExt;
+        let stat = Github.getCommit(repo, sha) |> Common.accessJson("files") |> List.foldLeft((acc, file) -> {
+            let filename =  Common.accessJson("filename", file);
+            let extOpt =  filename |> Common.extractExt;
             match extOpt {
                 case Option.None  => acc
                 case Option.Some(ext) =>
-                    let additions = Util.accessJson("additions", file);
-                    let deletions = Util.accessJson("deletions", file);
+                    let additions = Common.accessJson("additions", file);
+                    let deletions = Common.accessJson("deletions", file);
                     Map.insertWith(
                         match (old_adds, old_dels) -> match (new_adds, new_dels) -> (old_adds + new_adds, old_dels + new_dels),
                         ext, (additions, deletions), acc
