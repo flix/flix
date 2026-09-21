@@ -187,9 +187,9 @@ object Bootstrap {
     * The dependency is written to `flix.toml` and the project is then bootstrapped, so that
     * `lib/` and `packages.lock` describe the project as it is now declared.
     *
-    * The manifest is written as a whole rather than edited in place, so comments and the keys
-    * that [[Manifest]] does not model -- `description`, `authors`, `license`, `modules`, and the
-    * dead `name` -- do not survive. `flix.toml` is the package manager's file to write.
+    * The manifest is written as a whole rather than edited in place, so comments do not
+    * survive. Nothing else is lost: a manifest declares only what [[Manifest]] models.
+    * `flix.toml` is the package manager's file to write.
     *
     * A project that does not resolve cannot be built, so a resolution that fails with the
     * dependency added puts the manifest that was there back, as does any failure before it.
@@ -210,7 +210,8 @@ object Bootstrap {
       _ <- checkUndeclared(manifest, pkg.id)
       version <- selectVersion(pkg, token)
       mount <- selectMount(manifest, pkg.id, assumeYes)
-      dep = Dependency.FlixDependency(pkg.id, version, Some(mount), SecurityContext.Default, DependencyStyle.Table)
+      // Written as its version only, unless the mount is not the one the name of the repository derives.
+      dep = Dependency.FlixDependency(pkg.id, version, mount, SecurityContext.Default, DependencyStyle.VersionOnly)
       _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies :+ dep), token,
         s"Added '${pkg.id}' v$version, mounted at '$mount'.")
     } yield ()
@@ -250,7 +251,7 @@ object Bootstrap {
       manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
       dep <- findDeclared(manifest, pkg.id)
       _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies.filterNot(d => d == dep)), token,
-        s"Removed '${pkg.id}' v${dep.version}${dep.mount.map(mount => s", which was mounted at '$mount'").getOrElse("")}.")
+        s"Removed '${pkg.id}' v${dep.version}, which was mounted at '${dep.mount}'.")
     } yield ()
   }
 
@@ -394,8 +395,8 @@ object Bootstrap {
   private def releaseVersions(id: PackageId, token: Option[String]): Result[List[SemVer], BootstrapError] =
     for {
       project <- GitHub.parseProject(s"${id.owner}/${id.name}").mapErr(BootstrapError.FlixPackageError.apply)
-      releases <- GitHub.getReleases(project, token).mapErr(BootstrapError.FlixPackageError.apply)
-    } yield releases.map(r => r.version)
+      versions <- GitHub.getReleaseVersions(project, token).mapErr(BootstrapError.FlixPackageError.apply)
+    } yield versions
 
   /**
     * Returns the mount to declare the dependency on `id` under.
@@ -979,13 +980,12 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     FlixPackageManager.resolve(manifest, projectPath, token, lockfile) match {
       case Err(e) => Err(BootstrapError.FlixPackageError(e))
       case Ok(resolution) =>
-        // Every package must be one this version of Flix can build, and be mounted by all its
-        // dependents or by none of them, before anything is installed. The project's own manifest
-        // is checked when it is read, and a package is checked here, once it is known which
-        // version of it is built: a package can be built at a version that no manifest the user
-        // has seen asks for, and that version can require a newer Flix than the one declared.
-        val graphErrors = FlixPackageManager.checkFlixVersions(resolution, SemVer.ofVersion(Version.CurrentVersion)) ++
-          FlixPackageManager.checkConsistentMounts(resolution.manifests)
+        // Every package must be one this version of Flix can build, before anything is installed.
+        // The project's own manifest is checked when it is read, and a package is checked here,
+        // once it is known which version of it is built: a package can be built at a version that
+        // no manifest the user has seen asks for, and that version can require a newer Flix than
+        // the one declared.
+        val graphErrors = FlixPackageManager.checkFlixVersions(resolution, SemVer.ofVersion(Version.CurrentVersion))
         if (graphErrors.nonEmpty) {
           Err(toBootstrapError(graphErrors))
         } else {

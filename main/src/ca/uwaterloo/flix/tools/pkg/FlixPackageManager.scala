@@ -16,16 +16,16 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, InstalledPackage}
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.shared.{PackageId, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.util.{Formatter, Result, Sha256}
+import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result, Sha256}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.io.{IOException, InputStream, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
-import scala.annotation.tailrec
 import scala.collection.mutable
 
 object FlixPackageManager {
@@ -394,32 +394,6 @@ object FlixPackageManager {
   }
 
   /**
-    * Finds every package that some of its dependents mount and others do not.
-    *
-    * A mounted package is named under its own root and is reachable only through its mount, so a
-    * dependent that leaves it unmounted cannot reach it at all. Transitional: the question goes
-    * away once every dependency must declare a mount.
-    */
-  def checkConsistentMounts(manifests: List[Manifest]): List[PackageError] = {
-    // Pair every dependency declaration with the manifest that declares it.
-    val declarations = manifests.flatMap(m => findFlixDependencies(m).map(dep => (m, dep)))
-
-    declarations.groupBy { case (_, dep) => dep.id }.toList.sortBy { case (id, _) => id }.flatMap {
-      case (identifier, decls) =>
-        val (mounted, unmounted) = decls.partition { case (_, dep) => dep.mount.isDefined }
-        if (mounted.nonEmpty && unmounted.nonEmpty) {
-          Some(PackageError.InconsistentMounts(
-            identifier,
-            mounted.map { case (dependent, _) => dependent.displayName }.sorted,
-            unmounted.map { case (dependent, _) => dependent.displayName }.sorted
-          ))
-        } else {
-          None
-        }
-    }
-  }
-
-  /**
     * Finds every package in `resolution` that requires a newer version of Flix than `current`.
     *
     * Only the packages that are built are checked, since a package that is not built is not
@@ -468,8 +442,7 @@ object FlixPackageManager {
   def findAvailableUpdates(id: PackageId, version: SemVer, token: Option[String]): Result[AvailableUpdates, PackageError] = {
     for {
       githubProject <- GitHub.parseProject(s"${id.owner}/${id.name}")
-      releases <- GitHub.getReleases(githubProject, token)
-      availableVersions = releases.map(r => r.version)
+      availableVersions <- GitHub.getReleaseVersions(githubProject, token)
 
       major = version.majorUpdate(availableVersions)
       minor = version.minorUpdate(availableVersions)
@@ -525,8 +498,6 @@ object FlixPackageManager {
     * dependent requires, which is not in general what the resolution installs.
     *
     * The package is installed at `lib/<owner>/<repo>`
-    *
-    * There should be only one file with the given extension.
     *
     * Returns the installed file, whether it was downloaded now or was already cached, and an
     * error if it is not the file `lockfile` records.
@@ -593,48 +564,22 @@ object FlixPackageManager {
     * Opens a stream over the `extension` file of `proj`'s `version` release. The caller closes
     * the stream.
     *
-    * A release asset's address follows from the repository, the version, and the name, so the
-    * names a package is expected to publish are tried first, each at the cost of one request
-    * that either finds the file or does not. Only if none of them is there is the release
-    * listing read, which costs a request against the API rate limit: 60 an hour for an
+    * A package publishes its two files under fixed names, so a release asset's address follows
+    * from the repository, the version, and the extension alone, and is read at the cost of one
+    * request that either finds the file or does not. The release listing is never read to find
+    * one, which matters because it costs a request against the API rate limit: 60 an hour for an
     * anonymous client, shared by every package a build resolves.
-    *
-    * Only a name that is not there is worth another guess. A refusal or an unreachable server
-    * says nothing about the name, and reading the listing would not get any further, so it is
-    * reported as it is.
     */
-  private def openReleaseAsset(proj: GitHub.Project, version: SemVer, extension: String, token: Option[String]): Result[InputStream, PackageError] = {
-    def fromListing(): Result[InputStream, PackageError] =
-      GitHub.findReleaseAsset(proj, version, extension, token).flatMap(asset => GitHub.download(asset.url, token))
-
-    @tailrec
-    def tryNames(names: List[String]): Result[InputStream, PackageError] = names match {
-      case Nil => fromListing()
-      case name :: rest =>
-        GitHub.downloadReleaseAsset(proj, version, name, token) match {
-          case Err(_: PackageError.ReleaseAssetNotFound) => tryNames(rest)
-          case result => result
-        }
-    }
-
-    tryNames(guessedAssetNames(proj, extension))
-  }
+  private def openReleaseAsset(proj: GitHub.Project, version: SemVer, extension: String, token: Option[String]): Result[InputStream, PackageError] =
+    GitHub.downloadReleaseAsset(proj, version, publishedName(extension), token)
 
   /**
-    * Returns the names the `extension` asset of `proj` is guessed to have, in the order they are
-    * tried. A package whose asset has none of them is found through the release listing instead.
+    * Returns the name a package publishes its `extension` file under.
     */
-  private def guessedAssetNames(proj: GitHub.Project, extension: String): List[String] = extension match {
-    case Bootstrap.EXT_TOML =>
-      List(Bootstrap.FLIX_TOML)
-
-    case Bootstrap.EXT_FPKG =>
-      // A release published before the package was given a fixed name carries the name of the
-      // repository, or of the directory it was built in, which cannot be guessed at all.
-      List(Bootstrap.PACKAGE_FPKG, s"${proj.repo}.$extension")
-
-    case _ =>
-      Nil
+  private def publishedName(extension: String): String = extension match {
+    case Bootstrap.EXT_TOML => Bootstrap.FLIX_TOML
+    case Bootstrap.EXT_FPKG => Bootstrap.PACKAGE_FPKG
+    case _ => throw InternalCompilerException(s"Unexpected extension: '$extension'.", SourceLocation.Unknown)
   }
 
   /**

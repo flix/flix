@@ -172,6 +172,8 @@ class TestBootstrap extends AnyFunSuite {
     // derived from its name, and is installed. The dependencies that are already declared are
     // still declared afterwards, with the versions and the mounts they were declared with.
     val p = mkProjectWithDependency()
+    // A manifest declares only what is read, so a comment is the one thing in it that the
+    // package manager does not model.
     Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
       s"""${Files.readString(p.resolve(Bootstrap.FLIX_TOML))}
          |# The clerk of the museum.
@@ -182,11 +184,11 @@ class TestBootstrap extends AnyFunSuite {
 
     val dep = flixDependency(p, added)
     assert(dep.version == SemVer(2, 0, 2))
-    assert(dep.mount.contains(Mountpoint("MuseumGiftshop")))
+    assert(dep.mount == Mountpoint("MuseumGiftshop"))
 
     val clerk = flixDependency(p, ClerkIdentifier)
     assert(clerk.version == ClerkVersion)
-    assert(clerk.mount.contains(Mountpoint("Clerk")))
+    assert(clerk.mount == Mountpoint("Clerk"))
 
     // The package is installed, and the lock file records it.
     assert(Files.exists(libFile(p, added, SemVer(2, 0, 2), Bootstrap.EXT_FPKG)))
@@ -203,9 +205,9 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
     install(p, "flix/museum-giftshop").unsafeGet
 
-    val releases = GitHub.getReleases(GitHub.Project("flix", "museum-giftshop"), PkgTestUtils.gitHubToken).unsafeGet
+    val versions = GitHub.getReleaseVersions(GitHub.Project("flix", "museum-giftshop"), PkgTestUtils.gitHubToken).unsafeGet
     val dep = flixDependency(p, PackageId(Repository.GitHub, "flix", "museum-giftshop"))
-    assert(dep.version == releases.map(r => r.version).max)
+    assert(dep.version == versions.max)
   }
 
   test("install.03") {
@@ -252,14 +254,15 @@ class TestBootstrap extends AnyFunSuite {
 
   test("install.05") {
     // A version that was never released is not one to declare. It is the resolution that says
-    // so, since a version that is asked for is taken as it is asked for, so the dependency is
-    // written before it is refused, and the manifest that was there is put back.
+    // so -- the release publishes no `flix.toml` -- since a version that is asked for is taken
+    // as it is asked for, so the dependency is written before it is refused, and the manifest
+    // that was there is put back.
     val p = mkProjectWithDependency()
     val before = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
 
     install(p, "flix/museum-entrance@9.9.9") match {
       case Ok(_) => fail("Expected the missing release to be refused.")
-      case Err(BootstrapError.FlixPackageError(e: PackageError.VersionDoesNotExist)) =>
+      case Err(BootstrapError.FlixPackageError(e: PackageError.ReleaseAssetNotFound)) =>
         assert(e.version == SemVer(9, 9, 9))
       case Err(e) => fail(s"Expected a missing release, but got: ${e.message(Formatter.getDefault)}")
     }
@@ -282,7 +285,7 @@ class TestBootstrap extends AnyFunSuite {
 
     val dep = flixDependency(p, ClerkIdentifier)
     assert(dep.version == ClerkVersion)
-    assert(dep.mount.contains(Mountpoint("Clerk")))
+    assert(dep.mount == Mountpoint("Clerk"))
 
     val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
     assert(lockfile.packages.keySet == Set((ClerkIdentifier, ClerkVersion)))
@@ -377,7 +380,7 @@ class TestBootstrap extends AnyFunSuite {
 
     val dep = flixDependency(p, ClerkIdentifier)
     assert(dep.version == ClerkVersion)
-    assert(dep.mount.contains(Mountpoint("Clerk")))
+    assert(dep.mount == Mountpoint("Clerk"))
     assert(dep.sctx == SecurityContext.Paranoid)
 
     // The declaration is replaced where it is, and not dropped and added.
@@ -412,8 +415,7 @@ class TestBootstrap extends AnyFunSuite {
     val bytes = new ByteArrayOutputStream()
     Bootstrap.upgrade(p, "flix/museum", PkgTestUtils.gitHubToken)(Formatter.NoFormatter, new PrintStream(bytes)).unsafeGet
 
-    val releases = GitHub.getReleases(GitHub.Project("flix", "museum"), PkgTestUtils.gitHubToken).unsafeGet
-    val versions = releases.map(r => r.version)
+    val versions = GitHub.getReleaseVersions(GitHub.Project("flix", "museum"), PkgTestUtils.gitHubToken).unsafeGet
     val newestOfMajor = versions.filter(v => v.major == 3).max
     assert(flixDependency(p, museum).version == newestOfMajor)
 
@@ -432,7 +434,7 @@ class TestBootstrap extends AnyFunSuite {
 
     val dep = flixDependency(p, ClerkIdentifier)
     assert(dep.version == SemVer(2, 1, 2))
-    assert(dep.mount.contains(Mountpoint("Clerk")))
+    assert(dep.mount == Mountpoint("Clerk"))
   }
 
   test("upgrade.04") {
@@ -763,6 +765,9 @@ class TestBootstrap extends AnyFunSuite {
 
   /**
     * The version of [[ClerkIdentifier]] that [[mkProjectWithDependency]] declares.
+    *
+    * A package is installed by downloading the `package.fpkg` of its release, so a version the
+    * tests build against is one that publishes it.
     */
   private val ClerkVersion: SemVer = SemVer(2, 1, 3)
 

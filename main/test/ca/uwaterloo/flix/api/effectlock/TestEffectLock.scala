@@ -192,8 +192,11 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), None)(System.out).unsafeGet
 
     val lockfile = EffectLockfileParser.parse(p.resolve(Bootstrap.EFFECTS_LOCK)).unsafeGet
-    val extras = lockfile.packages(PackageId.mkPackageId("github:flix/extras").get)
-    assert(extras.defs.contains("Extras.Graph.closure"))
+    val id = PackageId.mkPackageId("github:flix/extras").get
+    val extras = lockfile.packages(id)
+    // A package is named under its own root, so a declaration is locked under the identifier of
+    // the package it belongs to.
+    assert(extras.defs.contains(s"$id.Extras.Graph.closure"))
     assert(extras.sigs.isEmpty)
 
     // Nothing has changed since the signatures were locked, so the check passes, whether every
