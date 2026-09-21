@@ -1586,20 +1586,23 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
 
   /**
     * Builds a fatjar package for the project.
+    *
+    * The jars packed into it are the ones the dependencies of the project resolve to, and not every
+    * jar in `lib/`: a jar left there by a dependency that was since removed or upgraded is not part
+    * of the project, and must not shadow the classes of the jars that are.
     */
   def buildFatJar(flix: Flix): Result[Unit, BootstrapError] = {
     val jarFile = Bootstrap.getJarFile(projectPath)
-    val libDir = Bootstrap.getLibraryDirectory(projectPath)
+    val jars = files.jars
     for {
       _ <- configureJarOutput(flix)
       result <- compile(flix)
       _ <- validateJarFile(jarFile)
-      _ <- validateDirectory(libDir)
-      _ <- validateJarFilesIn(libDir)
+      _ <- Result.traverse(jars)(validateJarFile)
       contents = (zip: ZipOutputStream) => {
         addClassesToZip(result.getClasses, zip)
         addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath), zip)
-        addJarsFromDirToZip(libDir, zip)
+        addJarsToZip(jars, zip)
       }
       _ <- createJar(jarFile, contents)
     } yield {
@@ -1608,33 +1611,7 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
   }
 
   /**
-    * Returns `OK(())` if `dir` exists and is a readable directory.
-    * If `dir` does not exist, it returns `Ok(())` too.
-    */
-  private def validateDirectory(dir: Path): Result[Unit, BootstrapError] = {
-    if (Files.exists(dir)) {
-      if (!Files.isDirectory(dir)) {
-        return Err(BootstrapError.FileError(s"The path '${dir.toString}' is not a directory."))
-      }
-      if (!Files.isReadable(dir)) {
-        return Err(BootstrapError.FileError(s"The path '${dir.toString}' is not readable."))
-      }
-    }
-    Ok(())
-  }
-
-  /**
-    * Returns `Ok(())` if all files ending with `.jar` in `dir` are valid jar files.
-    *
-    * @see [[validateJarFile]]
-    */
-  private def validateJarFilesIn(dir: Path): Result[Unit, BootstrapError] = {
-    Result.traverse(FileOps.getFilesWithExtIn(dir, EXT_JAR, Int.MaxValue))(validateJarFile).map(_ => ())
-  }
-
-  /**
-    * Adds all jars in `dir` to `zip`.
-    * Ignores non-jar files and does nothing if `dir` does not exist.
+    * Adds the contents of `jars` to `zip`.
     *
     * Most of each dependency jar is copied verbatim — class files, ordinary resources
     * (native libraries, capability files, `.properties` files, ...), and library-specific
@@ -1652,18 +1629,12 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     *         does not declare `Multi-Release: true`) and risk shadowing the base classes.
     *       - `module-info.class` cannot be merged: only one may live at the jar root.
     *
-    * Duplicate entry paths across jars are de-duplicated (first jar wins) so that the build
-    * does not abort with a `ZipException: duplicate entry`.
+    * Duplicate entry paths across jars are de-duplicated (the first of `jars` wins) so that the
+    * build does not abort with a `ZipException: duplicate entry`.
     */
-  private def addJarsFromDirToZip(dir: Path, zip: ZipOutputStream): Unit = {
-    // First, we get all jar files inside the lib folder.
-    // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
-    if (!Files.exists(dir)) {
-      return
-    }
+  private def addJarsToZip(jars: List[Path], zip: ZipOutputStream): Unit = {
     val servicesPrefix = "META-INF/services/"
     val metaInfPrefix = "META-INF/"
-    val jarDependencies = FileOps.getFilesWithExtIn(dir, EXT_JAR, Int.MaxValue)
 
     // Tracks entry names already written to `zip` so that an entry present in more than one
     // dependency jar is written only once (first jar wins) instead of throwing.
@@ -1687,7 +1658,7 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     }
 
     // Add jar dependencies.
-    jarDependencies.foreach(dep => {
+    jars.foreach(dep => {
       // Extract the runtime contents of the dependency into the fat jar.
       Using(new ZipInputStream(Files.newInputStream(dep))) {
         zipIn =>
