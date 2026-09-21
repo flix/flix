@@ -346,6 +346,51 @@ object PackageError {
   }
 
   /**
+    * An error raised to indicate that a release of the package `identifier` contains a manifest
+    * that declares no repository.
+    *
+    * @param identifier the package the release was downloaded for.
+    * @param release    the version the release is published as.
+    */
+  case class MissingRepository(identifier: PackageId, release: SemVer) extends PackageError {
+    override def message(f: Formatter): String = {
+      s"""Missing repository:
+         |  The release ${f.bold(s"v$release")} of the package '${f.red(identifier.toString)}'
+         |  contains a manifest that declares no repository.
+         |
+         |  A package is identified by the repository it is published from, so its manifest must
+         |  declare it:
+         |
+         |    repository = "$identifier"
+         |
+         |  This is a mistake in how the package was released, which its author must fix.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a release of the package `identifier` contains a manifest
+    * that declares another repository than the one it was downloaded from.
+    *
+    * @param identifier the package the release was downloaded for.
+    * @param release    the version the release is published as.
+    * @param declared   the package the manifest in the release declares.
+    */
+  case class MismatchedRepository(identifier: PackageId, release: SemVer, declared: PackageId) extends PackageError {
+    override def message(f: Formatter): String = {
+      s"""Mismatched repositories:
+         |  The release ${f.bold(s"v$release")} of the package '${f.red(identifier.toString)}'
+         |  contains a manifest that declares the repository '${f.bold(declared.toString)}'.
+         |
+         |  Downloaded for: $identifier
+         |  Declared:       $declared
+         |
+         |  This is a mistake in how the package was released, which its author must fix.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that the package `identifier` requires a newer version of Flix
     * than the one that is running.
     *
