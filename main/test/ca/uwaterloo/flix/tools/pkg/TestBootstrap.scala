@@ -226,7 +226,8 @@ class TestBootstrap extends AnyFunSuite {
 
   test("install.04") {
     // A mount that another dependency already has is not one to take, and a run that assumes
-    // yes has no one to ask for another.
+    // yes has no one to ask for another. The dependency that holds the mount is never resolved --
+    // the install is refused before anything is -- so it only has to be declared.
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
@@ -236,7 +237,7 @@ class TestBootstrap extends AnyFunSuite {
          |flix = "${Version.CurrentVersion}"
          |
          |[dependencies]
-         |"github:jaschdoc/flix-test-pkg-eff-upgrade" = { version = "0.1.1", mount = "MuseumClerk" }
+         |"github:flix/museum-giftshop" = { version = "2.0.2", mount = "MuseumClerk" }
          |""".stripMargin)
     val before = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
 
