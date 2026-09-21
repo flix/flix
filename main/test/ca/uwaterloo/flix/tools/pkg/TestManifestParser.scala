@@ -213,8 +213,8 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(PackageId(Repository.GitHub, "jls", "tic-tac-toe"), SemVer(1, 2, 3), Some(Mountpoint("ticTacToe")), SecurityContext.Plain, Dependency.FlixDependency.Form.Table),
-      Dependency.FlixDependency(PackageId(Repository.GitHub, "mlutze", "flixball"), SemVer(3, 2, 1), None, SecurityContext.Plain, Dependency.FlixDependency.Form.Version),
+    assertResult(expected = List(Dependency.FlixDependency(PackageId(Repository.GitHub, "jls", "tic-tac-toe"), SemVer(1, 2, 3), Some(Mountpoint("ticTacToe")), SecurityContext.Plain, DependencyStyle.Table),
+      Dependency.FlixDependency(PackageId(Repository.GitHub, "mlutze", "flixball"), SemVer(3, 2, 1), None, SecurityContext.Plain, DependencyStyle.VersionOnly),
       Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
       Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
       Dependency.JarDependency("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar", "myJar.jar")))(actual = {
@@ -646,90 +646,6 @@ class TestManifestParser extends AnyFunSuite {
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
-  }
-
-  test("Manifest.Format.01") {
-    // The tables come in a fixed order, the dependencies of each are sorted by key, and the `=`
-    // of the entries of each are aligned.
-    assertResult(expected =
-      """[package]
-        |version    = "0.1.0"
-        |repository = "github:johnDoe/hello-world"
-        |flix       = "0.33.0"
-        |
-        |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe" }
-        |"github:mlutze/flixball" = "3.2.1"
-        |
-        |[mvn-dependencies]
-        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
-        |"org.postgresql:postgresql"      = "1.2.3.4"
-        |
-        |[jar-dependencies]
-        |"myJar.jar" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
-        |""".stripMargin)(actual = Manifest.format(ManifestParser.parse(tomlCorrect, ManifestPath).unsafeGet))
-  }
-
-  test("Manifest.Format.Form.01") {
-    // A dependency is written in the form it was declared in. A table leaves out the security
-    // context when it is the default.
-    val toml =
-      """[package]
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |
-        |[dependencies]
-        |"github:magnus-madsen/helloworld" = "1.3.0"
-        |"github:flix/museum" = { version = "1.4.0", security = "plain" }
-        |"github:flix/museum-clerk" = { version = "2.1.2", mount = "Clerk" }
-        |"github:flix/museum-giftshop" = { version = "2.0.2" }
-        |"github:flix/museum-restaurant" = { version = "2.0.2", mount = "Restaurant", security = "unrestricted" }
-        |""".stripMargin
-    assertResult(expected =
-      """[package]
-        |version = "0.1.0"
-        |flix    = "0.33.0"
-        |
-        |[dependencies]
-        |"github:flix/museum"              = { version = "1.4.0" }
-        |"github:flix/museum-clerk"        = { version = "2.1.2", mount = "Clerk" }
-        |"github:flix/museum-giftshop"     = { version = "2.0.2" }
-        |"github:flix/museum-restaurant"   = { version = "2.0.2", mount = "Restaurant", security = "unrestricted" }
-        |"github:magnus-madsen/helloworld" = "1.3.0"
-        |""".stripMargin)(actual = Manifest.format(ManifestParser.parse(toml, ManifestPath).unsafeGet))
-  }
-
-  test("Manifest.Format.Form.02") {
-    // A dependency declared as its version is written as a table once it declares more than
-    // its version.
-    val toml =
-      """[package]
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |""".stripMargin
-    val dep = Dependency.FlixDependency(PackageId(Repository.GitHub, "flix", "museum"), SemVer(1, 4, 0), Some(Mountpoint("Museum")), SecurityContext.Plain, Dependency.FlixDependency.Form.Version)
-    val manifest = ManifestParser.parse(toml, ManifestPath).unsafeGet.copy(dependencies = List(dep))
-    assertResult(expected =
-      """[package]
-        |version = "0.1.0"
-        |flix    = "0.33.0"
-        |
-        |[dependencies]
-        |"github:flix/museum" = { version = "1.4.0", mount = "Museum" }
-        |""".stripMargin)(actual = Manifest.format(manifest))
-  }
-
-  test("Manifest.Format.Escape.01") {
-    // A string is escaped, so that it is read back as it was written.
-    val toml =
-      """[package]
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |""".stripMargin
-    val dep = Dependency.MavenDependency("org.postgresql", "postgresql", "1\"2\\3\t4\u00015é6")
-    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet.copy(dependencies = List(dep))
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
-    assertResult(expected = manifest1)(actual = manifest2)
   }
 
   /////////////

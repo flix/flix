@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.{Stat, Tester}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageSpec, ReleaseError, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyStyle, FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageSpec, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Options, Result}
 
@@ -210,7 +210,7 @@ object Bootstrap {
       _ <- checkUndeclared(manifest, pkg.id)
       version <- selectVersion(pkg, token)
       mount <- selectMount(manifest, pkg.id, assumeYes)
-      dep = Dependency.FlixDependency(pkg.id, version, Some(mount), SecurityContext.Default, Dependency.FlixDependency.Form.Table)
+      dep = Dependency.FlixDependency(pkg.id, version, Some(mount), SecurityContext.Default, DependencyStyle.Table)
       _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies :+ dep), token,
         s"Added '${pkg.id}' v$version, mounted at '$mount'.")
     } yield ()

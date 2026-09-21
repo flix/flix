@@ -65,7 +65,7 @@ object Manifest {
     *   - The tables come in a fixed order, and a table that declares nothing is left out.
     *   - The dependencies of a table are sorted by key.
     *   - The `=` of the entries of a table are aligned.
-    *   - A Flix dependency is written in the [[Dependency.FlixDependency.Form]] it was declared in.
+    *   - A Flix dependency is written in the [[DependencyStyle]] it was declared in.
     *   - Every line ends in `\n`.
     *
     * Parsing the text gives back `manifest`, up to the order of its dependencies.
@@ -107,12 +107,12 @@ object Manifest {
   /**
     * Returns the entry of `dep` in the `[dependencies]` table.
     *
-    * A dependency is written in the form it was declared in, but as its version only while that
+    * A dependency is written in the style it was declared in, but as its version only while that
     * is all it declares. A table spells out the mount only when there is one, and the security
     * context only when it is not the default.
     */
   private def flixDependencyEntry(dep: FlixDependency): Entry = dep match {
-    case FlixDependency(id, version, None, SecurityContext.Default, FlixDependency.Form.Version) =>
+    case FlixDependency(id, version, None, SecurityContext.Default, DependencyStyle.VersionOnly) =>
       Entry(id.toString, Value.Str(version.toString))
 
     case FlixDependency(id, version, mount, sctx, _) =>
