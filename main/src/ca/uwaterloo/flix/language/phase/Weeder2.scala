@@ -3344,11 +3344,38 @@ object Weeder2 {
   }
 
   private def tryParsePredicateArity(token: Token)(implicit sctx: SharedContext): Int = {
-    token.text.toIntOption match {
+    val text = token.text
+    if (text.startsWith("0x") || text.startsWith("0X")) {
+      // Hexadecimal literals (e.g. `0xFF`) lex as LiteralInt but are not valid arities.
+      val digits = text.stripPrefix("0x").stripPrefix("0X").filterNot(_ == '_')
+      val hint = try {
+        val decimal = Integer.parseInt(digits, 16)
+        s"Hexadecimal literal '$text' is not a valid predicate arity. Use the decimal literal '$decimal' instead."
+      } catch {
+        case _: NumberFormatException =>
+          "Predicate arity must be a decimal integer greater than zero."
+      }
+      // Soft failure: report the error and fall back on an arity of 0.
+      sctx.errors.add(WeederError.IllegalPredicateArity(hint, token.mkSourceLocation()))
+      0
+    } else if (text.contains("_")) {
+      // Underscored literals (e.g. `1_000`) lex as LiteralInt but are not valid arities.
+      val stripped = text.filterNot(_ == '_')
+      val hint = stripped.toIntOption match {
+        case Some(i) if i >= 1 =>
+          s"Underscores are not allowed in predicate arity. Use '$stripped' instead of '$text'."
+        case _ =>
+          "Predicate arity must be a decimal integer greater than zero."
+      }
+      // Soft failure: report the error and fall back on an arity of 0.
+      sctx.errors.add(WeederError.IllegalPredicateArity(hint, token.mkSourceLocation()))
+      0
+    } else token.text.toIntOption match {
       case Some(i) if i >= 1 => i
       case _ =>
         // Soft failure: report the error and fall back on an arity of 0.
-        sctx.errors.add(WeederError.IllegalPredicateArity(token.mkSourceLocation()))
+        val hint = "Predicate arity must be a decimal integer greater than zero."
+        sctx.errors.add(WeederError.IllegalPredicateArity(hint, token.mkSourceLocation()))
         0
     }
   }
