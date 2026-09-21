@@ -27,6 +27,15 @@ class TestManifestParser extends AnyFunSuite {
     }
   }
 
+  /**
+    * Asserts that `actual` is `expected` up to the order of their dependencies, which
+    * [[Manifest.format]] sorts.
+    */
+  def assertSameUpToOrder(expected: Manifest, actual: Manifest): Unit = {
+    assertResult(expected.copy(dependencies = Nil))(actual.copy(dependencies = Nil))
+    assertResult(expected.dependencies.toSet)(actual.dependencies.toSet)
+  }
+
   val f: Formatter = Formatter.NoFormatter
   val s: String = File.separator
   val tomlCorrect: String = {
@@ -204,8 +213,8 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(PackageId(Repository.GitHub, "jls", "tic-tac-toe"), SemVer(1, 2, 3), Some(Mountpoint("ticTacToe")), SecurityContext.Plain),
-      Dependency.FlixDependency(PackageId(Repository.GitHub, "mlutze", "flixball"), SemVer(3, 2, 1), None, SecurityContext.Plain),
+    assertResult(expected = List(Dependency.FlixDependency(PackageId(Repository.GitHub, "jls", "tic-tac-toe"), SemVer(1, 2, 3), Some(Mountpoint("ticTacToe")), SecurityContext.Plain, DependencyStyle.Table),
+      Dependency.FlixDependency(PackageId(Repository.GitHub, "mlutze", "flixball"), SemVer(3, 2, 1), None, SecurityContext.Plain, DependencyStyle.VersionOnly),
       Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
       Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
       Dependency.JarDependency("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar", "myJar.jar")))(actual = {
@@ -436,7 +445,7 @@ class TestManifestParser extends AnyFunSuite {
     val toml = tomlCorrect
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
-    assertResult(manifest1)(manifest2)
+    assertSameUpToOrder(manifest1, manifest2)
   }
 
   test("Manifest.Identity.02") {
@@ -450,7 +459,7 @@ class TestManifestParser extends AnyFunSuite {
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
-    assertResult(manifest1)(manifest2)
+    assertSameUpToOrder(manifest1, manifest2)
   }
 
   test("Manifest.Identity.03") {
@@ -468,7 +477,7 @@ class TestManifestParser extends AnyFunSuite {
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
-    assertResult(manifest1)(manifest2)
+    assertSameUpToOrder(manifest1, manifest2)
   }
 
   test("Manifest.Identity.04") {
@@ -486,7 +495,7 @@ class TestManifestParser extends AnyFunSuite {
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
-    assertResult(manifest1)(manifest2)
+    assertSameUpToOrder(manifest1, manifest2)
   }
 
   test("Manifest.Identity.05") {
@@ -504,7 +513,7 @@ class TestManifestParser extends AnyFunSuite {
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
-    assertResult(manifest1)(manifest2)
+    assertSameUpToOrder(manifest1, manifest2)
   }
 
   test("Manifest.Identity.06") {
@@ -522,7 +531,7 @@ class TestManifestParser extends AnyFunSuite {
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
-    assertResult(manifest1)(manifest2)
+    assertSameUpToOrder(manifest1, manifest2)
   }
 
   test("Manifest.Identity.07") {
@@ -540,7 +549,7 @@ class TestManifestParser extends AnyFunSuite {
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
-    assertResult(manifest1)(manifest2)
+    assertSameUpToOrder(manifest1, manifest2)
   }
 
   test("Manifest.Identity.08") {
@@ -556,7 +565,7 @@ class TestManifestParser extends AnyFunSuite {
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
-    assertResult(manifest1)(manifest2)
+    assertSameUpToOrder(manifest1, manifest2)
   }
 
   test("Manifest.Identity.09") {
@@ -572,7 +581,7 @@ class TestManifestParser extends AnyFunSuite {
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
-    assertResult(manifest1)(manifest2)
+    assertSameUpToOrder(manifest1, manifest2)
   }
 
   test("Manifest.Identity.10") {
@@ -588,7 +597,7 @@ class TestManifestParser extends AnyFunSuite {
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
-    assertResult(manifest1)(manifest2)
+    assertSameUpToOrder(manifest1, manifest2)
   }
 
   test("Manifest.Identity.11") {
@@ -604,7 +613,7 @@ class TestManifestParser extends AnyFunSuite {
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
-    assertResult(manifest1)(manifest2)
+    assertSameUpToOrder(manifest1, manifest2)
   }
 
   test("Manifest.Identity.12") {
@@ -620,7 +629,7 @@ class TestManifestParser extends AnyFunSuite {
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
-    assertResult(manifest1)(manifest2)
+    assertSameUpToOrder(manifest1, manifest2)
   }
 
   test("Manifest.Identity.13") {
@@ -636,7 +645,7 @@ class TestManifestParser extends AnyFunSuite {
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
-    assertResult(manifest1)(manifest2)
+    assertSameUpToOrder(manifest1, manifest2)
   }
 
   /////////////
@@ -1559,7 +1568,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
-    assertResult(manifest1)(manifest2)
+    assertSameUpToOrder(manifest1, manifest2)
   }
 
   test("ManifestError.FlixDependencyDuplicateMount") {
