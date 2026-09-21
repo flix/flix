@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.api.Bootstrap
+import ca.uwaterloo.flix.api.{Bootstrap, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.{PackageId, Repository, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
@@ -545,20 +545,45 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   }
 
   test("mismatched-versions") {
+    // A release that declares a version other than the one it is published as is refused, and is
+    // named by the version it is published as and the one it declares.
+    //
+    // The manifest is put in the cache rather than downloaded. A manifest is validated as it is
+    // installed, and a file that is already there is installed by being found, so the mistake is
+    // reached the same way whether it was fetched now or before -- and no release has to be
+    // published carrying it.
+    val id = PackageId(Repository.GitHub, "flix", "museum-clerk")
+    val released = SemVer(2, 1, 2)
+    val declared = SemVer(2, 1, 3)
+
+    val path = Files.createTempDirectory("")
+    val dir = Bootstrap.getLibraryDirectory(path)
+      .resolve("github").resolve(id.owner).resolve(id.name).resolve(released.toString)
+    Files.createDirectories(dir)
+    Files.writeString(dir.resolve(s"${id.name}-$released.${Bootstrap.EXT_TOML}"),
+      s"""
+         |[package]
+         |version = "$declared"
+         |repository = "$id"
+         |flix = "${Version.CurrentVersion}"
+         |""".stripMargin)
+
     val toml = PkgTestUtils.mkTomlWithDeps(
-      """
-        |"github:jaschdoc/flix-test-pkg-mismatched-versions" = "0.1.0"
-        |""".stripMargin
+      s"""
+         |"$id" = { version = "$released", mount = "clerk" }
+         |""".stripMargin
     )
     val manifest = ManifestParser.parse(toml, ManifestPath) match {
       case Ok(m) => m
       case Err(e) => fail(e.message(formatter))
     }
 
-    val path = Files.createTempDirectory("")
     FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
       case Ok(_) => fail("expected error, got success")
-      case Err(_: PackageError.MismatchedVersions) => succeed
+      case Err(e: PackageError.MismatchedVersions) =>
+        assert(e.identifier == id)
+        assert(e.release == released)
+        assert(e.declared == declared)
       case Err(e) => fail(e.message(formatter))
     }
   }
