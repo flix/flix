@@ -210,7 +210,7 @@ object Bootstrap {
       _ <- checkUndeclared(manifest, pkg.id)
       version <- selectVersion(pkg, token)
       mount <- selectMount(manifest, pkg.id, assumeYes)
-      dep = Dependency.FlixDependency(pkg.id, version, Some(mount), SecurityContext.Default)
+      dep = Dependency.FlixDependency(pkg.id, version, Some(mount), SecurityContext.Default, Dependency.FlixDependency.Form.Table)
       _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies :+ dep), token,
         s"Added '${pkg.id}' v$version, mounted at '$mount'.")
     } yield ()
@@ -264,9 +264,9 @@ object Bootstrap {
     * taken as it is asked for, which includes another major, and a version below the one that is
     * declared: a declaration is a version to pin as well as a version to raise.
     *
-    * Only the version changes. The mount and the security context are the ones that were
-    * declared, which is what this command has over removing the package and adding it again, and
-    * the declaration stays where it is in the file.
+    * Only the version changes. The mount, the security context, and whether the dependency is
+    * written as a version or as a table are the ones that were declared, which is what this
+    * command has over removing the package and adding it again.
     *
     * Only what the project declares can be changed: the version of a package that is reached
     * through another dependency is that dependency's to declare.
