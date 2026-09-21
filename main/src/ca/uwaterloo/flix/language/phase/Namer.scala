@@ -74,7 +74,7 @@ object Namer {
 
       val errors = sctx.errors.asScala.toList ++ checkOrphanModules(symbols)
 
-      (NamedAst.Root(symbols, instances, uses, units, modules, mounts, rootMounts, flix.mountedPackages, program.mainEntryPoint, locations, program.tokens), errors)
+      (NamedAst.Root(symbols, instances, uses, units, modules, mounts, rootMounts, program.mainEntryPoint, locations, program.tokens), errors)
     }
 
   /**
@@ -85,12 +85,12 @@ object Namer {
   /**
     * Returns the namespace the declarations of the source at `loc` are named under.
     *
-    * A package that something mounts is named under its own root, so that its declarations are
-    * reached through that mount rather than by sharing a namespace with every other package.
-    * Everything else, including a package that nothing mounts, is named under [[Name.RootNS]].
+    * A package is named under its own root, so that its declarations are reached through a mount
+    * rather than by sharing a namespace with every other package. Everything else is named under
+    * [[Name.RootNS]].
     */
-  private def rootOf(loc: SourceLocation)(implicit flix: Flix): Name.NName = loc.source.origin match {
-    case Origin.Package(id) if flix.mountedPackages.contains(id) => packageRoot(id)
+  private def rootOf(loc: SourceLocation): Name.NName = loc.source.origin match {
+    case Origin.Package(id) => packageRoot(id)
     case _ => Name.RootNS
   }
 

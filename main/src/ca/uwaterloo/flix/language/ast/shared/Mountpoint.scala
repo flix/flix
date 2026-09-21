@@ -30,6 +30,13 @@ object Mountpoint {
   def mkMountpoint(s: String): Option[Mountpoint] =
     if (Valid.matches(s) && !Lexer.isKeyword(s)) Some(Mountpoint(s)) else None
 
+  /**
+    * Returns the mount of a dependency on `id` that declares none: the name of its repository, if
+    * that is a mountpoint. The name is never folded into one, so e.g. `tic-tac-toe` has none.
+    */
+  def ofRepoName(id: PackageId): Option[Mountpoint] =
+    mkMountpoint(id.name)
+
 }
 
 /**

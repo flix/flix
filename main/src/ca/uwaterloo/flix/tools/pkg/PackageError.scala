@@ -32,11 +32,6 @@ sealed trait PackageError {
 }
 
 object PackageError {
-  case class VersionDoesNotExist(version: SemVer, project: Project) extends PackageError {
-    override def message(f: Formatter): String =
-      s"Version ${f.bold(version.toString)} does not exist for project ${f.bold(project.toString)}"
-  }
-
   case class InvalidProjectName(projectString: String) extends PackageError {
     override def message(f: Formatter): String =
       s"""A GitHub project should be formatted like so: 'owner/repository'.
@@ -256,19 +251,6 @@ object PackageError {
          |""".stripMargin
   }
 
-  case class NoSuchFile(project: String, extension: String) extends PackageError {
-    override def message(f: Formatter): String =
-      s"""There are no files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
-         |""".stripMargin
-  }
-
-  case class TooManyFiles(project: String, extension: String) extends PackageError {
-    override def message(f: Formatter): String =
-      s"""There are too many files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
-         |There should only be one $extension file in each project.
-         |""".stripMargin
-  }
-
   case class ManifestParseError(e: ManifestError) extends PackageError {
     override def message(f: Formatter): String = e.message(f)
   }
@@ -312,27 +294,6 @@ object PackageError {
          |    - Remove the offending dependency
          |    - Use a different dependency.
          |    - Increase security level. ${f.yellow("WARNING")}: This can be dangerous and may expose you to supply chain attacks.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that some dependents of the package `identifier` mount it and
-    * others do not.
-    *
-    * @param identifier the package the dependents disagree about.
-    * @param mounted    the dependents that mount it.
-    * @param unmounted  the dependents that do not.
-    */
-  case class InconsistentMounts(identifier: PackageId, mounted: List[String], unmounted: List[String]) extends PackageError {
-    override def message(f: Formatter): String = {
-      s"""${f.underline("Found a package that is mounted by some of its dependents and not by others:")}
-         |  The package '${f.red(identifier.toString)}' is mounted by: ${mounted.mkString(", ")}
-         |  but not by: ${unmounted.mkString(", ")}
-         |
-         |  A mounted package is reachable only under its mount, so the dependents that do not
-         |  mount it cannot reach it at all. Until a mount is required, every dependent of a
-         |  package must either mount it or leave it unmounted.
          |""".stripMargin
     }
   }

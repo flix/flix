@@ -27,18 +27,18 @@ import java.net.{URI, URL}
 class TestGitHub extends AnyFunSuite {
 
   test("getReleases.01") {
-    // A project that exists is read as its releases.
+    // A project that exists is read as the versions it has released.
     val project = GitHub.Project("flix", "museum-clerk")
-    val releases = GitHub.getReleases(project, PkgTestUtils.gitHubToken).unsafeGet
-    assert(releases.map(r => r.version).contains(SemVer(1, 1, 0)))
+    val versions = GitHub.getReleaseVersions(project, PkgTestUtils.gitHubToken).unsafeGet
+    assert(versions.contains(SemVer(1, 1, 0)))
   }
 
   test("getReleases.02") {
     // A project that does not exist is said not to exist, rather than reported as a body that
     // could not be parsed.
     val project = GitHub.Project("flix", "no-such-package")
-    GitHub.getReleases(project, PkgTestUtils.gitHubToken) match {
-      case Ok(releases) => fail(s"Expected no such project, but got: $releases")
+    GitHub.getReleaseVersions(project, PkgTestUtils.gitHubToken) match {
+      case Ok(versions) => fail(s"Expected no such project, but got: $versions")
       case Err(e: PackageError.ProjectDoesNotExist) =>
         assert(e.project == project)
         // What GitHub answered is not what the user is told.
@@ -51,8 +51,8 @@ class TestGitHub extends AnyFunSuite {
     // A token GitHub will not accept is reported as a rejected token, rather than as a response
     // nobody expected. The API answers 401 for one, where a request carrying none is let through.
     val project = GitHub.Project("flix", "museum-clerk")
-    GitHub.getReleases(project, Some("not-a-token")) match {
-      case Ok(releases) => fail(s"Expected a rejected token, but got: $releases")
+    GitHub.getReleaseVersions(project, Some("not-a-token")) match {
+      case Ok(versions) => fail(s"Expected a rejected token, but got: $versions")
       case Err(e: PackageError.TokenRejected) =>
         // What the token is is not what the user is told.
         assert(!e.message(Formatter.NoFormatter).contains("not-a-token"))
@@ -79,7 +79,7 @@ class TestGitHub extends AnyFunSuite {
     // Reading the listing at all is the test: how many of its releases are tagged as versions is
     // that repository's business, and changes as it releases.
     val project = GitHub.Project("microsoft", "vscode")
-    GitHub.getReleases(project, PkgTestUtils.gitHubToken) match {
+    GitHub.getReleaseVersions(project, PkgTestUtils.gitHubToken) match {
       case Ok(_) => // As expected.
       case Err(e) => fail(s"Expected a listing, but got: ${e.message(Formatter.NoFormatter)}")
     }

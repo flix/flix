@@ -110,6 +110,24 @@ object ManifestError {
         "A mount is a letter followed by letters, digits, or underscores, e.g. 'ticTacToe'."
   }
 
+  case class FlixDependencyUnderivableMount(path: Path, lib: PackageId) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""The Flix dependency ${f.bold(lib.toString)} declares no mount, and its name ${f.red(lib.name)} cannot be one.
+         |$reason
+         |Every Flix dependency has a mount, which is written before '::' in a use. Specify one explicitly:
+         |  "$lib" = { version = "x.y.z", mount = "someName" }
+         |The toml file was found at ${f.cyan(path.toString)}.
+         |""".stripMargin
+
+    private def reason: String =
+      if (Lexer.isKeyword(lib.name))
+        s"'${lib.name}' would be read as a keyword."
+      else if (lib.name.contains('-'))
+        "A mount is a letter followed by letters, digits, or underscores, and a hyphen would be read as a minus."
+      else
+        "A mount is a letter followed by letters, digits, or underscores."
+  }
+
   case class FlixDependencyDuplicateMount(path: Path, mount: Mountpoint, lib1: PackageId, lib2: PackageId) extends ManifestError {
     override def message(f: Formatter): String =
       s"""The Flix dependencies ${f.bold(lib1.toString)} and ${f.bold(lib2.toString)} share the mount ${f.red(mount.toString)}.
@@ -254,7 +272,7 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""The toml file has an entry in the package table named ${f.red(entryName)}, which is not allowed.
          |Allowed entry names in the package table:
-         |  name, description, version, repository, modules, flix, authors, license
+         |  version, repository, flix
          |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
