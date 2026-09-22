@@ -60,7 +60,21 @@ class TestMain extends AnyFunSuite {
   test("install") {
     val args = Array("install", "flix/museum-clerk")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.command == Main.Command.Install("flix/museum-clerk"))
+    assert(opts.command == Main.Command.Install(List("flix/museum-clerk")))
+  }
+
+  test("install.many") {
+    val args = Array("install", "flix/museum-clerk", "flix/museum-giftshop@2.0.2")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Install(List("flix/museum-clerk", "flix/museum-giftshop@2.0.2")))
+    assert(opts.files.isEmpty)
+  }
+
+  test("install.many.yes") {
+    val args = Array("install", "flix/museum-clerk", "flix/museum-giftshop", "--yes")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Install(List("flix/museum-clerk", "flix/museum-giftshop")))
+    assert(opts.assumeYes)
   }
 
   test("install.no-package") {
@@ -71,13 +85,35 @@ class TestMain extends AnyFunSuite {
   test("remove") {
     val args = Array("remove", "flix/museum-clerk")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.command == Main.Command.Remove("flix/museum-clerk"))
+    assert(opts.command == Main.Command.Remove(List("flix/museum-clerk")))
+  }
+
+  test("remove.many") {
+    val args = Array("remove", "flix/museum-clerk", "flix/museum-giftshop")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Remove(List("flix/museum-clerk", "flix/museum-giftshop")))
+  }
+
+  test("remove.no-package") {
+    val args = Array("remove")
+    assert(Main.parseCmdOpts(args).isEmpty)
   }
 
   test("upgrade") {
     val args = Array("upgrade", "flix/museum-clerk@1.1.0")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.command == Main.Command.Upgrade("flix/museum-clerk@1.1.0"))
+    assert(opts.command == Main.Command.Upgrade(List("flix/museum-clerk@1.1.0")))
+  }
+
+  test("upgrade.many") {
+    val args = Array("upgrade", "flix/museum-clerk@1.1.0", "flix/museum-giftshop")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Upgrade(List("flix/museum-clerk@1.1.0", "flix/museum-giftshop")))
+  }
+
+  test("upgrade.no-package") {
+    val args = Array("upgrade")
+    assert(Main.parseCmdOpts(args).isEmpty)
   }
 
   test("outdated") {
