@@ -507,6 +507,59 @@ class TestBootstrap extends AnyFunSuite {
     assert(Files.exists(classDir.resolve("Main.class")))
   }
 
+  test("build-classes deletes the class files of an earlier build") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    b.buildClasses(PkgTestUtils.mkFlix(b)).unsafeGet
+
+    // Class files whose names the next build does not produce.
+    val classDir = p.resolve("./build/class/").normalize()
+    val stale1 = classDir.resolve("Stale.class")
+    val stale2 = classDir.resolve("Old").resolve("Stale.class")
+    Files.createDirectories(stale2.getParent)
+    Files.copy(classDir.resolve("Main.class"), stale1)
+    Files.copy(classDir.resolve("Main.class"), stale2)
+
+    b.buildClasses(PkgTestUtils.mkFlix(b)).unsafeGet
+
+    assert(!Files.exists(stale1))
+    assert(!Files.exists(stale2.getParent))
+    assert(Files.exists(classDir.resolve("Main.class")))
+  }
+
+  test("build-classes refuses to delete an unexpected file") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    b.buildClasses(PkgTestUtils.mkFlix(b)).unsafeGet
+
+    val classDir = p.resolve("./build/class/").normalize()
+    val other = classDir.resolve("other.txt")
+    FileOps.writeString(other, "hello")
+
+    assert(b.buildClasses(PkgTestUtils.mkFlix(b)).toOption.isEmpty)
+
+    // Nothing is deleted.
+    assert(Files.exists(other))
+    assert(Files.exists(classDir.resolve("Main.class")))
+  }
+
+  test("build-classes keeps the class files of an earlier build when the project does not check") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    val b1 = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    b1.buildClasses(PkgTestUtils.mkFlix(b1)).unsafeGet
+
+    // A public module in a file whose path does not match its name.
+    Files.writeString(p.resolve("src").resolve("Bar.flix"), "pub mod Foo { pub def f(): Int32 = 1 }")
+
+    val b2 = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    assert(b2.buildClasses(PkgTestUtils.mkFlix(b2)).toOption.isEmpty)
+
+    assert(Files.exists(p.resolve("./build/class/Main.class").normalize()))
+  }
+
   test("build-jar") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
