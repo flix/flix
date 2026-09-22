@@ -215,7 +215,7 @@ object Bootstrap {
       versions <- Result.traverse(pkgs)(pkg => selectVersion(pkg, token))
       deps <- mkDependencies(manifest, pkgs.map(pkg => pkg.id).zip(versions), assumeYes)
       _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies ++ deps), token,
-        deps.map(dep => s"Added '${dep.id}' v${dep.version}${dep.mount.map(mount => s", mounted at '$mount'").getOrElse("")}."))
+        deps.map(dep => s"Added '${dep.id.shortName}' v${dep.version}${dep.mount.map(mount => s", mounted at '$mount'").getOrElse("")}."))
     } yield ()
   }
 
@@ -254,7 +254,7 @@ object Bootstrap {
       manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
       deps <- Result.traverse(pkgs)(pkg => findDeclared(manifest, pkg.id))
       _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies.filterNot(d => deps.contains(d))), token,
-        deps.map(dep => s"Removed '${dep.id}' v${dep.version}${dep.mount.map(mount => s", which was mounted at '$mount'").getOrElse("")}."))
+        deps.map(dep => s"Removed '${dep.id.shortName}' v${dep.version}${dep.mount.map(mount => s", which was mounted at '$mount'").getOrElse("")}."))
     } yield ()
   }
 
@@ -306,22 +306,44 @@ object Bootstrap {
       manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
       pkgs = if (named.isEmpty) manifest.flixDependencies.map(dep => PackageSpec(dep.id, None)) else named
       deps <- Result.traverse(pkgs)(pkg => findDeclared(manifest, pkg.id))
-      versions <- Result.traverse(pkgs.zip(deps)) { case (pkg, dep) => selectUpgradeVersion(pkg, dep, token) }
-      (unchanged, changed) = deps.zip(versions).partition { case (dep, version) => version == dep.version }
+      upgrades <- Result.traverse(pkgs.zip(deps)) { case (pkg, dep) => selectUpgradeVersion(pkg, dep, token).map(upgrade => (dep, upgrade)) }
+      (unchanged, changed) = upgrades.partition { case (dep, upgrade) => upgrade.version == dep.version }
       // A command that names its packages says of each whether it changed. A command that names
       // none says only what changed: a project has more packages that are current than there is
       // reason to read about.
-      _ = if (named.nonEmpty) unchanged.foreach { case (dep, version) => out.println(formatter.green(s"'${dep.id}' already declares v$version.")) }
+      _ = if (named.nonEmpty) unchanged.foreach { case (dep, upgrade) => out.println(formatter.green(s"${dep.id.shortName} is already at v${upgrade.version}.")) }
       _ <- if (changed.isEmpty) {
         if (named.isEmpty) out.println(formatter.green("All dependencies are up to date."))
         Ok(())
       } else {
-        val dependencies = changed.foldLeft(manifest.dependencies) { case (acc, (dep, version)) => replaceVersion(acc, dep, version) }
+        val dependencies = changed.foldLeft(manifest.dependencies) { case (acc, (dep, upgrade)) => replaceVersion(acc, dep, upgrade.version) }
         rewriteManifest(p, manifest.copy(dependencies = dependencies), token,
-          changed.map { case (dep, version) => s"Now declares '${dep.id}' v$version, was v${dep.version}." })
+          changed.map { case (dep, upgrade) => s"${if (upgrade.version > dep.version) "Upgraded" else "Downgraded"} '${dep.id.shortName}' v${dep.version} -> v${upgrade.version}." })
       }
+      _ = reportNewerMajors(upgrades)
     } yield ()
   }
+
+  /**
+    * Reports the packages of `upgrades` that have a newer major than the version they are given.
+    *
+    * A major is reported after the versions that changed, and not while they are being chosen: it
+    * is the one thing the command did not do, and a command that did nothing at all, because it
+    * failed, has nothing to add to.
+    */
+  private def reportNewerMajors(upgrades: List[(Dependency.FlixDependency, Upgrade)])(implicit formatter: Formatter, out: PrintStream): Unit = {
+    val newer = upgrades.collect { case (dep, Upgrade(_, Some(major))) => (dep.id, major) }
+    if (newer.nonEmpty) {
+      out.println()
+      out.println(if (newer.sizeIs == 1) "A newer major is available, ask for it by name:" else "Newer majors are available, ask for them by name:")
+      newer.foreach { case (id, major) => out.println(s"  ${formatter.cyan(s"flix upgrade ${id.shortName}@$major")}") }
+    }
+  }
+
+  /**
+    * The version to declare a package at, and the newer major that was not taken, if there is one.
+    */
+  private case class Upgrade(version: SemVer, newerMajor: Option[SemVer])
 
   /**
     * Returns `specs` as package specifications, or an error for the first that is not one.
@@ -432,24 +454,21 @@ object Bootstrap {
     * A major is a compatibility boundary, both for what a package can be built alongside -- see
     * [[FlixPackageManager.selectVersion]] -- and for what the code that uses it can expect, so
     * an upgrade that is not asked for a version stays within the major that is declared. A newer
-    * major is reported rather than taken: it is there to move to, but not without being asked
-    * for by name.
+    * major is returned rather than taken, to be reported once the command is done, see
+    * [[reportNewerMajors]]: it is there to move to, but not without being asked for by name.
     *
     * The version that is declared is never lowered, whatever was released: a package whose
     * declared version is newer than any release of its major stays where it is.
     */
-  private def selectUpgradeVersion(pkg: PackageSpec, dep: Dependency.FlixDependency, token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[SemVer, BootstrapError] = pkg.version match {
-    case Some(version) => Ok(version)
+  private def selectUpgradeVersion(pkg: PackageSpec, dep: Dependency.FlixDependency, token: Option[String]): Result[Upgrade, BootstrapError] = pkg.version match {
+    case Some(version) => Ok(Upgrade(version, None))
     case None =>
       releaseVersions(pkg.id, token).flatMap { versions =>
         if (versions.isEmpty) {
           Err(BootstrapError.NoReleases(pkg.id))
         } else {
-          versions.filter(v => v.major > dep.version.major).maxOption.foreach { newer =>
-            out.println(s"A newer major of ${formatter.blue(pkg.id.toString)} is available: ${formatter.yellow(s"v$newer")}.")
-            out.println(s"Ask for it by name to move to it: ${formatter.cyan(s"flix upgrade ${pkg.id.owner}/${pkg.id.name}@$newer")}.")
-          }
-          Ok((dep.version :: versions.filter(v => v.major == dep.version.major)).max)
+          val newerMajor = versions.filter(v => v.major > dep.version.major).maxOption
+          Ok(Upgrade((dep.version :: versions.filter(v => v.major == dep.version.major)).max, newerMajor))
         }
       }
   }

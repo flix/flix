@@ -360,7 +360,7 @@ object FlixPackageManager {
         }.distinct.sorted
         val rise = s"v$from -> v$to"
         val breaking = to.major == 0 && from.minor != to.minor
-        out.println(s"  Raised `${formatter.blue(s"${id.owner}/${id.name}")}` (${if (breaking) formatter.yellow(rise) else formatter.cyan(rise)}), required by ${requiredBy.mkString(", ")}.")
+        out.println(s"  Raised `${formatter.blue(id.shortName)}` (${if (breaking) formatter.yellow(rise) else formatter.cyan(rise)}), required by ${requiredBy.mkString(", ")}.")
       }
     }
   }
@@ -499,7 +499,7 @@ object FlixPackageManager {
     // declaration says what its dependent requires, and the manifest is what the resolution
     // settled on.
     val installed = resolution.manifestToFlixDeps.m.toList.collect { case (manifest, dep :: _) =>
-      val depName: String = s"${dep.id.owner}/${dep.id.name}"
+      val depName: String = dep.id.shortName
       install(dep.id, manifest.version, Bootstrap.EXT_FPKG, projectRoot, token, lockfile) match {
         case Ok(fpkg) =>
           val pkg = InstalledPackage(fpkg.path, dep.id, resolution.security(manifest), manifest.mounts)

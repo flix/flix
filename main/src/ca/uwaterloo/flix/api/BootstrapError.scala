@@ -84,7 +84,7 @@ object BootstrapError {
     */
   case class DuplicatePackageSpec(id: PackageId) extends BootstrapError {
     override def message(f: Formatter): String =
-      s"""${f.red(id.toString)} is named more than once.
+      s"""${f.red(id.shortName)} is named more than once.
          |A project declares a package once, at one version, so name each package once.
          |""".stripMargin
   }
@@ -94,7 +94,7 @@ object BootstrapError {
     */
   case class DependencyAlreadyDeclared(id: PackageId, version: SemVer) extends BootstrapError {
     override def message(f: Formatter): String =
-      s"""${f.red(id.toString)} is already a dependency of this project, at version ${f.bold(version.toString)}.
+      s"""${f.red(id.shortName)} is already a dependency of this project, at version ${f.bold(version.toString)}.
          |Use ${f.bold("flix upgrade")} to declare it at another version.
          |""".stripMargin
   }
@@ -114,7 +114,7 @@ object BootstrapError {
     */
   case class DependencyNotDeclared(id: PackageId) extends BootstrapError {
     override def message(f: Formatter): String =
-      s"""${f.red(id.toString)} is not a dependency of this project.
+      s"""${f.red(id.shortName)} is not a dependency of this project.
          |A package that is reached through another dependency is declared by that dependency, and not by this project.
          |""".stripMargin
   }
@@ -124,7 +124,7 @@ object BootstrapError {
     */
   case class PackageNotInstalled(id: PackageId) extends BootstrapError {
     override def message(f: Formatter): String =
-      s"""${f.red(id.toString)} is not installed.
+      s"""${f.red(id.shortName)} is not installed.
          |Only a package the project has installed can be locked or checked. Run the command on its own to cover every installed package.
          |""".stripMargin
   }
@@ -134,7 +134,7 @@ object BootstrapError {
     */
   case class NoReleases(id: PackageId) extends BootstrapError {
     override def message(f: Formatter): String =
-      s"""${f.red(id.toString)} has no releases.
+      s"""${f.red(id.shortName)} has no releases.
          |""".stripMargin
   }
 
@@ -144,7 +144,7 @@ object BootstrapError {
     */
   case class NoMount(id: PackageId) extends BootstrapError {
     override def message(f: Formatter): String =
-      s"""Unable to choose a mount for ${f.red(id.toString)}.
+      s"""Unable to choose a mount for ${f.red(id.shortName)}.
          |Run ${f.bold("flix install")} without ${f.bold("--yes")} to choose one, or add the dependency to ${f.cyan(Bootstrap.FLIX_TOML)} by hand.
          |""".stripMargin
   }

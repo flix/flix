@@ -75,6 +75,15 @@ case class PackageId(host: Repository, owner: String, name: String) extends Orde
   def canonicalRoot: String =
     PackageId.RootPrefix + host + PackageId.RootSeparator + owner + PackageId.RootSeparator + name
 
+  /**
+    * Returns how this package is named in a message and written in a command: its owner and its
+    * name, without the host.
+    *
+    * `github` is the only host there is, so naming it says nothing. A manifest still keys a
+    * dependency by the identifier in full, since a key is not written for a reader.
+    */
+  def shortName: String = s"$owner/$name"
+
   override def compare(that: PackageId): Int =
     Ordering[(String, String, String)].compare(
       (this.host.toString, this.owner, this.name),

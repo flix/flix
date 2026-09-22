@@ -539,11 +539,15 @@ class TestBootstrap extends AnyFunSuite {
     // A version below the one that is declared is taken as it is asked for: a declaration is a
     // version to pin as well as a version to raise.
     val p = mkProjectWithDependency()
-    upgrade(p, "flix/museum-clerk@2.1.2").unsafeGet
+    val bytes = new ByteArrayOutputStream()
+    Bootstrap.upgrade(p, List("flix/museum-clerk@2.1.2"), PkgTestUtils.gitHubToken)(Formatter.NoFormatter, new PrintStream(bytes)).unsafeGet
 
     val dep = flixDependency(p, ClerkIdentifier)
     assert(dep.version == SemVer(2, 1, 2))
     assert(dep.mount.contains(Mountpoint("Clerk")))
+
+    // The version falls, so the command does not claim to have upgraded anything.
+    assert(bytes.toString.contains(s"Downgraded '${ClerkIdentifier.shortName}' v$ClerkVersion -> v2.1.2."))
   }
 
   test("upgrade.04") {
@@ -616,8 +620,8 @@ class TestBootstrap extends AnyFunSuite {
 
     assert(flixDependency(p, ClerkIdentifier).version == ClerkVersion)
     assert(flixDependency(p, giftshop).version == SemVer(2, 0, 2))
-    assert(bytes.toString.contains(s"'$giftshop' already declares v2.0.2."))
-    assert(bytes.toString.contains(s"Now declares '$ClerkIdentifier' v$ClerkVersion, was v2.1.2."))
+    assert(bytes.toString.contains(s"${giftshop.shortName} is already at v2.0.2."))
+    assert(bytes.toString.contains(s"Upgraded '${ClerkIdentifier.shortName}' v2.1.2 -> v$ClerkVersion."))
   }
 
   test("upgrade.07") {
@@ -700,7 +704,11 @@ class TestBootstrap extends AnyFunSuite {
 
     assert(flixDependency(p, museum).version == SemVer(3, 0, 2))
     assert(flixDependency(p, ClerkIdentifier).version == ClerkVersion)
+    assert(bytes.toString.contains("A newer major is available, ask for it by name:"))
     assert(bytes.toString.contains("flix upgrade flix/museum@4.0.0"))
+
+    // The majors are reported after the versions that changed, and not before them.
+    assert(bytes.toString.indexOf("Upgraded") < bytes.toString.indexOf("A newer major"))
   }
 
   test("upgrade.10") {
@@ -727,7 +735,7 @@ class TestBootstrap extends AnyFunSuite {
     assert(bytes.toString.contains("All dependencies are up to date."))
 
     // A package that is current is not one to read about when no package was named.
-    assert(!bytes.toString.contains("already declares"))
+    assert(!bytes.toString.contains("is already at"))
   }
 
   test("upgrade.11") {
