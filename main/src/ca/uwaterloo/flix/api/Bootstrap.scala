@@ -579,12 +579,9 @@ object Bootstrap {
     val buildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue).map(_.normalize())
     for (file <- buildFiles) {
       if (file.startsWith(classDir)) {
-        if (!FileOps.checkExt(file, "class")) {
-          return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${p.relativize(file)}'"))
-        }
-
-        if (!FileOps.isClassFile(file)) {
-          return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${p.relativize(file)}'"))
+        isValidClassFile(file, p) match {
+          case Err(e) => return Err(e)
+          case Ok(()) => ()
         }
       } else if (file.startsWith(docDir)) {
         isValidDocumentFile(file, p) match {
@@ -625,6 +622,40 @@ object Bootstrap {
       _ <- deleteDirectory(buildDir, buildFiles, p)
       _ <- deleteDirectory(artifactDir, artifactFiles, p)
     } yield ()
+  }
+
+  /**
+    * Deletes all `.class` files under the class directory of the project at `p`, and removes any
+    * now-empty directories (including the class directory itself).
+    *
+    * Every file in the class directory is checked to be a valid class file before any file is
+    * deleted.
+    */
+  private def cleanClassDirectory(p: Path): Result[Unit, BootstrapError] = {
+    val classDir = getClassDirectory(p)
+
+    // Ensure `classDir` is not dangerous
+    checkForDangerousPath(classDir, p) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // Ensure all files in `classDir` are valid class files.
+    val classFiles = FileOps.getFilesIn(classDir, Int.MaxValue).map(_.normalize())
+    for (file <- classFiles) {
+      isValidClassFile(file, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+
+      checkForDangerousPath(file, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+    }
+
+    // Delete only once every file has been checked.
+    deleteDirectory(classDir, classFiles, p)
   }
 
   /**
@@ -718,6 +749,18 @@ object Bootstrap {
     if (p.normalize().startsWith(path.normalize())) {
       return Err(BootstrapError.FileError(s"Refusing to delete file in ancestor of project directory: '${path.normalize()}"))
     }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is not a class file that could be produced by `build-classes` in the project at `p`. */
+  private def isValidClassFile(path: Path, p: Path): Result[Unit, BootstrapError] = {
+    if (!FileOps.checkExt(path, "class")) {
+      return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${p.relativize(path)}'"))
+    }
+    if (!FileOps.isClassFile(path)) {
+      return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${p.relativize(path)}'"))
+    }
+
     Ok(())
   }
 
@@ -1423,10 +1466,14 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
   /**
     * Builds (compiles) the source files for the project in production mode and
     * writes the generated class files to the build directory.
+    *
+    * The class files of an earlier build are deleted first, but only once the project compiles.
+    * The names of generated classes differ from build to build, so they would otherwise accumulate.
     */
   def buildClasses(flix: Flix): Result[Unit, BootstrapError] = {
     for {
       result <- compileProject(flix, Build.Production)
+      _ <- Bootstrap.cleanClassDirectory(projectPath)
       _ <- writeClasses(result.getClasses)
     } yield {
       ()
