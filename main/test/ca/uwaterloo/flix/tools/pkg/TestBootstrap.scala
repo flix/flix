@@ -162,9 +162,9 @@ class TestBootstrap extends AnyFunSuite {
     assert(lines.exists(_.take(3) == List("flix/museum", "3.0.2", "3.0.2")))
 
     // museum-clerk is declared at 2.1.2 and built at 2.1.3, which is its newest release, so no
-    // update is available to it and it is not listed at all. That is the comparison: were it
-    // compared by the version it is declared at, 2.1.3 would be an update it is offered.
-    assert(!lines.exists(_.headOption.contains("flix/museum-clerk")))
+    // update is offered to it. It is listed all the same, since 2.1.3 is a version the project
+    // can declare instead of the 2.1.2 it declares.
+    assert(lines.exists(_ == List("flix/museum-clerk", "2.1.2", "2.1.3")))
   }
 
   test("install.01") {

@@ -2147,10 +2147,13 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     *
     * A dependency is compared by the version it is built at, which can be greater than the
     * version the project declares, since a declaration is only the least version the project can
-    * be built with. A dependency that is built at its newest release is up to date, whatever the
-    * project declares.
+    * be built with.
     *
-    * @return `true` if any outdated dependencies were found, `false` if everything is up to date.
+    * A dependency that is built at its newest release has no newer version to move to, but it is
+    * listed all the same when the project declares a version below the one it is built at. The
+    * version it is built at is one the project can declare instead, and [[upgrade]] declares it.
+    *
+    * @return `true` if any dependency is listed, `false` if everything is up to date.
     */
   def outdated(flix: Flix)(implicit out: PrintStream): Result[Boolean, BootstrapError] = {
     implicit val formatter: Formatter = flix.getFormatter
@@ -2166,7 +2169,9 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
         case Err(e) => return Result.Err(BootstrapError.FlixPackageError(e))
       }
 
-      if (updates.isEmpty)
+      // A dependency is listed when there is a newer version to move to, and when the version it
+      // is declared at is below the version it is built at, which is one it can declare instead.
+      if (updates.isEmpty && built == dep.version)
         None
       else
         Some(List(
