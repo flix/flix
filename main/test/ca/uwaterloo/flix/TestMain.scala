@@ -112,8 +112,10 @@ class TestMain extends AnyFunSuite {
   }
 
   test("upgrade.no-package") {
+    // A command that names no package upgrades every package the project declares.
     val args = Array("upgrade")
-    assert(Main.parseCmdOpts(args).isEmpty)
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Upgrade(Nil))
   }
 
   test("outdated") {

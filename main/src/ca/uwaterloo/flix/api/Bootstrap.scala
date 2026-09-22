@@ -269,6 +269,12 @@ object Bootstrap {
     * declared: a declaration is a version to pin as well as a version to raise. A package is
     * named at most once, see [[parsePackageSpecs]].
     *
+    * A command that names no package at all is one for every package the project declares, each
+    * moved to the newest release of the major it is declared at. It reports only the packages
+    * that change: a project has more packages that are current than there is reason to read
+    * about. A newer major is still reported rather than taken, so a package is never moved
+    * across a major without being named.
+    *
     * Only the version changes. The mount, the security context, and whether the dependency is
     * written as a version or as a table are the ones that were declared, which is what this
     * command has over removing the package and adding it again.
@@ -286,7 +292,7 @@ object Bootstrap {
     * alone, and a command in which no package changes rewrites nothing.
     */
   def upgrade(p: Path, specs: List[String], token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
-    val pkgs = parsePackageSpecs(specs, allowVersion = true) match {
+    val named = parsePackageSpecs(specs, allowVersion = true) match {
       case Ok(pkgs) => pkgs
       case Err(e) => return Err(e)
     }
@@ -298,11 +304,16 @@ object Bootstrap {
 
     for {
       manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
+      pkgs = if (named.isEmpty) manifest.flixDependencies.map(dep => PackageSpec(dep.id, None)) else named
       deps <- Result.traverse(pkgs)(pkg => findDeclared(manifest, pkg.id))
       versions <- Result.traverse(pkgs.zip(deps)) { case (pkg, dep) => selectUpgradeVersion(pkg, dep, token) }
       (unchanged, changed) = deps.zip(versions).partition { case (dep, version) => version == dep.version }
-      _ = unchanged.foreach { case (dep, version) => out.println(formatter.green(s"'${dep.id}' already declares v$version.")) }
+      // A command that names its packages says of each whether it changed. A command that names
+      // none says only what changed: a project has more packages that are current than there is
+      // reason to read about.
+      _ = if (named.nonEmpty) unchanged.foreach { case (dep, version) => out.println(formatter.green(s"'${dep.id}' already declares v$version.")) }
       _ <- if (changed.isEmpty) {
+        if (named.isEmpty) out.println(formatter.green("All dependencies are up to date."))
         Ok(())
       } else {
         val dependencies = changed.foldLeft(manifest.dependencies) { case (acc, (dep, version)) => replaceVersion(acc, dep, version) }
