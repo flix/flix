@@ -80,6 +80,16 @@ object BootstrapError {
   }
 
   /**
+    * An error raised to indicate that `id` is named more than once in a single command.
+    */
+  case class DuplicatePackageSpec(id: PackageId) extends BootstrapError {
+    override def message(f: Formatter): String =
+      s"""${f.red(id.toString)} is named more than once.
+         |A project declares a package once, at one version, so name each package once.
+         |""".stripMargin
+  }
+
+  /**
     * An error raised to indicate that `id` is already a dependency of the project.
     */
   case class DependencyAlreadyDeclared(id: PackageId, version: SemVer) extends BootstrapError {

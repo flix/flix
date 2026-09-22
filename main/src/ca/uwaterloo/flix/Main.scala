@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer, FormatterLsp as Ls
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Origin, SecurityContext}
-import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.JvmLoader
@@ -434,26 +434,26 @@ object Main {
             }
           }
 
-        case Command.Install(pkg) =>
+        case Command.Install(pkgs) =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'install' command does not support file arguments.")
             exit(1)
           }
-          exitOnResult(Bootstrap.install(cwd, pkg, options.githubToken, options.assumeYes))
+          exitOnResult(Bootstrap.install(cwd, pkgs, options.githubToken, options.assumeYes))
 
-        case Command.Remove(pkg) =>
+        case Command.Remove(pkgs) =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'remove' command does not support file arguments.")
             exit(1)
           }
-          exitOnResult(Bootstrap.remove(cwd, pkg, options.githubToken))
+          exitOnResult(Bootstrap.remove(cwd, pkgs, options.githubToken))
 
-        case Command.Upgrade(pkg) =>
+        case Command.Upgrade(pkgs) =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'upgrade' command does not support file arguments.")
             exit(1)
           }
-          exitOnResult(Bootstrap.upgrade(cwd, pkg, options.githubToken))
+          exitOnResult(Bootstrap.upgrade(cwd, pkgs, options.githubToken))
 
         case Command.Outdated =>
           if (cmdOpts.files.nonEmpty) {
@@ -605,11 +605,11 @@ object Main {
 
     case object Release extends Command
 
-    case class Install(pkg: String) extends Command
+    case class Install(pkgs: List[String]) extends Command
 
-    case class Remove(pkg: String) extends Command
+    case class Remove(pkgs: List[String]) extends Command
 
-    case class Upgrade(pkg: String) extends Command
+    case class Upgrade(pkgs: List[String]) extends Command
 
     case object Outdated extends Command
 
@@ -625,6 +625,19 @@ object Main {
 
     case object Zhegalkin extends Command
 
+  }
+
+  /**
+    * Returns `c` with `pkg` added to the packages of its command.
+    *
+    * Only [[Command.Install]], [[Command.Remove]], and [[Command.Upgrade]] take packages, and each
+    * is set with no packages when its command is parsed, before any of its packages are.
+    */
+  private def addPackage(c: CmdOpts, pkg: String): CmdOpts = c.command match {
+    case Command.Install(pkgs) => c.copy(command = Command.Install(pkgs :+ pkg))
+    case Command.Remove(pkgs) => c.copy(command = Command.Remove(pkgs :+ pkg))
+    case Command.Upgrade(pkgs) => c.copy(command = Command.Upgrade(pkgs :+ pkg))
+    case command => throw InternalCompilerException(s"Unexpected command: '$command'.", SourceLocation.Unknown)
   }
 
   /**
@@ -704,25 +717,31 @@ object Main {
       cmd("release").text("  releases a new version to GitHub.")
         .action((_, c) => c.copy(command = Command.Release))
 
-      cmd("install").text("  adds a dependency to the current project.")
+      cmd("install").text("  adds dependencies to the current project.")
+        .action((_, c) => c.copy(command = Command.Install(Nil)))
         .children(
-          arg[String]("package").action((pkg, c) => c.copy(command = Command.Install(pkg)))
+          arg[String]("<package>...").action((pkg, c) => addPackage(c, pkg))
             .required()
-            .text("the package to add, e.g. 'flix/museum-clerk' or 'flix/museum-clerk@1.1.0'.")
+            .unbounded()
+            .text("the packages to add, e.g. 'flix/museum-clerk' or 'flix/museum-clerk@1.1.0'.")
         )
 
-      cmd("remove").text("  removes a dependency from the current project.")
+      cmd("remove").text("  removes dependencies from the current project.")
+        .action((_, c) => c.copy(command = Command.Remove(Nil)))
         .children(
-          arg[String]("package").action((pkg, c) => c.copy(command = Command.Remove(pkg)))
+          arg[String]("<package>...").action((pkg, c) => addPackage(c, pkg))
             .required()
-            .text("the package to remove, e.g. 'flix/museum-clerk'.")
+            .unbounded()
+            .text("the packages to remove, e.g. 'flix/museum-clerk'.")
         )
 
-      cmd("upgrade").text("  declares a dependency of the current project at another version.")
+      cmd("upgrade").text("  declares dependencies of the current project at other versions.")
+        .action((_, c) => c.copy(command = Command.Upgrade(Nil)))
         .children(
-          arg[String]("package").action((pkg, c) => c.copy(command = Command.Upgrade(pkg)))
+          arg[String]("<package>...").action((pkg, c) => addPackage(c, pkg))
             .required()
-            .text("the package to upgrade, e.g. 'flix/museum-clerk' or 'flix/museum-clerk@1.1.0'.")
+            .unbounded()
+            .text("the packages to upgrade, e.g. 'flix/museum-clerk' or 'flix/museum-clerk@1.1.0'.")
         )
 
       cmd("outdated").text("  shows dependencies which have newer versions available.")

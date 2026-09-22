@@ -177,27 +177,31 @@ object Bootstrap {
   }
 
   /**
-    * Adds the package `spec` to the dependencies of the project at `p` and installs it.
+    * Adds the packages `specs` to the dependencies of the project at `p` and installs them.
     *
-    * `spec` is a package identifier with an optional version, e.g. `flix/museum-clerk` or
-    * `flix/museum-clerk@1.1.0`, see [[PackageSpec.mkPackageSpec]]. A package that is asked for at
-    * no particular version is added at its newest release. The version is a lower bound, so the
-    * package may still be built at a newer one if another dependency requires it.
+    * Each of `specs` is a package identifier with an optional version, e.g. `flix/museum-clerk`
+    * or `flix/museum-clerk@1.1.0`, see [[PackageSpec.mkPackageSpec]]. A package that is asked for
+    * at no particular version is added at its newest release. The version is a lower bound, so
+    * the package may still be built at a newer one if another dependency requires it. A package
+    * is named at most once, see [[parsePackageSpecs]].
     *
-    * The dependency is written to `flix.toml` and the project is then bootstrapped, so that
-    * `lib/` and `packages.lock` describe the project as it is now declared.
+    * The packages are added together or not at all. The dependencies are written to `flix.toml`
+    * at once and the project is then bootstrapped once, so that `lib/` and `packages.lock`
+    * describe the project as it is now declared. Every package is checked against the manifest
+    * before GitHub is asked for any version, and every version is chosen before the user is asked
+    * for any mount, so that a mount is not asked for only to be thrown away by a later package.
     *
     * The manifest is written as a whole rather than edited in place, so comments and the keys
     * that [[Manifest]] does not model -- `description`, `authors`, `license`, `modules`, and the
     * dead `name` -- do not survive. `flix.toml` is the package manager's file to write.
     *
     * A project that does not resolve cannot be built, so a resolution that fails with the
-    * dependency added puts the manifest that was there back, as does any failure before it.
+    * dependencies added puts the manifest that was there back, as does any failure before it.
     */
-  def install(p: Path, spec: String, token: Option[String], assumeYes: Boolean)(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
-    val pkg = PackageSpec.mkPackageSpec(spec) match {
-      case Some(s) => s
-      case None => return Err(BootstrapError.IllegalPackageSpec(spec))
+  def install(p: Path, specs: List[String], token: Option[String], assumeYes: Boolean)(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+    val pkgs = parsePackageSpecs(specs, allowVersion = true) match {
+      case Ok(pkgs) => pkgs
+      case Err(e) => return Err(e)
     }
 
     val tomlPath = getManifestFile(p)
@@ -207,38 +211,38 @@ object Bootstrap {
 
     for {
       manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
-      _ <- checkUndeclared(manifest, pkg.id)
-      version <- selectVersion(pkg, token)
-      mount <- selectMount(manifest, pkg.id, assumeYes)
-      dep = Dependency.FlixDependency(pkg.id, version, Some(mount), SecurityContext.Default, DependencyStyle.Table)
-      _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies :+ dep), token,
-        s"Added '${pkg.id}' v$version, mounted at '$mount'.")
+      _ <- Result.traverse(pkgs)(pkg => checkUndeclared(manifest, pkg.id))
+      versions <- Result.traverse(pkgs)(pkg => selectVersion(pkg, token))
+      deps <- mkDependencies(manifest, pkgs.map(pkg => pkg.id).zip(versions), assumeYes)
+      _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies ++ deps), token,
+        deps.map(dep => s"Added '${dep.id}' v${dep.version}${dep.mount.map(mount => s", mounted at '$mount'").getOrElse("")}."))
     } yield ()
   }
 
   /**
-    * Removes the package `spec` from the dependencies of the project at `p`.
+    * Removes the packages `specs` from the dependencies of the project at `p`.
     *
-    * `spec` is a package identifier, e.g. `flix/museum-clerk` or `github:flix/museum-clerk`. It
-    * carries no version: a package is declared at one version, so there is nothing to choose
-    * between.
+    * Each of `specs` is a package identifier, e.g. `flix/museum-clerk` or
+    * `github:flix/museum-clerk`. It carries no version: a package is declared at one version, so
+    * there is nothing to choose between. A package is named at most once, see
+    * [[parsePackageSpecs]].
     *
-    * The declaration is dropped from `flix.toml` and the project is then bootstrapped, so that
-    * `packages.lock` describes the project as it is now declared. Only what the project declares
-    * can be removed: a package that is reached through another dependency is that dependency's
-    * to declare, and stays.
+    * The packages are removed together or not at all. The declarations are dropped from
+    * `flix.toml` at once and the project is then bootstrapped once, so that `packages.lock`
+    * describes the project as it is now declared. Only what the project declares can be removed:
+    * a package that is reached through another dependency is that dependency's to declare, and
+    * stays.
     *
-    * What the removed package left in `lib/` stays as well. A package is loaded because the
+    * What a removed package left in `lib/` stays as well. A package is loaded because the
     * resolution installs it and not because it is on disk, so what is left is inert.
     *
     * The manifest is rewritten as a whole, see [[install]], and a failure puts back the bytes
     * that were there.
     */
-  def remove(p: Path, spec: String, token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
-    val pkg = PackageSpec.mkPackageSpec(spec) match {
-      case Some(s) if s.version.isDefined => return Err(BootstrapError.UnexpectedVersion(spec))
-      case Some(s) => s
-      case None => return Err(BootstrapError.IllegalPackageSpec(spec))
+  def remove(p: Path, specs: List[String], token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+    val pkgs = parsePackageSpecs(specs, allowVersion = false) match {
+      case Ok(pkgs) => pkgs
+      case Err(e) => return Err(e)
     }
 
     val tomlPath = getManifestFile(p)
@@ -248,21 +252,22 @@ object Bootstrap {
 
     for {
       manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
-      dep <- findDeclared(manifest, pkg.id)
-      _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies.filterNot(d => d == dep)), token,
-        s"Removed '${pkg.id}' v${dep.version}${dep.mount.map(mount => s", which was mounted at '$mount'").getOrElse("")}.")
+      deps <- Result.traverse(pkgs)(pkg => findDeclared(manifest, pkg.id))
+      _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies.filterNot(d => deps.contains(d))), token,
+        deps.map(dep => s"Removed '${dep.id}' v${dep.version}${dep.mount.map(mount => s", which was mounted at '$mount'").getOrElse("")}."))
     } yield ()
   }
 
   /**
-    * Changes the version of the package `spec` in the dependencies of the project at `p`.
+    * Changes the versions of the packages `specs` in the dependencies of the project at `p`.
     *
-    * `spec` is a package identifier with an optional version, e.g. `flix/museum-clerk` or
-    * `flix/museum-clerk@1.1.0`, see [[PackageSpec.mkPackageSpec]]. A package that is asked for
+    * Each of `specs` is a package identifier with an optional version, e.g. `flix/museum-clerk`
+    * or `flix/museum-clerk@1.1.0`, see [[PackageSpec.mkPackageSpec]]. A package that is asked for
     * at no particular version is moved to the newest release that shares a major with the
     * version it is declared at, see [[selectUpgradeVersion]]. A version that is asked for is
     * taken as it is asked for, which includes another major, and a version below the one that is
-    * declared: a declaration is a version to pin as well as a version to raise.
+    * declared: a declaration is a version to pin as well as a version to raise. A package is
+    * named at most once, see [[parsePackageSpecs]].
     *
     * Only the version changes. The mount, the security context, and whether the dependency is
     * written as a version or as a table are the ones that were declared, which is what this
@@ -271,14 +276,19 @@ object Bootstrap {
     * Only what the project declares can be changed: the version of a package that is reached
     * through another dependency is that dependency's to declare.
     *
+    * The packages are changed together or not at all, and the project is bootstrapped once with
+    * all of them changed. Packages whose majors have to move together can only be moved this
+    * way: a package whose new version requires a new major of another does not resolve with
+    * either one changed on its own.
+    *
     * The manifest is rewritten as a whole, see [[install]], and a failure puts back the bytes
     * that were there. A package that already declares the version it would be given is left
-    * alone entirely, so a command that changes nothing rewrites nothing.
+    * alone, and a command in which no package changes rewrites nothing.
     */
-  def upgrade(p: Path, spec: String, token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
-    val pkg = PackageSpec.mkPackageSpec(spec) match {
-      case Some(s) => s
-      case None => return Err(BootstrapError.IllegalPackageSpec(spec))
+  def upgrade(p: Path, specs: List[String], token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+    val pkgs = parsePackageSpecs(specs, allowVersion = true) match {
+      case Ok(pkgs) => pkgs
+      case Err(e) => return Err(e)
     }
 
     val tomlPath = getManifestFile(p)
@@ -288,16 +298,61 @@ object Bootstrap {
 
     for {
       manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
-      dep <- findDeclared(manifest, pkg.id)
-      version <- selectUpgradeVersion(pkg, dep, token)
-      _ <- if (version == dep.version) {
-        out.println(formatter.green(s"'${pkg.id}' already declares v$version."))
+      deps <- Result.traverse(pkgs)(pkg => findDeclared(manifest, pkg.id))
+      versions <- Result.traverse(pkgs.zip(deps)) { case (pkg, dep) => selectUpgradeVersion(pkg, dep, token) }
+      (unchanged, changed) = deps.zip(versions).partition { case (dep, version) => version == dep.version }
+      _ = unchanged.foreach { case (dep, version) => out.println(formatter.green(s"'${dep.id}' already declares v$version.")) }
+      _ <- if (changed.isEmpty) {
         Ok(())
       } else {
-        rewriteManifest(p, manifest.copy(dependencies = replaceVersion(manifest.dependencies, dep, version)), token,
-          s"Now declares '${pkg.id}' v$version, was v${dep.version}.")
+        val dependencies = changed.foldLeft(manifest.dependencies) { case (acc, (dep, version)) => replaceVersion(acc, dep, version) }
+        rewriteManifest(p, manifest.copy(dependencies = dependencies), token,
+          changed.map { case (dep, version) => s"Now declares '${dep.id}' v$version, was v${dep.version}." })
       }
     } yield ()
+  }
+
+  /**
+    * Returns `specs` as package specifications, or an error for the first that is not one.
+    *
+    * A version is refused when `allowVersion` is false, as it is for a package to remove.
+    *
+    * A package is named at most once, however it is written: `flix/museum-clerk` and
+    * `github:flix/museum-clerk@2.1.3` name the same package. A package that is named twice is
+    * either asked for twice or asked for at two versions, and a project declares a package once,
+    * at one version.
+    */
+  private def parsePackageSpecs(specs: List[String], allowVersion: Boolean): Result[List[PackageSpec], BootstrapError] =
+    Result.traverse(specs) { spec =>
+      PackageSpec.mkPackageSpec(spec) match {
+        case Some(s) if s.version.isDefined && !allowVersion => Err(BootstrapError.UnexpectedVersion(spec))
+        case Some(s) => Ok(s)
+        case None => Err(BootstrapError.IllegalPackageSpec(spec))
+      }
+    }.flatMap { pkgs =>
+      val ids = pkgs.map(pkg => pkg.id)
+      ids.find(id => ids.count(other => other == id) > 1) match {
+        case Some(id) => Err(BootstrapError.DuplicatePackageSpec(id))
+        case None => Ok(pkgs)
+      }
+    }
+
+  /**
+    * Returns a dependency on each of `pkgs`, at the version it is paired with and under the mount
+    * that [[selectMount]] chooses for it.
+    *
+    * The mounts are chosen in order, and each is taken before the next is chosen, so that two
+    * packages whose mounts would be the same are not both given it.
+    */
+  private def mkDependencies(manifest: Manifest, pkgs: List[(PackageId, SemVer)], assumeYes: Boolean)(implicit formatter: Formatter, out: PrintStream): Result[List[Dependency.FlixDependency], BootstrapError] = {
+    val deps = mutable.ListBuffer.empty[Dependency.FlixDependency]
+    for ((id, version) <- pkgs) {
+      selectMount(manifest.copy(dependencies = manifest.dependencies ++ deps), id, assumeYes) match {
+        case Ok(mount) => deps += Dependency.FlixDependency(id, version, Some(mount), SecurityContext.Default, DependencyStyle.Table)
+        case Err(e) => return Err(e)
+      }
+    }
+    Ok(deps.toList)
   }
 
   /**
@@ -478,14 +533,15 @@ object Bootstrap {
 
   /**
     * Writes `updated` to the `flix.toml` of the project at `p`, and then bootstraps the project
-    * so that its dependencies are the ones it now declares. Reports `success` once they are.
+    * so that its dependencies are the ones it now declares. Reports each of `successes` once they
+    * are.
     *
     * The manifest that was there is put back if the project does not resolve with the
     * dependencies changed, so that a command that fails leaves a project that still builds. What
     * is put back are the bytes that were read, and not the manifest that was parsed from them,
     * so a failure costs neither the comments nor the keys that a rewrite would.
     */
-  private def rewriteManifest(p: Path, updated: Manifest, token: Option[String], success: String)(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+  private def rewriteManifest(p: Path, updated: Manifest, token: Option[String], successes: List[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
     val tomlPath = getManifestFile(p)
 
     val original = try {
@@ -502,7 +558,7 @@ object Bootstrap {
 
     bootstrap(p, token) match {
       case Ok(_) =>
-        out.println(formatter.green(success))
+        successes.foreach(success => out.println(formatter.green(success)))
         Ok(())
       case Err(e) =>
         try {
