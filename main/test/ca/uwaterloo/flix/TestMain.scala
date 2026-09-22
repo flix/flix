@@ -120,6 +120,7 @@ class TestMain extends AnyFunSuite {
     val args = Array("repl")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.command == Main.Command.Repl)
+    assert(!opts.pauseOnExit)
   }
 
   test("check") {
@@ -172,6 +173,19 @@ class TestMain extends AnyFunSuite {
     val args = Array("--listen", "8080", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.listen.nonEmpty)
+  }
+
+  test("--pause-on-exit") {
+    val args = Array("--pause-on-exit")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.pauseOnExit)
+  }
+
+  test("repl --pause-on-exit") {
+    val args = Array("repl", "--pause-on-exit")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Repl)
+    assert(opts.pauseOnExit)
   }
 
   test("--threads") {

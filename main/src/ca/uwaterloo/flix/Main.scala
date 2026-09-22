@@ -30,10 +30,11 @@ import ca.uwaterloo.flix.util.*
 import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
 
-import java.io.{File, PrintStream}
+import java.io.{File, IOException, PrintStream}
 import java.net.BindException
 import java.nio.file.{Path, Paths}
 import scala.collection.mutable
+import scala.io.StdIn
 
 object Main {
 
@@ -41,6 +42,11 @@ object Main {
     * The header printed by `--help` and `--version`.
     */
   private val Header: String = s"The Flix Programming Language ${Version.CurrentVersion}"
+
+  /**
+    * Whether to wait for Enter before exiting with a non-zero exit code. Set once from `--pause-on-exit`.
+    */
+  private var pauseOnExit: Boolean = false
 
   def main(argv: Array[String]): Unit = {
 
@@ -54,10 +60,13 @@ object Main {
       null
     }
 
+    // check if the --pause-on-exit flag was passed.
+    pauseOnExit = cmdOpts.pauseOnExit
+
     // check if the --version flag was passed.
     if (cmdOpts.version) {
       printVersion(cmdOpts.json)
-      System.exit(0)
+      exit(0)
     }
 
     // get GitHub token
@@ -123,37 +132,37 @@ object Main {
           if (cmdOpts.listen.nonEmpty) {
             featureNotSupportedInNativeImage()
             SocketServer.listen(cmdOpts.listen.get)
-            System.exit(0)
+            exit(0)
           }
 
           // check if the --Xbenchmark-code-size flag was passed.
           if (cmdOpts.xbenchmarkCodeSize) {
             BenchmarkCompilerOld.benchmarkCodeSize(options)
-            System.exit(0)
+            exit(0)
           }
 
           // check if the --Xbenchmark-incremental flag was passed.
           if (cmdOpts.xbenchmarkIncremental) {
             BenchmarkCompilerOld.benchmarkIncremental(options)
-            System.exit(0)
+            exit(0)
           }
 
           // check if the --Xbenchmark-phases flag was passed.
           if (cmdOpts.xbenchmarkPhases) {
             BenchmarkCompilerOld.benchmarkPhases(options)
-            System.exit(0)
+            exit(0)
           }
 
           // check if the --Xbenchmark-frontend flag was passed.
           if (cmdOpts.xbenchmarkFrontend) {
             BenchmarkCompilerOld.benchmarkThroughput(options, frontend = true)
-            System.exit(0)
+            exit(0)
           }
 
           // check if the --Xbenchmark-throughput flag was passed.
           if (cmdOpts.xbenchmarkThroughput) {
             BenchmarkCompilerOld.benchmarkThroughput(options, frontend = false)
-            System.exit(0)
+            exit(0)
           }
 
           // check if we should start a REPL
@@ -163,10 +172,10 @@ object Main {
               case Result.Ok(bootstrap) =>
                 val shell = new Shell(bootstrap, options)
                 shell.loop()
-                System.exit(0)
+                exit(0)
               case Result.Err(error) =>
                 println(error.message(formatter))
-                System.exit(1)
+                exit(1)
             }
           }
 
@@ -182,10 +191,10 @@ object Main {
               case "flix" => flixFiles += file.toPath
               case "fpkg" | "jar" =>
                 Console.println(s"Cannot load '${file.getName}'. Flix packages and Java archives must be declared in '${Bootstrap.FLIX_TOML}'.")
-                System.exit(1)
+                exit(1)
               case _ =>
                 Console.println(s"Unrecognized file extension: '$ext'.")
-                System.exit(1)
+                exit(1)
             }
           }
 
@@ -207,16 +216,16 @@ object Main {
                   // Invoke main with the supplied arguments.
                   m(cmdOpts.args.toArray)
               }
-              System.exit(0)
+              exit(0)
             case (optRoot, errors) =>
               println(CompilationMessage.formatAll(errors)(formatter, optRoot))
-              System.exit(1)
+              exit(1)
           }
 
         case Command.Init =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'init' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           exitOnResult(Bootstrap.init(cwd))
 
@@ -231,14 +240,14 @@ object Main {
           } else {
             val flix = mkFlixWithFiles(cmdOpts.files, options)
             val (optRoot, errors) = flix.check()
-            if (errors.isEmpty) System.exit(0)
+            if (errors.isEmpty) exit(0)
             else exitWithErrors(flix, errors, optRoot)
           }
 
         case Command.Build =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'build' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
@@ -250,7 +259,7 @@ object Main {
         case Command.BuildClasses =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'build-classes' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
@@ -262,7 +271,7 @@ object Main {
         case Command.BuildJar =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'build-jar' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
@@ -274,7 +283,7 @@ object Main {
         case Command.BuildFatJar =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'build-fatjar' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
@@ -286,7 +295,7 @@ object Main {
         case Command.BuildPkg =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'build-pkg' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
@@ -298,7 +307,7 @@ object Main {
         case Command.Clean =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'clean' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           exitOnResult(Bootstrap.clean(cwd))
 
@@ -315,7 +324,7 @@ object Main {
             val (optRoot, errors) = flix.check()
             if (errors.isEmpty) {
               HtmlDocumentor.run(optRoot.get, docOrigin(cmdOpts), None, Bootstrap.getDocumentationDirectory(cwd))(flix)
-              System.exit(0)
+              exit(0)
             } else exitWithErrors(flix, errors, optRoot)
           }
 
@@ -333,7 +342,7 @@ object Main {
           if (errors.isEmpty) {
             val syntaxTree = flix.getParsedAst
             LspFormatter.formatFiles(syntaxTree, cmdOpts.files.map(_.toPath).toList)(flix)
-            System.exit(0)
+            exit(0)
           }
           else exitWithErrors(flix, errors, optRoot)
 
@@ -341,7 +350,7 @@ object Main {
         case Command.Run =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'run' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           featureNotSupportedInNativeImage()
           exitOnResult {
@@ -365,8 +374,8 @@ object Main {
             flix.compile() match {
               case Result.Ok(compilationResult) =>
                 Tester.run(Nil, JvmLoader.load(compilationResult))(flix) match {
-                  case Result.Ok(_) => System.exit(0)
-                  case Result.Err(_) => System.exit(1)
+                  case Result.Ok(_) => exit(0)
+                  case Result.Err(_) => exit(1)
                 }
               case Result.Err(errors) => exitWithErrors(flix, errors, None)
             }
@@ -375,33 +384,33 @@ object Main {
         case Command.Repl =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'repl' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           featureNotSupportedInNativeImage()
           Bootstrap.bootstrap(cwd, options.githubToken) match {
             case Result.Ok(bootstrap) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()
-              System.exit(0)
+              exit(0)
             case Result.Err(error) =>
               println(error.message(formatter))
-              System.exit(1)
+              exit(1)
           }
 
         case Command.PlainLsp =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'lsp' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           // lsp4j needs reflection metadata that the native image does not include yet.
           featureNotSupportedInNativeImage()
           LspServer.run(options)
-          System.exit(0)
+          exit(0)
 
         case Command.VSCodeLsp(port) =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'lsp-vscode' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           val o = options.copy(progress = false)
           try {
@@ -411,12 +420,12 @@ object Main {
             case ex: BindException =>
               throw new RuntimeException(ex)
           }
-          System.exit(0)
+          exit(0)
 
         case Command.Release =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'release' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
@@ -428,28 +437,28 @@ object Main {
         case Command.Install(pkg) =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'install' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           exitOnResult(Bootstrap.install(cwd, pkg, options.githubToken, options.assumeYes))
 
         case Command.Remove(pkg) =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'remove' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           exitOnResult(Bootstrap.remove(cwd, pkg, options.githubToken))
 
         case Command.Upgrade(pkg) =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'upgrade' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           exitOnResult(Bootstrap.upgrade(cwd, pkg, options.githubToken))
 
         case Command.Outdated =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'outdated' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
             bootstrap =>
@@ -458,19 +467,19 @@ object Main {
           } match {
             case Result.Ok(false) =>
               // Up to date
-              System.exit(0)
+              exit(0)
             case Result.Ok(true) =>
               // Contains outdated dependencies
-              System.exit(1)
+              exit(1)
             case Result.Err(error) =>
               println(error.message(formatter))
-              System.exit(1)
+              exit(1)
           }
 
         case Command.Stat =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'stat' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
@@ -482,7 +491,7 @@ object Main {
         case Command.EffCheck(pkg) =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'eff-check' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
@@ -494,7 +503,7 @@ object Main {
         case Command.EffLock(pkg) =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'eff-lock' command does not support file arguments.")
-            System.exit(1)
+            exit(1)
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
@@ -517,7 +526,7 @@ object Main {
     } catch {
       case ex: RuntimeException =>
         ex.printStackTrace()
-        System.exit(1)
+        exit(1)
     }
   }
 
@@ -533,6 +542,7 @@ object Main {
     githubToken: Option[String] = None,
     json: Boolean = false,
     listen: Option[Int] = None,
+    pauseOnExit: Boolean = false,
     threads: Option[Int] = None,
     top: Boolean = false,
     version: Boolean = false,
@@ -777,6 +787,9 @@ object Main {
       opt[Unit]("no-install").action((_, c) => c.copy(installDeps = false)).
         text("disables automatic installation of dependencies.")
 
+      opt[Unit]("pause-on-exit").action((_, c) => c.copy(pauseOnExit = true)).
+        text("waits for Enter before exiting with a non-zero exit code.")
+
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
 
@@ -884,7 +897,7 @@ object Main {
         flix.addFile(file.toPath, sctx)
       } else {
         Console.println(s"Unrecognized file: '${file.getName}'. Only .flix files are supported.")
-        System.exit(1)
+        exit(1)
       }
     }
     flix
@@ -895,7 +908,7 @@ object Main {
     */
   private def exitWithErrors(flix: Flix, errors: List[CompilationMessage], root: Option[TypedAst.Root]): Unit = {
     println(CompilationMessage.formatAll(errors)(flix.getFormatter, root))
-    System.exit(1)
+    exit(1)
   }
 
   /**
@@ -909,7 +922,7 @@ object Main {
           |You must run the flix.jar in the JVM for this action.
           |""".stripMargin
       println(msg)
-      System.exit(1)
+      exit(1)
     }
   }
 
@@ -918,11 +931,31 @@ object Main {
     */
   private def exitOnResult[T](result: Result[T, BootstrapError])(implicit formatter: Formatter): Unit = {
     result match {
-      case Result.Ok(_) => System.exit(0)
+      case Result.Ok(_) => exit(0)
       case Result.Err(error) =>
         println(error.message(formatter))
-        System.exit(1)
+        exit(1)
     }
+  }
+
+  /**
+    * Exits with the given exit code.
+    *
+    * If `--pause-on-exit` was passed and the exit code is non-zero, first waits for Enter.
+    * Returns immediately if stdin is closed.
+    */
+  private def exit(code: Int): Unit = {
+    if (pauseOnExit && code != 0) {
+      System.out.flush()
+      System.err.println("Press Enter to exit.")
+      try {
+        // Returns null immediately if stdin is closed.
+        StdIn.readLine()
+      } catch {
+        case _: IOException => // nop, exit anyway.
+      }
+    }
+    System.exit(code)
   }
 
 }
