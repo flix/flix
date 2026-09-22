@@ -17,7 +17,9 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, SecurityContext}
+import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
+import org.tomlj.Toml
 
 case class Manifest(version: SemVer,
                     repository: Option[GitHub.Project],
@@ -51,108 +53,113 @@ object Manifest {
   /** How a package that declares no repository is named in a message. */
   val Unnamed: String = "<unnamed>"
 
-  /** The keys that TOML reads as they are written. */
+  /** The keys that TOML reads as they are written, i.e., without quotes. */
   private val BareKey = "[A-Za-z0-9_-]+".r
 
   /**
-    * Formats `manifest` as a string / a valid `.toml` file.
-    * Parsing the output yields the original manifest, i.e., `manifest`.
+    * Returns `manifest` as the text of a `flix.toml` file.
+    *
+    * The text depends only on `manifest`, and neither on the platform nor on the text that
+    * `manifest` was parsed from:
+    *
+    *   - The tables come in a fixed order, and a table that declares nothing is left out.
+    *   - The dependencies of a table are sorted by key.
+    *   - The `=` of the entries of a table are aligned.
+    *   - A Flix dependency is written in the [[DependencyStyle]] it was declared in.
+    *   - Every line ends in `\n`.
+    *
+    * Parsing the text gives back `manifest`, up to the order of its dependencies.
     */
   def format(manifest: Manifest): String = {
-    val packageSection = mkPackageSection(manifest)
-    val flixDepSection = mkFlixDependencySection(manifest)
-    val mvnDepSection = mkMavenDependencySection(manifest)
-    val jarDepSection = mkJarDependencySection(manifest)
-    // A section that declares nothing is left out rather than written empty.
-    List(packageSection, flixDepSection, mvnDepSection, jarDepSection)
-      .filter(section => section.entries.exists { case _: TomlEntry.Present => true; case TomlEntry.Absent => false })
-      .map(formatTomlSection)
-      .mkString(System.lineSeparator())
-  }
-
-  private def mkPackageSection(manifest: Manifest): TomlSection = {
-    val repository = manifest.repository.map(proj => TomlEntry.Present(TomlKey("repository"), TomlExp.TomlValue(s"github:$proj")))
-      .getOrElse(TomlEntry.Absent)
-    val version = TomlEntry.Present(TomlKey("version"), TomlExp.TomlValue(manifest.version))
-    val flixVersion = TomlEntry.Present(TomlKey("flix"), TomlExp.TomlValue(manifest.flix))
-
-    TomlSection("package",
-      List(
-        version,
-        repository,
-        flixVersion,
-      )
+    val tables = List(
+      packageTable(manifest),
+      dependencyTable("dependencies", manifest.flixDependencies.map(flixDependencyEntry)),
+      dependencyTable("mvn-dependencies", manifest.mavenDependencies.map(mavenDependencyEntry)),
+      dependencyTable("jar-dependencies", manifest.jarDependencies.map(jarDependencyEntry))
     )
-  }
 
-  private def mkFlixDependencySection(manifest: Manifest): TomlSection = {
-    TomlSection("dependencies", manifest.flixDependencies.map(mkFlixDependency))
-  }
-
-  private def mkMavenDependencySection(manifest: Manifest) = {
-    TomlSection("mvn-dependencies", manifest.mavenDependencies.map(mkMavenDependency))
-  }
-
-  private def mkJarDependencySection(manifest: Manifest) = {
-    TomlSection("jar-dependencies", manifest.jarDependencies.map(mkJarDependency))
-  }
-
-  private def mkFlixDependency(dep: Dependency.FlixDependency): TomlEntry = {
-    val key = TomlKey(dep.id.toString)
-    val version = TomlEntry.Present(TomlKey("version"), TomlExp.TomlValue(dep.version))
-    // The default mount and the default security context are not rendered.
-    val mount = dep.mount.map(m => TomlEntry.Present(TomlKey("mount"), TomlExp.TomlValue(m))).getOrElse(TomlEntry.Absent)
-    val security = dep.sctx match {
-      case SecurityContext.Default => TomlEntry.Absent
-      case sctx => TomlEntry.Present(TomlKey("security"), TomlExp.TomlValue(sctx))
+    val sb = new StringBuilder
+    // A table that declares nothing is left out rather than written empty.
+    for (table <- tables if table.entries.nonEmpty) {
+      // The tables are separated by a blank line.
+      if (sb.nonEmpty) sb.append('\n')
+      appendTable(sb, table)
     }
-    // A record with only the version is rendered as the bare version string.
-    val values = TomlExp.TomlRecord(List(version, mount, security).collect { case e: TomlEntry.Present => e })
-    TomlEntry.Present(key, values)
+    sb.toString
   }
 
-  private def mkMavenDependency(dep: Dependency.MavenDependency): TomlEntry = {
-    val key = TomlKey(dep.identifier)
-    val value = TomlExp.TomlValue(dep.versionTag)
-    TomlEntry.Present(key, value)
+  /** Returns the `[package]` table of `manifest`. */
+  private def packageTable(manifest: Manifest): Table = {
+    val version = Entry("version", Value.Str(manifest.version.toString))
+    val repository = manifest.repository.map(proj => Entry("repository", Value.Str(s"github:$proj")))
+    val flix = Entry("flix", Value.Str(manifest.flix.toString))
+    Table("package", version :: repository.toList ::: List(flix))
   }
 
-  private def mkJarDependency(dep: Dependency.JarDependency): TomlEntry = {
-    val key = TomlKey(dep.identifier)
-    val value = TomlExp.TomlValue(s"url:${dep.url}")
-    TomlEntry.Present(key, value)
+  /**
+    * Returns the table `name` of the dependencies `entries`, sorted by key.
+    *
+    * Where a dependency is written depends only on what it is, and not on when it was added.
+    */
+  private def dependencyTable(name: String, entries: List[Entry]): Table =
+    Table(name, entries.sortBy(_.key))
+
+  /**
+    * Returns the entry of `dep` in the `[dependencies]` table.
+    *
+    * A dependency is written in the style it was declared in, but as its version only while that
+    * is all it declares. A table spells out the mount only when there is one, and the security
+    * context only when it is not the default.
+    */
+  private def flixDependencyEntry(dep: FlixDependency): Entry = dep match {
+    case FlixDependency(id, version, None, SecurityContext.Default, DependencyStyle.VersionOnly) =>
+      Entry(id.toString, Value.Str(version.toString))
+
+    case FlixDependency(id, version, mount, sctx, _) =>
+      val versionEntry = Entry("version", Value.Str(version.toString))
+      val mountEntry = mount.map(m => Entry("mount", Value.Str(m.toString)))
+      val securityEntry = Option.when(sctx != SecurityContext.Default)(Entry("security", Value.Str(sctx.toString)))
+      Entry(id.toString, Value.InlineTable(versionEntry :: mountEntry.toList ::: securityEntry.toList))
   }
 
-  private def formatTomlSection(section0: TomlSection): String = {
-    s"""[${section0.section}]
-       |${padKeys(section0.entries.collect { case e: TomlEntry.Present => e }).map(formatTomlEntry).mkString(System.lineSeparator())}
-       |""".stripMargin
+  /** Returns the entry of `dep` in the `[mvn-dependencies]` table. */
+  private def mavenDependencyEntry(dep: MavenDependency): Entry =
+    Entry(dep.identifier, Value.Str(dep.versionTag))
+
+  /** Returns the entry of `dep` in the `[jar-dependencies]` table. */
+  private def jarDependencyEntry(dep: JarDependency): Entry =
+    Entry(dep.identifier, Value.Str(s"url:${dep.url}"))
+
+  /** Appends `table` to `sb`: its header, and then one line per entry. */
+  private def appendTable(sb: StringBuilder, table: Table): Unit = {
+    sb.append('[').append(key(table.name)).append(']').append('\n')
+    // The keys are aligned by how they are written, since a quoted key is wider than it reads.
+    val width = table.entries.map(entry => key(entry.key).length).maxOption.getOrElse(0)
+    for (entry <- table.entries) {
+      appendEntry(sb, entry, width)
+      sb.append('\n')
+    }
   }
 
-  private def formatTomlEntry(entry: TomlEntry): String = entry match {
-    case TomlEntry.Absent => ""
-    case TomlEntry.Present(key, texp) => s"${formatTomlKey(key)} = ${formatTomlExp(texp)}"
+  /** Appends `entry` to `sb` as `key = value`, where the key is padded to `width` characters. */
+  private def appendEntry(sb: StringBuilder, entry: Entry, width: Int): Unit = {
+    val k = key(entry.key)
+    sb.append(k).append(" " * (width - k.length)).append(" = ")
+    appendValue(sb, entry.value)
   }
 
-  private def formatTomlExp(exp0: TomlExp): String = exp0 match {
-    case TomlExp.TomlValue(v) =>
-      val escaped = escape(v.toString)
-      s"\"$escaped\""
+  /** Appends `value` to `sb`. */
+  private def appendValue(sb: StringBuilder, value: Value): Unit = value match {
+    case Value.Str(s) =>
+      sb.append(quote(s))
 
-    case TomlExp.TomlArray(v) =>
-      v.map(formatTomlExp).mkString("[", ", ", "]")
-
-    case TomlExp.TomlRecord(List(TomlEntry.Present(_, texp))) =>
-      // Special case for record with only one key-value pair: just render the value.
-      formatTomlExp(texp)
-
-    case TomlExp.TomlRecord(v) =>
-      v.map(formatTomlEntry).mkString("{ ", ", ", " }")
-  }
-
-  private def formatTomlKey(key0: TomlKey): String = {
-    val padding = List.range(0, key0.padding).map(_ => " ").mkString
-    s"${renderTomlKey(key0.k)}$padding"
+    case Value.InlineTable(entries) =>
+      sb.append("{ ")
+      for ((entry, i) <- entries.zipWithIndex) {
+        if (i > 0) sb.append(", ")
+        appendEntry(sb, entry, width = 0)
+      }
+      sb.append(" }")
   }
 
   /**
@@ -161,51 +168,32 @@ object Manifest {
     * A key is quoted only when it must be: a package identifier holds `:` and `/`, and the name
     * of a jar holds `.`, none of which TOML reads as part of a bare key.
     */
-  private def renderTomlKey(k: String): String =
-    if (BareKey.matches(k)) k else s"\"${escape(k)}\""
+  private def key(k: String): String =
+    if (BareKey.matches(k)) k else quote(k)
 
-  /** Returns the list of entries, where the padding has been adjusted to account for the longest key. */
-  private def padKeys(entries: List[TomlEntry.Present]): List[TomlEntry.Present] = {
-    // A key is padded by how it is rendered, since a quoted key is two characters wider than it
-    // reads.
-    val optLongestKey = entries.map(e => renderTomlKey(e.key.k).length).maxOption
-    optLongestKey match {
-      case Some(longestKey) => entries.map {
-        case TomlEntry.Present(TomlKey(key, _), texp) => TomlEntry.Present(TomlKey(key, longestKey - renderTomlKey(key).length), texp)
-      }
-      case None => entries
-    }
-  }
+  /**
+    * Returns `s` as a TOML basic string: in quotes, and with `"`, `\`, and every character that
+    * is not printable ASCII escaped.
+    */
+  private def quote(s: String): String =
+    "\"" + Toml.tomlEscape(s) + "\""
 
-  /** Escapes `\` and `"` characters to `\\` and `\"`, respectively. */
-  private def escape(str: String): String = {
-    str.replace("\\", "\\\\")
-      .replace("\"", "\\\"")
-  }
+  /** A table: the header `[name]` followed by one line per entry. */
+  private case class Table(name: String, entries: List[Entry])
 
-  private case class TomlSection(section: String, entries: List[TomlEntry])
+  /** The pair `key = value`. The key is as it reads, and is quoted when it is written. */
+  private case class Entry(key: String, value: Value)
 
-  private sealed trait TomlEntry
+  /** The value of an [[Entry]]. */
+  private sealed trait Value
 
-  private object TomlEntry {
+  private object Value {
 
-    case object Absent extends TomlEntry
+    /** A string, e.g. `"1.4.0"`. The string is as it reads, and is escaped when it is written. */
+    case class Str(s: String) extends Value
 
-    case class Present(key: TomlKey, value: TomlExp) extends TomlEntry
-
-  }
-
-  private case class TomlKey(k: String, padding: Int = 0)
-
-  private sealed trait TomlExp
-
-  private object TomlExp {
-
-    case class TomlValue(v: Any) extends TomlExp
-
-    case class TomlArray(v: List[TomlExp]) extends TomlExp
-
-    case class TomlRecord(v: List[TomlEntry]) extends TomlExp
+    /** An inline table, e.g. `{ version = "1.4.0", mount = "Museum" }`. */
+    case class InlineTable(entries: List[Entry]) extends Value
 
   }
 

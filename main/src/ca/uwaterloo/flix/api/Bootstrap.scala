@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.{Stat, Tester}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageSpec, ReleaseError, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyStyle, FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageSpec, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Options, Result}
 
@@ -210,7 +210,7 @@ object Bootstrap {
       _ <- checkUndeclared(manifest, pkg.id)
       version <- selectVersion(pkg, token)
       mount <- selectMount(manifest, pkg.id, assumeYes)
-      dep = Dependency.FlixDependency(pkg.id, version, Some(mount), SecurityContext.Default)
+      dep = Dependency.FlixDependency(pkg.id, version, Some(mount), SecurityContext.Default, DependencyStyle.Table)
       _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies :+ dep), token,
         s"Added '${pkg.id}' v$version, mounted at '$mount'.")
     } yield ()
@@ -264,9 +264,9 @@ object Bootstrap {
     * taken as it is asked for, which includes another major, and a version below the one that is
     * declared: a declaration is a version to pin as well as a version to raise.
     *
-    * Only the version changes. The mount and the security context are the ones that were
-    * declared, which is what this command has over removing the package and adding it again, and
-    * the declaration stays where it is in the file.
+    * Only the version changes. The mount, the security context, and whether the dependency is
+    * written as a version or as a table are the ones that were declared, which is what this
+    * command has over removing the package and adding it again.
     *
     * Only what the project declares can be changed: the version of a package that is reached
     * through another dependency is that dependency's to declare.
@@ -516,6 +516,307 @@ object Bootstrap {
     }
   }
 
+  /**
+    * Deletes all compiled `.class` files, generated documentation, and pretty printed ASTs under
+    * the build directory of the project at `p`, and all jars and packages under its artifact
+    * directory, and removes any now-empty directories (including the `build` and `artifact`
+    * directories themselves). Performs safety checks to ensure:
+    *  - `p` is a Flix project (manifest present),
+    *  - no root or home directories are targeted,
+    *  - no ancestor of the project directory is targeted,
+    *  - every file in the build directory is a valid class file, a generated documentation file, or
+    *    a pretty printed AST,
+    *  - every file in the artifact directory is a jar, a package, or the manifest copied there by
+    *    `build-pkg`.
+    *
+    * Every file in both directories is checked before any file is deleted.
+    *
+    * The project is not bootstrapped: its manifest is not read, and its dependencies are neither
+    * resolved nor installed. A project is cleaned without the network, and can be cleaned when its
+    * manifest does not parse or its dependencies do not resolve.
+    *
+    * Returns `Ok(())` on success or `Err(...)` on validation or IO failures.
+    */
+  def clean(p: Path): Result[Unit, BootstrapError] = {
+    // Ensure project mode
+    val tomlPath = getManifestFile(p)
+    if (!Files.exists(tomlPath)) {
+      return Err(BootstrapError.NoProject(tomlPath))
+    }
+
+    // Ensure `cwd` is not dangerous
+    val cwd = Path.of(System.getProperty("user.dir"))
+    checkForSystemPath(cwd) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // Ensure `p` is not dangerous
+    checkForSystemPath(p) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    val buildDir = getBuildDirectory(p)
+    val classDir = getClassDirectory(p)
+    val docDir = getDocumentationDirectory(p)
+    val astDir = getAstDirectory(p)
+    val artifactDir = getArtifactDirectory(p)
+
+    // Ensure `buildDir` is not dangerous
+    checkForDangerousPath(buildDir, p) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // Ensure `artifactDir` is not dangerous
+    checkForDangerousPath(artifactDir, p) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // Ensure all files in `buildDir` are valid class files, documentation files, or AST files.
+    val buildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue).map(_.normalize())
+    for (file <- buildFiles) {
+      if (file.startsWith(classDir)) {
+        isValidClassFile(file, p) match {
+          case Err(e) => return Err(e)
+          case Ok(()) => ()
+        }
+      } else if (file.startsWith(docDir)) {
+        isValidDocumentFile(file, p) match {
+          case Err(e) => return Err(e)
+          case Ok(()) => ()
+        }
+      } else if (file.startsWith(astDir)) {
+        isValidAstFile(file, p) match {
+          case Err(e) => return Err(e)
+          case Ok(()) => ()
+        }
+      } else {
+        return Err(BootstrapError.FileError(s"Unexpected directory in build directory: '${p.relativize(file)}'"))
+      }
+
+      checkForDangerousPath(file, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+    }
+
+    // Ensure all files in `artifactDir` are jar files, package files, or the copied manifest.
+    val artifactFiles = FileOps.getFilesIn(artifactDir, Int.MaxValue).map(_.normalize())
+    for (file <- artifactFiles) {
+      isValidArtifactFile(file, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+
+      checkForDangerousPath(file, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+    }
+
+    // Delete only once every file in both directories has been checked.
+    for {
+      _ <- deleteDirectory(buildDir, buildFiles, p)
+      _ <- deleteDirectory(artifactDir, artifactFiles, p)
+    } yield ()
+  }
+
+  /**
+    * Deletes all `.class` files under the class directory of the project at `p`, and removes any
+    * now-empty directories (including the class directory itself).
+    *
+    * Every file in the class directory is checked to be a valid class file before any file is
+    * deleted.
+    */
+  private def cleanClassDirectory(p: Path): Result[Unit, BootstrapError] = {
+    val classDir = getClassDirectory(p)
+
+    // Ensure `classDir` is not dangerous
+    checkForDangerousPath(classDir, p) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // Ensure all files in `classDir` are valid class files.
+    val classFiles = FileOps.getFilesIn(classDir, Int.MaxValue).map(_.normalize())
+    for (file <- classFiles) {
+      isValidClassFile(file, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+
+      checkForDangerousPath(file, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+    }
+
+    // Delete only once every file has been checked.
+    deleteDirectory(classDir, classFiles, p)
+  }
+
+  /**
+    * Deletes `files`, which are the files in `dir`, and then every directory in `dir`, innermost
+    * first, including `dir` itself.
+    */
+  private def deleteDirectory(dir: Path, files: List[Path], p: Path): Result[Unit, BootstrapError] = {
+    // Delete files
+    for (file <- files) {
+      FileOps.delete(file) match {
+        case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete file '$file': $e"))
+        case Ok(_) => ()
+      }
+    }
+
+    // Delete empty directories
+    // Visit in reverse order to delete the innermost directories first
+    val directories = FileOps.getDirectoriesIn(dir, Int.MaxValue).map(_.normalize())
+    for (d <- directories.reverse) {
+      checkForDangerousPath(d, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+
+      FileOps.delete(d) match {
+        case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete directory '$d': $e"))
+        case Ok(_) => ()
+      }
+    }
+
+    Ok(())
+  }
+
+  /**
+    * Returns `Err` if `path` is one of the following:
+    *   - A root directory of the system
+    *   - The user's home directory (`"user.home"` system property, using [[System.getProperty]])
+    *   - Any ancestor of the project directory `p`
+    *
+    * Returns `Ok(())` otherwise.
+    */
+  private def checkForDangerousPath(path: Path, p: Path): Result[Unit, BootstrapError] = {
+    checkForSystemPath(path) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+    checkForAncestor(path, p) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is either a root directory or the user's home directory.
+    *
+    * @see [[checkForRootDir]]
+    * @see [[checkForHomeDir]]
+    */
+  private def checkForSystemPath(path: Path): Result[Unit, BootstrapError] = {
+    checkForRootDir(path) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+    checkForHomeDir(path) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is a root directory. */
+  private def checkForRootDir(path: Path): Result[Unit, BootstrapError] = {
+    val roots = FileSystems.getDefault.getRootDirectories.asScala.toList.map(_.normalize())
+    if (roots.contains(path.normalize())) {
+      return Err(BootstrapError.FileError("Refusing to delete file in root directory."))
+    }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is the user's home directory. */
+  private def checkForHomeDir(path: Path): Result[Unit, BootstrapError] = {
+    val home = Path.of(System.getProperty("user.home"))
+    if (home.normalize() == path.normalize()) {
+      return Err(BootstrapError.FileError("Refusing to delete file in home directory."))
+    }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is an ancestor of the project directory `p`. */
+  private def checkForAncestor(path: Path, p: Path): Result[Unit, BootstrapError] = {
+    if (p.normalize().startsWith(path.normalize())) {
+      return Err(BootstrapError.FileError(s"Refusing to delete file in ancestor of project directory: '${path.normalize()}"))
+    }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is not a class file that could be produced by `build-classes` in the project at `p`. */
+  private def isValidClassFile(path: Path, p: Path): Result[Unit, BootstrapError] = {
+    if (!FileOps.checkExt(path, "class")) {
+      return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${p.relativize(path)}'"))
+    }
+    if (!FileOps.isClassFile(path)) {
+      return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${p.relativize(path)}'"))
+    }
+
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is not a file that could be produced by [[HtmlDocumentor]] in the project at `p`. */
+  private def isValidDocumentFile(path: Path, p: Path): Result[Unit, BootstrapError] = {
+    val knownFiles = List("favicon.png", "index.js", "styles.css")
+    if (knownFiles.contains(path.getFileName.toString)) {
+      return Ok(())
+    }
+    if (FileOps.checkExt(path, "html")) {
+      return Ok(())
+    }
+    val iconsDir = getDocumentationDirectory(p).resolve("./icons/").normalize()
+    if (path.startsWith(iconsDir) && FileOps.checkExt(path, "svg")) {
+      return Ok(())
+    }
+
+    Err(BootstrapError.FileError(s"Unexpected file '${p.relativize(path)}'. Refusing to run 'clean'."))
+  }
+
+  /** Returns `Err` if `path` is not a file that could be produced by `AstPrinter` in the project at `p`. */
+  private def isValidAstFile(path: Path, p: Path): Result[Unit, BootstrapError] = {
+    val inAstDir = path.getParent == getAstDirectory(p)
+    if (inAstDir && path.getFileName.toString == "0phases.txt") {
+      return Ok(())
+    }
+    if (inAstDir && FileOps.checkExt(path, Flix.IrFileExtension)) {
+      return Ok(())
+    }
+
+    Err(BootstrapError.FileError(s"Unexpected file '${p.relativize(path)}'. Refusing to run 'clean'."))
+  }
+
+  /**
+    * Returns `Err` if `path` is not a file that could be produced by `build-jar`, `build-fatjar`, or
+    * `build-pkg` in the project at `p`.
+    *
+    * Any jar and any package in the artifact directory is accepted, not only the ones the project
+    * builds now: the jar is named after the project directory, which may have been renamed, and
+    * older versions of Flix named the package after it too.
+    */
+  private def isValidArtifactFile(path: Path, p: Path): Result[Unit, BootstrapError] = {
+    val inArtifactDir = path.getParent == getArtifactDirectory(p)
+    if (inArtifactDir && path.getFileName.toString == FLIX_TOML) {
+      return Ok(())
+    }
+    if (inArtifactDir && isJarFile(path)) {
+      return Ok(())
+    }
+    if (inArtifactDir && isPkgFile(path)) {
+      return Ok(())
+    }
+
+    Err(BootstrapError.FileError(s"Unexpected file '${p.relativize(path)}'. Refusing to run 'clean'."))
+  }
+
   /** The class file extension. Does not contain leading '.' */
   private val EXT_CLASS: String = "class"
 
@@ -619,6 +920,11 @@ object Bootstrap {
     * Returns the directory of the generated documentation files relative to the given path `p`.
     */
   def getDocumentationDirectory(p: Path): Path = getBuildDirectory(p).resolve("./doc/").normalize()
+
+  /**
+    * Returns the directory of the pretty printed ASTs (see `--Xprint-phases`) relative to the given path `p`.
+    */
+  private def getAstDirectory(p: Path): Path = p.resolve(CompilerConstants.AstDirectory).normalize()
 
   /**
     * Returns the path to the artifact directory relative to the given path `p`.
@@ -1160,10 +1466,14 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
   /**
     * Builds (compiles) the source files for the project in production mode and
     * writes the generated class files to the build directory.
+    *
+    * The class files of an earlier build are deleted first, but only once the project compiles.
+    * The names of generated classes differ from build to build, so they would otherwise accumulate.
     */
   def buildClasses(flix: Flix): Result[Unit, BootstrapError] = {
     for {
       result <- compileProject(flix, Build.Production)
+      _ <- Bootstrap.cleanClassDirectory(projectPath)
       _ <- writeClasses(result.getClasses)
     } yield {
       ()
@@ -1323,20 +1633,23 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
 
   /**
     * Builds a fatjar package for the project.
+    *
+    * The jars packed into it are the ones the dependencies of the project resolve to, and not every
+    * jar in `lib/`: a jar left there by a dependency that was since removed or upgraded is not part
+    * of the project, and must not shadow the classes of the jars that are.
     */
   def buildFatJar(flix: Flix): Result[Unit, BootstrapError] = {
     val jarFile = Bootstrap.getJarFile(projectPath)
-    val libDir = Bootstrap.getLibraryDirectory(projectPath)
+    val jars = files.jars
     for {
       _ <- configureJarOutput(flix)
       result <- compile(flix)
       _ <- validateJarFile(jarFile)
-      _ <- validateDirectory(libDir)
-      _ <- validateJarFilesIn(libDir)
+      _ <- Result.traverse(jars)(validateJarFile)
       contents = (zip: ZipOutputStream) => {
         addClassesToZip(result.getClasses, zip)
         addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath), zip)
-        addJarsFromDirToZip(libDir, zip)
+        addJarsToZip(jars, zip)
       }
       _ <- createJar(jarFile, contents)
     } yield {
@@ -1345,33 +1658,7 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
   }
 
   /**
-    * Returns `OK(())` if `dir` exists and is a readable directory.
-    * If `dir` does not exist, it returns `Ok(())` too.
-    */
-  private def validateDirectory(dir: Path): Result[Unit, BootstrapError] = {
-    if (Files.exists(dir)) {
-      if (!Files.isDirectory(dir)) {
-        return Err(BootstrapError.FileError(s"The path '${dir.toString}' is not a directory."))
-      }
-      if (!Files.isReadable(dir)) {
-        return Err(BootstrapError.FileError(s"The path '${dir.toString}' is not readable."))
-      }
-    }
-    Ok(())
-  }
-
-  /**
-    * Returns `Ok(())` if all files ending with `.jar` in `dir` are valid jar files.
-    *
-    * @see [[validateJarFile]]
-    */
-  private def validateJarFilesIn(dir: Path): Result[Unit, BootstrapError] = {
-    Result.traverse(FileOps.getFilesWithExtIn(dir, EXT_JAR, Int.MaxValue))(validateJarFile).map(_ => ())
-  }
-
-  /**
-    * Adds all jars in `dir` to `zip`.
-    * Ignores non-jar files and does nothing if `dir` does not exist.
+    * Adds the contents of `jars` to `zip`.
     *
     * Most of each dependency jar is copied verbatim — class files, ordinary resources
     * (native libraries, capability files, `.properties` files, ...), and library-specific
@@ -1389,18 +1676,12 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     *         does not declare `Multi-Release: true`) and risk shadowing the base classes.
     *       - `module-info.class` cannot be merged: only one may live at the jar root.
     *
-    * Duplicate entry paths across jars are de-duplicated (first jar wins) so that the build
-    * does not abort with a `ZipException: duplicate entry`.
+    * Duplicate entry paths across jars are de-duplicated (the first of `jars` wins) so that the
+    * build does not abort with a `ZipException: duplicate entry`.
     */
-  private def addJarsFromDirToZip(dir: Path, zip: ZipOutputStream): Unit = {
-    // First, we get all jar files inside the lib folder.
-    // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
-    if (!Files.exists(dir)) {
-      return
-    }
+  private def addJarsToZip(jars: List[Path], zip: ZipOutputStream): Unit = {
     val servicesPrefix = "META-INF/services/"
     val metaInfPrefix = "META-INF/"
-    val jarDependencies = FileOps.getFilesWithExtIn(dir, EXT_JAR, Int.MaxValue)
 
     // Tracks entry names already written to `zip` so that an entry present in more than one
     // dependency jar is written only once (first jar wins) instead of throwing.
@@ -1424,7 +1705,7 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     }
 
     // Add jar dependencies.
-    jarDependencies.foreach(dep => {
+    jars.foreach(dep => {
       // Extract the runtime contents of the dependency into the fat jar.
       Using(new ZipInputStream(Files.newInputStream(dep))) {
         zipIn =>
@@ -1543,8 +1824,24 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     * `origin`: the project's own code, or the bundled library.
     */
   def doc(flix: Flix, origin: Origin): Result[Unit, BootstrapError] = {
-    typeCheck(flix).map(HtmlDocumentor.run(_, origin, Bootstrap.getDocumentationDirectory(projectPath))(flix))
+    typeCheck(flix).map(HtmlDocumentor.run(_, origin, sourceRepository, Bootstrap.getDocumentationDirectory(projectPath))(flix))
   }
+
+  /**
+    * Returns the repository that the project is published as, at the tag of its version, if the
+    * manifest declares one.
+    *
+    * The tag is the one that [[release]] creates, and like a release, the links assume that the
+    * project is the root of its repository.
+    */
+  private def sourceRepository: Option[HtmlDocumentor.SourceRepository] =
+    for {
+      manifest <- optManifest
+      project <- manifest.repository
+    } yield HtmlDocumentor.SourceRepository(
+      s"https://github.com/${project.owner}/${project.repo}/blob/v${manifest.version}/",
+      projectPath.toAbsolutePath.normalize()
+    )
 
 
   /**
@@ -1724,179 +2021,6 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
       case Ok(false) => Ok(EffectLockfile(Map.empty))
       case Ok(true) => EffectLockfileParser.parse(path).mapErr(BootstrapError.EffectLockParseError.apply)
     }
-  }
-
-  // -- Clean Section --
-
-  /**
-    * Deletes all compiled `.class` files under the project's build directory and removes any now-empty
-    * directories (including the `build` directory itself). Performs safety checks to ensure:
-    *  - the current directory is a Flix project (manifest present),
-    *  - no root or home directories are targeted,
-    *  - no ancestor of the project directory is targeted,
-    *  - every file in the build directory has a `.class` extension and is a valid class file.
-    *
-    * Returns `Ok(())` on success or `Err(BootstrapError.FileError(...))` on validation or IO failures.
-    */
-  def clean(): Result[Unit, BootstrapError] = {
-    // Ensure project mode
-    if (optManifest.isEmpty) {
-      return Err(BootstrapError.FileError(s"No manifest found ('$FLIX_TOML'). Refusing to run 'clean' in a non-project directory."))
-    }
-
-    // Ensure `cwd` is not dangerous
-    val cwd = Path.of(System.getProperty("user.dir"))
-    checkForSystemPath(cwd) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
-    }
-
-    // Ensure `projectPath` is not dangerous
-    checkForSystemPath(projectPath) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
-    }
-
-    val buildDir = Bootstrap.getBuildDirectory(projectPath)
-    val classDir = Bootstrap.getClassDirectory(projectPath)
-    val docDir = Bootstrap.getDocumentationDirectory(projectPath)
-
-    // Ensure `buildDir` is not dangerous
-    checkForDangerousPath(buildDir) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
-    }
-
-    // Ensure all files in `buildDir` are valid class files.
-    val files = FileOps.getFilesIn(buildDir, Int.MaxValue).map(_.normalize())
-    for (file <- files) {
-      if (file.startsWith(classDir)) {
-        if (!FileOps.checkExt(file, "class")) {
-          return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${projectPath.relativize(file)}'"))
-        }
-
-        if (!FileOps.isClassFile(file)) {
-          return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${projectPath.relativize(file)}'"))
-        }
-      } else if (file.startsWith(docDir)) {
-        isValidDocumentFile(file) match {
-          case Err(e) => return Err(e)
-          case Ok(()) => ()
-        }
-      } else {
-        return Err(BootstrapError.FileError(s"Unexpected directory in build directory: '${projectPath.relativize(file)}'"))
-      }
-
-      checkForDangerousPath(file) match {
-        case Err(e) => return Err(e)
-        case Ok(()) => ()
-      }
-    }
-
-    // Delete files
-    for (file <- files) {
-      FileOps.delete(file) match {
-        case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete file '$file': $e"))
-        case Ok(_) => ()
-      }
-    }
-
-    // Delete empty directories
-    // Visit in reverse order to delete the innermost directories first
-    val directories = FileOps.getDirectoriesIn(buildDir, Int.MaxValue).map(_.normalize())
-    for (dir <- directories.reverse) {
-      checkForDangerousPath(dir) match {
-        case Err(e) => return Err(e)
-        case Ok(()) => ()
-      }
-
-      FileOps.delete(dir) match {
-        case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete directory '$dir': $e"))
-        case Ok(_) => ()
-      }
-    }
-
-    Ok(())
-  }
-
-  /**
-    * Returns `Err` if `path` is one of the following:
-    *   - A root directory of the system
-    *   - The user's home directory (`"user.home"` system property, using [[System.getProperty]])
-    *   - Any ancestor of [[projectPath]]
-    *
-    * Returns `Ok(())` otherwise.
-    */
-  private def checkForDangerousPath(path: Path): Result[Unit, BootstrapError] = {
-    checkForSystemPath(path) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
-    }
-    checkForAncestor(path) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
-    }
-    Ok(())
-  }
-
-  /** Returns `Err` if `path` is either a root directory or the user's home directory.
-    *
-    * @see [[checkForRootDir]]
-    * @see [[checkForHomeDir]]
-    */
-  private def checkForSystemPath(path: Path): Result[Unit, BootstrapError] = {
-    checkForRootDir(path) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
-    }
-    checkForHomeDir(path) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
-    }
-    Ok(())
-  }
-
-  /** Returns `Err` if `path` is a root directory. */
-  private def checkForRootDir(path: Path): Result[Unit, BootstrapError] = {
-    val roots = FileSystems.getDefault.getRootDirectories.asScala.toList.map(_.normalize())
-    if (roots.contains(path.normalize())) {
-      return Err(BootstrapError.FileError("Refusing to delete file in root directory."))
-    }
-    Ok(())
-  }
-
-  /** Returns `Err` if `path` is the user's home directory. */
-  private def checkForHomeDir(path: Path): Result[Unit, BootstrapError] = {
-    val home = Path.of(System.getProperty("user.home"))
-    if (home.normalize() == path.normalize()) {
-      return Err(BootstrapError.FileError("Refusing to delete file in home directory."))
-    }
-    Ok(())
-  }
-
-  /** Returns `Err` if `path` is an ancestor of `projectPath`. */
-  private def checkForAncestor(path: Path): Result[Unit, BootstrapError] = {
-    if (projectPath.normalize().startsWith(path.normalize())) {
-      return Err(BootstrapError.FileError(s"Refusing to delete file in ancestor of project directory: '${path.normalize()}"))
-    }
-    Ok(())
-  }
-
-  /** Returns `Err` if `path` is not a file that could be produced by [[HtmlDocumentor]]. */
-  private def isValidDocumentFile(path: Path): Result[Unit, BootstrapError] = {
-    val knownFiles = List("favicon.png", "index.js", "styles.css")
-    if (knownFiles.contains(path.getFileName.toString)) {
-      return Ok(())
-    }
-    if (FileOps.checkExt(path, "html")) {
-      return Ok(())
-    }
-    val iconsDir = Bootstrap.getDocumentationDirectory(projectPath).resolve("./icons/").normalize()
-    if (path.startsWith(iconsDir) && FileOps.checkExt(path, "svg")) {
-      return Ok(())
-    }
-
-    Err(BootstrapError.FileError(s"Unexpected file '${projectPath.relativize(path)}'. Refusing to run 'clean'."))
   }
 
   // -- Release and Outdated Section --

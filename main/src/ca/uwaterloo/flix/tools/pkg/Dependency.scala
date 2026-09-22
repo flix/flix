@@ -32,8 +32,10 @@ object Dependency {
     * @param mount the name of the top-level module the package is visible under, if the dependency
     *              declares one. A dependency without a mount is reachable unqualified instead, as
     *              it was before mounts existed. Transitional: a mount becomes required.
+    * @param style how the dependency is written in `flix.toml`, which is how it is written back,
+    *              see [[Manifest.format]].
     */
-  case class FlixDependency(id: PackageId, version: SemVer, mount: Option[Mountpoint], sctx: SecurityContext) extends Dependency {
+  case class FlixDependency(id: PackageId, version: SemVer, mount: Option[Mountpoint], sctx: SecurityContext, style: DependencyStyle) extends Dependency {
     override def toString: String = {
       val mountStr = mount.map(m => s"mount = \"$m\", ").getOrElse("")
       s"\"$id\" = { version = \"$version\", ${mountStr}security = \"$sctx\" }"
