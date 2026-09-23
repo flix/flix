@@ -539,11 +539,15 @@ class TestBootstrap extends AnyFunSuite {
     // A version below the one that is declared is taken as it is asked for: a declaration is a
     // version to pin as well as a version to raise.
     val p = mkProjectWithDependency()
-    upgrade(p, "flix/museum-clerk@2.1.2").unsafeGet
+    val bytes = new ByteArrayOutputStream()
+    Bootstrap.upgrade(p, List("flix/museum-clerk@2.1.2"), PkgTestUtils.gitHubToken)(Formatter.NoFormatter, new PrintStream(bytes)).unsafeGet
 
     val dep = flixDependency(p, ClerkIdentifier)
     assert(dep.version == SemVer(2, 1, 2))
     assert(dep.mount.contains(Mountpoint("Clerk")))
+
+    // The version falls, so the command does not claim to have upgraded anything.
+    assert(bytes.toString.contains(s"Downgraded '${ClerkIdentifier.shortName}' v$ClerkVersion -> v2.1.2."))
   }
 
   test("upgrade.04") {
@@ -616,8 +620,8 @@ class TestBootstrap extends AnyFunSuite {
 
     assert(flixDependency(p, ClerkIdentifier).version == ClerkVersion)
     assert(flixDependency(p, giftshop).version == SemVer(2, 0, 2))
-    assert(bytes.toString.contains(s"'$giftshop' already declares v2.0.2."))
-    assert(bytes.toString.contains(s"Now declares '$ClerkIdentifier' v$ClerkVersion, was v2.1.2."))
+    assert(bytes.toString.contains(s"${giftshop.shortName} is already at v2.0.2."))
+    assert(bytes.toString.contains(s"Upgraded '${ClerkIdentifier.shortName}' v2.1.2 -> v$ClerkVersion."))
   }
 
   test("upgrade.07") {
@@ -674,6 +678,78 @@ class TestBootstrap extends AnyFunSuite {
     }
 
     assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == before)
+  }
+
+  test("upgrade.09") {
+    // A command that names no package moves every package the project declares to the newest
+    // release of the major it is declared at, and reports the newer major of museum rather than
+    // taking it. museum has released 3.0.2 as well as 4.0.0, and museum-clerk 2.1.3.
+    val museum = PackageId(Repository.GitHub, "flix", "museum")
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |# museum reaches museum-restaurant, which has a Maven dependency.
+         |"$museum" = { version = "3.0.1", security = "unrestricted" }
+         |"$ClerkIdentifier" = { version = "2.1.0", mount = "Clerk" }
+         |""".stripMargin)
+
+    val bytes = new ByteArrayOutputStream()
+    Bootstrap.upgrade(p, Nil, PkgTestUtils.gitHubToken)(Formatter.NoFormatter, new PrintStream(bytes)).unsafeGet
+
+    assert(flixDependency(p, museum).version == SemVer(3, 0, 2))
+    assert(flixDependency(p, ClerkIdentifier).version == ClerkVersion)
+    assert(bytes.toString.contains("A newer major release is available, ask for it by name:"))
+    assert(bytes.toString.contains("flix upgrade flix/museum@4.0.0"))
+
+    // The majors are reported after the versions that changed, and not before them.
+    assert(bytes.toString.indexOf("Upgraded") < bytes.toString.indexOf("A newer major release"))
+  }
+
+  test("upgrade.10") {
+    // Every package is declared at the newest release of its major, so nothing changes and
+    // nothing is rewritten, comments included.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    val toml =
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |# The clerk of the museum.
+         |"$ClerkIdentifier" = { version = "$ClerkVersion", mount = "Clerk" }
+         |""".stripMargin
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML), toml)
+
+    val bytes = new ByteArrayOutputStream()
+    Bootstrap.upgrade(p, Nil, PkgTestUtils.gitHubToken)(Formatter.NoFormatter, new PrintStream(bytes)).unsafeGet
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == toml)
+    assert(bytes.toString.contains("All dependencies are up to date."))
+
+    // A package that is current is not one to read about when no package was named.
+    assert(!bytes.toString.contains("is already at"))
+  }
+
+  test("upgrade.11") {
+    // A project that declares no dependencies has none to move, and is not a project the command
+    // fails on. Nothing is asked of GitHub, since there is nothing to ask about.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    val toml = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+
+    val bytes = new ByteArrayOutputStream()
+    Bootstrap.upgrade(p, Nil, None)(Formatter.NoFormatter, new PrintStream(bytes)).unsafeGet
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == toml)
+    assert(bytes.toString.contains("All dependencies are up to date."))
   }
 
   test("build") {
