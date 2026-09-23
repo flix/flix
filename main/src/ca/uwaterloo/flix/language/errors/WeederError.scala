@@ -670,9 +670,10 @@ object WeederError {
   /**
     * An error raised to indicate an illegal predicate arity.
     *
-    * @param loc the location where the error occurs.
+    * @param hint a hint suggesting how to fix the arity.
+    * @param loc  the location where the error occurs.
     */
-  case class IllegalPredicateArity(loc: SourceLocation) extends WeederError {
+  case class IllegalPredicateArity(hint: String, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E0672
 
     def summary: String = "Malformed predicate arity."
@@ -682,6 +683,8 @@ object WeederError {
       s""">> Malformed predicate arity.
          |
          |${src(loc, "arity must be a positive integer")}
+         |
+         |${underline("Hint:")} $hint
          |""".stripMargin
     }
   }
