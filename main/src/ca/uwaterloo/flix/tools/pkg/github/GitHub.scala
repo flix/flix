@@ -57,6 +57,12 @@ object GitHub {
   private val ApiMediaType: String = "application/vnd.github+json"
 
   /**
+    * The media type an asset's REST address is asked to answer in: the file itself, where
+    * [[ApiMediaType]] would answer with the asset's description instead.
+    */
+  private val AssetMediaType: String = "application/octet-stream"
+
+  /**
     * The version of the REST API to speak.
     *
     * GitHub dates its API and asks every request to name the one it was written against. A
@@ -81,9 +87,11 @@ object GitHub {
   /**
     * An asset from a GitHub project release.
     *
-    * `url` is the link to download the asset.
+    * `url` is the public link to download the asset. `apiUrl` is the asset's REST address, the
+    * one that honours a token: the public link of an asset in a private repository answers 404
+    * whatever token it is sent. See [[downloadAsset]].
     */
-  case class Asset(name: String, url: URL)
+  case class Asset(name: String, url: URL, apiUrl: URL)
 
   /**
     * Lists the project's releases.
@@ -288,9 +296,38 @@ object GitHub {
     * Kept apart: a refusal (403/429, usually a rate limit), any other unexpected status, and never
     * reaching a server at all.
     */
-  def download(url: URL, token: Option[String]): Result[InputStream, PackageError] = {
-    val request = newRequest(url, token).GET().build()
+  def download(url: URL, token: Option[String]): Result[InputStream, PackageError] =
+    open(newRequest(url, token).GET().build(), url, token)
 
+  /**
+    * Opens a stream over `asset`, found through the release listing. The caller closes the stream.
+    *
+    * With a token, the asset is read from its REST address rather than its public link: the public
+    * link of an asset in a private repository answers 404 whatever token it is sent, so a token
+    * that could read the listing that found the asset could not read the asset itself. The REST
+    * address redirects to the same storage [[download]] is redirected to, and the token stops at
+    * GitHub in the same way. Without a token, the public link costs no request against the API
+    * rate limit, so it is kept.
+    *
+    * The request is built with [[newRequest]] rather than [[newApiRequest]]: a request header is
+    * added rather than replaced, and asking for [[ApiMediaType]] as well would answer with the
+    * asset's description instead of the file.
+    */
+  def downloadAsset(asset: Asset, token: Option[String]): Result[InputStream, PackageError] =
+    if (token.isEmpty) download(asset.url, token)
+    else {
+      val request = newRequest(asset.apiUrl, token)
+        .header("Accept", AssetMediaType)
+        .header("X-GitHub-Api-Version", ApiVersion)
+        .GET()
+        .build()
+      open(request, asset.apiUrl, token)
+    }
+
+  /**
+    * Sends `request` for `url`, and opens a stream over the response. See [[download]].
+    */
+  private def open(request: HttpRequest, url: URL, token: Option[String]): Result[InputStream, PackageError] = {
     val response = try {
       Client.sendStreamingRequest(request)
     } catch {
@@ -434,13 +471,14 @@ object GitHub {
   }
 
   /**
-    * Parses an asset JSON, if it names a file at an address.
+    * Parses an asset JSON, if it names a file at an address and at a REST address.
     */
   private def parseAsset(asset: JValue): Option[Asset] = {
     val name = asset \ "name"
     val url = asset \ "browser_download_url"
+    val apiUrl = asset \ "url"
     try {
-      Some(Asset(name.values.toString, new URI(url.values.toString).toURL))
+      Some(Asset(name.values.toString, new URI(url.values.toString).toURL, new URI(apiUrl.values.toString).toURL))
     } catch {
       case _: URISyntaxException => None
       case _: MalformedURLException => None

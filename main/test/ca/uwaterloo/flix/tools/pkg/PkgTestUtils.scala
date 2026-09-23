@@ -29,9 +29,28 @@ object PkgTestUtils {
   /**
     * GitHub token of the CI runner if available.
     */
-  val gitHubToken: Option[String] = {
-    val propValue = System.getenv("GITHUB_CI_RUNNER_TOKEN")
-    if (propValue == null || propValue.isBlank || propValue.isEmpty)
+  val gitHubToken: Option[String] = envToken("GITHUB_CI_RUNNER_TOKEN")
+
+  /**
+    * A token with read access to [[PrivateRepo]], if available.
+    *
+    * Distinct from [[gitHubToken]]: a CI runner's built-in token is scoped to the repository the
+    * workflow runs in and cannot read any other, private or not. The tests that need this one are
+    * skipped without it.
+    */
+  val privateRepoTestToken: Option[String] = envToken("GITHUB_PRIVATE_TEST_TOKEN")
+
+  /**
+    * A private repository with a published release, for testing that a token reaches its assets.
+    */
+  val PrivateRepo: String = "wstein/pr13165-package-renamed"
+
+  /**
+    * Returns the value of the environment variable `name`, if it is set to something.
+    */
+  private def envToken(name: String): Option[String] = {
+    val propValue = System.getenv(name)
+    if (propValue == null || propValue.isBlank)
       None
     else
       Some(propValue)

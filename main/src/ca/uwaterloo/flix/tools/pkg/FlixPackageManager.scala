@@ -602,10 +602,13 @@ object FlixPackageManager {
     * Only a name that is not there is worth another guess. A refusal or an unreachable server
     * says nothing about the name, and reading the listing would not get any further, so it is
     * reported as it is.
+    *
+    * A private repository's assets are not at their guessed addresses to anyone, token or not,
+    * so they are always found through the listing, and read the way a token can reach them.
     */
   private def openReleaseAsset(proj: GitHub.Project, version: SemVer, extension: String, token: Option[String]): Result[InputStream, PackageError] = {
     def fromListing(): Result[InputStream, PackageError] =
-      GitHub.findReleaseAsset(proj, version, extension, token).flatMap(asset => GitHub.download(asset.url, token))
+      GitHub.findReleaseAsset(proj, version, extension, token).flatMap(asset => GitHub.downloadAsset(asset, token))
 
     @tailrec
     def tryNames(names: List[String]): Result[InputStream, PackageError] = names match {
