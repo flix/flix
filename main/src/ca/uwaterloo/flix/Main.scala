@@ -741,7 +741,7 @@ object Main {
           arg[String]("<package>...").action((pkg, c) => addPackage(c, pkg))
             .optional()
             .unbounded()
-            .text("the packages to upgrade, e.g. 'flix/museum-clerk' or 'flix/museum-clerk@1.1.0'. Defaults to every declared package.")
+            .text("the packages to upgrade, e.g. 'flix/museum-clerk' or 'flix/museum-clerk@1.1.0'.")
         )
 
       cmd("outdated").text("  shows dependencies which have newer versions available.")

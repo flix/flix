@@ -704,11 +704,11 @@ class TestBootstrap extends AnyFunSuite {
 
     assert(flixDependency(p, museum).version == SemVer(3, 0, 2))
     assert(flixDependency(p, ClerkIdentifier).version == ClerkVersion)
-    assert(bytes.toString.contains("A newer major is available, ask for it by name:"))
+    assert(bytes.toString.contains("A newer major release is available, ask for it by name:"))
     assert(bytes.toString.contains("flix upgrade flix/museum@4.0.0"))
 
     // The majors are reported after the versions that changed, and not before them.
-    assert(bytes.toString.indexOf("Upgraded") < bytes.toString.indexOf("A newer major"))
+    assert(bytes.toString.indexOf("Upgraded") < bytes.toString.indexOf("A newer major release"))
   }
 
   test("upgrade.10") {

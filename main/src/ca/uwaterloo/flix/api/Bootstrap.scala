@@ -335,7 +335,7 @@ object Bootstrap {
     val newer = upgrades.collect { case (dep, Upgrade(_, Some(major))) => (dep.id, major) }
     if (newer.nonEmpty) {
       out.println()
-      out.println(if (newer.sizeIs == 1) "A newer major is available, ask for it by name:" else "Newer majors are available, ask for them by name:")
+      out.println(if (newer.sizeIs == 1) "A newer major release is available, ask for it by name:" else "Newer major releases are available, ask for them by name:")
       newer.foreach { case (id, major) => out.println(s"  ${formatter.cyan(s"flix upgrade ${id.shortName}@$major")}") }
     }
   }
