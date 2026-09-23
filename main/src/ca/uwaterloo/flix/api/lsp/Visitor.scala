@@ -112,7 +112,7 @@ object Visitor {
   }
 
   private def visitInstance(ins: Instance)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Instance(_, ann, _, trt, _, _, tconstrs, econstrs, assocs, defs, _, loc) = ins
+    val Instance(_, ann, _, trt, tparams, tpe, tconstrs, econstrs, assocs, defs, _, loc) = ins
     if (!a.accept(loc)) {
       return
     }
@@ -121,6 +121,8 @@ object Visitor {
 
     visitAnnotations(ann)
     visitTraitSymUse(trt)
+    tparams.foreach(visitTypeParam)
+    visitType(tpe)
     tconstrs.foreach(visitTraitConstraint)
     econstrs.foreach(visitEqualityConstraint)
     assocs.foreach(visitAssocTypeDef)
