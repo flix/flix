@@ -118,6 +118,35 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
+  test("Install a dependency from a private repository") {
+    // Neither the manifest nor the package of a private repository is at its guessed address, to
+    // anyone, so both are found through the listing, and read from where the token reaches them.
+    // The package is published as `pr13165-package.fpkg`, which no guess produces either.
+    assume(PkgTestUtils.privateRepoTestToken.isDefined, s"requires a token that can read ${PkgTestUtils.PrivateRepo}")
+    val token = PkgTestUtils.privateRepoTestToken
+    val toml = PkgTestUtils.mkTomlWithDeps(
+      s"""
+        |"github:${PkgTestUtils.PrivateRepo}" = { version = "0.1.1", mount = "privatePackage" }
+        |""".stripMargin
+    )
+    val manifest = ManifestParser.parse(toml, ManifestPath) match {
+      case Ok(m) => m
+      case Err(e) => fail(e.message(formatter))
+    }
+
+    val path = Files.createTempDirectory("")
+    val resolution = FlixPackageManager.resolve(manifest, path, token, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
+      case Ok(r) => r
+      case Err(e) => fail(e.message(formatter))
+    }
+
+    FlixPackageManager.installAll(resolution, path, token, PkgTestUtils.NoLock) match {
+      case Ok(installation) =>
+        assert(installation.packages.exists(_.path.endsWith(s"pr13165-package-renamed-0.1.1.${Bootstrap.EXT_FPKG}")))
+      case Err(e) => fail(e.message(formatter))
+    }
+  }
+
   test("Install missing dependencies from list of manifests") {
     assertResult(expected = true)(actual = {
       val toml1 = {

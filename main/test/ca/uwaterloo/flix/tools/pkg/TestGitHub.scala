@@ -98,6 +98,52 @@ class TestGitHub extends AnyFunSuite {
     }
   }
 
+  test("findReleaseAsset.01") {
+    // An asset found through the listing carries its REST address as well as its public link: the
+    // REST address is the one a token can read a private repository's asset from.
+    val project = GitHub.Project("flix", "museum-clerk")
+    val asset = GitHub.findReleaseAsset(project, SemVer(1, 1, 0), "toml", PkgTestUtils.gitHubToken).unsafeGet
+    assert(asset.apiUrl.getHost == "api.github.com")
+    assert(asset.apiUrl.getPath.startsWith("/repos/flix/museum-clerk/releases/assets/"))
+  }
+
+  test("downloadAsset.01") {
+    // An asset of a public repository is read without a token, from its public link.
+    val project = GitHub.Project("flix", "museum-clerk")
+    val asset = GitHub.findReleaseAsset(project, SemVer(1, 1, 0), "toml", PkgTestUtils.gitHubToken).unsafeGet
+    val stream = GitHub.downloadAsset(asset, None).unsafeGet
+    try {
+      assert(stream.readAllBytes().nonEmpty)
+    } finally {
+      stream.close()
+    }
+  }
+
+  test("downloadAsset.02") {
+    // An asset of a private repository is not at its public link to anyone, token or not; the
+    // token reaches it through the listing and its REST address.
+    assume(PkgTestUtils.privateRepoTestToken.isDefined, s"requires a token that can read ${PkgTestUtils.PrivateRepo}")
+    val token = PkgTestUtils.privateRepoTestToken
+    val project = GitHub.parseProject(PkgTestUtils.PrivateRepo).unsafeGet
+    val version = SemVer(0, 1, 1)
+
+    GitHub.downloadReleaseAsset(project, version, "flix.toml", token) match {
+      case Err(_: PackageError.ReleaseAssetNotFound) => ()
+      case other => fail(s"Expected the public link of a private asset to be not found, but got: $other")
+    }
+
+    val asset = GitHub.findReleaseAsset(project, version, "fpkg", token).unsafeGet
+    assert(asset.name == "pr13165-package.fpkg")
+    val stream = GitHub.downloadAsset(asset, token).unsafeGet
+    try {
+      val bytes = stream.readAllBytes()
+      // A package is a zip archive, not a page explaining why it could not be served.
+      assert(bytes.take(2).sameElements("PK".getBytes))
+    } finally {
+      stream.close()
+    }
+  }
+
   test("mayReceiveToken.01") {
     // The hosts a token is for: the API, the addresses releases are downloaded from, and the
     // one assets are uploaded to.
