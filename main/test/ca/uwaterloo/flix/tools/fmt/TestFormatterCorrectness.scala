@@ -41,8 +41,10 @@ class TestFormatterCorrectness extends TestFormatterCommon {
   private def checkCanFormat(samples: List[Sample]): Unit = {
     for (sample <- samples) {
       val tree = sample.reparse(sample.content).tree
-      val formatted = PrettyPrinter.format(tree)
-      assert(formatted.nonEmpty, s"Formatter produced empty output for ${sample.path}")
+      PrettyPrinter.format(tree) match {
+        case Some(formatted) => assert(formatted.nonEmpty, s"Formatter produced empty output for ${sample.path}")
+        case None => fail(s"Formatter produced no output for ${sample.path}")
+      }
     }
   }
 
@@ -55,9 +57,9 @@ class TestFormatterCorrectness extends TestFormatterCommon {
   private def checkIdempotency(samples: List[Sample]): Unit = {
     for (sample <- samples) {
       val tree1 = sample.reparse(sample.content).tree
-      val once = PrettyPrinter.format(tree1)
+      val once = formatOrFail(tree1)
       val tree2 = sample.reparse(once).tree
-      val twice = PrettyPrinter.format(tree2)
+      val twice = formatOrFail(tree2)
       assert(once == twice,
         s"Formatter is not idempotent for ${sample.path}:\n${firstDivergence(once, twice)}")
     }
@@ -73,7 +75,7 @@ class TestFormatterCorrectness extends TestFormatterCommon {
   private def checkNonDestructive(samples: List[Sample]): Unit = {
     for (sample <- samples) {
       val before = sample.reparse(sample.content)
-      val formatted = PrettyPrinter.format(before.tree)
+      val formatted = formatOrFail(before.tree)
       val after = sample.reparse(formatted)
       assert(sameShape(before.weeded, after.weeded),
         s"Formatter changed the AST shape for ${sample.path}")
