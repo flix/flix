@@ -47,7 +47,7 @@ instance Iterable[Array[a, r]] {
     type Elm = a
     type Aef = r
 
-    pub def iterator(rc: Region[r1], a: Array[a, r]): Iterator[a, r + r1, r1] \ (r + r1) =
+    pub def iterator(rc: Region[r1], a: Array[a, r]): Iterator[a, r, r1] \ (r + r1) =
         checked_ecast(Array.iterator(rc, a))
 }
 
@@ -1367,7 +1367,7 @@ pub mod Array {
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], a: Array[a, r2]): Iterator[a, r1 + r2, r1] \ r1 =
+    pub def iterator(rc: Region[r1], a: Array[a, r2]): Iterator[a, r2, r1] \ r1 =
         Iterator.range(rc, 0, length(a)) |> Iterator.map(i -> Array.get(i, a))
 
     ///

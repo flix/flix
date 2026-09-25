@@ -30,7 +30,7 @@ pub mod Range {
 
     instance Iterable[Range[t]] with Discrete[t] {
         type Elm = t
-        pub def iterator(rc: Region[r], rng: Range[t]): Iterator[t, r, r] \ r = Range.iterator(rc, rng)
+        pub def iterator(rc: Region[r], rng: Range[t]): Iterator[t, {}, r] \ r = Range.iterator(rc, rng)
     }
 
     ///
@@ -77,7 +77,7 @@ pub mod Range {
     ///
     /// Returns an iterator over the elements of `r`.
     ///
-    pub def iterator(rc: Region[r], rng: Range[t]): Iterator[t, r, r] \ r with Discrete[t] =
+    pub def iterator(rc: Region[r], rng: Range[t]): Iterator[t, {}, r] \ r with Discrete[t] =
         let Range(b, e) = rng;
         Iterator.unfold(rc, i -> if (i < e) Some((i, Discrete.succ(i))) else None, b)
 

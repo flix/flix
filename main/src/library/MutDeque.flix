@@ -39,7 +39,7 @@ pub mod MutDeque {
     instance Iterable[MutDeque[a, r]] {
         type Elm = a
         type Aef = r
-        pub def iterator(rc: Region[r1], md: MutDeque[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutDeque.iterator(rc, md)
+        pub def iterator(rc: Region[r1], md: MutDeque[a, r]): Iterator[a, r, r1] \ (r + r1) = MutDeque.iterator(rc, md)
     }
 
     instance ForEach[MutDeque[a, r]] {
@@ -411,7 +411,7 @@ pub mod MutDeque {
     ///
     /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r2, r1] \ { r1, r2 } =
         let i = Ref.fresh(rc, d->front);
         let next = () -> {
             if (Ref.get(i) < d->back) {
@@ -422,7 +422,7 @@ pub mod MutDeque {
                 None
             }
         };
-        Iterator.unfoldWithIter(rc, next)
+        Iterator.unfoldWithIter(rc, next) |> Iterator.absorbRegion
 
     ///
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.

@@ -277,7 +277,7 @@ pub mod BPlusTree {
     ///
     /// Not thread-safe: The iterator reads from the live leaf chain of `t`.
     ///
-    pub def iteratorWithKeys(rc1: Region[r1], t: BPlusTree[k, v, r2]): Iterator[k, r1 + r2, r1] \ r1 + r2 =
+    pub def iteratorWithKeys(rc1: Region[r1], t: BPlusTree[k, v, r2]): Iterator[k, r2, r1] \ r1 + r2 =
         Iterator.map(match (k, _) -> k, iterator(rc1, t))
 
     ///
@@ -285,7 +285,7 @@ pub mod BPlusTree {
     ///
     /// Not thread-safe: The iterator reads from the live leaf chain of `t`.
     ///
-    pub def iteratorValues(rc1: Region[r1], t: BPlusTree[k, v, r2]): Iterator[v, r1 + r2, r1] \ r1 + r2 =
+    pub def iteratorValues(rc1: Region[r1], t: BPlusTree[k, v, r2]): Iterator[v, r2, r1] \ r1 + r2 =
         Iterator.map(match (_, v) -> v, iterator(rc1, t))
 
     ///
@@ -293,7 +293,7 @@ pub mod BPlusTree {
     ///
     /// Not thread-safe: The iterator reads from the live leaf chain of `t`.
     ///
-    pub def iterator(rc1: Region[r1], t: BPlusTree[k, v, r]): Iterator[(k, v), r + r1, r1] \ r + r1 = {
+    pub def iterator(rc1: Region[r1], t: BPlusTree[k, v, r]): Iterator[(k, v), r, r1] \ r + r1 = {
         let nodeRef = Ref.fresh(rc1, Node.leftMostLeafUnconditional(t->root));
         let indexRef = Ref.fresh(rc1, 0);
         def next() = {
@@ -312,7 +312,7 @@ pub mod BPlusTree {
                     }
                 }
         };
-        Iterator.unfoldWithIter(rc1, next)
+        Iterator.unfoldWithIter(rc1, next) |> Iterator.absorbRegion
     }
 
     ///

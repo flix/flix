@@ -105,7 +105,7 @@ pub mod Set {
 
     instance Iterable[Set[a]] {
         type Elm = a
-        pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
+        pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, {}, r] \ r = Set.iterator(rc, s)
     }
 
     instance ForEach[Set[a]] {
@@ -571,7 +571,7 @@ pub mod Set {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r =
+    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, {}, r] \ r =
         let Set(t) = s;
         RedBlackTree.iterator(rc, t) |> Iterator.map(fst)
 
