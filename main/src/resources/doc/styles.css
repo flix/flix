@@ -188,11 +188,14 @@ h2 {
     margin-bottom: 1.5rem;
 }
 
-h3 {
+/* Subsection headings are h2 in the document outline but keep the h3 look. */
+h3,
+.subsection h2 {
     display: inline;
     font-family: "Inter", sans-serif;
     font-size: 0.9rem;
     font-weight: 200;
+    line-height: normal;
     color: var(--heading-color);
 }
 
@@ -501,7 +504,7 @@ main h2 {
     margin-top: 1rem;
     padding-left: 1.5rem;
 }
-.subsection h3 {
+.subsection h2 {
     margin-left: -1.5rem;
 }
 .subsection > summary {
@@ -628,6 +631,17 @@ main h2 {
 }
 .box .doc code {
     color: var(--doc-code-color);
+}
+
+/* Column alignment of markdown tables, see TableCellAlignment in HtmlDocumentor. */
+td.align-left, th.align-left {
+    text-align: left;
+}
+td.align-center, th.align-center {
+    text-align: center;
+}
+td.align-right, th.align-right {
+    text-align: right;
 }
 
 .mod-doc {
