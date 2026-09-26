@@ -611,13 +611,15 @@ main h2 {
 }
 
 .cases,
-.fields {
+.fields,
+.assocs {
     margin-left: 1rem;
     margin-top: 0.7rem;
     margin-bottom: 0.7rem;
 }
 .cases > code,
-.fields > code {
+.fields > code,
+.assocs > code {
     display: block;
 }
 .case-tag {

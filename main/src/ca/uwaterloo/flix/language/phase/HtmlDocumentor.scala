@@ -1334,9 +1334,13 @@ object HtmlDocumentor {
     sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>type</span> ")
-    sb.append(s"<span class='name'>${assoc.sym.name}</span>")
+    sb.append(s"<span class='name'>${esc(assoc.sym.name)}</span>")
     sb.append(": ")
     docKind(assoc.kind)
+    assoc.tpe.foreach { t =>
+      sb.append(" = ")
+      docTypeOrEffect(t)
+    }
     sb.append("</code>")
     docActions(None, assoc.loc)
     sb.append("</div>")
@@ -1363,7 +1367,32 @@ object HtmlDocumentor {
     sb.append("</code>")
     docActions(None, instance.loc)
     sb.append("</div>")
+    docAssocDefs(instance.assocs)
     docDoc(instance.doc)
+    sb.append("</div>")
+  }
+
+  /**
+    * Documents the given list of `AssocTypeDef`s of an instance, e.g. `type Elm = Char`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `assocs` is empty, nothing will be generated.
+    */
+  private def docAssocDefs(assocs: List[TypedAst.AssocTypeDef])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (assocs.isEmpty) {
+      return
+    }
+
+    sb.append("<div class='assocs'>")
+    for (a <- assocs.sortBy(_.loc)) {
+      sb.append("<code>")
+      sb.append("<span class='keyword'>type</span> ")
+      sb.append(s"<span class='name'>${esc(a.symUse.sym.name)}</span>")
+      sb.append(" = ")
+      docTypeOrEffect(a.tpe)
+      sb.append("</code>")
+    }
     sb.append("</div>")
   }
 
@@ -1663,6 +1692,27 @@ object HtmlDocumentor {
     sb.append("<span class='type'>")
     sb.append(esc(FormatType.formatType(tpe)))
     sb.append("</span>")
+  }
+
+  /**
+    * Document the given `Type`, `tpe`, as an effect if it is of kind `Eff` and as a type otherwise.
+    *
+    * An effect is written as it would be in source, e.g. `{}` rather than `Pure`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docTypeOrEffect(tpe: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (tpe.kind != Kind.Eff) {
+      docType(tpe)
+      return
+    }
+
+    val displayEff = DisplayType.fromWellKindedType(tpe)
+    val eff = displayEff match {
+      case DisplayType.Pure => "{}"
+      case _ => FormatType.formatDisplayType(displayEff)
+    }
+    sb.append(s"<span class='effect'>${esc(eff)}</span>")
   }
 
   /**
