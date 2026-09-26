@@ -231,7 +231,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given field `field0`
     */
   private def visitField(field0: StructField): Iterator[SemanticToken] = field0 match {
-    case StructField(sym, tpe, _) =>
+    case StructField(_, sym, tpe, _) =>
       val t = SemanticToken(SemanticTokenType.Property, Nil, sym.loc)
       Iterator(t) ++ visitType(tpe)
   }

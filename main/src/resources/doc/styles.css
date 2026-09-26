@@ -21,6 +21,7 @@
     --light-trait-def-color: #bfb280;
     --light-traits-color: #fc9d9a;
     --light-enum-color: #c8c8a9;
+    --light-struct-color: #9ccfcf;
     --light-op-color: #ccaeff;
     --light-eff-color: #ffaefa;
     --light-type-alias-color: #f9cdad;
@@ -49,6 +50,7 @@
     --dark-trait-def-color: #bfb280;
     --dark-traits-color: #fc9d9a;
     --dark-enum-color: #c8c8a9;
+    --dark-struct-color: #9ccfcf;
     --dark-op-color: #ccaeff;
     --dark-eff-color: #ffaefa;
     --dark-type-alias-color: #f9cdad;
@@ -77,6 +79,7 @@
     --trait-def-color: var(--light-trait-def-color);
     --traits-color: var(--light-traits-color);
     --enum-color: var(--light-enum-color);
+    --struct-color: var(--light-struct-color);
     --op-color: var(--light-op-color);
     --eff-color: var(--light-eff-color);
     --type-alias-color: var(--light-type-alias-color);
@@ -111,6 +114,7 @@
         --trait-def-color: var(--dark-trait-def-color);
         --traits-color: var(--dark-traits-color);
         --enum-color: var(--dark-enum-color);
+        --struct-color: var(--dark-struct-color);
         --op-color: var(--dark-op-color);
         --eff-color: var(--dark-eff-color);
         --type-alias-color: var(--dark-type-alias-color);
@@ -142,6 +146,7 @@
     --trait-def-color: var(--dark-trait-def-color);
     --traits-color: var(--dark-traits-color);
     --enum-color: var(--dark-enum-color);
+    --struct-color: var(--dark-struct-color);
     --op-color: var(--dark-op-color);
     --eff-color: var(--dark-eff-color);
     --type-alias-color: var(--dark-type-alias-color);
@@ -437,6 +442,9 @@ nav .Traits li::before {
 nav .Enums li::before {
     color: var(--enum-color);
 }
+nav .Structs li::before {
+    color: var(--struct-color);
+}
 nav .Operations li::before {
     color: var(--op-color);
 }
@@ -602,12 +610,14 @@ main h2 {
     }
 }
 
-.cases {
+.cases,
+.fields {
     margin-left: 1rem;
     margin-top: 0.7rem;
     margin-bottom: 0.7rem;
 }
-.cases > code {
+.cases > code,
+.fields > code {
     display: block;
 }
 .case-tag {
