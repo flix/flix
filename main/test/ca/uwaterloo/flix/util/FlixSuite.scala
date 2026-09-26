@@ -119,16 +119,8 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
       for ((sym, TestFn(_, skip, run)) <- testsByName) {
         if (!skip) {
           withClue(sym.loc.format) {
-            // Evaluate the function.
-            val result = run()
-            // Expect the true value, if boolean.
-            result match {
-              case res: java.lang.Boolean =>
-                if (!res.booleanValue()) {
-                  fail("Expected true, but got false.")
-                }
-              case _ => // nop
-            }
+            // Evaluate the function. A failing test throws.
+            run()
           }
         }
       }

@@ -8,19 +8,18 @@
 package ca.uwaterloo.flix.language.phase.jvm.classes
 
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.jvm.{ClassDescs, JavaClasses}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethodName, InstanceField, StaticMethod}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
 import ca.uwaterloo.flix.language.phase.jvm.Mangle.{RootPackage, mkDesc}
 import ca.uwaterloo.flix.language.phase.jvm.MethodTypeDescs.mkVoidDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.{ClassMaker, GenFunAndClosureClasses, MethodTypeDescs}
+import ca.uwaterloo.flix.language.phase.jvm.{ClassMaker, GenFunAndClosureClasses}
 import org.objectweb.asm.MethodVisitor
 
 import java.lang.constant.ClassDesc
-import java.lang.constant.ConstantDescs.CD_Object
 
 /**
   * The `Main` class, whose `main` method is the entry point of a compiled Flix program.
@@ -41,18 +40,10 @@ object GenMain {
   def MainMethod: StaticMethod = StaticMethod(this.Desc, "main", mkVoidDescriptor(JavaClasses.String.arrayType()))
 
   private def mainIns(sym: Symbol.DefnSym)(implicit mv: MethodVisitor): Unit = {
-    val defName = GenFunAndClosureClasses.defnDesc(sym)
     withName(0, JavaClasses.String.arrayType())(args => {
       args.load()
       INVOKESTATIC(GenGlobal.SetArgsMethod)
-      NEW(defName)
-      DUP()
-      INVOKESPECIAL(defName, ConstructorMethodName, MethodTypeDescs.NothingToVoid)
-      DUP()
-      GETSTATIC(GenUnit.SingletonField)
-      PUTFIELD(InstanceField(defName, "arg0", CD_Object))
-      GenResult.unwindSuspensionFreeThunk(s"in ${ClassDescs.binaryNameOf(Desc)}", SourceLocation.Unknown)
-      POP()
+      GenFunAndClosureClasses.runUnitDef(sym, s"in ${ClassDescs.binaryNameOf(Desc)}")
       RETURN()
     })
   }

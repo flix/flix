@@ -11,14 +11,14 @@ import ca.uwaterloo.flix.api.{CompilerConstants, Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.JvmAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, InstanceField, StaticMethod}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenFrame, GenResult, GenThunk, GenValue}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenFrame, GenResult, GenThunk, GenUnit, GenValue}
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
-import java.lang.constant.ConstantDescs.CD_int
+import java.lang.constant.ConstantDescs.{CD_Object, CD_int}
 
 /**
   * Generates byte code for the function and closure classes.
@@ -42,6 +42,28 @@ object GenFunAndClosureClasses {
     */
   def closureDesc(sym: Symbol.DefnSym): ClassDesc =
     Mangle.mkDesc(sym.namespace, Mangle.mkClassName("Clo", sym.name))
+
+  /**
+    * Emits instructions that run the def `sym`, of type `Unit -> t`, to completion and discard
+    * its result.
+    *
+    * The def's function class is instantiated, the `Unit` singleton is stored in its `arg0`
+    * field, and the resulting thunk is unwound. If the def suspends, an unhandled effect error
+    * is thrown, using `errorHint` in its message.
+    *
+    * [...] -> [...]
+    */
+  def runUnitDef(sym: Symbol.DefnSym, errorHint: String)(implicit mv: MethodVisitor): Unit = {
+    val desc = defnDesc(sym)
+    NEW(desc)
+    DUP()
+    INVOKESPECIAL(ConstructorMethod(desc, Nil))
+    DUP()
+    GETSTATIC(GenUnit.SingletonField)
+    PUTFIELD(InstanceField(desc, "arg0", CD_Object))
+    GenResult.unwindSuspensionFreeThunk(errorHint, sym.loc)
+    POP()
+  }
 
   /**
     * Returns a map of function- and closure-classes for the given set `defs`.
