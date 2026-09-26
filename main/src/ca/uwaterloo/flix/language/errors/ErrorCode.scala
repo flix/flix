@@ -50,13 +50,10 @@ object ErrorCode {
   case object E1069 extends ErrorCode
   case object E1127 extends ErrorCode
   case object E1134 extends ErrorCode
-  case object E1172 extends ErrorCode
   case object E1238 extends ErrorCode
   case object E1245 extends ErrorCode
-  case object E1285 extends ErrorCode
   case object E1349 extends ErrorCode
   case object E1356 extends ErrorCode
-  case object E1396 extends ErrorCode
   case object E1403 extends ErrorCode
   case object E1452 extends ErrorCode
   case object E1467 extends ErrorCode
@@ -71,7 +68,6 @@ object ErrorCode {
   case object E1785 extends ErrorCode
   case object E1792 extends ErrorCode
   case object E1803 extends ErrorCode
-  case object E1849 extends ErrorCode
   case object E1896 extends ErrorCode
   case object E1907 extends ErrorCode
   case object E1914 extends ErrorCode
