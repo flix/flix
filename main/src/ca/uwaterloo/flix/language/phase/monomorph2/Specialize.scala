@@ -384,9 +384,9 @@ private[monomorph2] object Specialize {
       val freshSym = Symbol.freshStructSym(struct.sym)
       val subst = StrictSubstitution.mk(Substitution(substMap))
       val newFields = struct.fields.map {
-        case (fieldSym, TypedAst.StructField(_, tpe, floc)) =>
+        case (fieldSym, TypedAst.StructField(_, mod, tpe, floc)) =>
           val newFieldSym = new Symbol.StructFieldSym(freshSym, fieldSym.name, fieldSym.loc)
-          newFieldSym -> TypedAst.StructField(newFieldSym, subst(tpe), floc)
+          newFieldSym -> TypedAst.StructField(newFieldSym, mod, subst(tpe), floc)
       }
       val newStruct = TypedAst.Struct(struct.doc, struct.ann, struct.mod, freshSym, Nil, struct.sc, newFields, struct.loc)
       (sym, args, freshSym, newStruct)

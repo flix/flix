@@ -117,7 +117,8 @@ object HtmlDocumentor {
       mod.submodules.flatMap(visitMod(_, outputDir)) :::
       mod.traits.flatMap(visitTrait(_, outputDir)) :::
       mod.effects.flatMap(visitEffect(_, outputDir)) :::
-      mod.enums.flatMap(visitEnum(_, outputDir))
+      mod.enums.flatMap(visitEnum(_, outputDir)) :::
+      mod.structs.flatMap(visitStruct(_, outputDir))
 
     generatedPages
   }
@@ -136,7 +137,8 @@ object HtmlDocumentor {
         mod.submodules.flatMap(visitMod(_, outputDir)) :::
           mod.traits.flatMap(visitTrait(_, outputDir)) :::
           mod.effects.flatMap(visitEffect(_, outputDir)) :::
-          mod.enums.flatMap(visitEnum(_, outputDir))
+          mod.enums.flatMap(visitEnum(_, outputDir)) :::
+          mod.structs.flatMap(visitStruct(_, outputDir))
       }.getOrElse(Nil)
 
     generatedPages
@@ -156,7 +158,8 @@ object HtmlDocumentor {
         mod.submodules.flatMap(visitMod(_, outputDir)) :::
           mod.traits.flatMap(visitTrait(_, outputDir)) :::
           mod.effects.flatMap(visitEffect(_, outputDir)) :::
-          mod.enums.flatMap(visitEnum(_, outputDir))
+          mod.enums.flatMap(visitEnum(_, outputDir)) :::
+          mod.structs.flatMap(visitStruct(_, outputDir))
       }.getOrElse(Nil)
 
     generatedPages
@@ -177,6 +180,28 @@ object HtmlDocumentor {
         mod.traits.flatMap(visitTrait(_, outputDir))
         mod.effects.flatMap(visitEffect(_, outputDir))
         mod.enums.flatMap(visitEnum(_, outputDir))
+        mod.structs.flatMap(visitStruct(_, outputDir))
+      }.getOrElse(Nil)
+
+    generatedPages
+  }
+
+  /**
+    * Documents the given `Struct`, `struct`, and all of its contained items, writing the resulting HTML to disk.
+    *
+    * Returns a list of the names of the generated files.
+    */
+  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): List[String] = {
+    val out = documentStruct(struct)
+    writeDocFile(struct.fileName, out, outputDir)
+
+    val generatedPages = List(struct.fileName) :::
+      struct.companionMod.map { mod =>
+        mod.submodules.flatMap(visitMod(_, outputDir)) :::
+          mod.traits.flatMap(visitTrait(_, outputDir)) :::
+          mod.effects.flatMap(visitEffect(_, outputDir)) :::
+          mod.enums.flatMap(visitEnum(_, outputDir)) :::
+          mod.structs.flatMap(visitStruct(_, outputDir))
       }.getOrElse(Nil)
 
     generatedPages
@@ -243,6 +268,21 @@ object HtmlDocumentor {
   private def enumFileName(sym: Symbol.EnumSym): String = s"${sym.toString}.html"
 
   /**
+    * Get the shortest name of the struct symbol, e.g. 'MutSet'.
+    */
+  private def structName(sym: Symbol.StructSym): String = sym.name
+
+  /**
+    * Get the fully qualified name of the struct symbol, e.g. 'MutSet.MutSet'.
+    */
+  private def structQualifiedName(sym: Symbol.StructSym): String = sym.toString
+
+  /**
+    * Get the file name of the struct symbol, e.g. 'MutSet.MutSet.html'.
+    */
+  private def structFileName(sym: Symbol.StructSym): String = s"${sym.toString}.html"
+
+  /**
     * Splits the modules present in the root into a tree of `HtmlDocumentor.Module`s, making them easier to work with.
     *
     * Note: This function leaves all companion module fields empty.
@@ -261,6 +301,7 @@ object HtmlDocumentor {
       var traits: List[Trait] = Nil
       var effects: List[Effect] = Nil
       var enums: List[Enum] = Nil
+      var structs: List[Struct] = Nil
       var typeAliases: List[TypedAst.TypeAlias] = Nil
       var defs: List[TypedAst.Def] = Nil
       mod.children.foreach {
@@ -271,6 +312,8 @@ object HtmlDocumentor {
           effects = mkEffect(sym, moduleSym, root) :: effects
         case sym: Symbol.EnumSym =>
           enums = mkEnum(sym, moduleSym, root) :: enums
+        case sym: Symbol.StructSym =>
+          structs = mkStruct(sym, moduleSym, root) :: structs
         case sym: Symbol.TypeAliasSym => typeAliases = root.typeAliases(sym) :: typeAliases
         case sym: Symbol.DefnSym => defs = root.defs(sym) :: defs
         case _ => // No op
@@ -285,6 +328,7 @@ object HtmlDocumentor {
         traits,
         effects,
         enums,
+        structs,
         typeAliases,
         defs,
       )
@@ -319,25 +363,42 @@ object HtmlDocumentor {
     * * leaving the companion module unpopulated.
     */
   private def mkEnum(sym: Symbol.EnumSym, parent: Symbol.ModuleSym, root: TypedAst.Root): Enum = {
+    val instances = instancesOf(root) {
+      case TypeConstructor.Enum(s, _) => s == sym
+      case _ => false
+    }
+    Enum(root.enums(sym), instances, parent, None)
+  }
 
-    /**
-      * Checks if a [[TypedAst.Instance]] with the given type `tpe` should be included on the page of the given enum.
-      */
+  /**
+    * Extracts all relevant information about the given `StructSym` from the root, into a `HtmlDocumentor.Struct`,
+    * leaving the companion module unpopulated.
+    */
+  private def mkStruct(sym: Symbol.StructSym, parent: Symbol.ModuleSym, root: TypedAst.Root): Struct = {
+    val instances = instancesOf(root) {
+      case TypeConstructor.Struct(s, _) => s == sym
+      case _ => false
+    }
+    Struct(root.structs(sym), instances, parent, None)
+  }
+
+  /**
+    * Returns the instances in `root` that should be included on the page of the type whose
+    * type constructor satisfies `isType`.
+    *
+    * An instance is included if:
+    *   1. It is for the type directly, e.g. `Eq[Boxed]`.
+    *   1. It is for the type applied to some number of arguments, e.g. `Eq[Chain[a]] with Eq[a]`.
+    */
+  private def instancesOf(root: TypedAst.Root)(isType: TypeConstructor => Boolean): List[TypedAst.Instance] = {
     @tailrec
-    def enumMatchesInstance(enm: Symbol.EnumSym, tpe: Type): Boolean = tpe match {
-      // An instance should be included if:
-      // 1. An instance exists directly, e.g. `Eq[Boxed]`
-      case Type.Cst(TypeConstructor.Enum(s, _), _) => enm == s
-      // 2. An instance exists, consisting of the enum having been applied with some number of parameters, e.g. `Eq[Chain[a]] with Eq[a]`
-      case Type.Apply(t, _, _) => enumMatchesInstance(enm, t)
-      // Othwerwise not
+    def matches(tpe: Type): Boolean = tpe match {
+      case Type.Cst(tc, _) => isType(tc)
+      case Type.Apply(t, _, _) => matches(t)
       case _ => false
     }
 
-    val allInstances = root.instances.values
-    val instances = allInstances.filter(i => enumMatchesInstance(sym, i.tpe)).toList
-
-    Enum(root.enums(sym), instances, parent, None)
+    root.instances.values.filter(i => matches(i.tpe)).toList
   }
 
   /**
@@ -355,7 +416,7 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterContents(mod: Module, origin: Origin): Module = mod match {
-    case Module(sym, doc, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
+    case Module(sym, doc, parent, uses, submodules, traits, effects, enums, structs, typeAliases, defs) =>
       Module(
         sym,
         doc,
@@ -365,6 +426,7 @@ object HtmlDocumentor {
         traits.filter(c => c.decl.mod.isPublic && isFrom(origin, c.decl.sym.loc)).map(c => filterTrait(c)),
         effects.filter(e => e.decl.mod.isPublic && isFrom(origin, e.decl.sym.loc)).map(e => filterEffect(e)),
         enums.filter(e => e.decl.mod.isPublic && isFrom(origin, e.decl.sym.loc)).map(e => filterEnum(e)),
+        structs.filter(s => s.decl.mod.isPublic && isFrom(origin, s.decl.sym.loc)).map(s => filterStruct(s)),
         typeAliases.filter(t => t.mod.isPublic && isFrom(origin, t.sym.loc)),
         defs.filter(d => d.spec.mod.isPublic && isFrom(origin, d.sym.loc)),
       )
@@ -443,6 +505,23 @@ object HtmlDocumentor {
   }
 
   /**
+    * Returns a `Struct` corresponding to the given `struct`,
+    * but with all items that shouldn't appear in the documentation removed.
+    *
+    * Note: This function assumes that companion modules are unpopulated,
+    * i.e. this should be called before `pairModules`.
+    */
+  private def filterStruct(struct: Struct): Struct = struct match {
+    case Struct(s, instances, parent, _) =>
+      Struct(
+        s,
+        instances,
+        parent,
+        None,
+      )
+  }
+
+  /**
     * Remove any modules and references to them if they:
     *   1. Contain no items
     *   1. Contain no submodules with any items
@@ -455,7 +534,7 @@ object HtmlDocumentor {
       * Recursively walks the module tree removing empty modules.
       */
     def visitMod(mod: Module): Option[Module] = mod match {
-      case Module(sym, doc, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
+      case Module(sym, doc, parent, uses, submodules, traits, effects, enums, structs, typeAliases, defs) =>
         val filteredSubMods = submodules.flatMap(visitMod)
 
         val isEmpty =
@@ -463,6 +542,7 @@ object HtmlDocumentor {
             traits.isEmpty &&
             effects.isEmpty &&
             enums.isEmpty &&
+            structs.isEmpty &&
             typeAliases.isEmpty &&
             defs.isEmpty
 
@@ -477,6 +557,7 @@ object HtmlDocumentor {
             traits,
             effects,
             enums,
+            structs,
             typeAliases,
             defs
           )
@@ -495,6 +576,7 @@ object HtmlDocumentor {
         Nil,
         Nil,
         Nil,
+        Nil,
       ))
   }
 
@@ -502,7 +584,7 @@ object HtmlDocumentor {
     * Get the given module tree, but with all companion modules paired to their respective items.
     */
   private def pairModules(mod: Module): Module = mod match {
-    case Module(sym, doc, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
+    case Module(sym, doc, parent, uses, submodules, traits, effects, enums, structs, typeAliases, defs) =>
 
       val visitedSubmodules = submodules.map(pairModules)
 
@@ -524,6 +606,11 @@ object HtmlDocumentor {
         comp.foreach(c => companionMods = c :: companionMods)
         e.copy(companionMod = comp)
       }
+      val pairedStructs = structs.map { s =>
+        val comp = visitedSubmodules.find(m => m.sym.ns.last == s.decl.sym.name)
+        comp.foreach(c => companionMods = c :: companionMods)
+        s.copy(companionMod = comp)
+      }
 
       val filteredSubmodules = visitedSubmodules.filterNot(companionMods.contains)
 
@@ -536,6 +623,7 @@ object HtmlDocumentor {
         pairedTraits,
         pairedEffects,
         pairedEnums,
+        pairedStructs,
         typeAliases,
         defs,
       )
@@ -549,6 +637,7 @@ object HtmlDocumentor {
 
     val sortedTraits = mod.traits.sortBy(_.name)
     val sortedEnums = mod.enums.sortBy(_.name)
+    val sortedStructs = mod.structs.sortBy(_.name)
     val sortedEffs = mod.effects.sortBy(_.name)
     val sortedTypeAliases = mod.typeAliases.sortBy(_.sym.name)
     val sortedDefs = mod.defs.sortBy(_.sym.name)
@@ -574,6 +663,11 @@ object HtmlDocumentor {
         "Enums",
         sortedEnums,
         (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+      )
+      docSideBarSection(
+        "Structs",
+        sortedStructs,
+        (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -614,6 +708,7 @@ object HtmlDocumentor {
     val mod = trt.companionMod
     val sortedTraits = mod.map(_.traits).getOrElse(Nil).sortBy(_.name)
     val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.name)
+    val sortedStructs = mod.map(_.structs).getOrElse(Nil).sortBy(_.name)
     val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.name)
     val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
@@ -649,6 +744,11 @@ object HtmlDocumentor {
         "Enums",
         sortedEnums,
         (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+      )
+      docSideBarSection(
+        "Structs",
+        sortedStructs,
+        (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -706,6 +806,7 @@ object HtmlDocumentor {
     val mod = eff.companionMod
     val sortedTraits = mod.map(_.traits).getOrElse(Nil).sortBy(_.name)
     val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.name)
+    val sortedStructs = mod.map(_.structs).getOrElse(Nil).sortBy(_.name)
     val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.name)
     val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
@@ -735,6 +836,11 @@ object HtmlDocumentor {
         "Enums",
         sortedEnums,
         (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+      )
+      docSideBarSection(
+        "Structs",
+        sortedStructs,
+        (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -788,6 +894,7 @@ object HtmlDocumentor {
     val mod = enm.companionMod
     val sortedTraits = mod.map(_.traits).getOrElse(Nil).sortBy(_.name)
     val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.name)
+    val sortedStructs = mod.map(_.structs).getOrElse(Nil).sortBy(_.name)
     val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.name)
     val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
@@ -813,6 +920,11 @@ object HtmlDocumentor {
         "Enums",
         sortedEnums,
         (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+      )
+      docSideBarSection(
+        "Structs",
+        sortedStructs,
+        (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -842,6 +954,90 @@ object HtmlDocumentor {
     sb.append("</div>")
     docCases(enm.decl.cases.values.toList)
     docDoc(enm.decl.doc)
+    docCollapsableSubSection("Instances", sortedInstances, docInstance)
+    sb.append("</div>")
+
+    docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
+    docSection("Definitions", sortedModuleDefs, docDef)
+
+    sb.append("</main>")
+
+    sb.append("</body>")
+    sb.append("</html>")
+
+    sb.toString()
+  }
+
+  /**
+    * Documents the given `Struct`, `struct`, returning a string of HTML.
+    */
+  private def documentStruct(struct: Struct)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+    implicit val sb: StringBuilder = new StringBuilder()
+
+    val sortedInstances = struct.instances.sortBy(_.trt.sym.name)
+
+    val mod = struct.companionMod
+    val sortedTraits = mod.map(_.traits).getOrElse(Nil).sortBy(_.name)
+    val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.name)
+    val sortedStructs = mod.map(_.structs).getOrElse(Nil).sortBy(_.name)
+    val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.name)
+    val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
+    val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
+
+    sb.append(mkHead(struct.qualifiedName, struct.fileName))
+    sb.append("<body class='no-script'>")
+
+    docHeader()
+
+    docSideBar(Some(struct.parent)) { () =>
+      mod.foreach(docSubModules)
+      docSideBarSection(
+        "Traits",
+        sortedTraits,
+        (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
+      )
+      docSideBarSection(
+        "Effects",
+        sortedEffs,
+        (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+      )
+      docSideBarSection(
+        "Enums",
+        sortedEnums,
+        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+      )
+      docSideBarSection(
+        "Structs",
+        sortedStructs,
+        (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
+      )
+      docSideBarSection(
+        "Type Aliases",
+        sortedTypeAliases,
+        (t: TypedAst.TypeAlias) => sb.append(s"<a href='#ta-${escUrl(t.sym.name)}'>${esc(t.sym.name)}</a>"),
+      )
+      docSideBarSection(
+        "Definitions",
+        sortedModuleDefs,
+        (d: TypedAst.Def) => sb.append(s"<a href='#def-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
+      )
+    }
+
+    sb.append("<main>")
+    sb.append(s"<h1>${esc(struct.qualifiedName)}</h1>")
+
+    sb.append(s"<div class='box' id='main-box'>")
+    docAnnotations(struct.decl.ann)
+    sb.append("<div class='decl'>")
+    sb.append("<code>")
+    sb.append("<span class='keyword'>struct</span> ")
+    sb.append(s"<span class='name'>${esc(struct.name)}</span>")
+    docTypeParams(struct.decl.tparams)
+    sb.append("</code>")
+    docActions(None, struct.decl.loc)
+    sb.append("</div>")
+    docFields(struct.decl.fields.values.toList)
+    docDoc(struct.decl.doc)
     docCollapsableSubSection("Instances", sortedInstances, docInstance)
     sb.append("</div>")
 
@@ -958,7 +1154,8 @@ object HtmlDocumentor {
       parentMod.submodules ++
         parentMod.traits ++
         parentMod.effects ++
-        parentMod.enums
+        parentMod.enums ++
+        parentMod.structs
 
     val sortedItems = subItems.sortBy(_.name)
 
@@ -1277,6 +1474,31 @@ object HtmlDocumentor {
           sb.append(")")
       }
 
+      sb.append("</code>")
+    }
+    sb.append("</div>")
+  }
+
+  /**
+    * Documents the given list of `StructField`s of a struct.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `fields` is empty, nothing will be generated.
+    */
+  private def docFields(fields: List[TypedAst.StructField])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (fields.isEmpty) {
+      return
+    }
+
+    sb.append("<div class='fields'>")
+    for (f <- fields.sortBy(_.loc)) {
+      sb.append("<code>")
+      if (f.mod.isMutable) {
+        sb.append("<span class='keyword'>mut</span> ")
+      }
+      sb.append(s"<span>${esc(f.sym.name)}</span>: ")
+      docType(f.tpe)
       sb.append("</code>")
     }
     sb.append("</div>")
@@ -1638,6 +1860,7 @@ object HtmlDocumentor {
                             traits: List[Trait],
                             effects: List[Effect],
                             enums: List[Enum],
+                            structs: List[Struct],
                             typeAliases: List[TypedAst.TypeAlias],
                             defs: List[TypedAst.Def]) extends Item {
     override def name: String = moduleName(this.sym)
@@ -1688,5 +1911,19 @@ object HtmlDocumentor {
     override def qualifiedName: String = enumQualifiedName(this.decl.sym)
 
     override def fileName: String = enumFileName(this.decl.sym)
+  }
+
+  /**
+    * A representation of a struct that's easier to work with while generating documentation.
+    */
+  private case class Struct(decl: TypedAst.Struct,
+                            instances: List[TypedAst.Instance],
+                            parent: Symbol.ModuleSym,
+                            companionMod: Option[Module]) extends Item {
+    override def name: String = structName(this.decl.sym)
+
+    override def qualifiedName: String = structQualifiedName(this.decl.sym)
+
+    override def fileName: String = structFileName(this.decl.sym)
   }
 }
