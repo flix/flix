@@ -2,11 +2,28 @@
 
 ## Flix and Scala
 
-- Every file must start with a copyright header.
+- Every file must start with a copyright header (see below).
 - Prefer functional to imperative programming.
   - Use of local mutability is okay.
 - If a function or method can be private, make it private.
 - Don't use fancy features unless necessary and reasonable.
+
+### Copyright header
+
+Every Flix and Scala file starts with a copyright line followed by the two-line pointer to the license.
+The copyright line names the year and the authors. The pointer is always the same two lines;
+do not paste the full Apache boilerplate, which lives in `LICENSE.md` at the root of the repository.
+
+```
+/*
+ * Copyright 2019 Liam Palmer, Magnus Madsen
+ *
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
+ */
+```
+
+Flix test files under `main/test` are the exception: they do not need a header (see the README files there).
 
 ## Flix-specific
 
