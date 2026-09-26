@@ -84,8 +84,6 @@ object ManifestParser {
     for (
       _ <- checkKeys(parser, p);
 
-      // For backwards compatibility -- for now -- we still accept the `name` field.
-
       version <- getRequiredStringProperty("package.version", parser, p);
       versionSemVer <- toFlixVer(version, p);
 
@@ -108,6 +106,14 @@ object ManifestParser {
     ) yield Manifest(versionSemVer, githubProject, flixSemVer, depsList ++ mvnDepsList ++ jarDepsList)
   }
 
+  /**
+    * Checks that `parser` declares no table, and no key of the package table, that is not allowed.
+    *
+    * A manifest declares only what is read: the version the package is published at, the
+    * repository it is published from, and the version of Flix it is built with. A key that
+    * nothing reads says nothing, and is free to disagree with what is beside it -- `name` was
+    * free to disagree with the repository -- so the manifest does not carry one.
+    */
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
     val keySet: Set[String] = parser.keySet().asScala.toSet
     val allowedKeys = Set("package", "dependencies", "mvn-dependencies", "jar-dependencies")
@@ -119,7 +125,7 @@ object ManifestParser {
 
     val dottedKeys = parser.dottedKeySet().asScala.toSet
     val packageKeys = dottedKeys.filter(s => s.startsWith("package."))
-    val allowedPackageKeys = Set("package.name", "package.description", "package.version", "package.repository", "package.modules", "package.flix", "package.authors", "package.license")
+    val allowedPackageKeys = Set("package.version", "package.repository", "package.flix")
     val illegalPackageKeys = packageKeys.diff(allowedPackageKeys)
     if (illegalPackageKeys.nonEmpty) {
       return Err(ManifestError.IllegalPackageKeyFound(p, illegalPackageKeys.head))
@@ -319,11 +325,12 @@ object ManifestParser {
 
         val id = PackageId(repo, username, projectName)
 
-        // If the dependency maps to a string, it declares only a version and has no mount.
+        // If the dependency maps to a string, it declares only a version.
         if (deps.isString(depKey)) {
           for (
-            ver <- getFlixVersion(deps, depKey, p)
-          ) yield FlixDependency(id, ver, None, SecurityContext.Default, DependencyStyle.VersionOnly)
+            ver <- getFlixVersion(deps, depKey, p);
+            mount <- deriveMount(id, p)
+          ) yield FlixDependency(id, ver, mount, SecurityContext.Default, DependencyStyle.VersionOnly)
 
           // If the dependency maps to a table, get the version, security, and mount.
         } else if (deps.isTable(depKey)) {
@@ -335,7 +342,7 @@ object ManifestParser {
           for (
             _ <- checkDependencyKeys(depTbl, depKey, Set(verKey, mountKey, securityKey), p);
             ver <- getFlixVersion(depTbl, verKey, p);
-            mount <- getMount(depTbl, mountKey, depKey, p);
+            mount <- getMount(depTbl, mountKey, depKey, id, p);
             security <- getSecurity(depTbl, securityKey, p)
           ) yield FlixDependency(id, ver, mount, security, DependencyStyle.Table)
         } else {
@@ -393,29 +400,40 @@ object ManifestParser {
   }
 
   /**
-    * Retrieves the mount of the dependency `depKey` from the table `depTbl` at `key`.
+    * Retrieves the mount of the dependency `depKey` on `id` from the table `depTbl` at `key`.
     *
-    * A dependency that declares no mount has none: its modules are reachable unqualified.
+    * A dependency that declares no mount is mounted at the name of its repository (see [[deriveMount]]).
     */
-  private def getMount(depTbl: TomlTable, key: String, depKey: String, p: Path): Result[Option[Mountpoint], ManifestError] = {
+  private def getMount(depTbl: TomlTable, key: String, depKey: String, id: PackageId, p: Path): Result[Mountpoint, ManifestError] = {
     if (!depTbl.contains(key)) {
-      Ok(None)
+      deriveMount(id, p)
     } else if (!depTbl.isString(key)) {
       Err(ManifestError.FlixDependencyMountType(p, depKey, depTbl.get(key)))
     } else {
       val mount = depTbl.getString(key)
       Mountpoint.mkMountpoint(mount) match {
-        case Some(m) => Ok(Some(m))
+        case Some(m) => Ok(m)
         case None => Err(ManifestError.FlixDependencyIllegalMount(p, depKey, mount))
       }
     }
   }
 
   /**
+    * Returns the mount of a dependency on `id` that declares none.
+    *
+    * The name of a repository that is not a mountpoint is an error, which asks for an explicit mount.
+    */
+  private def deriveMount(id: PackageId, p: Path): Result[Mountpoint, ManifestError] =
+    Mountpoint.ofRepoName(id) match {
+      case Some(m) => Ok(m)
+      case None => Err(ManifestError.FlixDependencyUnderivableMount(p, id))
+    }
+
+  /**
     * Returns an error if two Flix dependencies in `deps` share a mount.
     */
   private def checkDuplicateMounts(deps: List[Dependency], p: Path): Result[Unit, ManifestError] = {
-    val mountedDeps = deps.collect { case dep: FlixDependency if dep.mount.isDefined => (dep.mount.get, dep) }
+    val mountedDeps = deps.collect { case dep: FlixDependency => (dep.mount, dep) }
     val seen = mutable.Map.empty[Mountpoint, FlixDependency]
     for ((mount, dep) <- mountedDeps) {
       seen.get(mount) match {

@@ -26,7 +26,7 @@ import org.json4s.native.JsonMethods.{compact, parse, render}
 import java.io.{IOException, InputStream}
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import java.net.{MalformedURLException, URI, URISyntaxException, URL, URLEncoder}
+import java.net.{URI, URL, URLEncoder}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.util.Locale
@@ -74,19 +74,10 @@ object GitHub {
   }
 
   /**
-    * A release of a GitHub project.
-    */
-  case class Release(version: SemVer, assets: List[Asset])
-
-  /**
-    * An asset from a GitHub project release.
+    * Lists the versions the project has released.
     *
-    * `url` is the link to download the asset.
-    */
-  case class Asset(name: String, url: URL)
-
-  /**
-    * Lists the project's releases.
+    * A release asset is addressed by name (see [[downloadReleaseAsset]]), so the listing is read
+    * only to learn which versions exist, and never to find a file within one.
     *
     * The status is read before the body is: a project that does not exist, and a request that is
     * refused, both answer with a body that is not a listing, and reporting either as a body that
@@ -94,7 +85,7 @@ object GitHub {
     * such project (404), a refusal (403/429, usually a rate limit), any other unexpected status,
     * and never reaching a server at all.
     */
-  def getReleases(project: Project, token: Option[String]): Result[List[Release], PackageError] = {
+  def getReleaseVersions(project: Project, token: Option[String]): Result[List[SemVer], PackageError] = {
     val url = releaseListingUrl(project)
     val req = newApiRequest(url, token).GET().build()
     val response = try {
@@ -323,7 +314,7 @@ object GitHub {
   /**
     * Opens a stream over the `assetName` asset of `project`'s `version` release, without consulting
     * the REST API -- a release asset's address is fully predictable from owner/repo/tag/name.
-    * The caller closes the stream. See [[findReleaseAsset]] for the fallback when this 404s.
+    * The caller closes the stream.
     */
   def downloadReleaseAsset(project: Project, version: SemVer, assetName: String, token: Option[String]): Result[InputStream, PackageError] = {
     val url = releaseAssetUrl(project, version, assetName)
@@ -331,24 +322,6 @@ object GitHub {
       case Err(PackageError.DownloadFailed(_, 404)) =>
         Err(PackageError.ReleaseAssetNotFound(project, version, assetName, url))
       case other => other
-    }
-  }
-
-  /**
-    * Finds the single `extension` asset in `project`'s `version` release by reading the REST API --
-    * the fallback for when [[downloadReleaseAsset]]'s guessed name 404s.
-    */
-  def findReleaseAsset(project: Project, version: SemVer, extension: String, token: Option[String]): Result[Asset, PackageError] = {
-    getReleases(project, token).flatMap { releases =>
-      releases.find(r => r.version == version) match {
-        case None => Err(PackageError.VersionDoesNotExist(version, project))
-        case Some(release) =>
-          release.assets.filter(_.name.endsWith(s".$extension")) match {
-            case Nil => Err(PackageError.NoSuchFile(project.toString, extension))
-            case asset :: Nil => Ok(asset)
-            case _ => Err(PackageError.TooManyFiles(project.toString, extension))
-          }
-      }
     }
   }
 
@@ -409,7 +382,7 @@ object GitHub {
   }
 
   /**
-    * Parses a release JSON, if it is a release of the package.
+    * Parses the version a release JSON is tagged with, if it is a release of the package.
     *
     * A repository's releases are its own to tag, and only the ones tagged as a version are
     * versions of the package: a repository may release something that is not a Flix package at
@@ -417,35 +390,9 @@ object GitHub {
     * read as a version, and rather than -- as it once was -- thrown out of the listing as an
     * exception, which took down every build that read a repository holding one.
     */
-  private def parseRelease(json: JValue): Option[Release] = json \ "tag_name" match {
-    case JString(tag) => parseSemVer(tag).map(version => Release(version, parseAssets(json \ "assets")))
+  private def parseRelease(json: JValue): Option[SemVer] = json \ "tag_name" match {
+    case JString(tag) => parseSemVer(tag)
     case _ => None
-  }
-
-  /**
-    * Parses the assets of a release, passing over the ones that cannot be read.
-    *
-    * An asset that has no address is no use to a build that wants to download it, and is not
-    * worth failing a listing that may well hold the asset it was looking for.
-    */
-  private def parseAssets(json: JValue): List[Asset] = json match {
-    case JArray(assets) => assets.flatMap(parseAsset)
-    case _ => Nil
-  }
-
-  /**
-    * Parses an asset JSON, if it names a file at an address.
-    */
-  private def parseAsset(asset: JValue): Option[Asset] = {
-    val name = asset \ "name"
-    val url = asset \ "browser_download_url"
-    try {
-      Some(Asset(name.values.toString, new URI(url.values.toString).toURL))
-    } catch {
-      case _: URISyntaxException => None
-      case _: MalformedURLException => None
-      case _: IllegalArgumentException => None
-    }
   }
 
   /**

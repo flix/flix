@@ -38,10 +38,10 @@ case class Manifest(version: SemVer,
 
   /**
     * Returns the mount table of this manifest: the name of each mount to the identifier of the
-    * dependency it names. A dependency that declares no mount does not appear.
+    * dependency it names.
     */
   def mounts: Map[Mountpoint, PackageId] =
-    flixDependencies.flatMap(dep => dep.mount.map(_ -> dep.id)).toMap
+    flixDependencies.map(dep => dep.mount -> dep.id).toMap
 
   def mavenDependencies: List[Dependency.MavenDependency] = dependencies.collect { case dep: Dependency.MavenDependency => dep }
 
@@ -108,18 +108,22 @@ object Manifest {
     * Returns the entry of `dep` in the `[dependencies]` table.
     *
     * A dependency is written in the style it was declared in, but as its version only while that
-    * is all it declares. A table spells out the mount only when there is one, and the security
-    * context only when it is not the default.
+    * is all it declares. A table spells out the mount only when it is not the one derived from
+    * the name of the repository, and the security context only when it is not the default.
     */
-  private def flixDependencyEntry(dep: FlixDependency): Entry = dep match {
-    case FlixDependency(id, version, None, SecurityContext.Default, DependencyStyle.VersionOnly) =>
-      Entry(id.toString, Value.Str(version.toString))
+  private def flixDependencyEntry(dep: FlixDependency): Entry = {
+    // A derived mount is not written, so that it is derived again.
+    val mount = Option.when(!Mountpoint.ofRepoName(dep.id).contains(dep.mount))(dep.mount)
+    dep match {
+      case FlixDependency(id, version, _, SecurityContext.Default, DependencyStyle.VersionOnly) if mount.isEmpty =>
+        Entry(id.toString, Value.Str(version.toString))
 
-    case FlixDependency(id, version, mount, sctx, _) =>
-      val versionEntry = Entry("version", Value.Str(version.toString))
-      val mountEntry = mount.map(m => Entry("mount", Value.Str(m.toString)))
-      val securityEntry = Option.when(sctx != SecurityContext.Default)(Entry("security", Value.Str(sctx.toString)))
-      Entry(id.toString, Value.InlineTable(versionEntry :: mountEntry.toList ::: securityEntry.toList))
+      case FlixDependency(id, version, _, sctx, _) =>
+        val versionEntry = Entry("version", Value.Str(version.toString))
+        val mountEntry = mount.map(m => Entry("mount", Value.Str(m.toString)))
+        val securityEntry = Option.when(sctx != SecurityContext.Default)(Entry("security", Value.Str(sctx.toString)))
+        Entry(id.toString, Value.InlineTable(versionEntry :: mountEntry.toList ::: securityEntry.toList))
+    }
   }
 
   /** Returns the entry of `dep` in the `[mvn-dependencies]` table. */

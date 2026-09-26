@@ -77,44 +77,6 @@ class TestManifestParser extends AnyFunSuite {
     )
   }
 
-  test("Ok.ignores-name") {
-    // A package is named by the repository it is published as, which is what a dependent
-    // addresses it by. `name` is still accepted, and is not read: here it disagrees with the
-    // repository, and the repository is what names the package.
-    val toml =
-      """
-        |[package]
-        |name = "something-else"
-        |version = "0.1.0"
-        |repository = "github:johnDoe/hello-world"
-        |flix = "0.33.0"
-        |""".stripMargin
-    assertResult(expected = "johnDoe/hello-world")(actual =
-      ManifestParser.parse(toml, ManifestPath) match {
-        case Ok(m) => m.displayName
-        case Err(e) => e.message(f)
-      }
-    )
-  }
-
-  test("Ok.ignores-name.02") {
-    // `name` is not read at all, so it is not type checked either.
-    val toml =
-      """
-        |[package]
-        |name = 1
-        |version = "0.1.0"
-        |repository = "github:johnDoe/hello-world"
-        |flix = "0.33.0"
-        |""".stripMargin
-    assertResult(expected = "johnDoe/hello-world")(actual =
-      ManifestParser.parse(toml, ManifestPath) match {
-        case Ok(m) => m.displayName
-        case Err(e) => e.message(f)
-      }
-    )
-  }
-
   test("Ok.unnamed") {
     // A package that declares no repository cannot be addressed, and so has no name.
     val toml =
@@ -138,27 +100,6 @@ class TestManifestParser extends AnyFunSuite {
         |[package]
         |version = "0.1.0"
         |flix = "0.33.0"
-        |""".stripMargin
-    assertResult(expected = SemVer(0, 1, 0))(actual =
-      ManifestParser.parse(toml, ManifestPath) match {
-        case Ok(m) => m.version
-        case Err(e) => fail(e.message(f))
-      }
-    )
-  }
-
-  test("Ok.ignores-removed-keys") {
-    // A manifest written before these keys were dropped still parses, which is what keeps every
-    // already-published package readable.
-    val toml =
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
         |""".stripMargin
     assertResult(expected = SemVer(0, 1, 0))(actual =
       ManifestParser.parse(toml, ManifestPath) match {
@@ -213,8 +154,8 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(PackageId(Repository.GitHub, "jls", "tic-tac-toe"), SemVer(1, 2, 3), Some(Mountpoint("ticTacToe")), SecurityContext.Plain, DependencyStyle.Table),
-      Dependency.FlixDependency(PackageId(Repository.GitHub, "mlutze", "flixball"), SemVer(3, 2, 1), None, SecurityContext.Plain, DependencyStyle.VersionOnly),
+    assertResult(expected = List(Dependency.FlixDependency(PackageId(Repository.GitHub, "jls", "tic-tac-toe"), SemVer(1, 2, 3), Mountpoint("ticTacToe"), SecurityContext.Plain, DependencyStyle.Table),
+      Dependency.FlixDependency(PackageId(Repository.GitHub, "mlutze", "flixball"), SemVer(3, 2, 1), Mountpoint("flixball"), SecurityContext.Plain, DependencyStyle.VersionOnly),
       Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
       Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
       Dependency.JarDependency("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar", "myJar.jar")))(actual = {
@@ -660,6 +601,7 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("ManifestError.IllegalPackageKeyFound.01") {
+    // A key the package table does not have at all.
     val toml = {
       """
         |[package]
@@ -676,10 +618,12 @@ class TestManifestParser extends AnyFunSuite {
   //Description
 
   test("ManifestError.IllegalPackageKeyFound.02") {
+    // A manifest declares only what is read. This key is read by nothing, so it says
+    // nothing, and is no longer one a manifest may declare.
     val toml = {
       """
         |[package]
-        |desciption = "A simple program"
+        |description = "A simple program"
         |version = "0.1.0"
         |flix = "0.33.0"
         |
@@ -894,11 +838,13 @@ class TestManifestParser extends AnyFunSuite {
 
   // Modules
   test("ManifestError.IllegalPackageKeyFound.05") {
+    // A manifest declares only what is read. This key is read by nothing, so it says
+    // nothing, and is no longer one a manifest may declare.
     val toml = {
       """
         |[package]
         |version = "0.1.0"
-        |modjules = ["FirsMod", "SecondMod"]
+        |modules = ["FirstMod", "SecondMod"]
         |flix = "0.33.0"
         |
         |""".stripMargin
@@ -1014,12 +960,14 @@ class TestManifestParser extends AnyFunSuite {
   //License
 
   test("ManifestError.IllegalPackageKeyFound.07") {
+    // A manifest declares only what is read. This key is read by nothing, so it says
+    // nothing, and is no longer one a manifest may declare.
     val toml = {
       """
         |[package]
         |version = "0.1.0"
         |flix = "0.33.0"
-        |licence = "Apache-2.0"
+        |license = "Apache-2.0"
         |
         |""".stripMargin
     }
@@ -1030,13 +978,32 @@ class TestManifestParser extends AnyFunSuite {
   //Authors
 
   test("ManifestError.IllegalPackageKeyFound.08") {
+    // A manifest declares only what is read. This key is read by nothing, so it says
+    // nothing, and is no longer one a manifest may declare.
     val toml = {
       """
         |[package]
         |version = "0.1.0"
         |flix = "0.33.0"
-        |authars = ["John Doe <john@example.com>"]
+        |authors = ["John Doe <john@example.com>"]
         |
+        |""".stripMargin
+    }
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.IllegalPackageKeyFound](result)
+  }
+
+  //Name
+  test("ManifestError.IllegalPackageKeyFound.09") {
+    // `name` named nothing -- a package is named by the repository it is published as -- and
+    // was free to disagree with the repository beside it.
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |version = "0.1.0"
+        |repository = "github:johnDoe/hello-world"
+        |flix = "0.33.0"
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, ManifestPath)
@@ -1582,7 +1549,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "Game" }
         |"github:mlutze/flixball" = "3.2.1"
         |""".stripMargin
-    assertResult(expected = List(Some(Mountpoint("Game")), None))(actual =
+    assertResult(expected = List(Mountpoint("Game"), Mountpoint("flixball")))(actual =
       ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m.flixDependencies.map(_.mount)
         case Err(e) => e.message(f)
@@ -1599,12 +1566,136 @@ class TestManifestParser extends AnyFunSuite {
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "game" }
         |""".stripMargin
-    assertResult(expected = List(Some(Mountpoint("game"))))(actual =
+    assertResult(expected = List(Mountpoint("game")))(actual =
       ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m.flixDependencies.map(_.mount)
         case Err(e) => e.message(f)
       }
     )
+  }
+
+  test("Ok.mount.derived.01") {
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[dependencies]
+        |"github:mlutze/flixball" = "3.2.1"
+        |""".stripMargin
+    assertResult(expected = List(Mountpoint("flixball")))(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.flixDependencies.map(_.mount)
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
+  test("Ok.mount.derived.02") {
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[dependencies]
+        |"github:mlutze/flixball" = { version = "3.2.1", security = "paranoid" }
+        |""".stripMargin
+    assertResult(expected = List(Mountpoint("flixball")))(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.flixDependencies.map(_.mount)
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
+  test("Ok.mount.derived.03") {
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[dependencies]
+        |"github:flix/Flix" = "1.0.0"
+        |""".stripMargin
+    assertResult(expected = List(Mountpoint("Flix")))(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.flixDependencies.map(_.mount)
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
+  test("Ok.mount.derived.04") {
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", mount = "ticTacToe" }
+        |""".stripMargin
+    assertResult(expected = List(Mountpoint("ticTacToe")))(actual =
+      ManifestParser.parse(toml, ManifestPath) match {
+        case Ok(m) => m.flixDependencies.map(_.mount)
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
+  test("ManifestError.FlixDependencyUnderivableMount.Hyphen.01") {
+    // The name of the repository is never folded into a mount.
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = "1.2.3"
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyUnderivableMount](result)
+  }
+
+  test("ManifestError.FlixDependencyUnderivableMount.Hyphen.02") {
+    // Nor in the table form.
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "plain" }
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyUnderivableMount](result)
+  }
+
+  test("ManifestError.FlixDependencyUnderivableMount.Digit.01") {
+    // A mount begins with a letter.
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[dependencies]
+        |"github:gabrielecirulli/2048" = "1.0.0"
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyUnderivableMount](result)
+  }
+
+  test("ManifestError.FlixDependencyUnderivableMount.Keyword.01") {
+    // A keyword is read before a name, so it cannot be written before `::`.
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[dependencies]
+        |"github:someone/type" = "1.0.0"
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyUnderivableMount](result)
   }
 
   test("Manifest.Identity.Mount") {
@@ -1620,6 +1711,37 @@ class TestManifestParser extends AnyFunSuite {
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
+  }
+
+  test("Manifest.Identity.Mount.Derived") {
+    // A derived mount is not rendered, so the shorthand survives a round trip.
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[dependencies]
+        |"github:mlutze/flixball" = "3.2.1"
+        |""".stripMargin
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val rendered = Manifest.format(manifest1)
+    assert(!rendered.contains("mount"), rendered)
+    assertResult(manifest1)(ManifestParser.parse(rendered, ManifestPath).unsafeGet)
+  }
+
+  test("ManifestError.FlixDependencyDuplicateMount.Derived") {
+    // Two repositories with one name derive one mount.
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[dependencies]
+        |"github:alice/json" = "1.0.0"
+        |"github:bob/json" = "2.0.0"
+        |""".stripMargin
+    val result = ManifestParser.parse(toml, ManifestPath)
+    expectError[ManifestError.FlixDependencyDuplicateMount](result)
   }
 
   test("ManifestError.FlixDependencyDuplicateMount") {
