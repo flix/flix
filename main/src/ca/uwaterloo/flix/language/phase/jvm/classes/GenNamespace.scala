@@ -46,8 +46,7 @@ object GenNamespace {
   def ShimMethod(ns: List[String], defn: JvmAst.Def): StaticMethod = {
     val erasedArgs = defn.fparams.map(_.tpe).map(TypeDescs.toErasedClassDesc)
     val erasedResult = TypeDescs.toErasedClassDesc(defn.unboxedType.tpe)
-    // Exported names are checked in Safety, so no mangling is needed.
-    val name = if (defn.ann.isExport) defn.sym.name else "m_" + Mangle.mangle(defn.sym.name)
+    val name = "m_" + Mangle.mangle(defn.sym.name)
     StaticMethod(desc(ns), name, mkDescriptor(erasedArgs *)(erasedResult))
   }
 

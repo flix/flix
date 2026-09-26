@@ -67,15 +67,6 @@ object Annotation {
   }
 
   /**
-    * An annotation that marks a function to exported.
-    *
-    * @param loc the source location of the annotation.
-    */
-  case class Export(loc: SourceLocation) extends Annotation {
-    override def toString: String = "@Export"
-  }
-
-  /**
     * An AST node that represents an `@Inline` annotation.
     *
     * A function marked with `@Inline` is guaranteed to be inlined by the compiler.

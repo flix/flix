@@ -48,11 +48,6 @@ case class Annotations(annotations: List[Annotation]) {
   def isExperimental: Boolean = annotations exists (_.isInstanceOf[Annotation.Experimental])
 
   /**
-    * Returns `true` if `this` sequence contains the `@Export` annotation.
-    */
-  def isExport: Boolean = annotations exists (_.isInstanceOf[Annotation.Export])
-
-  /**
     * Returns `true` if `this` sequence contains the `@Inline` annotation.
     */
   def isInline: Boolean = annotations.exists(_.isInstanceOf[Annotation.Inline])

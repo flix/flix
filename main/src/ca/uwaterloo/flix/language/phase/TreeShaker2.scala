@@ -17,7 +17,7 @@ import ca.uwaterloo.flix.util.ParOps
   * The Tree Shaking phase removes all unused function definitions.
   *
   * A function is considered reachable if it:
-  *   - Is an entry point (main / tests / exports).
+  *   - Is an entry point (main / tests).
   *   - Appears in a function which itself is reachable.
   *   - Is an instance of a trait whose signature(s) appear in a reachable function.
   */

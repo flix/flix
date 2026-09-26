@@ -1149,7 +1149,6 @@ object Redundancy {
     !decl.spec.ann.isCompileTest &&
     !decl.spec.ann.isTest &&
       !decl.spec.mod.isPublic &&
-      !decl.spec.ann.isExport &&
       !decl.spec.ann.isDefaultHandler &&
       !isMain(decl.sym) &&
       !decl.sym.name.startsWith("_") &&
