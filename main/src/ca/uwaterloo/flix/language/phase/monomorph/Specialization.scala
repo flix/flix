@@ -402,8 +402,8 @@ object Specialization {
   /** Converts `field`, simplifying its polymorphic type. */
   def visitStructField(field: StructField)(implicit root: TypedAst.Root, flix: Flix): TypedAst.StructField = {
     field match {
-      case TypedAst.StructField(mod, fieldSym, tpe, loc) =>
-        TypedAst.StructField(mod, fieldSym, simplify(tpe, isGround = false), loc)
+      case TypedAst.StructField(fieldSym, mod, tpe, loc) =>
+        TypedAst.StructField(fieldSym, mod, simplify(tpe, isGround = false), loc)
     }
   }
 

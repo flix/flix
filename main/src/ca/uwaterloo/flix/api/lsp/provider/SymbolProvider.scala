@@ -108,7 +108,7 @@ object SymbolProvider {
   }
 
   private def mkFieldWorkspaceSymbol(f: TypedAst.StructField): WorkspaceSymbol = f match {
-    case TypedAst.StructField(_, sym, _, loc) => WorkspaceSymbol(
+    case TypedAst.StructField(sym, _, _, loc) => WorkspaceSymbol(
       sym.name, SymbolKind.Field, Nil, None, Location.from(loc),
     )
   }
@@ -129,7 +129,7 @@ object SymbolProvider {
   }
 
   private def mkFieldDocumentSymbol(f: TypedAst.StructField): DocumentSymbol = f match {
-    case TypedAst.StructField(_, sym, _, loc) => DocumentSymbol(
+    case TypedAst.StructField(sym, _, _, loc) => DocumentSymbol(
       sym.name, None, SymbolKind.Field, Range.from(loc), Range.from(loc), Nil, Nil,
     )
   }

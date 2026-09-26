@@ -363,7 +363,7 @@ object Typer {
   private def visitStructField(field: KindedAst.StructField)(implicit sctx: SharedContext): TypedAst.StructField = field match {
     case KindedAst.StructField(mod, sym, tpe, loc) =>
       checkNoAssocTypes(tpe)
-      TypedAst.StructField(mod, sym, tpe, loc)
+      TypedAst.StructField(sym, mod, tpe, loc)
   }
 
   /**

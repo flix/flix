@@ -282,7 +282,7 @@ object HighlightProvider {
       // Structs
       case TypedAst.Struct(_, _, _, sym, _, _, _, _) => Some(getStructSymOccurs(sym))
       case Type.Cst(TypeConstructor.Struct(sym, _), _) => Some(getStructSymOccurs(sym))
-      case TypedAst.StructField(_, sym, _, _) => Some(getStructFieldSymOccurs(sym))
+      case TypedAst.StructField(sym, _, _, _) => Some(getStructFieldSymOccurs(sym))
       case SymUse.StructFieldSymUse(sym, _) => Some(getStructFieldSymOccurs(sym))
       // Traits
       case TypedAst.Trait(_, _, _, sym, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
