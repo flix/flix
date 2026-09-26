@@ -22,9 +22,10 @@ import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeC
 import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
 import ca.uwaterloo.flix.util.LocalResource
 import ca.uwaterloo.flix.util.collection.Nel
-import org.commonmark.ext.gfm.tables.TablesExtension
+import org.commonmark.ext.gfm.tables.{TableCell, TablesExtension}
+import org.commonmark.node.Node
 import org.commonmark.parser.Parser
-import org.commonmark.renderer.html.HtmlRenderer
+import org.commonmark.renderer.html.{AttributeProvider, HtmlRenderer}
 
 import java.io.IOException
 import java.net.URLEncoder
@@ -603,6 +604,7 @@ object HtmlDocumentor {
     sb.append("</main>")
 
     sb.append("</body>")
+    sb.append("</html>")
 
     sb.toString()
   }
@@ -697,6 +699,7 @@ object HtmlDocumentor {
     sb.append("</main>")
 
     sb.append("</body>")
+    sb.append("</html>")
 
     sb.toString()
   }
@@ -778,6 +781,7 @@ object HtmlDocumentor {
     sb.append("</main>")
 
     sb.append("</body>")
+    sb.append("</html>")
 
     sb.toString()
   }
@@ -856,6 +860,7 @@ object HtmlDocumentor {
     sb.append("</main>")
 
     sb.append("</body>")
+    sb.append("</html>")
 
     sb.toString()
   }
@@ -1022,7 +1027,7 @@ object HtmlDocumentor {
     }
 
     sb.append(s"<section class='subsection'>")
-    sb.append(s"<h3>${esc(name)}</h3>")
+    sb.append(s"<h2>${esc(name)}</h2>")
     for (e <- group) {
       docElt(e)
     }
@@ -1046,7 +1051,7 @@ object HtmlDocumentor {
     }
 
     sb.append(s"<details class='subsection'>")
-    sb.append(s"<summary><h3>${esc(name)}</h3></summary>")
+    sb.append(s"<summary><h2>${esc(name)}</h2></summary>")
     for (e <- group) {
       docElt(e)
     }
@@ -1409,12 +1414,31 @@ object HtmlDocumentor {
     val extensions = java.util.List.of(TablesExtension.create())
     val parser = Parser.builder().extensions(extensions).build()
     val node = parser.parse(text)
-    val renderer = HtmlRenderer.builder().extensions(extensions).escapeHtml(true).build()
+    val renderer = HtmlRenderer.builder()
+      .extensions(extensions)
+      .escapeHtml(true)
+      .attributeProviderFactory(_ => TableCellAlignment)
+      .build()
     val html = renderer.render(node)
 
     sb.append(s"<div class='$cls'>")
     sb.append(html)
     sb.append("</div>")
+  }
+
+  /**
+    * Replaces the obsolete `align` attribute that the tables extension puts on table cells with an
+    * `align-left`, `align-center`, or `align-right` class, which the stylesheet maps to `text-align`.
+    */
+  private object TableCellAlignment extends AttributeProvider {
+    override def setAttributes(node: Node, tagName: String, attributes: java.util.Map[String, String]): Unit = node match {
+      case _: TableCell =>
+        val align = attributes.remove("align")
+        if (align != null) {
+          attributes.put("class", s"align-$align")
+        }
+      case _ => ()
+    }
   }
 
   /**
