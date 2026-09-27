@@ -60,13 +60,13 @@ mod TestLogger {
         run {
             g()
         } with handler Console {
-            def println(s, k) = {
+            def writeLine(s, k) = {
                 let res = "Logging to Console: " + s + k();
                 res
             }
             def readln(_) = unreachable!()
-            def print(_, _) = unreachable!()
-            def eprint(_, _) = unreachable!()
-            def eprintln(_, _) = unreachable!()
+            def write(_, _) = unreachable!()
+            def writeErr(_, _) = unreachable!()
+            def writeErrLine(_, _) = unreachable!()
         }
 }
