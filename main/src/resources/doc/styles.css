@@ -539,6 +539,10 @@ main h2 {
 .subsection > div:not(:last-child) {
     border-bottom: var(--border);
 }
+.subsection.default-handler {
+    padding-top: 0.5rem;
+    border-top: var(--border);
+}
 
 .decl {
     display: flex;
