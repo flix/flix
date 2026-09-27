@@ -785,4 +785,27 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointReturnType](result)
   }
+
+  test("Test.IllegalRunnableEntryPointArgs.Alias.01") {
+    val input =
+      """
+        |type alias U = Unit
+        |
+        |@Test
+        |def testFoo(_u: U): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
+  }
+
+  test("Test.IllegalRunnableEntryPointArgs.Alias.02") {
+    val input =
+      """
+        |type alias U = Unit
+        |
+        |def main(_u: U): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
+  }
 }
