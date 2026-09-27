@@ -1632,8 +1632,8 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the default handler of an effect, `handler`, if it has one.
-    * E.g. "Default handler: runWithIO", linking to the definition.
+    * Documents the default handler of an effect, `handler`, if it has one, as a
+    * "Default Handler" subsection that links to the definition.
     *
     * A default handler is public and declared in the companion module of its effect,
     * so the link points at the definition on the effect's own page.
@@ -1643,10 +1643,10 @@ object HtmlDocumentor {
   private def docDefaultHandler(handler: Option[Symbol.DefnSym])(implicit sb: StringBuilder): Unit = {
     handler.foreach { sym =>
       val page = moduleFileName(Symbol.mkModuleSym(sym.namespace))
-      sb.append("<div class='default-handler'>")
-      sb.append("Default handler: ")
-      sb.append(s"<a href='${escUrl(page)}#def-${escUrl(sym.name)}'><code>${esc(sym.name)}</code></a>")
-      sb.append("</div>")
+      sb.append("<section class='subsection default-handler'>")
+      sb.append("<h2>Default Handler</h2>")
+      sb.append(s"<div><code><a href='${escUrl(page)}#def-${escUrl(sym.name)}'>${esc(sym.name)}</a></code></div>")
+      sb.append("</section>")
     }
   }
 
