@@ -185,7 +185,7 @@ object EntryPoints {
     * reported.
     */
   private def checkMain(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
-    val errs = checkSignature(defn, tpe => EntryPointError.MainNonUnitReturnType(tpe, tpe.loc))
+    val errs = checkSignature(defn)
     if (errs.nonEmpty) {
       // Invalidate main and add errors.
       sctx.invalidMain.set(true)
@@ -199,7 +199,7 @@ object EntryPoints {
     * If the signature is invalid, the errors are reported and the `@Test` annotation is removed.
     */
   private def visitTest(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
-    val errs = checkSignature(defn, tpe => EntryPointError.TestNonUnitReturnType(tpe.loc))
+    val errs = checkSignature(defn)
     if (errs.isEmpty) {
       defn
     } else {
@@ -212,18 +212,18 @@ object EntryPoints {
     * Returns the errors in the signature of the entry point `defn`. An entry point has:
     *   - No type variables.
     *   - One parameter of type Unit.
-    *   - Return type Unit. A non-Unit return type is reported with `nonUnitReturnType`.
+    *   - Return type Unit (exactly, not via a type alias).
     *   - An effect that is a subset of the primitive effects and the effects with default handlers.
     *
     * The last three checks only run on functions without type variables.
     */
-  private def checkSignature(defn: TypedAst.Def, nonUnitReturnType: Type => EntryPointError)(implicit root: TypedAst.Root, flix: Flix): List[EntryPointError] =
+  private def checkSignature(defn: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): List[EntryPointError] =
     checkNoTypeVariables(defn) match {
       case Some(err) => List(err)
       case None =>
         List(
           checkUnitArg(defn),
-          checkUnitReturnType(defn, nonUnitReturnType),
+          checkUnitReturnType(defn),
           checkEffects(defn, Symbol.PrimitiveEffs ++ root.defaultHandlers.map(_.handledSym))
         ).flatten
     }
@@ -283,24 +283,17 @@ object EntryPoints {
   }
 
   /**
-    * Returns `None` if `defn` has return type Unit (via type aliases). Otherwise returns
-    * `nonUnitReturnType` applied to the return type.
+    * Returns `None` if `defn` has return type Unit. Returns an error otherwise.
     *
-    * Tools that want to run-and-print an arbitrary function (e.g. the shell's `:eval` or the
-    * editor's run button) are responsible for wrapping the call in `println(...)` themselves, so
-    * the compiler does not need to special-case ToString here.
+    * The return type must be exactly Unit; a type alias for Unit is not accepted. Tools that want
+    * to run-and-print an arbitrary function (e.g. the shell's `:eval` or the editor's run button)
+    * are responsible for wrapping the call in `println(...)` themselves, so the compiler does not
+    * need to special-case ToString here.
     */
-  private def checkUnitReturnType(defn: TypedAst.Def, nonUnitReturnType: Type => EntryPointError): Option[EntryPointError] = {
+  private def checkUnitReturnType(defn: TypedAst.Def)(implicit flix: Flix): Option[EntryPointError] = {
     val retTpe = defn.spec.retTpe
-    isUnitType(retTpe) match {
-      case Result.Ok(true) =>
-        None
-      case Result.Ok(false) =>
-        Some(nonUnitReturnType(retTpe))
-      case Result.Err(ErrorOrMalformed) =>
-        // Do not report an error, since previous phases should have done already.
-        None
-    }
+    if (retTpe == Type.Unit) None
+    else Some(EntryPointError.IllegalEntryPointReturnType(retTpe, retTpe.loc))
   }
 
   /**

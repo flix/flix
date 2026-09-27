@@ -110,34 +110,34 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
-  test("Test.TestNonUnitReturnType.01") {
+  test("Test.IllegalEntryPointReturnType.Test.01") {
     val input =
       """
         |@Test
         |def testFoo(): Bool = true
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.TestNonUnitReturnType](result)
+    expectError[EntryPointError.IllegalEntryPointReturnType](result)
   }
 
-  test("Test.TestNonUnitReturnType.02") {
+  test("Test.IllegalEntryPointReturnType.Test.02") {
     val input =
       """
         |@Test
         |def testBar(): Int32 = 42
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.TestNonUnitReturnType](result)
+    expectError[EntryPointError.IllegalEntryPointReturnType](result)
   }
 
-  test("Test.TestNonUnitReturnType.03") {
+  test("Test.IllegalEntryPointReturnType.Test.03") {
     val input =
       """
         |@Test
         |def testBaz(): String = "hello"
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[EntryPointError.TestNonUnitReturnType](result)
+    expectError[EntryPointError.IllegalEntryPointReturnType](result)
   }
 
   test("Test.IllegalEntryPointTypeVariables.Test.01") {
@@ -301,7 +301,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     expectError[EntryPointError.IllegalEntryPointEffect](result)
   }
 
-  test("Test.MainNonUnitReturnType.Main.01") {
+  test("Test.IllegalEntryPointReturnType.Main.01") {
     val input =
       """
         |def main(): a \ IO = checked_ecast(???)
@@ -310,53 +310,53 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
-  test("Test.MainNonUnitReturnType.Main.02") {
+  test("Test.IllegalEntryPointReturnType.Main.02") {
     val input =
       """
         |enum E
         |def main(): E = ???
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[EntryPointError.MainNonUnitReturnType](result)
+    expectError[EntryPointError.IllegalEntryPointReturnType](result)
   }
 
-  test("Test.MainNonUnitReturnType.Main.03") {
+  test("Test.IllegalEntryPointReturnType.Main.03") {
     // A non-Unit return type is rejected even when it has a ToString instance.
     val input =
       """
         |def main(): Int64 \ IO = checked_ecast(42i64)
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[EntryPointError.MainNonUnitReturnType](result)
+    expectError[EntryPointError.IllegalEntryPointReturnType](result)
   }
 
-  test("Test.MainNonUnitReturnType.Main.04") {
+  test("Test.IllegalEntryPointReturnType.Main.04") {
     val input =
       """
         |def main(): String = ???
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[EntryPointError.MainNonUnitReturnType](result)
+    expectError[EntryPointError.IllegalEntryPointReturnType](result)
   }
 
-  test("Test.MainNonUnitReturnType.Other.01") {
+  test("Test.IllegalEntryPointReturnType.Other.01") {
     val input =
       """
         |enum E
         |def f(): E = ???
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
-    expectError[EntryPointError.MainNonUnitReturnType](result)
+    expectError[EntryPointError.IllegalEntryPointReturnType](result)
   }
 
-  test("Test.MainNonUnitReturnType.Other.02") {
+  test("Test.IllegalEntryPointReturnType.Other.02") {
     // A non-Unit return type with a ToString instance is rejected for an explicit entry point too.
     val input =
       """
         |def f(): Int64 \ IO = checked_ecast(42i64)
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
-    expectError[EntryPointError.MainNonUnitReturnType](result)
+    expectError[EntryPointError.IllegalEntryPointReturnType](result)
   }
 
   test("Test.IllegalSignature.Main.01") {
@@ -370,7 +370,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
-    expectError[EntryPointError.MainNonUnitReturnType](result)
+    expectError[EntryPointError.IllegalEntryPointReturnType](result)
     expectError[EntryPointError.IllegalEntryPointEffect](result)
   }
 
@@ -763,7 +763,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     expectSuccess(result)
   }
 
-  test("Test.ValidEntryPoint.Test.Alias.01") {
+  test("Test.IllegalEntryPointReturnType.Alias.01") {
     val input =
       """
         |type alias U = Unit
@@ -772,10 +772,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def testFoo(): U = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectSuccess(result)
+    expectError[EntryPointError.IllegalEntryPointReturnType](result)
   }
 
-  test("Test.ValidEntryPoint.Main.Alias.01") {
+  test("Test.IllegalEntryPointReturnType.Alias.02") {
     val input =
       """
         |type alias U = Unit
@@ -783,6 +783,6 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): U = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectSuccess(result)
+    expectError[EntryPointError.IllegalEntryPointReturnType](result)
   }
 }

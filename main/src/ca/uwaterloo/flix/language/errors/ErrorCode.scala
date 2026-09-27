@@ -72,7 +72,6 @@ object ErrorCode {
   case object E1907 extends ErrorCode
   case object E1914 extends ErrorCode
   case object E1952 extends ErrorCode
-  case object E1960 extends ErrorCode
   case object E2018 extends ErrorCode
   case object E2025 extends ErrorCode
   case object E2063 extends ErrorCode
