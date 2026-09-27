@@ -18,7 +18,6 @@ import ca.uwaterloo.flix.util.{ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
-import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -40,8 +39,6 @@ import scala.jdk.CollectionConverters.*
   * (Wrapping entry points with their default effect handlers happens later, in `Lowering`.)
   */
 object EntryPoints {
-
-  private case object ErrorOrMalformed
 
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
   private implicit val S: RegionScope = RegionScope.Top
@@ -129,20 +126,6 @@ object EntryPoints {
     // Namely, println(exp)
     val newExp = exp.copy(exp2 = exp.exp1)
     oldShell.copy(spec = spec, exp = newExp)
-  }
-
-  /** Returns `true` if `tpe` is equivalent to Unit (via type aliases). */
-  @tailrec
-  private def isUnitType(tpe: Type): Result[Boolean, ErrorOrMalformed.type] = tpe match {
-    case Type.Cst(TypeConstructor.Unit, _) => Result.Ok(true)
-    case Type.Cst(_, _) => Result.Ok(false)
-    case Type.Apply(_, _, _) => Result.Ok(false)
-    case Type.Alias(_, _, t, _) => isUnitType(t)
-    case Type.Var(_, _) => Result.Err(ErrorOrMalformed)
-    case Type.AssocType(_, _, _, _) => Result.Err(ErrorOrMalformed)
-    case Type.JvmToType(_, _) => Result.Err(ErrorOrMalformed)
-    case Type.JvmToEff(_, _) => Result.Err(ErrorOrMalformed)
-    case Type.UnresolvedJvmType(_, _) => Result.Err(ErrorOrMalformed)
   }
 
   /**
@@ -263,22 +246,17 @@ object EntryPoints {
       defn.spec.econstrs.flatMap(ec => List(ec.tpe1, ec.tpe2))
   }
 
-  /** Returns `None` if `defn` has a single parameter of type Unit. Returns an error otherwise. */
+  /**
+    * Returns `None` if `defn` has a single parameter of type Unit. Returns an error otherwise.
+    *
+    * The parameter type must be exactly Unit; a type alias for Unit is not accepted.
+    */
   private def checkUnitArg(defn: TypedAst.Def): Option[EntryPointError] = {
     defn.spec.fparams match {
       // One parameter of type Unit - valid.
-      case Nel(arg, Nil) =>
-        isUnitType(arg.tpe) match {
-          case Result.Ok(true) => None
-          case Result.Ok(false) =>
-            Some(EntryPointError.IllegalRunnableEntryPointArgs(defn.sym.loc))
-          case Result.Err(ErrorOrMalformed) =>
-            // Do not report an error, since previous phases should have done already.
-            None
-        }
-      // More than one parameter - invalid.
-      case _ =>
-        Some(EntryPointError.IllegalRunnableEntryPointArgs(defn.sym.loc))
+      case Nel(arg, Nil) if arg.tpe == Type.Unit => None
+      // Any other parameter list - invalid.
+      case _ => Some(EntryPointError.IllegalRunnableEntryPointArgs(defn.sym.loc))
     }
   }
 
