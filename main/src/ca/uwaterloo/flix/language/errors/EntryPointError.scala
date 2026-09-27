@@ -48,6 +48,37 @@ object EntryPointError {
   }
 
   /**
+    * An error raised to indicate that an entry point function has an unexpected formal parameter.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEntryPointArgs(loc: SourceLocation) extends EntryPointError {
+    def code: ErrorCode = ErrorCode.E1512
+
+    def summary: String = s"Unexpected formal parameter in entry point."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unexpected formal parameter in entry point function.
+         |
+         |${highlight(loc, "formal parameter not allowed", fmt)}
+         |
+         |${underline("Explanation:")} Entry point functions (main and tests) must have
+         |no formal parameters.
+         |
+         |Expected signature:
+         |
+         |  def main(): Unit = ...
+         |
+         |or for tests:
+         |
+         |  @Test
+         |  def testFoo(): Unit = ...
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Error indicating an unhandled effect in an entry point function.
     *
     * @param eff the effect.
@@ -118,37 +149,6 @@ object EntryPointError {
          |${underline("Explanation:")} Entry point functions (main and tests) must have
          |concrete types. Type variables like 'a' or 't' are not allowed because the runtime
          |needs to know the exact types at the entry point.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Error indicating an unexpected formal parameter in a runnable (test or main) entry point function.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalRunnableEntryPointArgs(loc: SourceLocation) extends EntryPointError {
-    def code: ErrorCode = ErrorCode.E1512
-
-    def summary: String = s"Unexpected formal parameter in entry point."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Unexpected formal parameter in entry point function.
-         |
-         |${highlight(loc, "formal parameter not allowed", fmt)}
-         |
-         |${underline("Explanation:")} Entry point functions (main and tests) must have
-         |no formal parameters.
-         |
-         |Expected signature:
-         |
-         |  def main(): Unit = ...
-         |
-         |or for tests:
-         |
-         |  @Test
-         |  def testFoo(): Unit = ...
          |""".stripMargin
     }
   }

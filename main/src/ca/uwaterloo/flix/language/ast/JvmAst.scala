@@ -21,7 +21,6 @@ object JvmAst {
                   types: Set[SimpleType],
                   anonClasses: List[AnonClass],
                   mainEntryPoint: Option[Symbol.DefnSym],
-                  entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
   {
 

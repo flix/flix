@@ -20,7 +20,6 @@ object ReducedAst {
                   structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffSym, Effect],
                   mainEntryPoint: Option[Symbol.DefnSym],
-                  entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], exp: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation)

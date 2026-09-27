@@ -41,7 +41,7 @@ object Reducer {
     val types = allTypes(root, ctx.getDefTypes)
     val anonClasses = ctx.getAnonClasses
 
-    JvmAst.Root(defs, enums, structs, effects, types, anonClasses, root.mainEntryPoint, root.entryPoints, root.sources)
+    JvmAst.Root(defs, enums, structs, effects, types, anonClasses, root.mainEntryPoint, root.sources)
   }
 
   /** Returns all types of `root`. */
