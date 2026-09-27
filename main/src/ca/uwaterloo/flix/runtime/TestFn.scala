@@ -13,6 +13,6 @@ import ca.uwaterloo.flix.language.ast.Symbol
   *
   * @param sym  the Flix def symbol.
   * @param skip true if the test case is marked @Skip.
-  * @param run  the function code.
+  * @param run  runs the test. Exceptions thrown by the test propagate.
   */
-case class TestFn(sym: Symbol.DefnSym, skip: Boolean, run: () => AnyRef)
+case class TestFn(sym: Symbol.DefnSym, skip: Boolean, run: () => Unit)

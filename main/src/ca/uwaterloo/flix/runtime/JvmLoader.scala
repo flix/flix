@@ -51,11 +51,16 @@ object JvmLoader {
       // Load each class into the JVM in a fresh class loader.
       implicit val loadedClasses: Map[ClassDesc, Class[?]] = loadAll(root.classes.values, flix.jarLoader)
 
+      // The methods are looked up here, once, so that a missing one is reported at load time.
       val tests = MapOps.mapValuesWithKey(root.tests) {
-        case (sym, defn) => TestFn(sym, defn.isSkip, wrapTest(loadMethod(defn.className, defn.methodName)))
+        case (sym, defn) =>
+          val method = loadMethod(defn.className, defn.methodName)
+          TestFn(sym, defn.isSkip, () => invoke(method))
       }
       val main = root.main.map {
-        case defn => wrapMain(loadMethod(defn.className, defn.methodName))
+        case defn =>
+          val method = loadMethod(defn.className, defn.methodName)
+          (args: Array[String]) => invoke(method, args)
       }
 
       LoadedProgram(main, tests)
@@ -66,46 +71,16 @@ object JvmLoader {
     }
   }
 
-  /** Wraps the reflected test `method` (of type `Unit -> t`) into a thunk. */
-  private def wrapTest(method: Method): () => AnyRef = {
-    val parameterCount = method.getParameterCount
-    val argsArray = Array(null: AnyRef)
-    val argumentCount = argsArray.length
-    if (argumentCount != parameterCount) {
-      throw InternalCompilerException(s"Expected a method of $argumentCount parameters, but ${method.getName} has $parameterCount.", SourceLocation.Unknown)
+  /** Invokes the static `method` with `args`, rethrowing any exception the program itself throws. */
+  private def invoke(method: Method, args: AnyRef*): Unit = {
+    try {
+      method.invoke(null, args *)
+      ()
+    } catch {
+      case e: InvocationTargetException =>
+        // Rethrow the underlying exception.
+        throw e.getTargetException
     }
-
-    () => {
-      // Perform the method call using reflection.
-      try {
-        val result = method.invoke(null, argsArray *)
-        result
-      } catch {
-        case e: InvocationTargetException =>
-          // Rethrow the underlying exception.
-          throw e.getTargetException
-      }
-    }
-  }
-
-  /** Wraps the reflected main `method` (of type `Array[String] -> Unit`) into a function. */
-  private def wrapMain(method: Method): Array[String] => Unit = {
-    val parameterCount = method.getParameterCount
-    val argumentCount = 1 // A single Array[String] argument.
-    if (argumentCount != parameterCount) {
-      throw InternalCompilerException(s"Expected a main method of $argumentCount parameters, but ${method.getName} has $parameterCount.", SourceLocation.Unknown)
-    }
-
-    (args: Array[String]) =>
-      try {
-        // Call the method, passing the argument array.
-        method.invoke(null, args)
-        ()
-      } catch {
-        case e: InvocationTargetException =>
-          // Rethrow the underlying exception.
-          throw e.getTargetException
-      }
   }
 
   /** Returns the [[Method]] object for `className.methodName`. */

@@ -9,7 +9,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.language.jvm.ClassDescs
@@ -17,7 +17,6 @@ import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow,
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.constant.ClassDesc
-import ca.uwaterloo.flix.util.collection.MapOps
 
 
 object CodeGen {
@@ -44,10 +43,11 @@ object CodeGen {
       main => JvmClass(GenMain.Desc, GenMain.genByteCode(main.sym))
     ).toList
 
-    val namespaceClasses = namespacesOf(root).map {
-      case (ns, defs) =>
-        val entrypointDefs = defs.values.toList.filter(defn => root.entryPoints.contains(defn.sym))
-        JvmClass(GenNamespace.desc(ns), GenNamespace.genByteCode(ns, entrypointDefs))
+    // A namespace class holds the shim methods of the namespace's tests, so only namespaces
+    // with tests get one.
+    val testDefs = root.defs.values.filter(_.ann.isTest).toList
+    val namespaceClasses = testDefs.groupBy(_.sym.namespace).map {
+      case (ns, defs) => JvmClass(GenNamespace.desc(ns), GenNamespace.genByteCode(ns, defs.map(_.sym)))
     }.toList
 
     // Generate function classes.
@@ -163,21 +163,17 @@ object CodeGen {
 
     val classMap = allClasses.map(clazz => clazz.name -> clazz).toMap
 
-    val tests = MapOps.mapValues(root.defs.filter(_._2.ann.isTest)) {
+    val tests = testDefs.map {
       case defn =>
-        val ns = defn.sym.namespace
-        BytecodeAst.Test(GenNamespace.desc(ns), GenNamespace.ShimMethod(ns, defn).name, defn.ann.isSkip)
-    }
+        val shim = GenNamespace.ShimMethod(defn.sym)
+        defn.sym -> BytecodeAst.Test(shim.clazz, shim.name, defn.ann.isSkip)
+    }.toMap
     val main = root.mainEntryPoint.map{
       case _ =>
         BytecodeAst.Def(GenMain.Desc, GenMain.MainMethod.name)
     }
     BytecodeAst.Root(classMap, tests, main, root.sources)
   }(DebugNoOp())
-
-  /** Returns the defs of each namespace in the given AST `root`. */
-  private def namespacesOf(root: Root): Map[List[String], Map[Symbol.DefnSym, Def]] =
-    root.defs.groupBy(_._1.namespace)
 
   /** Returns the set of erased function types in `types` without searching recursively. */
   private def getErasedArrowsOf(types: Iterable[SimpleType]): Set[(List[ClassDesc], ClassDesc)] =
