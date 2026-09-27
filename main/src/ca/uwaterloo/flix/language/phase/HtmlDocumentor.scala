@@ -1364,6 +1364,7 @@ object HtmlDocumentor {
     docType(instance.tpe)
     sb.append("]")
     docTraitConstraints(instance.tconstrs)
+    docEqualityConstraints(instance.econstrs)
     sb.append("</code>")
     docActions(None, instance.loc)
     sb.append("</div>")
