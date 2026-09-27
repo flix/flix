@@ -762,4 +762,27 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibMin)
     expectSuccess(result)
   }
+
+  test("Test.ValidEntryPoint.Test.Alias.01") {
+    val input =
+      """
+        |type alias U = Unit
+        |
+        |@Test
+        |def testFoo(): U = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.Main.Alias.01") {
+    val input =
+      """
+        |type alias U = Unit
+        |
+        |def main(): U = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
 }
