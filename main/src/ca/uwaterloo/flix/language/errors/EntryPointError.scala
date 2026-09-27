@@ -77,6 +77,28 @@ object EntryPointError {
   }
 
   /**
+    * An error raised to indicate that an entry point function has a non-Unit return type.
+    *
+    * @param tpe the return type.
+    * @param loc the location of the return type.
+    */
+  case class IllegalEntryPointReturnType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
+    def code: ErrorCode = ErrorCode.E1403
+
+    def summary: String = s"Unexpected return type for entry point: '${FormatType.formatType(tpe)}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unexpected return type '${red(FormatType.formatType(tpe))}' for entry point function.
+         |
+         |${highlight(loc, "the return type must be Unit", fmt)}
+         |
+         |${underline("Explanation:")} Entry point functions (main and tests) must return Unit.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that an entry point function has type
     * variables in its signature.
     *
@@ -127,62 +149,6 @@ object EntryPointError {
          |
          |  @Test
          |  def testFoo(): Unit = ...
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Error indicating that the main entry point function has a non-Unit return type.
-    *
-    * @param tpe the actual (non-Unit) result type.
-    * @param loc the location where the error occurred.
-    */
-  case class MainNonUnitReturnType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
-    def code: ErrorCode = ErrorCode.E1403
-
-    def summary: String = s"Unexpected result type for main: '${FormatType.formatType(tpe)}'."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Unexpected result type '${red(FormatType.formatType(tpe))}' for main.
-         |
-         |${highlight(loc, "the result type must be Unit", fmt)}
-         |
-         |${underline("Explanation:")} The main function must return Unit.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate a @Test function that has a non-Unit return type.
-    *
-    * A @Test function must have no formal parameters, return Unit, and use only
-    * the Assert effect, effects with default handlers, and/or the IO effect.
-    *
-    * @param loc the location of the return type.
-    */
-  case class TestNonUnitReturnType(loc: SourceLocation) extends EntryPointError {
-    def code: ErrorCode = ErrorCode.E1960
-
-    def summary: String = s"Unexpected return type: @Test function must return Unit."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Unexpected return type: @Test function must return Unit.
-         |
-         |${highlight(loc, "expected Unit", fmt)}
-         |
-         |${underline("Explanation:")} A @Test function must have no formal parameters,
-         |return Unit, and use only the Assert effect, effects with default handlers,
-         |and/or the IO effect.
-         |
-         |Valid signatures:
-         |
-         |  @Test
-         |  def testFoo(): Unit \\ Assert = ...
-         |
-         |  @Test
-         |  def testBar(): Unit \\ {Assert, IO} = ...
          |""".stripMargin
     }
   }
