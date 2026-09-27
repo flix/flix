@@ -106,105 +106,57 @@ object HtmlDocumentor {
 
   /**
     * Documents the given `Module`, `mod`, and all of its contained items, writing the resulting HTML to disk.
-    *
-    * Returns a list of the names of the generated files.
     */
-  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): List[String] = {
-    val out = documentModule(mod)
-    writeDocFile(mod.fileName, out, outputDir)
-
-    val generatedPages = List(mod.fileName) :::
-      mod.submodules.flatMap(visitMod(_, outputDir)) :::
-      mod.traits.flatMap(visitTrait(_, outputDir)) :::
-      mod.effects.flatMap(visitEffect(_, outputDir)) :::
-      mod.enums.flatMap(visitEnum(_, outputDir)) :::
-      mod.structs.flatMap(visitStruct(_, outputDir))
-
-    generatedPages
+  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+    writeDocFile(mod.fileName, documentModule(mod), outputDir)
+    visitContents(mod, outputDir)
   }
 
   /**
     * Documents the given `Trait`, `trt`, and all of its contained items, writing the resulting HTML to disk.
-    *
-    * Returns a list of the names of the generated files.
     */
-  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): List[String] = {
-    val out = documentTrait(trt)
-    writeDocFile(trt.fileName, out, outputDir)
-
-    val generatedPages = List(trt.fileName) :::
-      trt.companionMod.map { mod =>
-        mod.submodules.flatMap(visitMod(_, outputDir)) :::
-          mod.traits.flatMap(visitTrait(_, outputDir)) :::
-          mod.effects.flatMap(visitEffect(_, outputDir)) :::
-          mod.enums.flatMap(visitEnum(_, outputDir)) :::
-          mod.structs.flatMap(visitStruct(_, outputDir))
-      }.getOrElse(Nil)
-
-    generatedPages
+  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+    writeDocFile(trt.fileName, documentTrait(trt), outputDir)
+    trt.companionMod.foreach(visitContents(_, outputDir))
   }
 
   /**
     * Documents the given `Effect`, `eff`, and all of its contained items, writing the resulting HTML to disk.
-    *
-    * Returns a list of the names of the generated files.
     */
-  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): List[String] = {
-    val out = documentEffect(eff)
-    writeDocFile(eff.fileName, out, outputDir)
-
-    val generatedPages = List(eff.fileName) :::
-      eff.companionMod.map { mod =>
-        mod.submodules.flatMap(visitMod(_, outputDir)) :::
-          mod.traits.flatMap(visitTrait(_, outputDir)) :::
-          mod.effects.flatMap(visitEffect(_, outputDir)) :::
-          mod.enums.flatMap(visitEnum(_, outputDir)) :::
-          mod.structs.flatMap(visitStruct(_, outputDir))
-      }.getOrElse(Nil)
-
-    generatedPages
+  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+    writeDocFile(eff.fileName, documentEffect(eff), outputDir)
+    eff.companionMod.foreach(visitContents(_, outputDir))
   }
 
   /**
     * Documents the given `Enum`, `enm`, and all of its contained items, writing the resulting HTML to disk.
-    *
-    * Returns a list of the names of the generated files.
     */
-  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): List[String] = {
-    val out = documentEnum(enm)
-    writeDocFile(enm.fileName, out, outputDir)
-
-    val generatedPages = List(enm.fileName) :::
-      enm.companionMod.map { mod =>
-        mod.submodules.flatMap(visitMod(_, outputDir))
-        mod.traits.flatMap(visitTrait(_, outputDir))
-        mod.effects.flatMap(visitEffect(_, outputDir))
-        mod.enums.flatMap(visitEnum(_, outputDir))
-        mod.structs.flatMap(visitStruct(_, outputDir))
-      }.getOrElse(Nil)
-
-    generatedPages
+  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+    writeDocFile(enm.fileName, documentEnum(enm), outputDir)
+    enm.companionMod.foreach(visitContents(_, outputDir))
   }
 
   /**
     * Documents the given `Struct`, `struct`, and all of its contained items, writing the resulting HTML to disk.
-    *
-    * Returns a list of the names of the generated files.
     */
-  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): List[String] = {
-    val out = documentStruct(struct)
-    writeDocFile(struct.fileName, out, outputDir)
+  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+    writeDocFile(struct.fileName, documentStruct(struct), outputDir)
+    struct.companionMod.foreach(visitContents(_, outputDir))
+  }
 
-    val generatedPages = List(struct.fileName) :::
-      struct.companionMod.map { mod =>
-        mod.submodules.flatMap(visitMod(_, outputDir)) :::
-          mod.traits.flatMap(visitTrait(_, outputDir)) :::
-          mod.effects.flatMap(visitEffect(_, outputDir)) :::
-          mod.enums.flatMap(visitEnum(_, outputDir)) :::
-          mod.structs.flatMap(visitStruct(_, outputDir))
-      }.getOrElse(Nil)
-
-    generatedPages
+  /**
+    * Documents the items contained in the given `Module`, `mod`, but not the module itself,
+    * writing the resulting HTML to disk.
+    *
+    * The items of a companion module are documented on the page of the item it belongs to,
+    * so a companion module gets no page of its own.
+    */
+  private def visitContents(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+    mod.submodules.foreach(visitMod(_, outputDir))
+    mod.traits.foreach(visitTrait(_, outputDir))
+    mod.effects.foreach(visitEffect(_, outputDir))
+    mod.enums.foreach(visitEnum(_, outputDir))
+    mod.structs.foreach(visitStruct(_, outputDir))
   }
 
   /**
