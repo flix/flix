@@ -10,8 +10,7 @@ pub mod Sys.Console {
     use Sys.Console
 
     import java.lang.System
-    import java.io.BufferedReader
-    import java.io.InputStreamReader
+    import java.io.ByteArrayOutputStream
 
     ///
     /// An effect used to interact with the console.
@@ -168,9 +167,7 @@ pub mod Sys.Console {
         // NB: System.console() returns null when there is no interactive terminal (e.g. IDE, piped input).
         let reader = match Object.toOption(System.console()) {
             case Some(c) => () -> Object.toOption(c.readLine())
-            case None =>
-                let br = new BufferedReader(new InputStreamReader(System.in));
-                () -> Object.toOption(br.readLine())
+            case None    => () -> readLineFromStdIn()
         };
         run {
             f(x)
@@ -189,6 +186,31 @@ pub mod Sys.Console {
     ///
     @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Console) + IO = handle(f)()
+
+    ///
+    /// Reads a line from `System.in` without reading past the end of the line.
+    ///
+    /// Returns `None` if the end of input has been reached before any byte was read.
+    ///
+    /// A `BufferedReader` reads ahead and would swallow lines meant for a later
+    /// reader, e.g. when the `Console` effect is handled more than once.
+    /// Reading one byte at a time is cheap because `System.in` is itself buffered.
+    ///
+    def readLineFromStdIn(): Option[String] \ IO =
+        let bytes = new ByteArrayOutputStream();
+        // Returns `true` if a newline was consumed and `false` if the end of input was reached.
+        def loop() = match System.in.read() {
+            case -1 => false // end of input
+            case 10 => true  // '\n'
+            case b  => bytes.write(b); loop()
+        };
+        let sawNewline = loop();
+        if (not sawNewline and bytes.size() == 0)
+            None
+        else {
+            let s = String.fromBytes(Array.toVector(bytes.toByteArray()));
+            Some(Option.getWithDefault(s, String.stripSuffix(substr = "\r", s)))
+        }
 
     ///
     /// Returns the string representation of the formattable value `p`.
