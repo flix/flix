@@ -8,8 +8,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.Source
+import ca.uwaterloo.flix.language.ast.BytecodeAst
 import ca.uwaterloo.flix.language.phase.jvm.JvmClass
 
 import java.lang.constant.ClassDesc
@@ -33,18 +32,6 @@ class CompilationResult(val root: BytecodeAst.Root,
   /** Returns the generated JVM classes. */
   def getClasses: Map[ClassDesc, JvmClass] =
     root.classes
-
-  /** Optionally returns the main entry point. */
-  def getMain: Option[BytecodeAst.Def] =
-    root.main
-
-  /** Returns all the test entry points in the program. */
-  def getTests: Map[Symbol.DefnSym, BytecodeAst.Test] =
-    root.tests
-
-  /** Returns the sources of the program. */
-  def getSources: Map[Source, SourceLocation] =
-    root.sources
 
   /** Returns the total number of lines of compiled code. */
   def getTotalLines: Int = root.sources.foldLeft(0) {

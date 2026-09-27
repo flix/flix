@@ -31,9 +31,9 @@ import scala.jdk.CollectionConverters.*
   *
   * This phase has these sub-phases:
   *   - Resolve the entrypoint option so that there is no implicit default entry point.
-  *   - Check that all entry points have valid signatures, where rules differ for main and tests.
-  *     If an entrypoint does not have a valid signature, its related annotation is removed to
-  *     allow further compilation to continue with valid assumptions.
+  *   - Check that all entry points have valid signatures. Main and tests follow the same rules.
+  *     If main does not have a valid signature, it is removed as the main entry point to allow
+  *     further compilation to continue with valid assumptions.
   *   - Compute the set of all entry points and store it in Root.
   *
   * (Wrapping entry points with their default effect handlers happens later, in `Lowering`.)
@@ -131,14 +131,15 @@ object EntryPoints {
   /**
     * CheckEntryPoints checks that all entry points (main/test) have valid signatures.
     *
-    * Because of resilience, invalid entry points are not discarded. Its entry point marker is
-    * removed (removed as the main function in root or have its annotation removed).
+    * Because of resilience, invalid entry points are not discarded. An invalid main function is
+    * removed as the main entry point of root. An invalid test keeps its `@Test` annotation.
     */
   private def checkEntryPoints(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = {
     implicit val sctx: SharedContext = SharedContext.mk()
     implicit val r: TypedAst.Root = root
 
-    ParOps.parMapValues(root.defs)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn)))
+    // The checks report errors through the shared context, so the mapped result is unused.
+    ParOps.parMapValues(root.defs)(defn => flix.profile(defn.sym, defn.loc)(checkDef(defn)))
 
     // Remove the entrypoint if it is not valid.
     val root1 = if (sctx.invalidMain.get()) root.copy(mainEntryPoint = None) else root
@@ -147,18 +148,13 @@ object EntryPoints {
   }
 
   /**
-    * Checks `defn` with relevant checks for its entry point kind (main/test).
-    *
-    * Because of resilience, invalid entry points are not discarded. Its entry point marker is
-    * removed (removed as the main function in root or have its annotation removed).
+    * Checks `defn` with the checks for its entry point kind (main/test).
     *
     * A function can be both main and a test at the same time.
     */
-  private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
-    // checkMain is different than visitTest because the entry point designation exists on
-    // root and invalid main functions are communicated via SharedContext.
+  private def checkDef(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
     if (TypedAstOps.isMain(defn)) checkMain(defn)
-    if (TypedAstOps.isTest(defn)) visitTest(defn) else defn
+    if (TypedAstOps.isTest(defn)) checkTest(defn)
   }
 
   /**
@@ -179,17 +175,10 @@ object EntryPoints {
   /**
     * Checks the signature of the test function `defn` (see [[checkSignature]]).
     *
-    * If the signature is invalid, the errors are reported and the `@Test` annotation is removed.
+    * If the signature is invalid, the errors are reported.
     */
-  private def visitTest(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
-    val errs = checkSignature(defn)
-    if (errs.isEmpty) {
-      defn
-    } else {
-      errs.foreach(sctx.errors.add)
-      removeTestAnnotation(defn)
-    }
-  }
+  private def checkTest(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit =
+    checkSignature(defn).foreach(sctx.errors.add)
 
   /**
     * Returns the errors in the signature of the entry point `defn`. An entry point has:
@@ -210,16 +199,6 @@ object EntryPoints {
           checkEffects(defn, Symbol.PrimitiveEffs ++ root.defaultHandlers.map(_.handledSym))
         ).flatten
     }
-
-  /** Returns `defn` without a test annotation. */
-  private def removeTestAnnotation(defn: TypedAst.Def): TypedAst.Def =
-    defn.copy(
-      spec = defn.spec.copy(
-        ann = defn.spec.ann.copy(
-          annotations = defn.spec.ann.annotations.filterNot(_.isInstanceOf[Annotation.Test])
-        )
-      )
-    )
 
   /**
     * Returns an error if `defn` has type variables.
@@ -256,7 +235,7 @@ object EntryPoints {
       // One parameter of type Unit - valid.
       case Nel(arg, Nil) if arg.tpe == Type.Unit => None
       // Any other parameter list - invalid.
-      case _ => Some(EntryPointError.IllegalRunnableEntryPointArgs(defn.sym.loc))
+      case _ => Some(EntryPointError.IllegalEntryPointArgs(defn.sym.loc))
     }
   }
 

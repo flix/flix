@@ -1147,18 +1147,11 @@ object Redundancy {
     */
   private def deadDef(decl: Def)(implicit sctx: SharedContext, root: Root): Boolean =
     !decl.spec.ann.isCompileTest &&
-    !decl.spec.ann.isTest &&
+      !TypedAstOps.isEntryPoint(decl) &&
       !decl.spec.mod.isPublic &&
       !decl.spec.ann.isDefaultHandler &&
-      !isMain(decl.sym) &&
       !decl.sym.name.startsWith("_") &&
       !sctx.defSyms.containsKey(decl.sym)
-
-  /**
-    * Returns `true` if the given symbol `sym` is the entry point.
-    */
-  private def isMain(sym: Symbol.DefnSym)(implicit root: Root): Boolean =
-    root.mainEntryPoint.contains(sym)
 
   /**
     * Returns `true` if the given definition `decl` is unused according to `used`.
