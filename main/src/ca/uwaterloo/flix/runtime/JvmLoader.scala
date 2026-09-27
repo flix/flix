@@ -51,11 +51,16 @@ object JvmLoader {
       // Load each class into the JVM in a fresh class loader.
       implicit val loadedClasses: Map[ClassDesc, Class[?]] = loadAll(root.classes.values, flix.jarLoader)
 
+      // The methods are looked up here, once, so that a missing one is reported at load time.
       val tests = MapOps.mapValuesWithKey(root.tests) {
-        case (sym, defn) => TestFn(sym, defn.isSkip, wrapTest(loadMethod(defn.className, defn.methodName)))
+        case (sym, defn) =>
+          val method = loadMethod(defn.className, defn.methodName)
+          TestFn(sym, defn.isSkip, () => invoke(method))
       }
       val main = root.main.map {
-        case defn => wrapMain(loadMethod(defn.className, defn.methodName))
+        case defn =>
+          val method = loadMethod(defn.className, defn.methodName)
+          (args: Array[String]) => invoke(method, args)
       }
 
       LoadedProgram(main, tests)
@@ -65,14 +70,6 @@ object JvmLoader {
         throw ex
     }
   }
-
-  /** Wraps the reflected test `method` (of type `() -> void`) into a thunk. */
-  private def wrapTest(method: Method): () => Unit =
-    () => invoke(method)
-
-  /** Wraps the reflected main `method` (of type `Array[String] -> void`) into a function. */
-  private def wrapMain(method: Method): Array[String] => Unit =
-    args => invoke(method, args)
 
   /** Invokes the static `method` with `args`, rethrowing any exception the program itself throws. */
   private def invoke(method: Method, args: AnyRef*): Unit = {
