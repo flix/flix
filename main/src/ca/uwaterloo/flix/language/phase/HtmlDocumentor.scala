@@ -355,7 +355,8 @@ object HtmlDocumentor {
     * * leaving the companion module unpopulated.
     */
   private def mkEffect(sym: Symbol.EffSym, parent: Symbol.ModuleSym, root: TypedAst.Root): Effect = {
-    Effect(root.effects(sym), parent, None)
+    val defaultHandler = root.defaultHandlers.find(_.handledSym == sym).map(_.handlerSym)
+    Effect(root.effects(sym), defaultHandler, parent, None)
   }
 
   /**
@@ -479,9 +480,10 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterEffect(eff: Effect): Effect = eff match {
-    case Effect(e, parent, _) =>
+    case Effect(e, defaultHandler, parent, _) =>
       Effect(
         e,
+        defaultHandler,
         parent,
         None,
       )
@@ -868,6 +870,7 @@ object HtmlDocumentor {
     docActions(None, eff.decl.loc)
     sb.append("</div>")
     docDoc(eff.decl.doc)
+    docDefaultHandler(eff.defaultHandler)
     sb.append("</div>")
 
     docSection("Operations", sortedOps, docOp)
@@ -1629,6 +1632,25 @@ object HtmlDocumentor {
   }
 
   /**
+    * Documents the default handler of an effect, `handler`, if it has one.
+    * E.g. "Default handler: runWithIO", linking to the definition.
+    *
+    * A default handler is public and declared in the companion module of its effect,
+    * so the link points at the definition on the effect's own page.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docDefaultHandler(handler: Option[Symbol.DefnSym])(implicit sb: StringBuilder): Unit = {
+    handler.foreach { sym =>
+      val page = moduleFileName(Symbol.mkModuleSym(sym.namespace))
+      sb.append("<div class='default-handler'>")
+      sb.append("Default handler: ")
+      sb.append(s"<a href='${escUrl(page)}#def-${escUrl(sym.name)}'><code>${esc(sym.name)}</code></a>")
+      sb.append("</div>")
+    }
+  }
+
+  /**
     * Document the the given `doc`, while parsing any markdown.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
@@ -1940,6 +1962,7 @@ object HtmlDocumentor {
     * A representation of an effect that's easier to work with while generating documentation.
     */
   private case class Effect(decl: TypedAst.Effect,
+                            defaultHandler: Option[Symbol.DefnSym],
                             parent: Symbol.ModuleSym,
                             companionMod: Option[Module]) extends Item {
     override def name: String = effectName(this.decl.sym)
