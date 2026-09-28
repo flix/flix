@@ -918,7 +918,7 @@ object ConstraintGen {
         val resultEff = Type.mkUnion(evar, handlerExpEff, loc.asSynthetic)
         (resultTpe, resultEff)
 
-      case Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
+      case Expr.InvokeConstructor(clazz, exps, jvar, tvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
         // --------------------------------------------------------
         // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
@@ -926,12 +926,13 @@ object ConstraintGen {
         val clazzTpe = JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
+        c.unifyType(tvar, clazzTpe, loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
-        val resTpe = clazzTpe
+        val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc) =>
+      case Expr.InvokeSuperConstructor(clazz, exps, jvar, tvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
         // --------------------------------------------------------
         // Γ ⊢ super(e₁ ...) : k \ JvmToEff[ι]
@@ -939,8 +940,9 @@ object ConstraintGen {
         val clazzTpe = JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
+        c.unifyType(tvar, clazzTpe, loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
-        val resTpe = clazzTpe
+        val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 

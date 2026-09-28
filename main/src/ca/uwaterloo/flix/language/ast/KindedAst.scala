@@ -168,9 +168,9 @@ object KindedAst {
 
     case class RunWith(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(clazz: ClassDesc, exps: List[Expr], jvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class InvokeConstructor(clazz: ClassDesc, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InvokeSuperConstructor(clazz: ClassDesc, exps: List[Expr], jvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class InvokeSuperConstructor(clazz: ClassDesc, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
