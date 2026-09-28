@@ -30,7 +30,7 @@ mod Test.EvalOrder {
     @Test
     def testDef02(): Unit \ Assert = region rc {
         let c = Ref.fresh(rc, 0);
-        assertEq(expected = ((0, 1), (2, 3)), pair(d2(next(c), next(c)), d2(next(c), next(c))))
+        assertEq(expected = ((0, 1, 2), (3, 4, 5)), pair(effectful(c, next(c), next(c)), effectful(c, next(c), next(c))))
     }
 
     @Test
@@ -142,7 +142,7 @@ mod Test.EvalOrder {
     @Test
     def testCurried03(): Unit \ Assert = region rc {
         let c = Ref.fresh(rc, 0);
-        assertEq(expected = (0, 1, 2), mk2(c)(next(c))(next(c)))
+        assertEq(expected = (0, 1, 2, 3), mk2(c)(next(c))(next(c)))
     }
 
     ///
@@ -332,7 +332,7 @@ mod Test.EvalOrder {
 
     def d3(x: Int32, y: Int32, z: Int32): (Int32, Int32, Int32) = (x, y, z)
 
-    def pair(x: (Int32, Int32), y: (Int32, Int32)): ((Int32, Int32), (Int32, Int32)) = (x, y)
+    def pair(x: (Int32, Int32, Int32), y: (Int32, Int32, Int32)): ((Int32, Int32, Int32), (Int32, Int32, Int32)) = (x, y)
 
     def named(x: {x = Int32}, y: {y = Int32}): (Int32, Int32) = (x#x, y#y)
 
@@ -348,9 +348,12 @@ mod Test.EvalOrder {
         let n = next(c);
         x -> (n, x)
 
-    def mk2(c: Ref[Int32, r]): (Int32 -> (Int32 -> (Int32, Int32, Int32))) \ r =
+    def mk2(c: Ref[Int32, r]): (Int32 -> (Int32 -> (Int32, Int32, Int32, Int32)) \ r) \ r =
         let n = next(c);
-        x -> y -> (n, x, y)
+        x -> {
+            let m = next(c);
+            y -> (n, x, m, y)
+        }
 
     def ho(f: (Int32, Int32) -> (Int32, Int32), c: Ref[Int32, r]): (Int32, Int32) \ r =
         f(next(c), next(c))
