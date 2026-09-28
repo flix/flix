@@ -1563,15 +1563,43 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docAnnotations(anns: Annotations)(implicit sb: StringBuilder): Unit = {
-    if (anns.annotations.isEmpty) {
+    val visible = anns.annotations.filter(isPublicAnnotation)
+    if (visible.isEmpty) {
       return
     }
 
     sb.append("<code class='annotations'>")
-    for (a <- anns.annotations) {
+    for (a <- visible) {
       sb.append(s"<span class='annotation'>${esc(a.toString)}</span> ")
     }
     sb.append("</code>")
+  }
+
+  /**
+    * Returns `true` if `ann` is meaningful to a caller of the API and should be documented.
+    *
+    * Annotations that only describe compiler-internal bookkeeping (e.g. lowering targets or
+    * inlining decisions) are hidden.
+    */
+  private def isPublicAnnotation(ann: Annotation): Boolean = ann match {
+    case Annotation.Deprecated(_) => true
+    case Annotation.Experimental(_) => true
+    case Annotation.Parallel(_) => true
+    case Annotation.ParallelWhenPure(_) => true
+    case Annotation.Lazy(_) => true
+    case Annotation.LazyWhenPure(_) => true
+    case Annotation.Terminates(_) => true
+
+    case Annotation.CompileTest(_) => false
+    case Annotation.DefaultHandler(_) => false
+    case Annotation.DontInline(_) => false
+    case Annotation.Inline(_) => false
+    case Annotation.LoweringTargetChannel(_) => false
+    case Annotation.LoweringTargetDatalog(_) => false
+    case Annotation.Skip(_) => false
+    case Annotation.Test(_) => false
+    case Annotation.TailRecursive(_) => false
+    case Annotation.Error(_, _) => false
   }
 
   /**
