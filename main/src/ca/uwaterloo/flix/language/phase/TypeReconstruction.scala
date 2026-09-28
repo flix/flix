@@ -184,7 +184,7 @@ object TypeReconstruction {
       val e2 = visitExp(exp2)
       val tpe = e2.tpe
       val eff = e2.eff
-      val boundType = Type.mkUncurriedArrowWithEffect(fps.map(_.tpe), e1.tpe, e1.eff, SourceLocation.Unknown)
+      val boundType = Type.mkUncurriedArrowWithEffect(fps.map(_.tpe), e1.eff, e1.tpe, SourceLocation.Unknown)
       val bnd = TypedAst.Binder(sym, boundType)
       TypedAst.Expr.LocalDef(ann, bnd, fps, e1, e2, tpe, eff, loc)
 
@@ -417,10 +417,10 @@ object TypeReconstruction {
       val e2 = visitExp(exp2)
       TypedAst.Expr.RunWith(e1, e2, subst(tvar), Type.mkUnion(subst(evar), e2.eff, loc.asSynthetic), loc)
 
-    case KindedAst.Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
+    case KindedAst.Expr.InvokeConstructor(_, exps, jvar, tvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
-      val tpe = JavaTypes.instantiateWithObjectArgs(clazz, loc)
+      val tpe = subst(tvar)
       val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
@@ -430,10 +430,10 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
       }
 
-    case KindedAst.Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc) =>
+    case KindedAst.Expr.InvokeSuperConstructor(_, exps, jvar, tvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
-      val tpe = JavaTypes.instantiateWithObjectArgs(clazz, loc)
+      val tpe = subst(tvar)
       val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
@@ -504,7 +504,7 @@ object TypeReconstruction {
 
     case KindedAst.Expr.GetStaticField(field, tvar, loc) =>
       val tpe = subst(tvar)
-      val eff = Type.IO
+      val eff = if (field.isFinal) Type.Pure else Type.IO
       TypedAst.Expr.GetStaticField(field, tpe, eff, loc)
 
     case KindedAst.Expr.PutStaticField(field, exp, loc) =>
@@ -608,8 +608,8 @@ object TypeReconstruction {
       val ss = selects.map(visitExp)
       val f = from.map(visitBodyPredicate)
       val w = where.map(visitExp)
-      val effs = es.map(_.eff) ::: ss.map(_.eff) ::: w.map(_.eff)
-      val eff = Type.mkUnion(effs, loc)
+      // The select and where expressions are type checked as part of the query expression.
+      val eff = Type.mkUnion(qe.eff :: es.map(_.eff), loc)
       TypedAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, subst(tvar), eff, loc)
 
     case KindedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, tvar, loc) =>
