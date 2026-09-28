@@ -2977,10 +2977,8 @@ object Weeder2 {
     }
 
     private def visitSchemaRowType(parentTree: Tree)(implicit sctx: SharedContext): Type = {
-      val rest: Type = tryPick(TreeKind.Ident, parentTree).map(tokenToIdent) match {
-        case None => WeededAst.Type.SchemaRowEmpty(parentTree.loc)
-        case Some(name) => WeededAst.Type.Var(name, name.loc)
-      }
+      val maybeType = tryPick(TreeKind.Type.Type, parentTree).map(visitType)
+      val rest = maybeType.getOrElse(WeededAst.Type.SchemaRowEmpty(parentTree.loc))
       pickAllTrees(parentTree).foldRight(rest) {
         case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithAlias =>
           val qname = pickQName(tree)

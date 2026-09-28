@@ -3765,7 +3765,7 @@ object Parser2 {
         delimiterL = TokenKind.HashBar,
         delimiterR = TokenKind.BarHash,
         breakWhen = _.isRecoverInType,
-        optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
+        optionallyWith = Some((TokenKind.Bar, () => ttype())),
       )
       close(mark, TreeKind.Type.Extensible)
     }
@@ -3781,7 +3781,7 @@ object Parser2 {
         delimiterL = TokenKind.HashCurlyL,
         delimiterR = TokenKind.CurlyR,
         breakWhen = _.isRecoverInType,
-        optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
+        optionallyWith = Some((TokenKind.Bar, () => ttype())),
       )
       close(mark, TreeKind.Type.Schema)
     }
@@ -3796,7 +3796,7 @@ object Parser2 {
         checkForItem = NAME_PREDICATE.contains,
         delimiterL = TokenKind.HashParenL,
         breakWhen = _.isRecoverInType,
-        optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
+        optionallyWith = Some((TokenKind.Bar, () => ttype())),
       )
       close(mark, TreeKind.Type.SchemaRow)
     }
