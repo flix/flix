@@ -98,8 +98,9 @@ object HtmlDocumentor {
     val modulesRoot = splitModules(root)
     val filteredModulesRoot = filterModules(modulesRoot, origin)
     val pairedModulesRoot = pairModules(filteredModulesRoot)
+    implicit val documentedTraits: Set[Symbol.TraitSym] = collectTraitSyms(filteredModulesRoot)
 
-    visitMod(pairedModulesRoot, outputDir)(flix, repo)
+    visitMod(pairedModulesRoot, outputDir)(flix, repo, documentedTraits)
 
     writeDocFile("404.html", document404(), outputDir)
 
@@ -109,7 +110,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Module`, `mod`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym]): Unit = {
     writeDocFile(mod.fileName, documentModule(mod), outputDir)
     visitContents(mod, outputDir)
   }
@@ -117,7 +118,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Trait`, `trt`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym]): Unit = {
     writeDocFile(trt.fileName, documentTrait(trt), outputDir)
     trt.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -125,7 +126,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Effect`, `eff`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym]): Unit = {
     writeDocFile(eff.fileName, documentEffect(eff), outputDir)
     eff.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -133,7 +134,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Enum`, `enm`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym]): Unit = {
     writeDocFile(enm.fileName, documentEnum(enm), outputDir)
     enm.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -141,7 +142,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Struct`, `struct`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym]): Unit = {
     writeDocFile(struct.fileName, documentStruct(struct), outputDir)
     struct.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -153,7 +154,7 @@ object HtmlDocumentor {
     * The items of a companion module are documented on the page of the item it belongs to,
     * so a companion module gets no page of its own.
     */
-  private def visitContents(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitContents(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym]): Unit = {
     mod.submodules.foreach(visitMod(_, outputDir))
     mod.traits.foreach(visitTrait(_, outputDir))
     mod.effects.foreach(visitEffect(_, outputDir))
@@ -361,6 +362,17 @@ object HtmlDocumentor {
     */
   private def filterModules(mod: Module, origin: Origin): Module = {
     filterEmpty(filterContents(mod, origin))
+  }
+
+  /**
+    * Returns the symbols of all traits in `mod` and its submodules, i.e. the traits that will
+    * have a documentation page generated for them.
+    *
+    * This is used to determine whether a trait name should be rendered as a link: a trait that
+    * has been filtered out (e.g. because it is not `pub`) has no page to link to.
+    */
+  private def collectTraitSyms(mod: Module): Set[Symbol.TraitSym] = {
+    mod.traits.iterator.map(_.decl.sym).toSet ++ mod.submodules.iterator.flatMap(collectTraitSyms)
   }
 
   /**
@@ -588,7 +600,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Module`, `mod`, returning a string of HTML.
     */
-  private def documentModule(mod: Module)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentModule(mod: Module)(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedTraits = mod.traits.sortBy(_.name)
@@ -659,7 +671,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Trait`, `trt`, returning a string of HTML.
     */
-  private def documentTrait(trt: Trait)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentTrait(trt: Trait)(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedAssocs = trt.decl.assocs.sortBy(_.sym.name)
@@ -769,7 +781,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Effect`, `eff`, returning a string of HTML.
     */
-  private def documentEffect(eff: Effect)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentEffect(eff: Effect)(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedOps = eff.decl.ops.sortBy(_.sym.name)
@@ -866,7 +878,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Enum`, `enm`, returning a string of HTML.
     */
-  private def documentEnum(enm: Enum)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentEnum(enm: Enum)(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedInstances = enm.instances.sortBy(_.trt.sym.name)
@@ -958,7 +970,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Struct`, `struct`, returning a string of HTML.
     */
-  private def documentStruct(struct: Struct)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentStruct(struct: Struct)(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedInstances = struct.instances.sortBy(_.trt.sym.name)
@@ -1310,7 +1322,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docDef(defn: TypedAst.Def)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
+  private def docDef(defn: TypedAst.Def)(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym], sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='def-${esc(defn.sym.name)}'>")
     docSpec(defn.sym.name, defn.spec, defn.loc, Some(s"def-${defn.sym.name}"))
     sb.append("</div>")
@@ -1321,7 +1333,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
+  private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym], sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='sig-${esc(sig.sym.name)}'>")
     docSpec(sig.sym.name, sig.spec, sig.loc, Some(s"sig-${sig.sym.name}"))
     sb.append("</div>")
@@ -1332,7 +1344,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docOp(op: TypedAst.Op)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
+  private def docOp(op: TypedAst.Op)(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym], sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='op-${esc(op.sym.name)}'>")
     docSpec(op.sym.name, op.spec, op.loc, Some(s"op-${op.sym.name}"))
     sb.append("</div>")
@@ -1344,7 +1356,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSpec(name: String, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
+  private def docSpec(name: String, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym], sb: StringBuilder): Unit = {
     docAnnotations(spec.ann)
     sb.append("<div class='decl'>")
     sb.append(s"<code>")
@@ -1391,7 +1403,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
+  private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, repo: Option[SourceRepository], documentedTraits: Set[Symbol.TraitSym], sb: StringBuilder): Unit = {
     sb.append("<div>")
     docAnnotations(instance.ann)
     sb.append("<div class='decl'>")
@@ -1443,7 +1455,7 @@ object HtmlDocumentor {
     *
     * If `tconsts` is empty, nothing will be generated.
     */
-  private def docTraitConstraints(tconsts: List[TraitConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docTraitConstraints(tconsts: List[TraitConstraint])(implicit flix: Flix, documentedTraits: Set[Symbol.TraitSym], sb: StringBuilder): Unit = {
     if (tconsts.isEmpty) {
       return
     }
@@ -1459,12 +1471,20 @@ object HtmlDocumentor {
   }
 
   /**
-    * Document the name of the given trait symbol, creating a link to the trait's documentation.
+    * Document the name of the given trait symbol, creating a link to the trait's documentation
+    * if it has a page, i.e. if it is in `documentedTraits`. Otherwise, the name is documented as
+    * plain text, since linking to it would result in a dead link (e.g. for a non-`pub` trait).
     */
-  private def docTraitName(sym: Symbol.TraitSym)(implicit sb: StringBuilder): Unit = {
-    sb.append(s"<a class='tpe-constraint' href='${escUrl(traitFileName(sym))}' title='trait ${esc(traitName(sym))}'>")
-    sb.append(esc(sym.name))
-    sb.append("</a>")
+  private def docTraitName(sym: Symbol.TraitSym)(implicit documentedTraits: Set[Symbol.TraitSym], sb: StringBuilder): Unit = {
+    if (documentedTraits.contains(sym)) {
+      sb.append(s"<a class='tpe-constraint' href='${escUrl(traitFileName(sym))}' title='trait ${esc(traitName(sym))}'>")
+      sb.append(esc(sym.name))
+      sb.append("</a>")
+    } else {
+      sb.append(s"<span class='tpe-constraint' title='trait ${esc(traitName(sym))}'>")
+      sb.append(esc(sym.name))
+      sb.append("</span>")
+    }
   }
 
   /**
@@ -1475,7 +1495,7 @@ object HtmlDocumentor {
     *
     * If `econsts` is empty, nothing will be generated.
     */
-  private def docEqualityConstraints(econsts: List[TypedAst.EqualityConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docEqualityConstraints(econsts: List[TypedAst.EqualityConstraint])(implicit flix: Flix, documentedTraits: Set[Symbol.TraitSym], sb: StringBuilder): Unit = {
     if (econsts.isEmpty) {
       return
     }
@@ -1508,7 +1528,7 @@ object HtmlDocumentor {
     *
     * If `derives` contains no elements, nothing will be generated.
     */
-  private def docDerivations(derives: Derivations)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docDerivations(derives: Derivations)(implicit flix: Flix, documentedTraits: Set[Symbol.TraitSym], sb: StringBuilder): Unit = {
     if (derives.traits.isEmpty) {
       return
     }
