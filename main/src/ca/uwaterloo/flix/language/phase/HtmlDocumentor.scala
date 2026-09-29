@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
-import ca.uwaterloo.flix.util.LocalResource
+import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource}
 import ca.uwaterloo.flix.util.collection.Nel
 import org.commonmark.ext.gfm.tables.{TableCell, TablesExtension}
 import org.commonmark.node.Node
@@ -78,6 +78,13 @@ object HtmlDocumentor {
     "dark" -> "darkMode",
     "light" -> "lightMode",
     "open" -> "menu",
+    "module" -> "module",
+    "trait" -> "trait",
+    "effect" -> "effect",
+    "enum" -> "enum",
+    "struct" -> "struct",
+    "type-alias" -> "typeAlias",
+    "def" -> "def",
   )
 
   /**
@@ -1209,10 +1216,29 @@ object HtmlDocumentor {
     sb.append(s"<ul class='sidebar-list sidebar-list-${esc(cssClass)}'>")
     for (e <- group) {
       sb.append("<li>")
+      docIcon(sideBarIconClass(name))
       docElt(e)
       sb.append("</li>")
     }
     sb.append("</ul>")
+  }
+
+  /**
+    * Returns the CSS class (see [[IconClasses]]) of the icon that represents the kind of entry in
+    * the side bar section with the given `name`, e.g. "Traits" or "Definitions".
+    *
+    * Kinds of entries that are not among the seven top-level kinds (modules, traits, effects,
+    * enums, structs, type aliases, definitions) reuse the icon of the kind they most resemble,
+    * e.g. signatures and operations reuse the "def" icon, since they are all function-like.
+    */
+  private def sideBarIconClass(name: String): String = name match {
+    case "Traits" => "trait"
+    case "Effects" => "effect"
+    case "Enums" => "enum"
+    case "Structs" => "struct"
+    case "Type Aliases" => "type-alias"
+    case "Definitions" | "Module Definitions" | "Signatures" | "Trait Definitions" | "Operations" => "def"
+    case _ => throw InternalCompilerException(s"Unexpected side bar section name: '$name'", SourceLocation.Unknown)
   }
 
   private def docSubModules(parentMod: Module)(implicit sb: StringBuilder): Unit = {
@@ -1226,6 +1252,7 @@ object HtmlDocumentor {
     sb.append("<ul class='sidebar-list sidebar-list-modules'>")
     for (m <- sortedItems) {
       sb.append("<li>")
+      docIcon("module")
       sb.append(s"<a href='${escUrl(m.fileName)}'>${esc(m.name)}</a>")
       sb.append("</li>")
     }
