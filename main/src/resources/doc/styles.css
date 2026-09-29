@@ -162,9 +162,6 @@
 /* BEGIN GLOBAL STYLES */
 * {
     box-sizing: border-box;
-
-    /* When overriding this property, make sure to include this transition */
-    transition: var(--blur-transition);
 }
 
 html, body {
@@ -220,24 +217,6 @@ button, input {
 }
 button, input[type="checkbox"] {
     cursor: pointer;
-}
-
-::placeholder {
-    color: var(--faded-text-color);
-    opacity: 1;
-}
-
-kbd {
-    border: var(--border);
-    border-radius: 0.2em;
-    padding: 0 0.25em;
-    background-color: var(--bg-color-1);
-}
-
-@media screen and (max-width: 800px) {
-    .keyboard-shortcut {
-        display: none;
-    }
 }
 
 @media (prefers-reduced-motion) {
@@ -427,35 +406,34 @@ nav li::before {
     content: "●";
     margin-right: 0.3rem;
 }
-nav .Modules li::before {
+nav .sidebar-list-modules li::before {
     color: var(--module-color);
 }
-nav .Signatures li::before {
+nav .sidebar-list-signatures li::before {
     color: var(--signature-color);
 }
-nav .Trait-Definitions li::before {
+nav .sidebar-list-trait-defs li::before {
     color: var(--trait-def-color);
 }
-nav .Traits li::before {
+nav .sidebar-list-traits li::before {
     color: var(--traits-color);
 }
-nav .Enums li::before {
+nav .sidebar-list-enums li::before {
     color: var(--enum-color);
 }
-nav .Structs li::before {
+nav .sidebar-list-structs li::before {
     color: var(--struct-color);
 }
-nav .Operations li::before {
+nav .sidebar-list-operations li::before {
     color: var(--op-color);
 }
-nav .Effects li::before {
+nav .sidebar-list-effects li::before {
     color: var(--eff-color);
 }
-nav .Type-Aliases li::before {
+nav .sidebar-list-type-aliases li::before {
     color: var(--type-alias-color);
 }
-nav .Definitions li::before,
-nav .Module-Definitions li::before {
+nav .sidebar-list-definitions li::before {
     color: var(--def-color);
 }
 
@@ -466,6 +444,9 @@ main {
     overflow-y: auto;
     scroll-behavior: smooth;
     background-color: var(--bg-color-2);
+
+    /* Animates the blur/contrast filter applied below when the mobile menu is open. */
+    transition: var(--blur-transition);
 }
 @media screen and (max-width: 800px) {
     main {

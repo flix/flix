@@ -607,31 +607,37 @@ object HtmlDocumentor {
       docSubModules(mod)
       docSideBarSection(
         "Traits",
+        "traits",
         sortedTraits,
         (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
       )
       docSideBarSection(
         "Effects",
+        "effects",
         sortedEffs,
         (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
         "Enums",
+        "enums",
         sortedEnums,
         (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
         "Structs",
+        "structs",
         sortedStructs,
         (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
+        "type-aliases",
         sortedTypeAliases,
         (t: TypedAst.TypeAlias) => sb.append(s"<a href='#ta-${escUrl(t.sym.name)}'>${esc(t.sym.name)}</a>"),
       )
       docSideBarSection(
         "Definitions",
+        "definitions",
         sortedDefs,
         (d: TypedAst.Def) => sb.append(s"<a href='#def-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
       )
@@ -678,41 +684,49 @@ object HtmlDocumentor {
       mod.foreach(docSubModules)
       docSideBarSection(
         "Signatures",
+        "signatures",
         sortedSigs,
         (s: TypedAst.Sig) => sb.append(s"<a href='#sig-${escUrl(s.sym.name)}'>${esc(s.sym.name)}</a>"),
       )
       docSideBarSection(
         "Trait Definitions",
+        "trait-defs",
         sortedTraitDefs,
         (d: TypedAst.Sig) => sb.append(s"<a href='#sig-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
       )
       docSideBarSection(
         "Traits",
+        "traits",
         sortedTraits,
         (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
       )
       docSideBarSection(
         "Effects",
+        "effects",
         sortedEffs,
         (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
         "Enums",
+        "enums",
         sortedEnums,
         (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
         "Structs",
+        "structs",
         sortedStructs,
         (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
+        "type-aliases",
         sortedTypeAliases,
         (t: TypedAst.TypeAlias) => sb.append(s"<a href='#ta-${escUrl(t.sym.name)}'>${esc(t.sym.name)}</a>"),
       )
       docSideBarSection(
         "Module Definitions",
+        "definitions",
         sortedModuleDefs,
         (d: TypedAst.Def) => sb.append(s"<a href='#def-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
       )
@@ -776,35 +790,42 @@ object HtmlDocumentor {
       mod.foreach(docSubModules)
       docSideBarSection(
         "Operations",
+        "operations",
         sortedOps, (o: TypedAst.Op) => sb.append(s"<a href='#op-${escUrl(esc(o.sym.name))}'>${esc(o.sym.name)}</a>")
       )
       docSideBarSection(
         "Traits",
+        "traits",
         sortedTraits,
         (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
       )
       docSideBarSection(
         "Effects",
+        "effects",
         sortedEffs,
         (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
         "Enums",
+        "enums",
         sortedEnums,
         (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
         "Structs",
+        "structs",
         sortedStructs,
         (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
+        "type-aliases",
         sortedTypeAliases,
         (t: TypedAst.TypeAlias) => sb.append(s"<a href='#ta-${escUrl(t.sym.name)}'>${esc(t.sym.name)}</a>"),
       )
       docSideBarSection(
         "Definitions",
+        "definitions",
         sortedModuleDefs,
         (d: TypedAst.Def) => sb.append(s"<a href='#def-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
       )
@@ -865,31 +886,37 @@ object HtmlDocumentor {
       mod.foreach(docSubModules)
       docSideBarSection(
         "Traits",
+        "traits",
         sortedTraits,
         (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
       )
       docSideBarSection(
         "Effects",
+        "effects",
         sortedEffs,
         (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
         "Enums",
+        "enums",
         sortedEnums,
         (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
         "Structs",
+        "structs",
         sortedStructs,
         (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
+        "type-aliases",
         sortedTypeAliases,
         (t: TypedAst.TypeAlias) => sb.append(s"<a href='#ta-${escUrl(t.sym.name)}'>${esc(t.sym.name)}</a>"),
       )
       docSideBarSection(
         "Definitions",
+        "definitions",
         sortedModuleDefs,
         (d: TypedAst.Def) => sb.append(s"<a href='#def-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
       )
@@ -950,31 +977,37 @@ object HtmlDocumentor {
       mod.foreach(docSubModules)
       docSideBarSection(
         "Traits",
+        "traits",
         sortedTraits,
         (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
       )
       docSideBarSection(
         "Effects",
+        "effects",
         sortedEffs,
         (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
         "Enums",
+        "enums",
         sortedEnums,
         (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
         "Structs",
+        "structs",
         sortedStructs,
         (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
+        "type-aliases",
         sortedTypeAliases,
         (t: TypedAst.TypeAlias) => sb.append(s"<a href='#ta-${escUrl(t.sym.name)}'>${esc(t.sym.name)}</a>"),
       )
       docSideBarSection(
         "Definitions",
+        "definitions",
         sortedModuleDefs,
         (d: TypedAst.Def) => sb.append(s"<a href='#def-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
       )
@@ -1110,18 +1143,20 @@ object HtmlDocumentor {
     *
     * If `group` is empty, nothing will be generated.
     *
-    * @param name   The name of the section, e.g. "Modules".
-    * @param group  The list of items in the section, in the order that they should appear.
-    * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
-    *               Note that they will each be wrapped in an `<li>` tag.
+    * @param name     The name of the section, e.g. "Modules".
+    * @param cssClass A stable, purpose-named CSS class identifying the kind of items in `group`
+    *                 (e.g. "traits"), used to style the list independently of `name`.
+    * @param group    The list of items in the section, in the order that they should appear.
+    * @param docElt   A function taking a single item from `group` and generating the corresponding HTML string.
+    *                 Note that they will each be wrapped in an `<li>` tag.
     */
-  private def docSideBarSection[T](name: String, group: List[T], docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
+  private def docSideBarSection[T](name: String, cssClass: String, group: List[T], docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
 
     sb.append(s"<h3><a href='#${escUrl(name.replace(' ', '-'))}'>${esc(name)}</a></h3>")
-    sb.append(s"<ul class='${esc(name.replace(' ', '-'))}'>")
+    sb.append(s"<ul class='sidebar-list sidebar-list-${esc(cssClass)}'>")
     for (e <- group) {
       sb.append("<li>")
       docElt(e)
@@ -1145,7 +1180,7 @@ object HtmlDocumentor {
     }
 
     sb.append("<h3>Modules</h3>")
-    sb.append("<ul class='Modules'>")
+    sb.append("<ul class='sidebar-list sidebar-list-modules'>")
     for (m <- sortedItems) {
       sb.append("<li>")
       sb.append(s"<a href='${escUrl(m.fileName)}'>${esc(m.name)}</a>")
