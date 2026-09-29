@@ -497,6 +497,9 @@ main h2 {
     border-radius: 0.2rem;
     box-sizing: border-box;
     overflow: auto;
+
+    /* Keep the target clear of the sticky header when jumping to an anchor link. */
+    scroll-margin-top: var(--header-height);
 }
 .box:last-of-type {
     margin-bottom: 3rem;
