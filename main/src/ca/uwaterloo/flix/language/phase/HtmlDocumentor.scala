@@ -792,7 +792,7 @@ object HtmlDocumentor {
       docSideBarSection(
         "Operations",
         "operations",
-        sortedOps, (o: TypedAst.Op) => sb.append(s"<a href='#op-${escUrl(esc(o.sym.name))}'>${esc(o.sym.name)}</a>")
+        sortedOps, (o: TypedAst.Op) => sb.append(s"<a href='#op-${escUrl(o.sym.name)}'>${esc(o.sym.name)}</a>")
       )
       docSideBarSection(
         "Traits",
@@ -1303,7 +1303,7 @@ object HtmlDocumentor {
     */
   private def docDef(defn: TypedAst.Def)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='def-${esc(defn.sym.name)}'>")
-    docSpec(defn.sym.name, defn.spec, defn.loc, Some(s"def-${esc(defn.sym.name)}"))
+    docSpec(defn.sym.name, defn.spec, defn.loc, Some(s"def-${defn.sym.name}"))
     sb.append("</div>")
   }
 
@@ -1314,7 +1314,7 @@ object HtmlDocumentor {
     */
   private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='sig-${esc(sig.sym.name)}'>")
-    docSpec(sig.sym.name, sig.spec, sig.loc, Some(s"sig-${esc(sig.sym.name)}"))
+    docSpec(sig.sym.name, sig.spec, sig.loc, Some(s"sig-${sig.sym.name}"))
     sb.append("</div>")
   }
 
@@ -1325,7 +1325,7 @@ object HtmlDocumentor {
     */
   private def docOp(op: TypedAst.Op)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='op-${esc(op.sym.name)}'>")
-    docSpec(op.sym.name, op.spec, op.loc, Some(s"op-${esc(op.sym.name)}"))
+    docSpec(op.sym.name, op.spec, op.loc, Some(s"op-${op.sym.name}"))
     sb.append("</div>")
   }
 
