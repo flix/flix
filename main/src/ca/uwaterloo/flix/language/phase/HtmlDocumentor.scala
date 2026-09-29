@@ -468,9 +468,18 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterStruct(struct: Struct): Struct = struct match {
-    case Struct(s, instances, parent, _) =>
+    case Struct(TypedAst.Struct(doc, ann, mod, sym, tparams, sc, fields, loc), instances, parent, _) =>
       Struct(
-        s,
+        TypedAst.Struct(
+          doc,
+          ann,
+          mod,
+          sym,
+          tparams,
+          sc,
+          fields.filter { case (_, f) => f.mod.isPublic },
+          loc
+        ),
         instances,
         parent,
         None,
