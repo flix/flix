@@ -610,24 +610,28 @@ object HtmlDocumentor {
         "traits",
         sortedTraits,
         (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Effects",
         "effects",
         sortedEffs,
         (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Enums",
         "enums",
         sortedEnums,
         (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Structs",
         "structs",
         sortedStructs,
         (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Type Aliases",
@@ -699,24 +703,28 @@ object HtmlDocumentor {
         "traits",
         sortedTraits,
         (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Effects",
         "effects",
         sortedEffs,
         (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Enums",
         "enums",
         sortedEnums,
         (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Structs",
         "structs",
         sortedStructs,
         (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Type Aliases",
@@ -799,24 +807,28 @@ object HtmlDocumentor {
         "traits",
         sortedTraits,
         (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Effects",
         "effects",
         sortedEffs,
         (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Enums",
         "enums",
         sortedEnums,
         (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Structs",
         "structs",
         sortedStructs,
         (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Type Aliases",
@@ -891,24 +903,28 @@ object HtmlDocumentor {
         "traits",
         sortedTraits,
         (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Effects",
         "effects",
         sortedEffs,
         (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Enums",
         "enums",
         sortedEnums,
         (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Structs",
         "structs",
         sortedStructs,
         (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Type Aliases",
@@ -983,24 +999,28 @@ object HtmlDocumentor {
         "traits",
         sortedTraits,
         (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Effects",
         "effects",
         sortedEffs,
         (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Enums",
         "enums",
         sortedEnums,
         (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Structs",
         "structs",
         sortedStructs,
         (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
+        hasTarget = false,
       )
       docSideBarSection(
         "Type Aliases",
@@ -1146,19 +1166,25 @@ object HtmlDocumentor {
     *
     * If `group` is empty, nothing will be generated.
     *
-    * @param name     The name of the section, e.g. "Modules".
-    * @param cssClass A stable, purpose-named CSS class identifying the kind of items in `group`
-    *                 (e.g. "traits"), used to style the list independently of `name`.
-    * @param group    The list of items in the section, in the order that they should appear.
-    * @param docElt   A function taking a single item from `group` and generating the corresponding HTML string.
-    *                 Note that they will each be wrapped in an `<li>` tag.
+    * @param name      The name of the section, e.g. "Modules".
+    * @param cssClass  A stable, purpose-named CSS class identifying the kind of items in `group`
+    *                  (e.g. "traits"), used to style the list independently of `name`.
+    * @param group     The list of items in the section, in the order that they should appear.
+    * @param docElt    A function taking a single item from `group` and generating the corresponding HTML string.
+    *                  Note that they will each be wrapped in an `<li>` tag.
+    * @param hasTarget Whether the section has a corresponding anchor in the main column to link to.
+    *                  If `false`, the heading is rendered as plain text instead of a link.
     */
-  private def docSideBarSection[T](name: String, cssClass: String, group: List[T], docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
+  private def docSideBarSection[T](name: String, cssClass: String, group: List[T], docElt: T => Unit, hasTarget: Boolean = true)(implicit sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
 
-    sb.append(s"<h3><a href='#${escUrl(name.replace(' ', '-'))}'>${esc(name)}</a></h3>")
+    if (hasTarget) {
+      sb.append(s"<h3><a href='#${escUrl(name.replace(' ', '-'))}'>${esc(name)}</a></h3>")
+    } else {
+      sb.append(s"<h3>${esc(name)}</h3>")
+    }
     sb.append(s"<ul class='sidebar-list sidebar-list-${esc(cssClass)}'>")
     for (e <- group) {
       sb.append("<li>")
