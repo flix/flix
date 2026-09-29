@@ -84,9 +84,6 @@ object ConstraintGen {
       case Expr.ApplyDef(DefSymUse(sym, loc1), exps, targs, itvar, tvar, evar, loc2) =>
         val defn = root.defs(sym)
 
-        // Pseudo variable for source to flow into
-        val pvar = Type.freshVar(Kind.Eff, loc1)
-
         val tparams = defn.spec.tparams.map(_.sym)
         val subst = Substitution(tparams.zip(targs).toMap)
 
@@ -106,8 +103,16 @@ object ConstraintGen {
         c.addClassConstraints(tconstrs, loc2)
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
-        c.unifySource(pvar, declaredEff, loc2)
-        c.unifyType(evar, Type.mkUnion(pvar :: effs, loc2), loc2)
+        val eff = if (declaredEff == Type.Pure) {
+          // A pure def is not the source of an effect.
+          Type.mkUnion(effs, loc2)
+        } else {
+          // Pseudo variable for source to flow into
+          val pvar = Type.freshVar(Kind.Eff, loc1)
+          c.unifySource(pvar, declaredEff, loc2)
+          Type.mkUnion(pvar :: effs, loc2)
+        }
+        c.unifyType(evar, eff, loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
