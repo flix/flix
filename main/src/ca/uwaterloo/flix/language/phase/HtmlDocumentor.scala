@@ -23,6 +23,7 @@ import java.net.URLEncoder
 import java.nio.file.{Files, Path, Paths}
 import java.util.regex.Pattern
 import scala.annotation.tailrec
+import scala.util.matching.Regex
 
 /**
   * A phase that emits a JSON file for library documentation.
@@ -646,6 +647,10 @@ object HtmlDocumentor {
     sb.append("<main id='main-content'>")
     sb.append(s"<h1>${esc(mod.qualifiedName)}</h1>")
     modDoc(mod.doc)
+    docSummarySection("Traits", sortedTraits, (t: Trait) => t.decl.doc)
+    docSummarySection("Effects", sortedEffs, (e: Effect) => e.decl.doc)
+    docSummarySection("Enums", sortedEnums, (e: Enum) => e.decl.doc)
+    docSummarySection("Structs", sortedStructs, (s: Struct) => s.decl.doc)
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Definitions", sortedDefs, docDef)
     sb.append("</main>")
@@ -1237,6 +1242,40 @@ object HtmlDocumentor {
   }
 
   /**
+    * Documents a summary section, (Traits, Effects, Enums, Structs), in the main content column,
+    * containing a `group` of items.
+    *
+    * Unlike [[docSection]], each item is summarized as a single table row containing its name,
+    * linked to its own page, and the first sentence of its documentation comment. This mirrors
+    * how e.g. rustdoc and Javadoc summarize the members of a module/package.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `group` is empty, nothing will be generated.
+    *
+    * @param name   The name of the section, e.g. "Traits". This name will also be the id of the section.
+    * @param group  The list of items in the section, in the order that they should appear.
+    * @param getDoc A function returning the documentation comment of an item.
+    */
+  private def docSummarySection[T <: Item](name: String, group: List[T], getDoc: T => Doc)(implicit sb: StringBuilder): Unit = {
+    if (group.isEmpty) {
+      return
+    }
+
+    sb.append(s"<section id='${name.replace(' ', '-')}'>")
+    sb.append(s"<h2>$name</h2>")
+    sb.append("<table class='summary-table'>")
+    for (e <- group) {
+      sb.append("<tr>")
+      sb.append(s"<td><a class='name' href='${escUrl(e.fileName)}'>${esc(e.name)}</a></td>")
+      sb.append(s"<td>${esc(firstSentence(getDoc(e)))}</td>")
+      sb.append("</tr>")
+    }
+    sb.append("</table>")
+    sb.append("</section>")
+  }
+
+  /**
     * Documents a subsection, (Signatures, Instances, etc.), containing a `group` of items.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
@@ -1753,6 +1792,38 @@ object HtmlDocumentor {
     sb.append(html)
     sb.append("</div>")
   }
+
+  /**
+    * Returns the first sentence of the given `doc`, as plain text (i.e. any markdown syntax is
+    * not rendered, only stripped of its surrounding paragraph/line structure).
+    *
+    * This is intended for use in short, one-line summaries, mirroring how e.g. rustdoc and
+    * Javadoc derive a summary line from a doc comment.
+    *
+    * If `doc` is empty, the empty string is returned.
+    */
+  private def firstSentence(doc: Doc): String = {
+    val text = doc.text
+    if (text.isBlank) {
+      return ""
+    }
+
+    // Markdown paragraphs are separated by a blank line; only the first paragraph is relevant.
+    val firstParagraph = text.split("\r?\n\\s*\r?\n", 2).head
+
+    // Collapse the paragraph's (possibly soft-wrapped) lines into a single line.
+    val flattened = firstParagraph.linesIterator.map(_.trim).filter(_.nonEmpty).mkString(" ")
+
+    // Cut off at the first sentence-ending punctuation mark followed by whitespace or the end
+    // of the string, e.g. ". ", "! ", "?".
+    SentenceEnd.findFirstMatchIn(flattened) match {
+      case Some(m) => flattened.substring(0, m.end).trim
+      case None => flattened
+    }
+  }
+
+  /** Matches a sentence-ending punctuation mark, followed by whitespace or the end of the string. */
+  private val SentenceEnd: Regex = raw"[.!?](?:\s|$$)".r
 
   /**
     * Replaces the obsolete `align` attribute that the tables extension puts on table cells with an

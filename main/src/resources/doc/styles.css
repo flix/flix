@@ -705,6 +705,36 @@ td.align-right, th.align-right {
     margin-bottom: 0;
 }
 
+.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 3rem;
+}
+.summary-table tr:not(:last-child) td {
+    border-bottom: var(--border);
+}
+.summary-table td {
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    vertical-align: top;
+}
+.summary-table td:first-child {
+    white-space: nowrap;
+    font-family: "Fira Code", monospace;
+    font-size: 0.85rem;
+}
+.summary-table td:last-child {
+    width: 100%;
+    font-size: 0.85rem;
+    color: var(--faded-text-color);
+}
+.summary-table a.name {
+    color: var(--name-color);
+    text-decoration: none;
+}
+.summary-table a.name:hover {
+    text-decoration: underline;
+}
+
 code {
     font-family: "Fira Code", monospace;
 }
