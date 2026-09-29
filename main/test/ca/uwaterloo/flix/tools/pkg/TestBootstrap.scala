@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Version}
-import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, Repository, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, Origin, PackageId, Repository, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{FileOps, Formatter, Result, Sha256}
@@ -41,6 +41,34 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.check(PkgTestUtils.mkFlix(b))
+  }
+
+  test("doc.project.branding") {
+    // Documenting a project (Origin.User) brands the generated pages as the project's own,
+    // taken from its manifest, rather than as Flix's.
+    val p = mkProjectWithRepository("github:test-owner/test-project", "1.2.3")
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    b.doc(PkgTestUtils.mkFlix(b), Origin.User).unsafeGet
+
+    val index = Files.readString(Bootstrap.getDocumentationDirectory(p).resolve("index.html"))
+    assert(index.contains("<title>test-owner/test-project | "))
+    assert(index.contains("<p class='site-title'><a href='index.html'>test-owner/test-project</a></p>"))
+    assert(index.contains("<span class='version'>1.2.3</span>"))
+    assert(!index.contains("The Flix Programming Language"))
+  }
+
+  test("doc.library.branding") {
+    // Documenting the bundled library (Origin.Library) keeps the "Flix" branding it has always
+    // had, even for a project whose manifest declares a name and version of its own.
+    val p = mkProjectWithRepository("github:test-owner/test-project", "1.2.3")
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    b.doc(PkgTestUtils.mkFlix(b), Origin.Library).unsafeGet
+
+    val index = Files.readString(Bootstrap.getDocumentationDirectory(p).resolve("index.html"))
+    assert(index.contains("<title>Flix | "))
+    assert(index.contains("<p class='site-title'><a href='index.html'>flix</a></p>"))
+    assert(index.contains(s"<span class='version'>${Version.CurrentVersion}</span>"))
+    assert(index.contains("The Flix Programming Language"))
   }
 
   test("packages.lock.01") {
@@ -1078,6 +1106,22 @@ class TestBootstrap extends AnyFunSuite {
          |
          |[dependencies]
          |"$ClerkIdentifier" = { version = "$ClerkVersion", mount = "Clerk" }
+         |""".stripMargin)
+    p
+  }
+
+  /**
+    * Returns a new project directory whose manifest declares `repository` as its repository and
+    * `version` as its version.
+    */
+  private def mkProjectWithRepository(repository: String, version: String): Path = {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""[package]
+         |version = "$version"
+         |flix = "${Version.CurrentVersion}"
+         |repository = "$repository"
          |""".stripMargin)
     p
   }

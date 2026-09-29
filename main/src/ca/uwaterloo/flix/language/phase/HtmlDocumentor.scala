@@ -90,18 +90,32 @@ object HtmlDocumentor {
   case class SourceRepository(url: String, root: Path)
 
   /**
+    * The name and version of the project whose documentation is being generated, taken from its
+    * manifest.
+    *
+    * Used to brand the generated pages (the page title, the meta description, and the wordmark
+    * and version shown in the header) as the project's own, rather than as Flix's. Not given when
+    * documenting the bundled library (`origin` is [[Origin.Library]]), which keeps the "Flix"
+    * branding it has always had.
+    */
+  case class ProjectInfo(name: String, version: String)
+
+  /**
     * Generates the API documentation for `root` and writes it to `outputDir`.
     *
     * The declarations of the user's code link to their source in `repo`, if it is given.
+    *
+    * The generated pages are branded as `project`'s, if it is given, and as Flix's own otherwise
+    * (as is always the case when documenting the bundled library).
     */
-  def run(root: TypedAst.Root, origin: Origin, repo: Option[SourceRepository], outputDir: Path)(implicit flix: Flix): Unit = {
+  def run(root: TypedAst.Root, origin: Origin, repo: Option[SourceRepository], outputDir: Path, project: Option[ProjectInfo] = None)(implicit flix: Flix): Unit = {
     val modulesRoot = splitModules(root)
     val filteredModulesRoot = filterModules(modulesRoot, origin)
     val pairedModulesRoot = pairModules(filteredModulesRoot)
 
-    visitMod(pairedModulesRoot, outputDir)(flix, repo)
+    visitMod(pairedModulesRoot, outputDir)(flix, repo, project)
 
-    writeDocFile("404.html", document404(), outputDir)
+    writeDocFile("404.html", document404()(flix, project), outputDir)
 
     writeAssets(outputDir)
   }
@@ -109,7 +123,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Module`, `mod`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], projectInfo: Option[ProjectInfo]): Unit = {
     writeDocFile(mod.fileName, documentModule(mod), outputDir)
     visitContents(mod, outputDir)
   }
@@ -117,7 +131,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Trait`, `trt`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], projectInfo: Option[ProjectInfo]): Unit = {
     writeDocFile(trt.fileName, documentTrait(trt), outputDir)
     trt.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -125,7 +139,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Effect`, `eff`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], projectInfo: Option[ProjectInfo]): Unit = {
     writeDocFile(eff.fileName, documentEffect(eff), outputDir)
     eff.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -133,7 +147,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Enum`, `enm`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], projectInfo: Option[ProjectInfo]): Unit = {
     writeDocFile(enm.fileName, documentEnum(enm), outputDir)
     enm.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -141,7 +155,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Struct`, `struct`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], projectInfo: Option[ProjectInfo]): Unit = {
     writeDocFile(struct.fileName, documentStruct(struct), outputDir)
     struct.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -153,7 +167,7 @@ object HtmlDocumentor {
     * The items of a companion module are documented on the page of the item it belongs to,
     * so a companion module gets no page of its own.
     */
-  private def visitContents(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitContents(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], projectInfo: Option[ProjectInfo]): Unit = {
     mod.submodules.foreach(visitMod(_, outputDir))
     mod.traits.foreach(visitTrait(_, outputDir))
     mod.effects.foreach(visitEffect(_, outputDir))
@@ -588,7 +602,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Module`, `mod`, returning a string of HTML.
     */
-  private def documentModule(mod: Module)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentModule(mod: Module)(implicit flix: Flix, repo: Option[SourceRepository], projectInfo: Option[ProjectInfo]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedTraits = mod.traits.sortBy(_.name)
@@ -664,7 +678,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Trait`, `trt`, returning a string of HTML.
     */
-  private def documentTrait(trt: Trait)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentTrait(trt: Trait)(implicit flix: Flix, repo: Option[SourceRepository], projectInfo: Option[ProjectInfo]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedAssocs = trt.decl.assocs.sortBy(_.sym.name)
@@ -775,7 +789,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Effect`, `eff`, returning a string of HTML.
     */
-  private def documentEffect(eff: Effect)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentEffect(eff: Effect)(implicit flix: Flix, repo: Option[SourceRepository], projectInfo: Option[ProjectInfo]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedOps = eff.decl.ops.sortBy(_.sym.name)
@@ -873,7 +887,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Enum`, `enm`, returning a string of HTML.
     */
-  private def documentEnum(enm: Enum)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentEnum(enm: Enum)(implicit flix: Flix, repo: Option[SourceRepository], projectInfo: Option[ProjectInfo]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedInstances = enm.instances.sortBy(_.trt.sym.name)
@@ -966,7 +980,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Struct`, `struct`, returning a string of HTML.
     */
-  private def documentStruct(struct: Struct)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentStruct(struct: Struct)(implicit flix: Flix, repo: Option[SourceRepository], projectInfo: Option[ProjectInfo]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedInstances = struct.instances.sortBy(_.trt.sym.name)
@@ -1058,7 +1072,7 @@ object HtmlDocumentor {
   /**
     * Documents the "page not found" error page, returning a string of HTML.
     */
-  private def document404()(implicit flix: Flix): String = {
+  private def document404()(implicit flix: Flix, projectInfo: Option[ProjectInfo]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     sb.append(mkHead("Page Not Found", "404.html"))
@@ -1081,13 +1095,17 @@ object HtmlDocumentor {
 
   /**
     * Generates the string representing the head of the HTML document.
+    *
+    * The page is branded as `projectInfo`'s project, if it is given, and as Flix's own otherwise.
     */
-  private def mkHead(name: String, fileName: String): String = {
+  private def mkHead(name: String, fileName: String)(implicit projectInfo: Option[ProjectInfo]): String = {
+    val titleBrand = projectInfo.map(_.name).getOrElse("Flix")
+    val descriptionBrand = projectInfo.map(_.name).getOrElse("The Flix Programming Language")
     s"""<!doctype html><html lang='en'>
        |<head>
        |<meta charset='utf-8'>
        |<meta name='viewport' content='width=device-width,initial-scale=1'>
-       |<meta name='description' content='API documentation for ${esc(name)} | The Flix Programming Language'>
+       |<meta name='description' content='API documentation for ${esc(name)} | ${esc(descriptionBrand)}'>
        |<!-- Runs synchronously, before the stylesheets, so the reader's stored theme is applied before first paint; a deferred/module script (like index.js below) would run too late and cause a flash of the wrong theme. -->
        |<script>
        |(function () {
@@ -1107,7 +1125,7 @@ object HtmlDocumentor {
        |<link href='styles.css' rel='stylesheet'>
        |<link href='favicon.png' rel='icon'>
        |<script type='module' src='./index.js'></script>
-       |<title>Flix | ${esc(name)}</title>
+       |<title>${esc(titleBrand)} | ${esc(name)}</title>
        |</head>
     """.stripMargin
   }
@@ -1116,17 +1134,22 @@ object HtmlDocumentor {
     * Generate the page header.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * The wordmark and version are `projectInfo`'s project's, if it is given, and Flix's own
+    * otherwise.
     */
-  private def docHeader()(implicit sb: StringBuilder): Unit = {
+  private def docHeader()(implicit sb: StringBuilder, projectInfo: Option[ProjectInfo]): Unit = {
     sb.append("<a class='skip-link' href='#main-content'>Skip to main content</a>")
 
     sb.append("<header>")
 
     // The site branding is not marked up as a heading: each page's own `h1` (in `<main>`) is
     // the sole top-level heading, so this must not introduce an `h2` that precedes it.
+    val wordmark = projectInfo.map(_.name).getOrElse("flix")
+    val version = projectInfo.map(_.version).getOrElse(Version.CurrentVersion.toString)
     sb.append("<div class='flix'>")
-    sb.append("<p class='site-title'><a href='index.html'>flix</a></p>")
-    sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
+    sb.append(s"<p class='site-title'><a href='index.html'>${esc(wordmark)}</a></p>")
+    sb.append(s"<span class='version'>${esc(version)}</span>")
     sb.append("</div>")
 
     sb.append("<div class='spacer' role='presentation'></div>")
