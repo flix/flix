@@ -269,15 +269,9 @@ function initKeyboardHelp() {
         });
         for (const {keys, desc} of KEYBOARD_SHORTCUTS) {
             const dt = document.createElement("dt");
+            // The site's stylesheet already styles bare `<kbd>` elements.
             const kbd = document.createElement("kbd");
             kbd.textContent = keys;
-            Object.assign(kbd.style, {
-                border: "var(--border)",
-                borderRadius: "0.25rem",
-                padding: "0.1rem 0.45rem",
-                backgroundColor: "var(--bg-color-3)",
-                fontFamily: "monospace",
-            });
             dt.append(kbd);
 
             const dd = document.createElement("dd");
@@ -314,12 +308,39 @@ function initKeyboardHelp() {
 }
 
 /**
+ * Adds a small "Press ? for shortcuts" hint to the header, using the site's existing
+ * `.keyboard-shortcut` class, which already hides it on narrow screens.
+ */
+function initShortcutHint(help) {
+    const header = document.querySelector("header");
+    const themeToggle = document.querySelector("#theme-toggle");
+    if (header === null || themeToggle === null) {
+        return;
+    }
+
+    const hint = document.createElement("button");
+    hint.classList.add("toggle", "keyboard-shortcut");
+    hint.setAttribute("aria-label", "Show keyboard shortcuts");
+    hint.style.fontSize = "0.8rem";
+    hint.style.whiteSpace = "nowrap";
+    hint.append("Press ");
+    const kbd = document.createElement("kbd");
+    kbd.textContent = "?";
+    hint.append(kbd);
+    hint.append(" for shortcuts");
+    hint.addEventListener("click", () => help.show());
+
+    header.insertBefore(hint, themeToggle);
+}
+
+/**
  * Wires up all keyboard shortcuts: the `?` help overlay and the "expand/collapse all Instances"
  * shortcut.
  */
 function initKeyboardShortcuts() {
     const help = initKeyboardHelp();
     const instances = initInstances();
+    initShortcutHint(help);
 
     document.addEventListener("keydown", (e) => {
         if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) {
