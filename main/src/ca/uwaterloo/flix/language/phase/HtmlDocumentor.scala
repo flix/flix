@@ -9,6 +9,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
 import ca.uwaterloo.flix.util.LocalResource
@@ -99,7 +100,9 @@ object HtmlDocumentor {
     val filteredModulesRoot = filterModules(modulesRoot, origin)
     val pairedModulesRoot = pairModules(filteredModulesRoot)
 
-    visitMod(pairedModulesRoot, outputDir)(flix, repo)
+    implicit val effectUsage: EffectUsageIndex = indexEffectUsage(pairedModulesRoot)
+
+    visitMod(pairedModulesRoot, outputDir)(flix, repo, effectUsage)
 
     writeDocFile("404.html", document404(), outputDir)
 
@@ -109,7 +112,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Module`, `mod`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], effectUsage: EffectUsageIndex): Unit = {
     writeDocFile(mod.fileName, documentModule(mod), outputDir)
     visitContents(mod, outputDir)
   }
@@ -117,7 +120,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Trait`, `trt`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], effectUsage: EffectUsageIndex): Unit = {
     writeDocFile(trt.fileName, documentTrait(trt), outputDir)
     trt.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -125,7 +128,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Effect`, `eff`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], effectUsage: EffectUsageIndex): Unit = {
     writeDocFile(eff.fileName, documentEffect(eff), outputDir)
     eff.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -133,7 +136,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Enum`, `enm`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], effectUsage: EffectUsageIndex): Unit = {
     writeDocFile(enm.fileName, documentEnum(enm), outputDir)
     enm.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -141,7 +144,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Struct`, `struct`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], effectUsage: EffectUsageIndex): Unit = {
     writeDocFile(struct.fileName, documentStruct(struct), outputDir)
     struct.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -153,7 +156,7 @@ object HtmlDocumentor {
     * The items of a companion module are documented on the page of the item it belongs to,
     * so a companion module gets no page of its own.
     */
-  private def visitContents(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitContents(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], effectUsage: EffectUsageIndex): Unit = {
     mod.submodules.foreach(visitMod(_, outputDir))
     mod.traits.foreach(visitTrait(_, outputDir))
     mod.effects.foreach(visitEffect(_, outputDir))
@@ -311,6 +314,63 @@ object HtmlDocumentor {
   private def mkEffect(sym: Symbol.EffSym, parent: Symbol.ModuleSym, root: TypedAst.Root): Effect = {
     val defaultHandler = root.defaultHandlers.find(_.handledSym == sym).map(_.handlerSym)
     Effect(root.effects(sym), defaultHandler, parent, None)
+  }
+
+  /**
+    * The defs that are relevant to an effect's documentation page:
+    *
+    *   - `users`: the defs whose declared type/effect mentions the effect anywhere, e.g. in
+    *     their own `\ ef` effect set, or in the effect of some nested arrow type.
+    *   - `handlers`: the defs that contain a `run`-`with` expression handling the effect.
+    *
+    * Both lists only ever contain defs that will actually appear in the generated
+    * documentation, so every entry is guaranteed to link to a page that exists.
+    */
+  private case class EffectUsage(users: List[TypedAst.Def], handlers: List[TypedAst.Def])
+
+  private type EffectUsageIndex = Map[Symbol.EffSym, EffectUsage]
+
+  /**
+    * Builds an index of, for every effect, the defs that use it and the defs that handle it,
+    * by scanning every def that will appear in the documentation rooted at `mod`.
+    *
+    * This must be built from the final, filtered module tree (i.e. after [[filterModules]] and
+    * [[pairModules]] have run), so that the defs it refers to are the ones that are actually
+    * documented, and not, e.g., private helpers or defs from a dependency.
+    *
+    * Note: Only top-level defs of a module (and its companion modules) are scanned. Trait
+    * default-method bodies and trait instance defs are not currently included, so a def that
+    * only appears as an instance implementation will not show up as a user or handler.
+    */
+  private def indexEffectUsage(mod: Module): EffectUsageIndex = {
+    val defs = allDocumentedDefs(mod)
+
+    defs.foldLeft(Map.empty[Symbol.EffSym, EffectUsage]) { (acc0, defn) =>
+      val userEffs = defn.spec.declaredScheme.base.effects
+      val handledEffs = TypedAstOps.handledEffSymsOf(defn.exp)
+
+      val acc1 = userEffs.foldLeft(acc0) { (acc, effSym) =>
+        val cur = acc.getOrElse(effSym, EffectUsage(Nil, Nil))
+        acc.updated(effSym, cur.copy(users = defn :: cur.users))
+      }
+      handledEffs.foldLeft(acc1) { (acc, effSym) =>
+        val cur = acc.getOrElse(effSym, EffectUsage(Nil, Nil))
+        acc.updated(effSym, cur.copy(handlers = defn :: cur.handlers))
+      }
+    }
+  }
+
+  /**
+    * Returns every top-level def that will be documented somewhere in `mod` or one of its
+    * (transitively nested) submodules or companion modules.
+    */
+  private def allDocumentedDefs(mod: Module): List[TypedAst.Def] = {
+    mod.defs ++
+      mod.submodules.flatMap(allDocumentedDefs) ++
+      mod.traits.flatMap(_.companionMod.toList.flatMap(allDocumentedDefs)) ++
+      mod.effects.flatMap(_.companionMod.toList.flatMap(allDocumentedDefs)) ++
+      mod.enums.flatMap(_.companionMod.toList.flatMap(allDocumentedDefs)) ++
+      mod.structs.flatMap(_.companionMod.toList.flatMap(allDocumentedDefs))
   }
 
   /**
@@ -754,8 +814,12 @@ object HtmlDocumentor {
   /**
     * Documents the given `Effect`, `eff`, returning a string of HTML.
     */
-  private def documentEffect(eff: Effect)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentEffect(eff: Effect)(implicit flix: Flix, repo: Option[SourceRepository], effectUsage: EffectUsageIndex): String = {
     implicit val sb: StringBuilder = new StringBuilder()
+
+    val usage = effectUsage.getOrElse(eff.decl.sym, EffectUsage(Nil, Nil))
+    val sortedUsers = usage.users.sortBy(_.sym.toString)
+    val sortedHandlers = usage.handlers.sortBy(_.sym.toString)
 
     val sortedOps = eff.decl.ops.sortBy(_.sym.name)
 
@@ -825,6 +889,8 @@ object HtmlDocumentor {
     sb.append("</div>")
     docDoc(eff.decl.doc)
     docDefaultHandler(eff.defaultHandler)
+    docEffectDefLinks("Users", "effect-users", sortedUsers)
+    docEffectDefLinks("Handlers", "effect-handlers", sortedHandlers)
     sb.append("</div>")
 
     docSection("Operations", sortedOps, docOp)
@@ -1655,6 +1721,34 @@ object HtmlDocumentor {
       sb.append(s"<div><code><a href='${escUrl(page)}#def-${escUrl(sym.name)}'>${esc(sym.name)}</a></code></div>")
       sb.append("</section>")
     }
+  }
+
+  /**
+    * Documents a list of defs, `defs`, related to an effect (e.g. its users or its handlers),
+    * as a subsection titled `title`, using `cls` as the subsection's CSS class.
+    *
+    * Each def is displayed by its fully qualified name and links to its definition, since,
+    * unlike a default handler, these defs may live anywhere in the documented project.
+    *
+    * If `defs` is empty, nothing is appended.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docEffectDefLinks(title: String, cls: String, defs: List[TypedAst.Def])(implicit sb: StringBuilder): Unit = {
+    if (defs.isEmpty) {
+      return
+    }
+
+    sb.append(s"<section class='subsection $cls'>")
+    sb.append(s"<h2>${esc(title)}</h2>")
+    sb.append("<ul>")
+    for (d <- defs) {
+      val sym = d.sym
+      val page = moduleFileName(Symbol.mkModuleSym(sym.namespace))
+      sb.append(s"<li><code><a href='${escUrl(page)}#def-${escUrl(sym.name)}'>${esc(sym.toString)}</a></code></li>")
+    }
+    sb.append("</ul>")
+    sb.append("</section>")
   }
 
   /**

@@ -118,6 +118,90 @@ object TypedAstOps {
   }
 
   /**
+    * Creates a set of the symbols of all the effects handled (i.e. via a `run`-`with` handler
+    * expression) somewhere in the given `exp0`.
+    */
+  def handledEffSymsOf(exp0: Expr): Set[Symbol.EffSym] = exp0 match {
+    case Expr.Cst(_, _, _) => Set.empty
+    case Expr.Var(_, _, _) => Set.empty
+    case Expr.Hole(_, _, _, _, _) => Set.empty
+    case Expr.HoleWithExp(exp, _, _, _, _) => handledEffSymsOf(exp)
+    case Expr.OpenAs(_, exp, _, _) => handledEffSymsOf(exp)
+    case Expr.Use(_, _, exp, _) => handledEffSymsOf(exp)
+    case Expr.Lambda(_, exp, _, _) => handledEffSymsOf(exp)
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) => handledEffSymsOf(exp1) ++ handledEffSymsOf(exp2)
+    case Expr.ApplyDef(_, exps, _, _, _, _, _, _) => exps.flatMap(handledEffSymsOf).toSet
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) => exps.flatMap(handledEffSymsOf).toSet
+    case Expr.ApplyOp(_, exps, _, _, _, _) => exps.flatMap(handledEffSymsOf).toSet
+    case Expr.ApplySig(_, exps, _, _, _, _, _, _, _) => exps.flatMap(handledEffSymsOf).toSet
+    case Expr.Unary(_, exp, _, _, _) => handledEffSymsOf(exp)
+    case Expr.Binary(_, exp1, exp2, _, _, _) => handledEffSymsOf(exp1) ++ handledEffSymsOf(exp2)
+    case Expr.Let(_, exp1, exp2, _, _, _) => handledEffSymsOf(exp1) ++ handledEffSymsOf(exp2)
+    case Expr.LocalDef(_, _, _, exp1, exp2, _, _, _) => handledEffSymsOf(exp1) ++ handledEffSymsOf(exp2)
+    case Expr.Region(_, _, exp, _, _, _) => handledEffSymsOf(exp)
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => handledEffSymsOf(exp1) ++ handledEffSymsOf(exp2) ++ handledEffSymsOf(exp3)
+    case Expr.Stm(exps, exp, _, _, _) => exps.foldRight(handledEffSymsOf(exp))((e, acc) => handledEffSymsOf(e) ++ acc)
+    case Expr.Discard(exp, _, _) => handledEffSymsOf(exp)
+    case Expr.Match(exp, rules, _, _, _) => handledEffSymsOf(exp) ++ rules.flatMap(rule => handledEffSymsOf(rule.exp) ++ rule.guard.toList.flatMap(handledEffSymsOf))
+    case Expr.RestrictableChoose(_, exp, rules, _, _, _) => handledEffSymsOf(exp) ++ rules.flatMap(rule => handledEffSymsOf(rule.exp))
+    case Expr.ExtMatch(exp, rules, _, _, _) => handledEffSymsOf(exp) ++ rules.flatMap(r => handledEffSymsOf(r.exp))
+    case Expr.Tag(_, exps, _, _, _) => exps.flatMap(handledEffSymsOf).toSet
+    case Expr.RestrictableTag(_, exps, _, _, _) => exps.flatMap(handledEffSymsOf).toSet
+    case Expr.ExtTag(_, exps, _, _, _) => exps.flatMap(handledEffSymsOf).toSet
+    case Expr.Tuple(elms, _, _, _) => elms.flatMap(handledEffSymsOf).toSet
+    case Expr.RecordSelect(exp, _, _, _, _) => handledEffSymsOf(exp)
+    case Expr.RecordExtend(_, value, rest, _, _, _) => handledEffSymsOf(value) ++ handledEffSymsOf(rest)
+    case Expr.RecordRestrict(_, rest, _, _, _) => handledEffSymsOf(rest)
+    case Expr.ArrayLit(exps, exp, _, _, _) => exps.flatMap(handledEffSymsOf).toSet ++ handledEffSymsOf(exp)
+    case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) => handledEffSymsOf(exp1) ++ handledEffSymsOf(exp2) ++ handledEffSymsOf(exp3)
+    case Expr.ArrayLoad(base, index, _, _, _) => handledEffSymsOf(base) ++ handledEffSymsOf(index)
+    case Expr.ArrayLength(base, _, _) => handledEffSymsOf(base)
+    case Expr.ArrayStore(base, index, elm, _, _) => handledEffSymsOf(base) ++ handledEffSymsOf(index) ++ handledEffSymsOf(elm)
+    case Expr.StructNew(_, fields, region, _, _, _) => region.map(handledEffSymsOf).getOrElse(Set()) ++ fields.flatMap { case (_, v) => handledEffSymsOf(v) }
+    case Expr.StructGet(e, _, _, _, _) => handledEffSymsOf(e)
+    case Expr.StructPut(e1, _, e2, _, _, _) => handledEffSymsOf(e1) ++ handledEffSymsOf(e2)
+    case Expr.VectorLit(exps, _, _, _) => exps.flatMap(handledEffSymsOf).toSet
+    case Expr.VectorLoad(exp1, exp2, _, _, _) => handledEffSymsOf(exp1) ++ handledEffSymsOf(exp2)
+    case Expr.VectorLength(exp, _) => handledEffSymsOf(exp)
+    case Expr.Ascribe(exp, _, _, _, _, _) => handledEffSymsOf(exp)
+    case Expr.InstanceOf(exp, _, _) => handledEffSymsOf(exp)
+    case Expr.CheckedCast(_, exp, _, _, _) => handledEffSymsOf(exp)
+    case Expr.UncheckedCast(exp, _, _, _, _, _) => handledEffSymsOf(exp)
+    case Expr.Unsafe(exp, _, _, _, _, _) => handledEffSymsOf(exp)
+
+    case Expr.TryCatch(exp, rules, _, _, _) => handledEffSymsOf(exp) ++ rules.flatMap(rule => handledEffSymsOf(rule.exp))
+    case Expr.Throw(exp, _, _, _) => handledEffSymsOf(exp)
+    case Expr.Handler(symUse, rules, _, _, _, _, _) => rules.flatMap(rule => handledEffSymsOf(rule.exp)).toSet + symUse.sym
+    case Expr.RunWith(exp1, exp2, _, _, _) => handledEffSymsOf(exp1) ++ handledEffSymsOf(exp2)
+    case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(handledEffSymsOf).toSet
+    case Expr.InvokeSuperConstructor(_, args, _, _, _) => args.flatMap(handledEffSymsOf).toSet
+    case Expr.InvokeMethod(_, exp, args, _, _, _) => handledEffSymsOf(exp) ++ args.flatMap(handledEffSymsOf)
+    case Expr.InvokeSuperMethod(_, args, _, _, _) => args.flatMap(handledEffSymsOf).toSet
+    case Expr.InvokeStaticMethod(_, args, _, _, _) => args.flatMap(handledEffSymsOf).toSet
+    case Expr.GetField(_, exp, _, _, _) => handledEffSymsOf(exp)
+    case Expr.PutField(_, exp1, exp2, _, _, _) => handledEffSymsOf(exp1) ++ handledEffSymsOf(exp2)
+    case Expr.GetStaticField(_, _, _, _) => Set.empty
+    case Expr.PutStaticField(_, exp, _, _, _) => handledEffSymsOf(exp)
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) => (constructors.flatMap(c => handledEffSymsOf(c.exp)) ++ methods.flatMap(method => handledEffSymsOf(method.exp))).toSet
+    case Expr.NewChannel(exp, _, _, _) => handledEffSymsOf(exp)
+    case Expr.GetChannel(exp, _, _, _) => handledEffSymsOf(exp)
+    case Expr.PutChannel(exp1, exp2, _, _, _) => handledEffSymsOf(exp1) ++ handledEffSymsOf(exp2)
+    case Expr.SelectChannel(rules, default, _, _, _) => rules.flatMap(rule => handledEffSymsOf(rule.chan) ++ handledEffSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(handledEffSymsOf)
+    case Expr.Spawn(exp1, exp2, _, _, _) => handledEffSymsOf(exp1) ++ handledEffSymsOf(exp2)
+    case Expr.ParYield(frags, exp, _, _, _) => handledEffSymsOf(exp) ++ frags.flatMap(f => handledEffSymsOf(f.exp))
+    case Expr.Lazy(exp, _, _) => handledEffSymsOf(exp)
+    case Expr.Force(exp, _, _, _) => handledEffSymsOf(exp)
+    case Expr.FixpointConstraintSet(_, _, _) => Set.empty
+    case Expr.FixpointLambda(_, exp, _, _, _) => handledEffSymsOf(exp)
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) => handledEffSymsOf(exp1) ++ handledEffSymsOf(exp2)
+    case Expr.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) => exps.flatMap(handledEffSymsOf).toSet ++ terms.flatMap(handledEffSymsOf).toSet
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) => exps.flatMap(handledEffSymsOf).toSet ++ handledEffSymsOf(queryExp) ++ selects.flatMap(handledEffSymsOf).toSet ++ where.flatMap(handledEffSymsOf).toSet
+    case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) => exps.flatMap(handledEffSymsOf).toSet
+    case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.flatMap(handledEffSymsOf).toSet
+    case Expr.Error(_, _, _) => Set.empty
+  }
+
+  /**
     * Creates an iterable over all the instance defs in `root`.
     */
   def instanceDefsOf(root: Root): Iterable[Def] = {
