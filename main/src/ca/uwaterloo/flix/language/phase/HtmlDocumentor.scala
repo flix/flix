@@ -1079,6 +1079,16 @@ object HtmlDocumentor {
        |<meta charset='utf-8'>
        |<meta name='viewport' content='width=device-width,initial-scale=1'>
        |<meta name='description' content='API documentation for ${esc(name)} | The Flix Programming Language'>
+       |<script>
+       |(function () {
+       |    try {
+       |        var stored = localStorage.getItem('flix-html-docs:use-dark-theme');
+       |        if (stored !== null) {
+       |            document.documentElement.classList.add(stored === 'true' ? 'dark' : 'light');
+       |        }
+       |    } catch (e) {}
+       |})();
+       |</script>
        |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Noto+Sans&display=swap' rel='stylesheet'>
