@@ -86,7 +86,7 @@ class TestJavaTypes extends AnyFunSuite {
     assert(JavaTypes.formatType(CD_int) == "Int32")
     assert(JavaTypes.formatType(CD_String) == "String")
     assert(JavaTypes.formatType(JavaClasses.BigInteger) == "BigInt")
-    assert(JavaTypes.formatType(ClassDesc.of("java.util.Map$Entry")) == "java.util.Map$Entry")
+    assert(JavaTypes.formatType(ClassDesc.of("java.util.Map$Entry")) == "java.util.Map.Entry")
     assert(JavaTypes.formatType(CD_int.arrayType()) == Type.mkArray(Type.Int32, Type.IO, loc).toString)
   }
 
