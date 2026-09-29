@@ -733,6 +733,7 @@ object HtmlDocumentor {
     docActions(None, trt.decl.loc)
     sb.append("</div>")
     docDoc(trt.decl.doc)
+    mod.foreach(m => modDoc(m.doc))
     docSubSection("Associated Types", sortedAssocs, docAssoc)
     docCollapsableSubSection("Instances", sortedInstances, docInstance)
     sb.append("</div>")
@@ -824,6 +825,7 @@ object HtmlDocumentor {
     docActions(None, eff.decl.loc)
     sb.append("</div>")
     docDoc(eff.decl.doc)
+    mod.foreach(m => modDoc(m.doc))
     docDefaultHandler(eff.defaultHandler)
     sb.append("</div>")
 
@@ -911,6 +913,7 @@ object HtmlDocumentor {
     sb.append("</div>")
     docCases(enm.decl.cases.values.toList)
     docDoc(enm.decl.doc)
+    mod.foreach(m => modDoc(m.doc))
     docCollapsableSubSection("Instances", sortedInstances, docInstance)
     sb.append("</div>")
 
@@ -995,6 +998,7 @@ object HtmlDocumentor {
     sb.append("</div>")
     docFields(struct.decl.fields.values.toList)
     docDoc(struct.decl.doc)
+    mod.foreach(m => modDoc(m.doc))
     docCollapsableSubSection("Instances", sortedInstances, docInstance)
     sb.append("</div>")
 
