@@ -1079,7 +1079,8 @@ object HtmlDocumentor {
        |<meta charset='utf-8'>
        |<meta name='viewport' content='width=device-width,initial-scale=1'>
        |<meta name='description' content='API documentation for ${esc(name)} | The Flix Programming Language'>
-       |<script>
+       |<!-- Runs synchronously, before the stylesheets, so the reader's stored theme is applied before first paint; a deferred/module script (like index.js below) would run too late and cause a flash of the wrong theme. -->
+       |<script type='text/javascript'>
        |(function () {
        |    try {
        |        var stored = localStorage.getItem('flix-html-docs:use-dark-theme');
