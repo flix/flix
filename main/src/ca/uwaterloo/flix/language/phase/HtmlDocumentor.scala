@@ -643,7 +643,7 @@ object HtmlDocumentor {
       )
     }
 
-    sb.append("<main>")
+    sb.append("<main id='main-content'>")
     sb.append(s"<h1>${esc(mod.qualifiedName)}</h1>")
     modDoc(mod.doc)
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
@@ -732,7 +732,7 @@ object HtmlDocumentor {
       )
     }
 
-    sb.append("<main>")
+    sb.append("<main id='main-content'>")
     sb.append(s"<h1>${esc(trt.qualifiedName)}</h1>")
 
     sb.append(s"<div class='box' id='main-box'>")
@@ -832,7 +832,7 @@ object HtmlDocumentor {
       )
     }
 
-    sb.append("<main>")
+    sb.append("<main id='main-content'>")
     sb.append(s"<h1>${esc(eff.qualifiedName)}</h1>")
 
     sb.append(s"<div class='box'  id='main-box'>")
@@ -924,7 +924,7 @@ object HtmlDocumentor {
       )
     }
 
-    sb.append("<main>")
+    sb.append("<main id='main-content'>")
     sb.append(s"<h1>${esc(enm.qualifiedName)}</h1>")
 
     sb.append(s"<div class='box' id='main-box'>")
@@ -1016,7 +1016,7 @@ object HtmlDocumentor {
       )
     }
 
-    sb.append("<main>")
+    sb.append("<main id='main-content'>")
     sb.append(s"<h1>${esc(struct.qualifiedName)}</h1>")
 
     sb.append(s"<div class='box' id='main-box'>")
@@ -1057,9 +1057,9 @@ object HtmlDocumentor {
 
     docHeader()
 
-    sb.append("<nav></nav>")
+    sb.append("<nav aria-label='Sidebar navigation'></nav>")
 
-    sb.append("<main>")
+    sb.append("<main id='main-content'>")
     sb.append("<h1>Page Not Found</h1>")
     sb.append("<p>There is no page at this address.</p>")
     sb.append("<p><a href='index.html'>Go to the documentation home</a>.</p>")
@@ -1109,10 +1109,14 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docHeader()(implicit sb: StringBuilder): Unit = {
+    sb.append("<a class='skip-link' href='#main-content'>Skip to main content</a>")
+
     sb.append("<header>")
 
+    // The site branding is not marked up as a heading: each page's own `h1` (in `<main>`) is
+    // the sole top-level heading, so this must not introduce an `h2` that precedes it.
     sb.append("<div class='flix'>")
-    sb.append("<h2><a href='index.html'>flix</a></h2>")
+    sb.append("<p class='site-title'><a href='index.html'>flix</a></p>")
     sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
     sb.append("</div>")
 
@@ -1123,11 +1127,13 @@ object HtmlDocumentor {
     docIcon("light")
     sb.append("</button>")
 
-    sb.append("<div id='menu-toggle' class='toggle'>")
+    // A `<label>` wrapping the checkbox gives the toggle a proper accessible name and an
+    // interactive area that matches its whole visual hit target (rather than a bare `<div>`).
+    sb.append("<label id='menu-toggle' class='toggle'>")
     sb.append("<input type='checkbox' aria-label='Toggle Navigation Menu'>")
     docIcon("open")
     docIcon("close")
-    sb.append("</div>")
+    sb.append("</label>")
 
     sb.append("</header>")
   }
@@ -1138,7 +1144,10 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docSideBar(parent: Option[Symbol.ModuleSym])(docContents: () => Unit)(implicit sb: StringBuilder): Unit = {
-    sb.append("<nav>")
+    sb.append("<nav aria-label='Sidebar navigation'>")
+    // Visually hidden: gives the section `h3` headings below a proper `h2` ancestor within the
+    // nav landmark's own heading structure, without changing how the sidebar looks.
+    sb.append("<h2 class='visually-hidden'>Sidebar navigation</h2>")
     parent.map { p =>
       sb.append(s"<a class='back' href='${escUrl(moduleFileName(p))}'>")
       docIcon("back")
