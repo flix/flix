@@ -203,6 +203,28 @@ h1 {
     margin-bottom: 3rem;
 }
 
+/* The page title is a breadcrumb trail, e.g. "Prelude / Fixpoint / Ram", rather than plain text;
+   every segment but the last (the current page) links to its own page. It keeps the look of the
+   plain h1 it replaces. */
+h1.breadcrumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    row-gap: 0.5rem;
+}
+h1.breadcrumbs a {
+    color: var(--faded-text-color);
+}
+h1.breadcrumbs a:hover {
+    color: var(--heading-color);
+}
+h1.breadcrumbs .breadcrumb-sep {
+    color: var(--faded-text-color);
+}
+h1.breadcrumbs .breadcrumb-current {
+    color: var(--heading-color);
+}
+
 h2 {
     font-family: "Oswald", sans-serif;
     font-size: 2rem;
@@ -431,10 +453,51 @@ nav {
         transform: translateY(0);
     }
 }
-nav > .back {
-    display: flex;
-    gap: 0.1rem;
-    margin-bottom: 1rem;
+nav .sidebar-heading {
+    display: block;
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--faded-text-color);
+}
+nav .module-tree {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: var(--border);
+}
+nav .module-tree > ul {
+    padding-left: 0;
+}
+nav .module-tree ul {
+    margin-top: 0.2rem;
+    padding-left: 0.9rem;
+    list-style: none;
+}
+nav .module-tree li {
+    margin-bottom: 0.1rem;
+}
+nav .module-tree summary {
+    cursor: pointer;
+    list-style: none;
+}
+nav .module-tree summary::-webkit-details-marker {
+    display: none;
+}
+nav .module-tree summary::before {
+    content: "▸";
+    display: inline-block;
+    width: 1em;
+    color: var(--faded-text-color);
+}
+nav .module-tree details[open] > summary::before {
+    content: "▾";
+}
+nav .module-tree a {
+    color: var(--text-color);
+}
+nav .module-tree a.current {
+    color: var(--show-hide-color);
+    font-weight: 700;
 }
 nav ul {
     margin-top: 0.2rem;

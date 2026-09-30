@@ -73,7 +73,6 @@ object HtmlDocumentor {
     * its SVG file, relative to [[Icons]].
     */
   private val IconClasses: List[(String, String)] = List(
-    "back" -> "back",
     "close" -> "close",
     "dark" -> "darkMode",
     "light" -> "lightMode",
@@ -99,7 +98,11 @@ object HtmlDocumentor {
     val filteredModulesRoot = filterModules(modulesRoot, origin)
     val pairedModulesRoot = pairModules(filteredModulesRoot)
 
-    visitMod(pairedModulesRoot, outputDir)(flix, repo)
+    // The full module hierarchy, made available to every page so it can render the persistent
+    // module tree in its sidebar and the breadcrumb trail leading up to itself.
+    implicit val moduleTree: Module = pairedModulesRoot
+
+    visitMod(pairedModulesRoot, outputDir)(flix, repo, moduleTree)
 
     writeDocFile("404.html", document404(), outputDir)
 
@@ -109,7 +112,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Module`, `mod`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], moduleTree: Module): Unit = {
     writeDocFile(mod.fileName, documentModule(mod), outputDir)
     visitContents(mod, outputDir)
   }
@@ -117,7 +120,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Trait`, `trt`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], moduleTree: Module): Unit = {
     writeDocFile(trt.fileName, documentTrait(trt), outputDir)
     trt.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -125,7 +128,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Effect`, `eff`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], moduleTree: Module): Unit = {
     writeDocFile(eff.fileName, documentEffect(eff), outputDir)
     eff.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -133,7 +136,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Enum`, `enm`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], moduleTree: Module): Unit = {
     writeDocFile(enm.fileName, documentEnum(enm), outputDir)
     enm.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -141,7 +144,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Struct`, `struct`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], moduleTree: Module): Unit = {
     writeDocFile(struct.fileName, documentStruct(struct), outputDir)
     struct.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -153,7 +156,7 @@ object HtmlDocumentor {
     * The items of a companion module are documented on the page of the item it belongs to,
     * so a companion module gets no page of its own.
     */
-  private def visitContents(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitContents(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], moduleTree: Module): Unit = {
     mod.submodules.foreach(visitMod(_, outputDir))
     mod.traits.foreach(visitTrait(_, outputDir))
     mod.effects.foreach(visitEffect(_, outputDir))
@@ -588,7 +591,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Module`, `mod`, returning a string of HTML.
     */
-  private def documentModule(mod: Module)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentModule(mod: Module)(implicit flix: Flix, repo: Option[SourceRepository], moduleTree: Module): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedTraits = mod.traits.sortBy(_.name)
@@ -603,7 +606,7 @@ object HtmlDocumentor {
 
     docHeader()
 
-    docSideBar(mod.parent) { () =>
+    docSideBar(mod.sym) { () =>
       docSubModules(mod)
       docSideBarSection(
         "Traits",
@@ -644,7 +647,7 @@ object HtmlDocumentor {
     }
 
     sb.append("<main id='main-content'>")
-    sb.append(s"<h1>${esc(mod.qualifiedName)}</h1>")
+    docBreadcrumbs(moduleAncestors(mod.sym), mod.name)
     modDoc(mod.doc)
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Definitions", sortedDefs, docDef)
@@ -659,7 +662,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Trait`, `trt`, returning a string of HTML.
     */
-  private def documentTrait(trt: Trait)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentTrait(trt: Trait)(implicit flix: Flix, repo: Option[SourceRepository], moduleTree: Module): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedAssocs = trt.decl.assocs.sortBy(_.sym.name)
@@ -680,7 +683,7 @@ object HtmlDocumentor {
 
     docHeader()
 
-    docSideBar(Some(trt.parent)) { () =>
+    docSideBar(trt.parent) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Signatures",
@@ -733,7 +736,7 @@ object HtmlDocumentor {
     }
 
     sb.append("<main id='main-content'>")
-    sb.append(s"<h1>${esc(trt.qualifiedName)}</h1>")
+    docBreadcrumbs(moduleChain(trt.parent), trt.name)
 
     sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(trt.decl.ann)
@@ -769,7 +772,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Effect`, `eff`, returning a string of HTML.
     */
-  private def documentEffect(eff: Effect)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentEffect(eff: Effect)(implicit flix: Flix, repo: Option[SourceRepository], moduleTree: Module): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedOps = eff.decl.ops.sortBy(_.sym.name)
@@ -787,7 +790,7 @@ object HtmlDocumentor {
 
     docHeader()
 
-    docSideBar(Some(eff.parent)) { () =>
+    docSideBar(eff.parent) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Operations",
@@ -833,7 +836,7 @@ object HtmlDocumentor {
     }
 
     sb.append("<main id='main-content'>")
-    sb.append(s"<h1>${esc(eff.qualifiedName)}</h1>")
+    docBreadcrumbs(moduleChain(eff.parent), eff.name)
 
     sb.append(s"<div class='box'  id='main-box'>")
     docAnnotations(eff.decl.ann)
@@ -866,7 +869,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Enum`, `enm`, returning a string of HTML.
     */
-  private def documentEnum(enm: Enum)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentEnum(enm: Enum)(implicit flix: Flix, repo: Option[SourceRepository], moduleTree: Module): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedInstances = enm.instances.sortBy(_.trt.sym.name)
@@ -884,7 +887,7 @@ object HtmlDocumentor {
 
     docHeader()
 
-    docSideBar(Some(enm.parent)) { () =>
+    docSideBar(enm.parent) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Traits",
@@ -925,7 +928,7 @@ object HtmlDocumentor {
     }
 
     sb.append("<main id='main-content'>")
-    sb.append(s"<h1>${esc(enm.qualifiedName)}</h1>")
+    docBreadcrumbs(moduleChain(enm.parent), enm.name)
 
     sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(enm.decl.ann)
@@ -958,7 +961,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Struct`, `struct`, returning a string of HTML.
     */
-  private def documentStruct(struct: Struct)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentStruct(struct: Struct)(implicit flix: Flix, repo: Option[SourceRepository], moduleTree: Module): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedInstances = struct.instances.sortBy(_.trt.sym.name)
@@ -976,7 +979,7 @@ object HtmlDocumentor {
 
     docHeader()
 
-    docSideBar(Some(struct.parent)) { () =>
+    docSideBar(struct.parent) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Traits",
@@ -1017,7 +1020,7 @@ object HtmlDocumentor {
     }
 
     sb.append("<main id='main-content'>")
-    sb.append(s"<h1>${esc(struct.qualifiedName)}</h1>")
+    docBreadcrumbs(moduleChain(struct.parent), struct.name)
 
     sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(struct.decl.ann)
@@ -1139,24 +1142,105 @@ object HtmlDocumentor {
   }
 
   /**
-    * Generate the side bar with the contents specified by `docContents`.
+    * Generate the side bar.
+    *
+    * The side bar has two parts:
+    *   1. A persistent module tree, rooted at [[RootNS]], with `current` (the module that the page
+    *      belongs to) marked, so a reader can jump to any other module, e.g. a sibling, without
+    *      first backtracking to the root.
+    *   1. An "On This Page" outline of the current page's own contents, as generated by
+    *      `docOnPageContents`, e.g. its submodules, traits, or definitions.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSideBar(parent: Option[Symbol.ModuleSym])(docContents: () => Unit)(implicit sb: StringBuilder): Unit = {
+  private def docSideBar(current: Symbol.ModuleSym)(docOnPageContents: () => Unit)(implicit sb: StringBuilder, moduleTree: Module): Unit = {
     sb.append("<nav aria-label='Sidebar navigation'>")
     // Visually hidden: gives the section `h3` headings below a proper `h2` ancestor within the
     // nav landmark's own heading structure, without changing how the sidebar looks.
     sb.append("<h2 class='visually-hidden'>Sidebar navigation</h2>")
-    parent.map { p =>
-      sb.append(s"<a class='back' href='${escUrl(moduleFileName(p))}'>")
-      docIcon("back")
-      sb.append(moduleName(p))
-      sb.append("</a>")
-    }
-    docContents()
+
+    sb.append("<div class='module-tree'>")
+    sb.append("<h3 class='sidebar-heading'>Modules</h3>")
+    sb.append("<ul>")
+    docModuleTreeNode(moduleTree, current)
+    sb.append("</ul>")
+    sb.append("</div>")
+
+    sb.append("<div class='page-outline'>")
+    sb.append("<h3 class='sidebar-heading'>On This Page</h3>")
+    docOnPageContents()
+    sb.append("</div>")
+
     sb.append("</nav>")
   }
+
+  /**
+    * Documents the module `mod` and, recursively, its submodules, as a single node of the
+    * persistent module tree in the side bar (see [[docSideBar]]).
+    *
+    * A module with no submodules is a plain link. A module with submodules is a collapsible
+    * `<details>` element, expanded by default exactly when it lies on the path from the root down
+    * to `current` (`current` included), so that path is always visible without interaction, while
+    * unrelated branches stay collapsed. The module `current` itself is marked so it can be
+    * highlighted.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docModuleTreeNode(mod: Module, current: Symbol.ModuleSym)(implicit sb: StringBuilder): Unit = {
+    val curCls = if (mod.sym == current) " class='current'" else ""
+    val link = s"<a href='${escUrl(mod.fileName)}'$curCls>${esc(mod.name)}</a>"
+
+    if (mod.submodules.isEmpty) {
+      sb.append(s"<li>$link</li>")
+      return
+    }
+
+    val onPath = current.ns.startsWith(mod.sym.ns)
+    val openAttr = if (onPath) " open" else ""
+    sb.append(s"<li><details$openAttr><summary>$link</summary><ul>")
+    for (sub <- mod.submodules.sortBy(_.name)) {
+      docModuleTreeNode(sub, current)
+    }
+    sb.append("</ul></details></li>")
+  }
+
+  /**
+    * Documents the breadcrumb trail leading up to the current page, from the root down to (but
+    * not including) the page itself, e.g. `List(Prelude, Fixpoint)` for the page of `Fixpoint.Ram`.
+    * Every module in `ancestors` links to its own page, followed by the current page's own name,
+    * `currentName`, which is not a link, e.g. `Prelude / Fixpoint / Ram`.
+    *
+    * This replaces the page's former, unlinked `<h1>` title, so it is still styled and still
+    * exactly one per page; only now every segment but the last is a link.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docBreadcrumbs(ancestors: List[Symbol.ModuleSym], currentName: String)(implicit sb: StringBuilder): Unit = {
+    sb.append("<h1 class='breadcrumbs'>")
+    for (a <- ancestors) {
+      sb.append(s"<a href='${escUrl(moduleFileName(a))}'>${esc(moduleName(a))}</a>")
+      sb.append("<span class='breadcrumb-sep'> / </span>")
+    }
+    sb.append(s"<span class='breadcrumb-current'>${esc(currentName)}</span>")
+    sb.append("</h1>")
+  }
+
+  /**
+    * Returns the ancestor modules of `sym`, from the root down to (but not including) `sym`
+    * itself, e.g. `List(Prelude, Fixpoint)` for `Fixpoint.Ram`.
+    *
+    * This is reconstructed purely from the namespace of `sym`, so it requires no lookup in the
+    * module tree and works even for a module that has been filtered out of it.
+    */
+  private def moduleAncestors(sym: Symbol.ModuleSym): List[Symbol.ModuleSym] =
+    sym.ns.indices.map(i => Symbol.mkModuleSym(sym.ns.take(i))).toList
+
+  /**
+    * Returns the modules from the root down to and including `sym` itself, e.g.
+    * `List(Prelude, Fixpoint, Fixpoint.Ram)` for `Fixpoint.Ram`.
+    */
+  private def moduleChain(sym: Symbol.ModuleSym): List[Symbol.ModuleSym] =
+    moduleAncestors(sym) :+ sym
 
   /**
     * Documents a section in the side bar, (Modules, Traits, Enums, etc.), containing a `group` of items.
