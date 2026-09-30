@@ -1905,6 +1905,24 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
   }
 
   /**
+    * Checks the documentation coverage for the declarations that come from a source with the
+    * origin `origin`: the project's own code, or the bundled library.
+    *
+    * Returns `Ok` if every documentable item has a doc comment, or an `Err` listing every one
+    * that does not, so this can be used as a CI gate on documentation coverage.
+    *
+    * No HTML documentation is generated; this is a pure lint/coverage check.
+    */
+  def docCheck(flix: Flix, origin: Origin): Result[Unit, BootstrapError] = {
+    typeCheck(flix).flatMap { root =>
+      HtmlDocumentor.checkCoverage(root, origin) match {
+        case Nil => Ok(())
+        case missing => Err(BootstrapError.MissingDocumentation(missing))
+      }
+    }
+  }
+
+  /**
     * Formats all source files in the project.
     */
   def format(flix: Flix): Result[Unit, BootstrapError] = {

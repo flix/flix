@@ -96,6 +96,124 @@ object HtmlDocumentor {
   }
 
   /**
+    * A documentable item that has no doc comment.
+    *
+    * @param kind          a short, human-readable description of the kind of item, e.g. `"module"` or `"def"`.
+    * @param qualifiedName the fully qualified name of the item.
+    * @param loc           the source location of the item.
+    */
+  case class MissingDoc(kind: String, qualifiedName: String, loc: SourceLocation)
+
+  /**
+    * Returns every item under `origin` in `root` that would appear in the documentation generated
+    * by [[run]], but has no doc comment.
+    *
+    * This reuses the exact same module-splitting, filtering, and companion-module-pairing logic
+    * that `run` uses to decide what gets a page, so this walks the set of modules, types, and
+    * members that would actually be documented -- not raw or private declarations that are
+    * intentionally excluded from the generated documentation.
+    */
+  def checkCoverage(root: TypedAst.Root, origin: Origin): List[MissingDoc] = {
+    val modulesRoot = splitModules(root)
+    val filteredModulesRoot = filterModules(modulesRoot, origin)
+    val pairedModulesRoot = pairModules(filteredModulesRoot)
+
+    checkMod(pairedModulesRoot).sortBy(m => (m.qualifiedName, m.kind))
+  }
+
+  /**
+    * Returns the missing-doc-comment items of `mod`, its contents, and its submodules.
+    *
+    * The root module is a pseudo-module with no declaration of its own (it is never written to a
+    * page), so its own doc comment, unlike that of every other module, is not checked.
+    *
+    * Likewise, a module that exists only implicitly -- e.g. `Foo.Bar` because of a declaration
+    * `def Foo.Bar.f(): ...`, without any `mod Foo.Bar { ... }` block of its own -- has a synthetic
+    * location (`!mod.doc.loc.isReal`) and no place for a doc comment to go, so it is skipped too.
+    */
+  private def checkMod(mod: Module): List[MissingDoc] = {
+    val self = if (mod.sym.isRoot) Nil else checkModDoc(mod)
+    self ++ checkContents(mod)
+  }
+
+  /**
+    * Returns `List(MissingDoc("module", ...))` if `mod` has no doc comment, and `Nil` otherwise.
+    *
+    * A module that exists only implicitly -- e.g. `Foo.Bar` because of a declaration
+    * `def Foo.Bar.f(): ...`, without any `mod Foo.Bar { ... }` block of its own -- has a synthetic
+    * location (`!mod.doc.loc.isReal`) and no place for a doc comment to go, so it is skipped.
+    */
+  private def checkModDoc(mod: Module): List[MissingDoc] =
+    if (!mod.doc.loc.isReal) Nil else missingDoc("module", moduleQualifiedName(mod.sym), mod.doc)
+
+  /**
+    * Returns the missing-doc-comment items contained directly in `mod`: its submodules (and, in
+    * turn, their contents), traits, effects, enums, structs, type aliases, and definitions.
+    */
+  private def checkContents(mod: Module): List[MissingDoc] = {
+    mod.submodules.flatMap(checkMod) ++
+      mod.traits.flatMap(checkTrait) ++
+      mod.effects.flatMap(checkEffect) ++
+      mod.enums.flatMap(checkEnum) ++
+      mod.structs.flatMap(checkStruct) ++
+      mod.typeAliases.flatMap(t => missingDoc("type alias", t.sym.toString, t.doc)) ++
+      mod.defs.flatMap(d => missingDoc("def", d.sym.toString, d.spec.doc))
+  }
+
+  /**
+    * Returns the missing-doc-comment items of `companionMod`, if any: its own doc comment
+    * (now rendered on the page of the trait/effect/enum/struct it belongs to) and its contents.
+    */
+  private def checkCompanionMod(companionMod: Option[Module]): List[MissingDoc] =
+    companionMod.toList.flatMap(m => checkModDoc(m) ++ checkContents(m))
+
+  /**
+    * Returns the missing-doc-comment items of `trt`: the trait itself, its signatures and trait
+    * definitions, and the contents of its companion module, if any.
+    */
+  private def checkTrait(trt: Trait): List[MissingDoc] =
+    missingDoc("trait", trt.qualifiedName, trt.decl.doc) ++
+      trt.signatures.flatMap(s => missingDoc("signature", s.sym.toString, s.spec.doc)) ++
+      trt.defs.flatMap(d => missingDoc("trait def", d.sym.toString, d.spec.doc)) ++
+      checkCompanionMod(trt.companionMod)
+
+  /**
+    * Returns the missing-doc-comment items of `eff`: the effect itself, its operations, and the
+    * contents of its companion module, if any.
+    */
+  private def checkEffect(eff: Effect): List[MissingDoc] =
+    missingDoc("effect", eff.qualifiedName, eff.decl.doc) ++
+      eff.decl.ops.flatMap(o => missingDoc("effect operation", o.sym.toString, o.spec.doc)) ++
+      checkCompanionMod(eff.companionMod)
+
+  /**
+    * Returns the missing-doc-comment items of `enm`: the enum itself and the contents of its
+    * companion module, if any.
+    *
+    * Enum cases carry no doc comment of their own in the AST, so they are not checked.
+    */
+  private def checkEnum(enm: Enum): List[MissingDoc] =
+    missingDoc("enum", enm.qualifiedName, enm.decl.doc) ++
+      checkCompanionMod(enm.companionMod)
+
+  /**
+    * Returns the missing-doc-comment items of `struct`: the struct itself and the contents of its
+    * companion module, if any.
+    *
+    * Struct fields carry no doc comment of their own in the AST, so they are not checked.
+    */
+  private def checkStruct(struct: Struct): List[MissingDoc] =
+    missingDoc("struct", struct.qualifiedName, struct.decl.doc) ++
+      checkCompanionMod(struct.companionMod)
+
+  /**
+    * Returns `List(MissingDoc(kind, qualifiedName, doc.loc))` if `doc` is empty, i.e. the item it
+    * documents has no doc comment, and `Nil` otherwise.
+    */
+  private def missingDoc(kind: String, qualifiedName: String, doc: Doc): List[MissingDoc] =
+    if (doc.text.isEmpty) List(MissingDoc(kind, qualifiedName, doc.loc)) else Nil
+
+  /**
     * Documents the given `Module`, `mod`, and all of its contained items, writing the resulting HTML to disk.
     */
   private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix): Unit = {
