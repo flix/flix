@@ -644,6 +644,7 @@ object HtmlDocumentor {
     }
 
     sb.append("<main id='main-content'>")
+    docBreadcrumbs(mod.parent, mod.name)
     sb.append(s"<h1>${esc(mod.qualifiedName)}</h1>")
     modDoc(mod.doc)
     docSummarySection("Traits", sortedTraits, (t: Trait) => t.decl.doc)
@@ -737,6 +738,7 @@ object HtmlDocumentor {
     }
 
     sb.append("<main id='main-content'>")
+    docBreadcrumbs(Some(trt.parent), trt.name)
     sb.append(s"<h1>${esc(trt.qualifiedName)}</h1>")
 
     sb.append(s"<div class='box' id='main-box'>")
@@ -837,6 +839,7 @@ object HtmlDocumentor {
     }
 
     sb.append("<main id='main-content'>")
+    docBreadcrumbs(Some(eff.parent), eff.name)
     sb.append(s"<h1>${esc(eff.qualifiedName)}</h1>")
 
     sb.append(s"<div class='box'  id='main-box'>")
@@ -929,6 +932,7 @@ object HtmlDocumentor {
     }
 
     sb.append("<main id='main-content'>")
+    docBreadcrumbs(Some(enm.parent), enm.name)
     sb.append(s"<h1>${esc(enm.qualifiedName)}</h1>")
 
     sb.append(s"<div class='box' id='main-box'>")
@@ -1021,6 +1025,7 @@ object HtmlDocumentor {
     }
 
     sb.append("<main id='main-content'>")
+    docBreadcrumbs(Some(struct.parent), struct.name)
     sb.append(s"<h1>${esc(struct.qualifiedName)}</h1>")
 
     sb.append(s"<div class='box' id='main-box'>")
@@ -1160,6 +1165,33 @@ object HtmlDocumentor {
     }
     docContents()
     sb.append("</nav>")
+  }
+
+  /**
+    * Generate the breadcrumb trail of the page of the item called `name` in the module `parent`:
+    * a link to each enclosing module, outermost first, followed by `name` itself.
+    *
+    * Every enclosing module has a page to link to: it contains the item, so it is not pruned by
+    * [[filterEmpty]], and if it is a companion module then the item it belongs to has a page with
+    * the same file name.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `parent` is `None`, i.e. the page is that of the root module, nothing will be generated.
+    */
+  private def docBreadcrumbs(parent: Option[Symbol.ModuleSym], name: String)(implicit sb: StringBuilder): Unit = parent match {
+    case None => // The root module has no enclosing modules.
+    case Some(p) =>
+      val enclosing = p.ns.inits.toList.reverse.map(Symbol.mkModuleSym)
+
+      sb.append("<nav class='breadcrumbs' aria-label='Breadcrumb'>")
+      sb.append("<ol>")
+      for (m <- enclosing) {
+        sb.append(s"<li><a href='${escUrl(moduleFileName(m))}'>${esc(moduleName(m))}</a></li>")
+      }
+      sb.append(s"<li aria-current='page'>${esc(name)}</li>")
+      sb.append("</ol>")
+      sb.append("</nav>")
   }
 
   /**

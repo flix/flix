@@ -395,7 +395,9 @@ header > .toggle:hover {
     }
 }
 
-nav {
+/* The sidebar is the `nav` that is a child of `body`, which tells it apart from the breadcrumbs
+   in `main`. */
+body > nav {
     grid-area: nav;
 
     position: sticky;
@@ -412,7 +414,7 @@ nav {
     z-index: 1;
 }
 @media screen and (max-width: 800px) {
-    nav {
+    body > nav {
         position: fixed;
         top: 20%;
         width: 100%;
@@ -427,57 +429,57 @@ nav {
         transform: translateY(100%);
         transition: transform 0.2s, var(--blur-transition);
     }
-    :root:has(#menu-toggle input:checked) nav {
+    :root:has(#menu-toggle input:checked) body > nav {
         transform: translateY(0);
     }
 }
-nav > .back {
+body > nav > .back {
     display: flex;
     gap: 0.1rem;
     margin-bottom: 1rem;
 }
-nav ul {
+body > nav ul {
     margin-top: 0.2rem;
     padding-left: 0.5rem;
     font-family: "Inter", sans-serif;
     font-size: 13px;
     list-style: none;
 }
-nav li {
+body > nav li {
     margin-bottom: 0.1rem;
 }
-nav li::before {
+body > nav li::before {
     content: "●";
     margin-right: 0.3rem;
 }
-nav .sidebar-list-modules li::before {
+body > nav .sidebar-list-modules li::before {
     color: var(--module-color);
 }
-nav .sidebar-list-signatures li::before {
+body > nav .sidebar-list-signatures li::before {
     color: var(--signature-color);
 }
-nav .sidebar-list-trait-defs li::before {
+body > nav .sidebar-list-trait-defs li::before {
     color: var(--trait-def-color);
 }
-nav .sidebar-list-traits li::before {
+body > nav .sidebar-list-traits li::before {
     color: var(--traits-color);
 }
-nav .sidebar-list-enums li::before {
+body > nav .sidebar-list-enums li::before {
     color: var(--enum-color);
 }
-nav .sidebar-list-structs li::before {
+body > nav .sidebar-list-structs li::before {
     color: var(--struct-color);
 }
-nav .sidebar-list-operations li::before {
+body > nav .sidebar-list-operations li::before {
     color: var(--op-color);
 }
-nav .sidebar-list-effects li::before {
+body > nav .sidebar-list-effects li::before {
     color: var(--eff-color);
 }
-nav .sidebar-list-type-aliases li::before {
+body > nav .sidebar-list-type-aliases li::before {
     color: var(--type-alias-color);
 }
-nav .sidebar-list-definitions li::before {
+body > nav .sidebar-list-definitions li::before {
     color: var(--def-color);
 }
 
@@ -505,6 +507,35 @@ main {
 
 main h2 {
     font-family: "Oswald", sans-serif;
+}
+
+.breadcrumbs {
+    margin-bottom: 0.5rem;
+
+    font-family: "Inter", sans-serif;
+    font-size: 0.9rem;
+    color: var(--faded-text-color);
+}
+.breadcrumbs > ol {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.breadcrumbs li + li::before {
+    content: "/";
+    /* Where supported, the empty alternative text stops screen readers announcing the separator. */
+    content: "/" / "";
+    margin: 0 0.4rem;
+    color: var(--faded-text-color);
+}
+.breadcrumbs a {
+    color: inherit;
+}
+.breadcrumbs a:hover,
+.breadcrumbs [aria-current] {
+    color: var(--text-color);
 }
 
 .box {
