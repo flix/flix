@@ -1188,12 +1188,7 @@ object HtmlDocumentor {
   }
 
   private def docSubModules(parentMod: Module)(implicit sb: StringBuilder): Unit = {
-    val subItems: List[Item] =
-      parentMod.submodules ++
-        parentMod.traits ++
-        parentMod.effects ++
-        parentMod.enums ++
-        parentMod.structs
+    val subItems: List[Item] = parentMod.submodules
 
     val sortedItems = subItems.sortBy(_.name)
 
