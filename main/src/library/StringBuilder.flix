@@ -14,7 +14,7 @@ pub mod StringBuilder {
     ///
     /// Represents a StringBuilder.
     ///
-    enum StringBuilder[_: Region](JStringBuilder)
+    pub enum StringBuilder[_: Region](JStringBuilder)
 
     instance Writable[StringBuilder[r]] {
 

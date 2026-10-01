@@ -5,7 +5,7 @@
  * that can be found in the LICENSE.md file.
  */
 
-mod Readable {
+pub mod Readable {
 
     use IoError.ErrorKind
     use IoError.IoError
@@ -16,7 +16,7 @@ mod Readable {
     ///
     /// A trait for types which are resources that can be read from.
     ///
-    trait Readable[t] {
+    pub trait Readable[t] {
 
         ///
         /// Type of each element that can be read from the resource.

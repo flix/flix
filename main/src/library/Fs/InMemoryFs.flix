@@ -21,7 +21,7 @@ mod Fs.InMemoryFs {
     /// - `dirs`:    set of normalized absolute paths registered as directories.
     /// - `times`:   map from normalized absolute paths to `{atime, ctime, mtime}` records (ms since epoch).
     /// - `counter`: monotonically increasing counter for generating unique temp directory names.
-    pub struct InMemoryFs[r: Region] {
+    struct InMemoryFs[r: Region] {
         mut files:   Map[String, Entry],
         mut dirs:    Set[String],
         mut times:   Map[String, {atime = Int64, ctime = Int64, mtime = Int64}],
