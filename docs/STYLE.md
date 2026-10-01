@@ -36,11 +36,12 @@ Flix test files under `main/test` are the exception: they do not need a header (
 - Indentation is 4 spaces.
 - Pattern matches should align `=>`.
 - Avoid unnecessary lambdas. 
-  - e.g. prefer `List.map(String.toLowerCase)` over `List.map(s -> String.toLowerCase(s)`.
+  - e.g. prefer `List.map(String.toLowerCase)` over `List.map(s -> String.toLowerCase(s))`.
 - Prefer string interpolation to constructing strings with concatenation.
 - Keep the simplest cases in a pattern matches first.
   - e.g. keep the base case(s) before the inductive case(s).
 - Doc comments should use triple slashes ///.
+  - The first paragraph should be a short summary (preferably a single sentence) and will appear in generated documentation.
 
 ### Naming
 - Variable names are typical one letter; `o` for Option, `l` for `List`.
