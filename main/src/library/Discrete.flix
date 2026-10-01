@@ -5,7 +5,7 @@
  * that can be found in the LICENSE.md file.
  */
 
-mod Discrete {
+pub mod Discrete {
 
     ///
     /// A trait for types whose values form a discrete sequence, i.e. where every
@@ -21,7 +21,7 @@ mod Discrete {
     /// around from the maximum value to the minimum value, and `prev` wraps around
     /// from the minimum value to the maximum value. The unbounded `BigInt` never wraps.
     ///
-    trait Discrete[t] with Order[t] {
+    pub trait Discrete[t] with Order[t] {
         ///
         /// Returns the successor of the given `x`.
         ///

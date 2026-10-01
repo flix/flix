@@ -54,7 +54,7 @@ mod BPlusTree.Node {
     ///     cannot be acquired immediately all current locks will be released and the attempt
     ///     restarted after the wanted lock has been released by the holder.
     ///
-    pub struct Node[k, v, r] {
+    struct Node[k, v, r] {
         keys:       Array[k, r],
         children:   Array[Node[k, v, r], r],
         values:     Array[v, r],

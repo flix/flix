@@ -6,7 +6,7 @@ mod Test.Dec.Assoc.Type.Collection {
     // Type definitions                                              //
     ///////////////////////////////////////////////////////////////////
 
-    pub trait Collection[c] {
+    trait Collection[c] {
         pub type Elm: Type
         pub def empty(): c
         pub def add(e: Collection.Elm[c], c: c): c

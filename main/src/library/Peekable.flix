@@ -5,7 +5,7 @@
  * that can be found in the LICENSE.md file.
  */
 
-mod Peekable {
+pub mod Peekable {
 
     import java.lang.String
 
@@ -13,7 +13,7 @@ mod Peekable {
     /// Extends `Readable` with the ability to `peek` at values that have not yet been `read`,
     /// `skip` values that don't need to be read, and perform other kinds of conditional reads.
     ///
-    trait Peekable[t] with Readable[t] {
+    pub trait Peekable[t] with Readable[t] {
 
         ///
         /// Returns `Ok(Some(x))` where x is the next value to be read, or `Ok(None)` if the `reader` is empty.

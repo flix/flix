@@ -5,14 +5,14 @@
  * that can be found in the LICENSE.md file.
  */
 
-mod MonadZip {
+pub mod MonadZip {
 
     ///
     /// A trait for zipping Monads, typically container monads like `List`.
     ///
     /// A minimal implementation must define `zipWith` and `zipWithA`.
     ///
-    trait MonadZip[m: Type -> Type] with Monad[m] {
+    pub trait MonadZip[m: Type -> Type] with Monad[m] {
 
         ///
         /// Returns single monad where the element (or elements) of `ma` and `mb` are combined

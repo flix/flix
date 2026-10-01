@@ -5,12 +5,12 @@
  * that can be found in the LICENSE.md file.
  */
 
-mod MonadZero {
+pub mod MonadZero {
 
     ///
     /// A trait for Monads that have a zero element.
     ///
-    trait MonadZero[m: Type -> Type] with Monad[m] {
+    pub trait MonadZero[m: Type -> Type] with Monad[m] {
 
         ///
         /// Returns the zero element of the monad.

@@ -10,7 +10,7 @@ pub mod ForEach {
     ///
     /// A trait for data structures that support a forEach operation.
     ///
-    trait ForEach[t] {
+    pub trait ForEach[t] {
 
         ///
         /// The type of elements in the data structure.

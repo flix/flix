@@ -21,7 +21,7 @@ pub mod DecodingReader {
     ///              either because they are lead bytes whose continuation bytes have not been read, or
     ///              because `DecodingReader` overestimated the number of bytes needed to fill a char buffer.
     ///
-    struct DecodingReader[t, r] {
+    pub struct DecodingReader[t, r] {
         rc:            Region[r],
         byteReader:    t,
         decoder:       CharsetDecoder,

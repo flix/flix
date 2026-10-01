@@ -10,7 +10,7 @@ pub mod Range {
     ///
     /// Represents a range (b, e) of discrete values from `b` (inclusive) to `e` (exclusive).
     ///
-    enum Range[t] with Eq, ToString {
+    pub enum Range[t] with Eq, ToString {
         case Range(t, t)
     }
 

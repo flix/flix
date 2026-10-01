@@ -17,7 +17,7 @@ pub mod Writable {
     ///
     /// A trait for types which are resources that can be written to.
     ///
-    trait Writable[t] {
+    pub trait Writable[t] {
 
         ///
         /// Type of each element that can be written to the resource.
