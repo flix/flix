@@ -772,6 +772,11 @@ code .name {
 code .type {
     color: var(--type-color);
 }
+code .type-var {
+    /* Same color as a type constructor for now: giving type variables their own color is a
+     * follow-up (see ticket T3), this only gives them their own element to style. */
+    color: var(--type-color);
+}
 code .kind {
     color: var(--kind-color);
 }
