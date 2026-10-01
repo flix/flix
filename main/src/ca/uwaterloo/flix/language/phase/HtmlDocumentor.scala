@@ -1171,27 +1171,19 @@ object HtmlDocumentor {
     * Generate the breadcrumb trail of the page of the item called `name` in the module `parent`:
     * a link to each enclosing module, outermost first, followed by `name` itself.
     *
-    * Every enclosing module has a page to link to: it contains the item, so it is not pruned by
-    * [[filterEmpty]], and if it is a companion module then the item it belongs to has a page with
-    * the same file name.
-    *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
     * If `parent` is `None`, i.e. the page is that of the root module, nothing will be generated.
     */
-  private def docBreadcrumbs(parent: Option[Symbol.ModuleSym], name: String)(implicit sb: StringBuilder): Unit = parent match {
-    case None => // The root module has no enclosing modules.
-    case Some(p) =>
-      val enclosing = p.ns.inits.toList.reverse.map(Symbol.mkModuleSym)
-
-      sb.append("<nav class='breadcrumbs' aria-label='Breadcrumb'>")
-      sb.append("<ol>")
-      for (m <- enclosing) {
-        sb.append(s"<li><a href='${escUrl(moduleFileName(m))}'>${esc(moduleName(m))}</a></li>")
+  private def docBreadcrumbs(parent: Option[Symbol.ModuleSym], name: String)(implicit sb: StringBuilder): Unit = {
+    parent.foreach { p =>
+      sb.append("<div class='breadcrumbs'>")
+      for (m <- p.ns.inits.toList.reverse.map(Symbol.mkModuleSym)) {
+        sb.append(s"<a href='${escUrl(moduleFileName(m))}'>${esc(moduleName(m))}</a> / ")
       }
-      sb.append(s"<li aria-current='page'>${esc(name)}</li>")
-      sb.append("</ol>")
-      sb.append("</nav>")
+      sb.append(s"<span>${esc(name)}</span>")
+      sb.append("</div>")
+    }
   }
 
   /**
