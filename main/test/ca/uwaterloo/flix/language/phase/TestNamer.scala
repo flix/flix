@@ -816,6 +816,187 @@ class TestNamer extends AnyFunSuite with TestUtils {
     expectError[NameError.CompanionMustBeFirst](result)
   }
 
+  test("CompanionMustBePublic.Enum.01") {
+    val input =
+      """
+        |pub mod B {
+        |    enum B { case B }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBePublic](result)
+  }
+  test("CompanionMustBePublic.Struct.01") {
+    val input =
+      """
+        |pub mod B {
+        |    struct B { x: Int32 }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBePublic](result)
+  }
+  test("CompanionMustBePublic.Effect.01") {
+    val input =
+      """
+        |pub mod B {
+        |    eff B { def op(): Unit }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBePublic](result)
+  }
+  test("CompanionMustBePublic.Trait.01") {
+    val input =
+      """
+        |pub mod B {
+        |    trait B[a] { pub def f(x: a): Int32 }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBePublic](result)
+  }
+  test("CompanionMustBePublic.Enum.02") {
+    val input =
+      """
+        |pub mod A.B {
+        |    enum B { case B }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBePublic](result)
+  }
+  test("IllegalPublicCompanion.Enum.01") {
+    val input =
+      """
+        |mod B {
+        |    pub enum B { case B }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalPublicCompanion](result)
+  }
+  test("IllegalPublicCompanion.Struct.01") {
+    val input =
+      """
+        |mod B {
+        |    pub struct B { x: Int32 }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalPublicCompanion](result)
+  }
+  test("IllegalPublicCompanion.Effect.01") {
+    val input =
+      """
+        |mod B {
+        |    pub eff B { def op(): Unit }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalPublicCompanion](result)
+  }
+  test("IllegalPublicCompanion.Trait.01") {
+    val input =
+      """
+        |mod B {
+        |    pub trait B[a] { pub def f(x: a): Int32 }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalPublicCompanion](result)
+  }
+  test("IllegalPublicCompanion.Enum.02") {
+    val input =
+      """
+        |mod A.B {
+        |    pub enum B { case B }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalPublicCompanion](result)
+  }
+  test("IllegalPublicCompanion.Enum.03") {
+    val input =
+      """
+        |mod A {
+        |    mod B {
+        |        pub enum B { case B }
+        |    }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalPublicCompanion](result)
+  }
+  test("CompanionVisibility.Public.01") {
+    val input =
+      """
+        |pub mod B {
+        |    pub enum B { case B }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[NameError.CompanionMustBePublic](result)
+    rejectError[NameError.IllegalPublicCompanion](result)
+  }
+  test("CompanionVisibility.Public.02") {
+    val input =
+      """
+        |pub mod B {
+        |    pub trait B[a] { pub def f(x: a): Int32 }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[NameError.CompanionMustBePublic](result)
+    rejectError[NameError.IllegalPublicCompanion](result)
+  }
+  test("CompanionVisibility.Private.01") {
+    val input =
+      """
+        |mod B {
+        |    enum B { case B }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[NameError.CompanionMustBePublic](result)
+    rejectError[NameError.IllegalPublicCompanion](result)
+  }
+  test("CompanionVisibility.Private.02") {
+    val input =
+      """
+        |mod A {
+        |    mod B {
+        |        enum B { case B }
+        |    }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[NameError.CompanionMustBePublic](result)
+    rejectError[NameError.IllegalPublicCompanion](result)
+  }
+  test("CompanionVisibility.NotCompanion.01") {
+    val input =
+      """
+        |pub mod B {
+        |    enum C { case C }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[NameError.CompanionMustBePublic](result)
+    rejectError[NameError.IllegalPublicCompanion](result)
+  }
+  test("CompanionVisibility.NotCompanion.02") {
+    val input =
+      """
+        |mod B {
+        |    pub enum C { case C }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[NameError.CompanionMustBePublic](result)
+    rejectError[NameError.IllegalPublicCompanion](result)
+  }
+
   test("CompanionIsFirst.Enum.01") {
     val input =
       """

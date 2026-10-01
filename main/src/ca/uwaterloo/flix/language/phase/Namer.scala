@@ -261,8 +261,39 @@ object Namer {
 
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))
+
+      //
+      // Check for [[NameError.CompanionMustBePublic]] and [[NameError.IllegalPublicCompanion]] -- i.e. that
+      // the companion of the module, if any, is public exactly when the module is.
+      //
+      checkCompanionVisibility(mod, qname, ds)
+
       val sym = new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone)
       NamedAst.Declaration.Mod(doc, ann, mod, sym, qname.loc, usesAndImports, ds, loc)
+  }
+
+  /**
+    * Checks that the companion of the module `qname`, if any, is public exactly when the module is.
+    *
+    * A companion is a declaration (enum, struct, effect, or trait) whose name matches its enclosing
+    * module. It is lifted into the parent namespace (see [[liftCompanion]]), so the module and its
+    * companion name the same entity and must have the same visibility.
+    */
+  private def checkCompanionVisibility(mod: Modifiers, qname: Name.QName, decls: List[NamedAst.Declaration])(implicit sctx: SharedContext): Unit = {
+    val name = qname.ident.name
+    val companionOpt: Option[(Modifiers, SourceLocation)] = decls.collectFirst {
+      case d: NamedAst.Declaration.Enum if d.sym.name == name => (d.mod, d.sym.loc)
+      case d: NamedAst.Declaration.Struct if d.sym.name == name => (d.mod, d.sym.loc)
+      case d: NamedAst.Declaration.Effect if d.sym.name == name => (d.mod, d.sym.loc)
+      case d: NamedAst.Declaration.Trait if d.sym.name == name => (d.mod, d.sym.loc)
+    }
+    companionOpt match {
+      case Some((companionMod, loc)) if mod.isPublic && !companionMod.isPublic =>
+        sctx.errors.add(NameError.CompanionMustBePublic(name, qname.loc, loc))
+      case Some((companionMod, loc)) if !mod.isPublic && companionMod.isPublic =>
+        sctx.errors.add(NameError.IllegalPublicCompanion(name, qname.loc, loc))
+      case _ => // Nop
+    }
   }
 
   /**

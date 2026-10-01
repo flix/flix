@@ -1,4 +1,4 @@
-mod Location {
+pub mod Location {
     use Net.Http
     use Util.Json
     use Util.Json.FromJson
