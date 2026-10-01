@@ -453,51 +453,10 @@ nav {
         transform: translateY(0);
     }
 }
-nav .sidebar-heading {
-    display: block;
-    margin-bottom: 0.3rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--faded-text-color);
-}
-nav .module-tree {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: var(--border);
-}
-nav .module-tree > ul {
-    padding-left: 0;
-}
-nav .module-tree ul {
-    margin-top: 0.2rem;
-    padding-left: 0.9rem;
-    list-style: none;
-}
-nav .module-tree li {
-    margin-bottom: 0.1rem;
-}
-nav .module-tree summary {
-    cursor: pointer;
-    list-style: none;
-}
-nav .module-tree summary::-webkit-details-marker {
-    display: none;
-}
-nav .module-tree summary::before {
-    content: "▸";
-    display: inline-block;
-    width: 1em;
-    color: var(--faded-text-color);
-}
-nav .module-tree details[open] > summary::before {
-    content: "▾";
-}
-nav .module-tree a {
-    color: var(--text-color);
-}
-nav .module-tree a.current {
-    color: var(--show-hide-color);
-    font-weight: 700;
+nav > .back {
+    display: flex;
+    gap: 0.1rem;
+    margin-bottom: 1rem;
 }
 nav ul {
     margin-top: 0.2rem;
