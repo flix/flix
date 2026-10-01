@@ -1754,21 +1754,12 @@ object HtmlDocumentor {
   }
 
   /**
-    * Returns `true` if `ann` marks the API stability of the item it is attached to (i.e. it is
-    * `@Deprecated` or `@Experimental`).
-    *
-    * These are rendered as badges/pills rather than plain annotation text, both on the item's
-    * own page and in any list that mentions the item (e.g. the sidebar), so that a reader
-    * scanning a list can spot an unstable or deprecated item without opening its page.
-    */
-  private def isStabilityAnnotation(ann: Annotation): Boolean = ann match {
-    case Annotation.Deprecated(_) => true
-    case Annotation.Experimental(_) => true
-    case _ => false
-  }
-
-  /**
     * Documents the stability badges (`Deprecated`, `Experimental`) carried by `anns`, if any.
+    *
+    * These are shown as small, color-coded pills wherever an item is listed (e.g. the sidebar),
+    * so that a reader scanning a list can spot an unstable or deprecated item without opening
+    * its page. The item's own page still documents the same annotations as plain text, via
+    * [[docAnnotations]].
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
@@ -1792,14 +1783,9 @@ object HtmlDocumentor {
     * Document the given `Annotations`.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
-    *
-    * `@Deprecated` and `@Experimental` are rendered as badges (see [[docStabilityBadges]])
-    * rather than as plain annotation text.
     */
   private def docAnnotations(anns: Annotations)(implicit sb: StringBuilder): Unit = {
-    docStabilityBadges(anns)
-
-    val visible = anns.annotations.filter(a => isPublicAnnotation(a) && !isStabilityAnnotation(a))
+    val visible = anns.annotations.filter(isPublicAnnotation)
     if (visible.isEmpty) {
       return
     }
