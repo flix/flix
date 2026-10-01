@@ -28,6 +28,10 @@
     --light-eff-color: #ffaefa;
     --light-type-alias-color: #f9cdad;
     --light-def-color: #83af9b;
+    --light-deprecated-color: #c0341d;
+    --light-deprecated-bg-color: rgba(192, 52, 29, 0.12);
+    --light-experimental-color: #1864ab;
+    --light-experimental-bg-color: rgba(24, 100, 171, 0.12);
     --light-shadow-color: rgba(0, 0, 0, 0.05);
     --light-highlight-color: rgba(0, 0, 0, 0.3);
 
@@ -57,6 +61,10 @@
     --dark-eff-color: #ffaefa;
     --dark-type-alias-color: #f9cdad;
     --dark-def-color: #83af9b;
+    --dark-deprecated-color: #ff8a65;
+    --dark-deprecated-bg-color: rgba(255, 138, 101, 0.16);
+    --dark-experimental-color: #74c0fc;
+    --dark-experimental-bg-color: rgba(116, 192, 252, 0.16);
     --dark-shadow-color: rgba(0, 0, 0, 0.3);
     --dark-highlight-color: hsla(50, 0%, 100%, 0.3);
 
@@ -86,6 +94,10 @@
     --eff-color: var(--light-eff-color);
     --type-alias-color: var(--light-type-alias-color);
     --def-color: var(--light-def-color);
+    --deprecated-color: var(--light-deprecated-color);
+    --deprecated-bg-color: var(--light-deprecated-bg-color);
+    --experimental-color: var(--light-experimental-color);
+    --experimental-bg-color: var(--light-experimental-bg-color);
     --shadow-color: var(--light-shadow-color);
     --highlight-color: var(--light-highlight-color);
     color-scheme: light;
@@ -121,6 +133,10 @@
         --eff-color: var(--dark-eff-color);
         --type-alias-color: var(--dark-type-alias-color);
         --def-color: var(--dark-def-color);
+        --deprecated-color: var(--dark-deprecated-color);
+        --deprecated-bg-color: var(--dark-deprecated-bg-color);
+        --experimental-color: var(--dark-experimental-color);
+        --experimental-bg-color: var(--dark-experimental-bg-color);
         --shadow-color: var(--dark-shadow-color);
         --highlight-color: var(--dark-highlight-color);
         color-scheme: dark;
@@ -153,6 +169,10 @@
     --eff-color: var(--dark-eff-color);
     --type-alias-color: var(--dark-type-alias-color);
     --def-color: var(--dark-def-color);
+    --deprecated-color: var(--dark-deprecated-color);
+    --deprecated-bg-color: var(--dark-deprecated-bg-color);
+    --experimental-color: var(--dark-experimental-color);
+    --experimental-bg-color: var(--dark-experimental-bg-color);
     --shadow-color: var(--dark-shadow-color);
     --highlight-color: var(--dark-highlight-color);
     color-scheme: dark;
@@ -762,6 +782,31 @@ code.annotations {
 }
 code .annotation {
     color: var(--annotation-color);
+}
+.badges {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-right: 0.3rem;
+}
+.badge {
+    display: inline-block;
+    font-family: "Inter", sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.4;
+    padding: 0.05rem 0.5rem;
+    border-radius: 1rem;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+.badge-deprecated {
+    color: var(--deprecated-color);
+    background-color: var(--deprecated-bg-color);
+}
+.badge-experimental {
+    color: var(--experimental-color);
+    background-color: var(--experimental-bg-color);
 }
 code .keyword {
     color: var(--keyword-color);
