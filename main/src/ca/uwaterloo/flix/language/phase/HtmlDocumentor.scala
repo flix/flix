@@ -23,7 +23,6 @@ import java.net.URLEncoder
 import java.nio.file.{Files, Path, Paths}
 import java.util.regex.Pattern
 import scala.annotation.tailrec
-import scala.util.matching.Regex
 
 /**
   * A phase that emits a JSON file for library documentation.
@@ -1246,7 +1245,7 @@ object HtmlDocumentor {
     * containing a `group` of items.
     *
     * Unlike [[docSection]], each item is summarized as a single table row containing its name,
-    * linked to its own page, and the first sentence of its documentation comment. This mirrors
+    * linked to its own page, and the first paragraph of its documentation comment. This mirrors
     * how e.g. rustdoc and Javadoc summarize the members of a module/package.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
@@ -1268,7 +1267,7 @@ object HtmlDocumentor {
     for (e <- group) {
       sb.append("<tr>")
       sb.append(s"<td><a class='name' href='${escUrl(e.fileName)}'>${esc(e.name)}</a></td>")
-      sb.append(s"<td>${esc(firstSentence(getDoc(e)))}</td>")
+      sb.append(s"<td>${esc(summaryText(getDoc(e)))}</td>")
       sb.append("</tr>")
     }
     sb.append("</table>")
@@ -1794,15 +1793,16 @@ object HtmlDocumentor {
   }
 
   /**
-    * Returns the first sentence of the given `doc`, as plain text (i.e. any markdown syntax is
-    * not rendered, only stripped of its surrounding paragraph/line structure).
+    * Returns the first paragraph of the given `doc`, as plain text (i.e. any markdown syntax is
+    * not rendered, only stripped of its surrounding paragraph/line structure), collapsed onto a
+    * single line.
     *
-    * This is intended for use in short, one-line summaries, mirroring how e.g. rustdoc and
-    * Javadoc derive a summary line from a doc comment.
+    * This is intended for use in short summaries, mirroring how e.g. rustdoc and Javadoc derive
+    * a summary from a doc comment.
     *
     * If `doc` is empty, the empty string is returned.
     */
-  private def firstSentence(doc: Doc): String = {
+  private def summaryText(doc: Doc): String = {
     val text = doc.text
     if (text.isBlank) {
       return ""
@@ -1812,18 +1812,8 @@ object HtmlDocumentor {
     val firstParagraph = text.split("\r?\n\\s*\r?\n", 2).head
 
     // Collapse the paragraph's (possibly soft-wrapped) lines into a single line.
-    val flattened = firstParagraph.linesIterator.map(_.trim).filter(_.nonEmpty).mkString(" ")
-
-    // Cut off at the first sentence-ending punctuation mark followed by whitespace or the end
-    // of the string, e.g. ". ", "! ", "?".
-    SentenceEnd.findFirstMatchIn(flattened) match {
-      case Some(m) => flattened.substring(0, m.end).trim
-      case None => flattened
-    }
+    firstParagraph.linesIterator.map(_.trim).filter(_.nonEmpty).mkString(" ")
   }
-
-  /** Matches a sentence-ending punctuation mark, followed by whitespace or the end of the string. */
-  private val SentenceEnd: Regex = raw"[.!?](?:\s|$$)".r
 
   /**
     * Replaces the obsolete `align` attribute that the tables extension puts on table cells with an
