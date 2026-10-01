@@ -667,7 +667,7 @@ object HtmlDocumentor {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedAssocs = trt.decl.assocs.sortBy(_.sym.name)
-    val sortedInstances = trt.instances.sortBy(_.loc)
+    val sortedInstances = trt.instances.sortBy(i => FormatType.formatType(i.tpe))
     val sortedSigs = trt.signatures.sortBy(_.sym.name)
     val sortedTraitDefs = trt.defs.sortBy(_.sym.name)
 
