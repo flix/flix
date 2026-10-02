@@ -35,6 +35,22 @@ function initTheme() {
     });
 }
 
+// Briefly shows `msg` near the mouse position of click event `e`, e.g. to confirm that a 'copy'
+// button worked. Used by both initCopyLinks and initCopyCode.
+function showCopyMsg(e, msg) {
+    const msgNode = document.createElement("div");
+    msgNode.classList.add("copy-link-msg");
+    msgNode.textContent = msg;
+    msgNode.style.position = "absolute";
+    msgNode.style.top = `${e.clientY}px`;
+    msgNode.style.left = `${e.clientX}px`;
+    document.body.append(msgNode);
+
+    msgNode.addEventListener("animationend", () => {
+        msgNode.remove();
+    });
+}
+
 function initCopyLinks() {
     const links = document.querySelectorAll(".copy-link");
     for (const link of links) {
@@ -49,17 +65,29 @@ function initCopyLinks() {
                 msg = "Failed to copy link ✕";
             }
 
-            const msgNode = document.createElement("div");
-            msgNode.classList.add("copy-link-msg");
-            msgNode.textContent = msg;
-            msgNode.style.position = "absolute";
-            msgNode.style.top = `${e.clientY}px`;
-            msgNode.style.left = `${e.clientX}px`;
-            document.body.append(msgNode);
+            showCopyMsg(e, msg);
+        });
+    }
+}
 
-            msgNode.addEventListener("animationend", () => {
-                msgNode.remove();
-            });
+// Adds a click handler to each 'copy code' button (added to fenced code blocks in doc comments,
+// see FencedCodeBlockRenderer in HtmlDocumentor) that copies the plain text of the code block
+// next to it to the clipboard.
+function initCopyCode() {
+    const buttons = document.querySelectorAll(".copy-code");
+    for (const button of buttons) {
+        button.addEventListener("click", async (e) => {
+            const code = button.parentElement.querySelector("pre code");
+
+            let msg;
+            try {
+                await navigator.clipboard.writeText(code.textContent);
+                msg = "Code copied";
+            } catch {
+                msg = "Failed to copy code ✕";
+            }
+
+            showCopyMsg(e, msg);
         });
     }
 }
@@ -80,4 +108,5 @@ function initLink(link) {
 
 initTheme();
 initCopyLinks();
+initCopyCode();
 initLinks();

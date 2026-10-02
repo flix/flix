@@ -9,14 +9,15 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, TokenKind, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
 import ca.uwaterloo.flix.util.LocalResource
 import ca.uwaterloo.flix.util.collection.Nel
 import org.commonmark.ext.gfm.tables.{TableCell, TablesExtension}
-import org.commonmark.node.Node
+import org.commonmark.node.{FencedCodeBlock, Node}
 import org.commonmark.parser.Parser
-import org.commonmark.renderer.html.{AttributeProvider, HtmlRenderer}
+import org.commonmark.renderer.NodeRenderer
+import org.commonmark.renderer.html.{AttributeProvider, HtmlNodeRendererContext, HtmlRenderer}
 
 import java.io.IOException
 import java.net.URLEncoder
@@ -1801,6 +1802,7 @@ object HtmlDocumentor {
       .extensions(extensions)
       .escapeHtml(true)
       .attributeProviderFactory(_ => TableCellAlignment)
+      .nodeRendererFactory(context => new FencedCodeBlockRenderer(context))
       .build()
     val html = renderer.render(node)
 
@@ -1845,6 +1847,109 @@ object HtmlDocumentor {
         }
       case _ => ()
     }
+  }
+
+  /**
+    * Renders markdown fenced code blocks (i.e. triple-backtick blocks) found in doc comments,
+    * replacing commonmark's default (plain, unhighlighted) rendering of them.
+    *
+    * The block's contents are assumed to be Flix source and are syntax highlighted at
+    * documentation-generation time by running them through the compiler's own [[Lexer]] (see
+    * [[highlightFlixCode]]) -- no highlighting library has to run in the browser, and the
+    * highlighting can never drift out of sync with the real grammar. A 'copy code' button is also
+    * added, mirroring the 'copy link' button used elsewhere on the page (see [[docLink]]).
+    */
+  private class FencedCodeBlockRenderer(context: HtmlNodeRendererContext) extends NodeRenderer {
+    override def getNodeTypes: java.util.Set[Class[_ <: Node]] = {
+      val types = new java.util.HashSet[Class[_ <: Node]]()
+      types.add(classOf[FencedCodeBlock])
+      types
+    }
+
+    override def render(node: Node): Unit = node match {
+      case block: FencedCodeBlock =>
+        val writer = context.getWriter
+        writer.line()
+        writer.raw("<div class='code-block'>")
+        writer.raw("<button type='button' class='copy-code' aria-label='Copy code'>Copy</button>")
+        writer.raw("<pre><code>")
+        writer.raw(highlightFlixCode(block.getLiteral))
+        writer.raw("</code></pre>")
+        writer.raw("</div>")
+        writer.line()
+      case _ => ()
+    }
+  }
+
+  /**
+    * Syntax-highlights `code` (assumed to be Flix source) for use inside a `<pre><code>` block, by
+    * lexing it with the compiler's [[Lexer]] and wrapping each resulting token in a `<span>`
+    * carrying a CSS class for its [[TokenKind]] (see [[tokenCssClass]]).
+    *
+    * [[Lexer]] is run here completely standalone: on just the block's text, with no other compiler
+    * phase or context involved. It is resilient by design (see its documentation), so this never
+    * fails even when `code` is not valid Flix, e.g. because a doc comment fenced a diagram or some
+    * other non-code text rather than an actual example: unrecognized characters simply are not
+    * highlighted. Whitespace between tokens, and any trailing text, is copied through unchanged, so
+    * the original text is always reproduced exactly (mod HTML-escaping).
+    */
+  private def highlightFlixCode(code: String): String = {
+    val source = Source.fromString(SourceName.PathName(Paths.get("doc-comment.flix")), Origin.Unknown, SecurityContext.Unrestricted, code)
+    val (tokens, _) = Lexer.lex(source)
+
+    val highlighted = new StringBuilder()
+    var pos = 0
+    for (tok <- tokens if tok.kind != TokenKind.Eof) {
+      // Carry over any whitespace (or other text the lexer skipped) between the previous token and this one.
+      if (tok.startIndex > pos) {
+        highlighted.append(esc(code.substring(pos, tok.startIndex)))
+      }
+      val lexeme = esc(code.substring(tok.startIndex, tok.endIndex))
+      tokenCssClass(tok.kind) match {
+        case Some(cssClass) => highlighted.append(s"<span class='$cssClass'>").append(lexeme).append("</span>")
+        case None => highlighted.append(lexeme)
+      }
+      pos = tok.endIndex
+    }
+    // Carry over any trailing whitespace after the last token.
+    if (pos < code.length) {
+      highlighted.append(esc(code.substring(pos)))
+    }
+    highlighted.toString()
+  }
+
+  /**
+    * Maps a [[TokenKind]] to the CSS class used to color it in a highlighted code block, if any.
+    *
+    * Where possible, this reuses the same classes (and hence the same theme colors) already used
+    * to render declaration signatures elsewhere on the page (`keyword`, `name`, `type`,
+    * `annotation`), so a highlighted code block and a rendered signature agree on color. Tokens
+    * for which no particular color is obviously useful (punctuation, delimiters, an unrecognized
+    * character, etc.) are left unclassified, so they render in the default text color.
+    */
+  private def tokenCssClass(kind: TokenKind): Option[String] = kind match {
+    case k if k.isKeyword || k.isModifier => Some("keyword")
+    case k if k.isComment => Some("comment")
+    case TokenKind.Annotation => Some("annotation")
+    case TokenKind.NameUppercase => Some("type")
+    case TokenKind.NameLowercase | TokenKind.NameMath => Some("name")
+    case TokenKind.LiteralString
+         | TokenKind.LiteralChar
+         | TokenKind.LiteralRegex
+         | TokenKind.LiteralStringInterpolationL
+         | TokenKind.LiteralStringInterpolationR => Some("string")
+    case TokenKind.LiteralInt
+         | TokenKind.LiteralInt8
+         | TokenKind.LiteralInt16
+         | TokenKind.LiteralInt32
+         | TokenKind.LiteralInt64
+         | TokenKind.LiteralBigInt
+         | TokenKind.LiteralFloat
+         | TokenKind.LiteralFloat32
+         | TokenKind.LiteralFloat64
+         | TokenKind.LiteralBigDecimal => Some("number")
+    case k if k.isOperator => Some("operator")
+    case _ => None
   }
 
   /**

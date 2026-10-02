@@ -16,6 +16,10 @@
     --light-kind-color: #6b6b6b;
     --light-effect-color: #d4671e;
     --light-doc-code-color: #d63384;
+    --light-string-color: #1a7f37;
+    --light-number-color: #8250df;
+    --light-comment-color: var(--light-faded-text-color);
+    --light-operator-color: #57606a;
     --light-show-hide-color: #0d6efd;
     --light-show-hide-hover-color: #0a58ca;
     --light-module-color: #a0a5ff;
@@ -45,6 +49,10 @@
     --dark-kind-color: #999999;
     --dark-effect-color: #ff944d;
     --dark-doc-code-color: #ff66b3;
+    --dark-string-color: #7ee787;
+    --dark-number-color: #d2a8ff;
+    --dark-comment-color: var(--dark-faded-text-color);
+    --dark-operator-color: #8b949e;
     --dark-show-hide-color: #68a4fd;
     --dark-show-hide-hover-color: #3c86f6;
     --dark-module-color: #a0a5ff;
@@ -74,6 +82,10 @@
     --kind-color: var(--light-kind-color);
     --effect-color: var(--light-effect-color);
     --doc-code-color: var(--light-doc-code-color);
+    --string-color: var(--light-string-color);
+    --number-color: var(--light-number-color);
+    --comment-color: var(--light-comment-color);
+    --operator-color: var(--light-operator-color);
     --show-hide-color: var(--light-show-hide-color);
     --show-hide-hover-color: var(--light-show-hide-hover-color);
     --module-color: var(--light-module-color);
@@ -109,6 +121,10 @@
         --kind-color: var(--dark-kind-color);
         --effect-color: var(--dark-effect-color);
         --doc-code-color: var(--dark-doc-code-color);
+        --string-color: var(--dark-string-color);
+        --number-color: var(--dark-number-color);
+        --comment-color: var(--dark-comment-color);
+        --operator-color: var(--dark-operator-color);
         --show-hide-color: var(--dark-show-hide-color);
         --show-hide-hover-color: var(--dark-show-hide-hover-color);
         --module-color: var(--dark-module-color);
@@ -141,6 +157,10 @@
     --kind-color: var(--dark-kind-color);
     --effect-color: var(--dark-effect-color);
     --doc-code-color: var(--dark-doc-code-color);
+    --string-color: var(--dark-string-color);
+    --number-color: var(--dark-number-color);
+    --comment-color: var(--dark-comment-color);
+    --operator-color: var(--dark-operator-color);
     --show-hide-color: var(--dark-show-hide-color);
     --show-hide-hover-color: var(--dark-show-hide-hover-color);
     --module-color: var(--dark-module-color);
@@ -691,6 +711,57 @@ main h2 {
 .box .doc code {
     color: var(--doc-code-color);
 }
+/* Overrides the inline-code color above for a highlighted fenced code block (see
+   FencedCodeBlockRenderer in HtmlDocumentor): un-highlighted tokens/whitespace in such a block
+   should read as regular code, not as inline doc code. */
+.box .doc pre code {
+    color: var(--text-color);
+}
+
+/* A highlighted fenced code block from a doc comment, see FencedCodeBlockRenderer in
+   HtmlDocumentor. */
+.code-block {
+    position: relative;
+    margin: 0.75rem 0;
+}
+.code-block pre {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    overflow-x: auto;
+    background-color: var(--bg-color-3);
+    border: var(--border);
+    border-radius: 0.375rem;
+}
+.code-block pre code {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    white-space: pre;
+}
+.code-block > .copy-code {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+
+    color: var(--faded-text-color);
+    font-family: "Inter", sans-serif;
+    font-size: 0.7rem;
+    line-height: 1;
+    background-color: var(--bg-color-3);
+    padding: 0.25em 0.65em;
+    border-radius: 0.375rem;
+    border: var(--border);
+    cursor: pointer;
+
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+}
+.code-block:hover > .copy-code,
+.code-block > .copy-code:focus-visible {
+    opacity: 1;
+}
+.code-block > .copy-code:hover {
+    color: var(--text-color);
+}
 
 /* Column alignment of markdown tables, see TableCellAlignment in HtmlDocumentor. */
 td.align-left, th.align-left {
@@ -780,4 +851,21 @@ code .effect {
 }
 code .tpe-constraint {
     text-decoration: underline;
+}
+
+/* Used by highlighted fenced code blocks, see FencedCodeBlockRenderer/tokenCssClass in
+   HtmlDocumentor. `.keyword`, `.name`, `.type`, and `.annotation` above are reused as-is, so a
+   highlighted code block shares its colors with the declaration signatures elsewhere on the page. */
+code .comment {
+    color: var(--comment-color);
+    font-style: italic;
+}
+code .string {
+    color: var(--string-color);
+}
+code .number {
+    color: var(--number-color);
+}
+code .operator {
+    color: var(--operator-color);
 }
