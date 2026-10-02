@@ -10,7 +10,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.util.LocalResource
 import ca.uwaterloo.flix.util.collection.Nel
 import org.commonmark.ext.gfm.tables.{TableCell, TablesExtension}
@@ -90,6 +91,26 @@ object HtmlDocumentor {
   case class SourceRepository(url: String, root: Path)
 
   /**
+    * The symbols of the items that have a documentation page, grouped by kind.
+    *
+    * Used to decide whether a type constructor or trait name printed in a signature should be
+    * rendered as a link: a symbol that has been filtered out of the documentation (e.g. because
+    * it is not `pub`) has no page to link to, and its name should be printed as plain text
+    * instead.
+    *
+    * A type alias has no page of its own -- it is documented on an anchor on its enclosing
+    * module's page -- so `typeAliases` maps each alias symbol to that enclosing module, which is
+    * enough to build the link.
+    */
+  case class DocumentedSymbols(
+    traits: Set[Symbol.TraitSym],
+    enums: Set[Symbol.EnumSym],
+    structs: Set[Symbol.StructSym],
+    effects: Set[Symbol.EffSym],
+    typeAliases: Map[Symbol.TypeAliasSym, Symbol.ModuleSym],
+  )
+
+  /**
     * Generates the API documentation for `root` and writes it to `outputDir`.
     *
     * The declarations of the user's code link to their source in `repo`, if it is given.
@@ -98,8 +119,9 @@ object HtmlDocumentor {
     val modulesRoot = splitModules(root)
     val filteredModulesRoot = filterModules(modulesRoot, origin)
     val pairedModulesRoot = pairModules(filteredModulesRoot)
+    implicit val documented: DocumentedSymbols = collectDocumentedSymbols(filteredModulesRoot)
 
-    visitMod(pairedModulesRoot, outputDir)(flix, repo)
+    visitMod(pairedModulesRoot, outputDir)(flix, repo, documented)
 
     writeDocFile("404.html", document404(), outputDir)
 
@@ -109,7 +131,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Module`, `mod`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols): Unit = {
     writeDocFile(mod.fileName, documentModule(mod), outputDir)
     visitContents(mod, outputDir)
   }
@@ -117,7 +139,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Trait`, `trt`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols): Unit = {
     writeDocFile(trt.fileName, documentTrait(trt), outputDir)
     trt.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -125,7 +147,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Effect`, `eff`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols): Unit = {
     writeDocFile(eff.fileName, documentEffect(eff), outputDir)
     eff.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -133,7 +155,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Enum`, `enm`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols): Unit = {
     writeDocFile(enm.fileName, documentEnum(enm), outputDir)
     enm.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -141,7 +163,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Struct`, `struct`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols): Unit = {
     writeDocFile(struct.fileName, documentStruct(struct), outputDir)
     struct.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -153,7 +175,7 @@ object HtmlDocumentor {
     * The items of a companion module are documented on the page of the item it belongs to,
     * so a companion module gets no page of its own.
     */
-  private def visitContents(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository]): Unit = {
+  private def visitContents(mod: Module, outputDir: Path)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols): Unit = {
     mod.submodules.foreach(visitMod(_, outputDir))
     mod.traits.foreach(visitTrait(_, outputDir))
     mod.effects.foreach(visitEffect(_, outputDir))
@@ -361,6 +383,27 @@ object HtmlDocumentor {
     */
   private def filterModules(mod: Module, origin: Origin): Module = {
     filterEmpty(filterContents(mod, origin))
+  }
+
+  /**
+    * Returns the symbols of every trait, enum, struct, effect and type alias in `mod` and its
+    * submodules, i.e. the items that will have a documentation page (or, for a type alias, an
+    * anchor on its module's page) generated for them.
+    *
+    * This is used to determine whether a name printed in a signature should be rendered as a
+    * link: an item that has been filtered out (e.g. because it is not `pub`) has no page to link
+    * to, and its name should be printed as plain text instead.
+    */
+  private def collectDocumentedSymbols(mod: Module): DocumentedSymbols = {
+    val subSyms = mod.submodules.map(collectDocumentedSymbols)
+
+    val traits = mod.traits.iterator.map(_.decl.sym).toSet ++ subSyms.iterator.flatMap(_.traits)
+    val enums = mod.enums.iterator.map(_.decl.sym).toSet ++ subSyms.iterator.flatMap(_.enums)
+    val structs = mod.structs.iterator.map(_.decl.sym).toSet ++ subSyms.iterator.flatMap(_.structs)
+    val effects = mod.effects.iterator.map(_.decl.sym).toSet ++ subSyms.iterator.flatMap(_.effects)
+    val typeAliases = mod.typeAliases.iterator.map(t => t.sym -> mod.sym).toMap ++ subSyms.iterator.flatMap(_.typeAliases)
+
+    DocumentedSymbols(traits, enums, structs, effects, typeAliases)
   }
 
   /**
@@ -588,7 +631,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Module`, `mod`, returning a string of HTML.
     */
-  private def documentModule(mod: Module)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentModule(mod: Module)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedTraits = mod.traits.sortBy(_.name)
@@ -664,7 +707,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Trait`, `trt`, returning a string of HTML.
     */
-  private def documentTrait(trt: Trait)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentTrait(trt: Trait)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedAssocs = trt.decl.assocs.sortBy(_.sym.name)
@@ -775,7 +818,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Effect`, `eff`, returning a string of HTML.
     */
-  private def documentEffect(eff: Effect)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentEffect(eff: Effect)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedOps = eff.decl.ops.sortBy(_.sym.name)
@@ -873,7 +916,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Enum`, `enm`, returning a string of HTML.
     */
-  private def documentEnum(enm: Enum)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentEnum(enm: Enum)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedInstances = enm.instances.sortBy(_.trt.sym.name)
@@ -966,7 +1009,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Struct`, `struct`, returning a string of HTML.
     */
-  private def documentStruct(struct: Struct)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
+  private def documentStruct(struct: Struct)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedInstances = struct.instances.sortBy(_.trt.sym.name)
@@ -1344,7 +1387,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
+  private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='ta-${esc(ta.sym.name)}'>")
     sb.append("<div class='decl'>")
     sb.append("<code>")
@@ -1365,7 +1408,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docDef(defn: TypedAst.Def)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
+  private def docDef(defn: TypedAst.Def)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='def-${esc(defn.sym.name)}'>")
     docSpec(defn.sym.name, defn.spec, defn.loc, Some(s"def-${defn.sym.name}"))
     sb.append("</div>")
@@ -1376,7 +1419,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
+  private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='sig-${esc(sig.sym.name)}'>")
     docSpec(sig.sym.name, sig.spec, sig.loc, Some(s"sig-${sig.sym.name}"))
     sb.append("</div>")
@@ -1387,7 +1430,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docOp(op: TypedAst.Op)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
+  private def docOp(op: TypedAst.Op)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='op-${esc(op.sym.name)}'>")
     docSpec(op.sym.name, op.spec, op.loc, Some(s"op-${op.sym.name}"))
     sb.append("</div>")
@@ -1399,7 +1442,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSpec(name: String, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
+  private def docSpec(name: String, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     docAnnotations(spec.ann)
     sb.append("<div class='decl'>")
     sb.append(s"<code>")
@@ -1422,7 +1465,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docAssoc(assoc: TypedAst.AssocTypeSig)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
+  private def docAssoc(assoc: TypedAst.AssocTypeSig)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     sb.append("<div>")
     sb.append("<div class='decl'>")
     sb.append("<code>")
@@ -1446,7 +1489,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
+  private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     sb.append("<div>")
     docAnnotations(instance.ann)
     sb.append("<div class='decl'>")
@@ -1473,7 +1516,7 @@ object HtmlDocumentor {
     *
     * If `assocs` is empty, nothing will be generated.
     */
-  private def docAssocDefs(assocs: List[TypedAst.AssocTypeDef])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docAssocDefs(assocs: List[TypedAst.AssocTypeDef])(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     if (assocs.isEmpty) {
       return
     }
@@ -1498,7 +1541,7 @@ object HtmlDocumentor {
     *
     * If `tconsts` is empty, nothing will be generated.
     */
-  private def docTraitConstraints(tconsts: List[TraitConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docTraitConstraints(tconsts: List[TraitConstraint])(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     if (tconsts.isEmpty) {
       return
     }
@@ -1514,12 +1557,20 @@ object HtmlDocumentor {
   }
 
   /**
-    * Document the name of the given trait symbol, creating a link to the trait's documentation.
+    * Document the name of the given trait symbol, creating a link to the trait's documentation
+    * page if it has one, i.e. if it is in `documented.traits`. Otherwise, the name is documented
+    * as plain text, since linking to it would result in a dead link (e.g. for a non-`pub` trait).
     */
-  private def docTraitName(sym: Symbol.TraitSym)(implicit sb: StringBuilder): Unit = {
-    sb.append(s"<a class='tpe-constraint' href='${escUrl(traitFileName(sym))}' title='trait ${esc(traitName(sym))}'>")
-    sb.append(esc(sym.name))
-    sb.append("</a>")
+  private def docTraitName(sym: Symbol.TraitSym)(implicit documented: DocumentedSymbols, sb: StringBuilder): Unit = {
+    if (documented.traits.contains(sym)) {
+      sb.append(s"<a class='tpe-constraint' href='${escUrl(traitFileName(sym))}' title='trait ${esc(traitName(sym))}'>")
+      sb.append(esc(sym.name))
+      sb.append("</a>")
+    } else {
+      sb.append(s"<span class='tpe-constraint' title='trait ${esc(traitName(sym))}'>")
+      sb.append(esc(sym.name))
+      sb.append("</span>")
+    }
   }
 
   /**
@@ -1530,7 +1581,7 @@ object HtmlDocumentor {
     *
     * If `econsts` is empty, nothing will be generated.
     */
-  private def docEqualityConstraints(econsts: List[TypedAst.EqualityConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docEqualityConstraints(econsts: List[TypedAst.EqualityConstraint])(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     if (econsts.isEmpty) {
       return
     }
@@ -1563,7 +1614,7 @@ object HtmlDocumentor {
     *
     * If `derives` contains no elements, nothing will be generated.
     */
-  private def docDerivations(derives: Derivations)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docDerivations(derives: Derivations)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     if (derives.traits.isEmpty) {
       return
     }
@@ -1580,20 +1631,18 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docCases(cases: List[TypedAst.Case])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docCases(cases: List[TypedAst.Case])(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     sb.append("<div class='cases'>")
     for (c <- cases.sortBy(_.loc)) {
       sb.append("<code>")
       sb.append("<span class='keyword'>case</span> ")
       sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>")
 
-      c.tpes.map(DisplayType.fromWellKindedType(_)) match {
+      c.tpes match {
         case Nil => // Nothing
         case elms =>
           sb.append("(")
-          docList(elms) { t =>
-            sb.append(s"<span class='type'>${esc(FormatType.formatDisplayType(t))}</span>")
-          }
+          docList(elms)(docType)
           sb.append(")")
       }
 
@@ -1609,7 +1658,7 @@ object HtmlDocumentor {
     *
     * If `fields` is empty, nothing will be generated.
     */
-  private def docFields(fields: List[TypedAst.StructField])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docFields(fields: List[TypedAst.StructField])(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     if (fields.isEmpty) {
       return
     }
@@ -1653,7 +1702,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docFormalParams(fparams: Nel[TypedAst.FormalParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docFormalParams(fparams: Nel[TypedAst.FormalParam])(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     sb.append("<span class='fparams'>(")
     fparams match {
       case Nel(TypedAst.FormalParam(_, Type.Cst(TypeConstructor.Unit, _), _, _, _), Nil) =>
@@ -1743,7 +1792,7 @@ object HtmlDocumentor {
     *               If `None`, the button will not be included.
     * @param loc    The source location that the 'source' button will refer to.
     */
-  private def docActions(linkId: Option[String], loc: SourceLocation)(implicit flix: Flix, repo: Option[SourceRepository], sb: StringBuilder): Unit = {
+  private def docActions(linkId: Option[String], loc: SourceLocation)(implicit flix: Flix, repo: Option[SourceRepository], documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     sb.append("<span class='actions'>")
     linkId.foreach(docLink)
     docSourceLocation(loc)
@@ -1847,14 +1896,25 @@ object HtmlDocumentor {
     }
   }
 
+
   /**
-    * Document the the given `Type`, `tpe`.
+    * Document the given `Type`, `tpe`, from its type tree, rather than from a single
+    * pre-formatted string.
+    *
+    * Every type constructor that has a documentation page (an enum, a struct, an effect or a
+    * type alias -- see [[DocumentedSymbols]]) becomes a link to that page, the same way a trait
+    * name in a `with` clause already does. A type constructor with no page (a built-in like
+    * `Int32` or `List`, if it has been filtered out of the documentation) is printed as plain
+    * text. A type variable is printed with its own `type-var` class, distinct from a type
+    * constructor. An effect nested anywhere in `tpe` -- e.g. inside a parameter's own function
+    * type -- is printed with the same `effect` class a top-level effect gets, via
+    * [[docEffectFormula]], rather than being flattened into the surrounding type's plain text.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docType(tpe: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docType(tpe: Type)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     sb.append("<span class='type'>")
-    sb.append(esc(FormatType.formatType(tpe)))
+    docTypeTree(tpe)
     sb.append("</span>")
   }
 
@@ -1865,18 +1925,14 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docTypeOrEffect(tpe: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docTypeOrEffect(tpe: Type)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
     if (tpe.kind != Kind.Eff) {
       docType(tpe)
-      return
+    } else if (isPureEffect(tpe)) {
+      sb.append("<span class='effect'>{}</span>")
+    } else {
+      docEffectFormula(tpe)
     }
-
-    val displayEff = DisplayType.fromWellKindedType(tpe)
-    val eff = displayEff match {
-      case DisplayType.Pure => "{}"
-      case _ => FormatType.formatDisplayType(displayEff)
-    }
-    sb.append(s"<span class='effect'>${esc(eff)}</span>")
   }
 
   /**
@@ -1899,16 +1955,601 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docEffectType(eff: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    val displayEff = DisplayType.fromWellKindedType(eff)
-    displayEff match {
-      case DisplayType.Pure => // No op
+  private def docEffectType(eff: Type)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
+    if (isPureEffect(eff)) {
+      return
+    }
+    sb.append(" \\ ")
+    docEffectFormula(eff)
+  }
+
+  /**
+    * Returns `true` if `tpe` is structurally the empty effect set, written with no combinators,
+    * e.g. the effect of a pure function.
+    */
+  private def isPureEffect(tpe: Type): Boolean = tpe.typeArguments.isEmpty && (tpe.baseType match {
+    case Type.Cst(TypeConstructor.Pure, _) => true
+    case _ => false
+  })
+
+  /**
+    * Recursively documents the given `Type`, `tpe0`, one HTML element per type constructor and
+    * type variable, linking every type constructor that has a documentation page.
+    *
+    * This mirrors the constructor cases that [[DisplayType.fromWellKindedType]] and
+    * [[FormatType]] handle when formatting a type as a single string, but emits an HTML element
+    * (a link when the constructor has a page, otherwise a plain-text span) per constructor
+    * instead of one flat string. A handful of exotic constructors that essentially never appear
+    * in a documented signature (unresolved JVM member types, extensible variants, restrictable
+    * case sets, and the like) are not walked individually; rather than dropping them, they fall
+    * back to the shared formatter for just that subtree, via [[docFallback]].
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docTypeTree(tpe0: Type)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
+    val args = tpe0.typeArguments
+    tpe0.baseType match {
+      case Type.Var(sym, _) =>
+        docTypeVar(sym)
+        docTypeArgsInBrackets(args)
+
+      case Type.Alias(symUse, _, _, _) =>
+        docAliasName(symUse.sym)
+        docTypeArgsInBrackets(args)
+
+      case Type.AssocType(symUse, arg, _, _) =>
+        docTraitName(symUse.sym.trt)
+        sb.append(".")
+        sb.append(esc(symUse.sym.name))
+        sb.append("[")
+        docTypeTree(arg)
+        args.foreach { a => sb.append(", "); docTypeTree(a) }
+        sb.append("]")
+
+      case Type.Cst(tc, _) =>
+        docTypeConstructor(tc, args, tpe0)
+
       case _ =>
-        sb.append(" \\ ")
-        sb.append("<span class='effect'>")
-        sb.append(esc(FormatType.formatDisplayType(displayEff)))
+        // Type.JvmToType, Type.JvmToEff, Type.UnresolvedJvmType, or (should not happen) a bare
+        // Type.Apply: fall back to the shared formatter rather than dropping the information.
+        docFallback(tpe0)
+    }
+  }
+
+  /**
+    * Documents the given `TypeConstructor`, `tc`, applied to the given `args`, as part of
+    * [[docTypeTree]]. `whole` is the original type, kept around only so a case that isn't fully
+    * handled here can fall back to formatting it as a whole via [[docFallback]].
+    */
+  private def docTypeConstructor(tc: TypeConstructor, args: List[Type], whole: Type)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = tc match {
+    case TypeConstructor.Void => docPlainTypeName("Void"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Unit => docPlainTypeName("Unit"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Null => docPlainTypeName("Null"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Bool => docPlainTypeName("Bool"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Char => docPlainTypeName("Char"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Float32 => docPlainTypeName("Float32"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Float64 => docPlainTypeName("Float64"); docTypeArgsInBrackets(args)
+    case TypeConstructor.BigDecimal => docPlainTypeName("BigDecimal"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Int8 => docPlainTypeName("Int8"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Int16 => docPlainTypeName("Int16"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Int32 => docPlainTypeName("Int32"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Int64 => docPlainTypeName("Int64"); docTypeArgsInBrackets(args)
+    case TypeConstructor.BigInt => docPlainTypeName("BigInt"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Str => docPlainTypeName("String"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Regex => docPlainTypeName("Regex"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Sender => docPlainTypeName("Sender"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Receiver => docPlainTypeName("Receiver"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Lazy => docPlainTypeName("Lazy"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Array => docPlainTypeName("Array"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Vector => docPlainTypeName("Vector"); docTypeArgsInBrackets(args)
+    case TypeConstructor.RegionToStar => docPlainTypeName("Region"); docTypeArgsInBrackets(args)
+    case TypeConstructor.True => docPlainTypeName("true")
+    case TypeConstructor.False => docPlainTypeName("false")
+    case TypeConstructor.Pure => docPlainTypeName("Pure")
+    case TypeConstructor.Univ => docPlainTypeName("Univ")
+
+    case TypeConstructor.Region(sym) =>
+      // A region is itself an effect (the capability to use its scoped resources), so it gets
+      // the same role as any other effect.
+      sb.append(s"<span class='effect'>${esc(sym.text)}</span>")
+
+    case TypeConstructor.Native(desc, _) =>
+      docPlainTypeName(ClassDescs.canonicalNameOf(desc))
+      docTypeArgsInBrackets(args)
+
+    case TypeConstructor.RestrictableEnum(sym, _) =>
+      // Restrictable enums are not tracked in `DocumentedSymbols`, so their names are always
+      // printed as plain text. This is a rare, experimental feature; extending the link tracking
+      // to cover it is left for a follow-up.
+      docPlainTypeName(sym.name)
+      docTypeArgsInBrackets(args)
+
+    case TypeConstructor.Enum(sym, _) =>
+      docDocumentedTypeName(documented.enums.contains(sym), enumFileName(sym), "enum", enumName(sym))
+      docTypeArgsInBrackets(args)
+
+    case TypeConstructor.Struct(sym, _) =>
+      docDocumentedTypeName(documented.structs.contains(sym), structFileName(sym), "struct", structName(sym))
+      docTypeArgsInBrackets(args)
+
+    case TypeConstructor.Effect(sym, _) =>
+      docEffectSymName(sym)
+      docTypeArgsInBrackets(args)
+
+    case TypeConstructor.Tuple(arity) => docTuple(arity, args, whole)
+    case TypeConstructor.Relation(arity) => docParenWrapped("Relation", arity, args, whole)
+    case TypeConstructor.Lattice(arity) => docLattice(arity, args, whole)
+    case TypeConstructor.Arrow(arity) => docArrow(arity, args, whole)
+    case TypeConstructor.Record => docRecord(args, whole)
+    case TypeConstructor.Schema => docSchema(args, whole)
+
+    case _ =>
+      // Every other constructor (record/schema rows seen outside of Record/Schema, extensible
+      // variants, restrictable case sets, resolved JVM members, ArrowWithoutEffect,
+      // ArrayWithoutRegion, RegionWithoutRegion, AnyType, Error, and any future addition): these
+      // essentially never appear in a type written in a signature, so rather than a bespoke
+      // renderer for each, fall back to the shared formatter for just this subtree.
+      docFallback(whole)
+  }
+
+  /**
+    * Documents a type variable, `sym`, with its own `type-var` class, distinct from a type
+    * constructor.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docTypeVar(sym: Symbol.KindedTypeVarSym)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<span class='type-var'>")
+    sb.append(esc(varName(sym)))
+    sb.append("</span>")
+  }
+
+  /**
+    * Returns the name of the given type variable symbol, `sym`, as it should be printed: its
+    * source name if one is known and the format options ask for names, or an id-based name
+    * derived from its kind otherwise.
+    *
+    * This mirrors the `Var` case of [[FormatType]]'s own visitor.
+    */
+  private def varName(sym: Symbol.KindedTypeVarSym)(implicit flix: Flix): String = {
+    val idBased = sym.kind match {
+      case Kind.Wild => "_" + sym.id.toString
+      case Kind.WildCaseSet => "_c" + sym.id.toString
+      case Kind.Star => "t" + sym.id
+      case Kind.Eff => "e" + sym.id
+      case Kind.Bool => "b" + sym.id
+      case Kind.RecordRow => "r" + sym.id
+      case Kind.SchemaRow => "s" + sym.id
+      case Kind.Predicate => "'" + sym.id.toString
+      case Kind.Jvm => "j" + sym.id.toString
+      case Kind.CaseSet(_) => "c" + sym.id.toString
+      case Kind.Arrow(_, _) => "'" + sym.id.toString
+      case Kind.Error => "err" + sym.id.toString
+    }
+    flix.getFormatOptions.varNames match {
+      case FormatOptions.VarName.IdBased => idBased
+      case FormatOptions.VarName.NameBased => sym.text match {
+        case VarText.Absent => idBased
+        case VarText.SourceText(s) => s
+      }
+    }
+  }
+
+  /**
+    * Documents the given plain (non-linkable) type constructor name, `name`, e.g. a built-in
+    * like `Int32` that has no documentation page.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docPlainTypeName(name: String)(implicit sb: StringBuilder): Unit = {
+    sb.append(s"<span class='type'>${esc(name)}</span>")
+  }
+
+  /**
+    * Documents the name of a documentable type constructor (an enum or a struct), creating a
+    * link to its documentation page if `isDocumented`, the same way [[docTraitName]] does for a
+    * trait. Otherwise, the name is documented as plain text, since linking to it would result in
+    * a dead link (e.g. for a non-`pub` enum).
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docDocumentedTypeName(isDocumented: Boolean, fileName: String, label: String, shortName: String)(implicit sb: StringBuilder): Unit = {
+    if (isDocumented) {
+      sb.append(s"<a class='type' href='${escUrl(fileName)}' title='$label ${esc(shortName)}'>")
+      sb.append(esc(shortName))
+      sb.append("</a>")
+    } else {
+      sb.append(s"<span class='type' title='$label ${esc(shortName)}'>")
+      sb.append(esc(shortName))
+      sb.append("</span>")
+    }
+  }
+
+  /**
+    * Documents the name of the given type alias symbol, `sym`, creating a link to the anchor on
+    * its module's page if it has one, i.e. if it is in `documented.typeAliases`. Otherwise, the
+    * name is documented as plain text.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docAliasName(sym: Symbol.TypeAliasSym)(implicit documented: DocumentedSymbols, sb: StringBuilder): Unit = {
+    documented.typeAliases.get(sym) match {
+      case Some(modSym) =>
+        val page = moduleFileName(modSym)
+        sb.append(s"<a class='type' href='${escUrl(page)}#ta-${escUrl(sym.name)}' title='type alias ${esc(sym.name)}'>")
+        sb.append(esc(sym.name))
+        sb.append("</a>")
+      case None =>
+        sb.append(s"<span class='type' title='type alias ${esc(sym.name)}'>")
+        sb.append(esc(sym.name))
         sb.append("</span>")
     }
+  }
+
+  /**
+    * Documents the name of the given effect symbol, `sym`, creating a link to its documentation
+    * page if it has one, i.e. if it is in `documented.effects`. Otherwise, the name is documented
+    * as plain text.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docEffectSymName(sym: Symbol.EffSym)(implicit documented: DocumentedSymbols, sb: StringBuilder): Unit = {
+    if (documented.effects.contains(sym)) {
+      sb.append(s"<a class='effect' href='${escUrl(effectFileName(sym))}' title='effect ${esc(effectName(sym))}'>")
+      sb.append(esc(sym.name))
+      sb.append("</a>")
+    } else {
+      sb.append(s"<span class='effect' title='effect ${esc(effectName(sym))}'>")
+      sb.append(esc(sym.name))
+      sb.append("</span>")
+    }
+  }
+
+  /**
+    * Documents the given list of type arguments, `args`, wrapped in `[]`, if there are any.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docTypeArgsInBrackets(args: List[Type])(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
+    if (args.nonEmpty) {
+      sb.append("[")
+      docList(args)(docTypeTree)
+      sb.append("]")
+    }
+  }
+
+  /**
+    * Returns `true` if a type headed by `tc` needs to be parenthesized when it appears somewhere
+    * that isn't innately delimited (e.g. as the return type of a function). Mirrors the
+    * `isDelimited` cases of [[FormatType]] that can actually appear in a well-kinded signature.
+    */
+  private def needsParens(tpe: Type): Boolean = tpe.baseType match {
+    case Type.Cst(TypeConstructor.Arrow(_), _) => true
+    case Type.Cst(TypeConstructor.Not | TypeConstructor.And | TypeConstructor.Or, _) => true
+    case _ => false
+  }
+
+  /**
+    * Documents `tpe`, parenthesizing it first if [[needsParens]] says it would otherwise be
+    * ambiguous.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docDelimitedType(tpe: Type)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
+    if (needsParens(tpe)) {
+      sb.append("(")
+      docTypeTree(tpe)
+      sb.append(")")
+    } else {
+      docTypeTree(tpe)
+    }
+  }
+
+  /**
+    * Documents `tpe` as it should appear in the argument position of a function type: like
+    * [[docDelimitedType]], except that a tuple gets an extra set of parentheses, to distinguish a
+    * single tuple argument (e.g. `((Int32, Int32)) -> Int32`) from the uncurried multi-argument
+    * sugar that reuses the same tuple-like syntax (e.g. `(Int32, Int32) -> Int32`).
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docFunctionArgType(tpe: Type)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = tpe.baseType match {
+    case Type.Cst(TypeConstructor.Tuple(_), _) =>
+      sb.append("(")
+      docTypeTree(tpe)
+      sb.append(")")
+    case _ => docDelimitedType(tpe)
+  }
+
+  /**
+    * Documents the function type headed by `Arrow(arity)` applied to `args`, i.e. `[eff, arg_1,
+    * ..., arg_n, ret]`, as `arg_1 -> ... -> arg_n -> ret \ eff` (with the `\ eff` omitted if
+    * `eff` is `Pure`), linking and giving effect roles to whatever is nested in `arg_1..n` and
+    * `ret`.
+    *
+    * `whole` is the original type, used only to fall back to [[docFallback]] if `args` is not of
+    * the shape a fully-applied arrow should have (which should not happen for a well-kinded
+    * type).
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docArrow(arity: Int, args: List[Type], whole: Type)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = args match {
+    case eff :: rest if rest.length == arity && arity >= 2 =>
+      val leading = rest.dropRight(2)
+      val lastArg = rest(rest.length - 2)
+      val ret = rest.last
+
+      for (a <- leading) {
+        docFunctionArgType(a)
+        sb.append(" -> ")
+      }
+      docFunctionArgType(lastArg)
+      sb.append(" -> ")
+      docDelimitedType(ret)
+
+      if (!isPureEffect(eff)) {
+        sb.append(" \\ ")
+        docEffectFormula(eff)
+      }
+
+    case _ => docFallback(whole)
+  }
+
+  /**
+    * Documents the tuple type headed by `Tuple(arity)` applied to `args` as `(t_1, ..., t_n)`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docTuple(arity: Int, args: List[Type], whole: Type)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
+    if (args.length != arity) {
+      docFallback(whole)
+      return
+    }
+    sb.append("(")
+    docList(args)(docTypeTree)
+    sb.append(")")
+  }
+
+  /**
+    * Documents a predicate-like type headed by a constructor named `name` (`Relation`), applied
+    * to `args`, as `name(t_1, ..., t_n)`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docParenWrapped(name: String, arity: Int, args: List[Type], whole: Type)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
+    if (args.length != arity) {
+      docFallback(whole)
+      return
+    }
+    docPlainTypeName(name)
+    sb.append("(")
+    docList(args)(docTypeTree)
+    sb.append(")")
+  }
+
+  /**
+    * Documents the lattice type headed by `Lattice(arity)` applied to `args` as
+    * `Lattice(t_1, ..., t_n; lat)`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docLattice(arity: Int, args: List[Type], whole: Type)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
+    if (args.length != arity || args.isEmpty) {
+      docFallback(whole)
+      return
+    }
+    docPlainTypeName("Lattice")
+    sb.append("(")
+    docList(args.init)(docTypeTree)
+    sb.append("; ")
+    docTypeTree(args.last)
+    sb.append(")")
+  }
+
+  /**
+    * Documents the record type headed by `Record` applied to `args` (which should be a single
+    * record row) as `{ label_1 = t_1, ..., label_n = t_n }`, or `{ ... | rest }` if the row is
+    * extended by a variable.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docRecord(args: List[Type], whole: Type)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = args match {
+    case rowTpe :: Nil =>
+      val (labels0, rest) = collectRecordRow(rowTpe)
+      val labels = labels0.sortBy(_._1)
+      sb.append("{ ")
+      docList(labels) { case (name, tpe) =>
+        sb.append(esc(name))
+        sb.append(" = ")
+        docTypeTree(tpe)
+      }
+      rest.foreach { r =>
+        if (labels.nonEmpty) sb.append(" | ")
+        docTypeTree(r)
+      }
+      sb.append(" }")
+    case _ => docFallback(whole)
+  }
+
+  /**
+    * Decomposes the given record row, `row0`, into its labelled fields and, if the row is
+    * extended by something other than the empty row, that remainder.
+    *
+    * Mirrors [[DisplayType.fromRecordRow]], but keeps each field's own [[Type]] rather than
+    * converting to a [[DisplayType]], so the fields can still be linked and structured when
+    * documented.
+    */
+  private def collectRecordRow(row0: Type): (List[(String, Type)], Option[Type]) = row0.baseType match {
+    case Type.Cst(TypeConstructor.RecordRowEmpty, _) if row0.typeArguments.isEmpty => (Nil, None)
+    case Type.Cst(TypeConstructor.RecordRowExtend(label), _) =>
+      row0.typeArguments match {
+        case tpe :: rest :: Nil =>
+          val (labels, tail) = collectRecordRow(rest)
+          ((label.name, tpe) :: labels, tail)
+        case _ => (Nil, Some(row0))
+      }
+    case _ => (Nil, Some(row0))
+  }
+
+  /**
+    * Documents the schema type headed by `Schema` applied to `args` (which should be a single
+    * schema row) as `#{ Name_1(t_1, ...), ... }`, or `#{ ... | rest }` if the row is extended by
+    * a variable.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docSchema(args: List[Type], whole: Type)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = args match {
+    case rowTpe :: Nil =>
+      val (fields0, rest) = collectSchemaRow(rowTpe)
+      val fields = fields0.sortBy(_._1)
+      sb.append("#{ ")
+      docList(fields) { case (name, tpe) => docSchemaField(name, tpe) }
+      rest.foreach { r =>
+        if (fields.nonEmpty) sb.append(" | ")
+        docTypeTree(r)
+      }
+      sb.append(" }")
+    case _ => docFallback(whole)
+  }
+
+  /**
+    * Decomposes the given schema row, `row0`, into its named fields and, if the row is extended
+    * by something other than the empty row, that remainder.
+    *
+    * Mirrors [[DisplayType.fromSchemaRow]], but keeps each field's own [[Type]] rather than
+    * converting to a [[DisplayType]].
+    */
+  private def collectSchemaRow(row0: Type): (List[(String, Type)], Option[Type]) = row0.baseType match {
+    case Type.Cst(TypeConstructor.SchemaRowEmpty, _) if row0.typeArguments.isEmpty => (Nil, None)
+    case Type.Cst(TypeConstructor.SchemaRowExtend(pred), _) =>
+      row0.typeArguments match {
+        case tpe :: rest :: Nil =>
+          val (fields, tail) = collectSchemaRow(rest)
+          ((pred.name, tpe) :: fields, tail)
+        case _ => (Nil, Some(row0))
+      }
+    case _ => (Nil, Some(row0))
+  }
+
+  /**
+    * Documents one field, `name(tpe)`, of a schema, printing it as a relation `name(t_1, ..., t_n)`
+    * or a lattice `name(t_1, ..., t_n; lat)` if `tpe` (with any top-level alias erased) is one,
+    * and as `name(<t>)` otherwise, mirroring [[DisplayType.visitSchemaFieldType]].
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docSchemaField(name: String, tpe: Type)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
+    val erased = Type.eraseTopAliases(tpe)
+    erased.baseType match {
+      case Type.Cst(TypeConstructor.Relation(arity), _) if erased.typeArguments.length == arity =>
+        sb.append(esc(name))
+        sb.append("(")
+        docList(erased.typeArguments)(docTypeTree)
+        sb.append(")")
+      case Type.Cst(TypeConstructor.Lattice(arity), _) if erased.typeArguments.length == arity && arity > 0 =>
+        sb.append(esc(name))
+        sb.append("(")
+        docList(erased.typeArguments.init)(docTypeTree)
+        sb.append("; ")
+        docTypeTree(erased.typeArguments.last)
+        sb.append(")")
+      case _ =>
+        sb.append(esc(name))
+        sb.append("(<")
+        docTypeTree(tpe)
+        sb.append(">)")
+    }
+  }
+
+  /**
+    * Recursively documents the given `Type`, `eff0`, of kind `Eff`, one HTML element per effect
+    * name, region and effect-kinded type variable, so that an effect nested anywhere in a type
+    * -- e.g. inside a parameter's own function type -- gets the same `effect` role a top-level
+    * effect gets.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docEffectFormula(eff0: Type)(implicit flix: Flix, documented: DocumentedSymbols, sb: StringBuilder): Unit = {
+
+    /** Flattens a chain of the same effect operator `tc`, e.g. `(a + b) + c` into `a :: b :: c :: Nil`. */
+    def flatten(tc: TypeConstructor, t: Type): List[Type] = t.baseType match {
+      case Type.Cst(tc2, _) if tc2 == tc => t.typeArguments.flatMap(flatten(tc, _))
+      case _ => List(t)
+    }
+
+    def needsEffectParens(t: Type): Boolean = t.baseType match {
+      case Type.Cst(TypeConstructor.Complement | TypeConstructor.Union | TypeConstructor.Intersection
+                    | TypeConstructor.Difference | TypeConstructor.SymmetricDiff, _) => true
+      case _ => false
+    }
+
+    def visitDelimited(t: Type): Unit = {
+      if (needsEffectParens(t)) {
+        sb.append("(")
+        visit(t)
+        sb.append(")")
+      } else {
+        visit(t)
+      }
+    }
+
+    def visitChain(op: TypeConstructor, sep: String, t: Type): Unit = {
+      val parts = flatten(op, t)
+      for ((p, i) <- parts.zipWithIndex) {
+        visitDelimited(p)
+        if (i < parts.length - 1) {
+          sb.append(sep)
+        }
+      }
+    }
+
+    def visit(t: Type): Unit = t.baseType match {
+      case Type.Cst(TypeConstructor.Effect(sym, _), _) =>
+        docEffectSymName(sym)
+        docTypeArgsInBrackets(t.typeArguments)
+
+      case Type.Cst(TypeConstructor.Region(sym), _) =>
+        sb.append(s"<span class='effect'>${esc(sym.text)}</span>")
+
+      case Type.Var(sym, _) =>
+        sb.append("<span class='effect'>")
+        sb.append(esc(varName(sym)))
+        sb.append("</span>")
+
+      case Type.Cst(TypeConstructor.Pure, _) => sb.append("<span class='effect'>Pure</span>")
+      case Type.Cst(TypeConstructor.Univ, _) => sb.append("<span class='effect'>Univ</span>")
+
+      case Type.Cst(TypeConstructor.Complement, _) =>
+        sb.append("~")
+        visitDelimited(t.typeArguments.head)
+
+      case Type.Cst(TypeConstructor.Union, _) => visitChain(TypeConstructor.Union, " + ", t)
+      case Type.Cst(TypeConstructor.Intersection, _) => visitChain(TypeConstructor.Intersection, " & ", t)
+      case Type.Cst(TypeConstructor.Difference, _) => visitChain(TypeConstructor.Difference, " - ", t)
+      case Type.Cst(TypeConstructor.SymmetricDiff, _) => visitChain(TypeConstructor.SymmetricDiff, " ⊕ ", t)
+
+      case Type.Alias(symUse, _, _, _) =>
+        docAliasName(symUse.sym)
+        docTypeArgsInBrackets(t.typeArguments)
+
+      case _ => docFallback(t)
+    }
+
+    visit(eff0)
+  }
+
+  /**
+    * Documents `t` using the shared formatter, [[FormatType]], on just this subtree, rather than
+    * dropping it. Used for the handful of type or effect constructors that [[docTypeTree]] and
+    * [[docEffectFormula]] do not walk individually.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docFallback(t: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    val cls = if (t.kind == Kind.Eff) "effect" else "type"
+    sb.append(s"<span class='$cls'>")
+    sb.append(esc(FormatType.formatType(t)))
+    sb.append("</span>")
   }
 
   /**
