@@ -507,6 +507,21 @@ main h2 {
     font-family: "Oswald", sans-serif;
 }
 
+.breadcrumbs {
+    margin-bottom: 0.5rem;
+
+    font-family: "Inter", sans-serif;
+    font-size: 0.9rem;
+    color: var(--faded-text-color);
+}
+.breadcrumbs > a {
+    color: inherit;
+}
+.breadcrumbs > a:hover,
+.breadcrumbs > span {
+    color: var(--text-color);
+}
+
 .box {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
