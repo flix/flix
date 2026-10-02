@@ -1901,7 +1901,19 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     * `origin`: the project's own code, or the bundled library.
     */
   def doc(flix: Flix, origin: Origin): Result[Unit, BootstrapError] = {
-    typeCheck(flix).map(HtmlDocumentor.run(_, origin, sourceRepository, Bootstrap.getDocumentationDirectory(projectPath))(flix))
+    typeCheck(flix).map(HtmlDocumentor.run(_, origin, sourceRepository, Bootstrap.getDocumentationDirectory(projectPath), projectInfo(origin))(flix))
+  }
+
+  /**
+    * Returns the name and version of the project, taken from its manifest, that its documentation
+    * should be branded as when `origin` is not [[Origin.Library]].
+    *
+    * Documenting the bundled library (`origin` is [[Origin.Library]]) keeps the "Flix" branding it
+    * has always had, regardless of what project, if any, is being built at the time.
+    */
+  private def projectInfo(origin: Origin): Option[HtmlDocumentor.ProjectInfo] = origin match {
+    case Origin.Library => None
+    case _ => optManifest.map(m => HtmlDocumentor.ProjectInfo(m.displayName, m.version.toString))
   }
 
   /**
