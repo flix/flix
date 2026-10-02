@@ -645,7 +645,7 @@ object HtmlDocumentor {
 
     sb.append("<main id='main-content'>")
     docBreadcrumbs(mod.parent, mod.name)
-    sb.append(s"<h1>${esc(mod.qualifiedName)}</h1>")
+    sb.append(s"<h1>${esc(mod.name)}</h1>")
     modDoc(mod.doc)
     docSummarySection("Traits", sortedTraits, (t: Trait) => t.decl.doc)
     docSummarySection("Effects", sortedEffs, (e: Effect) => e.decl.doc)
@@ -739,7 +739,7 @@ object HtmlDocumentor {
 
     sb.append("<main id='main-content'>")
     docBreadcrumbs(Some(trt.parent), trt.name)
-    sb.append(s"<h1>${esc(trt.qualifiedName)}</h1>")
+    sb.append(s"<h1>${esc(trt.name)}</h1>")
 
     sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(trt.decl.ann)
@@ -840,7 +840,7 @@ object HtmlDocumentor {
 
     sb.append("<main id='main-content'>")
     docBreadcrumbs(Some(eff.parent), eff.name)
-    sb.append(s"<h1>${esc(eff.qualifiedName)}</h1>")
+    sb.append(s"<h1>${esc(eff.name)}</h1>")
 
     sb.append(s"<div class='box'  id='main-box'>")
     docAnnotations(eff.decl.ann)
@@ -933,7 +933,7 @@ object HtmlDocumentor {
 
     sb.append("<main id='main-content'>")
     docBreadcrumbs(Some(enm.parent), enm.name)
-    sb.append(s"<h1>${esc(enm.qualifiedName)}</h1>")
+    sb.append(s"<h1>${esc(enm.name)}</h1>")
 
     sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(enm.decl.ann)
@@ -1026,7 +1026,7 @@ object HtmlDocumentor {
 
     sb.append("<main id='main-content'>")
     docBreadcrumbs(Some(struct.parent), struct.name)
-    sb.append(s"<h1>${esc(struct.qualifiedName)}</h1>")
+    sb.append(s"<h1>${esc(struct.name)}</h1>")
 
     sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(struct.decl.ann)
