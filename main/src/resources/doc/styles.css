@@ -444,40 +444,43 @@ nav ul {
     list-style: none;
 }
 nav li {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
     margin-bottom: 0.1rem;
 }
-nav li::before {
-    content: "●";
-    margin-right: 0.3rem;
+nav li > .icon {
+    width: 0.8rem;
+    height: 0.8rem;
 }
-nav .sidebar-list-modules li::before {
+nav .sidebar-list-modules li > .icon {
     color: var(--module-color);
 }
-nav .sidebar-list-signatures li::before {
+nav .sidebar-list-signatures li > .icon {
     color: var(--signature-color);
 }
-nav .sidebar-list-trait-defs li::before {
+nav .sidebar-list-trait-defs li > .icon {
     color: var(--trait-def-color);
 }
-nav .sidebar-list-traits li::before {
+nav .sidebar-list-traits li > .icon {
     color: var(--traits-color);
 }
-nav .sidebar-list-enums li::before {
+nav .sidebar-list-enums li > .icon {
     color: var(--enum-color);
 }
-nav .sidebar-list-structs li::before {
+nav .sidebar-list-structs li > .icon {
     color: var(--struct-color);
 }
-nav .sidebar-list-operations li::before {
+nav .sidebar-list-operations li > .icon {
     color: var(--op-color);
 }
-nav .sidebar-list-effects li::before {
+nav .sidebar-list-effects li > .icon {
     color: var(--eff-color);
 }
-nav .sidebar-list-type-aliases li::before {
+nav .sidebar-list-type-aliases li > .icon {
     color: var(--type-alias-color);
 }
-nav .sidebar-list-definitions li::before {
+nav .sidebar-list-definitions li > .icon {
     color: var(--def-color);
 }
 
