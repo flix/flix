@@ -12,7 +12,7 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
 import ca.uwaterloo.flix.tools.doc.HtmlHighlighter
-import ca.uwaterloo.flix.util.LocalResource
+import ca.uwaterloo.flix.util.{Formatter, LocalResource}
 import ca.uwaterloo.flix.util.collection.Nel
 import org.commonmark.ext.gfm.tables.{TableCell, TablesExtension}
 import org.commonmark.node.Node
@@ -119,6 +119,31 @@ object HtmlDocumentor {
     val pairedModulesRoot = pairModules(filteredModulesRoot)
 
     checkMod(pairedModulesRoot).sortBy(m => (m.qualifiedName, m.kind))
+  }
+
+  /**
+    * Returns a human-readable report of `missing`, one grep-able line per item (e.g.
+    * `missing doc comment: def Foo.bar (Foo.flix:12)`), followed by a summary count.
+    *
+    * Returns `""` if `missing` is empty.
+    *
+    * This is printed as a non-blocking, always-on side effect of [[run]] (see the `doc` command
+    * in `Main.scala` / `Bootstrap.scala`) to encourage documentation coverage without failing an
+    * ordinary `flix doc` run -- it never affects the exit code.
+    */
+  def missingDocReport(missing: List[MissingDoc], f: Formatter): String = {
+    if (missing.isEmpty) ""
+    else {
+      val lines = missing.map {
+        case MissingDoc(kind, qualifiedName, loc) =>
+          s"${f.red("missing doc comment")}: $kind ${f.bold(qualifiedName)} (${loc.source.name}:${loc.startLine})"
+      }.mkString(System.lineSeparator())
+
+      s"""$lines
+         |
+         |Found ${f.red(missing.size.toString)} item(s) with no doc comment.
+         |""".stripMargin
+    }
   }
 
   /**

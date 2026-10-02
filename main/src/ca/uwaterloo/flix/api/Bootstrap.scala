@@ -1899,26 +1899,27 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
   /**
     * Generates API documentation for the declarations that come from a source with the origin
     * `origin`: the project's own code, or the bundled library.
+    *
+    * As a side effect, also reports every documentable item that has no doc comment (one
+    * grep-able line per item, printed to stdout). This report is always on and never affects the
+    * exit code or whether the site is generated -- it is encouragement, not enforcement, since
+    * most Flix codebases are not fully documented yet.
     */
   def doc(flix: Flix, origin: Origin): Result[Unit, BootstrapError] = {
-    typeCheck(flix).map(HtmlDocumentor.run(_, origin, Bootstrap.getDocumentationDirectory(projectPath))(flix))
+    typeCheck(flix).map { root =>
+      HtmlDocumentor.run(root, origin, Bootstrap.getDocumentationDirectory(projectPath))(flix)
+      reportMissingDoc(flix, root, origin)
+    }
   }
 
   /**
-    * Checks the documentation coverage for the declarations that come from a source with the
-    * origin `origin`: the project's own code, or the bundled library.
-    *
-    * Returns `Ok` if every documentable item has a doc comment, or an `Err` listing every one
-    * that does not, so this can be used as a CI gate on documentation coverage.
-    *
-    * No HTML documentation is generated; this is a pure lint/coverage check.
+    * Prints a report of every documentable item under `origin` in `root` that has no doc
+    * comment, if any. Does nothing if there are none.
     */
-  def docCheck(flix: Flix, origin: Origin): Result[Unit, BootstrapError] = {
-    typeCheck(flix).flatMap { root =>
-      HtmlDocumentor.checkCoverage(root, origin) match {
-        case Nil => Ok(())
-        case missing => Err(BootstrapError.MissingDocumentation(missing))
-      }
+  private def reportMissingDoc(flix: Flix, root: TypedAst.Root, origin: Origin): Unit = {
+    val missing = HtmlDocumentor.checkCoverage(root, origin)
+    if (missing.nonEmpty) {
+      println(HtmlDocumentor.missingDocReport(missing, flix.getFormatter))
     }
   }
 
