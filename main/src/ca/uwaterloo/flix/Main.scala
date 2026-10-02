@@ -314,7 +314,11 @@ object Main {
             val flix = mkFlixWithFiles(cmdOpts.files, options)
             val (optRoot, errors) = flix.check()
             if (errors.isEmpty) {
-              HtmlDocumentor.run(optRoot.get, docOrigin(cmdOpts), None, Bootstrap.getDocumentationDirectory(cwd))(flix)
+              val root = optRoot.get
+              val origin = docOrigin(cmdOpts)
+              HtmlDocumentor.run(root, origin, None, Bootstrap.getDocumentationDirectory(cwd))(flix)
+              val missing = HtmlDocumentor.checkCoverage(root, origin)
+              if (missing.nonEmpty) println(HtmlDocumentor.missingDocReport(missing, formatter))
               exit(0)
             } else exitWithErrors(flix, errors, optRoot)
           }
@@ -684,7 +688,7 @@ object Main {
       cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
         .children(
           opt[Unit]("library").action((_, c) => c.copy(library = true))
-            .text("documents the bundled library instead of the current project.")
+            .text("documents the bundled library instead of the current project."),
         )
 
       cmd("format").action((_, c) => c.copy(command = Command.Format)).text("  formats Flix source code files.")

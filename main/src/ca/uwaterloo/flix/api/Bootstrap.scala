@@ -1899,9 +1899,28 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
   /**
     * Generates API documentation for the declarations that come from a source with the origin
     * `origin`: the project's own code, or the bundled library.
+    *
+    * As a side effect, also reports every documentable item that has no doc comment (one
+    * grep-able line per item, printed to stdout). This report is always on and never affects the
+    * exit code or whether the site is generated -- it is encouragement, not enforcement, since
+    * most Flix codebases are not fully documented yet.
     */
   def doc(flix: Flix, origin: Origin): Result[Unit, BootstrapError] = {
-    typeCheck(flix).map(HtmlDocumentor.run(_, origin, sourceRepository, Bootstrap.getDocumentationDirectory(projectPath))(flix))
+    typeCheck(flix).map { root =>
+      HtmlDocumentor.run(root, origin, sourceRepository, Bootstrap.getDocumentationDirectory(projectPath))(flix)
+      reportMissingDoc(flix, root, origin)
+    }
+  }
+
+  /**
+    * Prints a report of every documentable item under `origin` in `root` that has no doc
+    * comment, if any. Does nothing if there are none.
+    */
+  private def reportMissingDoc(flix: Flix, root: TypedAst.Root, origin: Origin): Unit = {
+    val missing = HtmlDocumentor.checkCoverage(root, origin)
+    if (missing.nonEmpty) {
+      println(HtmlDocumentor.missingDocReport(missing, flix.getFormatter))
+    }
   }
 
   /**
