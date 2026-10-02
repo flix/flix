@@ -393,6 +393,10 @@ header > .toggle:hover {
     #menu-toggle {
         display: flex;
     }
+    /* The menu shows the sidebar, which a source page does not have. */
+    body:not(:has(nav)) #menu-toggle {
+        display: none;
+    }
 }
 
 nav {
@@ -718,6 +722,22 @@ td.align-right, th.align-right {
 }
 .mod-doc p:last-child {
     margin-bottom: 0;
+}
+
+/* A source page has no sidebar, and gives the width it frees to the code.
+   The code itself is formatted by `highlight.css`. */
+main.source-page {
+    padding: 1rem 2rem;
+}
+@media screen and (max-width: 800px) {
+    main.source-page {
+        padding: 1rem 0.5rem;
+    }
+}
+main.source-page > h1 {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    overflow-wrap: anywhere;
 }
 
 .summary-table {
