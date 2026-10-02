@@ -5,7 +5,7 @@
  * that can be found in the LICENSE.md file.
  */
 
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.tools.doc
 
 import ca.uwaterloo.flix.api.lsp.provider.SemanticTokensProvider
 import ca.uwaterloo.flix.api.lsp.{SemanticToken, SemanticTokenType}
