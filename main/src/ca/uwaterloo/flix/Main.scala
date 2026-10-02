@@ -307,8 +307,7 @@ object Main {
             exitOnResult {
               Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
                 val flix = bootstrap.mkFlix(options, formatter)
-                if (cmdOpts.docCheck) bootstrap.docCheck(flix, docOrigin(cmdOpts))
-                else bootstrap.doc(flix, docOrigin(cmdOpts))
+                bootstrap.doc(flix, docOrigin(cmdOpts))
               }
             }
           } else {
@@ -316,17 +315,11 @@ object Main {
             val (optRoot, errors) = flix.check()
             if (errors.isEmpty) {
               val root = optRoot.get
-              if (cmdOpts.docCheck) {
-                val missing = HtmlDocumentor.checkCoverage(root, docOrigin(cmdOpts))
-                if (missing.isEmpty) exit(0)
-                else {
-                  println(BootstrapError.MissingDocumentation(missing).message(formatter))
-                  exit(1)
-                }
-              } else {
-                HtmlDocumentor.run(root, docOrigin(cmdOpts), None, Bootstrap.getDocumentationDirectory(cwd))(flix)
-                exit(0)
-              }
+              val origin = docOrigin(cmdOpts)
+              HtmlDocumentor.run(root, origin, None, Bootstrap.getDocumentationDirectory(cwd))(flix)
+              val missing = HtmlDocumentor.checkCoverage(root, origin)
+              if (missing.nonEmpty) println(HtmlDocumentor.missingDocReport(missing, formatter))
+              exit(0)
             } else exitWithErrors(flix, errors, optRoot)
           }
 
@@ -541,7 +534,6 @@ object Main {
     entryPoint: Option[String] = None,
     installDeps: Boolean = true,
     library: Boolean = false,
-    docCheck: Boolean = false,
     githubToken: Option[String] = None,
     json: Boolean = false,
     listen: Option[Int] = None,
@@ -697,8 +689,6 @@ object Main {
         .children(
           opt[Unit]("library").action((_, c) => c.copy(library = true))
             .text("documents the bundled library instead of the current project."),
-          opt[Unit]("check").action((_, c) => c.copy(docCheck = true))
-            .text("checks documentation coverage instead of generating HTML: reports every public module, type, and member with no doc comment, and exits with a non-zero status if any are found."),
         )
 
       cmd("format").action((_, c) => c.copy(command = Command.Format)).text("  formats Flix source code files.")

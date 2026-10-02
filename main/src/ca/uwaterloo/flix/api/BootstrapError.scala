@@ -10,7 +10,6 @@ import ca.uwaterloo.flix.api.effectlock.EffectLockError
 import ca.uwaterloo.flix.language.ast.shared.PackageId
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatSignature}
-import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.tools.pkg.{LockError, ManifestError, PackageError, SemVer}
 import ca.uwaterloo.flix.util.Formatter
@@ -245,23 +244,4 @@ object BootstrapError {
     override def message(f: Formatter): String = e.message(f)
   }
 
-  /**
-    * An error raised by `flix doc --check` to indicate that one or more documentable items --
-    * public modules, types, or members -- have no doc comment.
-    *
-    * @param missing the items that have no doc comment, one per line of the report.
-    */
-  case class MissingDocumentation(missing: List[HtmlDocumentor.MissingDoc]) extends BootstrapError {
-    override def message(f: Formatter): String = {
-      val lines = missing.map {
-        case HtmlDocumentor.MissingDoc(kind, qualifiedName, loc) =>
-          s"${f.red("missing doc comment")}: $kind ${f.bold(qualifiedName)} (${loc.source.name}:${loc.startLine})"
-      }.mkString(System.lineSeparator())
-
-      s"""$lines
-         |
-         |Found ${f.red(missing.size.toString)} item(s) with no doc comment.
-         |""".stripMargin
-    }
-  }
 }
