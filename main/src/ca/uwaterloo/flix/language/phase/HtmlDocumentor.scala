@@ -591,6 +591,7 @@ object HtmlDocumentor {
   private def documentModule(mod: Module)(implicit flix: Flix, repo: Option[SourceRepository]): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
+    val sortedSubModules = mod.submodules.sortBy(_.name)
     val sortedTraits = mod.traits.sortBy(_.name)
     val sortedEnums = mod.enums.sortBy(_.name)
     val sortedStructs = mod.structs.sortBy(_.name)
@@ -647,6 +648,7 @@ object HtmlDocumentor {
     docBreadcrumbs(mod.parent, mod.name)
     sb.append(s"<h1>${esc(mod.name)}</h1>")
     modDoc(mod.doc)
+    docSummarySection("Modules", sortedSubModules, (m: Module) => m.doc)
     docSummarySection("Traits", sortedTraits, (t: Trait) => t.decl.doc)
     docSummarySection("Effects", sortedEffs, (e: Effect) => e.decl.doc)
     docSummarySection("Enums", sortedEnums, (e: Enum) => e.decl.doc)
