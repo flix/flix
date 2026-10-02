@@ -57,13 +57,13 @@ mod Test.Dec.AssocEff {
     trait Iterable[t: Type] {
         type Elm: Type
         type Aef: Eff
-        pub def iterator(rc: Region[r], t: t): Iterator[Iterable.Elm[t], r + Iterable.Aef[t], r] \ r + Iterable.Aef[t]
+        pub def iterator(rc: Region[r], t: t): Iterator[Iterable.Elm[t], Iterable.Aef[t], r] \ r + Iterable.Aef[t]
     }
 
     instance Iterable[List[a]] {
         type Elm = a
         type Aef = {}
-        pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ r = {
+        pub def iterator(rc: Region[r], l: List[a]): Iterator[a, {}, r] \ r = {
             List.iterator(rc, l)
         }
     }
@@ -71,7 +71,7 @@ mod Test.Dec.AssocEff {
     instance Iterable[MutList[a, r1]] {
         type Elm = a
         type Aef = r1
-        pub def iterator(rc: Region[r], l: MutList[a, r1]): Iterator[a, r + r1, r] \ r + r1 = {
+        pub def iterator(rc: Region[r], l: MutList[a, r1]): Iterator[a, r1, r] \ r + r1 = {
             MutList.iterator(rc, l)
         }
     }
@@ -79,7 +79,7 @@ mod Test.Dec.AssocEff {
     instance Iterable[Map[k, v]] {
         type Elm = (k, v)
         type Aef = {}
-        pub def iterator(rc: Region[r], l: Map[k, v]): Iterator[(k, v), r, r] \ r = {
+        pub def iterator(rc: Region[r], l: Map[k, v]): Iterator[(k, v), {}, r] \ r = {
             Map.iterator(rc, l)
         }
     }
@@ -87,7 +87,7 @@ mod Test.Dec.AssocEff {
     instance Iterable[MutMap[k, v, r1]] {
         type Elm = (k, v)
         type Aef = r1
-        pub def iterator(rc: Region[r], l: MutMap[k, v, r1]): Iterator[(k, v), r + r1, r] \ r + r1 = {
+        pub def iterator(rc: Region[r], l: MutMap[k, v, r1]): Iterator[(k, v), r1, r] \ r + r1 = {
             MutMap.iterator(rc, l)
         }
     }
@@ -108,13 +108,13 @@ mod Test.Dec.AssocEff {
     trait DeepIterable[a] {
         type Elm
         type Aef: Eff
-        pub def iterator(rc: Region[r], x: a): Iterator[DeepIterable.Elm[a], r + DeepIterable.Aef[a], r] \ r + DeepIterable.Aef[a]
+        pub def iterator(rc: Region[r], x: a): Iterator[DeepIterable.Elm[a], DeepIterable.Aef[a], r] \ r + DeepIterable.Aef[a]
     }
 
     instance DeepIterable[Int32] {
         type Elm = Int32
         type Aef = {}
-        pub def iterator(rc: Region[r], x: Int32): Iterator[Int32, r, r] \ r = Iterator.singleton(rc, x)
+        pub def iterator(rc: Region[r], x: Int32): Iterator[Int32, {}, r] \ r = Iterator.singleton(rc, x)
     }
 
     enum LoudInt32(Int32) with Eq
@@ -122,7 +122,7 @@ mod Test.Dec.AssocEff {
     instance DeepIterable[LoudInt32] {
         type Elm = Int32
         type Aef = Console
-        pub def iterator(rc: Region[r], x: LoudInt32): Iterator[Int32, r + Console, r] \ r + Console = {
+        pub def iterator(rc: Region[r], x: LoudInt32): Iterator[Int32, Console, r] \ r + Console = {
             let LoudInt32.LoudInt32(i) = x;
             Console.println("${i}!");
             Iterator.singleton(rc, i) |> Iterator.map(y -> {Console.println("${y}!"); y})
@@ -132,10 +132,10 @@ mod Test.Dec.AssocEff {
     instance DeepIterable[List[a]] with DeepIterable[a] {
         type Elm = DeepIterable.Elm[a]
         type Aef = DeepIterable.Aef[a]
-        pub def iterator(rc: Region[r], x: List[a]): Iterator[DeepIterable.Elm[a], r + DeepIterable.Aef[a], r] \ r + DeepIterable.Aef[a] = {
+        pub def iterator(rc: Region[r], x: List[a]): Iterator[DeepIterable.Elm[a], DeepIterable.Aef[a], r] \ r + DeepIterable.Aef[a] = {
             // this is needed because the nested Aef isn't actually executed when we flatMap
             let _ = (checked_ecast(123): _ \ DeepIterable.Aef[a]);
-            List.iterator(rc, x) |> Iterator.flatMap(DeepIterable.iterator(rc))
+            List.iterator(rc, x) |> Iterator.flatMap(DeepIterable.iterator(rc)) |> Iterator.absorbRegion
 
         }
     }

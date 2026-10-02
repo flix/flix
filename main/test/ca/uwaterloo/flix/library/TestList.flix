@@ -10,7 +10,7 @@ mod TestList {
     /////////////////////////////////////////////////////////////////////////////
     @Test
     def collect01(): Unit \ Assert = region rc {
-        assertEq(expected = Nil, Collectable.collect((Iterator.empty(rc): Iterator[Int32, rc, rc])))
+        assertEq(expected = Nil, Collectable.collect((Iterator.empty(rc): Iterator[Int32, {}, rc])))
     }
 
     @Test

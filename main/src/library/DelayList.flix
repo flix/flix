@@ -117,7 +117,7 @@ pub mod DelayList {
 
     instance Iterable[DelayList[a]] {
         type Elm = a
-        pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r = DelayList.iterator(rc, l)
+        pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, {}, r] \ r = DelayList.iterator(rc, l)
     }
 
     instance ForEach[DelayList[a]] {
@@ -1212,7 +1212,7 @@ pub mod DelayList {
     /// Does not force any elements of the list.
     ///
     @Experimental @Lazy
-    pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r =
+    pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, {}, r] \ r =
         let cursor = Ref.fresh(rc, l);
         let next = () -> {
             let ll = Ref.get(cursor);
@@ -1223,7 +1223,7 @@ pub mod DelayList {
                     Some(x)
             }
         };
-        Iterator.unfoldWithIter(rc, next)
+        Iterator.unfoldWithIter(rc, next) |> Iterator.absorbRegion
 
     ///
     /// Returns `l` as a `List`.
