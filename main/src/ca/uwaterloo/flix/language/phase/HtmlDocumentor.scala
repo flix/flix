@@ -609,25 +609,25 @@ object HtmlDocumentor {
         "Traits",
         "traits",
         sortedTraits,
-        (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
+        (t: Trait) => docSideBarItem(escUrl(t.fileName), t.name, t.decl.ann),
       )
       docSideBarSection(
         "Effects",
         "effects",
         sortedEffs,
-        (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        (e: Effect) => docSideBarItem(escUrl(e.fileName), e.name, e.decl.ann),
       )
       docSideBarSection(
         "Enums",
         "enums",
         sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        (e: Enum) => docSideBarItem(escUrl(e.fileName), e.name, e.decl.ann),
       )
       docSideBarSection(
         "Structs",
         "structs",
         sortedStructs,
-        (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
+        (s: Struct) => docSideBarItem(escUrl(s.fileName), s.name, s.decl.ann),
       )
       docSideBarSection(
         "Type Aliases",
@@ -639,7 +639,7 @@ object HtmlDocumentor {
         "Definitions",
         "definitions",
         sortedDefs,
-        (d: TypedAst.Def) => sb.append(s"<a href='#def-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
+        (d: TypedAst.Def) => docSideBarItem(s"#def-${escUrl(d.sym.name)}", d.sym.name, d.spec.ann),
       )
     }
 
@@ -691,37 +691,37 @@ object HtmlDocumentor {
         "Signatures",
         "signatures",
         sortedSigs,
-        (s: TypedAst.Sig) => sb.append(s"<a href='#sig-${escUrl(s.sym.name)}'>${esc(s.sym.name)}</a>"),
+        (s: TypedAst.Sig) => docSideBarItem(s"#sig-${escUrl(s.sym.name)}", s.sym.name, s.spec.ann),
       )
       docSideBarSection(
         "Trait Definitions",
         "trait-defs",
         sortedTraitDefs,
-        (d: TypedAst.Sig) => sb.append(s"<a href='#sig-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
+        (d: TypedAst.Sig) => docSideBarItem(s"#sig-${escUrl(d.sym.name)}", d.sym.name, d.spec.ann),
       )
       docSideBarSection(
         "Traits",
         "traits",
         sortedTraits,
-        (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
+        (t: Trait) => docSideBarItem(escUrl(t.fileName), t.name, t.decl.ann),
       )
       docSideBarSection(
         "Effects",
         "effects",
         sortedEffs,
-        (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        (e: Effect) => docSideBarItem(escUrl(e.fileName), e.name, e.decl.ann),
       )
       docSideBarSection(
         "Enums",
         "enums",
         sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        (e: Enum) => docSideBarItem(escUrl(e.fileName), e.name, e.decl.ann),
       )
       docSideBarSection(
         "Structs",
         "structs",
         sortedStructs,
-        (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
+        (s: Struct) => docSideBarItem(escUrl(s.fileName), s.name, s.decl.ann),
       )
       docSideBarSection(
         "Type Aliases",
@@ -733,7 +733,7 @@ object HtmlDocumentor {
         "Module Definitions",
         "definitions",
         sortedModuleDefs,
-        (d: TypedAst.Def) => sb.append(s"<a href='#def-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
+        (d: TypedAst.Def) => docSideBarItem(s"#def-${escUrl(d.sym.name)}", d.sym.name, d.spec.ann),
       )
     }
 
@@ -798,31 +798,31 @@ object HtmlDocumentor {
       docSideBarSection(
         "Operations",
         "operations",
-        sortedOps, (o: TypedAst.Op) => sb.append(s"<a href='#op-${escUrl(o.sym.name)}'>${esc(o.sym.name)}</a>")
+        sortedOps, (o: TypedAst.Op) => docSideBarItem(s"#op-${escUrl(o.sym.name)}", o.sym.name, o.spec.ann)
       )
       docSideBarSection(
         "Traits",
         "traits",
         sortedTraits,
-        (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
+        (t: Trait) => docSideBarItem(escUrl(t.fileName), t.name, t.decl.ann),
       )
       docSideBarSection(
         "Effects",
         "effects",
         sortedEffs,
-        (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        (e: Effect) => docSideBarItem(escUrl(e.fileName), e.name, e.decl.ann),
       )
       docSideBarSection(
         "Enums",
         "enums",
         sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        (e: Enum) => docSideBarItem(escUrl(e.fileName), e.name, e.decl.ann),
       )
       docSideBarSection(
         "Structs",
         "structs",
         sortedStructs,
-        (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
+        (s: Struct) => docSideBarItem(escUrl(s.fileName), s.name, s.decl.ann),
       )
       docSideBarSection(
         "Type Aliases",
@@ -834,7 +834,7 @@ object HtmlDocumentor {
         "Definitions",
         "definitions",
         sortedModuleDefs,
-        (d: TypedAst.Def) => sb.append(s"<a href='#def-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
+        (d: TypedAst.Def) => docSideBarItem(s"#def-${escUrl(d.sym.name)}", d.sym.name, d.spec.ann),
       )
     }
 
@@ -897,25 +897,25 @@ object HtmlDocumentor {
         "Traits",
         "traits",
         sortedTraits,
-        (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
+        (t: Trait) => docSideBarItem(escUrl(t.fileName), t.name, t.decl.ann),
       )
       docSideBarSection(
         "Effects",
         "effects",
         sortedEffs,
-        (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        (e: Effect) => docSideBarItem(escUrl(e.fileName), e.name, e.decl.ann),
       )
       docSideBarSection(
         "Enums",
         "enums",
         sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        (e: Enum) => docSideBarItem(escUrl(e.fileName), e.name, e.decl.ann),
       )
       docSideBarSection(
         "Structs",
         "structs",
         sortedStructs,
-        (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
+        (s: Struct) => docSideBarItem(escUrl(s.fileName), s.name, s.decl.ann),
       )
       docSideBarSection(
         "Type Aliases",
@@ -927,7 +927,7 @@ object HtmlDocumentor {
         "Definitions",
         "definitions",
         sortedModuleDefs,
-        (d: TypedAst.Def) => sb.append(s"<a href='#def-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
+        (d: TypedAst.Def) => docSideBarItem(s"#def-${escUrl(d.sym.name)}", d.sym.name, d.spec.ann),
       )
     }
 
@@ -990,25 +990,25 @@ object HtmlDocumentor {
         "Traits",
         "traits",
         sortedTraits,
-        (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
+        (t: Trait) => docSideBarItem(escUrl(t.fileName), t.name, t.decl.ann),
       )
       docSideBarSection(
         "Effects",
         "effects",
         sortedEffs,
-        (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        (e: Effect) => docSideBarItem(escUrl(e.fileName), e.name, e.decl.ann),
       )
       docSideBarSection(
         "Enums",
         "enums",
         sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        (e: Enum) => docSideBarItem(escUrl(e.fileName), e.name, e.decl.ann),
       )
       docSideBarSection(
         "Structs",
         "structs",
         sortedStructs,
-        (s: Struct) => sb.append(s"<a href='${escUrl(s.fileName)}'>${esc(s.name)}</a>"),
+        (s: Struct) => docSideBarItem(escUrl(s.fileName), s.name, s.decl.ann),
       )
       docSideBarSection(
         "Type Aliases",
@@ -1020,7 +1020,7 @@ object HtmlDocumentor {
         "Definitions",
         "definitions",
         sortedModuleDefs,
-        (d: TypedAst.Def) => sb.append(s"<a href='#def-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
+        (d: TypedAst.Def) => docSideBarItem(s"#def-${escUrl(d.sym.name)}", d.sym.name, d.spec.ann),
       )
     }
 
@@ -1667,6 +1667,47 @@ object HtmlDocumentor {
         }
     }
     sb.append(")</span>")
+  }
+
+  /**
+    * Documents the stability badges (`Deprecated`, `Experimental`) carried by `anns`, if any.
+    *
+    * These are shown as small, color-coded pills wherever an item is listed (e.g. the sidebar),
+    * so that a reader scanning a list can spot an unstable or deprecated item without opening
+    * its page. The item's own page still documents the same annotations as plain text, via
+    * [[docAnnotations]].
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docStabilityBadges(anns: Annotations)(implicit sb: StringBuilder): Unit = {
+    val badges = anns.annotations.collect {
+      case Annotation.Deprecated(_) => "deprecated" -> "Deprecated"
+      case Annotation.Experimental(_) => "experimental" -> "Experimental"
+    }
+    if (badges.isEmpty) {
+      return
+    }
+
+    sb.append("<span class='badges'>")
+    for ((cls, label) <- badges) {
+      sb.append(s"<span class='badge badge-$cls'>$label</span>")
+    }
+    sb.append("</span>")
+  }
+
+  /**
+    * Documents a single entry in a sidebar list: a link to `href` labelled `name`, followed by
+    * any stability badges carried by `ann` (see [[docStabilityBadges]]).
+    *
+    * `href` is used as-is, so it must already be escaped (e.g. via [[escUrl]]) by the caller —
+    * callers that link to an anchor (e.g. `#def-foo`) only escape the name portion of the
+    * fragment, not the fixed prefix, so that escaping can't be done generically here.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docSideBarItem(href: String, name: String, ann: Annotations)(implicit sb: StringBuilder): Unit = {
+    sb.append(s"<a href='$href'>${esc(name)}</a>")
+    docStabilityBadges(ann)
   }
 
   /**
