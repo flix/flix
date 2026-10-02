@@ -314,7 +314,7 @@ object Main {
             val flix = mkFlixWithFiles(cmdOpts.files, options)
             val (optRoot, errors) = flix.check()
             if (errors.isEmpty) {
-              HtmlDocumentor.run(optRoot.get, docOrigin(cmdOpts), None, Bootstrap.getDocumentationDirectory(cwd))(flix)
+              HtmlDocumentor.run(optRoot.get, docOrigin(cmdOpts), Bootstrap.getDocumentationDirectory(cwd))(flix)
               exit(0)
             } else exitWithErrors(flix, errors, optRoot)
           }
