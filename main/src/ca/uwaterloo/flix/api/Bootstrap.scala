@@ -843,7 +843,7 @@ object Bootstrap {
 
   /** Returns `Err` if `path` is not a file that could be produced by [[HtmlDocumentor]] in the project at `p`. */
   private def isValidDocumentFile(path: Path, p: Path): Result[Unit, BootstrapError] = {
-    val knownFiles = List("favicon.png", "highlight.css", "index.js", "styles.css")
+    val knownFiles = List("favicon.png", "highlight.css", "highlight.js", "index.js", "styles.css")
     if (knownFiles.contains(path.getFileName.toString)) {
       return Ok(())
     }
@@ -1901,7 +1901,7 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     * `origin`: the project's own code, or the bundled library.
     */
   def doc(flix: Flix, origin: Origin): Result[Unit, BootstrapError] = {
-    typeCheck(flix).map(HtmlDocumentor.run(_, origin, projectPath, Bootstrap.getDocumentationDirectory(projectPath))(flix))
+    typeCheck(flix).map(HtmlDocumentor.run(_, origin, Bootstrap.getDocumentationDirectory(projectPath))(flix))
   }
 
   /**

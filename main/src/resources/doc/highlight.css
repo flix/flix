@@ -1,4 +1,4 @@
-/* The formatting of the code on a source page, see HtmlHighlighter.
+/* The formatting of a source page, see HtmlHighlighter.
 
    Only a source page links to this stylesheet, and it does so after `styles.css`, whose variables
    it uses. Every class of a token is specific to this stylesheet, so that the code can be styled
@@ -41,6 +41,29 @@
     --selected-line-color: var(--dark-selected-line-color);
 }
 /* END VARIABLES */
+
+
+
+/* BEGIN PAGE */
+/* A source page has no sidebar, and gives the width it frees to the code. */
+main:has(> .source-code) {
+    padding: 1rem 2rem;
+}
+main:has(> .source-code) > h1 {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    overflow-wrap: anywhere;
+}
+@media screen and (max-width: 800px) {
+    main:has(> .source-code) {
+        padding: 1rem 0.5rem;
+    }
+    /* The menu shows the sidebar, which a source page does not have. */
+    body:not(:has(nav)) #menu-toggle {
+        display: none;
+    }
+}
+/* END PAGE */
 
 
 

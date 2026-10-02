@@ -59,27 +59,6 @@ object HtmlDocumentor {
   private val Icons: String = "/doc/icons"
 
   /**
-    * The extension of a Flix source file, which the file name of its page leaves out.
-    */
-  private val SourceExtension: String = ".flix"
-
-  /**
-    * The path to the stylesheet of the highlighted code, relative to the resources folder.
-    */
-  private val HighlightStylesheet: String = "/doc/highlight.css"
-
-  /**
-    * The links that only the head of a source page has: the stylesheet of the highlighted code,
-    * and the bold weight of the font of code, which it displays keywords in.
-    *
-    * They are left out of every other page, so that those are displayed as before.
-    */
-  private val SourceLinks: String =
-    """
-      |<link href='highlight.css' rel='stylesheet'>
-      |<link href='https://fonts.googleapis.com/css?family=Fira+Code:700&display=swap' rel='stylesheet'>""".stripMargin
-
-  /**
     * Matches an HTML comment, including any whitespace that follows it.
     */
   private val CommentPattern: Pattern = Pattern.compile("(?s)<!--.*?-->\\s*")
@@ -97,36 +76,18 @@ object HtmlDocumentor {
   )
 
   /**
-    * The page that shows the code of a source.
-    *
-    * @param path     the path of the source as it is displayed, e.g. `Fs/FileSystem.flix`.
-    * @param fileName the file name of the page, e.g. `Fs.FileSystem.src.html`.
-    */
-  private case class SourcePage(path: Path, fileName: String)
-
-  /**
-    * The page of each source that has one, which the declarations of the source link to.
-    */
-  private case class SourcePages(pages: Map[Source, SourcePage])
-
-  /**
     * Generates the API documentation for `root` and writes it to `outputDir`.
     *
-    * Every source with the origin `origin` gets a page that shows its code, which its declarations
-    * link to. The path of the user's code is displayed relative to `projectRoot`.
+    * The declarations link to their source on the pages that [[HtmlHighlighter]] generates.
     */
-  def run(root: TypedAst.Root, origin: Origin, projectRoot: Path, outputDir: Path)(implicit flix: Flix): Unit = {
+  def run(root: TypedAst.Root, origin: Origin, outputDir: Path)(implicit flix: Flix): Unit = {
     val modulesRoot = splitModules(root)
     val filteredModulesRoot = filterModules(modulesRoot, origin)
     val pairedModulesRoot = pairModules(filteredModulesRoot)
 
-    val pages = mkSourcePages(root, origin, projectRoot)
+    visitMod(pairedModulesRoot, outputDir)
 
-    visitMod(pairedModulesRoot, outputDir)(flix, pages)
-
-    for ((src, page) <- pages.pages) {
-      writeDocFile(page.fileName, documentSource(src, page)(root), outputDir)
-    }
+    HtmlHighlighter.run(root, origin, outputDir)(documentPage)
 
     writeDocFile("404.html", document404(), outputDir)
 
@@ -134,73 +95,9 @@ object HtmlDocumentor {
   }
 
   /**
-    * Returns the page of every source in `root` that comes from `origin`.
-    *
-    * The file name of a page is the path of its source with the directories joined by `.`, like
-    * the page of a module, e.g. `Fs.FileSystem.src.html` for `Fs/FileSystem.flix`. It cannot clash
-    * with the page of a declaration, since no declaration is named `src`.
-    */
-  private def mkSourcePages(root: TypedAst.Root, origin: Origin, projectRoot: Path): SourcePages = {
-    val paths = for {
-      src <- root.sources.keys.toList
-      if src.origin == origin
-      path <- sourcePath(src, projectRoot)
-    } yield (src, path)
-
-    // Two paths can flatten to the same file name, e.g. `A/B.flix` and `A.B.flix`.
-    // The paths are visited in order, so which of them is renamed is deterministic.
-    val pages = paths.sortBy(_._2.toString).foldLeft(Map.empty[Source, SourcePage]) {
-      case (acc, (src, path)) =>
-        val taken = acc.values.map(_.fileName).toSet
-        val base = sourceBaseName(path)
-        val candidates = s"$base.src.html" #:: LazyList.from(2).map(i => s"$base-$i.src.html")
-        acc + (src -> SourcePage(path, candidates.filterNot(taken.contains).head))
-    }
-    SourcePages(pages)
-  }
-
-  /**
-    * Returns the path of `src` as it is displayed, if it has one.
-    *
-    * A source of the library is named by its path within the library. Any other source is shown
-    * relative to `projectRoot`, or by its file name alone if it lies outside it.
-    */
-  private def sourcePath(src: Source, projectRoot: Path): Option[Path] = {
-    val path = src.sourceName.toPath.map { path =>
-      src.origin match {
-        case Origin.Library => path
-        case _ =>
-          val root = projectRoot.toAbsolutePath.normalize()
-          val absolute = path.toAbsolutePath.normalize()
-          if (absolute.startsWith(root)) root.relativize(absolute) else absolute.getFileName
-      }
-    }
-    // A path without a name, e.g. the root of the file system, does not name a file.
-    path.filter(p => p != null && p.getNameCount > 0)
-  }
-
-  /**
-    * Returns the file name of the page of the source at `path`, without its extension,
-    * e.g. `Fs.FileSystem` for `Fs/FileSystem.flix`.
-    *
-    * Any character that would have to be escaped in a URL is replaced, so the name can be linked as is.
-    */
-  private def sourceBaseName(path: Path): String = {
-    val segments = pathSegments(path)
-    val name = (segments.init :+ segments.last.stripSuffix(SourceExtension)).mkString(".")
-    name.replaceAll("[^A-Za-z0-9._-]", "_")
-  }
-
-  /**
-    * Returns the segments of `path`, e.g. `Fs` and `FileSystem.flix` for `Fs/FileSystem.flix`.
-    */
-  private def pathSegments(path: Path): List[String] =
-    List.tabulate(path.getNameCount)(i => path.getName(i).toString)
-
-  /**
     * Documents the given `Module`, `mod`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix, pages: SourcePages): Unit = {
+  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix): Unit = {
     writeDocFile(mod.fileName, documentModule(mod), outputDir)
     visitContents(mod, outputDir)
   }
@@ -208,7 +105,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Trait`, `trt`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix, pages: SourcePages): Unit = {
+  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix): Unit = {
     writeDocFile(trt.fileName, documentTrait(trt), outputDir)
     trt.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -216,7 +113,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Effect`, `eff`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix, pages: SourcePages): Unit = {
+  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix): Unit = {
     writeDocFile(eff.fileName, documentEffect(eff), outputDir)
     eff.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -224,7 +121,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Enum`, `enm`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix, pages: SourcePages): Unit = {
+  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix): Unit = {
     writeDocFile(enm.fileName, documentEnum(enm), outputDir)
     enm.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -232,7 +129,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Struct`, `struct`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix, pages: SourcePages): Unit = {
+  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix): Unit = {
     writeDocFile(struct.fileName, documentStruct(struct), outputDir)
     struct.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -244,7 +141,7 @@ object HtmlDocumentor {
     * The items of a companion module are documented on the page of the item it belongs to,
     * so a companion module gets no page of its own.
     */
-  private def visitContents(mod: Module, outputDir: Path)(implicit flix: Flix, pages: SourcePages): Unit = {
+  private def visitContents(mod: Module, outputDir: Path)(implicit flix: Flix): Unit = {
     mod.submodules.foreach(visitMod(_, outputDir))
     mod.traits.foreach(visitTrait(_, outputDir))
     mod.effects.foreach(visitEffect(_, outputDir))
@@ -679,7 +576,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Module`, `mod`, returning a string of HTML.
     */
-  private def documentModule(mod: Module)(implicit flix: Flix, pages: SourcePages): String = {
+  private def documentModule(mod: Module)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedTraits = mod.traits.sortBy(_.name)
@@ -755,7 +652,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Trait`, `trt`, returning a string of HTML.
     */
-  private def documentTrait(trt: Trait)(implicit flix: Flix, pages: SourcePages): String = {
+  private def documentTrait(trt: Trait)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedAssocs = trt.decl.assocs.sortBy(_.sym.name)
@@ -866,7 +763,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Effect`, `eff`, returning a string of HTML.
     */
-  private def documentEffect(eff: Effect)(implicit flix: Flix, pages: SourcePages): String = {
+  private def documentEffect(eff: Effect)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedOps = eff.decl.ops.sortBy(_.sym.name)
@@ -964,7 +861,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Enum`, `enm`, returning a string of HTML.
     */
-  private def documentEnum(enm: Enum)(implicit flix: Flix, pages: SourcePages): String = {
+  private def documentEnum(enm: Enum)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedInstances = enm.instances.sortBy(_.trt.sym.name)
@@ -1057,7 +954,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Struct`, `struct`, returning a string of HTML.
     */
-  private def documentStruct(struct: Struct)(implicit flix: Flix, pages: SourcePages): String = {
+  private def documentStruct(struct: Struct)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedInstances = struct.instances.sortBy(_.trt.sym.name)
@@ -1171,29 +1068,21 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the code of the given source, `src`, whose page is `page`, returning a string of HTML.
+    * Documents a page without a sidebar that is called `name` and has the given `content`,
+    * returning a string of HTML.
     *
-    * The page has no sidebar, which leaves the width of the window to the code.
+    * This is the frame of the pages that [[HtmlHighlighter]] generates.
     */
-  private def documentSource(src: Source, page: SourcePage)(implicit root: TypedAst.Root): String = {
+  private def documentPage(name: String, fileName: String, content: String): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
-    val segments = pathSegments(page.path)
-
-    sb.append(mkHead(segments.mkString("/"), page.fileName, SourceLinks))
+    sb.append(mkHead(name, fileName))
     sb.append("<body class='no-script'>")
 
     docHeader()
 
-    sb.append("<main id='main-content' class='source-page'>")
-    if (segments.length > 1) {
-      sb.append("<div class='breadcrumbs'>")
-      segments.init.foreach(dir => sb.append(s"${esc(dir)} / "))
-      sb.append(s"<span>${esc(segments.last)}</span>")
-      sb.append("</div>")
-    }
-    sb.append(s"<h1>${esc(segments.last)}</h1>")
-    sb.append(HtmlHighlighter.highlight(src))
+    sb.append("<main id='main-content'>")
+    sb.append(content)
     sb.append("</main>")
 
     sb.append("</body>")
@@ -1204,11 +1093,8 @@ object HtmlDocumentor {
 
   /**
     * Generates the string representing the head of the HTML document.
-    *
-    * The `links` are additional elements of the head, which only the page at hand needs.
-    * They follow the stylesheet of the documentation, so a stylesheet among them can build on it.
     */
-  private def mkHead(name: String, fileName: String, links: String = ""): String = {
+  private def mkHead(name: String, fileName: String): String = {
     s"""<!doctype html><html lang='en'>
        |<head>
        |<meta charset='utf-8'>
@@ -1230,7 +1116,7 @@ object HtmlDocumentor {
        |<link href='https://fonts.googleapis.com/css?family=Noto+Sans&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Inter&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Open+Sans&display=swap' rel='stylesheet'>
-       |<link href='styles.css' rel='stylesheet'>$links
+       |<link href='styles.css' rel='stylesheet'>
        |<link href='favicon.png' rel='icon'>
        |<script type='module' src='./index.js'></script>
        |<title>Flix | ${esc(name)}</title>
@@ -1477,7 +1363,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, pages: SourcePages, sb: StringBuilder): Unit = {
+  private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='ta-${esc(ta.sym.name)}'>")
     sb.append("<div class='decl'>")
     sb.append("<code>")
@@ -1498,7 +1384,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docDef(defn: TypedAst.Def)(implicit flix: Flix, pages: SourcePages, sb: StringBuilder): Unit = {
+  private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='def-${esc(defn.sym.name)}'>")
     docSpec(defn.sym.name, defn.spec, defn.loc, Some(s"def-${defn.sym.name}"))
     sb.append("</div>")
@@ -1509,7 +1395,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, pages: SourcePages, sb: StringBuilder): Unit = {
+  private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='sig-${esc(sig.sym.name)}'>")
     docSpec(sig.sym.name, sig.spec, sig.loc, Some(s"sig-${sig.sym.name}"))
     sb.append("</div>")
@@ -1520,7 +1406,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docOp(op: TypedAst.Op)(implicit flix: Flix, pages: SourcePages, sb: StringBuilder): Unit = {
+  private def docOp(op: TypedAst.Op)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='op-${esc(op.sym.name)}'>")
     docSpec(op.sym.name, op.spec, op.loc, Some(s"op-${op.sym.name}"))
     sb.append("</div>")
@@ -1532,7 +1418,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSpec(name: String, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit flix: Flix, pages: SourcePages, sb: StringBuilder): Unit = {
+  private def docSpec(name: String, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit flix: Flix, sb: StringBuilder): Unit = {
     docAnnotations(spec.ann)
     sb.append("<div class='decl'>")
     sb.append(s"<code>")
@@ -1555,7 +1441,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docAssoc(assoc: TypedAst.AssocTypeSig)(implicit flix: Flix, pages: SourcePages, sb: StringBuilder): Unit = {
+  private def docAssoc(assoc: TypedAst.AssocTypeSig)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<div>")
     sb.append("<div class='decl'>")
     sb.append("<code>")
@@ -1579,7 +1465,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, pages: SourcePages, sb: StringBuilder): Unit = {
+  private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<div>")
     docAnnotations(instance.ann)
     sb.append("<div class='decl'>")
@@ -1863,7 +1749,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSourceLocation(loc: SourceLocation)(implicit pages: SourcePages, sb: StringBuilder): Unit = {
+  private def docSourceLocation(loc: SourceLocation)(implicit sb: StringBuilder): Unit = {
     createLink(loc).foreach(link => sb.append(s"<a class='source' href='$link'>Source</a>"))
   }
 
@@ -1876,7 +1762,7 @@ object HtmlDocumentor {
     *               If `None`, the button will not be included.
     * @param loc    The source location that the 'source' button will refer to.
     */
-  private def docActions(linkId: Option[String], loc: SourceLocation)(implicit flix: Flix, pages: SourcePages, sb: StringBuilder): Unit = {
+  private def docActions(linkId: Option[String], loc: SourceLocation)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='actions'>")
     linkId.foreach(docLink)
     docSourceLocation(loc)
@@ -2063,9 +1949,6 @@ object HtmlDocumentor {
     val stylesheet = readResourceString(Stylesheet) + mkIconStyles()
     writeFile("styles.css", stylesheet.getBytes, outputDir)
 
-    val highlightStylesheet = readResource(HighlightStylesheet)
-    writeFile("highlight.css", highlightStylesheet, outputDir)
-
     val favicon = readResource(FavIcon)
     writeFile("favicon.png", favicon, outputDir)
 
@@ -2142,18 +2025,11 @@ object HtmlDocumentor {
   /**
     * Create a raw link to the given `SourceLocation`, if it has one.
     *
-    * The link is to the lines of `loc` on the page of its source. A source without a page,
-    * i.e. one that is not part of what is documented, has no link.
-    *
-    * The fragment names the first and the last line, e.g. `#L10-L20`, which `index.js` marks and
-    * scrolls to. A single line is named by its id alone, which the browser can jump to by itself.
+    * The link is to the lines of `loc` on the page of its source, see [[HtmlHighlighter]].
     *
     * The URL is already escaped.
     */
-  private def createLink(loc: SourceLocation)(implicit pages: SourcePages): Option[String] = {
-    val lines = if (loc.startLine == loc.endLine) s"L${loc.startLine}" else s"L${loc.startLine}-L${loc.endLine}"
-    pages.pages.get(loc.source).map(page => s"${page.fileName}#$lines")
-  }
+  private def createLink(loc: SourceLocation): Option[String] = HtmlHighlighter.link(loc)
 
   /**
     * Escape any HTML in the string.
