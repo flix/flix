@@ -126,7 +126,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |    def op(): Unit \ IO
         |}
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalEffectfulOperation](result)
   }
 

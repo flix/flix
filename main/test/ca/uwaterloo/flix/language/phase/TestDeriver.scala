@@ -53,7 +53,7 @@ class TestDeriver extends AnyFunSuite with TestUtils {
         |    case E
         |}
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DerivationError.IllegalDerivation](result)
   }
 

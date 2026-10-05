@@ -110,7 +110,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
            |}
            |
        """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[RedundancyError.HiddenVarSym](result)
   }
 
@@ -386,7 +386,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |}
         |
       """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
     expectError[RedundancyError.ShadowingName](result)
   }
@@ -1447,7 +1447,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |    ?foo
          |
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 
@@ -1459,7 +1459,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |    ?foo
          |
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 
