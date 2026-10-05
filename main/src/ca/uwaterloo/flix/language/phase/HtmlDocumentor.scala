@@ -1869,14 +1869,14 @@ object HtmlDocumentor {
     * Document the given `Type`, `tpe`, from its type tree, rather than from a single
     * pre-formatted string.
     *
-    * Every type constructor that has a documentation page (an enum, a struct, an effect or a
-    * type alias) becomes a link to that page, the same way a trait name in a `with` clause
-    * already does. A type constructor with no page (a built-in like
-    * `Int32` or `List`, if it has been filtered out of the documentation) is printed as plain
-    * text. A type variable is printed with its own `type-var` class, distinct from a type
-    * constructor. An effect nested anywhere in `tpe` -- e.g. inside a parameter's own function
-    * type -- is printed with the same `effect` class a top-level effect gets, via
-    * [[docEffectFormula]], rather than being flattened into the surrounding type's plain text.
+    * Every type constructor that has a documentation page (an enum, a struct, an effect, a type
+    * alias, or one of the 14 primitives with a companion module) becomes a link to that page, the
+    * same way a trait name in a `with` clause already does. A built-in with no page of its own
+    * (e.g. `Void`, `Lazy`) is printed as plain text. A type variable is printed with its own
+    * `type-var` class, distinct from a type constructor. An effect nested anywhere in `tpe` --
+    * e.g. inside a parameter's own function type -- is printed with the same `effect` class a
+    * top-level effect gets, via [[docEffectFormula]], rather than being flattened into the
+    * surrounding type's plain text.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
@@ -1990,26 +1990,34 @@ object HtmlDocumentor {
     * handled here can fall back to formatting it as a whole via [[docFallback]].
     */
   private def docTypeConstructor(tc: TypeConstructor, args: List[Type], whole: Type)(implicit flix: Flix, sb: StringBuilder): Unit = tc match {
+    // These 14 primitives each have a companion module, and so a real documentation page, in the
+    // standard library (confirmed against main/src/library/*.flix): link to it like any other
+    // documentable type constructor. The display name doubles as the page's file name, since each
+    // is a top-level module (e.g. `String.html` for `Str`, whose display name corrects the
+    // constructor's own case name to match the module's actual name).
+    case TypeConstructor.Bool => docPrimitiveTypeName("Bool"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Char => docPrimitiveTypeName("Char"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Float32 => docPrimitiveTypeName("Float32"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Float64 => docPrimitiveTypeName("Float64"); docTypeArgsInBrackets(args)
+    case TypeConstructor.BigDecimal => docPrimitiveTypeName("BigDecimal"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Int8 => docPrimitiveTypeName("Int8"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Int16 => docPrimitiveTypeName("Int16"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Int32 => docPrimitiveTypeName("Int32"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Int64 => docPrimitiveTypeName("Int64"); docTypeArgsInBrackets(args)
+    case TypeConstructor.BigInt => docPrimitiveTypeName("BigInt"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Str => docPrimitiveTypeName("String"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Regex => docPrimitiveTypeName("Regex"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Array => docPrimitiveTypeName("Array"); docTypeArgsInBrackets(args)
+    case TypeConstructor.Vector => docPrimitiveTypeName("Vector"); docTypeArgsInBrackets(args)
+
+    // The remaining built-ins have no companion module and so no page to link to: print plain
+    // text, same as before.
     case TypeConstructor.Void => docPlainTypeName("Void"); docTypeArgsInBrackets(args)
     case TypeConstructor.Unit => docPlainTypeName("Unit"); docTypeArgsInBrackets(args)
     case TypeConstructor.Null => docPlainTypeName("Null"); docTypeArgsInBrackets(args)
-    case TypeConstructor.Bool => docPlainTypeName("Bool"); docTypeArgsInBrackets(args)
-    case TypeConstructor.Char => docPlainTypeName("Char"); docTypeArgsInBrackets(args)
-    case TypeConstructor.Float32 => docPlainTypeName("Float32"); docTypeArgsInBrackets(args)
-    case TypeConstructor.Float64 => docPlainTypeName("Float64"); docTypeArgsInBrackets(args)
-    case TypeConstructor.BigDecimal => docPlainTypeName("BigDecimal"); docTypeArgsInBrackets(args)
-    case TypeConstructor.Int8 => docPlainTypeName("Int8"); docTypeArgsInBrackets(args)
-    case TypeConstructor.Int16 => docPlainTypeName("Int16"); docTypeArgsInBrackets(args)
-    case TypeConstructor.Int32 => docPlainTypeName("Int32"); docTypeArgsInBrackets(args)
-    case TypeConstructor.Int64 => docPlainTypeName("Int64"); docTypeArgsInBrackets(args)
-    case TypeConstructor.BigInt => docPlainTypeName("BigInt"); docTypeArgsInBrackets(args)
-    case TypeConstructor.Str => docPlainTypeName("String"); docTypeArgsInBrackets(args)
-    case TypeConstructor.Regex => docPlainTypeName("Regex"); docTypeArgsInBrackets(args)
     case TypeConstructor.Sender => docPlainTypeName("Sender"); docTypeArgsInBrackets(args)
     case TypeConstructor.Receiver => docPlainTypeName("Receiver"); docTypeArgsInBrackets(args)
     case TypeConstructor.Lazy => docPlainTypeName("Lazy"); docTypeArgsInBrackets(args)
-    case TypeConstructor.Array => docPlainTypeName("Array"); docTypeArgsInBrackets(args)
-    case TypeConstructor.Vector => docPlainTypeName("Vector"); docTypeArgsInBrackets(args)
     case TypeConstructor.RegionToStar => docPlainTypeName("Region"); docTypeArgsInBrackets(args)
     case TypeConstructor.True => docPlainTypeName("true")
     case TypeConstructor.False => docPlainTypeName("false")
@@ -2105,12 +2113,24 @@ object HtmlDocumentor {
 
   /**
     * Documents the given plain (non-linkable) type constructor name, `name`, e.g. a built-in
-    * like `Int32` that has no documentation page.
+    * like `Void` or `Lazy` that has no documentation page of its own.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docPlainTypeName(name: String)(implicit sb: StringBuilder): Unit = {
     sb.append(s"<span class='type'>${esc(name)}</span>")
+  }
+
+  /**
+    * Documents the name of a primitive type, `name`, creating a link to its companion module's
+    * documentation page, e.g. `Int32` to `Int32.html`. Unlike [[docDocumentedTypeName]], this is
+    * only ever called for the 14 primitives that are known, statically, to have a page -- see the
+    * comment in [[docTypeConstructor]].
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docPrimitiveTypeName(name: String)(implicit sb: StringBuilder): Unit = {
+    docDocumentedTypeName(s"$name.html", "primitive type", name)
   }
 
   /**
