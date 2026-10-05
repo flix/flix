@@ -132,6 +132,7 @@ class TestStratifier extends AnyFunSuite with TestUtils {
       |    (query p2 select x from B301(x) |> Vector.length)
       |    > 0
       |}
+      |mod Vector { pub def length(_v: Vector[a]): Int32 = 0 }
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
@@ -155,6 +156,8 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |    (query p1 select x from A302(x) |> Vector.length) +
         |    (query p2 select x from B302(x) |> Vector.length)
         |    > 0
+        |pub enum Option[t] with Eq, Order { case None, case Some(t) }
+        |mod Vector { pub def length(_v: Vector[a]): Int32 = 0 }
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
@@ -206,6 +209,7 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |  B((c: String)) :- fix C(c; 12).
         |  C((c: String); 12) :- A(c).
         |}
+        |instance LowerBound[Int32] { pub def minValue(): Int32 = 0 }
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
@@ -220,6 +224,7 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |  C(c, x) :- fix D(c; x).
         |  D(c; x) :- B(c; x).
         |}
+        |instance LowerBound[Int32] { pub def minValue(): Int32 = 0 }
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
@@ -234,6 +239,8 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |    };
         |    let ans = query p select (a, b) from A(a; b);
         |    Vector.length(ans)
+        |instance LowerBound[Int32] { pub def minValue(): Int32 = 0 }
+        |mod Vector { pub def length(_v: Vector[a]): Int32 = 0 }
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
@@ -248,6 +255,8 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |    };
         |    let ans = query p select (a, b) from A(a; b);
         |    Vector.length(ans)
+        |instance LowerBound[Int32] { pub def minValue(): Int32 = 0 }
+        |mod Vector { pub def length(_v: Vector[a]): Int32 = 0 }
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
@@ -262,6 +271,8 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |    };
         |    let ans = query p select (a, b) from A(a; b);
         |    Vector.length(ans)
+        |instance LowerBound[Int32] { pub def minValue(): Int32 = 0 }
+        |mod Vector { pub def length(_v: Vector[a]): Int32 = 0 }
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
@@ -276,6 +287,8 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |    };
         |    let ans = query p select (a, b) from A(a; b);
         |    Vector.length(ans)
+        |instance LowerBound[Int32] { pub def minValue(): Int32 = 0 }
+        |mod Vector { pub def length(_v: Vector[a]): Int32 = 0 }
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
@@ -290,6 +303,8 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |    };
         |    let ans = query p select (a, b) from A(a; b);
         |    Vector.length(ans)
+        |instance LowerBound[Int32] { pub def minValue(): Int32 = 0 }
+        |mod Vector { pub def length(_v: Vector[a]): Int32 = 0 }
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
@@ -304,6 +319,8 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |    };
         |    let ans = query p select (a, b) from A(a; b);
         |    Vector.length(ans)
+        |instance LowerBound[Int32] { pub def minValue(): Int32 = 0 }
+        |mod Vector { pub def length(_v: Vector[a]): Int32 = 0 }
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)

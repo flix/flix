@@ -1048,8 +1048,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |def foo(): Unit \ IO =
            |    let _ = new File(0);
            |    ()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ConstructorNotFound](result)
   }
 
@@ -1061,8 +1062,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |def foo(): Unit \ IO =
            |    let _ = new String(true);
            |    ()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ConstructorNotFound](result)
   }
 
@@ -1074,8 +1076,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |def foo(): Unit \ IO =
            |    let _ = new String(true, 'a', "test");
            |    ()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ConstructorNotFound](result)
   }
 
@@ -1245,8 +1248,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def foo(): String \ IO = {
         |    Arrays.deepToString(Array#{} @ Static)
         |}
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1271,8 +1275,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
       raw"""
            |def foo(): String \ IO =
            |    (2).toString()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -1281,8 +1286,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
       raw"""
            |def foo(): Bool \ IO =
            |    true.equals(true)
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -1291,8 +1297,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
       raw"""
            |def foo(): Int32 \ IO =
            |    (2.0f64).hashCode()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -1301,8 +1308,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
       raw"""
            |def foo(): String \ IO =
            |    'a'.toString()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -2922,8 +2930,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |        @String
            |        def toString(_this: Serializable): String = "hello"
            |    }
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalNonJavaAnnotation](result)
   }
 
@@ -2935,8 +2944,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new Object @ rc { };
            |    ()
            |}
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.NewObjectWithStructRegion](result)
   }
 
@@ -2948,8 +2958,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new Object @ rc { x = 1 };
            |    ()
            |}
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.NewObjectWithStructFields](result)
   }
 
@@ -2961,8 +2972,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new Object @ rc { x = 1 };
            |    ()
            |}
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.NewObjectWithStructRegion](result)
     expectError[ResolutionError.NewObjectWithStructFields](result)
   }
@@ -2974,8 +2986,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |def foo(): Unit \ IO =
            |    let _ = new S { def new(): S \ IO = super() };
            |    ()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.NewStructWithObjectConstructors](result)
   }
 
@@ -3001,8 +3014,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |        def m(): Unit = ()
            |    };
            |    ()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.NewStructWithObjectConstructors](result)
     expectError[ResolutionError.NewStructWithObjectMethods](result)
   }
@@ -3013,8 +3027,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |def foo(): Unit \ IO =
            |    let _ = new Foo { def hello(): Unit = () };
            |    ()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -3025,8 +3040,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new Foo @ rc { x = 1 };
            |    ()
            |}
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedStruct](result)
   }
 }

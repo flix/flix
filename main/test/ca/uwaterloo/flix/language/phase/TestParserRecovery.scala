@@ -769,8 +769,10 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def foo(): Unit \ IO = if (false) if (true) println(1) else println(1)
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -972,8 +974,10 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    println("Hello World!")
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -984,8 +988,9 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Unit \ IO =
         |    def bar(): Int32 = 123
         |def main(): Unit = ()
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }

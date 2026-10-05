@@ -18,8 +18,9 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     val input =
       """
         |def main(_blah: Array[String, _]): Unit \ IO = checked_ecast(())
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
@@ -27,8 +28,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     val input =
       """
         |def main(_blah: Array[a, Static]): Unit \ IO = checked_ecast(())
+        |pub eff IO
+        |pub type alias Static = IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
@@ -38,8 +41,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |trait C[a]
         |
         |def main(_blah: Array[a, Static]): Unit \ IO with C[a] = checked_ecast(())
+        |pub eff IO
+        |pub type alias Static = IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
@@ -216,8 +221,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |    Print.print();
         |    println("Hello, World!")
         |
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalEntryPointEffect](result)
   }
 
@@ -281,8 +288,9 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |    E.op();
         |    checked_ecast(())
         |}
+        |pub eff IO
       """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalEntryPointEffect](result)
   }
 
@@ -305,8 +313,9 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     val input =
       """
         |def main(): a \ IO = checked_ecast(???)
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
@@ -325,8 +334,9 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     val input =
       """
         |def main(): Int64 \ IO = checked_ecast(42i64)
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalEntryPointReturnType](result)
   }
 
@@ -354,8 +364,9 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Int64 \ IO = checked_ecast(42i64)
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
+    val result = check(input, Options.TestWithLibNix.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
     expectError[EntryPointError.IllegalEntryPointReturnType](result)
   }
 
@@ -405,8 +416,9 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     val input =
       """
         |def main(): Unit \ IO = checked_ecast(())
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 
@@ -414,8 +426,9 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     val input =
       """
         |def main(): Unit \ NonDet = checked_ecast(())
+        |pub eff NonDet
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 
@@ -423,8 +436,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     val input =
       """
         |def main(): Unit \ {NonDet, IO} = checked_ecast(())
+        |pub eff IO
+        |pub eff NonDet
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 
@@ -467,8 +482,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 
@@ -493,8 +510,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit \ E = E.op()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 
@@ -536,8 +555,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit \ E1 + E2 = E1.op();E2.op()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 
@@ -579,8 +600,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit \ E2 + E1 = E2.op();E1.op()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 
@@ -639,8 +662,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit \ E1 + E2 + E3 = E1.op1();E2.op2();E3.op3()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 
@@ -699,8 +724,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit \ E1 + E3 = E1.op1();E3.op3()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 
@@ -758,8 +785,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit \ E1 + E2 + E3 + IO = E1.op1();E2.op2();E3.op3();println("Hello World")
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 

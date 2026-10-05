@@ -45,8 +45,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.DuplicateHandler](result)
   }
 
@@ -71,8 +73,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalArity](result)
   }
 
@@ -97,8 +101,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalArity](result)
   }
 
@@ -174,8 +180,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalConstraint](result)
   }
 
@@ -204,8 +212,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalEffect](result)
   }
 
@@ -251,8 +261,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalEffect](result)
   }
 
@@ -272,8 +284,9 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalEffectArguments](result)
   }
 
@@ -293,8 +306,9 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalEffectArguments](result)
   }
 
@@ -314,8 +328,9 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalEffectArguments](result)
   }
 
@@ -340,8 +355,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalParameterType](result)
   }
 
@@ -359,8 +376,9 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalParameterType](result)
   }
 
@@ -385,8 +403,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalParameterType](result)
   }
 
@@ -411,8 +431,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalParameterType](result)
   }
 
@@ -437,8 +459,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalParameterType](result)
   }
 
@@ -463,8 +487,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalReturnType](result)
   }
 
@@ -489,8 +515,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalReturnType](result)
   }
 
@@ -510,8 +538,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.MissingHandledEffect](result)
   }
 
@@ -536,8 +566,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.MissingHandledEffect](result)
   }
 
@@ -562,8 +594,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |}
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.NonPublicHandler](result)
   }
 
@@ -586,8 +620,10 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |            }
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.NotInCompanionModule](result)
   }
 
