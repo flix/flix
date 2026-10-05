@@ -65,14 +65,16 @@ object Reducer {
       val ls = lctx.lparams.toList
       val unboxedType = JvmAst.UnboxedType(unboxedType0.tpe)
 
-      // Add all types.
-      // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
-      ctx.addDefType(d.arrowType)
-      ctx.addDefType(unboxedType.tpe)
-
       val pcPoints = lctx.getPcPoints
 
-      JvmAst.Def(ann, mod, sym, fparams, ls, pcPoints, e, tpe, unboxedType, loc)
+      val defn = JvmAst.Def(ann, mod, sym, fparams, ls, pcPoints, e, tpe, unboxedType, loc)
+
+      // Add all types.
+      // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
+      ctx.addDefType(defn.arrowType)
+      ctx.addDefType(unboxedType.tpe)
+
+      defn
   }
 
   private def visitClo(c: ErasedAst.Clo)(implicit root: ErasedAst.Root, ctx: SharedContext): JvmAst.Clo = c match {
@@ -86,17 +88,19 @@ object Reducer {
       // `ls` is initialized based on the context mutation of `visitExpr`
       val ls = lctx.lparams.toList
 
+      val pcPoints = lctx.getPcPoints
+
+      val clo = JvmAst.Clo(sym, cparams, fparams, ls, pcPoints, e, tpe, loc)
+
       // Add all types.
       // `clo.fparams` and `clo.tpe` are both included in `clo.arrowType`
-      ctx.addDefType(c.arrowType)
+      ctx.addDefType(clo.arrowType)
       // Compute the types in the captured formal parameters.
       for (cp <- cparams) {
         ctx.addDefType(cp.tpe)
       }
 
-      val pcPoints = lctx.getPcPoints
-
-      JvmAst.Clo(sym, cparams, fparams, ls, pcPoints, e, tpe, loc)
+      clo
   }
 
   private def visitEnum(enm: ErasedAst.Enum): JvmAst.Enum = {
