@@ -23,6 +23,7 @@ object ErasedAst {
                   mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
+  /** A top-level def or a lifted local def. It has no captured variables. */
   case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, fparams: List[FormalParam], exp: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation)
 
   /** A lifted lambda. The closure parameters `cparams` are its captured variables. */
