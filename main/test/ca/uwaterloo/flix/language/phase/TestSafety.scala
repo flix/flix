@@ -90,7 +90,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(x) :- B(Some(x)).
         |}
       """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[IllegalPatternInBodyAtom](result)
   }
 
@@ -101,7 +101,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(1) :- B(Some(2)).
         |}
       """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[IllegalPatternInBodyAtom](result)
   }
 
@@ -112,7 +112,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(1) :- B(None).
         |}
       """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[IllegalPatternInBodyAtom](result)
   }
 
@@ -123,7 +123,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(x) :- B(()), C(x::_).
         |}
     """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[IllegalPatternInBodyAtom](result)
   }
 

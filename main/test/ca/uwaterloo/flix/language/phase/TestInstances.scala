@@ -422,7 +422,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    pub def f(x: Int64): Set[String] = ???
         |}
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MismatchedSignatures](result)
 
   }

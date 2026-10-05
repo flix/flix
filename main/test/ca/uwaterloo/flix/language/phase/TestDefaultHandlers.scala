@@ -226,7 +226,7 @@ class TestDefaultHandlers extends AnyFunSuite with TestUtils {
         |
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[DefaultHandlerError.IllegalEffect](result)
   }
 

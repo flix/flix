@@ -221,7 +221,7 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |  D(c; x) :- B(c; x).
         |}
       """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
   }
 
@@ -235,7 +235,7 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |    let ans = query p select (a, b) from A(a; b);
         |    Vector.length(ans)
       """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
   }
 
@@ -249,7 +249,7 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |    let ans = query p select (a, b) from A(a; b);
         |    Vector.length(ans)
       """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
   }
 
@@ -263,7 +263,7 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |    let ans = query p select (a, b) from A(a; b);
         |    Vector.length(ans)
       """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
   }
 
@@ -277,7 +277,7 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |    let ans = query p select (a, b) from A(a; b);
         |    Vector.length(ans)
       """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
   }
 
@@ -291,7 +291,7 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |    let ans = query p select (a, b) from A(a; b);
         |    Vector.length(ans)
       """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
   }
 
@@ -305,7 +305,7 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |    let ans = query p select (a, b) from A(a; b);
         |    Vector.length(ans)
       """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
   }
 
