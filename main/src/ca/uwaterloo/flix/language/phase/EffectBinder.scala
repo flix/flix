@@ -45,10 +45,11 @@ object EffectBinder {
     */
   def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("EffectBinder") {
     val newDefs = ParOps.parMapValues(root.defs)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn)))
+    val newClos = ParOps.parMapValues(root.clos)(clo => flix.profile(clo.sym, clo.loc)(visitClo(clo)))
     val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newStructs = ParOps.parMapValues(root.structs)(visitStruct)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
-    ReducedAst.Root(newDefs, newEnums, newStructs, newEffects, root.mainEntryPoint, root.sources)
+    ReducedAst.Root(newDefs, newClos, newEnums, newStructs, newEffects, root.mainEntryPoint, root.sources)
   }
 
   private sealed trait Binder
@@ -62,11 +63,22 @@ object EffectBinder {
     * operand stack.
     */
   private def visitDef(defn: LiftedAst.Def)(implicit flix: Flix): ReducedAst.Def = defn match {
-    case LiftedAst.Def(ann, mod, sym, cparams0, fparams0, exp0, tpe, loc) =>
+    case LiftedAst.Def(ann, mod, sym, fparams0, exp0, tpe, loc) =>
+      val fparams = fparams0.map(visitParam)
+      val exp = visitExpr(exp0)
+      ReducedAst.Def(ann, mod, sym, fparams, exp, tpe, ReducedAst.UnboxedType(tpe), loc)
+  }
+
+  /**
+    * Transforms the [[LiftedAst.Clo]] such that effect operations will be run without an
+    * operand stack.
+    */
+  private def visitClo(clo: LiftedAst.Clo)(implicit flix: Flix): ReducedAst.Clo = clo match {
+    case LiftedAst.Clo(sym, cparams0, fparams0, exp0, tpe, loc) =>
       val cparams = cparams0.map(visitParam)
       val fparams = fparams0.map(visitParam)
       val exp = visitExpr(exp0)
-      ReducedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, ReducedAst.UnboxedType(tpe), loc)
+      ReducedAst.Clo(sym, cparams, fparams, exp, tpe, loc)
   }
 
   private def visitEnum(enm: LiftedAst.Enum): ReducedAst.Enum = enm match {

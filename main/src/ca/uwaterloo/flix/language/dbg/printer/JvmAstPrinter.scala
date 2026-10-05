@@ -8,6 +8,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.JvmAst.Expr
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Modifiers}
 import ca.uwaterloo.flix.language.ast.{JvmAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.jvm.ClassDescs
@@ -18,10 +19,22 @@ object JvmAstPrinter {
   /** Returns the [[DocAst.Program]] representation of `root`. */
   def print(root: JvmAst.Root): DocAst.Program = {
     val defs = root.defs.values.map {
-      case JvmAst.Def(ann, mod, sym, cparams, fparams, _, _, stmt, tpe, _, _) =>
+      case JvmAst.Def(ann, mod, sym, fparams, _, _, stmt, tpe, _, _) =>
         DocAst.Def(
           ann,
           mod,
+          sym,
+          fparams.map(printOffsetFormalParam),
+          SimpleTypePrinter.print(tpe),
+          PurityPrinter.print(stmt.purity),
+          print(stmt)
+        )
+    }.toList
+    val clos = root.clos.values.map {
+      case JvmAst.Clo(sym, cparams, fparams, _, _, stmt, tpe, _) =>
+        DocAst.Def(
+          Annotations.Empty,
+          Modifiers.Empty,
           sym,
           (cparams ++ fparams).map(printOffsetFormalParam),
           SimpleTypePrinter.print(tpe),
@@ -29,7 +42,7 @@ object JvmAstPrinter {
           print(stmt)
         )
     }.toList
-    DocAst.Program(Nil, defs, Nil)
+    DocAst.Program(Nil, defs ++ clos, Nil)
   }
 
   /** Returns the [[DocAst.Expr]] representation of `e`. */

@@ -43,18 +43,26 @@ object Eraser {
     implicit val r: ReducedAst.Root = root
     implicit val ctx: SharedContext = new SharedContext()
     val newDefs = ParOps.parMapValues(root.defs)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn)))
+    val newClos = ParOps.parMapValues(root.clos)(clo => flix.profile(clo.sym, clo.loc)(visitClo(clo)))
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
     // Specializations must happen after all other types and expressions are visited.
     val newEnums = specializeEnums(ctx.getEnumSpecializations)
     val newStructs = specializeStructs(ctx.getStructSpecializations)
-    ErasedAst.Root(newDefs, newEnums, newStructs, newEffects, root.mainEntryPoint, root.sources)
+    ErasedAst.Root(newDefs, newClos, newEnums, newStructs, newEffects, root.mainEntryPoint, root.sources)
   }(DebugNoOp())
 
   private def visitDef(defn: ReducedAst.Def)(implicit ctx: SharedContext, flix: Flix): ErasedAst.Def = defn match {
-    case ReducedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, originalTpe, loc) =>
+    case ReducedAst.Def(ann, mod, sym, fparams, exp, tpe, originalTpe, loc) =>
       val eNew = visitExp(exp)
       val e = ErasedAst.Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), exp.purity, loc)
-      ErasedAst.Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), e, box(tpe), ErasedAst.UnboxedType(erase(originalTpe.tpe)), loc)
+      ErasedAst.Def(ann, mod, sym, fparams.map(visitParam), e, box(tpe), ErasedAst.UnboxedType(erase(originalTpe.tpe)), loc)
+  }
+
+  private def visitClo(clo: ReducedAst.Clo)(implicit ctx: SharedContext, flix: Flix): ErasedAst.Clo = clo match {
+    case ReducedAst.Clo(sym, cparams, fparams, exp, tpe, loc) =>
+      val eNew = visitExp(exp)
+      val e = ErasedAst.Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), exp.purity, loc)
+      ErasedAst.Clo(sym, cparams.map(visitParam), fparams.map(visitParam), e, box(tpe), loc)
   }
 
   private def specializeEnums(specializations: List[(Symbol.EnumSym, List[SimpleType], Symbol.EnumSym)])(implicit root: ReducedAst.Root, flix: Flix): Map[Symbol.EnumSym, ErasedAst.Enum] = {

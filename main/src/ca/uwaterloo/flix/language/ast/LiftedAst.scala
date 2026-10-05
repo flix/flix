@@ -15,9 +15,10 @@ import java.lang.constant.ClassDesc
 
 object LiftedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
+                  clos: Map[Symbol.DefnSym, Clo],
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffSym, Effect],
@@ -25,7 +26,10 @@ object LiftedAst {
                   entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], exp: Expr, tpe: SimpleType, loc: SourceLocation)
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, fparams: List[FormalParam], exp: Expr, tpe: SimpleType, loc: SourceLocation)
+
+  /** A lifted lambda. The closure parameters `cparams` are its captured variables. */
+  case class Clo(sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], exp: Expr, tpe: SimpleType, loc: SourceLocation)
 
   case class Enum(ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: Map[Symbol.CaseSym, Case], loc: SourceLocation)
 

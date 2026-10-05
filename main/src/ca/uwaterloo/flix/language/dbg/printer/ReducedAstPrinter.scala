@@ -8,6 +8,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.ReducedAst.Expr
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Modifiers}
 import ca.uwaterloo.flix.language.ast.{ReducedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.jvm.ClassDescs
@@ -20,10 +21,22 @@ object ReducedAstPrinter {
     */
   def print(root: ReducedAst.Root): DocAst.Program = {
     val defs = root.defs.values.map {
-      case ReducedAst.Def(ann, mod, sym, cparams, fparams, stmt, tpe, _, _) =>
+      case ReducedAst.Def(ann, mod, sym, fparams, stmt, tpe, _, _) =>
         DocAst.Def(
           ann,
           mod,
+          sym,
+          fparams.map(printFormalParam),
+          SimpleTypePrinter.print(tpe),
+          PurityPrinter.print(stmt.purity),
+          print(stmt)
+        )
+    }.toList
+    val clos = root.clos.values.map {
+      case ReducedAst.Clo(sym, cparams, fparams, stmt, tpe, _) =>
+        DocAst.Def(
+          Annotations.Empty,
+          Modifiers.Empty,
           sym,
           (cparams ++ fparams).map(printFormalParam),
           SimpleTypePrinter.print(tpe),
@@ -31,7 +44,7 @@ object ReducedAstPrinter {
           print(stmt)
         )
     }.toList
-    DocAst.Program(Nil, defs, Nil)
+    DocAst.Program(Nil, defs ++ clos, Nil)
   }
 
   /**
