@@ -131,9 +131,8 @@ pub mod DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toString(l: DelayList[a]): String with ToString[a] = region rc {
-        "DelayList(" + (DelayList.iterator(rc, l) |> Iterator.join(", ")) + ")"
-    }
+    pub def toString(l: DelayList[a]): String with ToString[a] =
+        "DelayList(" + DelayList.join(", ", l) + ")"
 
     ///
     /// Returns an empty DelayList.

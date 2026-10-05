@@ -305,8 +305,7 @@ pub mod MutHashSet {
     ///
     /// Returns a string representation of the given mutable hash set `s`.
     ///
-    pub def toString(s: MutHashSet[a, r]): String \ r with ToString[a] = region rc {
-        "MutHashSet#{" + (MutHashSet.iterator(rc, s) |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(s: MutHashSet[a, r]): String \ r with ToString[a] =
+        "MutHashSet#{" + MutHashSet.join(", ", s) + "}"
 
 }

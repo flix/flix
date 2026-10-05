@@ -125,9 +125,8 @@ pub mod Map {
     ///
     /// Returns a string representation of the given map `m`.
     ///
-    pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region rc {
-        "Map#{" + (Map.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] =
+        "Map#{" + Map.joinWith((k, v) -> "${k} => ${v}", ", ", m) + "}"
 
     ///
     /// Determines whether to use parallel evaluation.

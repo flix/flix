@@ -107,9 +107,8 @@ pub mod Set {
     ///
     /// Returns a string representation of the given set `s`.
     ///
-    pub def toString(s: Set[a]): String with ToString[a] = region rc {
-        "Set#{" + (Set.iterator(rc, s) |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(s: Set[a]): String with ToString[a] =
+        "Set#{" + Set.join(", ", s) + "}"
 
     ///
     /// Determines whether to use parallel evaluation.
