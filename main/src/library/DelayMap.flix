@@ -63,8 +63,9 @@ pub mod DelayMap {
     /// Returns a string representation of the given `DelayMap` `m`.
     ///
     @Experimental
-    pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] =
-        "DelayMap#{" + DelayMap.joinWith((k, v) -> "${k} => ${v}", ", ", m) + "}"
+    pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region rc {
+        "DelayMap#{" + (DelayMap.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
+    }
 
     ///
     /// Returns the number of threads to use for parallel evaluation.
