@@ -102,12 +102,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("HiddenVarSym.Select.01") {
     val input =
       raw"""
-           |def f(): Int32 \ Chan = region rc {
-           |    let (_, rx) = Channel.buffered(rc, 1);
+           |def f(rx: Receiver[Int32]): Int32 \ {Chan, NonDet} =
            |    select {
            |        case _x <- recv(rx) => _x
            |    }
-           |}
            |
        """.stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -375,15 +373,12 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("ShadowedName.Select.01") {
     val input =
       """
-        |def f(): Int32 \ Chan = region rc {
+        |def f(rx: Receiver[Int32]): Int32 \ {Chan, NonDet} =
         |    let x = 123;
-        |    let (tx, rx) = Channel.buffered(rc, 1);
-        |    Channel.send(456, tx);
         |    select {
         |        case y <- recv(rx) => y
         |        case x <- recv(rx) => x
         |    }
-        |}
         |
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -421,8 +416,9 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |       let x = 0;
         |       x
         |   }
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
     expectError[RedundancyError.ShadowingName](result)
   }
@@ -940,8 +936,9 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |     def compareTo(x: Object, _y: Object): Int32 =
         |       0
         |   }
+        |pub eff IO
         """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
@@ -1411,31 +1408,27 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UnusedVarSym.Select.01") {
     val input =
       raw"""
-           |def f(): Int32 = region rc {
-           |    let (_, rx) = Channel.unbuffered(rc);
+           |def f(rx: Receiver[Int32]): Int32 \ {Chan, NonDet} =
            |    select {
            |        case x <- recv(rx) => 123
            |    }
-           |}
            |
        """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
   test("UnusedVarSym.Select.02") {
     val input =
       raw"""
-           |def f(): Int32 = region rc {
-           |    let (_, rx) = Channel.unbuffered(rc);
+           |def f(rx: Receiver[Int32]): Int32 \ {Chan, NonDet} =
            |    select {
            |        case x <- recv(rx) => x
            |        case x <- recv(rx) => 123
            |    }
-           |}
            |
        """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
@@ -1563,8 +1556,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
            |  let x = Array#{1, 2, 3} @ Static;
            |  unchecked_cast(x as _ \ {})
            |
+           |pub eff IO
+           |pub type alias Static = IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
@@ -1816,9 +1811,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |def f(g: a -> b \ ef, x: a): b \ ef = g(x)
         |
         |def h(): Unit \ IO = f(fakePrint, discard "hello")
+        |pub eff IO
         |""".stripMargin
 
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[RedundancyError.DiscardedPureExpression](result)
   }
 
@@ -1832,9 +1828,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |def f(): Unit \ IO =
         |    discard fakePrint("hello")
         |
+        |pub eff IO
         |""".stripMargin
 
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantDiscard](result)
   }
 
@@ -1847,9 +1844,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |    let arr = Array#{()} @ Static;
         |    discard f((i: Int32) -> %%ARRAY_LOAD%%(arr, i), 0)
         |
+        |pub eff IO
         |""".stripMargin
 
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantDiscard](result)
   }
 
@@ -2113,8 +2111,11 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |              :: 14 :: 15 :: 16 :: 17 :: 18 :: 19 :: 20 :: 21 :: 22 :: 23 :: 24 :: xs;
         |    l
         |}
+        |pub enum List[t] { case Nil, case Cons(t, List[t]) }
+        |mod List { pub def append(l1: List[a], _l2: List[a]): List[a] = l1 }
+        |mod Vector { pub def toList(_v: Vector[a]): List[a] = List.Nil }
         |""".stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 }
