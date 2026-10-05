@@ -16,15 +16,18 @@ import java.lang.constant.ClassDesc
 object ErasedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
+                  clos: Map[Symbol.DefnSym, Clo],
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffSym, Effect],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], exp: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
-    val arrowType: SimpleType.Arrow = SimpleType.mkArrow(fparams.map(_.tpe), tpe)
-  }
+  /** A top-level def or a lifted local def. It has no captured variables. */
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, fparams: List[FormalParam], exp: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation)
+
+  /** A lifted lambda. The closure parameters `cparams` are its captured variables. */
+  case class Clo(sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], exp: Expr, tpe: SimpleType, loc: SourceLocation)
 
   /** Remember the unboxed return type for test function generation. */
   case class UnboxedType(tpe: SimpleType)

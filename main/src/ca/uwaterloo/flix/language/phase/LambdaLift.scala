@@ -38,14 +38,17 @@ object LambdaLift {
       case (macc, (sym, defn)) => macc + (sym -> defn)
     }
 
-    LiftedAst.Root(newDefs, enums, structs, effects, root.mainEntryPoint, root.entryPoints, root.sources)
+    // Collect the lifted closures from the shared context.
+    val clos = sctx.liftedClos.asScala.toMap
+
+    LiftedAst.Root(newDefs, clos, enums, structs, effects, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
   private def visitDef(def0: SimplifiedAst.Def)(implicit sctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
     case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, _, loc) =>
       val fs = fparams.map(visitFormalParam)
       val e = visitExp(exp)(sym, Map.empty, sctx, flix)
-      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, loc)
+      LiftedAst.Def(ann, mod, sym, fs, e, tpe, loc)
   }
 
   private def visitEnum(enum0: SimplifiedAst.Enum): LiftedAst.Enum = enum0 match {
@@ -96,12 +99,8 @@ object LambdaLift {
       // Recursively lift the inner expression.
       val liftedExp = visitExp(exp)
 
-      // Generate a fresh symbol for the new lifted definition.
+      // Generate a fresh symbol for the new lifted closure.
       val freshSymbol = Symbol.freshDefnSym(sym0)
-
-      // Construct annotations and modifiers for the fresh definition.
-      val ann = Annotations.Empty
-      val mod = Modifiers(Modifier.Synthetic :: Nil)
 
       // Construct the closure parameters
       val cs = if (cparams.isEmpty) {
@@ -111,12 +110,12 @@ object LambdaLift {
       // Construct the formal parameters.
       val fs = fparams.map(visitFormalParam)
 
-      // Construct a new definition.
-      val defTpe = arrowTpe.result
-      val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, defTpe, loc)
+      // Construct a new closure.
+      val cloTpe = arrowTpe.result
+      val clo = LiftedAst.Clo(freshSymbol, cs, fs, liftedExp, cloTpe, loc)
 
-      // Add the new definition to the map of lifted definitions.
-      sctx.liftedDefs.add(freshSymbol -> defn)
+      // Add the new closure to the queue of lifted closures.
+      sctx.liftedClos.add(freshSymbol -> clo)
 
       // Construct the closure args.
       val closureArgs = if (freeVars.isEmpty)
@@ -197,7 +196,7 @@ object LambdaLift {
       val mod = Modifiers(Modifier.Synthetic :: Nil)
       val fps = fparams.map(visitFormalParam)
       val defTpe = exp1.tpe
-      val liftedDef = LiftedAst.Def(ann, mod, freshDefnSym, List.empty, fps, body, defTpe, loc.asSynthetic)
+      val liftedDef = LiftedAst.Def(ann, mod, freshDefnSym, fps, body, defTpe, loc.asSynthetic)
       sctx.liftedDefs.add(freshDefnSym -> liftedDef)
       visitExp(exp2)(sym0, updatedLiftedLocalDefs, sctx, flix) // LocalDef node is erased here
 
@@ -252,16 +251,19 @@ object LambdaLift {
   /**
     * A context shared across threads.
     *
-    * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
+    * We use concurrent (non-blocking) linked queues to ensure thread-safety.
+    *
+    * @param liftedDefs the defs lifted from local defs.
+    * @param liftedClos the closures lifted from lambdas.
     */
-  private case class SharedContext(liftedDefs: ConcurrentLinkedQueue[(Symbol.DefnSym, LiftedAst.Def)])
+  private case class SharedContext(liftedDefs: ConcurrentLinkedQueue[(Symbol.DefnSym, LiftedAst.Def)], liftedClos: ConcurrentLinkedQueue[(Symbol.DefnSym, LiftedAst.Clo)])
 
   private object SharedContext {
 
     /**
       * Returns a fresh shared context.
       */
-    def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue())
+    def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue())
   }
 
 }

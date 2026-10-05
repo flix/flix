@@ -50,8 +50,8 @@ object CodeGen {
       case (ns, defs) => JvmClass(GenNamespace.desc(ns), GenNamespace.genByteCode(ns, defs.map(_.sym)))
     }.toList
 
-    // Generate function classes.
-    val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs).values.toList
+    // Generate function and closure classes.
+    val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs, root.clos).values.toList
     val erasedFunctionTypes = getErasedArrowsOf(allTypes)
     val functionInterfaces = erasedFunctionTypes.map { case (args, result) => JvmClass(GenArrow.desc(args, result), GenArrow.genByteCode(args, result)) }
     val closureAbstractClasses = erasedFunctionTypes.map {

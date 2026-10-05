@@ -34,6 +34,7 @@ object Reducer {
     implicit val ctx: SharedContext = new SharedContext()
 
     val defs = ParOps.parMapValues(root.defs)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn)))
+    val clos = ParOps.parMapValues(root.clos)(clo => flix.profile(clo.sym, clo.loc)(visitClo(clo)))
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
@@ -41,7 +42,7 @@ object Reducer {
     val types = allTypes(root, ctx.getDefTypes)
     val anonClasses = ctx.getAnonClasses
 
-    JvmAst.Root(defs, enums, structs, effects, types, anonClasses, root.mainEntryPoint, root.sources)
+    JvmAst.Root(defs, clos, enums, structs, effects, types, anonClasses, root.mainEntryPoint, root.sources)
   }
 
   /** Returns all types of `root`. */
@@ -54,7 +55,30 @@ object Reducer {
   }
 
   private def visitDef(d: ErasedAst.Def)(implicit root: ErasedAst.Root, ctx: SharedContext): JvmAst.Def = d match {
-    case ErasedAst.Def(ann, mod, sym, cparams0, fparams0, exp, tpe, unboxedType0, loc) =>
+    case ErasedAst.Def(ann, mod, sym, fparams0, exp, tpe, unboxedType0, loc) =>
+      implicit val lctx: LocalContext = new LocalContext(isControlImpure = Purity.isControlImpure(exp.purity))
+
+      // It is important to visit parameters and variables in the order the backend expects: fparams, then lparams.
+      val fparams = fparams0.map(visitOffsetFormalParam)
+      val e = visitExpr(exp)
+      // `ls` is initialized based on the context mutation of `visitExpr`
+      val ls = lctx.lparams.toList
+      val unboxedType = JvmAst.UnboxedType(unboxedType0.tpe)
+
+      val pcPoints = lctx.getPcPoints
+
+      val defn = JvmAst.Def(ann, mod, sym, fparams, ls, pcPoints, e, tpe, unboxedType, loc)
+
+      // Add all types.
+      // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
+      ctx.addDefType(defn.arrowType)
+      ctx.addDefType(unboxedType.tpe)
+
+      defn
+  }
+
+  private def visitClo(c: ErasedAst.Clo)(implicit root: ErasedAst.Root, ctx: SharedContext): JvmAst.Clo = c match {
+    case ErasedAst.Clo(sym, cparams0, fparams0, exp, tpe, loc) =>
       implicit val lctx: LocalContext = new LocalContext(isControlImpure = Purity.isControlImpure(exp.purity))
 
       // It is important to visit parameters and variables in the order the backend expects: cparams, fparams, then lparams.
@@ -63,20 +87,20 @@ object Reducer {
       val e = visitExpr(exp)
       // `ls` is initialized based on the context mutation of `visitExpr`
       val ls = lctx.lparams.toList
-      val unboxedType = JvmAst.UnboxedType(unboxedType0.tpe)
+
+      val pcPoints = lctx.getPcPoints
+
+      val clo = JvmAst.Clo(sym, cparams, fparams, ls, pcPoints, e, tpe, loc)
 
       // Add all types.
-      // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
-      ctx.addDefType(d.arrowType)
-      ctx.addDefType(unboxedType.tpe)
+      // `clo.fparams` and `clo.tpe` are both included in `clo.arrowType`
+      ctx.addDefType(clo.arrowType)
       // Compute the types in the captured formal parameters.
       for (cp <- cparams) {
         ctx.addDefType(cp.tpe)
       }
 
-      val pcPoints = lctx.getPcPoints
-
-      JvmAst.Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, unboxedType, loc)
+      clo
   }
 
   private def visitEnum(enm: ErasedAst.Enum): JvmAst.Enum = {
