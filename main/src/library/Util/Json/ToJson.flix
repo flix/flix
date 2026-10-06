@@ -17,6 +17,7 @@ pub mod Util.Json.ToJson {
     /// Trait for types that can be encoded as a `Json` value.
     ///
     pub trait ToJson[a] {
+        /// Encodes `x` as a `Json` value.
         pub def toJson(x: a): Json
     }
 

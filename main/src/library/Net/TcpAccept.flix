@@ -23,6 +23,7 @@ pub mod Net.TcpAccept {
     /// Effect for accepting TCP server connections.
     ///
     pub eff TcpAccept {
+        /// Accepts an incoming connection on `server` and returns the connected socket.
         def accept(server: TcpServer): Result[IoError, TcpSocket]
     }
 

@@ -66,6 +66,7 @@ pub mod BPlusTree {
         search:   BPlusTree.Search
     }
 
+    /// Describes the order in which the elements of vector keys are compared; empty for non-vector keys.
     pub type alias Search = Vector[Int32]
 
     instance ForEach[BPlusTree[k, v, r]] {

@@ -23,6 +23,7 @@ pub mod Net.TcpConnect {
     /// Effect for connecting to TCP servers.
     ///
     pub eff TcpConnect {
+        /// Opens a TCP connection to the given `ip` address and `port`.
         def connect(ip: IpAddr, port: Int16): Result[IoError, TcpSocket]
     }
 

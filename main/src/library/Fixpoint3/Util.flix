@@ -6,6 +6,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Utility functions for the fixpoint solver.
 pub mod Fixpoint3.Util {
     ///
     /// Unwraps an option.

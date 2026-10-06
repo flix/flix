@@ -28,6 +28,7 @@ pub mod ToJava {
     pub trait ToJava[t: Type] {
         type Out[t]: Type
         type Aef[t]: Eff = {}
+        /// Converts the Flix value `t` to its Java representation.
         pub def toJava(t: t): ToJava.Out[t] \ ToJava.Aef[t]
     }
 

@@ -7,6 +7,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Functions for solving Datalog programs and querying their models.
 pub mod Fixpoint3.Solver {
     import dev.flix.runtime.Global
 

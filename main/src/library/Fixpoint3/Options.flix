@@ -7,6 +7,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Configuration options for the fixpoint solver.
 pub mod Fixpoint3.Options {
 
     ///

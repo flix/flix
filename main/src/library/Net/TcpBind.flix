@@ -24,6 +24,7 @@ pub mod Net.TcpBind {
     /// Effect for binding TCP servers.
     ///
     pub eff TcpBind {
+        /// Binds a TCP server to the given `ip` address and `port`.
         def bind(ip: IpAddr, port: Int16): Result[IoError, TcpServer]
     }
 

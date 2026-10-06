@@ -7,6 +7,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Phase that compiles Datalog programs to RAM programs.
 pub mod Fixpoint3.Phase.Compiler {
     use Fixpoint3.Ast.Ram.{arityOfNonLat, BoolExp, Facts, Predicates, RamProgram, RamStmt, RamTerm, RelOp, RelSym, RowVar}
     use Fixpoint3.Ast.Datalog.{BodyPredicate, BodyTerm, Constraint, Datalog, Fixity, HeadTerm, Polarity, VarSym}
