@@ -103,9 +103,7 @@ object LambdaLift {
       val freshSymbol = Symbol.freshDefnSym(sym0)
 
       // Construct the closure parameters
-      val cs = if (cparams.isEmpty) {
-        List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), SimpleType.Unit, loc))
-      } else cparams.map(visitFormalParam)
+      val cs = cparams.map(visitFormalParam)
 
       // Construct the formal parameters.
       val fs = fparams.map(visitFormalParam)
@@ -118,9 +116,7 @@ object LambdaLift {
       sctx.liftedClos.add(freshSymbol -> clo)
 
       // Construct the closure args.
-      val closureArgs = if (freeVars.isEmpty)
-        List(LiftedAst.Expr.Cst(Constant.Unit, SimpleType.Unit, loc))
-      else freeVars.map {
+      val closureArgs = freeVars.map {
         case SimplifiedAst.FreeVar(sym, fvTpe) => LiftedAst.Expr.Var(sym, fvTpe, sym.loc)
       }
 
