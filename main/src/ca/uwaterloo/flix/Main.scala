@@ -307,7 +307,8 @@ object Main {
             exitOnResult {
               Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
                 val flix = bootstrap.mkFlix(options, formatter)
-                bootstrap.doc(flix, docOrigin(cmdOpts))
+                val origin = docOrigin(cmdOpts)
+                bootstrap.doc(flix, origin).flatMap(_ => bootstrap.checkMissingDocs(flix, origin)(System.out))
               }
             }
           } else {
@@ -317,8 +318,7 @@ object Main {
               val root = optRoot.get
               val origin = docOrigin(cmdOpts)
               HtmlDocumentor.run(root, origin, Bootstrap.getDocumentationDirectory(cwd))(flix)
-              val missing = HtmlDocumentor.checkCoverage(root, origin)
-              if (missing.nonEmpty) println(HtmlDocumentor.missingDocReport(missing, formatter))
+              checkMissingDocs(root, origin)
               exit(0)
             } else exitWithErrors(flix, errors, optRoot)
           }
@@ -688,7 +688,7 @@ object Main {
       cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
         .children(
           opt[Unit]("library").action((_, c) => c.copy(library = true))
-            .text("documents the bundled library instead of the current project."),
+            .text("documents the bundled library instead of the current project.")
         )
 
       cmd("format").action((_, c) => c.copy(command = Command.Format)).text("  formats Flix source code files.")
@@ -898,6 +898,17 @@ object Main {
     */
   private def docOrigin(cmdOpts: CmdOpts): Origin =
     if (cmdOpts.library) Origin.Library else Origin.User
+
+  /**
+    * Prints a report of every documentable item under `origin` in `root` that has no doc comment,
+    * if any. Prints nothing if there are none, and never affects the exit code.
+    */
+  private def checkMissingDocs(root: TypedAst.Root, origin: Origin)(implicit formatter: Formatter): Unit = {
+    val missing = HtmlDocumentor.checkMissingDocs(root, origin)
+    if (missing.nonEmpty) {
+      println(HtmlDocumentor.missingDocReport(missing, formatter))
+    }
+  }
 
   /**
     * Creates a fresh Flix instance configured with the given options and source files.

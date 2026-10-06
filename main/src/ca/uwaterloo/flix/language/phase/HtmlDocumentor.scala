@@ -112,8 +112,10 @@ object HtmlDocumentor {
     * that `run` uses to decide what gets a page, so this walks the set of modules, types, and
     * members that would actually be documented -- not raw or private declarations that are
     * intentionally excluded from the generated documentation.
+    *
+    * This is independent of [[run]]: it generates no HTML, and `run` performs no check.
     */
-  def checkCoverage(root: TypedAst.Root, origin: Origin): List[MissingDoc] = {
+  def checkMissingDocs(root: TypedAst.Root, origin: Origin): List[MissingDoc] = {
     val modulesRoot = splitModules(root)
     val filteredModulesRoot = filterModules(modulesRoot, origin)
     val pairedModulesRoot = pairModules(filteredModulesRoot)
@@ -126,10 +128,6 @@ object HtmlDocumentor {
     * `missing doc comment: def Foo.bar (Foo.flix:12)`), followed by a summary count.
     *
     * Returns `""` if `missing` is empty.
-    *
-    * This is printed as a non-blocking, always-on side effect of [[run]] (see the `doc` command
-    * in `Main.scala` / `Bootstrap.scala`) to encourage documentation coverage without failing an
-    * ordinary `flix doc` run -- it never affects the exit code.
     */
   def missingDocReport(missing: List[MissingDoc], f: Formatter): String = {
     if (missing.isEmpty) ""
