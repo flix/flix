@@ -17,6 +17,7 @@
 /// represented by a unique SCC in the topological order.
 ///
 pub mod Fixpoint3.PrecedenceGraph {
+    /// A vertex of the precedence graph, identified by an integer.
     pub type alias Vertex = Int32
 
     ///

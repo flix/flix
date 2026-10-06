@@ -5,6 +5,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Type of in-memory overlays that record changes on top of a lower file system layer, and its functions.
 mod Fs.MemoryOverlay {
 
     import java.nio.file.FileSystems

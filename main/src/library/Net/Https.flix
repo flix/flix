@@ -32,6 +32,7 @@ pub mod Net.Https {
     /// Requests whose URL does not use the `https://` scheme are rejected.
     ///
     pub eff Https {
+        /// Sends the HTTPS request `req` and returns its response.
         def request(req: HttpRequest): Result[IoError, HttpResponse]
     }
 

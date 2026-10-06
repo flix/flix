@@ -6,6 +6,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Type for assigning unique integer identifiers to elements, and its functions.
 pub mod Fixpoint3.UniqueInts {
     use Fixpoint3.Counter
 

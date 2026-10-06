@@ -28,6 +28,7 @@ pub mod ToFlix {
     pub trait ToFlix[t: Type] {
         type In[t]: Type
         type Aef[t]: Eff = {}
+        /// Converts the Java value `t` to its Flix representation.
         pub def toFlix(t: ToFlix.In[t]): t \ ToFlix.Aef[t]
     }
 

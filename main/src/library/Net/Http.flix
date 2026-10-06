@@ -32,6 +32,7 @@ pub mod Net.Http {
     /// Supports both `http://` and `https://` URLs.
     ///
     pub eff Http {
+        /// Sends the HTTP request `req` and returns its response.
         def request(req: HttpRequest): Result[IoError, HttpResponse]
     }
 

@@ -19,6 +19,7 @@ pub mod Formattable {
         ///
         type Aef[a]: Eff = {}
 
+        /// Returns a `RichString` representation of `x`.
         pub def format(x: a): RichString \ Formattable.Aef[a]
     }
 

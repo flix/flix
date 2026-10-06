@@ -7,6 +7,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Phase that simplifies and optimizes RAM programs.
 pub mod Fixpoint3.Phase.Simplifier {
     use Fixpoint3.Ast.Ram.{BoolExp, Facts, Predicates, RamProgram, RamStmt, RelOp, RelSym, RowVar}
     use Fixpoint3.Ast.Ram.RamTerm.RowLoad

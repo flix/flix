@@ -36,10 +36,12 @@ pub mod Net.TcpSocket {
             TcpSocket.write(buffer, socket)
     }
 
+    /// Reads bytes from `socket` into `buffer` and returns the number of bytes read.
     pub def read(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
         let TcpSocket(_, inputStream, _) = socket;
         Readable.read(buffer, inputStream)
 
+    /// Writes the bytes in `buffer` to `socket` and returns the number of bytes written.
     pub def write(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
         let TcpSocket(_, _, outputStream) = socket;
         Writable.write(buffer, outputStream)

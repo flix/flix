@@ -23,6 +23,7 @@ pub mod Net.Ping {
     /// Effect for determining whether an address is reachable.
     ///
     pub eff Ping {
+        /// Returns `true` if `host` is reachable within `timeout` units of `u`.
         def isReachable(host: IpAddr, timeout: Int32, u: TimeUnit): Result[IoError, Bool]
     }
 

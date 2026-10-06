@@ -6,6 +6,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Phase that selects the indexes required by the relations of a RAM program.
 pub mod Fixpoint3.Phase.IndexSelection {
     use Fixpoint3.Ast.Ram.{RamStmt, RamProgram, RelOp, BoolExp, RelSym, RamTerm, Search, Indexes, IndexInformation, RowVar, arityOf, arityOfNonLat}
     use Fixpoint3.Predicate.{relSymFromPredType, relSymToPredType, PredType, relSymsOfProgram}

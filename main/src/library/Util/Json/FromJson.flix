@@ -24,6 +24,7 @@ pub mod Util.Json.FromJson {
     /// Trait for types that can be decoded from a `Json` value.
     ///
     pub trait FromJson[a] {
+        /// Decodes the JSON value `j` into a value of type `a`, or returns a `JsonError`.
         pub def fromJson(j: Json): Result[JsonError, a]
     }
 

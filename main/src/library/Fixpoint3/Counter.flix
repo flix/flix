@@ -6,6 +6,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Type of simple mutable counters, and its functions.
 pub mod Fixpoint3.Counter {
 
     ///

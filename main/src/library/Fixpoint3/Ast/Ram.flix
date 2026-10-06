@@ -7,6 +7,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Abstract syntax tree of the relational algebra machine (RAM).
 pub mod Fixpoint3.Ast.Ram {
     use Fixpoint3.Ast.Shared.{BoxedDenotation => Denotation, PredSym}
     use Fixpoint3.Ast.Shared.Denotation.{Relational}

@@ -22,7 +22,9 @@ pub mod Net.Dns {
     /// Effect for resolving domain names to IP addresses.
     ///
     pub eff Dns {
+        /// Resolves `host` to an IP address.
         def lookup(host: String): Result[IoError, IpAddr]
+        /// Resolves `host` to all of its IP addresses.
         def lookupAll(host: String): Result[IoError, List[IpAddr]]
     }
 

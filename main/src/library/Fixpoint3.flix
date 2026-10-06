@@ -89,6 +89,7 @@ pub mod Fixpoint3 {
     /// Trait for types that contain predicate symbols.
     ///
     pub trait PredSymsOf[t] {
+        /// Returns the set of predicate symbols occurring in `x`.
         pub def predSymsOf(x: t): Set[PredSym]
     }
 
@@ -101,6 +102,7 @@ pub mod Fixpoint3 {
     /// Trait for types that contain substitutable predicate symbols.
     ///
     pub trait SubstitutePredSym[t] {
+        /// Returns `x` with its predicate symbols replaced according to the substitution `s`.
         pub def substitute(x: t, s: Map[PredSym, PredSym]): t
     }
 

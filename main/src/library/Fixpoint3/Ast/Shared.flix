@@ -7,6 +7,7 @@
  * Use of this source code is governed by the Apache 2.0 license
  * that can be found in the LICENSE.md file.
  */
+/// Definitions shared between the Datalog and RAM abstract syntax trees.
 pub mod Fixpoint3.Ast.Shared {
 
     use Fixpoint3.Boxable
@@ -33,6 +34,7 @@ pub mod Fixpoint3.Ast.Shared {
         case Latticenal(v, v -> v -> Bool, v -> v -> v, v -> v -> v)
     }
 
+    /// A denotation whose lattice components operate on boxed values.
     pub type alias BoxedDenotation = Denotation[Boxed]
 
     ///
@@ -74,6 +76,7 @@ pub mod Fixpoint3.Ast.Shared {
     // PredSym                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
+    /// Represents a predicate symbol consisting of a name and a unique identifier.
     pub enum PredSym with Eq, Order {
         case PredSym(String, Int64)
     }
