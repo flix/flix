@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of lazy lists, and its operations.
+/// Type of lazy lists, and its functions.
 ///
 pub mod DelayList {
     use Math.Shuffle

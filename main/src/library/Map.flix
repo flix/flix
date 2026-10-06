@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of immutable maps, and its operations.
+/// Type of immutable maps, and its functions.
 ///
 pub mod Map {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of decisions returned by a retry strategy, and its operations.
+/// Type of decisions returned by a retry strategy, and its functions.
 ///
 pub mod Net.RetryDecision {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of rich strings composed of styled text spans, and its operations.
+/// Type of rich strings composed of styled text spans, and its functions.
 ///
 pub mod RichString {
 

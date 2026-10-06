@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for sleeping the current thread, and its handlers.
+/// Effect for sleeping the current thread, and its functions.
 ///
 pub mod Time.Sleep {
     use Logger.Severity

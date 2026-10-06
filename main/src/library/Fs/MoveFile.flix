@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for moving or renaming a file or directory, and its handlers.
+/// Effect for moving or renaming a file or directory, and its functions.
 ///
 pub mod Fs.MoveFile {
 

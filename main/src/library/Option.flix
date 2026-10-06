@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of optional values, and its operations.
+/// Type of optional values, and its functions.
 ///
 pub mod Option {
 

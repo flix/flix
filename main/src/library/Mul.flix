@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that support multiplication, and its operations.
+/// Trait for types that support multiplication, and its functions.
 ///
 pub mod Mul {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for starting and managing processes outside the JVM, and its handlers.
+/// Effect for starting and managing processes outside the JVM, and its functions.
 ///
 pub mod Sys.Process {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that form a meet semi-lattice, and its operations.
+/// Trait for types that form a meet semi-lattice, and its functions.
 ///
 pub mod MeetLattice {
 

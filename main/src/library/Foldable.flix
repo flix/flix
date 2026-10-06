@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be folded, and its operations.
+/// Trait for types that can be folded, and its functions.
 ///
 pub mod Foldable {
 

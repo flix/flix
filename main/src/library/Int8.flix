@@ -14,7 +14,7 @@ instance UpperBound[Int8] {
 }
 
 ///
-/// Type of 8-bit signed integers, and its operations.
+/// Type of 8-bit signed integers, and its functions.
 ///
 pub mod Int8 {
 

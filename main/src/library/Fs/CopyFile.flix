@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for copying a file, and its handlers.
+/// Effect for copying a file, and its functions.
 ///
 pub mod Fs.CopyFile {
 

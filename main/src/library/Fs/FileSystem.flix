@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for performing all filesystem operations, and its handlers.
+/// Effect for performing all filesystem operations, and its functions.
 ///
 pub mod Fs.FileSystem {
 

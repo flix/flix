@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for shuffling collections, and its handlers.
+/// Effect for shuffling collections, and its functions.
 ///
 pub mod Math.Shuffle {
 

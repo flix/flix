@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of immutable maps that allow multiple values per key, and its operations.
+/// Type of immutable maps that allow multiple values per key, and its functions.
 ///
 pub mod MultiMap {
 

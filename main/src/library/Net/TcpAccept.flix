@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for accepting TCP server connections, and its handlers.
+/// Effect for accepting TCP server connections, and its functions.
 ///
 pub mod Net.TcpAccept {
     use IoError.ErrorKind

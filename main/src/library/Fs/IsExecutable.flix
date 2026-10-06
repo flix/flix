@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for checking whether a file is executable, and its handlers.
+/// Effect for checking whether a file is executable, and its functions.
 ///
 pub mod Fs.IsExecutable {
 

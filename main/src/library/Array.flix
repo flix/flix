@@ -57,7 +57,7 @@ instance Formattable[Array[a, r]] with Formattable[a] {
 }
 
 ///
-/// Type of mutable fixed-length arrays, and its operations.
+/// Type of mutable fixed-length arrays, and its functions.
 ///
 pub mod Array {
     use Math.Shuffle

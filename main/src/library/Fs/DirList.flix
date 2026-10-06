@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for listing the contents of a directory, and its handlers.
+/// Effect for listing the contents of a directory, and its functions.
 ///
 pub mod Fs.DirList {
 

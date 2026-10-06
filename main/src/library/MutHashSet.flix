@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of mutable hash sets that preserve insertion order, and its operations.
+/// Type of mutable hash sets that preserve insertion order, and its functions.
 ///
 pub mod MutHashSet {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be constructed from strings, and its operations.
+/// Trait for types that can be constructed from strings, and its functions.
 ///
 pub mod FromString {
 

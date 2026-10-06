@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of immutable maps with lazily evaluated values, and its operations.
+/// Type of immutable maps with lazily evaluated values, and its functions.
 ///
 pub mod DelayMap {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of mutable sets, and its operations.
+/// Type of mutable sets, and its functions.
 ///
 pub mod MutSet {
 

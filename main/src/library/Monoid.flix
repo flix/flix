@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that form a monoid, and its operations.
+/// Trait for types that form a monoid, and its functions.
 ///
 pub mod Monoid {
 

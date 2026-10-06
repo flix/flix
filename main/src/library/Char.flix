@@ -14,7 +14,7 @@ instance UpperBound[Char] {
 }
 
 ///
-/// Type of 16-bit Unicode characters, and its operations.
+/// Type of 16-bit Unicode characters, and its functions.
 ///
 pub mod Char {
 

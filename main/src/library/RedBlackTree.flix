@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of immutable red-black trees, and its operations.
+/// Type of immutable red-black trees, and its functions.
 ///
 pub mod RedBlackTree {
 

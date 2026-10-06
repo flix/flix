@@ -48,14 +48,14 @@ The generated documentation renders each declaration as `<Name> <Summary>`. Henc
 trait, or effect should not repeat its name, and should use one of the templates below.
 
 Most modules are companion modules, e.g. `mod List { enum List { ... } }`. The module summary is the summary of the
-inner declaration followed by `, and its operations.` (or `, and its handlers.` for effects).
+inner declaration followed by `, and its functions`.
 
 | Kind              | Module                                                   | Inner declaration                     |
 |-------------------|----------------------------------------------------------|---------------------------------------|
-| `enum` / `struct` | `Type of <plural noun phrase>, and its operations.`      | `Type of <plural noun phrase>.`       |
-| `trait`           | `Trait for types that <verb phrase>, and its operations.`| `Trait for types that <verb phrase>.` |
-| `eff`             | `Effect for <gerund phrase>, and its handlers.`          | `Effect for <gerund phrase>.`         |
-| built-in type     | `Type of <plural noun phrase>, and its operations.`      | —                                     |
+| `enum` / `struct` | `Type of <plural noun phrase>, and its functions.`       | `Type of <plural noun phrase>.`       |
+| `trait`           | `Trait for types that <verb phrase>, and its functions.` | `Trait for types that <verb phrase>.` |
+| `eff`             | `Effect for <gerund phrase>, and its functions.`         | `Effect for <gerund phrase>.`         |
+| built-in type     | `Type of <plural noun phrase>, and its functions.`       | —                                     |
 | function module   | `Functions for <gerund phrase>.`                         | —                                     |
 | namespace         | `Modules for <topic>.`                                   | —                                     |
 

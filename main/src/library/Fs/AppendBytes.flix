@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for appending bytes to a file, and its handlers.
+/// Effect for appending bytes to a file, and its functions.
 ///
 pub mod Fs.AppendBytes {
 

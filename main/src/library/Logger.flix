@@ -18,7 +18,7 @@ pub eff Logger {
 }
 
 ///
-/// Effect for logging messages, and its handlers.
+/// Effect for logging messages, and its functions.
 ///
 pub mod Logger {
 

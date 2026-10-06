@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for finding files matching a glob pattern, and its handlers.
+/// Effect for finding files matching a glob pattern, and its functions.
 ///
 pub mod Fs.Glob {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of reentrant mutual exclusion locks, and its operations.
+/// Type of reentrant mutual exclusion locks, and its functions.
 ///
 pub mod Concurrent.ReentrantLock {
 

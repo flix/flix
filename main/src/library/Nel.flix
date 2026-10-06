@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of non-empty immutable lists, and its operations.
+/// Type of non-empty immutable lists, and its functions.
 ///
 pub mod Nel {
     use Math.Shuffle

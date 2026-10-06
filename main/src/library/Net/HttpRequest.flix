@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of HTTP requests, and its operations.
+/// Type of HTTP requests, and its functions.
 ///
 pub mod Net.HttpRequest {
 

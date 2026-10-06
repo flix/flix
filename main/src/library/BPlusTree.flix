@@ -7,7 +7,7 @@
  */
 
 ///
-/// Type of mutable concurrent B+ trees, and its operations.
+/// Type of mutable concurrent B+ trees, and its functions.
 ///
 pub mod BPlusTree {
     import java.lang.Runtime

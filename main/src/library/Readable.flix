@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be read from, and its operations.
+/// Trait for types that can be read from, and its functions.
 ///
 pub mod Readable {
 

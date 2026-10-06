@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of immutable sequences with efficient append, and its operations.
+/// Type of immutable sequences with efficient append, and its functions.
 ///
 pub mod Chain {
     use Math.Shuffle

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for modifying files and directories, and its handlers.
+/// Effect for modifying files and directories, and its functions.
 ///
 pub mod Fs.FileWrite {
 

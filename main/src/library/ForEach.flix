@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that support iterating over their elements with `forEach`, and its operations.
+/// Trait for types that support iterating over their elements with `forEach`, and its functions.
 ///
 pub mod ForEach {
 

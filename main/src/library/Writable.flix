@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be written to, and its operations.
+/// Trait for types that can be written to, and its functions.
 ///
 pub mod Writable {
 

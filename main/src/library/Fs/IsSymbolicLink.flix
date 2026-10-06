@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for checking whether a path is a symbolic link, and its handlers.
+/// Effect for checking whether a path is a symbolic link, and its functions.
 ///
 pub mod Fs.IsSymbolicLink {
 

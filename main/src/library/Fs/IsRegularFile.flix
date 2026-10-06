@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for checking whether a path is a regular file, and its handlers.
+/// Effect for checking whether a path is a regular file, and its functions.
 ///
 pub mod Fs.IsRegularFile {
 

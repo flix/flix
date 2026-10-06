@@ -11,7 +11,7 @@
 pub def |+|(x: a, y: a): a with CommutativeSemiGroup[a] = CommutativeSemiGroup.combine(x, y)
 
 ///
-/// Trait for types that form a commutative semigroup, and its operations.
+/// Trait for types that form a commutative semigroup, and its functions.
 ///
 pub mod CommutativeSemiGroup {
 

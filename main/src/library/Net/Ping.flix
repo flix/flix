@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for determining whether an address is reachable, and its handlers.
+/// Effect for determining whether an address is reachable, and its functions.
 ///
 pub mod Net.Ping {
     use IoError.ErrorKind

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for resolving domain names to IP addresses, and its handlers.
+/// Effect for resolving domain names to IP addresses, and its functions.
 ///
 pub mod Net.Dns {
     use IoError.ErrorKind

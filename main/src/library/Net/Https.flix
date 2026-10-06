@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for sending HTTPS-only requests, and its handlers.
+/// Effect for sending HTTPS-only requests, and its functions.
 ///
 pub mod Net.Https {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of results that are either a successful value or an error value, and its operations.
+/// Type of results that are either a successful value or an error value, and its functions.
 ///
 pub mod Result {
 

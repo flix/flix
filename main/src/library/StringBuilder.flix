@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of mutable string builders, and its operations.
+/// Type of mutable string builders, and its functions.
 ///
 pub mod StringBuilder {
 

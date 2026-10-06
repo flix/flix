@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of HTTP request and response bodies, and its operations.
+/// Type of HTTP request and response bodies, and its functions.
 ///
 pub mod Net.Body {
 

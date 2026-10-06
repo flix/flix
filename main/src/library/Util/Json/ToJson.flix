@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be encoded as a `Json` value, and its operations.
+/// Trait for types that can be encoded as a `Json` value, and its functions.
 ///
 pub mod Util.Json.ToJson {
 

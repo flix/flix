@@ -11,7 +11,7 @@
 pub def ++(x: a, y: a): a with SemiGroup[a] = SemiGroup.combine(x, y)
 
 ///
-/// Trait for types that form a semigroup, and its operations.
+/// Trait for types that form a semigroup, and its functions.
 ///
 pub mod SemiGroup {
 

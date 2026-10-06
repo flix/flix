@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of options for the `moveWith` operation, and its operations.
+/// Type of options for the `moveWith` operation, and its functions.
 ///
 pub mod Fs.MoveOption {
 

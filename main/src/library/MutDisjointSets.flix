@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of mutable disjoint sets (union-find), and its operations.
+/// Type of mutable disjoint sets (union-find), and its functions.
 ///
 pub mod MutDisjointSets {
 

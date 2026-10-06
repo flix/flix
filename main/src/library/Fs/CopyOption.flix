@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of options for the `copyWith` operation, and its operations.
+/// Type of options for the `copyWith` operation, and its functions.
 ///
 pub mod Fs.CopyOption {
 

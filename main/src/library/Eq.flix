@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that support equality and inequality, and its operations.
+/// Trait for types that support equality and inequality, and its functions.
 ///
 pub mod Eq {
 

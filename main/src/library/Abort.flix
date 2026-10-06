@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for aborting a computation with an error message, and its handlers.
+/// Effect for aborting a computation with an error message, and its functions.
 ///
 pub mod Abort {
 

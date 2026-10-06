@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of file size units, and its operations.
+/// Type of file size units, and its functions.
 ///
 pub mod Fs.SizeUnit {
 

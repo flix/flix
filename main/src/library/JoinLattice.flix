@@ -7,7 +7,7 @@
  */
 
 ///
-/// Trait for types that form a join semi-lattice, and its operations.
+/// Trait for types that form a join semi-lattice, and its functions.
 ///
 pub mod JoinLattice {
 

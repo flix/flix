@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of buffered readers, and its operations.
+/// Type of buffered readers, and its functions.
 ///
 pub mod BufReader {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of file sizes, and its operations.
+/// Type of file sizes, and its functions.
 ///
 pub mod Fs.Size {
 

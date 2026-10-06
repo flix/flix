@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of HTTP methods, and its operations.
+/// Type of HTTP methods, and its functions.
 ///
 pub mod Net.Method {
 

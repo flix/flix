@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of mutable maps, and its operations.
+/// Type of mutable maps, and its functions.
 ///
 pub mod MutMap {
 

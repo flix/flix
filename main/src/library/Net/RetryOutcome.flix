@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of reasons for considering a retry, and its operations.
+/// Type of reasons for considering a retry, and its functions.
 ///
 pub mod Net.RetryOutcome {
 

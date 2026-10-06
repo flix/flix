@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for checking whether a file exists, and its handlers.
+/// Effect for checking whether a file exists, and its functions.
 ///
 pub mod Fs.FileExists {
 

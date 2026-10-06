@@ -10,7 +10,7 @@ struct Ref[a, r] {
 }
 
 ///
-/// Type of mutable references, and its operations.
+/// Type of mutable references, and its functions.
 ///
 pub mod Ref {
 

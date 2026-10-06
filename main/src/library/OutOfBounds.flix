@@ -18,7 +18,7 @@ eff OutOfBounds {
 }
 
 ///
-/// Effect for signaling that an index is out of bounds, and its handlers.
+/// Effect for signaling that an index is out of bounds, and its functions.
 ///
 pub mod OutOfBounds {
 

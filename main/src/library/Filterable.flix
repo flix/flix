@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that support filtering, and its operations.
+/// Trait for types that support filtering, and its functions.
 ///
 pub mod Filterable {
 

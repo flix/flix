@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of process stdin streams, and its operations.
+/// Type of process stdin streams, and its functions.
 ///
 pub mod Sys.StdIn {
 

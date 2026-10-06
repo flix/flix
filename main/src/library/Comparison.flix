@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of comparison results, and its operations.
+/// Type of comparison results, and its functions.
 ///
 pub mod Comparison {
 

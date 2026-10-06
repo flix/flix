@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of half-open ranges of discrete values, and its operations.
+/// Type of half-open ranges of discrete values, and its functions.
 ///
 pub mod Range {
 

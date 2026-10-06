@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be marshaled to Java objects, and its operations.
+/// Trait for types that can be marshaled to Java objects, and its functions.
 ///
 pub mod ToJava {
 

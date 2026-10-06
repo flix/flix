@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for reading the last access time of a file, and its handlers.
+/// Effect for reading the last access time of a file, and its functions.
 ///
 pub mod Fs.AccessTime {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that support embedding values and applying embedded functions, and its operations.
+/// Trait for types that support embedding values and applying embedded functions, and its functions.
 ///
 pub mod Applicative {
 

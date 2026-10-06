@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of IPv4 socket addresses, and its operations.
+/// Type of IPv4 socket addresses, and its functions.
 ///
 pub mod Net.SocketAddrV4 {
 

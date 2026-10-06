@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of paths locating values inside a `Json` document, and its operations.
+/// Type of paths locating values inside a `Json` document, and its functions.
 ///
 pub mod Util.Json.JsonPath {
 

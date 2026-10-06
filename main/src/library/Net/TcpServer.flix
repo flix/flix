@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of TCP servers, and its operations.
+/// Type of TCP servers, and its functions.
 ///
 pub mod Net.TcpServer {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that support negation, and its operations.
+/// Trait for types that support negation, and its functions.
 ///
 pub mod Neg {
 

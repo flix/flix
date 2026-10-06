@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for interacting with the console, and its handlers.
+/// Effect for interacting with the console, and its functions.
 ///
 pub mod Sys.Console {
 

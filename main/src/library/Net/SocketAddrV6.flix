@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of IPv6 socket addresses, and its operations.
+/// Type of IPv6 socket addresses, and its functions.
 ///
 pub mod Net.SocketAddrV6 {
 

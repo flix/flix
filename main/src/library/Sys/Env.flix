@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for accessing the system environment, and its handlers.
+/// Effect for accessing the system environment, and its functions.
 ///
 pub mod Sys.Env {
 

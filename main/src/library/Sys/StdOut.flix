@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of process stdout streams, and its operations.
+/// Type of process stdout streams, and its functions.
 ///
 pub mod Sys.StdOut {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for deleting a file, and its handlers.
+/// Effect for deleting a file, and its functions.
 ///
 pub mod Fs.DeleteFile {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of lock condition variables, and its operations.
+/// Type of lock condition variables, and its functions.
 ///
 pub mod Concurrent.Condition {
 

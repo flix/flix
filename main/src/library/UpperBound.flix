@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that are partially ordered and have an upper bound, and its operations.
+/// Trait for types that are partially ordered and have an upper bound, and its functions.
 ///
 pub mod UpperBound {
 

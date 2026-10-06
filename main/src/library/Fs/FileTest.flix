@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for testing whether a path exists, is a directory, is a regular file, or is a symbolic link, and its handlers.
+/// Effect for testing whether a path exists, is a directory, is a regular file, or is a symbolic link, and its functions.
 ///
 pub mod Fs.FileTest {
 

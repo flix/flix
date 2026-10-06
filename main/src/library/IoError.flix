@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of errors that can occur when performing I/O operations involving the file system, and its operations.
+/// Type of errors that can occur when performing I/O operations involving the file system, and its functions.
 ///
 pub mod IoError {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for truncating a file, and its handlers.
+/// Effect for truncating a file, and its functions.
 ///
 pub mod Fs.Truncate {
 

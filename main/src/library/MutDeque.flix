@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of mutable double-ended queues, and its operations.
+/// Type of mutable double-ended queues, and its functions.
 ///
 pub mod MutDeque {
     use Math.Shuffle

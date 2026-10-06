@@ -7,7 +7,7 @@
  */
 
 ///
-/// Type of thread-safe `Int32` counters, and its operations.
+/// Type of thread-safe `Int32` counters, and its functions.
 ///
 pub mod BPlusTree.AtomicCounter {
     import java.util.concurrent.atomic.{LongAdder => JLongAdder}

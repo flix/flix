@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for writing lines to a file, and its handlers.
+/// Effect for writing lines to a file, and its functions.
 ///
 pub mod Fs.WriteLines {
 

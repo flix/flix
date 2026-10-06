@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for checking whether a file is readable, writable, or executable, and its handlers.
+/// Effect for checking whether a file is readable, writable, or executable, and its functions.
 ///
 pub mod Fs.FilePermission {
 

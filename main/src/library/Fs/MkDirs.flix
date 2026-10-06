@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for creating a directory and all its parent directories, and its handlers.
+/// Effect for creating a directory and all its parent directories, and its functions.
 ///
 pub mod Fs.MkDirs {
 

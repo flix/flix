@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that form a commutative group, and its operations.
+/// Trait for types that form a commutative group, and its functions.
 ///
 pub mod CommutativeGroup {
 

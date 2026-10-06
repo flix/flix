@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that form a commutative monoid, and its operations.
+/// Trait for types that form a commutative monoid, and its functions.
 ///
 pub mod CommutativeMonoid {
 

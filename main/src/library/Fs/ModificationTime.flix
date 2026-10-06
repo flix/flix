@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for reading the last modification time of a file, and its handlers.
+/// Effect for reading the last modification time of a file, and its functions.
 ///
 pub mod Fs.ModificationTime {
 

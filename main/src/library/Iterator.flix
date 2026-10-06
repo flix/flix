@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of lazy iterators scoped to a region, and its operations.
+/// Type of lazy iterators scoped to a region, and its functions.
 ///
 pub mod Iterator {
     use Step.{Ans, Skip, Done}

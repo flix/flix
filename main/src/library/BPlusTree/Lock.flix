@@ -7,7 +7,7 @@
  */
 
 ///
-/// Type of optimistic read-write locks, and its operations.
+/// Type of optimistic read-write locks, and its functions.
 ///
 pub mod BPlusTree.Lock {
     import java.util.concurrent.locks.{StampedLock => JStampedLock}

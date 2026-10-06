@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for reading the access, creation, and modification times of a file, and its handlers.
+/// Effect for reading the access, creation, and modification times of a file, and its functions.
 ///
 pub mod Fs.FileTime {
 

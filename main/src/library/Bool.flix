@@ -14,7 +14,7 @@ instance UpperBound[Bool] {
 }
 
 ///
-/// Type of boolean values, and its operations.
+/// Type of boolean values, and its functions.
 ///
 pub mod Bool {
 

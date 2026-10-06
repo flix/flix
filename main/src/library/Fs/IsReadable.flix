@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for checking whether a file is readable, and its handlers.
+/// Effect for checking whether a file is readable, and its functions.
 ///
 pub mod Fs.IsReadable {
 

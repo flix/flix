@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of time units, and its operations.
+/// Type of time units, and its functions.
 ///
 pub mod Time.TimeUnit {
 

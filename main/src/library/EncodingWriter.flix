@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of writers that encode chars into bytes, and its operations.
+/// Type of writers that encode chars into bytes, and its functions.
 ///
 pub mod EncodingWriter {
 

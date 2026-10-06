@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of socket addresses, and its operations.
+/// Type of socket addresses, and its functions.
 ///
 pub mod Net.SocketAddr {
 

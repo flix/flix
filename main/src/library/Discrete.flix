@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that form a discrete sequence, and its operations.
+/// Trait for types that form a discrete sequence, and its functions.
 ///
 pub mod Discrete {
 

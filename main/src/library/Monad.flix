@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that support monadic bind (`flatMap`), and its operations.
+/// Trait for types that support monadic bind (`flatMap`), and its functions.
 ///
 pub mod Monad {
 

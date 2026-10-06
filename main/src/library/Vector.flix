@@ -124,7 +124,7 @@ instance ForEach[Vector[a]] {
 }
 
 ///
-/// Type of immutable arrays, and its operations.
+/// Type of immutable arrays, and its functions.
 ///
 pub mod Vector {
     use Math.Shuffle

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of cyclic barriers, and its operations.
+/// Type of cyclic barriers, and its functions.
 ///
 pub mod Concurrent.CyclicBarrier {
     import java.util.concurrent.{CyclicBarrier => JCyclicBarrier}

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be mapped over, and its operations.
+/// Trait for types that can be mapped over, and its functions.
 ///
 pub mod Functor {
 

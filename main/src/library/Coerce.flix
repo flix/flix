@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be coerced, and its operations.
+/// Trait for types that can be coerced, and its functions.
 ///
 pub mod Coerce {
 

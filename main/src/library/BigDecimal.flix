@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of arbitrary-precision signed decimal numbers, and its operations.
+/// Type of arbitrary-precision signed decimal numbers, and its functions.
 ///
 /// The representation consists of both a "value" and a "scale". Standard
 /// equality (`==` and the `Eq` trait) consider both value and scale,

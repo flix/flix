@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for connecting to TCP servers, and its handlers.
+/// Effect for connecting to TCP servers, and its functions.
 ///
 pub mod Net.TcpConnect {
     use IoError.ErrorKind

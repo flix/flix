@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for checking whether a file is writable, and its handlers.
+/// Effect for checking whether a file is writable, and its functions.
 ///
 pub mod Fs.IsWritable {
 

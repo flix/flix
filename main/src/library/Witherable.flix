@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be traversed from left to right with an applicative functor while filtering elements, and its operations.
+/// Trait for types that can be traversed from left to right with an applicative functor while filtering elements, and its functions.
 ///
 pub mod Witherable {
 

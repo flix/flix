@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that support addition, and its operations.
+/// Trait for types that support addition, and its functions.
 ///
 pub mod Add {
 

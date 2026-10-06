@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of process stderr streams, and its operations.
+/// Type of process stderr streams, and its functions.
 ///
 pub mod Sys.StdErr {
 

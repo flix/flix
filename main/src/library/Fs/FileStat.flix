@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for reading file metadata, such as file type, permissions, timestamps, and size, and its handlers.
+/// Effect for reading file metadata, such as file type, permissions, timestamps, and size, and its functions.
 ///
 pub mod Fs.FileStat {
 

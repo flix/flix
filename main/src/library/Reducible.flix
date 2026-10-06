@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be reduced to a summary value, and its operations.
+/// Trait for types that can be reduced to a summary value, and its functions.
 ///
 pub mod Reducible {
 

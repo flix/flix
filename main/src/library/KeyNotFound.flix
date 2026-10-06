@@ -18,7 +18,7 @@ eff KeyNotFound {
 }
 
 ///
-/// Effect for signaling that a key was not found, and its handlers.
+/// Effect for signaling that a key was not found, and its functions.
 ///
 pub mod KeyNotFound {
 

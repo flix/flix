@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be hashed, and its operations.
+/// Trait for types that can be hashed, and its functions.
 ///
 pub mod Hash {
 

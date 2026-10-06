@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of validation results that are either a successful value or a non-empty collection of errors, and its operations.
+/// Type of validation results that are either a successful value or a non-empty collection of errors, and its functions.
 ///
 pub mod Validation {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of values with reversed ordering, and its operations.
+/// Type of values with reversed ordering, and its functions.
 ///
 pub mod Down {
 

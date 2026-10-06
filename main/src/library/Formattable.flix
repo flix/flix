@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be formatted as a `RichString`, and its operations.
+/// Trait for types that can be formatted as a `RichString`, and its functions.
 ///
 pub mod Formattable {
 

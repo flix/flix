@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for creating a temporary directory, and its handlers.
+/// Effect for creating a temporary directory, and its functions.
 ///
 pub mod Fs.MkTempDir {
 

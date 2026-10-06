@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of TCP sockets, and its operations.
+/// Type of TCP sockets, and its functions.
 ///
 pub mod Net.TcpSocket {
 

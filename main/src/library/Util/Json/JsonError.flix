@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of JSON parsing and decoding errors, and its operations.
+/// Type of JSON parsing and decoding errors, and its functions.
 ///
 pub mod Util.Json.JsonError {
 

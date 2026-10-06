@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of readers that decode bytes into chars, and its operations.
+/// Type of readers that decode bytes into chars, and its functions.
 ///
 pub mod DecodingReader {
 

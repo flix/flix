@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for generating random numbers, and its handlers.
+/// Effect for generating random numbers, and its functions.
 ///
 pub mod Math.Random {
 

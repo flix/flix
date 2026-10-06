@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of non-empty chains, and its operations.
+/// Type of non-empty chains, and its functions.
 ///
 pub mod Nec {
     use Math.Shuffle

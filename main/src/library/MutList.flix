@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of mutable lists backed by resizable arrays, and its operations.
+/// Type of mutable lists backed by resizable arrays, and its functions.
 ///
 pub mod MutList {
     use Math.Shuffle

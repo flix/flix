@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be read from with lookahead, and its operations.
+/// Trait for types that can be read from with lookahead, and its functions.
 ///
 pub mod Peekable {
 

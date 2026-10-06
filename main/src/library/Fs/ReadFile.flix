@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for reading the contents of a file as a string, and its handlers.
+/// Effect for reading the contents of a file as a string, and its functions.
 ///
 pub mod Fs.ReadFile {
 

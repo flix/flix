@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be converted to strings, and its operations.
+/// Trait for types that can be converted to strings, and its functions.
 ///
 pub mod ToString {
 

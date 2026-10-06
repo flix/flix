@@ -7,7 +7,7 @@
  */
 
 ///
-/// Trait for types that map indices to elements, and its operations.
+/// Trait for types that map indices to elements, and its functions.
 ///
 pub mod Indexable {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that are partially ordered and have a lower bound, and its operations.
+/// Trait for types that are partially ordered and have a lower bound, and its functions.
 ///
 pub mod LowerBound {
 

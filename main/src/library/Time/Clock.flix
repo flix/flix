@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for accessing the current (real-world) time, and its handlers.
+/// Effect for accessing the current (real-world) time, and its functions.
 ///
 pub mod Time.Clock {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be marshaled to Flix values, and its operations.
+/// Trait for types that can be marshaled to Flix values, and its functions.
 ///
 pub mod ToFlix {
 

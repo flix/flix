@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of compiled regular expressions, and its operations.
+/// Type of compiled regular expressions, and its functions.
 ///
 /// This module provides regular expression matching on strings, including
 /// alternative implementations of functions from `String.flix` using regular expressions.

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of arbitrary-precision signed integers, and its operations.
+/// Type of arbitrary-precision signed integers, and its functions.
 ///
 pub mod BigInt {
 

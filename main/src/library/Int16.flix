@@ -14,7 +14,7 @@ instance UpperBound[Int16] {
 }
 
 ///
-/// Type of 16-bit signed integers, and its operations.
+/// Type of 16-bit signed integers, and its functions.
 ///
 pub mod Int16 {
 

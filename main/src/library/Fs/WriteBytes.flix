@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for writing bytes to a file, and its handlers.
+/// Effect for writing bytes to a file, and its functions.
 ///
 pub mod Fs.WriteBytes {
 

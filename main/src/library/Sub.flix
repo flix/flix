@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that support subtraction, and its operations.
+/// Trait for types that support subtraction, and its functions.
 ///
 pub mod Sub {
 

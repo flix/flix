@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for sending HTTP requests, and its handlers.
+/// Effect for sending HTTP requests, and its functions.
 ///
 pub mod Net.Http {
 

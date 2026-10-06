@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that are monads that support zipping, and its operations.
+/// Trait for types that are monads that support zipping, and its functions.
 ///
 pub mod MonadZip {
 

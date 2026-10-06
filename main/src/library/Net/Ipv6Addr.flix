@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of IPv6 addresses, and its operations.
+/// Type of IPv6 addresses, and its functions.
 ///
 pub mod Net.Ipv6Addr {
     import java.lang.Integer

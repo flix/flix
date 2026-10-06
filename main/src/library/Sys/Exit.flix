@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for exiting the JVM, and its handlers.
+/// Effect for exiting the JVM, and its functions.
 ///
 pub mod Sys.Exit {
 

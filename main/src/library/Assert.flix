@@ -7,7 +7,7 @@
  */
 
 ///
-/// Effect for performing assertions during program execution, and its handlers.
+/// Effect for performing assertions during program execution, and its functions.
 ///
 pub mod Assert {
 

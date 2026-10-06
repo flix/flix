@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for appending lines to a file, and its handlers.
+/// Effect for appending lines to a file, and its functions.
 ///
 pub mod Fs.AppendLines {
 

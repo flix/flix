@@ -14,7 +14,7 @@ instance UpperBound[Int32] {
 }
 
 ///
-/// Type of 32-bit signed integers, and its operations.
+/// Type of 32-bit signed integers, and its functions.
 ///
 pub mod Int32 {
 

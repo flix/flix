@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of JSON values, and its operations.
+/// Type of JSON values, and its functions.
 ///
 pub mod Util.Json {
 

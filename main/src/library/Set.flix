@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of immutable ordered sets, and its operations.
+/// Type of immutable ordered sets, and its functions.
 ///
 pub mod Set {
 

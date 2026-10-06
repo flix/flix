@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be folded without regard to order, and its operations.
+/// Trait for types that can be folded without regard to order, and its functions.
 ///
 pub mod UnorderedFoldable {
 

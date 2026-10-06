@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of immutable singly-linked lists, and its operations.
+/// Type of immutable singly-linked lists, and its functions.
 ///
 pub mod List {
     use Math.Shuffle

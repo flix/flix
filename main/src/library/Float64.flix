@@ -14,7 +14,7 @@ instance UpperBound[Float64] {
 }
 
 ///
-/// Type of 64-bit floating-point numbers, and its operations.
+/// Type of 64-bit floating-point numbers, and its functions.
 ///
 pub mod Float64 {
 

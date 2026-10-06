@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of IP addresses, and its operations.
+/// Type of IP addresses, and its functions.
 ///
 pub mod Net.IpAddr {
 

@@ -7,7 +7,7 @@
  */
 
 ///
-/// Trait for types that map indices to elements and can be modified, and its operations.
+/// Trait for types that map indices to elements and can be modified, and its functions.
 ///
 pub mod IndexableMut {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that support division, and its operations.
+/// Trait for types that support division, and its functions.
 ///
 pub mod Div {
 

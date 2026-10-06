@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of mutable priority queues, and its operations.
+/// Type of mutable priority queues, and its functions.
 ///
 pub mod MutPriorityQueue {
 

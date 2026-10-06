@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of durations measured in nanoseconds, and its operations.
+/// Type of durations measured in nanoseconds, and its functions.
 ///
 pub mod Time.Duration {
 

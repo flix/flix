@@ -14,7 +14,7 @@ instance UpperBound[Int64] {
 }
 
 ///
-/// Type of 64-bit signed integers, and its operations.
+/// Type of 64-bit signed integers, and its functions.
 ///
 pub mod Int64 {
 

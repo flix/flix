@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that are monads with a zero element, and its operations.
+/// Trait for types that are monads with a zero element, and its functions.
 ///
 pub mod MonadZero {
 

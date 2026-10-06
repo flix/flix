@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of immutable strings, and its operations.
+/// Type of immutable strings, and its functions.
 ///
 pub mod String {
 

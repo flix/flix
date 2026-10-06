@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of values in the identity functor and monad, and its operations.
+/// Type of values in the identity functor and monad, and its functions.
 ///
 pub mod Identity {
 

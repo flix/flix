@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for checking whether a path is a directory, and its handlers.
+/// Effect for checking whether a path is a directory, and its functions.
 ///
 pub mod Fs.IsDirectory {
 

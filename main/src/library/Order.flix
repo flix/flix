@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that have a total order, and its operations.
+/// Trait for types that have a total order, and its functions.
 ///
 pub mod Order {
 

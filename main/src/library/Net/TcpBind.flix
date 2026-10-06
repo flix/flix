@@ -6,7 +6,7 @@
  */
 
 ///
-/// Effect for binding TCP servers, and its handlers.
+/// Effect for binding TCP servers, and its functions.
 ///
 pub mod Net.TcpBind {
     use IoError.ErrorKind

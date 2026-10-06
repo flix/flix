@@ -6,7 +6,7 @@
  */
 
 ///
-/// Type of IPv4 addresses, and its operations.
+/// Type of IPv4 addresses, and its functions.
 ///
 pub mod Net.Ipv4Addr {
     import java.net.InetAddress

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Trait for types that can be collected from an iterator, and its operations.
+/// Trait for types that can be collected from an iterator, and its functions.
 ///
 pub mod Collectable {
 
