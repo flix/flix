@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of immutable ordered sets, and its operations.
+///
 pub mod Set {
 
     ///
-    /// The Set type.
+    /// Type of immutable ordered sets.
     ///
     /// A set is currently represented internally as a red-black tree.
     ///

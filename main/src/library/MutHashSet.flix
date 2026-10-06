@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable hash sets that preserve insertion order, and its operations.
+///
 pub mod MutHashSet {
 
     ///
-    /// Represents a mutable hash set that preserves insertion order.
+    /// Type of mutable hash sets that preserve insertion order.
     ///
     pub struct MutHashSet[t: Type, r: Region] {
         inner: MutHashMap[t, Unit, r]

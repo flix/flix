@@ -6,14 +6,18 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of optimistic read-write locks, and its operations.
+///
 pub mod BPlusTree.Lock {
     import java.util.concurrent.locks.{StampedLock => JStampedLock}
 
     ///
-    /// The purpose of Lock is to provide a thin wrapper around Java's StampedLock without
-    /// the IO effect. The lock is optimistic in the sense that reads are performed by
-    /// reading the values and only afterwards verifying that no other thread has changed
-    /// the values. Only annotating a region effect to StampedLock is safe, since it can
+    /// Type of optimistic read-write locks.
+    ///
+    /// Wraps a Java `StampedLock` without the IO effect. The lock is optimistic in the
+    /// sense that reads are performed by reading the values and only afterwards verifying
+    /// that no other thread has changed the values. Only annotating a region effect to StampedLock is safe, since it can
     /// only non-deterministically block a thread for some ( potentially infinite) amount
     /// of time. This is allowed under non-effectful behavior.
     ///

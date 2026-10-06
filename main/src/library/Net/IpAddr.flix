@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of IP addresses, and its operations.
+///
 pub mod Net.IpAddr {
 
     use Net.IpAddr
@@ -14,7 +17,9 @@ pub mod Net.IpAddr {
     import java.net.UnknownHostException
 
     ///
-    /// Represents an IP address.
+    /// Type of IP addresses.
+    ///
+    /// An IP address is either an IPv4 or an IPv6 address.
     ///
     pub enum IpAddr with Eq, ToString {
         case V4(Ipv4Addr)

@@ -5,13 +5,18 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of lock condition variables, and its operations.
+///
 pub mod Concurrent.Condition {
 
     import java.lang.IllegalMonitorStateException
     import java.util.concurrent.locks.{Condition => JCondition}
 
     ///
-    /// A wrapper around a Java Condition.
+    /// Type of lock condition variables.
+    ///
+    /// Wraps a Java `Condition`.
     ///
     pub enum Condition(JCondition)
 

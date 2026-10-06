@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be written to, and its operations.
+///
 pub mod Writable {
 
     use IoError.ErrorKind
@@ -15,7 +18,7 @@ pub mod Writable {
     import java.lang.System
 
     ///
-    /// A trait for types which are resources that can be written to.
+    /// Trait for types that can be written to.
     ///
     pub trait Writable[t] {
 

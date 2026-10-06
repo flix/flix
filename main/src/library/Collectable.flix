@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be collected from an iterator, and its operations.
+///
 pub mod Collectable {
 
     ///
-    /// A trait representing collections that can be produced from an Iterator.
+    /// Trait for types that can be collected from an iterator.
     ///
     pub trait Collectable[t: Type] {
         ///

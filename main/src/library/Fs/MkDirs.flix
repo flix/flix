@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for creating a directory and all its parent directories, and its handlers.
+///
 pub mod Fs.MkDirs {
 
     use Fs.FileWrite
 
     ///
-    /// An effect used to create a directory and all its parent directories.
+    /// Effect for creating a directory and all its parent directories.
     ///
     /// Use the `MkDirs.runWithFileWrite` handler.
     ///

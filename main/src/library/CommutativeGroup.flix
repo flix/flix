@@ -5,11 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that form a commutative group, and its operations.
+///
 pub mod CommutativeGroup {
 
     ///
-    /// A trait for types that form a commutative group (abelian group)
-    /// i.e. groups where the `combine` function is commutative.
+    /// Trait for types that form a commutative group.
+    ///
+    /// A commutative group (abelian group) is a group where the `combine` function is commutative.
     ///
     /// The default instances for number define the additive inverse in the real numbers.
     ///

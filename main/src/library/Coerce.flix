@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be coerced, and its operations.
+///
 pub mod Coerce {
 
     ///
-    /// A trait for type that can be coerced.
+    /// Trait for types that can be coerced.
     ///
     /// Currently only supports newtype-style wrappers.
     ///

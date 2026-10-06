@@ -10,10 +10,13 @@
 ///
 pub def ++(x: a, y: a): a with SemiGroup[a] = SemiGroup.combine(x, y)
 
+///
+/// Trait for types that form a semigroup, and its operations.
+///
 pub mod SemiGroup {
 
     ///
-    /// A trait for types that form a semigroup.
+    /// Trait for types that form a semigroup.
     ///
     pub trait SemiGroup[a] {
         ///
@@ -125,6 +128,9 @@ pub mod SemiGroup {
         }
     }
 
+    ///
+    /// Type of Booleans combined with logical disjunction.
+    ///
     pub enum Any(Bool)
 
     instance SemiGroup[Any] {
@@ -139,6 +145,9 @@ pub mod SemiGroup {
 
     instance CommutativeMonoid[Any]
 
+    ///
+    /// Type of Booleans combined with logical conjunction.
+    ///
     pub enum All(Bool)
 
     instance SemiGroup[All] {

@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of rich strings composed of styled text spans, and its operations.
+///
 pub mod RichString {
 
     use Sys.Env
 
     ///
-    /// A rich string composed of multiple styled spans.
+    /// Type of rich strings composed of styled text spans.
     ///
     pub enum RichString {
         case RichString(Chain[RichString.Span])
@@ -41,7 +44,7 @@ pub mod RichString {
     }
 
     ///
-    /// Represents a color with RGB components or the terminal's default color.
+    /// Type of text colors, either RGB colors or the terminal's default color.
     ///
     /// For RGB, each component is a value from 0 to 255 representing red, green, and blue intensity.
     /// Default represents no color override, using the terminal's current color settings.
@@ -52,7 +55,7 @@ pub mod RichString {
     }
 
     ///
-    /// Represents text styling options.
+    /// Type of text styling options.
     ///
     /// Defines the visual appearance of text spans beyond color.
     ///
@@ -62,7 +65,7 @@ pub mod RichString {
     }
 
     ///
-    /// A text span with content, foreground color, background color, and styles.
+    /// Type of text spans with content, foreground color, background color, and styles.
     ///
     /// A span represents a contiguous piece of text with uniform styling.
     ///

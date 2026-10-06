@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for appending a string to a file, and its handlers.
+///
 pub mod Fs.AppendFile {
 
     use Fs.FileWrite
 
     ///
-    /// An effect used to append a string to a file.
+    /// Effect for appending a string to a file.
     ///
     /// Use the `AppendFile.runWithFileWrite` handler.
     ///

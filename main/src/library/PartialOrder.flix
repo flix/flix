@@ -5,10 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that have a partial order, and its operations.
+///
 pub mod PartialOrder {
 
     ///
-    /// A Partial Order is a function ⊑ which satisfies three properties: reflexivity, anti-symmetry, and transitivity.
+    /// Trait for types that have a partial order.
+    ///
+    /// A partial order is a relation ⊑ which satisfies three properties: reflexivity, anti-symmetry, and transitivity.
     ///
     pub trait PartialOrder[a] {
 

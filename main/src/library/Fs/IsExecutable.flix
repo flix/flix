@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for checking whether a file is executable, and its handlers.
+///
 pub mod Fs.IsExecutable {
 
     use Fs.FilePermission
 
     ///
-    /// An effect used to check if a file is executable.
+    /// Effect for checking whether a file is executable.
     ///
     /// Use the `IsExecutable.runWithFilePermission` handler.
     ///

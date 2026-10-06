@@ -6,10 +6,13 @@
  */
 
 ///
-/// The Identity Functor / Monad.
+/// Type of values in the identity functor and monad, and its operations.
 ///
 pub mod Identity {
 
+    ///
+    /// Type of values in the identity functor and monad.
+    ///
     pub enum Identity[a] with Eq, Order, ToString, Hash { case Identity(a) }
 
     instance SemiGroup[Identity[a]] with SemiGroup[a] {

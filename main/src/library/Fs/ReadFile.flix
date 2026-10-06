@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for reading the contents of a file as a string, and its handlers.
+///
 pub mod Fs.ReadFile {
 
     use Fs.FileRead
 
     ///
-    /// An effect used to read the contents of a file as a string.
+    /// Effect for reading the contents of a file as a string.
     ///
     /// Use the `ReadFile.runWithFileRead` handler.
     ///

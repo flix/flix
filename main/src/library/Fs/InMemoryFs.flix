@@ -28,7 +28,7 @@ mod Fs.InMemoryFs {
         mut counter: Int32
     }
 
-    /// The content of an in-memory entry.
+    /// Type of in-memory file contents, either text or bytes.
     pub enum Entry with ToString {
         case BinaryEntry(Vector[Int8])
         case TextEntry(String)

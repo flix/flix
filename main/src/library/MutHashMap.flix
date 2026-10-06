@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable hash maps that preserve insertion order, and its operations.
+///
 pub mod MutHashMap {
 
     ///
-    /// Represents a mutable hash map that preserves insertion order.
+    /// Type of mutable hash maps that preserve insertion order.
     ///
     /// Uses a hash table with separate chaining for collisions and a doubly-linked list
     /// to maintain insertion order.

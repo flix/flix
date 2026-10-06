@@ -5,11 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that form a discrete sequence, and its operations.
+///
 pub mod Discrete {
 
     ///
-    /// A trait for types whose values form a discrete sequence, i.e. where every
-    /// value has an immediate successor and predecessor.
+    /// Trait for types that form a discrete sequence.
+    ///
+    /// Every value has an immediate successor and predecessor.
     ///
     /// The successor and predecessor functions must satisfy the following laws:
     ///

@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for appending lines to a file, and its handlers.
+///
 pub mod Fs.AppendLines {
 
     use Fs.FileWrite
 
     ///
-    /// An effect used to append lines to a file.
+    /// Effect for appending lines to a file.
     ///
     /// Use the `AppendLines.runWithFileWrite` handler.
     ///

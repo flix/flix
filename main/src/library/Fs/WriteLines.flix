@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for writing lines to a file, and its handlers.
+///
 pub mod Fs.WriteLines {
 
     use Fs.FileWrite
 
     ///
-    /// An effect used to write lines to a file.
+    /// Effect for writing lines to a file.
     ///
     /// Use the `WriteLines.runWithFileWrite` handler.
     ///

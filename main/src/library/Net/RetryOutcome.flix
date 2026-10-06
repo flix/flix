@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of reasons for considering a retry, and its operations.
+///
 pub mod Net.RetryOutcome {
 
     use Net.HttpResponse
 
     ///
-    /// Describes why a retry is being considered.
+    /// Type of reasons for considering a retry.
     ///
     pub enum RetryOutcome {
         /// A transport-level failure (connection refused, timeout, etc.).

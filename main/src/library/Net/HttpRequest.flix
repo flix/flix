@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of HTTP requests, and its operations.
+///
 pub mod Net.HttpRequest {
 
     use Net.Body
@@ -15,7 +18,9 @@ pub mod Net.HttpRequest {
     use Time.Duration
 
     ///
-    /// An HTTP request with method, URL, multi-valued headers, and optional body.
+    /// Type of HTTP requests.
+    ///
+    /// An HTTP request has a method, a URL, multi-valued headers, and an optional body.
     ///
     pub enum HttpRequest({
         method          = Method,

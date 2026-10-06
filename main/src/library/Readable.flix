@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be read from, and its operations.
+///
 pub mod Readable {
 
     use IoError.ErrorKind
@@ -14,7 +17,7 @@ pub mod Readable {
     import java.io.IOException
 
     ///
-    /// A trait for types which are resources that can be read from.
+    /// Trait for types that can be read from.
     ///
     pub trait Readable[t] {
 

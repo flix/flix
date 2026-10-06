@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of process stderr streams, and its operations.
+///
 pub mod Sys.StdErr {
 
     import java.io.InputStream
 
     ///
-    /// A wrapper for the stderr stream of a process.
+    /// Type of process stderr streams.
     ///
     pub enum StdErr(InputStream)
 

@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that have a total order, and its operations.
+///
 pub mod Order {
 
     ///
-    /// A trait for types with a total order.
+    /// Trait for types that have a total order.
     ///
     pub trait Order[a] with Eq[a] {
 

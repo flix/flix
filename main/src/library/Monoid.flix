@@ -5,11 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that form a monoid, and its operations.
+///
 pub mod Monoid {
 
     ///
-    /// A trait for Monoids, objects that support an associative binary
-    /// operation `combine` and neutral element `empty`.
+    /// Trait for types that form a monoid.
+    ///
+    /// A monoid supports an associative binary operation `combine` and a neutral element `empty`.
     ///
     pub trait Monoid[a] with SemiGroup[a] {
         ///

@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of readers that decode bytes into chars, and its operations.
+///
 pub mod DecodingReader {
 
     import java.nio.charset.CharsetDecoder
@@ -13,7 +16,9 @@ pub mod DecodingReader {
     import java.nio.CharBuffer
 
     ///
-    /// Adapts a `Readable` of bytes to a `Readable` of chars.
+    /// Type of readers that decode bytes into chars.
+    ///
+    /// A `DecodingReader` adapts a `Readable` of bytes to a `Readable` of chars.
     ///
     /// `byteReader`: the underlying byte reader, an instance of `Readable where Readable.Elm[t] ~ Int8`.
     /// `decoder`: used to decode bytes read from `byteReader`.

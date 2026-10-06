@@ -12,48 +12,42 @@ pub type alias Static = IO
 type alias Heap[h: Eff] = h
 
 ///
-/// An enum that holds type information where a witness is not available.
+/// Type of proxies that carry type information where a witness is not available.
 ///
 pub enum Proxy[_: Type] {
     case Proxy
 }
 
 ///
-/// An enum that holds effect information where a witness is not available.
+/// Type of proxies that carry effect information where a witness is not available.
 ///
 pub enum ProxyEff[_: Eff] {
     case Proxy
 }
 
 ///
-/// An enum that holds type-level Bool information where a witness is not available.
+/// Type of proxies that carry type-level Boolean information where a witness is not available.
 ///
 pub enum ProxyBool[_: Bool] {
     case Proxy
 }
 
 ///
-/// The uninterpretable Chan effect.
-///
-/// The `Chan` effect represents the global region of channels.
+/// Effect for operations on channels in the global region.
 ///
 /// The `Chan` effect is uninterpretable which means that it cannot be handled.
 ///
 pub eff Chan
 
 ///
-/// The uninterpretable IO effect.
-///
-/// The `IO` effect represents the actions not described by any other effect.
+/// Effect for actions not described by any other effect.
 ///
 /// The `IO` effect is uninterpretable which means that it cannot be handled.
 ///
 pub eff IO
 
 ///
-/// The uninterpretable `NonDet` effect.
-///
-/// The `NonDet` effect represents one or more non-deterministic actions.
+/// Effect for non-deterministic actions.
 ///
 /// The `NonDet` effect is uninterpretable which means that it cannot be handled.
 ///
@@ -177,16 +171,25 @@ pub def indexOutOfBounds!(m: String): a = unsafe IO {
     throw new IndexOutOfBoundsException(m)
 }
 
+///
+/// Type of unary functions tagged as either pure or impure.
+///
 pub enum Purity[a: Type, b: Type, ef: Eff] {
     case Pure(a -> b)
     case Impure(a -> b \ ef)
 }
 
+///
+/// Type of curried binary functions tagged as either pure or impure.
+///
 pub enum Purity2[a: Type, b: Type, c: Type, ef: Eff] {
     case Pure(a -> b -> c)
     case Impure(a -> b -> c \ ef)
 }
 
+///
+/// Type of curried ternary functions tagged as either pure or impure.
+///
 pub enum Purity3[a: Type, b: Type, c: Type, d: Type, ef: Eff] {
     case Pure(a -> b -> c -> d)
     case Impure(a -> b -> c -> d \ ef)

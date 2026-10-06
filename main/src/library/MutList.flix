@@ -5,11 +5,14 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable lists backed by resizable arrays, and its operations.
+///
 pub mod MutList {
     use Math.Shuffle
 
     ///
-    /// Represents a mutable list.
+    /// Type of mutable lists backed by resizable arrays.
     ///
     /// Invariant
     ///   - The length is always higher than the total capacity of the array.

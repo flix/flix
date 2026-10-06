@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for reading file metadata, such as file type, permissions, timestamps, and size, and its handlers.
+///
 pub mod Fs.FileStat {
 
     use Fs.FileStat
@@ -15,7 +18,7 @@ pub mod Fs.FileStat {
     use Fs.Size
 
     ///
-    /// An effect used to read file metadata (test, permissions, timestamps, size).
+    /// Effect for reading file metadata, such as file type, permissions, timestamps, and size.
     ///
     pub eff FileStat {
 

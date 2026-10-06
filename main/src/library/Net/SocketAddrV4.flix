@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of IPv4 socket addresses, and its operations.
+///
 pub mod Net.SocketAddrV4 {
 
     use Net.Ipv4Addr
 
     ///
-    /// Represents an Ipv4 Socket Address.
+    /// Type of IPv4 socket addresses.
     ///
     pub enum SocketAddrV4 with Eq {
         case SocketAddrV4(Ipv4Addr, Int32)

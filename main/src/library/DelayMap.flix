@@ -5,10 +5,16 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of immutable maps with lazily evaluated values, and its operations.
+///
 pub mod DelayMap {
 
     import java.lang.Runtime
 
+    ///
+    /// Type of immutable maps with lazily evaluated values.
+    ///
     pub enum DelayMap[k, v] {
         case DMap(RedBlackTree[k, Lazy[v]])
     }

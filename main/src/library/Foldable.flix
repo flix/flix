@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be folded, and its operations.
+///
 pub mod Foldable {
 
     use Applicative.{*>}
 
     ///
-    /// A trait for data structures that can be folded.
+    /// Trait for types that can be folded.
     ///
     pub trait Foldable[t: Type -> Type] {
         ///

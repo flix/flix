@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for deleting a file, and its handlers.
+///
 pub mod Fs.DeleteFile {
 
     use Fs.FileWrite
 
     ///
-    /// An effect used to delete a file.
+    /// Effect for deleting a file.
     ///
     /// Use the `DeleteFile.runWithFileWrite` handler.
     ///

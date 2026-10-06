@@ -5,8 +5,14 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of comparison results, and its operations.
+///
 pub mod Comparison {
 
+    ///
+    /// Type of comparison results.
+    ///
     pub enum Comparison with Eq, ToString {
         case LessThan
         case EqualTo

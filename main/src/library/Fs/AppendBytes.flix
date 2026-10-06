@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for appending bytes to a file, and its handlers.
+///
 pub mod Fs.AppendBytes {
 
     use Fs.FileWrite
 
     ///
-    /// An effect used to append bytes to a file.
+    /// Effect for appending bytes to a file.
     ///
     /// Use the `AppendBytes.runWithFileWrite` handler.
     ///

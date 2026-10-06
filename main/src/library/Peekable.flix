@@ -5,10 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be read from with lookahead, and its operations.
+///
 pub mod Peekable {
 
     import java.lang.String
 
+    ///
+    /// Trait for types that can be read from with lookahead.
     ///
     /// Extends `Readable` with the ability to `peek` at values that have not yet been `read`,
     /// `skip` values that don't need to be read, and perform other kinds of conditional reads.

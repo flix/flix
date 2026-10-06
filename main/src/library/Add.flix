@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that support addition, and its operations.
+///
 pub mod Add {
 
     ///
-    /// A trait for addition.
+    /// Trait for types that support addition.
     ///
     pub trait Add[a] {
         ///

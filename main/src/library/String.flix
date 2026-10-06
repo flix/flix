@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of immutable strings, and its operations.
+///
 pub mod String {
 
     import java.lang.System

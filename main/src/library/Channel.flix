@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Modules for message passing over channels.
+///
 pub mod Channel {
 
     use Time.TimeUnit

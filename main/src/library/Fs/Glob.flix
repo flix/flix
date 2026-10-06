@@ -5,13 +5,16 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for finding files matching a glob pattern, and its handlers.
+///
 pub mod Fs.Glob {
 
     use Fs.FileSystem
     use Fs.FsLayer.{logPre, logPost}
 
     ///
-    /// An effect used to find files matching a glob pattern.
+    /// Effect for finding files matching a glob pattern.
     ///
     pub eff Glob {
 

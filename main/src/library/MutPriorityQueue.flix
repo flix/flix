@@ -5,10 +5,14 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable priority queues, and its operations.
+///
 pub mod MutPriorityQueue {
 
     ///
-    /// Represents a mutable priority queue.
+    /// Type of mutable priority queues.
+    ///
     /// Explanation of component types (left to right):
     /// Component 1: The region capability the queue is associated with.
     /// Component 2: A reference to the backing array.

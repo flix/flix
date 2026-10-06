@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of writers that encode chars into bytes, and its operations.
+///
 pub mod EncodingWriter {
 
     import java.nio.charset.CharsetEncoder
@@ -13,7 +16,9 @@ pub mod EncodingWriter {
     import java.nio.CharBuffer
 
     ///
-    /// Adapts a `Writable` of bytes to a `Writable` of chars.
+    /// Type of writers that encode chars into bytes.
+    ///
+    /// An `EncodingWriter` adapts a `Writable` of bytes to a `Writable` of chars.
     ///
     /// `byteWriter`: the underlying byte writer, an instance of `Writable` where `Writable.Elm[t] ~ Int8`.
     /// `encoder`: used to encode bytes before writing them to the `byteReader`.

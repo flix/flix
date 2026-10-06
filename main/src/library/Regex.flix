@@ -6,9 +6,9 @@
  */
 
 ///
-/// Basic support for regular expression matching on Strings.
+/// Type of compiled regular expressions, and its operations.
 ///
-/// This module uses the builtin Regex datatype representing a compiled regular expression and
+/// This module provides regular expression matching on strings, including
 /// alternative implementations of functions from `String.flix` using regular expressions.
 ///
 /// Note - for regex matching all scanning is left-to-right and "chunked" by the matcher.
@@ -44,7 +44,7 @@ pub mod Regex {
     use Regex.Matcher.{Matcher}
 
     ///
-    /// Represents a flag controlling the compilation of regular expression.
+    /// Type of flags that control the compilation of regular expressions.
     ///
     pub enum Flag with Eq, Order, ToString {
         case CanonEq

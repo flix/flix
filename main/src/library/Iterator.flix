@@ -5,15 +5,21 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of lazy iterators scoped to a region, and its operations.
+///
 pub mod Iterator {
     use Step.{Ans, Skip, Done}
 
+    ///
+    /// Type of lazy iterators scoped to a region.
+    ///
     pub enum Iterator[a: Type, ef: Eff, r: Region] {
         case Iterator(Region[r], Unit -> Iterator.Step[a] \ { r, ef })
     }
 
     ///
-    /// Represent the "steps" of an iterator.
+    /// Type of steps of an iterator.
     ///
     /// This is an expanded version of the `Option` type.
     /// `Ans` is the answer at an intermediate stage of iteration.

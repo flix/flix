@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of TCP servers, and its operations.
+///
 pub mod Net.TcpServer {
 
     import java.net.ServerSocket
 
     ///
-    /// Represents a TCP server.
+    /// Type of TCP servers.
     ///
     pub enum TcpServer(ServerSocket)
 

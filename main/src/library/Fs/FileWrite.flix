@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for modifying files and directories, and its handlers.
+///
 pub mod Fs.FileWrite {
 
     use Fs.FileStat
@@ -18,7 +21,10 @@ pub mod Fs.FileWrite {
     use Fs.MoveOption
 
     ///
-    /// An effect used to write files, append to files, truncate files, and create directories.
+    /// Effect for modifying files and directories.
+    ///
+    /// This includes writing, appending to, truncating, copying, moving, and
+    /// deleting files, and creating directories.
     ///
     pub eff FileWrite {
 

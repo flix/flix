@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for copying a file, and its handlers.
+///
 pub mod Fs.CopyFile {
 
     use Fs.FileWrite
@@ -12,7 +15,7 @@ pub mod Fs.CopyFile {
     use Fs.CopyOption
 
     ///
-    /// An effect used to copy a file.
+    /// Effect for copying a file.
     ///
     /// Use the `CopyFile.runWithFileWrite` handler.
     ///

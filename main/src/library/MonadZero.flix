@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that are monads with a zero element, and its operations.
+///
 pub mod MonadZero {
 
     ///
-    /// A trait for Monads that have a zero element.
+    /// Trait for types that are monads with a zero element.
     ///
     pub trait MonadZero[m: Type -> Type] with Monad[m] {
 

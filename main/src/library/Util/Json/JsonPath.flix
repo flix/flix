@@ -5,14 +5,18 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of paths locating values inside a `Json` document, and its operations.
+///
 pub mod Util.Json.JsonPath {
 
     use Util.Json
     use Util.Json.Json.{JArray, JObject}
 
     ///
-    /// A path locating a value inside a `Json` document, as a sequence of
-    /// `JsonStep`s.
+    /// Type of paths locating values inside a `Json` document.
+    ///
+    /// A path is a sequence of `JsonStep`s.
     ///
     /// The `List[JsonStep]` is stored head-at-root: the first element is the
     /// outermost step and the last element is the leaf. Walking head-to-tail
@@ -23,7 +27,9 @@ pub mod Util.Json.JsonPath {
     }
 
     ///
-    /// A single step in a `JsonPath`: either an array index or an object key.
+    /// Type of single steps in a `JsonPath`.
+    ///
+    /// A step is either an array index or an object key.
     ///
     pub enum JsonStep with Eq, ToString {
         case Index(Int32)

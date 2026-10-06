@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for reading the bytes of a file, and its handlers.
+///
 pub mod Fs.ReadBytes {
 
     use Fs.FileRead
 
     ///
-    /// An effect used to read the bytes of a file.
+    /// Effect for reading the bytes of a file.
     ///
     /// Use the `ReadBytes.runWithFileRead` handler.
     ///

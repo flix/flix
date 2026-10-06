@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable string builders, and its operations.
+///
 pub mod StringBuilder {
 
     use IoError.IoError
@@ -12,7 +15,7 @@ pub mod StringBuilder {
     import java.lang.{StringBuilder => JStringBuilder}
 
     ///
-    /// Represents a StringBuilder.
+    /// Type of mutable string builders.
     ///
     pub enum StringBuilder[_: Region](JStringBuilder)
 

@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for checking whether a file exists, and its handlers.
+///
 pub mod Fs.FileExists {
 
     use Fs.FileTest
 
     ///
-    /// An effect used to check if a file exists.
+    /// Effect for checking whether a file exists.
     ///
     /// Use the `FileExists.runWithFileTest` handler.
     ///

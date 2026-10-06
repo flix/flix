@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of TCP sockets, and its operations.
+///
 pub mod Net.TcpSocket {
 
     import java.io.InputStream
@@ -15,7 +18,7 @@ pub mod Net.TcpSocket {
     use Net.TcpSocket.TcpSocket
 
     ///
-    /// Represents a TCP socket.
+    /// Type of TCP sockets.
     ///
     pub enum TcpSocket(Socket, InputStream, OutputStream)
 

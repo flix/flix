@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of arbitrary-precision signed integers, and its operations.
+///
 pub mod BigInt {
 
     import java.math.BigDecimal

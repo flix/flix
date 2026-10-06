@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be mapped over, and its operations.
+///
 pub mod Functor {
 
     ///
-    /// A trait for types that can be mapped over.
+    /// Trait for types that can be mapped over.
     ///
     pub trait Functor[m: Type -> Type] {
         ///

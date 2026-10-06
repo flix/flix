@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be folded without regard to order, and its operations.
+///
 pub mod UnorderedFoldable {
 
     ///
-    /// A trait for unordered data structures that can be folded.
+    /// Trait for types that can be folded without regard to order.
     ///
     pub trait UnorderedFoldable[t: Type -> Type] {
         ///

@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for reading the last modification time of a file, and its handlers.
+///
 pub mod Fs.ModificationTime {
 
     use Fs.FileTime
 
     ///
-    /// An effect used to read the last modification time of a file.
+    /// Effect for reading the last modification time of a file.
     ///
     /// Use the `ModificationTime.runWithFileTime` handler.
     ///

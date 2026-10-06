@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that support subtraction, and its operations.
+///
 pub mod Sub {
 
     ///
-    /// A trait for subtraction.
+    /// Trait for types that support subtraction.
     ///
     pub trait Sub[a] {
         ///

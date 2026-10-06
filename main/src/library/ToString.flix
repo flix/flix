@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be converted to strings, and its operations.
+///
 pub mod ToString {
 
     import java.lang.Byte
@@ -16,7 +19,7 @@ pub mod ToString {
     import java.lang.Short
 
     ///
-    /// A trait for types that can be converted to strings.
+    /// Trait for types that can be converted to strings.
     ///
     pub trait ToString[a] {
         ///

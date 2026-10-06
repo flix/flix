@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for binding TCP servers, and its handlers.
+///
 pub mod Net.TcpBind {
     use IoError.ErrorKind
     use IoError.IoError
@@ -18,7 +21,7 @@ pub mod Net.TcpBind {
     import java.lang.IllegalArgumentException
 
     ///
-    /// The effect used to bind a TCP server.
+    /// Effect for binding TCP servers.
     ///
     pub eff TcpBind {
         def bind(ip: IpAddr, port: Int16): Result[IoError, TcpServer]

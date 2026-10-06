@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for aborting a computation with an error message, and its handlers.
+///
 pub mod Abort {
 
     import java.lang.Thread
@@ -12,7 +15,7 @@ pub mod Abort {
     import java.lang.System
 
     ///
-    /// An effect used to abort computation with an error message.
+    /// Effect for aborting a computation with an error message.
     ///
     pub eff Abort {
 

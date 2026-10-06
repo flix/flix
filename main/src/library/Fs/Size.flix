@@ -5,12 +5,17 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of file sizes, and its operations.
+///
 pub mod Fs.Size {
 
     use Fs.SizeUnit
 
     ///
-    /// Represents a file size stored as bytes (Int64).
+    /// Type of file sizes.
+    ///
+    /// A size is stored as a number of bytes (`Int64`).
     ///
     pub enum Size(Int64) with Eq, Order, Hash
 

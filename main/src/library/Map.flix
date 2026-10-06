@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of immutable maps, and its operations.
+///
 pub mod Map {
 
     ///
-    /// The Map type.
+    /// Type of immutable maps.
     ///
     /// A map is currently represented internally as a red-black tree.
     ///

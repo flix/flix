@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for accessing the current (real-world) time, and its handlers.
+///
 pub mod Time.Clock {
 
     use Time.Clock
@@ -14,7 +17,7 @@ pub mod Time.Clock {
     import java.util.concurrent.{TimeUnit => JTimeUnit}
 
     ///
-    /// An effect used to access the current (real-world) time.
+    /// Effect for accessing the current (real-world) time.
     ///
     pub eff Clock {
 

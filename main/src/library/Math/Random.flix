@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for generating random numbers, and its handlers.
+///
 pub mod Math.Random {
 
     use Math.Random
@@ -12,7 +15,7 @@ pub mod Math.Random {
     import java.util.{Random => JRandom}
 
     ///
-    /// An effect used to generate random numbers.
+    /// Effect for generating random numbers.
     ///
     pub eff Random {
 

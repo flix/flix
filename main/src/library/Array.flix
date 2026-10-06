@@ -56,6 +56,9 @@ instance Formattable[Array[a, r]] with Formattable[a] {
         fromString("Array#{") + joinWith(Formattable.format, fromString(", "), Array.toList(x)) + fromString("}")
 }
 
+///
+/// Type of mutable fixed-length arrays, and its operations.
+///
 pub mod Array {
     use Math.Shuffle
 

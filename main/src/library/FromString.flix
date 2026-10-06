@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be constructed from strings, and its operations.
+///
 pub mod FromString {
 
     ///
-    /// A trait for types that can be constructed from strings.
+    /// Trait for types that can be constructed from strings.
     ///
     pub trait FromString[a] {
         ///

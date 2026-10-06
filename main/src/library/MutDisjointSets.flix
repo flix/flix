@@ -5,11 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable disjoint sets (union-find), and its operations.
+///
 pub mod MutDisjointSets {
 
     ///
-    /// Represents a mutable disjoint set data structure
-    /// using union-by-rank and path compression.
+    /// Type of mutable disjoint sets (union-find).
+    ///
+    /// Uses union-by-rank and path compression.
     ///
     pub struct MutDisjointSets[t: Type, r: Region] {
         rc:     Region[r],

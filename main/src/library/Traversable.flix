@@ -5,11 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be traversed from left to right with an applicative functor, and its operations.
+///
 pub mod Traversable {
 
     ///
-    /// A trait for data structures that can be traversed in left-to-right
-    /// order with an applicative functor.
+    /// Trait for types that can be traversed from left to right with an applicative functor.
     ///
     pub trait Traversable[t: Type -> Type] with Functor[t], Foldable[t] {
 

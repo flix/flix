@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for checking whether a path is a symbolic link, and its handlers.
+///
 pub mod Fs.IsSymbolicLink {
 
     use Fs.FileTest
 
     ///
-    /// An effect used to check if a path is a symbolic link.
+    /// Effect for checking whether a path is a symbolic link.
     ///
     /// Use the `IsSymbolicLink.runWithFileTest` handler.
     ///

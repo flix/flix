@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for performing all filesystem operations, and its handlers.
+///
 pub mod Fs.FileSystem {
 
     use Fs.FileSystem
@@ -18,7 +21,7 @@ pub mod Fs.FileSystem {
     use Fs.MoveOption
 
     ///
-    /// An effect used to perform all filesystem operations.
+    /// Effect for performing all filesystem operations.
     ///
     pub eff FileSystem {
 

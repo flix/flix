@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for reading the lines of a file, and its handlers.
+///
 pub mod Fs.ReadLines {
 
     use Fs.FileRead
 
     ///
-    /// An effect used to read the lines of a file.
+    /// Effect for reading the lines of a file.
     ///
     /// Use the `ReadLines.runWithFileRead` handler.
     ///

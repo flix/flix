@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of HTTP methods, and its operations.
+///
 pub mod Net.Method {
 
     ///
-    /// An enum representing an HTTP method.
+    /// Type of HTTP methods.
     ///
     pub enum Method with Eq, ToString {
         case Get

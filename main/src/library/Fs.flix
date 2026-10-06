@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Modules for interacting with the file system.
+///
 /// ## Effect Hierarchy
 ///
 /// `[D]` = has `@DefaultHandler`.
@@ -71,6 +74,7 @@
 /// | withSizeRotation  |          |                |          |          |          |         |      | x         | x          |
 /// | withMemoryOverlay |          |                |          |          |          |         |      |           | x          |
 /// | withInMemoryFS    |          |                |          |          |          |         |      |           | x          |
+///
 pub mod Fs {
     /* empty */
 }

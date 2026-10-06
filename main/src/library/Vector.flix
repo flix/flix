@@ -123,6 +123,9 @@ instance ForEach[Vector[a]] {
     pub def forEach(f: a -> Unit \ ef, v: Vector[a]): Unit \ ef = Vector.forEach(f, v)
 }
 
+///
+/// Type of immutable arrays, and its operations.
+///
 pub mod Vector {
     use Math.Shuffle
 

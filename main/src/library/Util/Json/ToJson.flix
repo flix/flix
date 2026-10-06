@@ -5,13 +5,16 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be encoded as a `Json` value, and its operations.
+///
 pub mod Util.Json.ToJson {
 
     use Util.Json
     use Util.Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
 
     ///
-    /// A trait for types that can be encoded as a `Json` value.
+    /// Trait for types that can be encoded as a `Json` value.
     ///
     pub trait ToJson[a] {
         pub def toJson(x: a): Json

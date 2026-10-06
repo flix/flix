@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for sleeping the current thread, and its handlers.
+///
 pub mod Time.Sleep {
     use Logger.Severity
     use Math.Random
@@ -15,7 +18,7 @@ pub mod Time.Sleep {
     import java.lang.{Thread => JThread}
 
     ///
-    /// An effect used to sleep the current thread.
+    /// Effect for sleeping the current thread.
     ///
     pub eff Sleep {
 

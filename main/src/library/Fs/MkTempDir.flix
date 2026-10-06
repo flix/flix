@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for creating a temporary directory, and its handlers.
+///
 pub mod Fs.MkTempDir {
 
     use Fs.FileWrite
 
     ///
-    /// An effect used to create a temporary directory.
+    /// Effect for creating a temporary directory.
     ///
     /// Use the `MkTempDir.runWithFileWrite` handler.
     ///

@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of process stdin streams, and its operations.
+///
 pub mod Sys.StdIn {
 
     import java.io.OutputStream
 
     ///
-    /// A wrapper for the stdin stream of a process.
+    /// Type of process stdin streams.
     ///
     pub enum StdIn(OutputStream)
 

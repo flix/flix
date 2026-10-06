@@ -6,6 +6,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Modules for solving Datalog programs.
+///
 pub mod Fixpoint3 {
     import java.lang.Object
     import java.util.concurrent.locks.{ReadWriteLock => JReadWriteLock}
@@ -13,7 +16,7 @@ pub mod Fixpoint3 {
     use Fixpoint3.Ast.Shared.PredSym
 
     ///
-    /// Represents a boxed value.
+    /// Type of boxed values.
     ///
     /// `NoValue` is used for relational predicates which do not map to anything and therefore
     /// contain no value.
@@ -83,7 +86,7 @@ pub mod Fixpoint3 {
     }
 
     ///
-    /// A trait for types that contain predicate symbols.
+    /// Trait for types that contain predicate symbols.
     ///
     pub trait PredSymsOf[t] {
         pub def predSymsOf(x: t): Set[PredSym]
@@ -95,7 +98,7 @@ pub mod Fixpoint3 {
     enum ReadWriteLock[_: Region](JReadWriteLock)
 
     ///
-    /// A trait for types with predicate symbols that can be substituted.
+    /// Trait for types that contain substitutable predicate symbols.
     ///
     pub trait SubstitutePredSym[t] {
         pub def substitute(x: t, s: Map[PredSym, PredSym]): t

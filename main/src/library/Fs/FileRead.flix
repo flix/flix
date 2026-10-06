@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for reading the contents of a file as a string, as lines, or as bytes, and its handlers.
+///
 pub mod Fs.FileRead {
 
     use Fs.FileRead
@@ -14,7 +17,7 @@ pub mod Fs.FileRead {
     use Fs.Size
 
     ///
-    /// An effect used to read file contents (string, lines, bytes).
+    /// Effect for reading the contents of a file as a string, as lines, or as bytes.
     ///
     pub eff FileRead {
 

@@ -6,7 +6,8 @@
  */
 
 ///
-/// Indicates that a key was not found.
+/// Effect for signaling that a key was not found.
+///
 /// Useful for instances of `Index` or `IndexMut`.
 ///
 eff KeyNotFound {
@@ -16,6 +17,9 @@ eff KeyNotFound {
 
 }
 
+///
+/// Effect for signaling that a key was not found, and its handlers.
+///
 pub mod KeyNotFound {
 
     ///

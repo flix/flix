@@ -13,6 +13,9 @@ instance UpperBound[Float32] {
     pub def maxValue(): Float32 = Float32.maxValue()
 }
 
+///
+/// Type of 32-bit floating-point numbers, and its operations.
+///
 pub mod Float32 {
 
     import java.lang.Double

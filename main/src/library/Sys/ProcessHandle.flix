@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of handles to running processes, and its operations.
+///
 pub mod Sys.ProcessHandle {
 
     import java.lang.{Process => JProcess}
 
     ///
-    /// A handle for a running process.
+    /// Type of handles to running processes.
     ///
     pub enum ProcessHandle(JProcess)
 

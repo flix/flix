@@ -5,10 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that are monads that support zipping, and its operations.
+///
 pub mod MonadZip {
 
     ///
-    /// A trait for zipping Monads, typically container monads like `List`.
+    /// Trait for types that are monads that support zipping.
+    ///
+    /// Instances are typically container monads like `List`.
     ///
     /// A minimal implementation must define `zipWith` and `zipWithA`.
     ///

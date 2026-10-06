@@ -4,6 +4,10 @@
  * Use of this source code is governed by the Apache 2.0 license
  * that can be found in the LICENSE.md file.
  */
+
+///
+/// Modules for working with Java objects and `null` values.
+///
 pub mod Object {
 
     import java.util.Objects

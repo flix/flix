@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of HTTP responses, and its operations.
+///
 pub mod Net.HttpResponse {
 
     use IoError.ErrorKind
@@ -15,7 +18,9 @@ pub mod Net.HttpResponse {
     use Net.HttpResponse.HttpResponse
 
     ///
-    /// An HTTP response with final URL, status code, multi-valued headers, and body.
+    /// Type of HTTP responses.
+    ///
+    /// An HTTP response has a final URL, a status code, multi-valued headers, and a body.
     ///
     pub enum HttpResponse({
         url     = String,

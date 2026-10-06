@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for shuffling collections, and its handlers.
+///
 pub mod Math.Shuffle {
 
     use Math.Shuffle
@@ -12,7 +15,7 @@ pub mod Math.Shuffle {
     import java.util.{Random => JRandom}
 
     ///
-    /// An effect used to shuffle collections.
+    /// Effect for shuffling collections.
     ///
     pub eff Shuffle {
 

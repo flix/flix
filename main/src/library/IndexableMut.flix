@@ -6,11 +6,16 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that map indices to elements and can be modified, and its operations.
+///
 pub mod IndexableMut {
 
     ///
-    /// An `IndexableMut` instance on a type means that it has a (potentially partial) mapping from indices
-    /// (`Indexable.Idx`) to elements (`Indexable.Elm`). The mapping can be modified and potentially expanded.
+    /// Trait for types that map indices to elements and can be modified.
+    ///
+    /// The (potentially partial) mapping from indices (`Indexable.Idx`) to elements (`Indexable.Elm`)
+    /// can be modified and potentially expanded.
     /// The mapping can be accessed by `Indexable.get` and modified by `put`.
     ///
     /// If only a subset of indices are allowed to be modified (e.g. only a range of integers is valid)

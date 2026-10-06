@@ -6,8 +6,9 @@
  */
 
 ///
-/// The `Util` module is a collection of general-purpose utility submodules,
-/// each offering a self-contained piece of functionality:
+/// Modules for general-purpose utilities.
+///
+/// The submodules are:
 ///
 /// - `Util.Checksum` computes cryptographic digests, such as SHA-256.
 /// - `Util.Codec` encodes and decodes data, such as Base64.

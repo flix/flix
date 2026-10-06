@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that support negation, and its operations.
+///
 pub mod Neg {
 
     ///
-    /// A trait for negation.
+    /// Trait for types that support negation.
     ///
     pub trait Neg[a] {
         ///

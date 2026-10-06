@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for accepting TCP server connections, and its handlers.
+///
 pub mod Net.TcpAccept {
     use IoError.ErrorKind
     use IoError.IoError
@@ -17,7 +20,7 @@ pub mod Net.TcpAccept {
     import java.net.SocketTimeoutException
 
     ///
-    /// The effect used to accept a TCP server connection.
+    /// Effect for accepting TCP server connections.
     ///
     pub eff TcpAccept {
         def accept(server: TcpServer): Result[IoError, TcpSocket]

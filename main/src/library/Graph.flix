@@ -6,10 +6,11 @@
  */
 
 ///
-/// A library of functions that operates on graphs, represented as foldable
-/// collections of either pairs or triples, for unweighted and weighted graphs
-/// respectively. These pairs, or triples, represent directed edges while
-/// nodes(vertices) are given implicitly.
+/// Modules for operating on graphs.
+///
+/// Graphs are represented as foldable collections of either pairs or triples,
+/// for unweighted and weighted graphs respectively. These pairs, or triples,
+/// represent directed edges while nodes (vertices) are given implicitly.
 ///
 pub mod Graph {
 

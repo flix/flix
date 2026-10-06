@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be marshaled to Java objects, and its operations.
+///
 pub mod ToJava {
 
     import java.lang.Byte
@@ -20,7 +23,7 @@ pub mod ToJava {
     import java.util.{Set => JSet}
 
     ///
-    /// A trait for marshaling values to Java objects.
+    /// Trait for types that can be marshaled to Java objects.
     ///
     pub trait ToJava[t: Type] {
         type Out[t]: Type

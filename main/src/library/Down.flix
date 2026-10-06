@@ -5,10 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of values with reversed ordering, and its operations.
+///
 pub mod Down {
 
     ///
-    /// The `Down` type allows you to reverse the sort order of `a` conveniently.
+    /// Type of values with reversed ordering.
+    ///
+    /// Wrapping values in `Down` conveniently reverses the sort order of `a`.
     ///
     pub enum Down[a] {
         case Down(a)

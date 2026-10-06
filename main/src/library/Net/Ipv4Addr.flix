@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of IPv4 addresses, and its operations.
+///
 pub mod Net.Ipv4Addr {
     import java.net.InetAddress
     import java.net.UnknownHostException
@@ -14,7 +17,7 @@ pub mod Net.Ipv4Addr {
     use Net.Ipv6Addr
 
     ///
-    /// Represents a V4 Ip Address.
+    /// Type of IPv4 addresses.
     ///
     pub enum Ipv4Addr with Eq {
         // 32 bits

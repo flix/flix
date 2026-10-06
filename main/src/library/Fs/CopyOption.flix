@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of options for the `copyWith` operation, and its operations.
+///
 pub mod Fs.CopyOption {
 
     ///
-    /// Options for the `copyWith` operation.
+    /// Type of options for the `copyWith` operation.
     ///
     pub enum CopyOption with Eq, Order, ToString {
         case CopyAttributes

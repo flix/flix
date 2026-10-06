@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for checking whether a path is a directory, and its handlers.
+///
 pub mod Fs.IsDirectory {
 
     use Fs.FileTest
 
     ///
-    /// An effect used to check if a path is a directory.
+    /// Effect for checking whether a path is a directory.
     ///
     /// Use the `IsDirectory.runWithFileTest` handler.
     ///
