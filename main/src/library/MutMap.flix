@@ -59,9 +59,8 @@ pub mod MutMap {
     ///
     /// Returns a string representation of the given MutMap `m`.
     ///
-    pub def toString(m: MutMap[k, v, r]): String \ r with ToString[k], ToString[v] = region rc {
-        "MutMap#{" + (MutMap.iterator(rc, m) |> Iterator.joinWith(match (k, v) -> "${k} => ${v}", ", ")) + "}"
-    }
+    pub def toString(m: MutMap[k, v, r]): String \ r with ToString[k], ToString[v] =
+        "MutMap#{" + MutMap.joinWith((k, v) -> "${k} => ${v}", ", ", m) + "}"
 
     ///
     /// Returns a fresh empty mutable map.

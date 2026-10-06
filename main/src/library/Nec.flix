@@ -131,9 +131,8 @@ pub mod Nec {
     }
 
     instance ToString[Nec[a]] with ToString[a] {
-        pub def toString(c: Nec[a]): String = region rc {
-            "Nec#{" + (Nec.iterator(rc, c) |> Iterator.join(", ")) + "}"
-        }
+        pub def toString(c: Nec[a]): String =
+            "Nec#{" + Nec.join(", ", c) + "}"
     }
 
     instance Iterable[Nec[a]] {

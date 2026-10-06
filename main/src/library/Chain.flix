@@ -105,9 +105,8 @@ pub mod Chain {
     }
 
     instance ToString[Chain[a]] with ToString[a] {
-        pub def toString(c: Chain[a]): String = region rc {
-            "Chain#{" + (Chain.iterator(rc, c) |> Iterator.join(", ")) + "}"
-        }
+        pub def toString(c: Chain[a]): String =
+            "Chain#{" + Chain.join(", ", c) + "}"
     }
 
     instance Collectable[Chain[a]] {
