@@ -82,17 +82,24 @@ object HtmlDocumentor {
     * The declarations link to their source on the pages that [[HtmlHighlighter]] generates.
     */
   def run(root: TypedAst.Root, origin: Origin, outputDir: Path)(implicit flix: Flix): Unit = {
-    val modulesRoot = splitModules(root)
-    val filteredModulesRoot = filterModules(modulesRoot, origin)
-    val pairedModulesRoot = pairModules(filteredModulesRoot)
-
-    visitMod(pairedModulesRoot, outputDir)
+    visitMod(documentedModules(root, origin), outputDir)
 
     HtmlHighlighter.run(root, origin, outputDir)(documentPage)
 
     writeDocFile("404.html", document404(), outputDir)
 
     writeAssets(outputDir)
+  }
+
+  /**
+    * Returns the modules under `origin` in `root` that [[run]] documents, as the tree it writes
+    * pages for: split out of `root`, filtered to `origin`, and with each companion module paired
+    * with the item it belongs to.
+    */
+  def documentedModules(root: TypedAst.Root, origin: Origin): Module = {
+    val modulesRoot = splitModules(root)
+    val filteredModulesRoot = filterModules(modulesRoot, origin)
+    pairModules(filteredModulesRoot)
   }
 
   /**
@@ -2047,7 +2054,7 @@ object HtmlDocumentor {
   /**
     * An item is a unit that is typically output to its own HTML file.
     */
-  private sealed trait Item {
+  sealed trait Item {
     /** The shortest name of the item, e.g. 'StdOut' */
     def name: String
 
@@ -2061,17 +2068,17 @@ object HtmlDocumentor {
   /**
     * A representation of a module that's easier to work with while generating documentation.
     */
-  private case class Module(sym: Symbol.ModuleSym,
-                            doc: Doc,
-                            parent: Option[Symbol.ModuleSym],
-                            uses: List[UseOrImport],
-                            submodules: List[Module],
-                            traits: List[Trait],
-                            effects: List[Effect],
-                            enums: List[Enum],
-                            structs: List[Struct],
-                            typeAliases: List[TypedAst.TypeAlias],
-                            defs: List[TypedAst.Def]) extends Item {
+  case class Module(sym: Symbol.ModuleSym,
+                    doc: Doc,
+                    parent: Option[Symbol.ModuleSym],
+                    uses: List[UseOrImport],
+                    submodules: List[Module],
+                    traits: List[Trait],
+                    effects: List[Effect],
+                    enums: List[Enum],
+                    structs: List[Struct],
+                    typeAliases: List[TypedAst.TypeAlias],
+                    defs: List[TypedAst.Def]) extends Item {
     override def name: String = moduleName(this.sym)
 
     override def qualifiedName: String = moduleQualifiedName(this.sym)
@@ -2082,12 +2089,12 @@ object HtmlDocumentor {
   /**
     * A representation of a trait that's easier to work with while generating documentation.
     */
-  private case class Trait(decl: TypedAst.Trait,
-                           signatures: List[TypedAst.Sig],
-                           defs: List[TypedAst.Sig],
-                           instances: List[TypedAst.Instance],
-                           parent: Symbol.ModuleSym,
-                           companionMod: Option[Module]) extends Item {
+  case class Trait(decl: TypedAst.Trait,
+                   signatures: List[TypedAst.Sig],
+                   defs: List[TypedAst.Sig],
+                   instances: List[TypedAst.Instance],
+                   parent: Symbol.ModuleSym,
+                   companionMod: Option[Module]) extends Item {
     override def name: String = traitName(this.decl.sym)
 
     override def qualifiedName: String = traitQualifiedName(this.decl.sym)
@@ -2098,10 +2105,10 @@ object HtmlDocumentor {
   /**
     * A representation of an effect that's easier to work with while generating documentation.
     */
-  private case class Effect(decl: TypedAst.Effect,
-                            defaultHandler: Option[Symbol.DefnSym],
-                            parent: Symbol.ModuleSym,
-                            companionMod: Option[Module]) extends Item {
+  case class Effect(decl: TypedAst.Effect,
+                    defaultHandler: Option[Symbol.DefnSym],
+                    parent: Symbol.ModuleSym,
+                    companionMod: Option[Module]) extends Item {
     override def name: String = effectName(this.decl.sym)
 
     override def qualifiedName: String = effectQualifiedName(this.decl.sym)
@@ -2112,10 +2119,10 @@ object HtmlDocumentor {
   /**
     * A representation of an enum that's easier to work with while generating documentation.
     */
-  private case class Enum(decl: TypedAst.Enum,
-                          instances: List[TypedAst.Instance],
-                          parent: Symbol.ModuleSym,
-                          companionMod: Option[Module]) extends Item {
+  case class Enum(decl: TypedAst.Enum,
+                  instances: List[TypedAst.Instance],
+                  parent: Symbol.ModuleSym,
+                  companionMod: Option[Module]) extends Item {
     override def name: String = enumName(this.decl.sym)
 
     override def qualifiedName: String = enumQualifiedName(this.decl.sym)
@@ -2126,10 +2133,10 @@ object HtmlDocumentor {
   /**
     * A representation of a struct that's easier to work with while generating documentation.
     */
-  private case class Struct(decl: TypedAst.Struct,
-                            instances: List[TypedAst.Instance],
-                            parent: Symbol.ModuleSym,
-                            companionMod: Option[Module]) extends Item {
+  case class Struct(decl: TypedAst.Struct,
+                    instances: List[TypedAst.Instance],
+                    parent: Symbol.ModuleSym,
+                    companionMod: Option[Module]) extends Item {
     override def name: String = structName(this.decl.sym)
 
     override def qualifiedName: String = structQualifiedName(this.decl.sym)

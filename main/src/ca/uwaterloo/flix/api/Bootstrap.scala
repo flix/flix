@@ -20,6 +20,7 @@ import java.lang.constant.ClassDesc
 import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.{Stat, Tester}
+import ca.uwaterloo.flix.tools.doc.MissingDoc
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyStyle, FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageSpec, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -1902,6 +1903,20 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     */
   def doc(flix: Flix, origin: Origin): Result[Unit, BootstrapError] = {
     typeCheck(flix).map(HtmlDocumentor.run(_, origin, Bootstrap.getDocumentationDirectory(projectPath))(flix))
+  }
+
+  /**
+    * Prints a report of every documentable item that comes from a source with the origin `origin`
+    * and has no doc comment: one grep-able line per item, followed by a summary count. Prints
+    * nothing if there are none.
+    */
+  def checkMissingDocs(flix: Flix, origin: Origin)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
+    typeCheck(flix).map { root =>
+      val missing = MissingDoc.check(root, origin)
+      if (missing.nonEmpty) {
+        out.println(MissingDoc.format(missing, flix.getFormatter))
+      }
+    }
   }
 
   /**
