@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of reentrant mutual exclusion locks, and its functions.
+///
 pub mod Concurrent.ReentrantLock {
 
     import java.util.concurrent.TimeUnit
@@ -16,7 +19,9 @@ pub mod Concurrent.ReentrantLock {
     use Concurrent.Condition.Condition
 
     ///
-    /// A wrapper around a Java ReentrantLock.
+    /// Type of reentrant mutual exclusion locks.
+    ///
+    /// Wraps a Java `ReentrantLock`.
     ///
     pub enum ReentrantLock(JReentrantLock)
 

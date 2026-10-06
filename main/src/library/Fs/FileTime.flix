@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for reading the access, creation, and modification times of a file, and its functions.
+///
 pub mod Fs.FileTime {
 
     use Fs.FileStat
@@ -12,7 +15,7 @@ pub mod Fs.FileTime {
     use Fs.FsLayer.{logPre, logPost}
 
     ///
-    /// An effect used to read file timestamps (access, creation, modification).
+    /// Effect for reading the access, creation, and modification times of a file.
     ///
     pub eff FileTime {
 

@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that form a group, and its functions.
+///
 pub mod Group {
 
     ///
-    /// A trait for types that form a group.
+    /// Trait for types that form a group.
     ///
     /// The default instances for numbers define the additive inverse in the real numbers.
     ///

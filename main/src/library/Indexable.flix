@@ -6,11 +6,16 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that map indices to elements, and its functions.
+///
 pub mod Indexable {
 
     ///
-    /// An `Indexable` instance on a type means that it has a (partial or total) mapping from indices
-    /// (`Idx`) to elements (`Elm`). The mapping can be accessed by `get`.
+    /// Trait for types that map indices to elements.
+    ///
+    /// The mapping from indices (`Idx`) to elements (`Elm`) can be partial or total.
+    /// The mapping can be accessed by `get`.
     ///
     /// If all indices might not be defined (e.g. only a range of integers is valid) then then `Aef`
     /// should include an error like `OutOfBounds` or `KeyNotFound`.

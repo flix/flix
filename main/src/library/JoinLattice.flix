@@ -6,10 +6,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that form a join semi-lattice, and its functions.
+///
 pub mod JoinLattice {
 
     ///
-    /// A trait for join semi lattices.
+    /// Trait for types that form a join semi-lattice.
     ///
     pub trait JoinLattice[a] with PartialOrder[a] {
 

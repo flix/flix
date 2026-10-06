@@ -6,8 +6,9 @@
  */
 
 ///
-/// The `Time` module is a collection of time-related utility submodules,
-/// each offering a self-contained piece of functionality:
+/// Modules for working with time.
+///
+/// The submodules are:
 ///
 /// - `Time.Clock` accesses the current (real-world) time.
 /// - `Time.Duration` represents a span of time.

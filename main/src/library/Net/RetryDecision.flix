@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of decisions returned by a retry strategy, and its functions.
+///
 pub mod Net.RetryDecision {
 
     use Time.Duration
 
     ///
-    /// The decision returned by a retry handler.
+    /// Type of decisions returned by a retry strategy.
     ///
     pub enum RetryDecision with Eq, ToString {
         /// Retry after the given duration.

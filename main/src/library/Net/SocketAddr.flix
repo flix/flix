@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of socket addresses, and its functions.
+///
 pub mod Net.SocketAddr {
 
     use Net.IpAddr
@@ -15,7 +18,9 @@ pub mod Net.SocketAddr {
     use Net.SocketAddrV6
 
     ///
-    /// Represents a Socket Address.
+    /// Type of socket addresses.
+    ///
+    /// A socket address is either an IPv4 or an IPv6 socket address.
     ///
     pub enum SocketAddr with Eq {
         case V4(SocketAddrV4)

@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that support filtering, and its functions.
+///
 pub mod Filterable {
 
     ///
-    /// A trait for filtering container functors.
+    /// Trait for types that support filtering.
     ///
     pub trait Filterable[m: Type -> Type] with Functor[m], Foldable[m] {
 

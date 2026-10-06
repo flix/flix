@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that are partially ordered and have a lower bound, and its functions.
+///
 pub mod LowerBound {
 
     ///
-    /// A trait for partially ordered types that have a lower bound.
+    /// Trait for types that are partially ordered and have a lower bound.
     ///
     pub trait LowerBound[a] {
         ///

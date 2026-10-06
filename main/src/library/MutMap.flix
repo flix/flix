@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable maps, and its functions.
+///
 pub mod MutMap {
 
     ///
-    /// The Mutable Map type.
+    /// Type of mutable maps.
     ///
     pub struct MutMap[k: Type, v: Type, r: Region] {
         rc:        Region[r],

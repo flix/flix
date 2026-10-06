@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of JSON values, and its functions.
+///
 pub mod Util.Json {
 
     use Util.Json.JsonError
@@ -13,7 +16,7 @@ pub mod Util.Json {
     use Util.Json.FromJson
 
     ///
-    /// Represents a JSON value.
+    /// Type of JSON values.
     ///
     /// JSON numbers are stored as `BigDecimal` for lossless round-trip;
     /// JSON objects are stored as `Map[String, Json]`, which gives

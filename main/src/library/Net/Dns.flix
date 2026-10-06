@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for resolving domain names to IP addresses, and its functions.
+///
 pub mod Net.Dns {
     use IoError.ErrorKind
     use IoError.IoError
@@ -16,7 +19,7 @@ pub mod Net.Dns {
     import java.net.UnknownHostException
 
     ///
-    /// The effect used to resolve domain names to IP addresses.
+    /// Effect for resolving domain names to IP addresses.
     ///
     pub eff Dns {
         def lookup(host: String): Result[IoError, IpAddr]

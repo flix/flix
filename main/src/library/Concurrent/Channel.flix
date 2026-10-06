@@ -7,6 +7,9 @@
 // that can be found in the LICENSE.md file.
 //
 
+///
+/// Functions for multiple-producer, multiple-consumer channels.
+///
 pub mod Concurrent.Channel {
 
     import dev.flix.runtime.Global
@@ -21,8 +24,7 @@ pub mod Concurrent.Channel {
     use Concurrent.CyclicBarrier.awaitBarrier
 
     ///
-    /// An enum that represents a multiple-producer, multiple-consumer (mpmc)
-    /// channel.
+    /// Type of multiple-producer, multiple-consumer (mpmc) channels.
     ///
     /// The tuple corresponds to (
     ///   `admin` - The administration info of the channel.

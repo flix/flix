@@ -6,6 +6,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for performing assertions during program execution, and its functions.
+///
 pub mod Assert {
 
     use Sys.Console
@@ -14,7 +17,7 @@ pub mod Assert {
     import java.lang.AssertionError
 
     ///
-    /// An effect used to perform assertions during program execution.
+    /// Effect for performing assertions during program execution.
     ///
     pub eff Assert {
 

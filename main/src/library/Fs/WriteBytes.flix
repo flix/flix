@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for writing bytes to a file, and its functions.
+///
 pub mod Fs.WriteBytes {
 
     use Fs.FileWrite
 
     ///
-    /// An effect used to write bytes to a file.
+    /// Effect for writing bytes to a file.
     ///
     /// Use the `WriteBytes.runWithFileWrite` handler.
     ///

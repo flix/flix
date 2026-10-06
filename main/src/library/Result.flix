@@ -5,12 +5,14 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of results that are either a successful value or an error value, and its functions.
+///
 pub mod Result {
 
     ///
-    /// The Result type.
+    /// Type of results that are either a successful value or an error value.
     ///
-    /// A result represents a successful value or an error value.
     /// The constructor `Ok(v)` represents the successful value `v`,
     /// whereas the constructor `Err(v)` represents the error value `v`.
     ///

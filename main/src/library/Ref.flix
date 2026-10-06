@@ -9,6 +9,9 @@ struct Ref[a, r] {
     mut v: a
 }
 
+///
+/// Type of mutable references, and its functions.
+///
 pub mod Ref {
 
     ///

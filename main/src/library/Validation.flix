@@ -5,10 +5,16 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of validation results that are either a successful value or a non-empty collection of errors, and its functions.
+///
 pub mod Validation {
 
     ///
-    /// The Validation type.
+    /// Type of validation results that are either a successful value or a non-empty collection of errors.
+    ///
+    /// The constructor `Success(v)` represents the successful value `v`,
+    /// whereas the constructor `Failure(es)` represents the non-empty chain of errors `es`.
     ///
     pub enum Validation[e, t] with Eq, Order, ToString {
         case Success(t)

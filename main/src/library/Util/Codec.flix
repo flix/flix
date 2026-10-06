@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Functions for encoding and decoding data as Base64 and hexadecimal strings.
+///
 pub mod Util.Codec {
 
     import java.lang.IllegalArgumentException

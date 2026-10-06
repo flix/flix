@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for checking whether a file is readable, and its functions.
+///
 pub mod Fs.IsReadable {
 
     use Fs.FilePermission
 
     ///
-    /// An effect used to check if a file is readable.
+    /// Effect for checking whether a file is readable.
     ///
     /// Use the `IsReadable.runWithFilePermission` handler.
     ///

@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be formatted as a `RichString`, and its functions.
+///
 pub mod Formattable {
 
     ///
-    /// A trait for types that can be formatted as a `RichString`.
+    /// Trait for types that can be formatted as a `RichString`.
     ///
     pub trait Formattable[a] {
         ///

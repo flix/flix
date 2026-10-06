@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for moving or renaming a file or directory, and its functions.
+///
 pub mod Fs.MoveFile {
 
     use Fs.FileWrite
@@ -12,7 +15,7 @@ pub mod Fs.MoveFile {
     use Fs.MoveOption
 
     ///
-    /// An effect used to move (rename) a file or directory.
+    /// Effect for moving or renaming a file or directory.
     ///
     /// Use the `MoveFile.runWithFileWrite` handler.
     ///

@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Functions for converting between Flix and Java values and collections.
+///
 pub mod Adaptor {
 
     import java.lang.Object

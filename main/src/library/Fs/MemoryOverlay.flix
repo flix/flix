@@ -27,7 +27,7 @@ mod Fs.MemoryOverlay {
         mut counter:   Int32
     }
 
-    /// The content of an overlay entry.
+    /// Type of overlay file contents, either text or bytes.
     pub enum OverlayEntry with ToString {
         case BinaryEntry(Vector[Int8])
         case TextEntry(String)

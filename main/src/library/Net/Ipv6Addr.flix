@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of IPv6 addresses, and its functions.
+///
 pub mod Net.Ipv6Addr {
     import java.lang.Integer
     import java.lang.NumberFormatException
@@ -15,7 +18,7 @@ pub mod Net.Ipv6Addr {
     use Net.Ipv6Addr
 
     ///
-    /// Represents a V6 Ip Address.
+    /// Type of IPv6 addresses.
     ///
     pub enum Ipv6Addr with Eq {
         case Ipv6Addr(Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8)

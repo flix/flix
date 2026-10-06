@@ -5,13 +5,16 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for reading the size of a file, and its functions.
+///
 pub mod Fs.FileSize {
 
     use Fs.FileStat
     use Fs.Size
 
     ///
-    /// An effect used to read the size of a file.
+    /// Effect for reading the size of a file.
     ///
     /// Use the `FileSize.runWithFileStat` handler.
     ///

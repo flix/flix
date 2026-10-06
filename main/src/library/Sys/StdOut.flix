@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of process stdout streams, and its functions.
+///
 pub mod Sys.StdOut {
 
     import java.io.InputStream
 
     ///
-    /// A wrapper for the stdout stream of a process.
+    /// Type of process stdout streams.
     ///
     pub enum StdOut(InputStream)
 

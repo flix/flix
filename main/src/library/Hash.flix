@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be hashed, and its functions.
+///
 pub mod Hash {
 
     import java.lang.Byte
@@ -16,7 +19,7 @@ pub mod Hash {
     import java.lang.Short
 
     ///
-    /// A trait for types that can be hashed.
+    /// Trait for types that can be hashed.
     ///
     pub trait Hash[a] {
         ///

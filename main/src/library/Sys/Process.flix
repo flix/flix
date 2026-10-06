@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for starting and managing processes outside the JVM, and its functions.
+///
 pub mod Sys.Process {
 
     use IoError.ErrorKind
@@ -29,7 +32,7 @@ pub mod Sys.Process {
     import java.util.concurrent.{TimeUnit => JTimeUnit}
 
     ///
-    /// An effect used to start a process outside the JVM.
+    /// Effect for starting and managing processes outside the JVM.
     ///
     pub eff Process {
 

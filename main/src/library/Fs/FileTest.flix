@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for testing whether a path exists, is a directory, is a regular file, or is a symbolic link, and its functions.
+///
 pub mod Fs.FileTest {
 
     use Fs.FileStat
@@ -14,7 +17,7 @@ pub mod Fs.FileTest {
     use IoError.ErrorKind
 
     ///
-    /// An effect used to test file properties (exists, directory, regular file, symbolic link).
+    /// Effect for testing whether a path exists, is a directory, is a regular file, or is a symbolic link.
     ///
     pub eff FileTest {
 

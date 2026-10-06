@@ -6,11 +6,14 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of thread-safe `Int32` counters, and its functions.
+///
 pub mod BPlusTree.AtomicCounter {
     import java.util.concurrent.atomic.{LongAdder => JLongAdder}
 
     ///
-    /// A thread-safe counter producing `Int32`.
+    /// Type of thread-safe `Int32` counters.
     ///
     /// A `LongAdder` is used as `AtomicInteger`/`AtomicLong` appeared to perform
     /// badly under high contention.

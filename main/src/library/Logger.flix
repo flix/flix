@@ -6,7 +6,7 @@
  */
 
 ///
-/// An effect used to log messages.
+/// Effect for logging messages.
 ///
 pub eff Logger {
 
@@ -17,6 +17,9 @@ pub eff Logger {
 
 }
 
+///
+/// Effect for logging messages, and its functions.
+///
 pub mod Logger {
 
     use Sys.Console
@@ -24,7 +27,7 @@ pub mod Logger {
     use Severity.{Trace, Debug, Info, Warn, Fatal}
 
     ///
-    /// Represents levels of severity.
+    /// Type of log message severity levels.
     ///
     /// `Trace` is the lowest level of severity.
     /// `Fatal` is the highest level of severity.

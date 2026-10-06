@@ -5,10 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be iterated, and its functions.
+///
 pub mod Iterable {
 
     ///
-    /// A trait for immutable data structures that can be iterated.
+    /// Trait for types that can be iterated.
+    ///
+    /// Instances are immutable data structures.
     ///
     pub trait Iterable[t] {
         ///

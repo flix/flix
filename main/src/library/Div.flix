@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that support division, and its functions.
+///
 pub mod Div {
 
     import java.io.File
 
     ///
-    /// A trait for division.
+    /// Trait for types that support division.
     ///
     pub trait Div[a] {
         ///

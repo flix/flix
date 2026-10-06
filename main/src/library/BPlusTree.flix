@@ -6,11 +6,16 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable concurrent B+ trees, and its functions.
+///
 pub mod BPlusTree {
     import java.lang.Runtime
 
     ///
-    /// A mutable concurrent B+ Tree implementation with keys of type `k` and values of type `v`.
+    /// Type of mutable concurrent B+ trees.
+    ///
+    /// The tree maps keys of type `k` to values of type `v`.
     ///
     /// A B+ Tree is an m-ary self-balancing search tree where each node is either an internal
     /// node or a leaf node. In contrast to binary search trees, a B+ Tree of arity `m` only

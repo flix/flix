@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that are partially ordered and have an upper bound, and its functions.
+///
 pub mod UpperBound {
 
     ///
-    /// A trait for partially ordered types that have an upper bound.
+    /// Trait for types that are partially ordered and have an upper bound.
     ///
     pub trait UpperBound[a] {
         ///

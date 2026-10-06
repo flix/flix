@@ -5,11 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that form a meet semi-lattice, and its functions.
+///
 pub mod MeetLattice {
 
     ///
-    /// A trait for meet semi lattices.
-    /// A Meet Lattice is pair of functions (⊑, ⊓) where ⊑ is a partial order and ⊓ satisfy two properties:
+    /// Trait for types that form a meet semi-lattice.
+    ///
+    /// A meet lattice is a pair of functions (⊑, ⊓) where ⊑ is a partial order and ⊓ satisfies two properties:
     /// lower-bound and greatest-lower-bound.
     ///
     pub trait MeetLattice[a] with PartialOrder[a] {

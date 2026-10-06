@@ -7,4 +7,7 @@
 
 import java.nio.charset.Charset
 
+///
+/// Type of character sets for encoding and decoding text.
+///
 pub enum CharacterSet(Charset)

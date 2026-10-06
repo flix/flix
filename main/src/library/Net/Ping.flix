@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for determining whether an address is reachable, and its functions.
+///
 pub mod Net.Ping {
     use IoError.ErrorKind
     use IoError.IoError
@@ -17,7 +20,7 @@ pub mod Net.Ping {
     import java.net.UnknownHostException
 
     ///
-    /// The effect used to determine if an address is reachable.
+    /// Effect for determining whether an address is reachable.
     ///
     pub eff Ping {
         def isReachable(host: IpAddr, timeout: Int32, u: TimeUnit): Result[IoError, Bool]

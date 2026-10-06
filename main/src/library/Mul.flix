@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that support multiplication, and its functions.
+///
 pub mod Mul {
 
     ///
-    /// A trait for multiplication.
+    /// Trait for types that support multiplication.
     ///
     pub trait Mul[a] {
         ///

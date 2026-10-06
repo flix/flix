@@ -6,8 +6,9 @@
  */
 
 ///
-/// The `Net` module is a collection of networking utility submodules,
-/// each offering a self-contained piece of functionality:
+/// Modules for networking.
+///
+/// The submodules are:
 ///
 /// - `Http` and `Https` perform web requests.
 /// - `HttpRequest` and `HttpResponse` represent the messages exchanged.

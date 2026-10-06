@@ -6,7 +6,8 @@
  */
 
 ///
-/// Indicates that an index was out of bounds.
+/// Effect for signaling that an index is out of bounds.
+///
 /// Useful for instances of `Index` or `IndexMut`.
 ///
 eff OutOfBounds {
@@ -16,6 +17,9 @@ eff OutOfBounds {
 
 }
 
+///
+/// Effect for signaling that an index is out of bounds, and its functions.
+///
 pub mod OutOfBounds {
 
     ///

@@ -5,11 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be traversed from left to right with an applicative functor while filtering elements, and its functions.
+///
 pub mod Witherable {
 
     ///
-    /// A trait for data structures that can be traversed in left-to-right
-    /// order with an applicative partial functor.
+    /// Trait for types that can be traversed from left to right with an applicative functor while filtering elements.
     ///
     pub trait Witherable[t: Type -> Type] with Traversable[t], Filterable[t] {
 

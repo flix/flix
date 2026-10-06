@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable sets, and its functions.
+///
 pub mod MutSet {
 
     ///
-    /// The Mutable Set type.
+    /// Type of mutable sets.
     ///
     pub struct MutSet[t: Type, r: Region] {
         rc:        Region[r],
