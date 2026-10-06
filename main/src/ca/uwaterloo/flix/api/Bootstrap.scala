@@ -20,6 +20,7 @@ import java.lang.constant.ClassDesc
 import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.{Stat, Tester}
+import ca.uwaterloo.flix.tools.doc.MissingDoc
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyStyle, FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageSpec, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -1911,9 +1912,9 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     */
   def checkMissingDocs(flix: Flix, origin: Origin)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
     typeCheck(flix).map { root =>
-      val missing = HtmlDocumentor.checkMissingDocs(root, origin)
+      val missing = MissingDoc.check(root, origin)
       if (missing.nonEmpty) {
-        out.println(HtmlDocumentor.missingDocReport(missing, flix.getFormatter))
+        out.println(MissingDoc.format(missing, flix.getFormatter))
       }
     }
   }

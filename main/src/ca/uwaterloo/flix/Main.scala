@@ -17,6 +17,7 @@ import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
+import ca.uwaterloo.flix.tools.doc.MissingDoc
 import ca.uwaterloo.flix.util.*
 import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
@@ -904,9 +905,9 @@ object Main {
     * if any. Prints nothing if there are none, and never affects the exit code.
     */
   private def checkMissingDocs(root: TypedAst.Root, origin: Origin)(implicit formatter: Formatter): Unit = {
-    val missing = HtmlDocumentor.checkMissingDocs(root, origin)
+    val missing = MissingDoc.check(root, origin)
     if (missing.nonEmpty) {
-      println(HtmlDocumentor.missingDocReport(missing, formatter))
+      println(MissingDoc.format(missing, formatter))
     }
   }
 
