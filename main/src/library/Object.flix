@@ -6,7 +6,7 @@
  */
 
 ///
-/// Modules for working with Java objects and `null` values.
+/// Functions for working with Java objects and `null` values.
 ///
 pub mod Object {
 

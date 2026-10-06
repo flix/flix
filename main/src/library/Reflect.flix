@@ -1,5 +1,5 @@
 ///
-/// Modules for reflecting on the runtime representation of values and types.
+/// Functions for reflecting on the runtime representation of values and types.
 ///
 pub mod Reflect {
     import java.lang.{Object => JObject}

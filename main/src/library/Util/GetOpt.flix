@@ -6,7 +6,7 @@
  */
 
 ///
-/// Modules for parsing command line options.
+/// Functions for parsing command-line options.
 ///
 /// Acknowledgement: this is a port of Sven Panne's `System.Console.GetOpt` in the Haskell Base libraries.
 ///

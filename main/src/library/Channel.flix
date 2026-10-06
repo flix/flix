@@ -6,7 +6,7 @@
  */
 
 ///
-/// Modules for message passing over channels.
+/// Functions for message passing over channels.
 ///
 pub mod Channel {
 

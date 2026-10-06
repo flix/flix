@@ -6,7 +6,7 @@
  */
 
 ///
-/// Modules for executing HTTP requests with the Java HTTP client.
+/// Functions for executing HTTP requests with the Java HTTP client.
 ///
 pub mod Net.HttpLayer {
 

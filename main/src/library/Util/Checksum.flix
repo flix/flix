@@ -6,7 +6,7 @@
  */
 
 ///
-/// Modules for computing checksums and message digests.
+/// Functions for computing checksums and message digests.
 ///
 pub mod Util.Checksum {
 

@@ -6,7 +6,7 @@
  */
 
 ///
-/// Modules for Unicode code points.
+/// Functions for working with Unicode code points.
 ///
 /// The `CodePoint` module complements the `Char` module. `Char` only
 /// represents characters in Unicode's _Basic Multilingual Plane_

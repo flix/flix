@@ -6,7 +6,7 @@
  */
 
 ///
-/// Modules for converting between Flix and Java values and collections.
+/// Functions for converting between Flix and Java values and collections.
 ///
 pub mod Adaptor {
 

@@ -8,7 +8,7 @@
 //
 
 ///
-/// Modules for multiple-producer, multiple-consumer channels.
+/// Functions for multiple-producer, multiple-consumer channels.
 ///
 pub mod Concurrent.Channel {
 

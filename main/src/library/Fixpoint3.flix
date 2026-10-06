@@ -7,7 +7,7 @@
  */
 
 ///
-/// Modules for solving Datalog programs.
+/// Functions for solving Datalog programs.
 ///
 pub mod Fixpoint3 {
     import java.lang.Object

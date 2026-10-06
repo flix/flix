@@ -6,7 +6,7 @@
  */
 
 ///
-/// Modules for HTTP retry strategies.
+/// Functions for retrying HTTP requests.
 ///
 pub mod Net.Retry {
 

@@ -11,7 +11,7 @@
 eff Debug
 
 ///
-/// Modules for print debugging.
+/// Functions for print debugging.
 ///
 pub mod Debug {
 

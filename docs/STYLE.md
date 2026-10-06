@@ -56,7 +56,10 @@ inner declaration followed by `, and its operations.` (or `, and its handlers.` 
 | `trait`           | `Trait for types that <verb phrase>, and its operations.`| `Trait for types that <verb phrase>.` |
 | `eff`             | `Effect for <gerund phrase>, and its handlers.`          | `Effect for <gerund phrase>.`         |
 | built-in type     | `Type of <plural noun phrase>, and its operations.`      | —                                     |
+| function module   | `Functions for <gerund phrase>.`                         | —                                     |
 | namespace         | `Modules for <topic>.`                                   | —                                     |
+
+A function module has public functions but no companion type, trait, or effect. A namespace has only submodules.
 
 The module summary is a single sentence. Further details (constructors, representation, handlers) belong in
 later paragraphs of the inner declaration's doc comment.
