@@ -5,11 +5,14 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of immutable singly-linked lists, and its operations.
+///
 pub mod List {
     use Math.Shuffle
 
     ///
-    /// The List type.
+    /// Type of immutable singly-linked lists.
     ///
     /// A list is either the empty list represented by `Nil`, or
     /// an element `v` followed by a list `vs` represented by `v :: vs`.

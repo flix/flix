@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for interacting with the console, and its handlers.
+///
 pub mod Sys.Console {
 
     use Sys.Console
@@ -13,7 +16,7 @@ pub mod Sys.Console {
     import java.io.ByteArrayOutputStream
 
     ///
-    /// An effect used to interact with the console.
+    /// Effect for interacting with the console.
     ///
     /// The operations are the interface that a handler implements.
     ///
