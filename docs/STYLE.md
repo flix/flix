@@ -41,7 +41,25 @@ Flix test files under `main/test` are the exception: they do not need a header (
 - Keep the simplest cases in a pattern matches first.
   - e.g. keep the base case(s) before the inductive case(s).
 - Doc comments should use triple slashes ///.
-  - The first paragraph should be a short summary (preferably a single sentence) and will appear in generated documentation.
+
+### Doc comment summaries
+
+The generated documentation renders each declaration as `<Name> <Summary>`. Hence the summary of a module, type,
+trait, or effect should not repeat its name, and should use one of the templates below.
+
+Most modules are companion modules, e.g. `mod List { enum List { ... } }`. The module summary is the summary of the
+inner declaration followed by `, and its operations.` (or `, and its handlers.` for effects).
+
+| Kind              | Module                                                   | Inner declaration                     |
+|-------------------|----------------------------------------------------------|---------------------------------------|
+| `enum` / `struct` | `Type of <plural noun phrase>, and its operations.`      | `Type of <plural noun phrase>.`       |
+| `trait`           | `Trait for types that <verb phrase>, and its operations.`| `Trait for types that <verb phrase>.` |
+| `eff`             | `Effect for <gerund phrase>, and its handlers.`          | `Effect for <gerund phrase>.`         |
+| built-in type     | `Type of <plural noun phrase>, and its operations.`      | —                                     |
+| namespace         | `Modules for <topic>.`                                   | —                                     |
+
+The module summary is a single sentence. Further details (constructors, representation, handlers) belong in
+later paragraphs of the inner declaration's doc comment.
 
 ### Naming
 - Variable names are typical one letter; `o` for Option, `l` for `List`.
