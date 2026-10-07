@@ -9,8 +9,7 @@ package ca.uwaterloo.flix.tools.doc
 
 import ca.uwaterloo.flix.language.ast.shared.{Doc, Origin}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
-import ca.uwaterloo.flix.language.phase.HtmlDocumentor
-import ca.uwaterloo.flix.language.phase.HtmlDocumentor.{Effect, Enum, Module, Struct, Trait}
+import ca.uwaterloo.flix.tools.doc.HtmlDocumentor.{Effect, Enum, Module, Struct, Trait}
 import ca.uwaterloo.flix.util.Formatter
 
 /**

@@ -5,13 +5,12 @@
  * that can be found in the LICENSE.md file.
  */
 
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.tools.doc
 
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
-import ca.uwaterloo.flix.tools.doc.HtmlHighlighter
 import ca.uwaterloo.flix.util.LocalResource
 import ca.uwaterloo.flix.util.collection.Nel
 import org.commonmark.ext.gfm.tables.{TableCell, TablesExtension}
@@ -26,7 +25,7 @@ import java.util.regex.Pattern
 import scala.annotation.tailrec
 
 /**
-  * A phase that emits a JSON file for library documentation.
+  * Generates the HTML API documentation for a compiled program.
   */
 object HtmlDocumentor {
 
