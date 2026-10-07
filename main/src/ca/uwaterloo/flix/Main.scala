@@ -12,12 +12,11 @@ import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Origin, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
-import ca.uwaterloo.flix.tools.doc.MissingDoc
+import ca.uwaterloo.flix.tools.doc.{HtmlDocumentor, MissingDoc}
 import ca.uwaterloo.flix.util.*
 import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods

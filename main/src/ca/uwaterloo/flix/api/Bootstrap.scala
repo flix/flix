@@ -13,14 +13,13 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, Origin, PackageId, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
-import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.jvm.JvmClass
 
 import java.lang.constant.ClassDesc
 import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.{Stat, Tester}
-import ca.uwaterloo.flix.tools.doc.MissingDoc
+import ca.uwaterloo.flix.tools.doc.{HtmlDocumentor, MissingDoc}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyStyle, FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageSpec, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
