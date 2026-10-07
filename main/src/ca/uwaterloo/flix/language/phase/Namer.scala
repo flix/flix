@@ -289,9 +289,9 @@ object Namer {
     }
     companionOpt match {
       case Some((companionMod, loc)) if mod.isPublic && !companionMod.isPublic =>
-        sctx.errors.add(NameError.CompanionMustBePublic(name, qname.loc, loc))
+        sctx.errors.add(NameError.CompanionMustBePublic(qname, loc))
       case Some((companionMod, loc)) if !mod.isPublic && companionMod.isPublic =>
-        sctx.errors.add(NameError.IllegalPublicCompanion(name, qname.loc, loc))
+        sctx.errors.add(NameError.IllegalPublicCompanion(qname, loc))
       case _ => // Nop
     }
   }
