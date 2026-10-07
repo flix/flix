@@ -5,12 +5,17 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of durations measured in nanoseconds, and its functions.
+///
 pub mod Time.Duration {
 
     use Time.TimeUnit
 
     ///
-    /// Represents a duration of time stored as nanoseconds (Int64).
+    /// Type of durations measured in nanoseconds.
+    ///
+    /// A duration is stored as an `Int64` number of nanoseconds.
     ///
     pub enum Duration(Int64) with Eq, Order, Hash
 

@@ -816,6 +816,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    };
         |    let _ = pquery p select A(1; 2) with { B };
         |    ()
+        |instance LowerBound[Int32] { pub def minValue(): Int32 = 0 }
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalLatticeProvenance](result)
@@ -830,6 +831,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    };
         |    let _ = pquery p select A("hello"; 2) with { B };
         |    ()
+        |instance LowerBound[Int32] { pub def minValue(): Int32 = 0 }
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalLatticeProvenance](result)
@@ -842,6 +844,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    let p = #{ };
         |    let _ = pquery p select A("hello"; 2) with { B };
         |    ()
+        |instance LowerBound[Int32] { pub def minValue(): Int32 = 0 }
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalLatticeProvenance](result)
@@ -2058,8 +2061,10 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |  let _ = inject x into A/x;
         |  ()
         |}
+        |pub trait Foldable[t: Type -> Type] { pub def foldLeft(f: (b, a) -> b \ ef, s: b, t: t[a]): b \ ef }
+        |instance Foldable[Vector] { pub def foldLeft(_f: (b, a) -> b \ ef, s: b, _t: Vector[a]): b \ ef = checked_ecast(s) }
         |""".stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ParseError.UnexpectedToken](result)
     rejectError[WeederError.IllegalPredicateArity](result)
   }

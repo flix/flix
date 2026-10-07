@@ -376,8 +376,9 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance C[Bool] {
         |    pub def f(x: Bool, y: Int32): Int32 \ IO = checked_ecast(123)
         |}
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MismatchedSignatures](result)
   }
 
@@ -391,8 +392,9 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance C[Bool] {
         |    pub def f(x: Bool, y: Int32): Int32 \ IO = checked_ecast(123)
         |}
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MismatchedSignatures](result)
   }
 
@@ -422,7 +424,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    pub def f(x: Int64): Set[String] = ???
         |}
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MismatchedSignatures](result)
 
   }

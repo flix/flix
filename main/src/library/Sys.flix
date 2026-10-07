@@ -6,8 +6,9 @@
  */
 
 ///
-/// The `Sys` module is a collection of operating-system utility submodules,
-/// each offering a self-contained piece of functionality:
+/// Modules for interacting with the operating system.
+///
+/// The submodules are:
 ///
 /// - `Sys.Console` reads from and writes to the console.
 /// - `Sys.Env` accesses environment variables, command-line arguments, and system properties.

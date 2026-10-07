@@ -13,6 +13,9 @@ instance UpperBound[Int16] {
     pub def maxValue(): Int16 = Int16.maxValue()
 }
 
+///
+/// Type of 16-bit signed integers, and its functions.
+///
 pub mod Int16 {
 
     import java.lang.NumberFormatException

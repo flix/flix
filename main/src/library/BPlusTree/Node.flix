@@ -6,6 +6,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Operations on the nodes of a `BPlusTree`.
 mod BPlusTree.Node {
     import java.lang.invoke.{VarHandle => JVarHandle}
     import java.lang.{Object => JObject}

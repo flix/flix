@@ -5,10 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that support embedding values and applying embedded functions, and its functions.
+///
 pub mod Applicative {
 
     ///
-    /// A trait for functors that support application, i.e. allow to:
+    /// Trait for types that support embedding values and applying embedded functions.
+    ///
+    /// An applicative is a functor that allows one to:
     ///
     /// - Make an applicative value out of a normal value (embed it into a default context), e.g. embed `5` into `Some(5)`.
     /// - Apply a function-type applicative to a matching argument-type applicative, resulting in an applicative of

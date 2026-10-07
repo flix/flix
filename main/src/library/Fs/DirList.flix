@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for listing the contents of a directory, and its functions.
+///
 pub mod Fs.DirList {
 
     use Fs.DirList
@@ -12,7 +15,7 @@ pub mod Fs.DirList {
     use Fs.FsLayer.{logPre, logPost}
 
     ///
-    /// An effect used to list the contents of a directory.
+    /// Effect for listing the contents of a directory.
     ///
     /// Use the `DirList.runWithFileSystem` handler.
     ///

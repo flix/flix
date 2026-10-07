@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for accessing the system environment, and its functions.
+///
 pub mod Sys.Env {
 
     use Sys.Env
@@ -21,7 +24,7 @@ pub mod Sys.Env {
     import java.util.{Map$Entry => Entry}
 
     ///
-    /// An effect used to access the system environment.
+    /// Effect for accessing the system environment.
     ///
     pub eff Env {
 

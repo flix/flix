@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for exiting the JVM, and its functions.
+///
 pub mod Sys.Exit {
 
     use Sys.Exit
@@ -12,7 +15,7 @@ pub mod Sys.Exit {
     import java.lang.System
 
     ///
-    /// An effect used to exit the JVM.
+    /// Effect for exiting the JVM.
     ///
     pub eff Exit {
 

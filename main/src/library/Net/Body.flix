@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of HTTP request and response bodies, and its functions.
+///
 pub mod Net.Body {
 
     ///
-    /// An enum representing the body of an HTTP request or response.
+    /// Type of HTTP request and response bodies.
     ///
     pub enum Body with Eq, ToString {
         case Text(String)

@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that support iterating over their elements with `forEach`, and its functions.
+///
 pub mod ForEach {
 
     ///
-    /// A trait for data structures that support a forEach operation.
+    /// Trait for types that support iterating over their elements with `forEach`.
     ///
     pub trait ForEach[t] {
 
@@ -30,7 +33,7 @@ pub mod ForEach {
     }
 
     ///
-    /// A view for `ForEach` instance `t` that wraps each element with its index.
+    /// Type of `ForEach` views that pair each element with its index.
     ///
     pub enum WithIndex[t](t)
 
@@ -57,7 +60,7 @@ pub mod ForEach {
     pub def withIndex(m: t): WithIndex[t] with ForEach[t] = WithIndex.WithIndex(m)
 
     ///
-    /// A view for `ForEach` instance `t` that filters out elements that don't match the predicate.
+    /// Type of `ForEach` views that filter out elements that do not match a predicate.
     ///
     pub enum WithFilter[t, a](a -> Bool, t)
 
@@ -75,7 +78,7 @@ pub mod ForEach {
     pub def withFilter(p: a -> Bool, m: t): WithFilter[t, a] with ForEach[t] where ForEach.Elm[t] ~ a = WithFilter.WithFilter(p, m)
 
     ///
-    /// A view for `ForEach` instance `t` that applies a mapping function to each element.
+    /// Type of `ForEach` views that apply a mapping function to each element.
     ///
     pub enum WithMap[t, a, b](a -> b, t)
 
@@ -93,7 +96,7 @@ pub mod ForEach {
     pub def withMap(f: a -> b, m: t): WithMap[t, a, b] with ForEach[t] = WithMap.WithMap(f, m)
 
     ///
-    /// A view for `Iterable` instances `s` and `t` that zips `s` and `t` together.
+    /// Type of views that zip two `Iterable` instances together.
     ///
     pub enum WithZip[s, t](s, t)
 

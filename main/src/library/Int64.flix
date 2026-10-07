@@ -13,6 +13,9 @@ instance UpperBound[Int64] {
     pub def maxValue(): Int64 = Int64.maxValue()
 }
 
+///
+/// Type of 64-bit signed integers, and its functions.
+///
 pub mod Int64 {
 
     import java.lang.Long

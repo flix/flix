@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for checking whether a file is writable, and its functions.
+///
 pub mod Fs.IsWritable {
 
     use Fs.FilePermission
 
     ///
-    /// An effect used to check if a file is writable.
+    /// Effect for checking whether a file is writable.
     ///
     /// Use the `IsWritable.runWithFilePermission` handler.
     ///

@@ -17,6 +17,7 @@ import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
+import ca.uwaterloo.flix.tools.doc.MissingDoc
 import ca.uwaterloo.flix.util.*
 import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
@@ -307,14 +308,18 @@ object Main {
             exitOnResult {
               Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
                 val flix = bootstrap.mkFlix(options, formatter)
-                bootstrap.doc(flix, docOrigin(cmdOpts))
+                val origin = docOrigin(cmdOpts)
+                bootstrap.doc(flix, origin).flatMap(_ => bootstrap.checkMissingDocs(flix, origin)(System.out))
               }
             }
           } else {
             val flix = mkFlixWithFiles(cmdOpts.files, options)
             val (optRoot, errors) = flix.check()
             if (errors.isEmpty) {
-              HtmlDocumentor.run(optRoot.get, docOrigin(cmdOpts), None, Bootstrap.getDocumentationDirectory(cwd))(flix)
+              val root = optRoot.get
+              val origin = docOrigin(cmdOpts)
+              HtmlDocumentor.run(root, origin, Bootstrap.getDocumentationDirectory(cwd))(flix)
+              checkMissingDocs(root, origin)
               exit(0)
             } else exitWithErrors(flix, errors, optRoot)
           }
@@ -894,6 +899,17 @@ object Main {
     */
   private def docOrigin(cmdOpts: CmdOpts): Origin =
     if (cmdOpts.library) Origin.Library else Origin.User
+
+  /**
+    * Prints a report of every documentable item under `origin` in `root` that has no doc comment,
+    * if any. Prints nothing if there are none, and never affects the exit code.
+    */
+  private def checkMissingDocs(root: TypedAst.Root, origin: Origin)(implicit formatter: Formatter): Unit = {
+    val missing = MissingDoc.check(root, origin)
+    if (missing.nonEmpty) {
+      println(MissingDoc.format(missing, formatter))
+    }
+  }
 
   /**
     * Creates a fresh Flix instance configured with the given options and source files.

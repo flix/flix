@@ -20,6 +20,7 @@ import java.lang.constant.ClassDesc
 import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.{Stat, Tester}
+import ca.uwaterloo.flix.tools.doc.MissingDoc
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyStyle, FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageSpec, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -843,7 +844,7 @@ object Bootstrap {
 
   /** Returns `Err` if `path` is not a file that could be produced by [[HtmlDocumentor]] in the project at `p`. */
   private def isValidDocumentFile(path: Path, p: Path): Result[Unit, BootstrapError] = {
-    val knownFiles = List("favicon.png", "index.js", "styles.css")
+    val knownFiles = List("favicon.png", "highlight.css", "highlight.js", "index.js", "styles.css")
     if (knownFiles.contains(path.getFileName.toString)) {
       return Ok(())
     }
@@ -1901,25 +1902,22 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     * `origin`: the project's own code, or the bundled library.
     */
   def doc(flix: Flix, origin: Origin): Result[Unit, BootstrapError] = {
-    typeCheck(flix).map(HtmlDocumentor.run(_, origin, sourceRepository, Bootstrap.getDocumentationDirectory(projectPath))(flix))
+    typeCheck(flix).map(HtmlDocumentor.run(_, origin, Bootstrap.getDocumentationDirectory(projectPath))(flix))
   }
 
   /**
-    * Returns the repository that the project is published as, at the tag of its version, if the
-    * manifest declares one.
-    *
-    * The tag is the one that [[release]] creates, and like a release, the links assume that the
-    * project is the root of its repository.
+    * Prints a report of every documentable item that comes from a source with the origin `origin`
+    * and has no doc comment: one grep-able line per item, followed by a summary count. Prints
+    * nothing if there are none.
     */
-  private def sourceRepository: Option[HtmlDocumentor.SourceRepository] =
-    for {
-      manifest <- optManifest
-      project <- manifest.repository
-    } yield HtmlDocumentor.SourceRepository(
-      s"https://github.com/${project.owner}/${project.repo}/blob/v${manifest.version}/",
-      projectPath.toAbsolutePath.normalize()
-    )
-
+  def checkMissingDocs(flix: Flix, origin: Origin)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
+    typeCheck(flix).map { root =>
+      val missing = MissingDoc.check(root, origin)
+      if (missing.nonEmpty) {
+        out.println(MissingDoc.format(missing, flix.getFormatter))
+      }
+    }
+  }
 
   /**
     * Formats all source files in the project.

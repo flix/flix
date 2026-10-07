@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for reading the creation time of a file, and its functions.
+///
 pub mod Fs.CreationTime {
 
     use Fs.FileTime
 
     ///
-    /// An effect used to read the creation time of a file.
+    /// Effect for reading the creation time of a file.
     ///
     /// Use the `CreationTime.runWithFileTime` handler.
     ///

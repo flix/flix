@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable sets, and its functions.
+///
 pub mod MutSet {
 
     ///
-    /// The Mutable Set type.
+    /// Type of mutable sets.
     ///
     pub struct MutSet[t: Type, r: Region] {
         rc:        Region[r],
@@ -38,9 +41,8 @@ pub mod MutSet {
     ///
     /// Returns a string representation of the given mutable set `s`.
     ///
-    pub def toString(s: MutSet[a, r]): String \ r with ToString[a] = region rc {
-        "MutSet#{" + (MutSet.iterator(rc, s) |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(s: MutSet[a, r]): String \ r with ToString[a] =
+        "MutSet#{" + MutSet.join(", ", s) + "}"
 
     ///
     /// Returns a fresh empty set.

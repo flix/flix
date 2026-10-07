@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Functions for executing HTTP requests with the Java HTTP client.
+///
 pub mod Net.HttpLayer {
 
     use IoError.ErrorKind

@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for checking whether a file is readable, writable, or executable, and its functions.
+///
 pub mod Fs.FilePermission {
 
     use Fs.FilePermission
@@ -14,7 +17,7 @@ pub mod Fs.FilePermission {
     use IoError.ErrorKind
 
     ///
-    /// An effect used to check file permissions (readable, writable, executable).
+    /// Effect for checking whether a file is readable, writable, or executable.
     ///
     pub eff FilePermission {
 

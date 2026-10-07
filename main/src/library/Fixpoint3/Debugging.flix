@@ -7,6 +7,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Functions for printing debug output during the fixpoint computation.
 pub mod Fixpoint3.Debugging {
     use Fixpoint3.Ast.Datalog.Datalog
     use Fixpoint3.Ast.ExecutableRam

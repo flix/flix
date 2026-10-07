@@ -5,6 +5,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Type of in-memory overlays that record changes on top of a lower file system layer, and its functions.
 mod Fs.MemoryOverlay {
 
     import java.nio.file.FileSystems
@@ -27,7 +28,7 @@ mod Fs.MemoryOverlay {
         mut counter:   Int32
     }
 
-    /// The content of an overlay entry.
+    /// Type of overlay file contents, either text or bytes.
     pub enum OverlayEntry with ToString {
         case BinaryEntry(Vector[Int8])
         case TextEntry(String)

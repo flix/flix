@@ -7,6 +7,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Phase that computes the stratification of Datalog programs.
 pub mod Fixpoint3.Phase.Stratifier {
     use Fixpoint3.Ast.Datalog.BodyPredicate.BodyAtom
     use Fixpoint3.Ast.Datalog.Constraint.Constraint

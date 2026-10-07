@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for checking whether a path is a regular file, and its functions.
+///
 pub mod Fs.IsRegularFile {
 
     use Fs.FileTest
 
     ///
-    /// An effect used to check if a path is a regular file.
+    /// Effect for checking whether a path is a regular file.
     ///
     /// Use the `IsRegularFile.runWithFileTest` handler.
     ///

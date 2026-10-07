@@ -5,10 +5,14 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Represents a mutable reference to a value of type `a` in region `r`.
 struct Ref[a, r] {
     mut v: a
 }
 
+///
+/// Type of mutable references, and its functions.
+///
 pub mod Ref {
 
     ///

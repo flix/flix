@@ -5,11 +5,16 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of cyclic barriers, and its functions.
+///
 pub mod Concurrent.CyclicBarrier {
     import java.util.concurrent.{CyclicBarrier => JCyclicBarrier}
 
     ///
-    /// A wrapper around a Java CyclicBarrier.
+    /// Type of cyclic barriers.
+    ///
+    /// Wraps a Java `CyclicBarrier`.
     ///
     pub enum CyclicBarrier(JCyclicBarrier)
 

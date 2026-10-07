@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for truncating a file, and its functions.
+///
 pub mod Fs.Truncate {
 
     use Fs.FileWrite
 
     ///
-    /// An effect used to truncate a file.
+    /// Effect for truncating a file.
     ///
     /// Use the `Truncate.runWithFileWrite` handler.
     ///

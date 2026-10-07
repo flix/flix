@@ -6,14 +6,14 @@
  */
 
 ///
-/// Parse the list of command line options supplied to the program.
+/// Functions for parsing command-line options.
 ///
 /// Acknowledgement: this is a port of Sven Panne's `System.Console.GetOpt` in the Haskell Base libraries.
 ///
 pub mod Util.GetOpt {
 
     ///
-    /// `ArgOrder` defines how to parse further arguments that follow non-options.
+    /// Type of policies for handling arguments that follow non-options.
     ///
     /// * `RequireOrder` after the first non-option all remain arguments are treated as non-options
     /// * `Permute` options and non-options are freely interspersed in the input stream
@@ -26,7 +26,9 @@ pub mod Util.GetOpt {
     }
 
     ///
-    /// `ArgDescr` defines whether or not the option takes an argument.
+    /// Type of option argument descriptors.
+    ///
+    /// Defines whether or not an option takes an argument.
     ///
     /// * `NoArg` expects no argument. The constructor takes a value of type `a` indicating the option that has been recognized.
     /// * `ReqArg` mandates an argument. The constructor takes a function to decode the argument and description string.

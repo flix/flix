@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for reading the last access time of a file, and its functions.
+///
 pub mod Fs.AccessTime {
 
     use Fs.FileTime
 
     ///
-    /// An effect used to read the last access time of a file.
+    /// Effect for reading the last access time of a file.
     ///
     /// Use the `AccessTime.runWithFileTime` handler.
     ///

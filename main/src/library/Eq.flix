@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that support equality and inequality, and its functions.
+///
 pub mod Eq {
 
     ///
-    /// A trait for equality and inequality.
+    /// Trait for types that support equality and inequality.
     ///
     pub trait Eq[a] {
 

@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of IPv6 socket addresses, and its functions.
+///
 pub mod Net.SocketAddrV6 {
 
     use Net.Ipv6Addr
 
     ///
-    /// Represents an Ipv6 Socket Address.
+    /// Type of IPv6 socket addresses.
     ///
     pub enum SocketAddrV6 with Eq {
         case SocketAddrV6(Ipv6Addr, Int32)

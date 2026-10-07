@@ -5,11 +5,14 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable double-ended queues, and its functions.
+///
 pub mod MutDeque {
     use Math.Shuffle
 
     ///
-    /// Represents a mutable deque.
+    /// Type of mutable double-ended queues.
     ///
     /// Explanation of component types (from left to right):
     /// The 1st component is a reference the backing array.

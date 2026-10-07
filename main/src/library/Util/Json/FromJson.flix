@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be decoded from a `Json` value, and its functions.
+///
 pub mod Util.Json.FromJson {
 
     use Util.Json
@@ -18,9 +21,10 @@ pub mod Util.Json.FromJson {
     use Util.Json.JsonPath.{empty, fromList, steps}
 
     ///
-    /// A trait for types that can be decoded from a `Json` value.
+    /// Trait for types that can be decoded from a `Json` value.
     ///
     pub trait FromJson[a] {
+        /// Decodes the JSON value `j` into a value of type `a`, or returns a `JsonError`.
         pub def fromJson(j: Json): Result[JsonError, a]
     }
 

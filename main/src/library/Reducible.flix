@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be reduced to a summary value, and its functions.
+///
 pub mod Reducible {
 
     ///
-    /// A trait for types that can be reduced to a summary value.
+    /// Trait for types that can be reduced to a summary value.
     ///
     /// `Reducible` is like a non-empty `Foldable` and may only be implemented on non-empty data structures.
     ///

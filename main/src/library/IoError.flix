@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of errors that can occur when performing I/O operations involving the file system, and its functions.
+///
 pub mod IoError {
 
     ///
-    /// An error that can occur when performing I/O operations involving the file system.
+    /// Type of errors that can occur when performing I/O operations involving the file system.
     ///
     /// The first element describes the general kind of error that occurred.
     /// This can be used to determine the correct action to take to handle specific kinds of errors.
@@ -24,6 +27,9 @@ pub mod IoError {
         }
     }
 
+    ///
+    /// Type of general kinds of I/O errors.
+    ///
     pub enum ErrorKind with Eq, ToString {
         case AlreadyExists
         case ChecksumMismatch

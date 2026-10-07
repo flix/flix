@@ -10,6 +10,9 @@
 ///
 eff Debug
 
+///
+/// Functions for print debugging.
+///
 pub mod Debug {
 
     import java.lang.Byte

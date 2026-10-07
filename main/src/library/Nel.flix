@@ -5,11 +5,16 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of non-empty immutable lists, and its functions.
+///
 pub mod Nel {
     use Math.Shuffle
 
     ///
-    /// The NonEmptyList type.
+    /// Type of non-empty immutable lists.
+    ///
+    /// A non-empty list `Nel(x, xs)` consists of a head element `x` followed by a list `xs`.
     ///
     pub enum Nel[a] {
         case Nel(a, List[a])

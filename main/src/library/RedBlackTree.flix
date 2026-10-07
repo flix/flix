@@ -5,13 +5,17 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of immutable red-black trees, and its functions.
+///
 pub mod RedBlackTree {
 
     import java.lang.Runtime
 
     ///
-    /// An immutable red-black tree implementation with keys
-    /// of type `k` and values of type `v`.
+    /// Type of immutable red-black trees.
+    ///
+    /// A red-black tree has keys of type `k` and values of type `v`.
     ///
     /// A red-black tree is a self-balancing binary search tree.
     /// Each node is either red or black, although a transitory
@@ -91,7 +95,7 @@ pub mod RedBlackTree {
     }
 
     ///
-    /// The color of a red-black tree node.
+    /// Type of colors of red-black tree nodes.
     ///
     pub enum Color {
         case Red

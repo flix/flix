@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of immutable ordered sets, and its functions.
+///
 pub mod Set {
 
     ///
-    /// The Set type.
+    /// Type of immutable ordered sets.
     ///
     /// A set is currently represented internally as a red-black tree.
     ///
@@ -107,9 +110,8 @@ pub mod Set {
     ///
     /// Returns a string representation of the given set `s`.
     ///
-    pub def toString(s: Set[a]): String with ToString[a] = region rc {
-        "Set#{" + (Set.iterator(rc, s) |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(s: Set[a]): String with ToString[a] =
+        "Set#{" + Set.join(", ", s) + "}"
 
     ///
     /// Determines whether to use parallel evaluation.

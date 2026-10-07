@@ -5,11 +5,16 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of buffered readers, and its functions.
+///
 pub mod BufReader {
 
     ///
-    /// A `Readable` implementation that wraps an underlying `Readable` instance
-    /// and stores the items read from the underlying instance in an internal buffer.
+    /// Type of buffered readers.
+    ///
+    /// A `BufReader` is a `Readable` implementation that wraps an underlying `Readable`
+    /// instance and stores the items read from the underlying instance in an internal buffer.
     ///
     /// A call to `read` will read directly from the buffer if items are available, and
     /// will trigger a `read` from the underlying `reader` when the buffer is empty.

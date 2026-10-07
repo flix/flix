@@ -14,9 +14,9 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
 
 /**
-  * The Tree Shaking phase removes all unused function definitions.
+  * The Tree Shaking phase removes all unused function definitions and closures.
   *
-  * A function is considered reachable if it:
+  * A function or closure is considered reachable if it:
   *   - Is an entry point (main / tests).
   *   - Appears in a function which itself is reachable.
   *   - Is an instance of a trait whose signature(s) appear in a reachable function.
@@ -35,13 +35,21 @@ object TreeShaker2 {
       case (sym, _) => allReachable.contains(sym)
     }
 
-    root.copy(defs = newDefs)
+    // Filter the reachable closures.
+    val newClos = root.clos.filter {
+      case (sym, _) => allReachable.contains(sym)
+    }
+
+    root.copy(defs = newDefs, clos = newClos)
   }
 
-  /** Returns the symbols reachable from `sym`. */
+  /** Returns the symbols reachable from `sym`, which is either a def or a closure. */
   private def visitSym(sym: Symbol.DefnSym, root: Root): Set[Symbol.DefnSym] = root.defs.get(sym) match {
-    case None => Set.empty
     case Some(defn) => visitExp(defn.exp)
+    case None => root.clos.get(sym) match {
+      case Some(clo) => visitExp(clo.exp)
+      case None => Set.empty
+    }
   }
 
   /** Returns the function symbols reachable from `e0`. */

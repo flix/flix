@@ -7,6 +7,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Interpreter for executable RAM programs.
 pub mod Fixpoint3.Interpreter {
     use Fixpoint3.Ast.ExecutableRam.{BoolExp, RamProgram, RamStmt, RamTerm, RelOp, WriteTuple}
     use Fixpoint3.Ast.Ram.{arityOfNonLat, Predicates, RelSym, Search, toDenotation, toId}

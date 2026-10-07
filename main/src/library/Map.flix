@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of immutable maps, and its functions.
+///
 pub mod Map {
 
     ///
-    /// The Map type.
+    /// Type of immutable maps.
     ///
     /// A map is currently represented internally as a red-black tree.
     ///
@@ -125,9 +128,8 @@ pub mod Map {
     ///
     /// Returns a string representation of the given map `m`.
     ///
-    pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region rc {
-        "Map#{" + (Map.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] =
+        "Map#{" + Map.joinWith((k, v) -> "${k} => ${v}", ", ", m) + "}"
 
     ///
     /// Determines whether to use parallel evaluation.

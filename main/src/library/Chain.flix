@@ -5,13 +5,16 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of immutable sequences with efficient append, and its functions.
+///
 pub mod Chain {
     use Math.Shuffle
     use ViewLeft.{NoneLeft, SomeLeft}
     use ViewRight.{NoneRight, SomeRight}
 
     ///
-    /// The Chain type.
+    /// Type of immutable sequences with efficient append.
     ///
     /// A chain is a list represented as an unbalanced binary tree.
     /// It supports efficient append and "snoc" - appending elements at the tail
@@ -105,9 +108,8 @@ pub mod Chain {
     }
 
     instance ToString[Chain[a]] with ToString[a] {
-        pub def toString(c: Chain[a]): String = region rc {
-            "Chain#{" + (Chain.iterator(rc, c) |> Iterator.join(", ")) + "}"
-        }
+        pub def toString(c: Chain[a]): String =
+            "Chain#{" + Chain.join(", ", c) + "}"
     }
 
     instance Collectable[Chain[a]] {
@@ -126,7 +128,7 @@ pub mod Chain {
     }
 
     ///
-    /// A datatype for pattern matching on a chain (traversing left-to-right).
+    /// Type of views for pattern matching on a chain from left to right.
     ///
     pub enum ViewLeft[t] with Eq {
         case NoneLeft
@@ -134,7 +136,7 @@ pub mod Chain {
     }
 
     ///
-    /// A datatype for pattern matching on a chain (traversing right-to-left).
+    /// Type of views for pattern matching on a chain from right to left.
     ///
     pub enum ViewRight[t] with Eq {
         case NoneRight

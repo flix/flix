@@ -5,10 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of half-open ranges of discrete values, and its functions.
+///
 pub mod Range {
 
     ///
-    /// Represents a range (b, e) of discrete values from `b` (inclusive) to `e` (exclusive).
+    /// Type of half-open ranges of discrete values.
+    ///
+    /// A range `(b, e)` contains the values from `b` (inclusive) to `e` (exclusive).
     ///
     pub enum Range[t] with Eq, ToString {
         case Range(t, t)

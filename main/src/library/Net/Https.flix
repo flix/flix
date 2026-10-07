@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for sending HTTPS-only requests, and its functions.
+///
 pub mod Net.Https {
 
     use IoError.ErrorKind
@@ -24,9 +27,12 @@ pub mod Net.Https {
     use Time.Duration.toMillis
 
     ///
-    /// The effect used to send HTTPS-only requests.
+    /// Effect for sending HTTPS-only requests.
+    ///
+    /// Requests whose URL does not use the `https://` scheme are rejected.
     ///
     pub eff Https {
+        /// Sends the HTTPS request `req` and returns its response.
         def request(req: HttpRequest): Result[IoError, HttpResponse]
     }
 

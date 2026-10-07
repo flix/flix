@@ -5,12 +5,14 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of immutable maps that allow multiple values per key, and its functions.
+///
 pub mod MultiMap {
 
     ///
-    /// The MultiMap type.
+    /// Type of immutable maps that allow multiple values per key.
     ///
-    /// A MultiMap is a Map that allows multiple values for a key.
     /// Multiple values are stored in a Set so duplicates are not allowed.
     ///
     /// The key and value types must implement the Eq and Order traits.

@@ -5,12 +5,14 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of optional values, and its functions.
+///
 pub mod Option {
 
     ///
-    /// The Option type.
+    /// Type of optional values.
     ///
-    /// An option represents an optional value.
     /// The constructor `None` represents an absent value,
     /// whereas the constructor `Some(v)` represents the value `v`.
     ///

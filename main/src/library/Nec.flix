@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of non-empty chains, and its functions.
+///
 pub mod Nec {
     use Math.Shuffle
     use ViewLeft.{OneLeft, SomeLeft}
@@ -13,7 +16,7 @@ pub mod Nec {
     use Applicative.{<*>}
 
     ///
-    /// The NonEmpty Chain type.
+    /// Type of non-empty chains.
     ///
     /// A chain is a list represented as an unbalanced binary tree.
     /// It supports efficient append and "snoc" - appending elements at the tail
@@ -131,9 +134,8 @@ pub mod Nec {
     }
 
     instance ToString[Nec[a]] with ToString[a] {
-        pub def toString(c: Nec[a]): String = region rc {
-            "Nec#{" + (Nec.iterator(rc, c) |> Iterator.join(", ")) + "}"
-        }
+        pub def toString(c: Nec[a]): String =
+            "Nec#{" + Nec.join(", ", c) + "}"
     }
 
     instance Iterable[Nec[a]] {
@@ -147,7 +149,7 @@ pub mod Nec {
     }
 
     ///
-    /// A datatype for pattern matching on a Nec (traversing left-to-right).
+    /// Type of views for pattern matching on a non-empty chain from left to right.
     ///
     pub enum ViewLeft[a] with Eq {
         case OneLeft(a)
@@ -155,7 +157,7 @@ pub mod Nec {
     }
 
     ///
-    /// A datatype for pattern matching on a Nec (traversing right-to-left).
+    /// Type of views for pattern matching on a non-empty chain from right to left.
     ///
     pub enum ViewRight[a] with Eq {
         case OneRight(a)

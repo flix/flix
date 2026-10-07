@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that can be marshaled to Flix values, and its functions.
+///
 pub mod ToFlix {
 
     import java.lang.Byte
@@ -20,11 +23,12 @@ pub mod ToFlix {
     import java.util.{Set => JSet}
 
     ///
-    /// A trait for marshaling values to Flix objects.
+    /// Trait for types that can be marshaled to Flix values.
     ///
     pub trait ToFlix[t: Type] {
         type In[t]: Type
         type Aef[t]: Eff = {}
+        /// Converts the Java value `t` to its Flix representation.
         pub def toFlix(t: ToFlix.In[t]): t \ ToFlix.Aef[t]
     }
 

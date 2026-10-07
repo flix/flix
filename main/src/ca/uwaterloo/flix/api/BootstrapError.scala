@@ -243,4 +243,5 @@ object BootstrapError {
   case class EffectLockParseError(e: EffectLockError) extends BootstrapError {
     override def message(f: Formatter): String = e.message(f)
   }
+
 }

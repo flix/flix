@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Functions for retrying HTTP requests.
+///
 pub mod Net.Retry {
 
     use Math.Random

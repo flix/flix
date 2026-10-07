@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Functions for computing checksums and message digests.
+///
 pub mod Util.Checksum {
 
     import java.security.MessageDigest

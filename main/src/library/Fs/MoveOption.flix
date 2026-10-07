@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of options for the `moveWith` operation, and its functions.
+///
 pub mod Fs.MoveOption {
 
     ///
-    /// Options for the `moveWith` operation.
+    /// Type of options for the `moveWith` operation.
     ///
     pub enum MoveOption with Eq, Order, ToString {
         case AtomicMove

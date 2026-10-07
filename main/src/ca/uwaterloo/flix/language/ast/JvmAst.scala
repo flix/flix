@@ -15,6 +15,7 @@ import java.lang.constant.ClassDesc
 object JvmAst {
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
+                  clos: Map[Symbol.DefnSym, Clo],
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffSym, Effect],
@@ -28,7 +29,13 @@ object JvmAst {
 
   }
 
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[OffsetFormalParam], fparams: List[OffsetFormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
+  /** A top-level def or a lifted local def. It has no captured variables. */
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, fparams: List[OffsetFormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
+    val arrowType: SimpleType.Arrow = SimpleType.mkArrow(fparams.map(_.tpe), tpe)
+  }
+
+  /** A lifted lambda. The closure parameters `cparams` are its captured variables. */
+  case class Clo(sym: Symbol.DefnSym, cparams: List[OffsetFormalParam], fparams: List[OffsetFormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: SimpleType, loc: SourceLocation) {
     val arrowType: SimpleType.Arrow = SimpleType.mkArrow(fparams.map(_.tpe), tpe)
   }
 

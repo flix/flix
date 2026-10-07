@@ -6,6 +6,7 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Type of mutable directed graphs, and its functions.
 pub mod Fixpoint3.PrecedenceGraph.MutGraph {
     use Fixpoint3.Counter
     use Fixpoint3.PrecedenceGraph.MutGraph

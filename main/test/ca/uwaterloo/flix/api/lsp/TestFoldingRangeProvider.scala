@@ -9,7 +9,7 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.api.lsp.provider.FoldingRangeProvider
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, SourceName}
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{LibLevel, Options}
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestFoldingRangeProvider extends AnyFunSuite {
@@ -17,13 +17,9 @@ class TestFoldingRangeProvider extends AnyFunSuite {
   /**
     * The Flix object used across all the tests.
     *
-    * We first compile the stdlib so that every further compilation will be incremental.
+    * The tests do not use the library, so it is left out.
     */
-  private val Flix: Flix = {
-    val flix = new Flix().setOptions(Options.Default)
-    flix.check()
-    flix
-  }
+  private val Flix: Flix = new Flix().setOptions(Options.Default.copy(lib = LibLevel.Nix))
 
   /**
     * The uri of the test source.

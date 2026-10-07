@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Modules for concurrent programming.
+///
 pub mod Concurrent {
     /* empty */
 }

@@ -5,12 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of time units, and its functions.
+///
 pub mod Time.TimeUnit {
 
     use Time.TimeUnit
 
     ///
-    /// Represents a time unit.
+    /// Type of time units.
     ///
     pub enum TimeUnit with Eq, ToString {
         case Days

@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable hash sets that preserve insertion order, and its functions.
+///
 pub mod MutHashSet {
 
     ///
-    /// Represents a mutable hash set that preserves insertion order.
+    /// Type of mutable hash sets that preserve insertion order.
     ///
     pub struct MutHashSet[t: Type, r: Region] {
         inner: MutHashMap[t, Unit, r]
@@ -305,8 +308,7 @@ pub mod MutHashSet {
     ///
     /// Returns a string representation of the given mutable hash set `s`.
     ///
-    pub def toString(s: MutHashSet[a, r]): String \ r with ToString[a] = region rc {
-        "MutHashSet#{" + (MutHashSet.iterator(rc, s) |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(s: MutHashSet[a, r]): String \ r with ToString[a] =
+        "MutHashSet#{" + MutHashSet.join(", ", s) + "}"
 
 }

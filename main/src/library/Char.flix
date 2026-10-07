@@ -13,6 +13,9 @@ instance UpperBound[Char] {
     pub def maxValue(): Char = Char.maxValue()
 }
 
+///
+/// Type of 16-bit Unicode characters, and its functions.
+///
 pub mod Char {
 
     import java.lang.Character

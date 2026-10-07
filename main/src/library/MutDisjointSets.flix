@@ -5,11 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable disjoint sets (union-find), and its functions.
+///
 pub mod MutDisjointSets {
 
     ///
-    /// Represents a mutable disjoint set data structure
-    /// using union-by-rank and path compression.
+    /// Type of mutable disjoint sets (union-find).
+    ///
+    /// Uses union-by-rank and path compression.
     ///
     pub struct MutDisjointSets[t: Type, r: Region] {
         rc:     Region[r],
@@ -26,11 +30,21 @@ pub mod MutDisjointSets {
         mut rank:   Int32
     }
 
+    /// Functions on the nodes of the disjoint set forest.
     mod Node {
+        /// Returns the parent of the node `n`, or `None` if `n` is a root.
         pub def parent(n: Node[t, r]): Option[Node[t, r]] \ r = n->parent
+
+        /// Returns the rank of the node `n`.
         pub def rank(n: Node[t, r]): Int32 \ r = n->rank
+
+        /// Increments the rank of the node `n` by one.
         pub def incrementRank(n: Node[t, r]): Unit \ r = n->rank = n->rank + 1
+
+        /// Sets the parent of the node `n` to `newParent`.
         pub def setParent(newParent: Option[Node[t, r]], n: Node[t, r]): Unit \ r = n->parent = newParent
+
+        /// Returns the element stored in the node `n`.
         pub def value(n: Node[t, r]): t = n->value
     }
 

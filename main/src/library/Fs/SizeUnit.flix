@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of file size units, and its functions.
+///
 pub mod Fs.SizeUnit {
 
     ///
-    /// Represents a size unit.
+    /// Type of file size units.
     ///
     pub enum SizeUnit with Eq, ToString {
         case Bytes

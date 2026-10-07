@@ -13,6 +13,9 @@ instance UpperBound[Int32] {
     pub def maxValue(): Int32 = Int32.maxValue()
 }
 
+///
+/// Type of 32-bit signed integers, and its functions.
+///
 pub mod Int32 {
 
     import java.lang.Integer

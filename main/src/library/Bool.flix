@@ -13,6 +13,9 @@ instance UpperBound[Bool] {
     pub def maxValue(): Bool = true
 }
 
+///
+/// Type of boolean values, and its functions.
+///
 pub mod Bool {
 
     ///

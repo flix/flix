@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for sending HTTP requests, and its functions.
+///
 pub mod Net.Http {
 
     use IoError.ErrorKind
@@ -24,9 +27,12 @@ pub mod Net.Http {
     use Time.Duration.toMillis
 
     ///
-    /// The effect used to send HTTP requests (both http:// and https://).
+    /// Effect for sending HTTP requests.
+    ///
+    /// Supports both `http://` and `https://` URLs.
     ///
     pub eff Http {
+        /// Sends the HTTP request `req` and returns its response.
         def request(req: HttpRequest): Result[IoError, HttpResponse]
     }
 

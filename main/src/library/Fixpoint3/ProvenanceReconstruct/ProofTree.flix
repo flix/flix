@@ -6,9 +6,11 @@
  * that can be found in the LICENSE.md file.
  */
 
+/// Functions on proof trees.
 pub mod Fixpoint3.ProvenanceReconstruct.ProofTree {
     use Fixpoint3.ProvenanceReconstruct.ProofTree
 
+    /// Returns a string representation of the proof tree `p`, indented by `indentChild` spaces.
     pub def toString(p: ProofTree[r], indentChild: Int32): String \ r = match p {
         case EDB(pred, fact) =>
             let indentCur = String.repeat(indentChild, " ");

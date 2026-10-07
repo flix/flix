@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Trait for types that form a commutative monoid, and its functions.
+///
 pub mod CommutativeMonoid {
 
     ///
-    /// A trait for types that form a commutative monoid.
+    /// Trait for types that form a commutative monoid.
     ///
     pub trait CommutativeMonoid[a] with Monoid[a] {
 

@@ -5,6 +5,9 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for connecting to TCP servers, and its functions.
+///
 pub mod Net.TcpConnect {
     use IoError.ErrorKind
     use IoError.IoError
@@ -17,9 +20,10 @@ pub mod Net.TcpConnect {
     import java.io.IOException
 
     ///
-    /// The effect used to connect to a TCP server.
+    /// Effect for connecting to TCP servers.
     ///
     pub eff TcpConnect {
+        /// Opens a TCP connection to the given `ip` address and `port`.
         def connect(ip: IpAddr, port: Int16): Result[IoError, TcpSocket]
     }
 

@@ -5,10 +5,13 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable hash maps that preserve insertion order, and its functions.
+///
 pub mod MutHashMap {
 
     ///
-    /// Represents a mutable hash map that preserves insertion order.
+    /// Type of mutable hash maps that preserve insertion order.
     ///
     /// Uses a hash table with separate chaining for collisions and a doubly-linked list
     /// to maintain insertion order.
@@ -92,16 +95,36 @@ pub mod MutHashMap {
         mut orderNext:  Option[Node[k, v, r]] // Next entry in insertion order
     }
 
+    /// Functions on the entry nodes of the hash map.
     mod Node {
+        /// Returns the key of the entry `e`.
         pub def getKey(e: Node[k, v, r]): k = e->key
+
+        /// Returns the value of the entry `e`.
         pub def getValue(e: Node[k, v, r]): v \ r = e->value
+
+        /// Sets the value of the entry `e` to `v`.
         pub def setValue(v: v, e: Node[k, v, r]): Unit \ r = e->value = v
+
+        /// Returns the cached hash code of the key of the entry `e`.
         pub def getHash(e: Node[k, v, r]): Int32 = e->hash
+
+        /// Returns the next entry in the same bucket as `e`, if any.
         pub def getBucketNext(e: Node[k, v, r]): Option[Node[k, v, r]] \ r = e->bucketNext
+
+        /// Sets the next entry in the same bucket as `e` to `next`.
         pub def setBucketNext(next: Option[Node[k, v, r]], e: Node[k, v, r]): Unit \ r = e->bucketNext = next
+
+        /// Returns the entry preceding `e` in insertion order, if any.
         pub def getOrderPrev(e: Node[k, v, r]): Option[Node[k, v, r]] \ r = e->orderPrev
+
+        /// Sets the entry preceding `e` in insertion order to `prev`.
         pub def setOrderPrev(prev: Option[Node[k, v, r]], e: Node[k, v, r]): Unit \ r = e->orderPrev = prev
+
+        /// Returns the entry following `e` in insertion order, if any.
         pub def getOrderNext(e: Node[k, v, r]): Option[Node[k, v, r]] \ r = e->orderNext
+
+        /// Sets the entry following `e` in insertion order to `next`.
         pub def setOrderNext(next: Option[Node[k, v, r]], e: Node[k, v, r]): Unit \ r = e->orderNext = next
     }
 

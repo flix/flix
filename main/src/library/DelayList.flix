@@ -5,9 +5,15 @@
  * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of lazy lists, and its functions.
+///
 pub mod DelayList {
     use Math.Shuffle
 
+    ///
+    /// Type of lazy lists.
+    ///
     pub enum DelayList[a] {
         case ENil
         case ECons(a, DelayList[a])
