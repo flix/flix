@@ -188,6 +188,7 @@ object ErrorCode {
   case object E5803 extends ErrorCode
   case object E5815 extends ErrorCode
   case object E5826 extends ErrorCode
+  case object E5848 extends ErrorCode
   case object E5849 extends ErrorCode
   case object E5914 extends ErrorCode
   case object E5952 extends ErrorCode
@@ -282,6 +283,7 @@ object ErrorCode {
   case object E9394 extends ErrorCode
   case object E9407 extends ErrorCode
   case object E9467 extends ErrorCode
+  case object E9491 extends ErrorCode
   case object E9512 extends ErrorCode
   case object E9578 extends ErrorCode
   case object E9623 extends ErrorCode

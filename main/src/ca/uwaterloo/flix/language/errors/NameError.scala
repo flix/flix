@@ -318,6 +318,62 @@ object NameError {
   }
 
   /**
+    * An error raised to indicate that the companion of a public module is not public.
+    *
+    * A companion is a declaration (enum, struct, effect, or trait) whose name matches its enclosing module.
+    *
+    * @param qname the qualified name of the enclosing module.
+    * @param loc   the location of the name of the companion.
+    */
+  case class CompanionMustBePublic(qname: Name.QName, loc: SourceLocation) extends NameError {
+    def code: ErrorCode = ErrorCode.E5848
+
+    def summary: String = s"Companion '${qname.ident.name}' of public module '$qname' must be 'pub'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Companion '${red(qname.ident.name)}' of public module '${red(qname.toString)}' must be '${red("pub")}'.
+         |
+         |${highlight(loc, "non-public companion", fmt)}
+         |
+         |${highlight(qname.loc, "public module", fmt)}
+         |
+         |${underline("Explanation:")} When a declaration shares its name with its enclosing module,
+         |it is the companion of that module, and the two name the same entity. A companion must
+         |be 'pub' exactly when its module is. Add 'pub' to the companion, or remove it from the module.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that the companion of a non-public module is public.
+    *
+    * A companion is a declaration (enum, struct, effect, or trait) whose name matches its enclosing module.
+    *
+    * @param qname the qualified name of the enclosing module.
+    * @param loc   the location of the name of the companion.
+    */
+  case class IllegalPublicCompanion(qname: Name.QName, loc: SourceLocation) extends NameError {
+    def code: ErrorCode = ErrorCode.E9491
+
+    def summary: String = s"Companion '${qname.ident.name}' of non-public module '$qname' cannot be 'pub'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Companion '${red(qname.ident.name)}' of non-public module '${red(qname.toString)}' cannot be '${red("pub")}'.
+         |
+         |${highlight(loc, "public companion", fmt)}
+         |
+         |${highlight(qname.loc, "non-public module", fmt)}
+         |
+         |${underline("Explanation:")} When a declaration shares its name with its enclosing module,
+         |it is the companion of that module, and the two name the same entity. A companion must
+         |be 'pub' exactly when its module is. Remove 'pub' from the companion, or add it to the module.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that a top-level trait is marked as sealed.
     *
     * A sealed trait may only be implemented within its declaring module. A top-level
