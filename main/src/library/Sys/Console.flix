@@ -1,29 +1,27 @@
 /*
  *  Copyright 2024 Magnus Madsen
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
+///
+/// Effect for interacting with the console, and its functions.
+///
 pub mod Sys.Console {
 
     use Sys.Console
 
     import java.lang.System
-    import java.io.BufferedReader
-    import java.io.InputStreamReader
+    import java.io.ByteArrayOutputStream
 
     ///
-    /// An effect used to interact with the console.
+    /// Effect for interacting with the console.
+    ///
+    /// The operations are the interface that a handler implements.
+    ///
+    /// Programs normally use `print`, `println`, `eprint`, and `eprintln`
+    /// which accept any value with a `ToString` instance.
     ///
     pub eff Console {
 
@@ -35,40 +33,50 @@ pub mod Sys.Console {
         def readln(): Option[String]
 
         ///
-        /// Prints the given string `s` to the standard out.
+        /// Writes the given string `s` to the standard out.
         ///
-        def print(s: String): Unit
+        def write(s: String): Unit
 
         ///
-        /// Prints the given string `s` to the standard err.
+        /// Writes the given string `s` to the standard out followed by a new line.
         ///
-        def eprint(s: String): Unit
+        def writeLine(s: String): Unit
 
         ///
-        /// Prints the given string `s` to the standard out followed by a new line.
+        /// Writes the given string `s` to the standard err.
         ///
-        def println(s: String): Unit
+        def writeErr(s: String): Unit
 
         ///
-        /// Prints the given string `s` to the standard err followed by a new line.
+        /// Writes the given string `s` to the standard err followed by a new line.
         ///
-        def eprintln(s: String): Unit
+        def writeErrLine(s: String): Unit
 
     }
 
     ///
-    /// Prints prompt `p`, reads a line, and returns `default` if the input is empty or whitespace.
+    /// Prints the string representation of `x` to the standard out.
     ///
-    /// Returns `default` if the end of input has been reached.
+    pub def print(x: a): Unit \ Console with ToString[a] =
+        Console.write(ToString.toString(x))
+
     ///
-    pub def readlnWithDefault(p: a, default: String): String \ Console + Formattable.Aef[a] with Formattable[a] =
-        Console.print(prompt(p));
-        match Console.readln() {
-            case None => default
-            case Some(input) =>
-                let trimmed = String.trim(input);
-                if (String.isEmpty(trimmed)) default else trimmed
-        }
+    /// Prints the string representation of `x` to the standard out followed by a new line.
+    ///
+    pub def println(x: a): Unit \ Console with ToString[a] =
+        Console.writeLine(ToString.toString(x))
+
+    ///
+    /// Prints the string representation of `x` to the standard err.
+    ///
+    pub def eprint(x: a): Unit \ Console with ToString[a] =
+        Console.writeErr(ToString.toString(x))
+
+    ///
+    /// Prints the string representation of `x` to the standard err followed by a new line.
+    ///
+    pub def eprintln(x: a): Unit \ Console with ToString[a] =
+        Console.writeErrLine(ToString.toString(x))
 
     ///
     /// Prints prompt `p`, reads a line, and applies `f` to the input.
@@ -78,95 +86,51 @@ pub mod Sys.Console {
     ///
     /// Returns `None` if the end of input has been reached.
     ///
-    pub def readlnWith(p: a, f: String -> Result[String, b]): Option[b] \ Console + Formattable.Aef[a] with Formattable[a] =
-        Console.print(prompt(p));
+    pub def readlnWith(p: a, f: String -> Result[String, b]): Option[b] \ Console with ToString[a] =
+        Console.print(p);
         match Console.readln() {
-            case None => None
-            case Some(input) =>
-                match f(input) {
-                    case Ok(v) => Some(v)
-                    case Err(msg) =>
-                        Console.eprintln(msg);
-                        readlnWith(p, f)
-                }
+            case None        => None
+            case Some(input) => match f(input) {
+                case Ok(v)    => Some(v)
+                case Err(msg) => Console.eprintln(msg); readlnWith(p, f)
+            }
         }
+
+    ///
+    /// Prints prompt `p`, reads a line, and parses it as a value of type `b`.
+    ///
+    /// Leading and trailing whitespace is ignored.
+    ///
+    /// If the input cannot be parsed, prints an error to stderr and re-prompts.
+    ///
+    /// Returns `None` if the end of input has been reached.
+    ///
+    pub def readlnAs(p: a): Option[b] \ Console with ToString[a], FromString[b] =
+        readlnWith(p, s -> match FromString.fromString(String.trim(s)) {
+            case Some(v) => Ok(v)
+            case None    => Err("Invalid input. Please try again.")
+        })
 
     ///
     /// Prints prompt `p` with a yes/no hint and reads a boolean answer.
     ///
     /// Appends `[Y/n]` if `default#default` is `true`, or `[y/N]` if `false`.
     /// Empty input returns `default#default`. Recognizes "y", "yes", "n", "no" (case-insensitive).
-    /// Any other input returns `default#default`.
+    /// Any other input prints an error to stderr and re-prompts.
     ///
     /// Returns `default#default` if the end of input has been reached.
     ///
-    pub def confirm(p: a, default: {default = Bool}): Bool \ Console + Formattable.Aef[a] with Formattable[a] =
-        let hint = if (default#default) " [Y/n] " else " [y/N] ";
-        Console.print(prompt(p) + hint);
-        match Console.readln() {
-            case None => default#default
-            case Some(raw) =>
-                let input = String.toLowerCase(String.trim(raw));
-                if (String.isEmpty(input))
-                    default#default
-                else if (input == "y" or input == "yes")
-                    true
-                else if (input == "n" or input == "no")
-                    false
-                else
-                    default#default
-        }
-
-    ///
-    /// Prints prompt `p` followed by a numbered list of `options`, then reads a selection.
-    ///
-    /// Returns `Some(element)` if the user enters a valid number, `None` otherwise.
-    ///
-    /// Returns `None` if the end of input has been reached.
-    ///
-    pub def pick(p: a, choices: List[b]): Option[b] \ Console + Formattable.Aef[a] + Formattable.Aef[b] with Formattable[a], Formattable[b] =
-        Console.println(prompt(p));
-        foreach ((i, opt) <- ForEach.withIndex(choices))
-            Console.println("  ${i + 1}) ${prompt(opt)}");
-        Console.print("> ");
-        match Console.readln() {
-            case None => None
-            case Some(raw) =>
-                match Int32.fromString(raw) {
-                    case None => None
-                    case Some(n) =>
-                        if (1 <= n and n <= List.length(choices))
-                            List.head(List.drop(n - 1, choices))
-                        else
-                            None
-                }
-        }
-
-    ///
-    /// Like `pick`, but re-prompts until the user makes a valid selection.
-    ///
-    /// Returns `None` if the end of input has been reached.
-    ///
-    pub def pickWith(p: a, choices: List[b]): Option[b] \ Console + Formattable.Aef[a] + Formattable.Aef[b] with Formattable[a], Formattable[b] =
-        Console.println(prompt(p));
-        foreach ((i, opt) <- ForEach.withIndex(choices))
-            Console.println("  ${i + 1}) ${prompt(opt)}");
-        def loop() = {
-            Console.print("> ");
-            match Console.readln() {
-                case None => None
-                case Some(raw) =>
-                    match Int32.fromString(raw) {
-                        case None => loop()
-                        case Some(n) =>
-                            if (1 <= n and n <= List.length(choices))
-                                List.head(List.drop(n - 1, choices))
-                            else
-                                loop()
-                    }
-            }
+    pub def confirm(p: a, default: {default = Bool}): Bool \ Console with ToString[a] =
+        let hint = if (default#default) "[Y/n]" else "[y/N]";
+        let parse = s -> match String.toLowerCase(String.trim(s)) {
+            case ""    => Ok(default#default)
+            case "y"   => Ok(true)
+            case "yes" => Ok(true)
+            case "n"   => Ok(false)
+            case "no"  => Ok(false)
+            case _     => Err("Please answer 'y' or 'n'.")
         };
-        loop()
+        readlnWith("${p} ${hint} ", parse) |> Option.getWithDefault(default#default)
 
     ///
     /// Handles the `Console` effect of the given function `f`.
@@ -177,18 +141,16 @@ pub mod Sys.Console {
         // NB: System.console() returns null when there is no interactive terminal (e.g. IDE, piped input).
         let reader = match Object.toOption(System.console()) {
             case Some(c) => () -> Object.toOption(c.readLine())
-            case None =>
-                let br = new BufferedReader(new InputStreamReader(System.in));
-                () -> Object.toOption(br.readLine())
+            case None    => () -> readLineFromStdIn()
         };
         run {
             f(x)
         } with handler Console {
-            def readln(k)      = k(reader())
-            def print(s, k)    = { System.out.print(s); System.out.flush(); k() }
-            def eprint(s, k)   = { System.err.print(s); System.err.flush(); k() }
-            def println(s, k)  = { System.out.println(s); System.out.flush(); k() }
-            def eprintln(s, k) = { System.err.println(s); System.err.flush(); k() }
+            def readln(k)          = k(reader())
+            def write(s, k)        = { System.out.print(s); System.out.flush(); k() }
+            def writeLine(s, k)    = { System.out.println(s); System.out.flush(); k() }
+            def writeErr(s, k)     = { System.err.print(s); System.err.flush(); k() }
+            def writeErrLine(s, k) = { System.err.println(s); System.err.flush(); k() }
         }
 
     ///
@@ -200,9 +162,28 @@ pub mod Sys.Console {
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Console) + IO = handle(f)()
 
     ///
-    /// Returns the string representation of the formattable value `p`.
+    /// Reads a line from `System.in` without reading past the end of the line.
     ///
-    def prompt(p: a): String \ Formattable.Aef[a] with Formattable[a] =
-        RichString.toString(Formattable.format(p))
+    /// Returns `None` if the end of input has been reached before any byte was read.
+    ///
+    /// A `BufferedReader` reads ahead and would swallow lines meant for a later
+    /// reader, e.g. when the `Console` effect is handled more than once.
+    /// Reading one byte at a time is cheap because `System.in` is itself buffered.
+    ///
+    def readLineFromStdIn(): Option[String] \ IO =
+        let bytes = new ByteArrayOutputStream();
+        // Returns `true` if a newline was consumed and `false` if the end of input was reached.
+        def loop() = match System.in.read() {
+            case -1 => false // end of input
+            case 10 => true  // '\n'
+            case b  => bytes.write(b); loop()
+        };
+        let sawNewline = loop();
+        if (not sawNewline and bytes.size() == 0)
+            None
+        else {
+            let s = String.fromBytes(Array.toVector(bytes.toByteArray()));
+            Some(Option.getWithDefault(s, String.stripSuffix(substr = "\r", s)))
+        }
 
 }

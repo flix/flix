@@ -1,17 +1,8 @@
 /*
  * Copyright 2019 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix
@@ -21,11 +12,11 @@ import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Origin, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
+import ca.uwaterloo.flix.tools.doc.{HtmlDocumentor, MissingDoc}
 import ca.uwaterloo.flix.util.*
 import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
@@ -316,14 +307,18 @@ object Main {
             exitOnResult {
               Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
                 val flix = bootstrap.mkFlix(options, formatter)
-                bootstrap.doc(flix, docOrigin(cmdOpts))
+                val origin = docOrigin(cmdOpts)
+                bootstrap.doc(flix, origin).flatMap(_ => bootstrap.checkMissingDocs(flix, origin)(System.out))
               }
             }
           } else {
             val flix = mkFlixWithFiles(cmdOpts.files, options)
             val (optRoot, errors) = flix.check()
             if (errors.isEmpty) {
-              HtmlDocumentor.run(optRoot.get, docOrigin(cmdOpts), None, Bootstrap.getDocumentationDirectory(cwd))(flix)
+              val root = optRoot.get
+              val origin = docOrigin(cmdOpts)
+              HtmlDocumentor.run(root, origin, Bootstrap.getDocumentationDirectory(cwd))(flix)
+              checkMissingDocs(root, origin)
               exit(0)
             } else exitWithErrors(flix, errors, optRoot)
           }
@@ -903,6 +898,17 @@ object Main {
     */
   private def docOrigin(cmdOpts: CmdOpts): Origin =
     if (cmdOpts.library) Origin.Library else Origin.User
+
+  /**
+    * Prints a report of every documentable item under `origin` in `root` that has no doc comment,
+    * if any. Prints nothing if there are none, and never affects the exit code.
+    */
+  private def checkMissingDocs(root: TypedAst.Root, origin: Origin)(implicit formatter: Formatter): Unit = {
+    val missing = MissingDoc.check(root, origin)
+    if (missing.nonEmpty) {
+      println(MissingDoc.format(missing, formatter))
+    }
+  }
 
   /**
     * Creates a fresh Flix instance configured with the given options and source files.

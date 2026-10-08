@@ -1,27 +1,23 @@
 /*
  *  Copyright 2022 Stephen Tetley
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions not
- *  limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
-mod MonadZip {
+///
+/// Trait for types that are monads that support zipping, and its functions.
+///
+pub mod MonadZip {
 
     ///
-    /// A trait for zipping Monads, typically container monads like `List`.
+    /// Trait for types that are monads that support zipping.
+    ///
+    /// Instances are typically container monads like `List`.
     ///
     /// A minimal implementation must define `zipWith` and `zipWithA`.
     ///
-    trait MonadZip[m: Type -> Type] with Monad[m] {
+    pub trait MonadZip[m: Type -> Type] with Monad[m] {
 
         ///
         /// Returns single monad where the element (or elements) of `ma` and `mb` are combined

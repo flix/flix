@@ -6,12 +6,14 @@
     --light-border-color: rgba(0, 0, 0, 0.071);
     --light-heading-color: #212529;
     --light-text-color: #111111;
-    --light-faded-text-color: #8a8a8a;
+    /* #8a8a8a on white is ~3.5:1, below the WCAG AA minimum (4.5:1) for body text; #6b6b6b is
+       ~5.3:1 while still reading as a muted/faded gray. */
+    --light-faded-text-color: #6b6b6b;
     --light-annotation-color: #b15422;
     --light-keyword-color: #030303;
     --light-name-color: #b12250;
     --light-type-color: #3061c4;
-    --light-kind-color: #8a8a8a;
+    --light-kind-color: #6b6b6b;
     --light-effect-color: #d4671e;
     --light-doc-code-color: #d63384;
     --light-show-hide-color: #0d6efd;
@@ -21,6 +23,7 @@
     --light-trait-def-color: #bfb280;
     --light-traits-color: #fc9d9a;
     --light-enum-color: #c8c8a9;
+    --light-struct-color: #9ccfcf;
     --light-op-color: #ccaeff;
     --light-eff-color: #ffaefa;
     --light-type-alias-color: #f9cdad;
@@ -49,6 +52,7 @@
     --dark-trait-def-color: #bfb280;
     --dark-traits-color: #fc9d9a;
     --dark-enum-color: #c8c8a9;
+    --dark-struct-color: #9ccfcf;
     --dark-op-color: #ccaeff;
     --dark-eff-color: #ffaefa;
     --dark-type-alias-color: #f9cdad;
@@ -77,6 +81,7 @@
     --trait-def-color: var(--light-trait-def-color);
     --traits-color: var(--light-traits-color);
     --enum-color: var(--light-enum-color);
+    --struct-color: var(--light-struct-color);
     --op-color: var(--light-op-color);
     --eff-color: var(--light-eff-color);
     --type-alias-color: var(--light-type-alias-color);
@@ -111,6 +116,7 @@
         --trait-def-color: var(--dark-trait-def-color);
         --traits-color: var(--dark-traits-color);
         --enum-color: var(--dark-enum-color);
+        --struct-color: var(--dark-struct-color);
         --op-color: var(--dark-op-color);
         --eff-color: var(--dark-eff-color);
         --type-alias-color: var(--dark-type-alias-color);
@@ -142,6 +148,7 @@
     --trait-def-color: var(--dark-trait-def-color);
     --traits-color: var(--dark-traits-color);
     --enum-color: var(--dark-enum-color);
+    --struct-color: var(--dark-struct-color);
     --op-color: var(--dark-op-color);
     --eff-color: var(--dark-eff-color);
     --type-alias-color: var(--dark-type-alias-color);
@@ -157,15 +164,30 @@
 /* BEGIN GLOBAL STYLES */
 * {
     box-sizing: border-box;
-
-    /* When overriding this property, make sure to include this transition */
-    transition: var(--blur-transition);
 }
 
 html, body {
     min-height: 100dvh;
     margin: 0;
     padding: 0;
+}
+
+/* Keeps content available to screen readers while hiding it visually, without affecting layout. */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+:focus-visible {
+    outline: 2px solid var(--show-hide-color);
+    outline-offset: 2px;
 }
 
 h1, h2 {
@@ -188,11 +210,14 @@ h2 {
     margin-bottom: 1.5rem;
 }
 
-h3 {
+/* Subsection headings are h2 in the document outline but keep the h3 look. */
+h3,
+.subsection h2 {
     display: inline;
     font-family: "Inter", sans-serif;
     font-size: 0.9rem;
     font-weight: 200;
+    line-height: normal;
     color: var(--heading-color);
 }
 
@@ -212,24 +237,6 @@ button, input {
 }
 button, input[type="checkbox"] {
     cursor: pointer;
-}
-
-::placeholder {
-    color: var(--faded-text-color);
-    opacity: 1;
-}
-
-kbd {
-    border: var(--border);
-    border-radius: 0.2em;
-    padding: 0 0.25em;
-    background-color: var(--bg-color-1);
-}
-
-@media screen and (max-width: 800px) {
-    .keyboard-shortcut {
-        display: none;
-    }
 }
 
 @media (prefers-reduced-motion) {
@@ -259,6 +266,24 @@ body {
     body {
         display: block;
     }
+}
+
+/* Hidden off-screen until keyboard-focused, so keyboard/screen-reader users can bypass the
+   header and sidebar navigation straight to the main content. */
+.skip-link {
+    position: fixed;
+    top: -3rem;
+    left: 0.5rem;
+    z-index: 3; /* Above the header (z-index: 2) once focused. */
+
+    background-color: var(--bg-color-1);
+    color: var(--text-color);
+    border: var(--border);
+    border-radius: 0.2rem;
+    padding: 0.5rem 1rem;
+}
+.skip-link:focus {
+    top: 0.5rem;
 }
 
 header {
@@ -291,10 +316,16 @@ header {
     gap: 0.3rem;
     align-items: baseline;
 }
-.flix > h2 {
+.flix > .site-title {
+    /* Not a heading element (see HtmlDocumentor.docHeader), so the `h1`/`h2` base rules above
+       don't apply to it; restated here to keep the same look. */
+    color: var(--heading-color);
+    font-family: "Oswald", sans-serif;
+    line-height: 1.2;
+    margin: 0;
+
     font-weight: 700;
     display: inline-block;
-    margin-bottom: 0;
     font-size: 1.5rem;
 }
 .flix > .version {
@@ -419,32 +450,34 @@ nav li::before {
     content: "●";
     margin-right: 0.3rem;
 }
-nav .Modules li::before {
+nav .sidebar-list-modules li::before {
     color: var(--module-color);
 }
-nav .Signatures li::before {
+nav .sidebar-list-signatures li::before {
     color: var(--signature-color);
 }
-nav .Trait-Definitions li::before {
+nav .sidebar-list-trait-defs li::before {
     color: var(--trait-def-color);
 }
-nav .Traits li::before {
+nav .sidebar-list-traits li::before {
     color: var(--traits-color);
 }
-nav .Enums li::before {
+nav .sidebar-list-enums li::before {
     color: var(--enum-color);
 }
-nav .Operations li::before {
+nav .sidebar-list-structs li::before {
+    color: var(--struct-color);
+}
+nav .sidebar-list-operations li::before {
     color: var(--op-color);
 }
-nav .Effects li::before {
+nav .sidebar-list-effects li::before {
     color: var(--eff-color);
 }
-nav .Type-Aliases li::before {
+nav .sidebar-list-type-aliases li::before {
     color: var(--type-alias-color);
 }
-nav .Definitions li::before,
-nav .Module-Definitions li::before {
+nav .sidebar-list-definitions li::before {
     color: var(--def-color);
 }
 
@@ -455,6 +488,9 @@ main {
     overflow-y: auto;
     scroll-behavior: smooth;
     background-color: var(--bg-color-2);
+
+    /* Animates the blur/contrast filter applied below when the mobile menu is open. */
+    transition: var(--blur-transition);
 }
 @media screen and (max-width: 800px) {
     main {
@@ -469,6 +505,21 @@ main {
 
 main h2 {
     font-family: "Oswald", sans-serif;
+}
+
+.breadcrumbs {
+    margin-bottom: 0.5rem;
+
+    font-family: "Inter", sans-serif;
+    font-size: 0.9rem;
+    color: var(--faded-text-color);
+}
+.breadcrumbs > a {
+    color: inherit;
+}
+.breadcrumbs > a:hover,
+.breadcrumbs > span {
+    color: var(--text-color);
 }
 
 .box {
@@ -486,6 +537,9 @@ main h2 {
     border-radius: 0.2rem;
     box-sizing: border-box;
     overflow: auto;
+
+    /* Keep the target clear of the sticky header when jumping to an anchor link. */
+    scroll-margin-top: var(--header-height);
 }
 .box:last-of-type {
     margin-bottom: 3rem;
@@ -501,7 +555,7 @@ main h2 {
     margin-top: 1rem;
     padding-left: 1.5rem;
 }
-.subsection h3 {
+.subsection h2 {
     margin-left: -1.5rem;
 }
 .subsection > summary {
@@ -527,6 +581,10 @@ main h2 {
 }
 .subsection > div:not(:last-child) {
     border-bottom: var(--border);
+}
+.subsection.default-handler {
+    padding-top: 0.5rem;
+    border-top: var(--border);
 }
 
 .decl {
@@ -599,12 +657,16 @@ main h2 {
     }
 }
 
-.cases {
+.cases,
+.fields,
+.assocs {
     margin-left: 1rem;
     margin-top: 0.7rem;
     margin-bottom: 0.7rem;
 }
-.cases > code {
+.cases > code,
+.fields > code,
+.assocs > code {
     display: block;
 }
 .case-tag {
@@ -630,6 +692,17 @@ main h2 {
     color: var(--doc-code-color);
 }
 
+/* Column alignment of markdown tables, see TableCellAlignment in HtmlDocumentor. */
+td.align-left, th.align-left {
+    text-align: left;
+}
+td.align-center, th.align-center {
+    text-align: center;
+}
+td.align-right, th.align-right {
+    text-align: right;
+}
+
 .mod-doc {
     margin-top: 0.5rem;
     margin-bottom: 1rem;
@@ -645,6 +718,36 @@ main h2 {
 }
 .mod-doc p:last-child {
     margin-bottom: 0;
+}
+
+.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 3rem;
+}
+.summary-table tr:not(:last-child) td {
+    border-bottom: var(--border);
+}
+.summary-table td {
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    vertical-align: top;
+}
+.summary-table td:first-child {
+    white-space: nowrap;
+    font-family: "Fira Code", monospace;
+    font-size: 0.85rem;
+}
+.summary-table td:last-child {
+    width: 100%;
+    font-size: 0.85rem;
+    color: var(--faded-text-color);
+}
+.summary-table a.name {
+    color: var(--name-color);
+    text-decoration: none;
+}
+.summary-table a.name:hover {
+    text-decoration: underline;
 }
 
 code {

@@ -1,33 +1,24 @@
 /*
  * Copyright 2021 Jonathan Lindegaard Starup
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix, FlixEvent}
-import ca.uwaterloo.flix.language.ast.JvmAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, Symbol}
+import ca.uwaterloo.flix.language.ast.JvmAst.{Clo, Def, Expr, LocalParam, OffsetFormalParam, Root}
+import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, InstanceField, StaticMethod}
 import ca.uwaterloo.flix.language.phase.jvm.Instructions.*
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenFrame, GenResult, GenThunk, GenValue}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenFrame, GenResult, GenThunk, GenUnit, GenValue}
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
 
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
-import java.lang.constant.ConstantDescs.CD_int
+import java.lang.constant.ConstantDescs.{CD_Object, CD_int}
 
 /**
   * Generates byte code for the function and closure classes.
@@ -53,20 +44,34 @@ object GenFunAndClosureClasses {
     Mangle.mkDesc(sym.namespace, Mangle.mkClassName("Clo", sym.name))
 
   /**
-    * Returns a map of function- and closure-classes for the given set `defs`.
+    * Emits instructions that run the def `sym`, of type `Unit -> t`, to completion and discard
+    * its result.
+    *
+    * The def's function class is instantiated, the `Unit` singleton is stored in its `arg0`
+    * field, and the resulting thunk is unwound. If the def suspends, an unhandled effect error
+    * is thrown, using `errorHint` in its message.
+    *
+    * [...] -> [...]
     */
-  def gen(defs: Map[Symbol.DefnSym, Def])(implicit root: Root, flix: Flix): Map[ClassDesc, JvmClass] = {
-    ParOps.parAgg(defs.values, Map.empty[ClassDesc, JvmClass])({
+  def runUnitDef(sym: Symbol.DefnSym, errorHint: String)(implicit mv: MethodVisitor): Unit = {
+    val desc = defnDesc(sym)
+    NEW(desc)
+    DUP()
+    INVOKESPECIAL(ConstructorMethod(desc, Nil))
+    DUP()
+    GETSTATIC(GenUnit.SingletonField)
+    PUTFIELD(InstanceField(desc, "arg0", CD_Object))
+    GenResult.unwindSuspensionFreeThunk(errorHint, sym.loc)
+    POP()
+  }
 
-      case (macc, closure) if isClosure(closure) =>
-        flix.profile(closure.sym, closure.loc) {
-          val closureName = closureDesc(closure.sym)
-          val code = genClosure(closureName, closure)
-          flix.emitEvent(FlixEvent.EmittedClass(closure.sym, code.length))
-          macc + (closureName -> JvmClass(closureName, code))
-        }
+  /**
+    * Returns a map of function- and closure-classes for the given `defs` and `clos`.
+    */
+  def gen(defs: Map[Symbol.DefnSym, Def], clos: Map[Symbol.DefnSym, Clo])(implicit root: Root, flix: Flix): Map[ClassDesc, JvmClass] = {
+    val functionClasses = ParOps.parAgg(defs.values, Map.empty[ClassDesc, JvmClass])({
 
-      case (macc, defn) if isFunction(defn) && isControlPure(defn) =>
+      case (macc, defn) if isControlPure(defn) =>
         flix.profile(defn.sym, defn.loc) {
           val functionName = defnDesc(defn.sym)
           val code = genControlPureFunction(functionName, defn)
@@ -74,22 +79,28 @@ object GenFunAndClosureClasses {
           macc + (functionName -> JvmClass(functionName, code))
         }
 
-      case (macc, defn) if isFunction(defn) =>
+      case (macc, defn) =>
         flix.profile(defn.sym, defn.loc) {
           val functionName = defnDesc(defn.sym)
           val code = genControlImpureFunction(functionName, defn)
           flix.emitEvent(FlixEvent.EmittedClass(defn.sym, code.length))
           macc + (functionName -> JvmClass(functionName, code))
         }
-
-      case (macc, _) =>
-        macc
     }, _ ++ _)
+
+    val closureClasses = ParOps.parAgg(clos.values, Map.empty[ClassDesc, JvmClass])({
+
+      case (macc, clo) =>
+        flix.profile(clo.sym, clo.loc) {
+          val closureName = closureDesc(clo.sym)
+          val code = genClosure(closureName, clo)
+          flix.emitEvent(FlixEvent.EmittedClass(clo.sym, code.length))
+          macc + (closureName -> JvmClass(closureName, code))
+        }
+    }, _ ++ _)
+
+    functionClasses ++ closureClasses
   }
-
-  private def isClosure(defn: Def): Boolean = defn.cparams.nonEmpty
-
-  private def isFunction(defn: Def): Boolean = defn.cparams.isEmpty
 
   private def isControlPure(defn: Def): Boolean = Purity.isControlPure(defn.expr.purity)
 
@@ -192,8 +203,8 @@ object GenFunAndClosureClasses {
 
     // Methods
     compileInvokeMethod(visitor, className)
-    compileFrameMethod(visitor, className, defn)
-    compileCopyMethod(visitor, className, defn)
+    compileFrameMethod(visitor, className, Nil, defn.fparams, defn.lparams, defn.pcPoints, defn.expr, defn.loc)
+    compileCopyMethod(visitor, className, Nil, defn.fparams, defn.lparams)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -254,24 +265,24 @@ object GenFunAndClosureClasses {
     * }
     * }}}
     */
-  private def genClosure(className: ClassDesc, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genClosure(className: ClassDesc, clo: Clo)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = ClassMaker.mkClassWriter()
 
     // Header
-    val functionInterface = GenAbstractArrow.descOfArrowType(defn.arrowType)
+    val functionInterface = GenAbstractArrow.descOfArrowType(clo.arrowType)
     val frameInterface = GenFrame
     visitor.visit(CompilerConstants.JvmTargetVersion, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, ClassDescs.internalNameOf(className), null,
       ClassDescs.internalNameOf(functionInterface), Array(ClassDescs.internalNameOf(frameInterface.Desc)))
-    visitor.visitSource(defn.loc.source.name, null)
+    visitor.visitSource(clo.loc.source.name, null)
 
     // Fields
-    val closureArgTypes = defn.cparams.map(_.tpe)
+    val closureArgTypes = clo.cparams.map(_.tpe)
     for ((argType, index) <- closureArgTypes.zipWithIndex) {
       val field = visitor.visitField(Opcodes.ACC_PUBLIC, s"clo$index", TypeDescs.toClassDesc(argType).descriptorString(), null, null)
       field.visitEnd()
     }
     // lparams use erased types (like fparams) so setPc can store without casting
-    for ((x, i) <- defn.lparams.zipWithIndex) {
+    for ((x, i) <- clo.lparams.zipWithIndex) {
       visitor.visitField(Opcodes.ACC_PUBLIC, s"l$i", TypeDescs.toErasedClassDesc(x.tpe).descriptorString(), null, null)
     }
     visitor.visitField(Opcodes.ACC_PUBLIC, "pc", CD_int.descriptorString(), null, null)
@@ -280,9 +291,9 @@ object GenFunAndClosureClasses {
 
     // Methods
     compileInvokeMethod(visitor, className)
-    compileFrameMethod(visitor, className, defn)
-    compileCopyMethod(visitor, className, defn)
-    compileGetUniqueThreadClosureMethod(visitor, className, defn)
+    compileFrameMethod(visitor, className, clo.cparams, clo.fparams, clo.lparams, clo.pcPoints, clo.expr, clo.loc)
+    compileCopyMethod(visitor, className, clo.cparams, clo.fparams, clo.lparams)
+    compileGetUniqueThreadClosureMethod(visitor, className, clo)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -370,25 +381,35 @@ object GenFunAndClosureClasses {
     m.visitEnd()
   }
 
+  /**
+    * Compiles the frame method of a function or closure with the closure parameters `cparams0`
+    * (empty for a function), formal parameters `fparams0`, local parameters `lparams0`, and
+    * body `expr`.
+    */
   private def compileFrameMethod(visitor: ClassWriter,
                                  className: ClassDesc,
-                                 defn: Def)(implicit root: Root, flix: Flix): Unit = {
+                                 cparams0: List[OffsetFormalParam],
+                                 fparams0: List[OffsetFormalParam],
+                                 lparams0: List[LocalParam],
+                                 pcPoints: Int,
+                                 expr: Expr,
+                                 loc: SourceLocation)(implicit root: Root, flix: Flix): Unit = {
     // Method header
     val classInternalName = ClassDescs.internalNameOf(className)
     val applyMethod = GenFrame.ApplyMethod
     implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, applyMethod.name, applyMethod.d.descriptorString(), null, null)
     val localOffset = 2 // [this: Obj, value: Obj, ...]
 
-    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.offset + localOffset, lp.sym.isWild, TypeDescs.toErasedClassDesc(lp.tpe), Some(TypeDescs.toClassDesc(lp.tpe))) }
-    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.offset + localOffset, false, TypeDescs.toClassDesc(cp.tpe), None) }
-    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.offset + localOffset, false, TypeDescs.toErasedClassDesc(fp.tpe), Some(TypeDescs.toClassDesc(fp.tpe))) }
+    val lparams = lparams0.zipWithIndex.map { case (lp, i) => (s"l$i", lp.offset + localOffset, lp.sym.isWild, TypeDescs.toErasedClassDesc(lp.tpe), Some(TypeDescs.toClassDesc(lp.tpe))) }
+    val cparams = cparams0.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.offset + localOffset, false, TypeDescs.toClassDesc(cp.tpe), None) }
+    val fparams = fparams0.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.offset + localOffset, false, TypeDescs.toErasedClassDesc(fp.tpe), Some(TypeDescs.toClassDesc(fp.tpe))) }
 
     def loadParamsOf(params: List[(String, Int, Boolean, ClassDesc, Option[ClassDesc])]): Unit = {
       params.foreach { case (name, offset, _, fieldType, castTo) => loadFromField(m, className, name, offset, fieldType, castTo) }
     }
 
     m.visitCode()
-    addLoc(defn.loc)
+    addLoc(loc)
     loadParamsOf(lparams)
 
     // used for self-recursive tail calls
@@ -398,12 +419,12 @@ object GenFunAndClosureClasses {
     loadParamsOf(cparams)
     loadParamsOf(fparams)
 
-    if (Purity.isControlPure(defn.expr.purity)) {
+    if (Purity.isControlPure(expr.purity)) {
       val ctx = GenExpression.DirectInstanceContext(enterLabel, Map.empty, localOffset)
-      GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
+      GenExpression.compileExpr(expr)(m, ctx, root, flix)
     } else {
-      val pcLabels: Vector[Label] = Vector.range(0, defn.pcPoints).map(_ => new Label())
-      if (defn.pcPoints > 0) {
+      val pcLabels: Vector[Label] = Vector.range(0, pcPoints).map(_ => new Label())
+      if (pcPoints > 0) {
         // the default label is the starting point of the function if pc = 0
         val defaultLabel = new Label()
         m.visitVarInsn(Opcodes.ALOAD, 0)
@@ -453,7 +474,7 @@ object GenFunAndClosureClasses {
       }
 
       val ctx = GenExpression.EffectContext(enterLabel, Map.empty, newFrame, setPc, narrowLocals, localOffset, pcLabels.prepended(null), Array(0))
-      GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
+      GenExpression.compileExpr(expr)(m, ctx, root, flix)
       assert(ctx.pcCounter(0) == pcLabels.size, s"${(className, ctx.pcCounter(0), pcLabels.size)}")
     }
 
@@ -482,12 +503,12 @@ object GenFunAndClosureClasses {
     * Make a new `classType` with all the fields set to the same as `this`.
     * A partial copy is without local parameters and without pc
     */
-  private def mkCopy(className: ClassDesc, defn: Def)(implicit mv: MethodVisitor, root: Root): Unit = {
+  private def mkCopy(className: ClassDesc, cparams0: List[OffsetFormalParam], fparams0: List[OffsetFormalParam], lparams0: List[LocalParam])(implicit mv: MethodVisitor, root: Root): Unit = {
     val classInternalName = ClassDescs.internalNameOf(className)
     val pc = List(("pc", CD_int))
-    val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", TypeDescs.toErasedClassDesc(p._1.tpe)))
-    val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", TypeDescs.toClassDesc(p._1.tpe)))
-    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", TypeDescs.toErasedClassDesc(p._1.tpe)))
+    val fparams = fparams0.zipWithIndex.map(p => (s"arg${p._2}", TypeDescs.toErasedClassDesc(p._1.tpe)))
+    val cparams = cparams0.zipWithIndex.map(p => (s"clo${p._2}", TypeDescs.toClassDesc(p._1.tpe)))
+    val lparams = lparams0.zipWithIndex.map(p => (s"l${p._2}", TypeDescs.toErasedClassDesc(p._1.tpe)))
     val params = pc ++ fparams ++ cparams ++ lparams
 
     NEW(className)
@@ -507,24 +528,24 @@ object GenFunAndClosureClasses {
     MethodTypeDesc.of(t)
   }
 
-  private def compileCopyMethod(visitor: ClassWriter, className: ClassDesc, defn: Def)(implicit root: Root): Unit = {
+  private def compileCopyMethod(visitor: ClassWriter, className: ClassDesc, cparams: List[OffsetFormalParam], fparams: List[OffsetFormalParam], lparams: List[LocalParam])(implicit root: Root): Unit = {
     implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, copyName, nothingToTDescriptor(className).descriptorString(), null, null)
     m.visitCode()
 
-    mkCopy(className, defn)
+    mkCopy(className, cparams, fparams, lparams)
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
   }
 
-  private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, className: ClassDesc, defn: Def)(implicit root: Root): Unit = {
-    val (cloArgs, cloResult) = GenArrow.erasedArgsAndResult(defn.arrowType)
+  private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, className: ClassDesc, clo: Clo)(implicit root: Root): Unit = {
+    val (cloArgs, cloResult) = GenArrow.erasedArgsAndResult(clo.arrowType)
     val closureAbstractClass = GenAbstractArrow.desc(cloArgs, cloResult)
     implicit val m: MethodVisitor = visitor.visitMethod(Opcodes.ACC_PUBLIC, GenAbstractArrow.GetUniqueThreadClosureMethod(cloArgs, cloResult).name, MethodTypeDescs.mkDescriptor()(closureAbstractClass).descriptorString(), null, null)
     m.visitCode()
 
-    mkCopy(className, defn)
+    mkCopy(className, clo.cparams, clo.fparams, clo.lparams)
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)

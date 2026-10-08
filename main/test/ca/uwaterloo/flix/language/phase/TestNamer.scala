@@ -1,17 +1,8 @@
 /*
  * Copyright 2015-2016 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.language.phase
@@ -823,6 +814,129 @@ class TestNamer extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[NameError.CompanionMustBeFirst](result)
+  }
+
+  test("CompanionMustBePublic.Enum.01") {
+    val input =
+      """
+        |pub mod B {
+        |    enum B { case B }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBePublic](result)
+  }
+
+  test("CompanionMustBePublic.Struct.01") {
+    val input =
+      """
+        |pub mod B {
+        |    struct B { x: Int32 }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBePublic](result)
+  }
+
+  test("CompanionMustBePublic.Effect.01") {
+    val input =
+      """
+        |pub mod B {
+        |    eff B { def op(): Unit }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBePublic](result)
+  }
+
+  test("CompanionMustBePublic.Trait.01") {
+    val input =
+      """
+        |pub mod B {
+        |    trait B[a] { pub def f(x: a): Int32 }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBePublic](result)
+  }
+
+  test("CompanionMustBePublic.Enum.02") {
+    val input =
+      """
+        |pub mod A.B {
+        |    enum B { case B }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.CompanionMustBePublic](result)
+  }
+
+  test("IllegalPublicCompanion.Enum.01") {
+    val input =
+      """
+        |mod B {
+        |    pub enum B { case B }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalPublicCompanion](result)
+  }
+
+  test("IllegalPublicCompanion.Struct.01") {
+    val input =
+      """
+        |mod B {
+        |    pub struct B { x: Int32 }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalPublicCompanion](result)
+  }
+
+  test("IllegalPublicCompanion.Effect.01") {
+    val input =
+      """
+        |mod B {
+        |    pub eff B { def op(): Unit }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalPublicCompanion](result)
+  }
+
+  test("IllegalPublicCompanion.Trait.01") {
+    val input =
+      """
+        |mod B {
+        |    pub trait B[a] { pub def f(x: a): Int32 }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalPublicCompanion](result)
+  }
+
+  test("IllegalPublicCompanion.Enum.02") {
+    val input =
+      """
+        |mod A.B {
+        |    pub enum B { case B }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalPublicCompanion](result)
+  }
+
+  test("IllegalPublicCompanion.Enum.03") {
+    val input =
+      """
+        |mod A {
+        |    mod B {
+        |        pub enum B { case B }
+        |    }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalPublicCompanion](result)
   }
 
   test("CompanionIsFirst.Enum.01") {

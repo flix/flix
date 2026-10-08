@@ -15,7 +15,7 @@ concurrency:
   group: community-build-${{ github.ref }}
 
 jobs:
-  # Build the JAR once for all the community builds
+  # Build the JAR once for the community builds and the library documentation
   build-jar:
     runs-on: ubuntu-latest
     steps:
@@ -87,3 +87,56 @@ jobs:
           # Note: -Xss8m because type inference recurses once per AST node along a
           # function's spine, so large functions exhaust the default 1MB stack.
           java -Xss8m -jar out.jar build --github-token ${{ secrets.GITHUB_TOKEN }}
+
+  # Validate the HTML and CSS of the library documentation
+  library-documentation:
+    needs: build-jar
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # The Nu HTML Checker (the engine behind validator.w3.org/nu), pinned.
+      # Published by the validator maintainers as https://www.npmjs.com/package/vnu-jar
+      VNU_JAR_VERSION: "26.9.16"
+    steps:
+      - name: Install JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: Download Flix JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: flix-jar
+      - name: Generate the library documentation
+        # Runs in an empty directory so that `flix doc` picks up no project files.
+        run: |
+          mkdir doc-check
+          cd doc-check
+          java -jar ../out.jar doc --library
+      - name: Check that the documentation was generated
+        run: |
+          cd doc-check/build/doc
+          test -f index.html
+          test -f styles.css
+          test -f index.js
+          count=$(ls *.html | wc -l)
+          echo "Generated $count HTML pages."
+          # The library has several hundred pages; guard against a silently empty run.
+          test "$count" -ge 100
+      - name: Install the Nu HTML Checker
+        run: |
+          mkdir vnu
+          cd vnu
+          npm install --no-save --ignore-scripts --no-audit --no-fund "vnu-jar@${VNU_JAR_VERSION}"
+      - name: Validate the HTML and CSS
+        # Every page is checked as HTML and styles.css as CSS; warnings count as errors.
+        run: >
+          java -jar vnu/node_modules/vnu-jar/build/dist/vnu.jar
+          --skip-non-html --also-check-css --Werror --format gnu
+          doc-check/build/doc
+      - name: Upload the generated documentation
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: library-documentation
+          path: doc-check/build/doc

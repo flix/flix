@@ -1,17 +1,8 @@
 /*
  * Copyright 2026 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.language.errors
@@ -59,13 +50,10 @@ object ErrorCode {
   case object E1069 extends ErrorCode
   case object E1127 extends ErrorCode
   case object E1134 extends ErrorCode
-  case object E1172 extends ErrorCode
   case object E1238 extends ErrorCode
   case object E1245 extends ErrorCode
-  case object E1285 extends ErrorCode
   case object E1349 extends ErrorCode
   case object E1356 extends ErrorCode
-  case object E1396 extends ErrorCode
   case object E1403 extends ErrorCode
   case object E1452 extends ErrorCode
   case object E1467 extends ErrorCode
@@ -80,12 +68,10 @@ object ErrorCode {
   case object E1785 extends ErrorCode
   case object E1792 extends ErrorCode
   case object E1803 extends ErrorCode
-  case object E1849 extends ErrorCode
   case object E1896 extends ErrorCode
   case object E1907 extends ErrorCode
   case object E1914 extends ErrorCode
   case object E1952 extends ErrorCode
-  case object E1960 extends ErrorCode
   case object E2018 extends ErrorCode
   case object E2025 extends ErrorCode
   case object E2063 extends ErrorCode
@@ -182,7 +168,6 @@ object ErrorCode {
   case object E4956 extends ErrorCode
   case object E5023 extends ErrorCode
   case object E5067 extends ErrorCode
-  case object E5134 extends ErrorCode
   case object E5178 extends ErrorCode
   case object E5245 extends ErrorCode
   case object E5252 extends ErrorCode
@@ -203,6 +188,7 @@ object ErrorCode {
   case object E5803 extends ErrorCode
   case object E5815 extends ErrorCode
   case object E5826 extends ErrorCode
+  case object E5848 extends ErrorCode
   case object E5849 extends ErrorCode
   case object E5914 extends ErrorCode
   case object E5952 extends ErrorCode
@@ -297,6 +283,7 @@ object ErrorCode {
   case object E9394 extends ErrorCode
   case object E9407 extends ErrorCode
   case object E9467 extends ErrorCode
+  case object E9491 extends ErrorCode
   case object E9512 extends ErrorCode
   case object E9578 extends ErrorCode
   case object E9623 extends ErrorCode

@@ -1,19 +1,13 @@
 /*
  *  Copyright 2025 Ry Wiese
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of TCP sockets, and its functions.
+///
 pub mod Net.TcpSocket {
 
     import java.io.InputStream
@@ -24,7 +18,7 @@ pub mod Net.TcpSocket {
     use Net.TcpSocket.TcpSocket
 
     ///
-    /// Represents a TCP socket.
+    /// Type of TCP sockets.
     ///
     pub enum TcpSocket(Socket, InputStream, OutputStream)
 
@@ -42,10 +36,12 @@ pub mod Net.TcpSocket {
             TcpSocket.write(buffer, socket)
     }
 
+    /// Reads bytes from `socket` into `buffer` and returns the number of bytes read.
     pub def read(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
         let TcpSocket(_, inputStream, _) = socket;
         Readable.read(buffer, inputStream)
 
+    /// Writes the bytes in `buffer` to `socket` and returns the number of bytes written.
     pub def write(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
         let TcpSocket(_, _, outputStream) = socket;
         Writable.write(buffer, outputStream)

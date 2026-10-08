@@ -1,17 +1,8 @@
 /*
  * Copyright 2023 Jonathan Lindegaard Starup
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.language.phase
@@ -54,10 +45,11 @@ object EffectBinder {
     */
   def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("EffectBinder") {
     val newDefs = ParOps.parMapValues(root.defs)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn)))
+    val newClos = ParOps.parMapValues(root.clos)(clo => flix.profile(clo.sym, clo.loc)(visitClo(clo)))
     val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newStructs = ParOps.parMapValues(root.structs)(visitStruct)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
-    ReducedAst.Root(newDefs, newEnums, newStructs, newEffects, root.mainEntryPoint, root.entryPoints, root.sources)
+    ReducedAst.Root(newDefs, newClos, newEnums, newStructs, newEffects, root.mainEntryPoint, root.sources)
   }
 
   private sealed trait Binder
@@ -71,11 +63,22 @@ object EffectBinder {
     * operand stack.
     */
   private def visitDef(defn: LiftedAst.Def)(implicit flix: Flix): ReducedAst.Def = defn match {
-    case LiftedAst.Def(ann, mod, sym, cparams0, fparams0, exp0, tpe, loc) =>
+    case LiftedAst.Def(ann, mod, sym, fparams0, exp0, tpe, loc) =>
+      val fparams = fparams0.map(visitParam)
+      val exp = visitExpr(exp0)
+      ReducedAst.Def(ann, mod, sym, fparams, exp, tpe, ReducedAst.UnboxedType(tpe), loc)
+  }
+
+  /**
+    * Transforms the [[LiftedAst.Clo]] such that effect operations will be run without an
+    * operand stack.
+    */
+  private def visitClo(clo: LiftedAst.Clo)(implicit flix: Flix): ReducedAst.Clo = clo match {
+    case LiftedAst.Clo(sym, cparams0, fparams0, exp0, tpe, loc) =>
       val cparams = cparams0.map(visitParam)
       val fparams = fparams0.map(visitParam)
       val exp = visitExpr(exp0)
-      ReducedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, ReducedAst.UnboxedType(tpe), loc)
+      ReducedAst.Clo(sym, cparams, fparams, exp, tpe, loc)
   }
 
   private def visitEnum(enm: LiftedAst.Enum): ReducedAst.Enum = enm match {

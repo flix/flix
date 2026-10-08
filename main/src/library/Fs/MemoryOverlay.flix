@@ -1,19 +1,11 @@
 /*
  * Copyright 2026 Flix Authors
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
+/// Type of in-memory overlays that record changes on top of a lower file system layer, and its functions.
 mod Fs.MemoryOverlay {
 
     import java.nio.file.FileSystems
@@ -29,14 +21,14 @@ mod Fs.MemoryOverlay {
     /// - `dirs`:      set of normalized absolute paths registered as directories.
     /// - `whiteouts`: set of normalized absolute paths deleted in the overlay (hides lower-layer entries).
     /// - `counter`:   monotonically increasing counter for generating unique temp directory names.
-    pub struct MemoryOverlay[r: Region] {
+    struct MemoryOverlay[r: Region] {
         mut files:     Map[String, OverlayEntry],
         mut dirs:      Set[String],
         mut whiteouts: Set[String],
         mut counter:   Int32
     }
 
-    /// The content of an overlay entry.
+    /// Type of overlay file contents, either text or bytes.
     pub enum OverlayEntry with ToString {
         case BinaryEntry(Vector[Int8])
         case TextEntry(String)

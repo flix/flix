@@ -1,0 +1,156 @@
+/* The formatting of a source page, see HtmlHighlighter.
+
+   Only a source page links to this stylesheet, and it does so after `styles.css`, whose variables
+   it uses. Every class of a token is specific to this stylesheet, so that the code can be styled
+   without affecting any other page. */
+
+/* BEGIN VARIABLES */
+:root, :root.light {
+    --light-comment-color: #767676;
+    --light-string-color: #2a7a3b;
+    --light-number-color: #7b3fc4;
+    --light-variable-color: #555555;
+    --light-selected-line-color: rgba(255, 196, 0, 0.22);
+
+    --dark-comment-color: #808080;
+    --dark-string-color: #7fd68f;
+    --dark-number-color: #c9a3ff;
+    --dark-variable-color: #b4b4b4;
+    --dark-selected-line-color: rgba(255, 196, 0, 0.16);
+
+    --comment-color: var(--light-comment-color);
+    --string-color: var(--light-string-color);
+    --number-color: var(--light-number-color);
+    --variable-color: var(--light-variable-color);
+    --selected-line-color: var(--light-selected-line-color);
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --comment-color: var(--dark-comment-color);
+        --string-color: var(--dark-string-color);
+        --number-color: var(--dark-number-color);
+        --variable-color: var(--dark-variable-color);
+        --selected-line-color: var(--dark-selected-line-color);
+    }
+}
+:root.dark {
+    --comment-color: var(--dark-comment-color);
+    --string-color: var(--dark-string-color);
+    --number-color: var(--dark-number-color);
+    --variable-color: var(--dark-variable-color);
+    --selected-line-color: var(--dark-selected-line-color);
+}
+/* END VARIABLES */
+
+
+
+/* BEGIN PAGE */
+/* A source page has no sidebar, and gives the width it frees to the code. */
+main:has(> .source-code) {
+    padding: 1rem 2rem;
+}
+main:has(> .source-code) > h1 {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    overflow-wrap: anywhere;
+}
+@media screen and (max-width: 800px) {
+    main:has(> .source-code) {
+        padding: 1rem 0.5rem;
+    }
+    /* The menu shows the sidebar, which a source page does not have. */
+    body:not(:has(nav)) #menu-toggle {
+        display: none;
+    }
+}
+/* END PAGE */
+
+
+
+/* BEGIN CODE */
+.source-code {
+    margin: 0 0 3rem 0;
+    padding: 0.5rem 0;
+    overflow-x: auto;
+
+    box-shadow: 0 0 10px 0 var(--shadow-color);
+    background-color: var(--bg-color-1);
+    border: var(--border);
+    border-radius: 0.2rem;
+
+    font-size: 0.85rem;
+    line-height: 1.5;
+    tab-size: 4;
+}
+.source-code > code {
+    counter-reset: line;
+}
+/* Each line is a `<span>` with the id `L<n>` that is followed by a newline.
+   A line is as wide as the code at least, so the mark of a selected line spans the whole of it. */
+.source-code > code > span {
+    display: inline-block;
+    min-width: 100%;
+    padding-right: 1rem;
+
+    /* Keep the line clear of the sticky header, with some of the code before it for context. */
+    scroll-margin-top: calc(var(--header-height) + 4.5em);
+}
+/* The line numbers are generated, so they are not part of the text that is selected and copied. */
+.source-code > code > span::before {
+    counter-increment: line;
+    content: counter(line);
+
+    display: inline-block;
+    min-width: 4ch;
+    margin: 0 1.5ch 0 1ch;
+    text-align: right;
+    color: var(--faded-text-color);
+    user-select: none;
+}
+.source-code > code > span.selected,
+.source-code > code > span:target {
+    background-color: var(--selected-line-color);
+}
+/* END CODE */
+
+
+
+/* BEGIN TOKENS */
+/* An annotation. */
+.source-code .an {
+    color: var(--annotation-color);
+}
+/* A comment. */
+.source-code .cm {
+    color: var(--comment-color);
+}
+/* An effect. */
+.source-code .ef {
+    color: var(--effect-color);
+}
+/* A function, i.e. a definition, a signature, or an operation. */
+.source-code .fn {
+    color: var(--name-color);
+}
+/* A keyword. It has the color of plain text, so its weight sets it apart. */
+.source-code .kw {
+    color: var(--keyword-color);
+    font-weight: 700;
+}
+/* A number. */
+.source-code .nu {
+    color: var(--number-color);
+}
+/* A string, a character, or a regular expression. */
+.source-code .st {
+    color: var(--string-color);
+}
+/* A type, a trait, or a type variable. */
+.source-code .ty {
+    color: var(--type-color);
+}
+/* A local variable or a parameter. */
+.source-code .va {
+    color: var(--variable-color);
+}
+/* END TOKENS */

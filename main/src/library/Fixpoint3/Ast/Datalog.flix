@@ -4,19 +4,11 @@
  * Copyright 2025 Casper Dalgaard Nielsen
  *                Adam Yasser Tallouzi
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
+/// Abstract syntax tree of Datalog programs.
 pub mod Fixpoint3.Ast.Datalog {
     use Fixpoint3.Boxed
     use Fixpoint3.PredSymsOf
@@ -151,6 +143,7 @@ pub mod Fixpoint3.Ast.Datalog {
     // Constraint                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
+    /// Represents a Datalog fact or rule, consisting of a head predicate and a body.
     pub enum Constraint {
         case Constraint(HeadPredicate, Vector[BodyPredicate])
     }
@@ -188,6 +181,7 @@ pub mod Fixpoint3.Ast.Datalog {
     // HeadPredicate                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
+    /// Represents the head atom of a Datalog constraint.
     pub enum HeadPredicate {
         case HeadAtom(PredSym, Denotation, Vector[HeadTerm])
     }
@@ -223,6 +217,7 @@ pub mod Fixpoint3.Ast.Datalog {
     // BodyPredicate                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
+    /// Represents a predicate in the body of a rule: an atom, a functional, or a guard.
     pub enum BodyPredicate {
         case BodyAtom(PredSym, Denotation, Polarity, Fixity, Vector[BodyTerm])
         case Functional(Vector[VarSym], Vector[Boxed] -> Vector[Vector[Boxed]], Vector[VarSym])
@@ -284,6 +279,7 @@ pub mod Fixpoint3.Ast.Datalog {
     // HeadTerm                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
+    /// Represents a term in a head atom: a variable, a literal, or a function application.
     pub enum HeadTerm {
         case Var(VarSym)
         case Lit(Boxed)
@@ -310,6 +306,7 @@ pub mod Fixpoint3.Ast.Datalog {
     // BodyTerm                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
+    /// Represents a term in a body atom: a wildcard, a variable, or a literal.
     pub enum BodyTerm {
         case Wild
         case Var(VarSym)
@@ -328,6 +325,7 @@ pub mod Fixpoint3.Ast.Datalog {
     // VarSym                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
+    /// Represents a variable symbol in a Datalog constraint.
     pub enum VarSym with Eq, Order, ToString {
         case VarSym(String)
     }
@@ -336,6 +334,7 @@ pub mod Fixpoint3.Ast.Datalog {
     // Fixity                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
+    /// Represents whether a body atom is `Fixed` (evaluated only against the full relation) or `Loose`.
     pub enum Fixity {
         case Loose
         case Fixed
@@ -345,6 +344,7 @@ pub mod Fixpoint3.Ast.Datalog {
     // Polarity                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
+    /// Represents whether a body atom is positive or negated.
     pub enum Polarity {
         case Positive
         case Negative

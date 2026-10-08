@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, Repository, SecurityContext}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.{FileOps, Formatter}
+import ca.uwaterloo.flix.util.{FileOps, Formatter, LibLevel}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path}
@@ -27,14 +27,17 @@ class TestMounts extends AnyFunSuite with TestUtils {
     Files.createDirectories(p.resolve("src").resolve("Game"))
     FileOps.writeString(p.resolve("src").resolve("Game").resolve("Rules.flix"), "pub mod Game.Rules { pub def players(): Int32 = 2 }")
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault).unsafeGet
+    val flix = PkgTestUtils.mkFlix(b)
+    flix.setOptions(flix.options.copy(lib = LibLevel.Min))
+    b.buildPkg(flix)(Formatter.getDefault).unsafeGet
     p.resolve("artifact").resolve(Bootstrap.PACKAGE_FPKG)
   }
 
-  /** Checks `main` against the package at `pkgPath`, installed under `mounts`. */
-  private def check(pkgPath: Path, mounts: Map[Mountpoint, PackageId], main: String): (Option[TypedAst.Root], List[CompilationMessage]) = {
+  /** Checks `main` against the package at `pkgPath`, installed under `mounts`, with the library level `lib`. */
+  private def check(pkgPath: Path, mounts: Map[Mountpoint, PackageId], main: String, lib: LibLevel = LibLevel.Min): (Option[TypedAst.Root], List[CompilationMessage]) = {
     val pkg = InstalledPackage(pkgPath, Id, SecurityContext.Unrestricted, Map.empty)
     val flix = PkgTestUtils.mkFlix(List(pkg), mounts)
+    flix.setOptions(flix.options.copy(lib = lib))
     flix.addSource(Path.of("Main.flix"), main, SecurityContext.Unrestricted)
     flix.check()
   }
@@ -82,7 +85,7 @@ class TestMounts extends AnyFunSuite with TestUtils {
         |use List::Board
         |def main(): Unit \ IO = println(Board.place() + List.length(1 :: Nil))
         |""".stripMargin
-    expectSuccess(check(pkg, Map(Mountpoint("List") -> Id), main))
+    expectSuccess(check(pkg, Map(Mountpoint("List") -> Id), main, lib = LibLevel.All))
   }
 
   test("mount.named-like-own-module") {

@@ -2,17 +2,8 @@
  * Copyright 2015-2023 Magnus Madsen, Matthew Lutze
  * Copyright 2024 Alexander Dybdahl Troelsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.language.phase.typer
 
@@ -93,9 +84,6 @@ object ConstraintGen {
       case Expr.ApplyDef(DefSymUse(sym, loc1), exps, targs, itvar, tvar, evar, loc2) =>
         val defn = root.defs(sym)
 
-        // Pseudo variable for source to flow into
-        val pvar = Type.freshVar(Kind.Eff, loc1)
-
         val tparams = defn.spec.tparams.map(_.sym)
         val subst = Substitution(tparams.zip(targs).toMap)
 
@@ -115,8 +103,16 @@ object ConstraintGen {
         c.addClassConstraints(tconstrs, loc2)
         c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
-        c.unifySource(pvar, declaredEff, loc2)
-        c.unifyType(evar, Type.mkUnion(pvar :: effs, loc2), loc2)
+        val eff = if (declaredEff == Type.Pure) {
+          // A pure def is not the source of an effect.
+          Type.mkUnion(effs, loc2)
+        } else {
+          // Pseudo variable for source to flow into
+          val pvar = Type.freshVar(Kind.Eff, loc1)
+          c.unifySource(pvar, declaredEff, loc2)
+          Type.mkUnion(pvar :: effs, loc2)
+        }
+        c.unifyType(evar, eff, loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -927,7 +923,7 @@ object ConstraintGen {
         val resultEff = Type.mkUnion(evar, handlerExpEff, loc.asSynthetic)
         (resultTpe, resultEff)
 
-      case Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
+      case Expr.InvokeConstructor(clazz, exps, jvar, tvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
         // --------------------------------------------------------
         // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
@@ -935,12 +931,13 @@ object ConstraintGen {
         val clazzTpe = JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
+        c.unifyType(tvar, clazzTpe, loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
-        val resTpe = clazzTpe
+        val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc) =>
+      case Expr.InvokeSuperConstructor(clazz, exps, jvar, tvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
         // --------------------------------------------------------
         // Γ ⊢ super(e₁ ...) : k \ JvmToEff[ι]
@@ -948,8 +945,9 @@ object ConstraintGen {
         val clazzTpe = JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
+        c.unifyType(tvar, clazzTpe, loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
-        val resTpe = clazzTpe
+        val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 

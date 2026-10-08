@@ -1,17 +1,8 @@
 /*
  * Copyright 2023 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.api
 
@@ -22,13 +13,13 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, Origin, PackageId, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
-import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.jvm.JvmClass
 
 import java.lang.constant.ClassDesc
 import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.{Stat, Tester}
+import ca.uwaterloo.flix.tools.doc.{HtmlDocumentor, MissingDoc}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyStyle, FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageSpec, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -853,7 +844,7 @@ object Bootstrap {
 
   /** Returns `Err` if `path` is not a file that could be produced by [[HtmlDocumentor]] in the project at `p`. */
   private def isValidDocumentFile(path: Path, p: Path): Result[Unit, BootstrapError] = {
-    val knownFiles = List("favicon.png", "index.js", "styles.css")
+    val knownFiles = List("favicon.png", "highlight.css", "highlight.js", "index.js", "styles.css")
     if (knownFiles.contains(path.getFileName.toString)) {
       return Ok(())
     }
@@ -1910,25 +1901,22 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     * `origin`: the project's own code, or the bundled library.
     */
   def doc(flix: Flix, origin: Origin): Result[Unit, BootstrapError] = {
-    typeCheck(flix).map(HtmlDocumentor.run(_, origin, sourceRepository, Bootstrap.getDocumentationDirectory(projectPath))(flix))
+    typeCheck(flix).map(HtmlDocumentor.run(_, origin, Bootstrap.getDocumentationDirectory(projectPath))(flix))
   }
 
   /**
-    * Returns the repository that the project is published as, at the tag of its version, if the
-    * manifest declares one.
-    *
-    * The tag is the one that [[release]] creates, and like a release, the links assume that the
-    * project is the root of its repository.
+    * Prints a report of every documentable item that comes from a source with the origin `origin`
+    * and has no doc comment: one grep-able line per item, followed by a summary count. Prints
+    * nothing if there are none.
     */
-  private def sourceRepository: Option[HtmlDocumentor.SourceRepository] =
-    for {
-      manifest <- optManifest
-      project <- manifest.repository
-    } yield HtmlDocumentor.SourceRepository(
-      s"https://github.com/${project.owner}/${project.repo}/blob/v${manifest.version}/",
-      projectPath.toAbsolutePath.normalize()
-    )
-
+  def checkMissingDocs(flix: Flix, origin: Origin)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
+    typeCheck(flix).map { root =>
+      val missing = MissingDoc.check(root, origin)
+      if (missing.nonEmpty) {
+        out.println(MissingDoc.format(missing, flix.getFormatter))
+      }
+    }
+  }
 
   /**
     * Formats all source files in the project.

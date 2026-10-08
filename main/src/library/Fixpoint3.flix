@@ -2,19 +2,13 @@
  * Copyright 2025 Casper Dalgaard Nielsen
  *                Adam Yasser Tallouzi
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
+///
+/// Functions for solving Datalog programs.
+///
 pub mod Fixpoint3 {
     import java.lang.Object
     import java.util.concurrent.locks.{ReadWriteLock => JReadWriteLock}
@@ -22,7 +16,7 @@ pub mod Fixpoint3 {
     use Fixpoint3.Ast.Shared.PredSym
 
     ///
-    /// Represents a boxed value.
+    /// Type of boxed values.
     ///
     /// `NoValue` is used for relational predicates which do not map to anything and therefore
     /// contain no value.
@@ -92,9 +86,10 @@ pub mod Fixpoint3 {
     }
 
     ///
-    /// A trait for types that contain predicate symbols.
+    /// Trait for types that contain predicate symbols.
     ///
     pub trait PredSymsOf[t] {
+        /// Returns the set of predicate symbols occurring in `x`.
         pub def predSymsOf(x: t): Set[PredSym]
     }
 
@@ -104,9 +99,10 @@ pub mod Fixpoint3 {
     enum ReadWriteLock[_: Region](JReadWriteLock)
 
     ///
-    /// A trait for types with predicate symbols that can be substituted.
+    /// Trait for types that contain substitutable predicate symbols.
     ///
     pub trait SubstitutePredSym[t] {
+        /// Returns `x` with its predicate symbols replaced according to the substitution `s`.
         pub def substitute(x: t, s: Map[PredSym, PredSym]): t
     }
 

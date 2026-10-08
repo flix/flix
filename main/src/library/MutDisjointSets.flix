@@ -1,24 +1,19 @@
 /*
  *  Copyright 2023 Jakob Schneider Villumsen
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable disjoint sets (union-find), and its functions.
+///
 pub mod MutDisjointSets {
 
     ///
-    /// Represents a mutable disjoint set data structure
-    /// using union-by-rank and path compression.
+    /// Type of mutable disjoint sets (union-find).
+    ///
+    /// Uses union-by-rank and path compression.
     ///
     pub struct MutDisjointSets[t: Type, r: Region] {
         rc:     Region[r],
@@ -35,11 +30,21 @@ pub mod MutDisjointSets {
         mut rank:   Int32
     }
 
+    /// Functions on the nodes of the disjoint set forest.
     mod Node {
+        /// Returns the parent of the node `n`, or `None` if `n` is a root.
         pub def parent(n: Node[t, r]): Option[Node[t, r]] \ r = n->parent
+
+        /// Returns the rank of the node `n`.
         pub def rank(n: Node[t, r]): Int32 \ r = n->rank
+
+        /// Increments the rank of the node `n` by one.
         pub def incrementRank(n: Node[t, r]): Unit \ r = n->rank = n->rank + 1
+
+        /// Sets the parent of the node `n` to `newParent`.
         pub def setParent(newParent: Option[Node[t, r]], n: Node[t, r]): Unit \ r = n->parent = newParent
+
+        /// Returns the element stored in the node `n`.
         pub def value(n: Node[t, r]): t = n->value
     }
 

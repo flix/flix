@@ -1,17 +1,8 @@
 /*
  * Copyright 2015-2016 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.language.phase
@@ -270,8 +261,39 @@ object Namer {
 
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))
+
+      //
+      // Check for [[NameError.CompanionMustBePublic]] and [[NameError.IllegalPublicCompanion]] -- i.e. that
+      // the companion of the module, if any, is public exactly when the module is.
+      //
+      checkCompanionVisibility(mod, qname, ds)
+
       val sym = new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone)
       NamedAst.Declaration.Mod(doc, ann, mod, sym, qname.loc, usesAndImports, ds, loc)
+  }
+
+  /**
+    * Checks that the companion of the module `qname`, if any, is public exactly when the module is.
+    *
+    * A companion is a declaration (enum, struct, effect, or trait) whose name matches its enclosing
+    * module. It is lifted into the parent namespace (see [[liftCompanion]]), so the module and its
+    * companion name the same entity and must have the same visibility.
+    */
+  private def checkCompanionVisibility(mod: Modifiers, qname: Name.QName, decls: List[NamedAst.Declaration])(implicit sctx: SharedContext): Unit = {
+    val name = qname.ident.name
+    val companionOpt: Option[(Modifiers, SourceLocation)] = decls.collectFirst {
+      case d: NamedAst.Declaration.Enum if d.sym.name == name => (d.mod, d.sym.loc)
+      case d: NamedAst.Declaration.Struct if d.sym.name == name => (d.mod, d.sym.loc)
+      case d: NamedAst.Declaration.Effect if d.sym.name == name => (d.mod, d.sym.loc)
+      case d: NamedAst.Declaration.Trait if d.sym.name == name => (d.mod, d.sym.loc)
+    }
+    companionOpt match {
+      case Some((companionMod, loc)) if mod.isPublic && !companionMod.isPublic =>
+        sctx.errors.add(NameError.CompanionMustBePublic(qname, loc))
+      case Some((companionMod, loc)) if !mod.isPublic && companionMod.isPublic =>
+        sctx.errors.add(NameError.IllegalPublicCompanion(qname, loc))
+      case _ => // Nop
+    }
   }
 
   /**

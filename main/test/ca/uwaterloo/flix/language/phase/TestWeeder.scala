@@ -1,17 +1,8 @@
 /*
  * Copyright 2015-2016 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.language.phase
@@ -825,6 +816,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    };
         |    let _ = pquery p select A(1; 2) with { B };
         |    ()
+        |instance LowerBound[Int32] { pub def minValue(): Int32 = 0 }
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalLatticeProvenance](result)
@@ -839,6 +831,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    };
         |    let _ = pquery p select A("hello"; 2) with { B };
         |    ()
+        |instance LowerBound[Int32] { pub def minValue(): Int32 = 0 }
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalLatticeProvenance](result)
@@ -851,6 +844,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    let p = #{ };
         |    let _ = pquery p select A("hello"; 2) with { B };
         |    ()
+        |instance LowerBound[Int32] { pub def minValue(): Int32 = 0 }
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalLatticeProvenance](result)
@@ -2067,8 +2061,10 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |  let _ = inject x into A/x;
         |  ()
         |}
+        |pub trait Foldable[t: Type -> Type] { pub def foldLeft(f: (b, a) -> b \ ef, s: b, t: t[a]): b \ ef }
+        |instance Foldable[Vector] { pub def foldLeft(_f: (b, a) -> b \ ef, s: b, _t: Vector[a]): b \ ef = checked_ecast(s) }
         |""".stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ParseError.UnexpectedToken](result)
     rejectError[WeederError.IllegalPredicateArity](result)
   }

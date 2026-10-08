@@ -1,19 +1,13 @@
 /*
  *  Copyright 2025 Ry Wiese
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of readers that decode bytes into chars, and its functions.
+///
 pub mod DecodingReader {
 
     import java.nio.charset.CharsetDecoder
@@ -22,7 +16,9 @@ pub mod DecodingReader {
     import java.nio.CharBuffer
 
     ///
-    /// Adapts a `Readable` of bytes to a `Readable` of chars.
+    /// Type of readers that decode bytes into chars.
+    ///
+    /// A `DecodingReader` adapts a `Readable` of bytes to a `Readable` of chars.
     ///
     /// `byteReader`: the underlying byte reader, an instance of `Readable where Readable.Elm[t] ~ Int8`.
     /// `decoder`: used to decode bytes read from `byteReader`.
@@ -30,7 +26,7 @@ pub mod DecodingReader {
     ///              either because they are lead bytes whose continuation bytes have not been read, or
     ///              because `DecodingReader` overestimated the number of bytes needed to fill a char buffer.
     ///
-    struct DecodingReader[t, r] {
+    pub struct DecodingReader[t, r] {
         rc:            Region[r],
         byteReader:    t,
         decoder:       CharsetDecoder,

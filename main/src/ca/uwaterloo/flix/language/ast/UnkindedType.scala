@@ -1,17 +1,8 @@
 /*
  * Copyright 2022 Matthew Lutze
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.language.ast
 
@@ -24,7 +15,6 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Nel
 
 import java.lang.constant.ClassDesc
-import java.lang.constant.ConstantDescs.CD_Object
 import java.util.Objects
 import scala.collection.immutable.SortedSet
 
@@ -349,59 +339,10 @@ object UnkindedType {
   }
 
   /**
-    * Returns the Int32 type.
-    */
-  def mkInt32(loc: SourceLocation): UnkindedType = {
-    UnkindedType.Cst(TypeConstructor.Int32, loc)
-  }
-
-  /**
-    * Returns the Int64 type.
-    */
-  def mkInt64(loc: SourceLocation): UnkindedType = {
-    UnkindedType.Cst(TypeConstructor.Int64, loc)
-  }
-
-  /**
-    * Returns the Float64 type.
-    */
-  def mkFloat64(loc: SourceLocation): UnkindedType = {
-    UnkindedType.Cst(TypeConstructor.Float64, loc)
-  }
-
-  /**
-   * Returns the Bool type.
-   */
-  def mkBool(loc: SourceLocation): UnkindedType = {
-    UnkindedType.Cst(TypeConstructor.Bool, loc)
-  }
-
-  /**
-   * Returns the Unit type.
-   */
-  def mkUnit(loc: SourceLocation): UnkindedType = {
-    UnkindedType.Cst(TypeConstructor.Unit, loc)
-  }
-
-  /**
-    * Returns the java.lang.Object type.
-    */
-  def mkObject(loc: SourceLocation): UnkindedType =
-    UnkindedType.Cst(TypeConstructor.Native(CD_Object, 0), loc)
-
-  /**
     * Constructs the apply type base[t_1, ,..., t_n].
     */
   def mkApply(base: UnkindedType, ts: List[UnkindedType], loc: SourceLocation): UnkindedType = ts.foldLeft(base) {
     case (acc, t) => Apply(acc, t, loc)
-  }
-
-  /**
-    * Constructs the type a -> b \ IO
-    */
-  def mkIoArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val eff = Some(UnkindedType.Effect(Symbol.IO, loc))
-    mkApply(UnkindedType.Arrow(eff, 2, loc), List(a, b), loc)
   }
 
   /**

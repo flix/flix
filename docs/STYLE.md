@@ -2,11 +2,28 @@
 
 ## Flix and Scala
 
-- Every file must start with a copyright header.
+- Every file must start with a copyright header (see below).
 - Prefer functional to imperative programming.
   - Use of local mutability is okay.
 - If a function or method can be private, make it private.
 - Don't use fancy features unless necessary and reasonable.
+
+### Copyright header
+
+Every Flix and Scala file starts with a copyright line followed by the two-line pointer to the license.
+The copyright line names the year and the authors. The pointer is always the same two lines;
+do not paste the full Apache boilerplate, which lives in `LICENSE.md` at the root of the repository.
+
+```
+/*
+ * Copyright 2019 Liam Palmer, Magnus Madsen
+ *
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
+ */
+```
+
+Flix test files under `main/test` are the exception: they do not need a header (see the README files there).
 
 ## Flix-specific
 
@@ -19,11 +36,33 @@
 - Indentation is 4 spaces.
 - Pattern matches should align `=>`.
 - Avoid unnecessary lambdas. 
-  - e.g. prefer `List.map(String.toLowerCase)` over `List.map(s -> String.toLowerCase(s)`.
+  - e.g. prefer `List.map(String.toLowerCase)` over `List.map(s -> String.toLowerCase(s))`.
 - Prefer string interpolation to constructing strings with concatenation.
 - Keep the simplest cases in a pattern matches first.
   - e.g. keep the base case(s) before the inductive case(s).
 - Doc comments should use triple slashes ///.
+
+### Doc comment summaries
+
+The generated documentation renders each declaration as `<Name> <Summary>`. Hence the summary of a module, type,
+trait, or effect should not repeat its name, and should use one of the templates below.
+
+Most modules are companion modules, e.g. `mod List { enum List { ... } }`. The module summary is the summary of the
+inner declaration followed by `, and its functions`.
+
+| Kind              | Module                                                   | Inner declaration                     |
+|-------------------|----------------------------------------------------------|---------------------------------------|
+| `enum` / `struct` | `Type of <plural noun phrase>, and its functions.`       | `Type of <plural noun phrase>.`       |
+| `trait`           | `Trait for types that <verb phrase>, and its functions.` | `Trait for types that <verb phrase>.` |
+| `eff`             | `Effect for <gerund phrase>, and its functions.`         | `Effect for <gerund phrase>.`         |
+| built-in type     | `Type of <plural noun phrase>, and its functions.`       | —                                     |
+| function module   | `Functions for <gerund phrase>.`                         | —                                     |
+| namespace         | `Modules for <topic>.`                                   | —                                     |
+
+A function module has public functions but no companion type, trait, or effect. A namespace has only submodules.
+
+The module summary is a single sentence. Further details (constructors, representation, handlers) belong in
+later paragraphs of the inner declaration's doc comment.
 
 ### Naming
 - Variable names are typical one letter; `o` for Option, `l` for `List`.

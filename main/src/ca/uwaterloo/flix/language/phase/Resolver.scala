@@ -2,17 +2,8 @@
  *  Copyright 2017 Magnus Madsen
  *  Copyright 2024 Alexander Dybdahl Troelsen
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.language.phase
@@ -3718,21 +3709,6 @@ object Resolver {
     case JavaClasses.BigInteger => UnkindedType.Cst(TypeConstructor.BigInt, loc)
     case JavaClasses.String => UnkindedType.Cst(TypeConstructor.Str, loc)
     case JavaClasses.Regex => UnkindedType.Cst(TypeConstructor.Regex, loc)
-    case JavaClasses.ObjFunction => UnkindedType.mkIoArrow(UnkindedType.mkObject(loc), UnkindedType.mkObject(loc), loc)
-    case JavaClasses.ObjConsumer => UnkindedType.mkIoArrow(UnkindedType.mkObject(loc), UnkindedType.mkUnit(loc), loc)
-    case JavaClasses.ObjPredicate => UnkindedType.mkIoArrow(UnkindedType.mkObject(loc), UnkindedType.mkBool(loc), loc)
-    case JavaClasses.IntFunction => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkObject(loc), loc)
-    case JavaClasses.IntConsumer => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkUnit(loc), loc)
-    case JavaClasses.IntPredicate => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkBool(loc), loc)
-    case JavaClasses.IntUnaryOperator => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkInt32(loc), loc)
-    case JavaClasses.LongFunction => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkObject(loc), loc)
-    case JavaClasses.LongConsumer => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkUnit(loc), loc)
-    case JavaClasses.LongPredicate => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkBool(loc), loc)
-    case JavaClasses.LongUnaryOperator => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkInt64(loc), loc)
-    case JavaClasses.DoubleFunction => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkObject(loc), loc)
-    case JavaClasses.DoubleConsumer => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkUnit(loc), loc)
-    case JavaClasses.DoublePredicate => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkBool(loc), loc)
-    case JavaClasses.DoubleUnaryOperator => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkFloat64(loc), loc)
     case _ => UnkindedType.UnappliedNative(clazz.desc, clazz.typeParameters.length, loc)
   }
 
