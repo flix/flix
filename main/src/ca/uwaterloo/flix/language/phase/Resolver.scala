@@ -3086,9 +3086,10 @@ object Resolver {
     * closes that gap. A sealed trait is accessible here: sealing only restricts implementation.
     */
   private def checkTraitAccessibility(sym: Symbol.TraitSym, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): Unit = {
-    infallableLookupSym(sym, root).collectFirst {
+    val traitOpt = infallableLookupSym(sym, root).collectFirst {
       case trt: NamedAst.Declaration.Trait => trt
-    }.foreach { trt =>
+    }
+    for (trt <- traitOpt) {
       getTraitAccessibility(trt, ns0) match {
         case TraitAccessibility.Accessible => ()
         case TraitAccessibility.Sealed => ()
