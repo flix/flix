@@ -6,8 +6,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, Repository, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result
@@ -21,13 +20,6 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}
 
 object ManifestParser {
-  /**
-    * Regular expression defining a valid string for the username and project name of a Flix
-    * dependency. Concretely, a valid name consists only of alphanumeric characters, `_`, and `-`.
-    *
-    * A `.` is not allowed: the name becomes part of the package's canonical root, which is a JVM
-    * package path, and a `.` is the separator there as well as in a Flix namespace.
-    */
   /**
     * Creates a Manifest from the .toml file
     * at path `p` and returns an error if
@@ -223,9 +215,7 @@ object ManifestParser {
           if (jarDep) {
             createJarDep(depKey, depValue, p)
           } else if (flixDep) {
-            // Key needs this format to do typed look-ups.
-            val dottedDepKey = s"\"$depKey\""
-            createFlixDep(deps, dottedDepKey, p)
+            createFlixDep(deps, depKey, p)
           } else {
             createMavenDep(depKey, depValue, p)
           }
@@ -288,58 +278,41 @@ object ManifestParser {
   }
 
   /**
-    * Create a [[FlixDependency]].
+    * Creates a [[FlixDependency]] from the entry `depKey` of the table `deps` of Flix dependencies.
     *
-    * @param deps   [[TomlTable]] of declared Flix dependencies.
-    * @param depKey Repository address of the package.
-    * @param p      [[Path]] of the project Toml file.
-    * @return [[Result]] of the [[FlixDependency]] if succesful, otherwise a [[ManifestError]]
+    * The key is the identifier of the package, e.g. `github:flix/museum`, see [[PackageId.mkPackageId]].
     */
   private def createFlixDep(deps: TomlTable, depKey: String, p: Path): Result[FlixDependency, ManifestError] = {
-    // Regex for extracting repository, username, and project name.
-    // (.+) is a capturing group, where . matches any character.
-    val validPkg = s"^\"(.+):(.+)/(.+)\"$$".r
-    depKey match {
-      case validPkg(repoStr, username, projectName) =>
-        val repo = Repository.mkRepository(repoStr) match {
-          case Some(r) => r
-          case None => return Err(ManifestError.UnsupportedRepository(p, repoStr))
-        }
+    // A typed look-up needs the key in quotes, since it holds `:` and `/`.
+    val quotedKey = s"\"$depKey\""
 
-        // Ensure the username is valid.
-        if (!PackageId.isValidName(username))
-          return Err(ManifestError.IllegalName(p, depKey))
+    val id = PackageId.mkPackageId(depKey) match {
+      case Some(id) => id
+      case None => return Err(ManifestError.FlixDependencyFormatError(p, quotedKey))
+    }
 
-        // Ensure the project name is valid.
-        if (!PackageId.isValidName(projectName))
-          return Err(ManifestError.IllegalName(p, depKey))
+    // If the dependency maps to a string, it declares only a version.
+    if (deps.isString(quotedKey)) {
+      for (
+        ver <- getFlixVersion(deps, quotedKey, p);
+        mount <- deriveMount(id, p)
+      ) yield FlixDependency(id, ver, mount, SecurityContext.Default, DependencyStyle.VersionOnly)
 
-        val id = PackageId(repo, username, projectName)
+      // If the dependency maps to a table, get the version, security, and mount.
+    } else if (deps.isTable(quotedKey)) {
+      val depTbl = deps.getTable(quotedKey)
+      val verKey = "version"
+      val mountKey = "mount"
+      val securityKey = "security"
 
-        // If the dependency maps to a string, it declares only a version.
-        if (deps.isString(depKey)) {
-          for (
-            ver <- getFlixVersion(deps, depKey, p);
-            mount <- deriveMount(id, p)
-          ) yield FlixDependency(id, ver, mount, SecurityContext.Default, DependencyStyle.VersionOnly)
-
-          // If the dependency maps to a table, get the version, security, and mount.
-        } else if (deps.isTable(depKey)) {
-          val depTbl = deps.getTable(depKey)
-          val verKey = "version"
-          val mountKey = "mount"
-          val securityKey = "security"
-
-          for (
-            _ <- checkDependencyKeys(depTbl, depKey, Set(verKey, mountKey, securityKey), p);
-            ver <- getFlixVersion(depTbl, verKey, p);
-            mount <- getMount(depTbl, mountKey, depKey, id, p);
-            security <- getSecurity(depTbl, securityKey, p)
-          ) yield FlixDependency(id, ver, mount, security, DependencyStyle.Table)
-        } else {
-          Err(ManifestError.VersionTypeError(p, depKey, deps.get(depKey)))
-        }
-      case _ => Err(ManifestError.FlixDependencyFormatError(p, depKey))
+      for (
+        _ <- checkDependencyKeys(depTbl, quotedKey, Set(verKey, mountKey, securityKey), p);
+        ver <- getFlixVersion(depTbl, verKey, p);
+        mount <- getMount(depTbl, mountKey, quotedKey, id, p);
+        security <- getSecurity(depTbl, securityKey, p)
+      ) yield FlixDependency(id, ver, mount, security, DependencyStyle.Table)
+    } else {
+      Err(ManifestError.VersionTypeError(p, quotedKey, deps.get(quotedKey)))
     }
   }
 

@@ -469,10 +469,7 @@ object Bootstrap {
     * Returns the versions of `id` that have been released.
     */
   private def releaseVersions(id: PackageId, token: Option[String]): Result[List[SemVer], BootstrapError] =
-    for {
-      project <- GitHub.parseProject(s"${id.owner}/${id.name}").mapErr(BootstrapError.FlixPackageError.apply)
-      versions <- GitHub.getReleaseVersions(project, token).mapErr(BootstrapError.FlixPackageError.apply)
-    } yield versions
+    GitHub.getReleaseVersions(GitHub.Project.mkProject(id), token).mapErr(BootstrapError.FlixPackageError.apply)
 
   /**
     * Returns the mount to declare the dependency on `id` under.

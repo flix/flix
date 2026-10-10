@@ -7,15 +7,14 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, InstalledPackage}
-import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.shared.{PackageId, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result, Sha256}
+import ca.uwaterloo.flix.util.{Formatter, Result, Sha256}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 import ca.uwaterloo.flix.util.collection.ListMap
 
-import java.io.{IOException, InputStream, PrintStream}
+import java.io.{IOException, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
 import scala.collection.mutable
 
@@ -231,7 +230,7 @@ object FlixPackageManager {
     for {
       // download toml files
       tomlFiles <- traverse(findFlixDependencies(dependent)) { dep =>
-        install(dep.id, dep.version, Bootstrap.EXT_TOML, path, token, lockfile).map(toml => (toml, dep))
+        install(dep.id, dep.version, ReleaseAsset.Toml, path, token, lockfile).map(toml => (toml, dep))
       }
 
       // parse manifests
@@ -432,8 +431,7 @@ object FlixPackageManager {
     */
   def findAvailableUpdates(id: PackageId, version: SemVer, token: Option[String]): Result[AvailableUpdates, PackageError] = {
     for {
-      githubProject <- GitHub.parseProject(s"${id.owner}/${id.name}")
-      availableVersions <- GitHub.getReleaseVersions(githubProject, token)
+      availableVersions <- GitHub.getReleaseVersions(GitHub.Project.mkProject(id), token)
 
       major = version.majorUpdate(availableVersions)
       minor = version.minorUpdate(availableVersions)
@@ -464,7 +462,7 @@ object FlixPackageManager {
     // settled on.
     val installed = resolution.manifestToFlixDeps.m.toList.collect { case (manifest, dep :: _) =>
       val depName: String = dep.id.shortName
-      install(dep.id, manifest.version, Bootstrap.EXT_FPKG, projectRoot, token, lockfile) match {
+      install(dep.id, manifest.version, ReleaseAsset.Fpkg, projectRoot, token, lockfile) match {
         case Ok(fpkg) =>
           val pkg = InstalledPackage(fpkg.path, dep.id, resolution.security(manifest), manifest.mounts)
           (pkg, (dep.id, manifest.version) -> fpkg.digest)
@@ -483,7 +481,7 @@ object FlixPackageManager {
   }
 
   /**
-    * Installs the `extension` file of the Github package `id` at `version`.
+    * Installs the `asset` of the GitHub package `id` at `version`.
     *
     * `version` is passed rather than read off a declaration, because a declaration says what its
     * dependent requires, which is not in general what the resolution installs.
@@ -497,22 +495,22 @@ object FlixPackageManager {
     * `flix.toml` is parsed and an `.fpkg` becomes a source of code as soon as they are installed,
     * and checking afterwards would mean having already acted on bytes that were never verified.
     */
-  private def install(id: PackageId, version: SemVer, extension: String, p: Path, token: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[InstalledFile, PackageError] = {
-    val proj = GitHub.Project(id.owner, id.name)
+  private def install(id: PackageId, version: SemVer, asset: ReleaseAsset, p: Path, token: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[InstalledFile, PackageError] = {
+    val proj = GitHub.Project.mkProject(id)
     val lib = Bootstrap.getLibraryDirectory(p)
-    val assetName = s"${proj.repo}-$version.$extension"
+    val assetName = s"${proj.repo}-$version.${asset.extension}"
     val dirPath = lib.resolve("github").resolve(proj.owner).resolve(proj.repo).resolve(version.toString)
     // create the directory if it does not exist
     Files.createDirectories(dirPath)
     val assetPath = dirPath.resolve(assetName)
 
     if (Files.exists(assetPath)) {
-      out.println(s"  Cached `${publishedName(extension)}` from `${formatter.blue(s"${proj.owner}/${proj.repo}")}` (${formatter.cyan(s"v$version")}).")
-      verifyCached(assetPath, id, version, extension, lockfile)
+      out.println(s"  Cached `${asset.name}` from `${formatter.blue(s"${proj.owner}/${proj.repo}")}` (${formatter.cyan(s"v$version")}).")
+      verifyCached(assetPath, id, version, asset, lockfile)
     } else {
-      out.print(s"  Downloading `${publishedName(extension)}` from `${formatter.blue(s"${proj.owner}/${proj.repo}")}` (${formatter.cyan(s"v$version")})... ")
+      out.print(s"  Downloading `${asset.name}` from `${formatter.blue(s"${proj.owner}/${proj.repo}")}` (${formatter.cyan(s"v$version")})... ")
       out.flush()
-      openReleaseAsset(proj, version, extension, token) match {
+      GitHub.downloadReleaseAsset(proj, version, asset.name, token) match {
         case Err(e) =>
           out.println("ERROR.")
           Err(e)
@@ -542,35 +540,13 @@ object FlixPackageManager {
           }
           if (Files.exists(assetPath)) {
             out.println(s"OK.")
-            verifyDownloaded(assetPath, id, version, extension, lockfile)
+            verifyDownloaded(assetPath, id, version, asset, lockfile)
           } else {
             out.println(s"ERROR: File was not created.")
             Err(PackageError.DownloadError(assetName, None))
           }
       }
     }
-  }
-
-  /**
-    * Opens a stream over the `extension` file of `proj`'s `version` release. The caller closes
-    * the stream.
-    *
-    * A package publishes its two files under fixed names, so a release asset's address follows
-    * from the repository, the version, and the extension alone, and is read at the cost of one
-    * request that either finds the file or does not. The release listing is never read to find
-    * one, which matters because it costs a request against the API rate limit: 60 an hour for an
-    * anonymous client, shared by every package a build resolves.
-    */
-  private def openReleaseAsset(proj: GitHub.Project, version: SemVer, extension: String, token: Option[String]): Result[InputStream, PackageError] =
-    GitHub.downloadReleaseAsset(proj, version, publishedName(extension), token)
-
-  /**
-    * Returns the name a package publishes its `extension` file under.
-    */
-  private def publishedName(extension: String): String = extension match {
-    case Bootstrap.EXT_TOML => Bootstrap.FLIX_TOML
-    case Bootstrap.EXT_FPKG => Bootstrap.PACKAGE_FPKG
-    case _ => throw InternalCompilerException(s"Unexpected extension: '$extension'.", SourceLocation.Unknown)
   }
 
   /**
@@ -593,11 +569,11 @@ object FlixPackageManager {
     * Returns the file at `path`, which was already in `lib/`, together with its digest, and an
     * error if `lockfile` records a different digest for it.
     */
-  private def verifyCached(path: Path, id: PackageId, version: SemVer, extension: String, lockfile: Lockfile): Result[InstalledFile, PackageError] = {
+  private def verifyCached(path: Path, id: PackageId, version: SemVer, asset: ReleaseAsset, lockfile: Lockfile): Result[InstalledFile, PackageError] = {
     digest(path).flatMap { file =>
-      recordedDigest(id, version, extension, lockfile) match {
+      recordedDigest(id, version, asset, lockfile) match {
         case Some(expected) if expected != file.digest =>
-          Err(PackageError.MismatchedCachedDigest(id, version, extension, path, expected, file.digest))
+          Err(PackageError.MismatchedCachedDigest(id, version, asset, path, expected, file.digest))
         case _ =>
           Ok(file)
       }
@@ -608,11 +584,11 @@ object FlixPackageManager {
     * Returns the file at `path`, which was just downloaded, together with its digest, and an
     * error if `lockfile` records a different digest for it.
     */
-  private def verifyDownloaded(path: Path, id: PackageId, version: SemVer, extension: String, lockfile: Lockfile): Result[InstalledFile, PackageError] = {
+  private def verifyDownloaded(path: Path, id: PackageId, version: SemVer, asset: ReleaseAsset, lockfile: Lockfile): Result[InstalledFile, PackageError] = {
     digest(path).flatMap { file =>
-      recordedDigest(id, version, extension, lockfile) match {
+      recordedDigest(id, version, asset, lockfile) match {
         case Some(expected) if expected != file.digest =>
-          Err(PackageError.MismatchedDownloadedDigest(id, version, extension, path, expected, file.digest))
+          Err(PackageError.MismatchedDownloadedDigest(id, version, asset, path, expected, file.digest))
         case _ =>
           Ok(file)
       }
@@ -620,24 +596,20 @@ object FlixPackageManager {
   }
 
   /**
-    * Returns the digest that `lockfile` records for the `extension` file of the package `id` at
-    * `version`, if it records one.
+    * Returns the digest that `lockfile` records for the `asset` of the package `id` at `version`,
+    * if it records one.
     *
     * A package that `lockfile` does not record at `version` has no digest here and so is not
     * checked. That is a dependency that was added, or that is required or built at a version it
     * was not when the lock file was written, and there is nothing yet to compare it against. It
     * is recorded when the lock file is written again.
     */
-  private def recordedDigest(id: PackageId, version: SemVer, extension: String, lockfile: Lockfile): Option[Sha256] = {
-    lockfile.packages.get((id, version)).flatMap {
-      entry =>
-        // A package is installed as exactly these two files, and the lock file holds a digest of
-        // each. Anything else is not something a lock file describes.
-        extension match {
-          case Bootstrap.EXT_TOML => Some(entry.toml)
-          case Bootstrap.EXT_FPKG => entry.fpkg
-          case _ => None
-        }
+  private def recordedDigest(id: PackageId, version: SemVer, asset: ReleaseAsset, lockfile: Lockfile): Option[Sha256] = {
+    lockfile.packages.get((id, version)).flatMap { entry =>
+      asset match {
+        case ReleaseAsset.Fpkg => entry.fpkg
+        case ReleaseAsset.Toml => Some(entry.toml)
+      }
     }
   }
 

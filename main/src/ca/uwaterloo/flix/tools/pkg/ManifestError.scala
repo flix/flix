@@ -155,7 +155,8 @@ object ManifestError {
 
   case class FlixDependencyFormatError(path: Path, depName: String) extends ManifestError {
     override def message(f: Formatter): String =
-      s"""A Flix dependency should be formatted like so: 'repository:username/projectname'.
+      s"""A Flix dependency should be formatted like so: 'github:username/projectname'.
+         |The username and the project name may hold letters, digits, '_', and '-'.
          |Instead found: ${f.red(depName)}.
          |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
@@ -221,14 +222,6 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""There was a problem parsing the toml file with the following errors:
          |'$msg'
-         |The toml file was found at ${f.cyan(path.toString)}.
-         |""".stripMargin
-  }
-
-  case class UnsupportedRepository(path: Path, attemptedRepo: String) extends ManifestError {
-    override def message(f: Formatter): String =
-      s"""${f.red(attemptedRepo)} is not supported as a repository to download Flix dependencies from.
-         |Supported repositories: ${f.bold("github")}.
          |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }

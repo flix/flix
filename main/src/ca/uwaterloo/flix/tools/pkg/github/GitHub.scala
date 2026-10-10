@@ -6,6 +6,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg.github
 
+import ca.uwaterloo.flix.language.ast.shared.PackageId
 import ca.uwaterloo.flix.tools.pkg.{PackageError, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Result
@@ -56,6 +57,11 @@ object GitHub {
     * to move off when we choose to.
     */
   private val ApiVersion: String = "2022-11-28"
+
+  object Project {
+    /** Returns the project the package `id` is published from. */
+    def mkProject(id: PackageId): Project = Project(id.owner, id.name)
+  }
 
   /**
     * A GitHub project.

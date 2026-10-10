@@ -158,7 +158,7 @@ object Resolver {
     */
   private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): List[ResolvedAst.Declaration.TypeAlias] = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls, loc) =>
-      val unitRoot = rootOf(loc)
+      val unitRoot = Name.rootOf(loc.source.origin)
       val usesAndImports = usesAndImports0.flatMap(visitUseOrImport(_, unitRoot, root).toOption)
       val scp = appendAllUseScp(defaultUses, usesAndImports, root)
       val namespaces = decls.collect {
@@ -356,7 +356,7 @@ object Resolver {
     */
   private def visitUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.CompilationUnit = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls0, loc) =>
-      val unitRoot = rootOf(loc)
+      val unitRoot = Name.rootOf(loc.source.origin)
       val usesAndImports = resolveUsesAndImports(usesAndImports0, unitRoot, root)
       val scp = appendAllUseScp(defaultUses, usesAndImports, root)
       val decls = decls0.flatMap(visitDecl(_, scp, unitRoot.copy(loc = loc), defaultUses))
@@ -1827,7 +1827,6 @@ object Resolver {
     }
   }
 
-
   /**
     * Performs name resolution on the given constraint pattern `pat0` in the namespace `ns0`.
     * Constraint patterns do not introduce new variables.
@@ -1972,7 +1971,6 @@ object Resolver {
     case NamedAst.ExtTagPattern.Error(loc) =>
       (ResolvedAst.ExtTagPattern.Error(loc), List.empty)
   }
-
 
   /**
     * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
@@ -2797,7 +2795,6 @@ object Resolver {
     case object NotFound extends TypeLookupResult
   }
 
-
   /**
     * Looks up the ambiguous type.
     */
@@ -2927,7 +2924,7 @@ object Resolver {
       }
 
       // 4th priority: names at the root of the package the name occurs in
-      val viewerRoot = rootOf(qname.loc)
+      val viewerRoot = Name.rootOf(qname.loc.source.origin)
       val packageNames = declarationsIn(viewerRoot, qname.ident.name, root)
 
       // 5th priority: names in the root namespace, where the bundled library is declared
@@ -2973,7 +2970,7 @@ object Resolver {
       tryLookupModuleIn(ns0, name, root)
     }.orElse {
       // Then see if there's a module with this name at the root of that package
-      tryLookupModuleIn(rootOf(loc), name, root)
+      tryLookupModuleIn(Name.rootOf(loc.source.origin), name, root)
     }.orElse {
       // Finally, the root namespace, where the bundled library is declared
       tryLookupModuleIn(Name.RootNS, name, root)
@@ -2998,17 +2995,6 @@ object Resolver {
     */
   private def declarationsIn(ns: Name.NName, name: String, root: NamedAst.Root): List[Resolution] =
     root.symbols.getOrElse(ns, Map.empty).getOrElse(name, Nil).map(Resolution.Declaration.apply)
-
-  /**
-    * Returns the root namespace of the package the source at `loc` belongs to.
-    *
-    * A package is named under its own root, so that a name in one package cannot see the
-    * declarations of another except through a mount. Everything else is named under [[Name.RootNS]].
-    */
-  private def rootOf(loc: SourceLocation): Name.NName = loc.source.origin match {
-    case Origin.Package(id) => Name.mkUnlocatedNName(List(id.canonicalRoot))
-    case _ => Name.RootNS
-  }
 
   /**
     * Returns the mount table of the package the source at `loc` belongs to: the name of each mount
@@ -3216,7 +3202,6 @@ object Resolver {
     false
   }
 
-
   /**
     * Checks whether `enum0` is accessible from the given namespace `ns0`.
     *
@@ -3283,7 +3268,6 @@ object Resolver {
     }
   }
 
-
   /**
     * Checks whether `enum0` is accessible from the given namespace `ns0`.
     *
@@ -3316,7 +3300,6 @@ object Resolver {
       sctx.errors.add(error)
     }
   }
-
 
   /**
     * Returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
@@ -3762,7 +3745,6 @@ object Resolver {
 
     case class Error(e: ResolutionError.UndefinedName) extends ResolvedQName
   }
-
 
   /**
     * Enum indicating whether a type variable may be a wildcard.

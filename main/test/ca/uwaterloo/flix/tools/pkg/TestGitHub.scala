@@ -17,14 +17,14 @@ import java.net.{URI, URL}
 @DoNotDiscover
 class TestGitHub extends AnyFunSuite {
 
-  test("getReleases.01") {
+  test("getReleaseVersions.01") {
     // A project that exists is read as the versions it has released.
     val project = GitHub.Project("flix", "museum-clerk")
     val versions = GitHub.getReleaseVersions(project, PkgTestUtils.gitHubToken).unsafeGet
     assert(versions.contains(SemVer(1, 1, 0)))
   }
 
-  test("getReleases.02") {
+  test("getReleaseVersions.02") {
     // A project that does not exist is said not to exist, rather than reported as a body that
     // could not be parsed.
     val project = GitHub.Project("flix", "no-such-package")
@@ -38,7 +38,7 @@ class TestGitHub extends AnyFunSuite {
     }
   }
 
-  test("getReleases.03") {
+  test("getReleaseVersions.03") {
     // A token GitHub will not accept is reported as a rejected token, rather than as a response
     // nobody expected. The API answers 401 for one, where a request carrying none is let through.
     val project = GitHub.Project("flix", "museum-clerk")
@@ -61,7 +61,7 @@ class TestGitHub extends AnyFunSuite {
     assert(!authorized.message(Formatter.NoFormatter).contains("GITHUB_TOKEN"))
   }
 
-  test("getReleases.04") {
+  test("getReleaseVersions.04") {
     // A release tagged in a way that is not a version of a package is passed over, rather than
     // thrown out of the listing and taking the build with it. `microsoft/vscode` tags releases
     // `1.138.0`, without the leading `v`, which is a common enough way to tag one that a Flix

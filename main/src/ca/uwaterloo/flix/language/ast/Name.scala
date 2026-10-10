@@ -7,7 +7,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.PackageId
+import ca.uwaterloo.flix.language.ast.shared.{Origin, PackageId}
 
 object Name {
 
@@ -15,6 +15,25 @@ object Name {
     * The root namespace.
     */
   val RootNS: NName = NName(Nil, SourceLocation.Unknown)
+
+  /**
+    * Returns the namespace the declarations of the package `id` are named under: its canonical root.
+    */
+  def packageRoot(id: PackageId): NName = mkUnlocatedNName(List(id.canonicalRoot))
+
+  /**
+    * Returns the namespace the declarations of a source of the given `origin` are named under.
+    *
+    * A package is named under its own root, so that its declarations are reached through a mount
+    * rather than by sharing a namespace with every other package. Everything else, the user's own
+    * code and the bundled library, is named under [[RootNS]].
+    */
+  def rootOf(origin: Origin): NName = origin match {
+    case Origin.Package(id) => packageRoot(id)
+    case Origin.User => RootNS
+    case Origin.Library => RootNS
+    case Origin.Unknown => RootNS
+  }
 
   /**
     * Returns the given string `fqn` as a qualified name.

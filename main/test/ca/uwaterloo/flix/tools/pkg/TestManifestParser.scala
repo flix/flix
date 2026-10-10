@@ -1044,7 +1044,7 @@ class TestManifestParser extends AnyFunSuite {
     val result = ManifestParser.parse(toml, ManifestPath)
     expectError[ManifestError.IllegalTableFound](result)
   }
-  test("ManifestError.IllegalName.01") {
+  test("ManifestError.FlixDependencyFormatError.03") {
     val toml = {
       """
         |[package]
@@ -1058,10 +1058,10 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, ManifestPath)
-    expectError[ManifestError.IllegalName](result)
+    expectError[ManifestError.FlixDependencyFormatError](result)
   }
 
-  test("ManifestError.IllegalName.02") {
+  test("ManifestError.FlixDependencyFormatError.04") {
     val toml = {
       """
         |[package]
@@ -1075,7 +1075,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, ManifestPath)
-    expectError[ManifestError.IllegalName](result)
+    expectError[ManifestError.FlixDependencyFormatError](result)
   }
 
   test("ManifestError.FlixVersionFormatError.01") {
@@ -1232,7 +1232,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.IllegalTableFound](result)
   }
 
-  test("ManifestError.IllegalName.03") {
+  test("ManifestError.IllegalName.01") {
     val toml = {
       """
         |[package]
@@ -1249,7 +1249,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.IllegalName](result)
   }
 
-  test("ManifestError.IllegalName.04") {
+  test("ManifestError.IllegalName.02") {
     val toml = {
       """
         |[package]
@@ -1526,7 +1526,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.FlixDependencySecurityType](result)
   }
 
-  test("ManifestError.UnsupportedRepository.01") {
+  test("ManifestError.FlixDependencyFormatError.05") {
     val toml =
       """[package]
         |version = "0.1.0"
@@ -1536,7 +1536,7 @@ class TestManifestParser extends AnyFunSuite {
         |"hubgit:jls/tic-tac-toe" = "1.2.3"
         |""".stripMargin
     val result = ManifestParser.parse(toml, ManifestPath)
-    expectError[ManifestError.UnsupportedRepository](result)
+    expectError[ManifestError.FlixDependencyFormatError](result)
   }
 
   test("Ok.mount") {
