@@ -2289,6 +2289,7 @@ object Resolver {
         }
       case Resolution.Declaration(sig: NamedAst.Declaration.Sig) :: _ =>
         checkPathAccessibility(sig.sym.trt.namespace, ns0, qname.loc)
+        checkTraitAccessibility(sig.sym.trt, ns0, qname.loc)
         if (isSigAccessible(sig, ns0)) {
           ResolvedQName.Sig(sig)
         } else {
@@ -3074,6 +3075,29 @@ object Resolver {
     } else {
       // Case 4: The trait is otherwise accessible
       TraitAccessibility.Accessible
+    }
+  }
+
+  /**
+    * Reports [[InaccessibleTrait]] if the trait `sym` is not accessible from the namespace `ns0`.
+    *
+    * A signature is referenced through its trait, e.g. `A.Show.show(x)`, and every signature is
+    * public, so [[isSigAccessible]] alone cannot reject a signature of a private trait. This check
+    * closes that gap. A sealed trait is accessible here: sealing only restricts implementation.
+    */
+  private def checkTraitAccessibility(sym: Symbol.TraitSym, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): Unit = {
+    val traitOpt = infallableLookupSym(sym, root).collectFirst {
+      case trt: NamedAst.Declaration.Trait => trt
+    }
+    traitOpt match {
+      case None => ()
+      case Some(trt) =>
+        getTraitAccessibility(trt, ns0) match {
+          case TraitAccessibility.Accessible => ()
+          case TraitAccessibility.Sealed => ()
+          case TraitAccessibility.Inaccessible =>
+            sctx.errors.add(ResolutionError.InaccessibleTrait(trt.sym, ns0, loc))
+        }
     }
   }
 

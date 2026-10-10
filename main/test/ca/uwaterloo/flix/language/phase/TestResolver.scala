@@ -333,6 +333,89 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleTrait](result)
   }
 
+  test("InaccessibleTrait.05") {
+    val input =
+      """
+        |mod A {
+        |    trait Show[a] {
+        |        pub def show(x: a): String
+        |    }
+        |
+        |    instance Show[Int32] {
+        |        pub def show(x: Int32): String = "Int32"
+        |    }
+        |}
+        |
+        |def f(): String = A.Show.show(42) // Not allowed: `show` is public, but `A.Show` is private to `A`.
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
+  test("InaccessibleTrait.06") {
+    val input =
+      """
+        |mod A {
+        |    trait Show[a] {
+        |        pub def show(x: a): String
+        |    }
+        |
+        |    instance Show[Int32] {
+        |        pub def show(x: Int32): String = "Int32"
+        |    }
+        |}
+        |
+        |mod B {
+        |    def g(): String = A.Show.show(42) // Not allowed: `A.Show` is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
+  test("InaccessibleTrait.07") {
+    val input =
+      """
+        |mod A {
+        |    trait Show[a] {
+        |        pub def show(x: a): String
+        |    }
+        |
+        |    instance Show[Int32] {
+        |        pub def show(x: Int32): String = "Int32"
+        |    }
+        |}
+        |
+        |mod B {
+        |    use A.Show.show
+        |    def g(): String = show(42) // Not allowed: `show` belongs to `A.Show`, which is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
+  test("InaccessibleTrait.08") {
+    val input =
+      """
+        |mod A {
+        |    sealed trait Show[a] {
+        |        pub def show(x: a): String
+        |    }
+        |
+        |    instance Show[Int32] {
+        |        pub def show(x: Int32): String = "Int32"
+        |    }
+        |}
+        |
+        |mod B {
+        |    def g(): String = A.Show.show(42) // Not allowed: `A.Show` is sealed but not `pub`, so it is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
   test("InaccessibleModule.01") {
     val input =
       s"""
