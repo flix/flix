@@ -3089,13 +3089,15 @@ object Resolver {
     val traitOpt = infallableLookupSym(sym, root).collectFirst {
       case trt: NamedAst.Declaration.Trait => trt
     }
-    for (trt <- traitOpt) {
-      getTraitAccessibility(trt, ns0) match {
-        case TraitAccessibility.Accessible => ()
-        case TraitAccessibility.Sealed => ()
-        case TraitAccessibility.Inaccessible =>
-          sctx.errors.add(ResolutionError.InaccessibleTrait(trt.sym, ns0, loc))
-      }
+    traitOpt match {
+      case None => ()
+      case Some(trt) =>
+        getTraitAccessibility(trt, ns0) match {
+          case TraitAccessibility.Accessible => ()
+          case TraitAccessibility.Sealed => ()
+          case TraitAccessibility.Inaccessible =>
+            sctx.errors.add(ResolutionError.InaccessibleTrait(trt.sym, ns0, loc))
+        }
     }
   }
 
