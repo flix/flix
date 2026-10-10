@@ -333,6 +333,92 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleTrait](result)
   }
 
+  test("InaccessibleTrait.05") {
+    // The signature is public, but the trait that declares it is not.
+    val input =
+      """
+        |mod A {
+        |    trait Show[a] {
+        |        pub def show(x: a): String
+        |    }
+        |
+        |    instance Show[Int32] {
+        |        pub def show(x: Int32): String = "Int32"
+        |    }
+        |}
+        |
+        |def f(): String = A.Show.show(42)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
+  test("InaccessibleTrait.06") {
+    val input =
+      """
+        |mod A {
+        |    trait Show[a] {
+        |        pub def show(x: a): String
+        |    }
+        |
+        |    instance Show[Int32] {
+        |        pub def show(x: Int32): String = "Int32"
+        |    }
+        |}
+        |
+        |mod B {
+        |    def g(): String = A.Show.show(42)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
+  test("InaccessibleTrait.07") {
+    // The signature is brought into scope with `use` and called unqualified.
+    val input =
+      """
+        |mod A {
+        |    trait Show[a] {
+        |        pub def show(x: a): String
+        |    }
+        |
+        |    instance Show[Int32] {
+        |        pub def show(x: Int32): String = "Int32"
+        |    }
+        |}
+        |
+        |mod B {
+        |    use A.Show.show
+        |    def g(): String = show(42)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
+  test("InaccessibleTrait.08") {
+    // A sealed trait that is not public is inaccessible from an unrelated module.
+    val input =
+      """
+        |mod A {
+        |    sealed trait Show[a] {
+        |        pub def show(x: a): String
+        |    }
+        |
+        |    instance Show[Int32] {
+        |        pub def show(x: Int32): String = "Int32"
+        |    }
+        |}
+        |
+        |mod B {
+        |    def g(): String = A.Show.show(42)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
   test("InaccessibleModule.01") {
     val input =
       s"""
