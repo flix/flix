@@ -431,7 +431,7 @@ object FlixPackageManager {
     */
   def findAvailableUpdates(id: PackageId, version: SemVer, token: Option[String]): Result[AvailableUpdates, PackageError] = {
     for {
-      availableVersions <- GitHub.getReleaseVersions(GitHub.Project.ofPackageId(id), token)
+      availableVersions <- GitHub.getReleaseVersions(GitHub.Project.mkProject(id), token)
 
       major = version.majorUpdate(availableVersions)
       minor = version.minorUpdate(availableVersions)
@@ -496,7 +496,7 @@ object FlixPackageManager {
     * and checking afterwards would mean having already acted on bytes that were never verified.
     */
   private def install(id: PackageId, version: SemVer, asset: ReleaseAsset, p: Path, token: Option[String], lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[InstalledFile, PackageError] = {
-    val proj = GitHub.Project.ofPackageId(id)
+    val proj = GitHub.Project.mkProject(id)
     val lib = Bootstrap.getLibraryDirectory(p)
     val assetName = s"${proj.repo}-$version.${asset.extension}"
     val dirPath = lib.resolve("github").resolve(proj.owner).resolve(proj.repo).resolve(version.toString)

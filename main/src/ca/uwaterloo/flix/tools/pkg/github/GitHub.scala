@@ -58,16 +58,16 @@ object GitHub {
     */
   private val ApiVersion: String = "2022-11-28"
 
+  object Project {
+    /** Returns the project the package `id` is published from. */
+    def mkProject(id: PackageId): Project = Project(id.owner, id.name)
+  }
+
   /**
     * A GitHub project.
     */
   case class Project(owner: String, repo: String) {
     override def toString: String = s"$owner/$repo"
-  }
-
-  object Project {
-    /** Returns the project the package `id` is published from. */
-    def ofPackageId(id: PackageId): Project = Project(id.owner, id.name)
   }
 
   /**
