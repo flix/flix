@@ -21,9 +21,10 @@ import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.{Stat, Tester}
 import ca.uwaterloo.flix.tools.doc.{HtmlDocumentor, MissingDoc}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyStyle, FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageSpec, ReleaseError, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageSpec, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Options, Result}
+import org.tomlj.Toml
 
 import java.io.{IOException, PrintStream}
 import java.nio.file.{FileSystems, Files, LinkOption, Path, StandardCopyOption}
@@ -372,8 +373,7 @@ object Bootstrap {
     val deps = mutable.ListBuffer.empty[Dependency.FlixDependency]
     for ((id, version) <- pkgs) {
       selectMount(manifest.copy(dependencies = manifest.dependencies ++ deps), id, assumeYes) match {
-        // Written as its version only, unless the mount is not the one the name of the repository derives.
-        case Ok(mount) => deps += Dependency.FlixDependency(id, version, mount, SecurityContext.Default, DependencyStyle.VersionOnly)
+        case Ok(mount) => deps += Dependency.FlixDependency(id, version, mount, SecurityContext.Default)
         case Err(e) => return Err(e)
       }
     }
@@ -555,6 +555,9 @@ object Bootstrap {
     * so that its dependencies are the ones it now declares. Reports each of `successes` once they
     * are.
     *
+    * The dependencies are written in the form the manifest that was there declared them in, see
+    * [[Manifest.format]].
+    *
     * The manifest that was there is put back if the project does not resolve with the
     * dependencies changed, so that a command that fails leaves a project that still builds. What
     * is put back are the bytes that were read, and not the manifest that was parsed from them,
@@ -570,7 +573,7 @@ object Bootstrap {
     }
 
     try {
-      FileOps.writeString(tomlPath, Manifest.format(updated))
+      FileOps.writeString(tomlPath, Manifest.format(updated, Toml.parse(original)))
     } catch {
       case e: IOException => return Err(BootstrapError.FileError(s"Unable to write '$FLIX_TOML': ${e.getMessage}"))
     }

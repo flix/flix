@@ -7,6 +7,7 @@ import ca.uwaterloo.flix.util.{Formatter, Result}
 import org.scalatest.DoNotDiscover
 import ca.uwaterloo.flix.tools.pkg.PkgTestUtils.ManifestPath
 import org.scalatest.funsuite.AnyFunSuite
+import org.tomlj.Toml
 
 import java.io.File
 import java.nio.file.Paths
@@ -154,8 +155,8 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(PackageId(Repository.GitHub, "jls", "tic-tac-toe"), SemVer(1, 2, 3), Mountpoint("ticTacToe"), SecurityContext.Plain, DependencyStyle.Table(declaresMount = true, declaresSecurity = false)),
-      Dependency.FlixDependency(PackageId(Repository.GitHub, "mlutze", "flixball"), SemVer(3, 2, 1), Mountpoint("flixball"), SecurityContext.Plain, DependencyStyle.VersionOnly),
+    assertResult(expected = List(Dependency.FlixDependency(PackageId(Repository.GitHub, "jls", "tic-tac-toe"), SemVer(1, 2, 3), Mountpoint("ticTacToe"), SecurityContext.Plain),
+      Dependency.FlixDependency(PackageId(Repository.GitHub, "mlutze", "flixball"), SemVer(3, 2, 1), Mountpoint("flixball"), SecurityContext.Plain),
       Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
       Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
       Dependency.JarDependency("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar", "myJar.jar")))(actual = {
@@ -385,7 +386,7 @@ class TestManifestParser extends AnyFunSuite {
   test("Manifest.Identity.01") {
     val toml = tomlCorrect
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1, Toml.parse(toml)), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
   }
 
@@ -399,7 +400,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1, Toml.parse(toml)), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
   }
 
@@ -417,7 +418,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1, Toml.parse(toml)), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
   }
 
@@ -435,7 +436,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1, Toml.parse(toml)), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
   }
 
@@ -453,7 +454,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1, Toml.parse(toml)), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
   }
 
@@ -471,7 +472,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1, Toml.parse(toml)), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
   }
 
@@ -489,7 +490,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1, Toml.parse(toml)), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
   }
 
@@ -505,7 +506,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1, Toml.parse(toml)), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
   }
 
@@ -521,7 +522,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1, Toml.parse(toml)), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
   }
 
@@ -537,7 +538,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1, Toml.parse(toml)), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
   }
 
@@ -553,7 +554,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1, Toml.parse(toml)), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
   }
 
@@ -569,7 +570,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1, Toml.parse(toml)), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
   }
 
@@ -585,7 +586,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1, Toml.parse(toml)), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
   }
 
@@ -1709,7 +1710,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:mlutze/flixball" = "3.2.1"
         |""".stripMargin
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), ManifestPath).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1, Toml.parse(toml)), ManifestPath).unsafeGet
     assertSameUpToOrder(manifest1, manifest2)
   }
 
@@ -1724,7 +1725,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:mlutze/flixball" = "3.2.1"
         |""".stripMargin
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val rendered = Manifest.format(manifest1)
+    val rendered = Manifest.format(manifest1, Toml.parse(toml))
     assert(!rendered.contains("mount"), rendered)
     assertResult(manifest1)(ManifestParser.parse(rendered, ManifestPath).unsafeGet)
   }
@@ -1740,7 +1741,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:mlutze/flixball" = { version = "3.2.1", mount = "flixball" }
         |""".stripMargin
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val rendered = Manifest.format(manifest1)
+    val rendered = Manifest.format(manifest1, Toml.parse(toml))
     assert(rendered.contains("mount = \"flixball\""), rendered)
     assert(!rendered.contains("security"), rendered)
     assertResult(manifest1)(ManifestParser.parse(rendered, ManifestPath).unsafeGet)
@@ -1757,7 +1758,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:mlutze/flixball" = { version = "3.2.1", security = "plain" }
         |""".stripMargin
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val rendered = Manifest.format(manifest1)
+    val rendered = Manifest.format(manifest1, Toml.parse(toml))
     assert(rendered.contains("security = \"plain\""), rendered)
     assert(!rendered.contains("mount"), rendered)
     assertResult(manifest1)(ManifestParser.parse(rendered, ManifestPath).unsafeGet)
@@ -1774,11 +1775,44 @@ class TestManifestParser extends AnyFunSuite {
         |"github:mlutze/flixball" = { version = "3.2.1" }
         |""".stripMargin
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
-    val rendered = Manifest.format(manifest1)
+    val rendered = Manifest.format(manifest1, Toml.parse(toml))
     assert(rendered.contains("{ version = \"3.2.1\" }"), rendered)
     assert(!rendered.contains("mount"), rendered)
     assert(!rendered.contains("security"), rendered)
     assertResult(manifest1)(ManifestParser.parse(rendered, ManifestPath).unsafeGet)
+  }
+
+  test("Manifest.Format.Added") {
+    // A dependency the text does not declare, i.e. one a command adds, says no more than it has to.
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |""".stripMargin
+    val manifest = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val added = List(
+      Dependency.FlixDependency(PackageId(Repository.GitHub, "mlutze", "flixball"), SemVer(3, 2, 1), Mountpoint("flixball"), SecurityContext.Default),
+      Dependency.FlixDependency(PackageId(Repository.GitHub, "jls", "tic-tac-toe"), SemVer(1, 2, 3), Mountpoint("ticTacToe"), SecurityContext.Default)
+    )
+    val rendered = Manifest.format(manifest.copy(dependencies = added), Toml.parse(toml))
+    assert(rendered.contains("\"github:mlutze/flixball\" = \"3.2.1\""), rendered)
+    assert(rendered.contains("\"github:jls/tic-tac-toe\" = { version = \"1.2.3\", mount = \"ticTacToe\" }"), rendered)
+  }
+
+  test("Manifest.Format.Upgraded") {
+    // A dependency keeps its form when only its version changes.
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[dependencies]
+        |"github:mlutze/flixball" = { version = "3.2.1", mount = "flixball" }
+        |""".stripMargin
+    val manifest = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val upgraded = manifest.flixDependencies.map(dep => dep.copy(version = SemVer(3, 3, 0)))
+    val rendered = Manifest.format(manifest.copy(dependencies = upgraded), Toml.parse(toml))
+    assert(rendered.contains("\"github:mlutze/flixball\" = { version = \"3.3.0\", mount = \"flixball\" }"), rendered)
   }
 
   test("ManifestError.FlixDependencyDuplicateMount.Derived") {
