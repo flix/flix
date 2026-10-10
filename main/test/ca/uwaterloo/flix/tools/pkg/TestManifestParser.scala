@@ -154,7 +154,7 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(PackageId(Repository.GitHub, "jls", "tic-tac-toe"), SemVer(1, 2, 3), Mountpoint("ticTacToe"), SecurityContext.Plain, DependencyStyle.Table),
+    assertResult(expected = List(Dependency.FlixDependency(PackageId(Repository.GitHub, "jls", "tic-tac-toe"), SemVer(1, 2, 3), Mountpoint("ticTacToe"), SecurityContext.Plain, DependencyStyle.Table(declaresMount = true, declaresSecurity = false)),
       Dependency.FlixDependency(PackageId(Repository.GitHub, "mlutze", "flixball"), SemVer(3, 2, 1), Mountpoint("flixball"), SecurityContext.Plain, DependencyStyle.VersionOnly),
       Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
       Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
@@ -1726,6 +1726,58 @@ class TestManifestParser extends AnyFunSuite {
     val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
     val rendered = Manifest.format(manifest1)
     assert(!rendered.contains("mount"), rendered)
+    assertResult(manifest1)(ManifestParser.parse(rendered, ManifestPath).unsafeGet)
+  }
+
+  test("Manifest.Identity.Mount.Explicit") {
+    // A mount that was declared is kept, even though it is the one the name of the repository derives.
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[dependencies]
+        |"github:mlutze/flixball" = { version = "3.2.1", mount = "flixball" }
+        |""".stripMargin
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val rendered = Manifest.format(manifest1)
+    assert(rendered.contains("mount = \"flixball\""), rendered)
+    assert(!rendered.contains("security"), rendered)
+    assertResult(manifest1)(ManifestParser.parse(rendered, ManifestPath).unsafeGet)
+  }
+
+  test("Manifest.Identity.Security.Explicit") {
+    // A security context that was declared is kept, even though it is the default.
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[dependencies]
+        |"github:mlutze/flixball" = { version = "3.2.1", security = "plain" }
+        |""".stripMargin
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val rendered = Manifest.format(manifest1)
+    assert(rendered.contains("security = \"plain\""), rendered)
+    assert(!rendered.contains("mount"), rendered)
+    assertResult(manifest1)(ManifestParser.parse(rendered, ManifestPath).unsafeGet)
+  }
+
+  test("Manifest.Identity.Table.VersionOnly") {
+    // A table that declares only a version stays a table, and gains no key.
+    val toml =
+      """[package]
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |
+        |[dependencies]
+        |"github:mlutze/flixball" = { version = "3.2.1" }
+        |""".stripMargin
+    val manifest1 = ManifestParser.parse(toml, ManifestPath).unsafeGet
+    val rendered = Manifest.format(manifest1)
+    assert(rendered.contains("{ version = \"3.2.1\" }"), rendered)
+    assert(!rendered.contains("mount"), rendered)
+    assert(!rendered.contains("security"), rendered)
     assertResult(manifest1)(ManifestParser.parse(rendered, ManifestPath).unsafeGet)
   }
 
