@@ -18,7 +18,7 @@ import org.json4s.native.JsonMethods.{compact, parse, render}
 import java.io.{IOException, InputStream}
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import java.net.{URI, URL, URLEncoder}
+import java.net.{MalformedURLException, URI, URISyntaxException, URL, URLEncoder}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.util.Locale
@@ -47,6 +47,12 @@ object GitHub {
     * The media type the REST API is asked to answer in.
     */
   private val ApiMediaType: String = "application/vnd.github+json"
+
+  /**
+    * The media type an asset's REST address is asked to answer in: the file itself, where
+    * [[ApiMediaType]] would answer with a description of it.
+    */
+  private val AssetMediaType: String = "application/octet-stream"
 
   /**
     * The version of the REST API to speak.
@@ -94,11 +100,8 @@ object GitHub {
     val status = response.statusCode()
     if (status < 200 || status >= 300) {
       return status match {
-        case 401 if isAuthorized(url, token) => Err(PackageError.TokenRejected(url))
-        case 403 => Err(PackageError.DownloadRefused(url, status, retryAfter(response), isAuthorized(url, token)))
         case 404 => Err(PackageError.ProjectDoesNotExist(project, url))
-        case 429 => Err(PackageError.DownloadRefused(url, status, retryAfter(response), isAuthorized(url, token)))
-        case _ => Err(PackageError.DownloadFailed(url, status))
+        case _ => Err(failure(url, status, response, token))
       }
     }
 
@@ -276,9 +279,14 @@ object GitHub {
     * Kept apart: a refusal (403/429, usually a rate limit), any other unexpected status, and never
     * reaching a server at all.
     */
-  def download(url: URL, token: Option[String]): Result[InputStream, PackageError] = {
-    val request = newRequest(url, token).GET().build()
+  def download(url: URL, token: Option[String]): Result[InputStream, PackageError] =
+    open(newRequest(url, token).GET().build(), url, token)
 
+  /**
+    * Sends `request`, which is to `url` and carries `token` if it may, and opens a stream over
+    * the answer. The caller closes the stream. See [[download]].
+    */
+  private def open(request: HttpRequest, url: URL, token: Option[String]): Result[InputStream, PackageError] = {
     val response = try {
       Client.sendStreamingRequest(request)
     } catch {
@@ -291,13 +299,19 @@ object GitHub {
       case status =>
         // A close failure must not shadow the status being reported.
         try response.body().close() catch { case _: IOException => () }
-        status match {
-          case 401 if isAuthorized(url, token) => Err(PackageError.TokenRejected(url))
-          case 403 => Err(PackageError.DownloadRefused(url, status, retryAfter(response), isAuthorized(url, token)))
-          case 429 => Err(PackageError.DownloadRefused(url, status, retryAfter(response), isAuthorized(url, token)))
-          case _ => Err(PackageError.DownloadFailed(url, status))
-        }
+        Err(failure(url, status, response, token))
     }
+  }
+
+  /**
+    * Returns what a request to `url` that answered `status`, which is not a success, is reported
+    * as. A 404 says different things at different addresses, so the caller reads it first.
+    */
+  private def failure(url: URL, status: Int, response: HttpResponse[?], token: Option[String]): PackageError = status match {
+    case 401 if isAuthorized(url, token) => PackageError.TokenRejected(url)
+    case 403 => PackageError.DownloadRefused(url, status, retryAfter(response), isAuthorized(url, token))
+    case 429 => PackageError.DownloadRefused(url, status, retryAfter(response), isAuthorized(url, token))
+    case _ => PackageError.DownloadFailed(url, status)
   }
 
   /**
@@ -309,16 +323,82 @@ object GitHub {
   }
 
   /**
-    * Opens a stream over the `assetName` asset of `project`'s `version` release, without consulting
-    * the REST API -- a release asset's address is fully predictable from owner/repo/tag/name.
-    * The caller closes the stream.
+    * Opens a stream over the `assetName` asset of `project`'s `version` release. The caller
+    * closes the stream.
+    *
+    * The permanent address is read first, see [[downloadReleaseAssetDirectly]]: it costs nothing
+    * against the API rate limit, and ignores a token it does not accept. An asset that is not
+    * there is then looked for through the API on behalf of a token, see
+    * [[downloadReleaseAssetViaApi]], which is where an asset of a private repository is. An
+    * anonymous client is shown nothing more by the API, and does not ask.
     */
-  def downloadReleaseAsset(project: Project, version: SemVer, assetName: String, token: Option[String]): Result[InputStream, PackageError] = {
+  def downloadReleaseAsset(project: Project, version: SemVer, assetName: String, token: Option[String]): Result[InputStream, PackageError] =
+    (downloadReleaseAssetDirectly(project, version, assetName, token), token) match {
+      case (Err(_: PackageError.ReleaseAssetNotFound), Some(t)) => downloadReleaseAssetViaApi(project, version, assetName, t)
+      case (result, _) => result
+    }
+
+  /**
+    * Opens a stream over the `assetName` asset of `project`'s `version` release from its
+    * permanent address, without consulting the REST API -- a release asset's address is fully
+    * predictable from owner/repo/tag/name. The caller closes the stream.
+    *
+    * The address is served for a browser and honours no token, so an asset of a private
+    * repository is not found here whoever asks.
+    */
+  private def downloadReleaseAssetDirectly(project: Project, version: SemVer, assetName: String, token: Option[String]): Result[InputStream, PackageError] = {
     val url = releaseAssetUrl(project, version, assetName)
     download(url, token) match {
       case Err(PackageError.DownloadFailed(_, 404)) =>
         Err(PackageError.ReleaseAssetNotFound(project, version, assetName, url))
       case other => other
+    }
+  }
+
+  /**
+    * Opens a stream over the `assetName` asset of `project`'s `version` release through the REST
+    * API, carrying `token`. The caller closes the stream.
+    *
+    * The API honours a token where the permanent address does not, so this is where an asset of
+    * a private repository is read. The release is read by its tag, which costs one request
+    * against the API rate limit, and the asset from the REST address the release names, asked
+    * for the file itself rather than a description of it. That address redirects to the storage
+    * the asset lives on, as the permanent one does, and the token stops at GitHub the same way:
+    * see [[download]].
+    *
+    * The API answers 404 alike for a release that is not there and for a project `token` cannot
+    * see, so an asset it does not show is not found, whichever it is.
+    */
+  private def downloadReleaseAssetViaApi(project: Project, version: SemVer, assetName: String, token: String): Result[InputStream, PackageError] = {
+    val url = releaseVersionUrl(project, version)
+    val req = newApiRequest(url, Some(token)).GET().build()
+    val response = try {
+      Client.sendRequest(req)
+    } catch {
+      case ex: IOException => return Err(PackageError.ProjectUnreachable(url, project, ex))
+    }
+
+    val status = response.statusCode()
+    if (status == 404) {
+      return Err(PackageError.ReleaseAssetNotFound(project, version, assetName, url))
+    }
+    if (status < 200 || status >= 300) {
+      return Err(failure(url, status, response, Some(token)))
+    }
+
+    val json = response.body()
+    val release = try {
+      parse(json).asInstanceOf[JObject]
+    } catch {
+      case _: ClassCastException => return Err(PackageError.JsonError(json, project))
+    }
+
+    findAssetUrl(release \ "assets", assetName) match {
+      case None =>
+        Err(PackageError.ReleaseAssetNotFound(project, version, assetName, url))
+      case Some(assetUrl) =>
+        val assetReq = newApiRequest(assetUrl, Some(token)).setHeader("Accept", AssetMediaType).GET().build()
+        open(assetReq, assetUrl, Some(token))
     }
   }
 
@@ -389,6 +469,31 @@ object GitHub {
     */
   private def parseRelease(json: JValue): Option[SemVer] = json \ "tag_name" match {
     case JString(tag) => parseSemVer(tag)
+    case _ => None
+  }
+
+  /**
+    * Returns the REST address of the asset named `assetName` among the assets `json` lists, if
+    * it lists one at an address.
+    */
+  private def findAssetUrl(json: JValue, assetName: String): Option[URL] = json match {
+    case JArray(assets) =>
+      assets.collectFirst { case asset if asset \ "name" == JString(assetName) => asset \ "url" }.flatMap(parseUrl)
+    case _ => None
+  }
+
+  /**
+    * Parses `json` as a URL, if it is a string that is one.
+    */
+  private def parseUrl(json: JValue): Option[URL] = json match {
+    case JString(url) =>
+      try {
+        Some(new URI(url).toURL)
+      } catch {
+        case _: URISyntaxException => None
+        case _: MalformedURLException => None
+        case _: IllegalArgumentException => None
+      }
     case _ => None
   }
 
