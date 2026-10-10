@@ -121,12 +121,14 @@ object Namer {
           decl match {
             // We check if it is a *public* module declaration.
             case Declaration.Mod(_, _, mod, sym, _, _, _, loc) if mod.isPublic =>
-              // Check if `sym` has parent.
+              // The root the module is named under, i.e. the root namespace or the root of its package, is implicitly declared.
+              val root = Name.rootOf(loc.source.origin).parts
               sym.parent() match {
                 case None => // No parent, nothing to check.
+                case Some(parentSym) if parentSym.ns == root => // The parent is the root, nothing to check.
                 case Some(parentSym) =>
-                  // We have a parent. We have A.B.C and we must check that A.B declares C.
-                  if (isOrphan(parentSym, symbols)) {
+                  // We have a parent. We have A.B.C and we must check that A.B is declared, i.e. that A declares B.
+                  if (isUndeclared(parentSym, symbols)) {
                     orphanedModules += ((sym, parentSym, loc))
                   }
               }
@@ -152,22 +154,20 @@ object Namer {
   /**
     * Given a module `A.B.C` returns `true` if `A.B` does *NOT* declare a module `C`.
     *
-    * Special case: If `sym` has no parent then no declaration is required.
+    * Given a top-level module `A` returns `true` if the root does *NOT* declare a module `A`.
     */
-  private def isOrphan(sym: Symbol.ModuleSym, symbols: Map[Name.NName, Map[String, List[Declaration]]]): Boolean = sym.parent() match {
-    case None => false
-    case Some(parentSym) =>
-      // Compute the declarations in the parent module.
-      val ns = Name.NName(parentSym.ns.map(s => Name.Ident(s, SourceLocation.Unknown)), SourceLocation.Unknown)
-      val decls = symbols.getOrElse(ns, Map.empty)
-      val ds = decls.getOrElse(sym.ns.last, Nil)
-      // Check that the declarations contain a module declaration for `sym`.
-      val exists = ds.exists {
-        case Declaration.Mod(_, _, _, otherSym, _, _, _, _) => sym == otherSym
-        case _ => false
-      }
-      // If no declaration exists then `sym` is an orphan.
-      !exists
+  private def isUndeclared(sym: Symbol.ModuleSym, symbols: Map[Name.NName, Map[String, List[Declaration]]]): Boolean = {
+    // Compute the declarations in the parent module. For a top-level module that is the root.
+    val ns = Name.NName(sym.ns.init.map(s => Name.Ident(s, SourceLocation.Unknown)), SourceLocation.Unknown)
+    val decls = symbols.getOrElse(ns, Map.empty)
+    val ds = decls.getOrElse(sym.ns.last, Nil)
+    // Check that the declarations contain a module declaration for `sym`.
+    val exists = ds.exists {
+      case Declaration.Mod(_, _, _, otherSym, _, _, _, _) => sym == otherSym
+      case _ => false
+    }
+    // If no declaration exists then `sym` is undeclared.
+    !exists
   }
 
   /**
