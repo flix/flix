@@ -334,7 +334,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
   }
 
   test("InaccessibleTrait.05") {
-    // The signature is public, but the trait that declares it is not.
     val input =
       """
         |mod A {
@@ -347,7 +346,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |
-        |def f(): String = A.Show.show(42)
+        |def f(): String = A.Show.show(42) // Not allowed: `show` is public, but `A.Show` is private to `A`.
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleTrait](result)
@@ -367,7 +366,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |
         |mod B {
-        |    def g(): String = A.Show.show(42)
+        |    def g(): String = A.Show.show(42) // Not allowed: `A.Show` is private to `A`.
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -375,7 +374,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
   }
 
   test("InaccessibleTrait.07") {
-    // The signature is brought into scope with `use` and called unqualified.
     val input =
       """
         |mod A {
@@ -390,7 +388,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |mod B {
         |    use A.Show.show
-        |    def g(): String = show(42)
+        |    def g(): String = show(42) // Not allowed: `show` belongs to `A.Show`, which is private to `A`.
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -398,7 +396,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
   }
 
   test("InaccessibleTrait.08") {
-    // A sealed trait that is not public is inaccessible from an unrelated module.
     val input =
       """
         |mod A {
@@ -412,7 +409,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |
         |mod B {
-        |    def g(): String = A.Show.show(42)
+        |    def g(): String = A.Show.show(42) // Not allowed: `A.Show` is sealed but not `pub`, so it is private to `A`.
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
