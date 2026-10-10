@@ -29,16 +29,16 @@ sealed trait ReleaseAsset {
 
 object ReleaseAsset {
 
-  /** The manifest of the package, published as `flix.toml`. */
-  case object Toml extends ReleaseAsset {
-    val name: String = Bootstrap.FLIX_TOML
-    val extension: String = Bootstrap.EXT_TOML
-  }
-
   /** The package itself, published as `package.fpkg`. */
   case object Fpkg extends ReleaseAsset {
     val name: String = Bootstrap.PACKAGE_FPKG
     val extension: String = Bootstrap.EXT_FPKG
+  }
+
+  /** The manifest of the package, published as `flix.toml`. */
+  case object Toml extends ReleaseAsset {
+    val name: String = Bootstrap.FLIX_TOML
+    val extension: String = Bootstrap.EXT_TOML
   }
 
 }

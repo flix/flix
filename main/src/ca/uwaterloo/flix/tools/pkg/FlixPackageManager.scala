@@ -607,8 +607,8 @@ object FlixPackageManager {
   private def recordedDigest(id: PackageId, version: SemVer, asset: ReleaseAsset, lockfile: Lockfile): Option[Sha256] = {
     lockfile.packages.get((id, version)).flatMap { entry =>
       asset match {
-        case ReleaseAsset.Toml => Some(entry.toml)
         case ReleaseAsset.Fpkg => entry.fpkg
+        case ReleaseAsset.Toml => Some(entry.toml)
       }
     }
   }
