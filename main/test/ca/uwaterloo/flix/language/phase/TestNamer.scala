@@ -8,9 +8,12 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.{NameError, ResolutionError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
+
+import java.nio.file.Path
 
 class TestNamer extends AnyFunSuite with TestUtils {
 
@@ -994,4 +997,34 @@ class TestNamer extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibNix)
     expectError[NameError.IllegalSealedTrait](result)
   }
+
+  test("OrphanModule.01") {
+    // A public module at depth two whose parent is never declared.
+    val flix = new Flix().setOptions(Options.TestWithLibNix)
+    flix.addSource(Path.of("A/B.flix"), "pub mod A.B { pub def f(): Int32 = 1 }", sctx)
+    expectOneError[NameError.OrphanModule](flix.check())
+  }
+
+  test("OrphanModule.02") {
+    // Neither `A` nor `A.B` is declared. The missing parent of `A.B.C` is `A.B`.
+    val flix = new Flix().setOptions(Options.TestWithLibNix)
+    flix.addSource(Path.of("A/B/C.flix"), "pub mod A.B.C { pub def f(): Int32 = 1 }", sctx)
+    expectOneError[NameError.OrphanModule](flix.check())
+  }
+
+  test("OrphanModule.03") {
+    // With the parent declared, the qualified name resolves from inside the module.
+    val flix = new Flix().setOptions(Options.TestWithLibNix)
+    flix.addSource(Path.of("A.flix"), "pub mod A { pub def k(): Int32 = 2 }", sctx)
+    flix.addSource(Path.of("A/B.flix"),
+      """
+        |pub mod A.B {
+        |    pub def f(): Int32 = 1
+        |    pub def g(): Int32 = A.B.f()
+        |    pub def h(): Int32 = A.k()
+        |}
+        |""".stripMargin, sctx)
+    expectSuccess(flix.check())
+  }
+
 }
