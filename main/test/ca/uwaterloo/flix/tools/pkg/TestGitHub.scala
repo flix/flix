@@ -13,6 +13,7 @@ import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.net.{URI, URL}
+import java.nio.file.Files
 
 @DoNotDiscover
 class TestGitHub extends AnyFunSuite {
@@ -81,11 +82,12 @@ class TestGitHub extends AnyFunSuite {
     // token it does not accept rather than refusing the request. A token that has gone stale in
     // the environment therefore does not break a build that would have worked without one.
     val project = GitHub.Project("flix", "museum-clerk")
-    val stream = GitHub.downloadReleaseAsset(project, SemVer(1, 1, 0), "flix.toml", Some("not-a-token")).unsafeGet
+    val path = Files.createTempFile("flix", ".toml")
     try {
-      assert(stream.readAllBytes().nonEmpty)
+      GitHub.downloadReleaseAsset(project, SemVer(1, 1, 0), "flix.toml", path, Some("not-a-token")).unsafeGet
+      assert(Files.size(path) > 0)
     } finally {
-      stream.close()
+      Files.deleteIfExists(path)
     }
   }
 

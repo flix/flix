@@ -148,28 +148,21 @@ object PackageError {
          |""".stripMargin
   }
 
-  case class DownloadError(name: String, message: Option[String]) extends PackageError {
-    override def message(f: Formatter): String =
-      s"""A download error occurred while downloading ${f.bold(name)}
-         |${
-        message match {
-          case Some(e) => e
-          case None => ""
-        }
-      }
-         |""".stripMargin
-  }
-
-  case class DownloadErrorJar(url: String, fileName: String, message: Option[String]) extends PackageError {
-    override def message(f: Formatter): String =
-      s"""A download error occurred while downloading ${f.bold(fileName)} from $url
-         |${
-        message match {
-          case Some(e) => e
-          case None => ""
-        }
-      }
-         |""".stripMargin
+  /**
+    * A download that reached a server and then broke off partway through the body: the
+    * connection dropped, or the disk ran out. The file it left behind is cut short, and is
+    * removed so that a later build does not take it for a cached one; `removed` says whether
+    * that succeeded.
+    */
+  case class DownloadIncomplete(url: URL, path: Path, message: String, removed: Boolean) extends PackageError {
+    override def message(f: Formatter): String = {
+      val leftover =
+        if (removed) ""
+        else s"The incomplete file at ${f.cyan(path.toString)} could not be removed. Delete it before building again.\n"
+      s"""Could not download ${f.cyan(url.toString)} to ${f.cyan(path.toString)}.
+         |$message
+         |$leftover""".stripMargin
+    }
   }
 
   /**
