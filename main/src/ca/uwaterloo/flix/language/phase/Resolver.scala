@@ -3090,7 +3090,8 @@ object Resolver {
       case trt: NamedAst.Declaration.Trait => trt
     }.foreach { trt =>
       getTraitAccessibility(trt, ns0) match {
-        case TraitAccessibility.Accessible | TraitAccessibility.Sealed => ()
+        case TraitAccessibility.Accessible => ()
+        case TraitAccessibility.Sealed => ()
         case TraitAccessibility.Inaccessible =>
           sctx.errors.add(ResolutionError.InaccessibleTrait(trt.sym, ns0, loc))
       }
