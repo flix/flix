@@ -255,8 +255,8 @@ object FlixPackageManager {
     parseManifest(toml.path).flatMap {
       case m if m.version != version => Err(PackageError.MismatchedVersions(id, version, m.version))
       case m => m.packageId match {
-        case Some(declared) if declared == id => Ok(m)
-        case Some(declared) => Err(PackageError.MismatchedRepository(id, version, declared))
+        case Some(declared) =>
+          if (declared == id) Ok(m) else Err(PackageError.MismatchedRepository(id, version, declared))
         case None => Err(PackageError.MissingRepository(id, version))
       }
     }
