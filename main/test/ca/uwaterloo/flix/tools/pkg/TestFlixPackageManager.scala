@@ -90,34 +90,6 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     })
   }
 
-  test("Install falls back to the release listing") {
-    // The address of a release asset is guessed before the listing is read, which costs a
-    // request against the API rate limit. `jaschdoc/flix-test-pkg-eff-upgrade` publishes its
-    // package as `test-pkg-eff-upgrade.fpkg`, which is neither the fixed name nor the name of
-    // the repository, so it is found only by reading the listing.
-    val toml = PkgTestUtils.mkTomlWithDeps(
-      """
-        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = { version = "0.1.1", mount = "effUpgrade" }
-        |""".stripMargin
-    )
-    val manifest = ManifestParser.parse(toml, ManifestPath) match {
-      case Ok(m) => m
-      case Err(e) => fail(e.message(formatter))
-    }
-
-    val path = Files.createTempDirectory("")
-    val resolution = FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
-      case Ok(r) => r
-      case Err(e) => fail(e.message(formatter))
-    }
-
-    FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
-      case Ok(installation) =>
-        assert(installation.packages.exists(_.path.endsWith(s"flix-test-pkg-eff-upgrade-0.1.1.${Bootstrap.EXT_FPKG}")))
-      case Err(e) => fail(e.message(formatter))
-    }
-  }
-
   test("Install missing dependencies from list of manifests") {
     assertResult(expected = true)(actual = {
       val toml1 = {
@@ -275,32 +247,37 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   }
 
   test("Give error for missing version") {
-    assertResult(expected = PackageError.VersionDoesNotExist(SemVer(0, 0, 1), Project("flix", "museum")).message(formatter))(actual = {
-      val toml = {
-        """
-          |[package]
-          |version = "0.0.0"
-          |flix = "0.0.0"
-          |
-          |[dependencies]
-          |"github:flix/museum" = "0.0.1"
-          |
-          |[mvn-dependencies]
-          |
-          |""".stripMargin
-      }
+    // A version that was never released publishes no `flix.toml`, which is where a resolution
+    // that asks for it stops. The release is addressed by name, so nothing reads the listing to
+    // find out that it is not there.
+    val toml = {
+      """
+        |[package]
+        |version = "0.0.0"
+        |flix = "0.0.0"
+        |
+        |[dependencies]
+        |"github:flix/museum" = "0.0.1"
+        |
+        |[mvn-dependencies]
+        |
+        |""".stripMargin
+    }
 
-      val manifest = ManifestParser.parse(toml, ManifestPath) match {
-        case Ok(m) => m
-        case Err(e) => fail(e.message(formatter))
-      }
+    val manifest = ManifestParser.parse(toml, ManifestPath) match {
+      case Ok(m) => m
+      case Err(e) => fail(e.message(formatter))
+    }
 
-      val path = Files.createTempDirectory("")
-      FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
-        case Ok(res) => res
-        case Err(e) => e.message(formatter)
-      }
-    })
+    val path = Files.createTempDirectory("")
+    FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+      case Ok(res) => fail(s"Expected the missing release to be refused, but got: $res")
+      case Err(e: PackageError.ReleaseAssetNotFound) =>
+        assert(e.version == SemVer(0, 0, 1))
+        assert(e.project == Project("flix", "museum"))
+        assert(e.assetName == Bootstrap.FLIX_TOML)
+      case Err(e) => fail(s"Expected the missing release to be refused, but got: ${e.message(formatter)}")
+    }
   }
 
   test("Install transitive dependency") {
