@@ -23,10 +23,8 @@ object Dependency {
     * @param mount the name of the top-level module the package is visible under, which is the
     *              only way its declarations are reached. A dependency that declares no mount is
     *              mounted at the name of its repository, when that name is a mountpoint.
-    * @param style how the dependency is written in `flix.toml`, which is how it is written back,
-    *              see [[Manifest.format]].
     */
-  case class FlixDependency(id: PackageId, version: SemVer, mount: Mountpoint, sctx: SecurityContext, style: DependencyStyle) extends Dependency {
+  case class FlixDependency(id: PackageId, version: SemVer, mount: Mountpoint, sctx: SecurityContext) extends Dependency {
     override def toString: String =
       s"\"$id\" = { version = \"$version\", mount = \"$mount\", security = \"$sctx\" }"
   }

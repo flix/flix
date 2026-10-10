@@ -10,7 +10,7 @@ package ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import org.tomlj.Toml
+import org.tomlj.{Toml, TomlTable}
 
 case class Manifest(version: SemVer,
                     repository: Option[GitHub.Project],
@@ -48,23 +48,25 @@ object Manifest {
   private val BareKey = "[A-Za-z0-9_-]+".r
 
   /**
-    * Returns `manifest` as the text of a `flix.toml` file.
+    * Returns `manifest` as the text of a `flix.toml` file, where `source` is the text that
+    * `manifest` was parsed from, as parsed.
     *
-    * The text depends only on `manifest`, and neither on the platform nor on the text that
-    * `manifest` was parsed from:
+    * The text depends only on `manifest` and on the form `source` declares each Flix dependency
+    * in, and not on the platform:
     *
     *   - The tables come in a fixed order, and a table that declares nothing is left out.
     *   - The dependencies of a table are sorted by key.
     *   - The `=` of the entries of a table are aligned.
-    *   - A Flix dependency is written in the [[DependencyStyle]] it was declared in.
+    *   - A Flix dependency is written in the form `source` declares it in, see [[flixDependencyEntry]].
     *   - Every line ends in `\n`.
     *
     * Parsing the text gives back `manifest`, up to the order of its dependencies.
     */
-  def format(manifest: Manifest): String = {
+  def format(manifest: Manifest, source: TomlTable): String = {
+    val declared = Option(source.getTable("dependencies"))
     val tables = List(
       packageTable(manifest),
-      dependencyTable("dependencies", manifest.flixDependencies.map(flixDependencyEntry)),
+      dependencyTable("dependencies", manifest.flixDependencies.map(dep => flixDependencyEntry(dep, declared))),
       dependencyTable("mvn-dependencies", manifest.mavenDependencies.map(mavenDependencyEntry)),
       dependencyTable("jar-dependencies", manifest.jarDependencies.map(jarDependencyEntry))
     )
@@ -96,31 +98,31 @@ object Manifest {
     Table(name, entries.sortBy(_.key))
 
   /**
-    * Returns the entry of `dep` in the `[dependencies]` table.
+    * Returns the entry of `dep` in the `[dependencies]` table, where `declared` is the
+    * `[dependencies]` table of the text the manifest was parsed from.
     *
-    * A dependency is written in the style it was declared in, but as its version only while that
-    * is all it declares. A table spells out a mount or a security context that was declared, and
-    * one that was not only when it is not what its omission means: the mount derived from the
-    * name of the repository, and the default security context.
+    * A dependency is written in the form it was declared in: as a table if it was declared as
+    * one, and else as its version only while that is all it has to say. A table spells out a
+    * mount or a security context that was declared, and one that was not only when it is not
+    * what its omission means: the mount derived from the name of the repository, and the
+    * default security context. A dependency that was not declared, i.e. one a command adds,
+    * says no more than it has to.
     */
-  private def flixDependencyEntry(dep: FlixDependency): Entry = {
-    val (declaresMount, declaresSecurity) = dep.style match {
-      case DependencyStyle.VersionOnly => (false, false)
-      case DependencyStyle.Table(m, s) => (m, s)
-    }
+  private def flixDependencyEntry(dep: FlixDependency, declared: Option[TomlTable]): Entry = {
+    // A typed look-up needs the key in quotes, since it holds `:` and `/`.
+    val quotedKey = s"\"${dep.id}\""
+    val table = declared.filter(_.isTable(quotedKey)).map(_.getTable(quotedKey))
     // A declared key is kept, so that a rewrite does not take away what was written. One that
     // was not declared is written only when it would not be derived again.
-    val mount = Option.when(declaresMount || !Mountpoint.ofRepoName(dep.id).contains(dep.mount))(dep.mount)
-    val security = Option.when(declaresSecurity || dep.sctx != SecurityContext.Default)(dep.sctx)
-    dep match {
-      case FlixDependency(id, version, _, _, DependencyStyle.VersionOnly) if mount.isEmpty && security.isEmpty =>
-        Entry(id.toString, Value.Str(version.toString))
-
-      case FlixDependency(id, version, _, _, _) =>
-        val versionEntry = Entry("version", Value.Str(version.toString))
-        val mountEntry = mount.map(m => Entry("mount", Value.Str(m.toString)))
-        val securityEntry = security.map(s => Entry("security", Value.Str(s.toString)))
-        Entry(id.toString, Value.InlineTable(versionEntry :: mountEntry.toList ::: securityEntry.toList))
+    val mount = Option.when(table.exists(_.contains("mount")) || !Mountpoint.ofRepoName(dep.id).contains(dep.mount))(dep.mount)
+    val security = Option.when(table.exists(_.contains("security")) || dep.sctx != SecurityContext.Default)(dep.sctx)
+    if (table.isEmpty && mount.isEmpty && security.isEmpty) {
+      Entry(dep.id.toString, Value.Str(dep.version.toString))
+    } else {
+      val versionEntry = Entry("version", Value.Str(dep.version.toString))
+      val mountEntry = mount.map(m => Entry("mount", Value.Str(m.toString)))
+      val securityEntry = security.map(sctx => Entry("security", Value.Str(sctx.toString)))
+      Entry(dep.id.toString, Value.InlineTable(versionEntry :: mountEntry.toList ::: securityEntry.toList))
     }
   }
 

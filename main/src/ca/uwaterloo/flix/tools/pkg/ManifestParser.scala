@@ -296,7 +296,7 @@ object ManifestParser {
       for (
         ver <- getFlixVersion(deps, quotedKey, p);
         mount <- deriveMount(id, p)
-      ) yield FlixDependency(id, ver, mount, SecurityContext.Default, DependencyStyle.VersionOnly)
+      ) yield FlixDependency(id, ver, mount, SecurityContext.Default)
 
       // If the dependency maps to a table, get the version, security, and mount.
     } else if (deps.isTable(quotedKey)) {
@@ -310,7 +310,7 @@ object ManifestParser {
         ver <- getFlixVersion(depTbl, verKey, p);
         mount <- getMount(depTbl, mountKey, quotedKey, id, p);
         security <- getSecurity(depTbl, securityKey, p)
-      ) yield FlixDependency(id, ver, mount, security, DependencyStyle.Table(depTbl.contains(mountKey), depTbl.contains(securityKey)))
+      ) yield FlixDependency(id, ver, mount, security)
     } else {
       Err(ManifestError.VersionTypeError(p, quotedKey, deps.get(quotedKey)))
     }
