@@ -147,6 +147,17 @@ object Name {
     case head :: rest => (PackageId.ofCanonicalRoot(head).map(_.toString).getOrElse(head) :: rest).mkString(".")
   }
 
+  /**
+    * Returns the namespace `parts` as it is written where it is declared.
+    *
+    * A package is named under a root that is never written in source, so the root is dropped and
+    * what remains is the name relative to the package root.
+    */
+  def declaredParts(parts: List[String]): List[String] = parts match {
+    case head :: rest if PackageId.ofCanonicalRoot(head).isDefined => rest
+    case _ => parts
+  }
+
   case class NName(idents: List[Ident], loc: SourceLocation) {
     /**
       * Returns `true` if this is the root namespace.

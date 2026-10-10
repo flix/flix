@@ -230,6 +230,7 @@ object NameError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
+      val parts = Name.declaredParts(ns.parts)
       s""">> Nested public module: '${red(ns.toString)}'.
          |
          |${highlight(loc, "nested public module", fmt)}
@@ -237,8 +238,8 @@ object NameError {
          |${underline("Explanation:")} A public module must be declared at the top level of its
          |own file, not inside another module. For example:
          |
-         |  // File ${ns.parts.mkString("/")}.flix
-         |  pub mod $ns { ... }
+         |  // File ${parts.mkString("/")}.flix
+         |  pub mod ${parts.mkString(".")} { ... }
          |""".stripMargin
     }
   }
