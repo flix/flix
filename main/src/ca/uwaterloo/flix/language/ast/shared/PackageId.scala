@@ -14,7 +14,12 @@ object PackageId {
   /** The separator of the parts of a canonical root. */
   private val RootSeparator: Char = '$'
 
-  /** The names a repository, an owner, and a project may be built from. */
+  /**
+    * The names a repository, an owner, and a project may be built from: letters, digits, `_`, and `-`.
+    *
+    * A `.` is not allowed: the name becomes part of the package's canonical root, which is a JVM
+    * package path, and a `.` is the separator there as well as in a Flix namespace.
+    */
   private val ValidName = "[A-Za-z0-9_-]+".r
 
   /** An identifier: a host, an owner, and a project name. */

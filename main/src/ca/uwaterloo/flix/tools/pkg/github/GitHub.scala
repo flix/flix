@@ -6,6 +6,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg.github
 
+import ca.uwaterloo.flix.language.ast.shared.PackageId
 import ca.uwaterloo.flix.tools.pkg.{PackageError, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Result
@@ -62,6 +63,11 @@ object GitHub {
     */
   case class Project(owner: String, repo: String) {
     override def toString: String = s"$owner/$repo"
+  }
+
+  object Project {
+    /** Returns the project the package `id` is published from. */
+    def ofPackageId(id: PackageId): Project = Project(id.owner, id.name)
   }
 
   /**

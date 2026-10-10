@@ -180,14 +180,14 @@ object PackageError {
     *
     * @param identifier the identifier of the package, e.g. `github:flix/museum`.
     * @param version    the version of the package.
-    * @param extension  the file of the package that does not match, i.e. `toml` or `fpkg`.
+    * @param asset      the file of the package that does not match.
     * @param path       the path of the file in `lib/`.
     * @param expected   the digest that `packages.lock` records.
     * @param actual     the digest of the file that is there.
     */
-  case class MismatchedCachedDigest(identifier: PackageId, version: SemVer, extension: String, path: Path, expected: Sha256, actual: Sha256) extends PackageError {
+  case class MismatchedCachedDigest(identifier: PackageId, version: SemVer, asset: ReleaseAsset, path: Path, expected: Sha256, actual: Sha256) extends PackageError {
     override def message(f: Formatter): String =
-      s"""The ${f.bold(extension)} of ${f.bold(identifier.toString)} ${f.bold(version.toString)} is not the one ${f.bold("packages.lock")} records.
+      s"""The ${f.bold(asset.name)} of ${f.bold(identifier.toString)} ${f.bold(version.toString)} is not the one ${f.bold("packages.lock")} records.
          |   expected: ${f.cyan(expected.toString)}
          |  but found: ${f.red(actual.toString)}
          |
@@ -206,14 +206,14 @@ object PackageError {
     *
     * @param identifier the identifier of the package, e.g. `github:flix/museum`.
     * @param version    the version of the package.
-    * @param extension  the file of the package that does not match, i.e. `toml` or `fpkg`.
+    * @param asset      the file of the package that does not match.
     * @param path       the path the file was downloaded to.
     * @param expected   the digest that `packages.lock` records.
     * @param actual     the digest of the file that was downloaded.
     */
-  case class MismatchedDownloadedDigest(identifier: PackageId, version: SemVer, extension: String, path: Path, expected: Sha256, actual: Sha256) extends PackageError {
+  case class MismatchedDownloadedDigest(identifier: PackageId, version: SemVer, asset: ReleaseAsset, path: Path, expected: Sha256, actual: Sha256) extends PackageError {
     override def message(f: Formatter): String =
-      s"""The ${f.bold(extension)} of ${f.bold(identifier.toString)} ${f.bold(version.toString)} is not the one ${f.bold("packages.lock")} records.
+      s"""The ${f.bold(asset.name)} of ${f.bold(identifier.toString)} ${f.bold(version.toString)} is not the one ${f.bold("packages.lock")} records.
          |        expected: ${f.cyan(expected.toString)}
          |  but downloaded: ${f.red(actual.toString)}
          |

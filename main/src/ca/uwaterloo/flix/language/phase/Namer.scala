@@ -58,7 +58,7 @@ object Namer {
 
       // What each viewer, the root project and every package, reaches through its own mounts.
       def resolveMounts(table: Map[Mountpoint, PackageId]): Map[Mountpoint, Name.NName] =
-        table.map { case (name, id) => name -> packageRoot(id) }
+        table.map { case (name, id) => name -> Name.packageRoot(id) }
 
       val rootMounts = resolveMounts(flix.rootMounts)
       val mounts = flix.packageMounts.map { case (id, table) => id -> resolveMounts(table) }
@@ -67,23 +67,6 @@ object Namer {
 
       (NamedAst.Root(symbols, instances, uses, units, modules, mounts, rootMounts, program.mainEntryPoint, locations, program.tokens), errors)
     }
-
-  /**
-    * Returns the namespace the declarations of the package `id` are named under.
-    */
-  private def packageRoot(id: PackageId): Name.NName = Name.mkUnlocatedNName(List(id.canonicalRoot))
-
-  /**
-    * Returns the namespace the declarations of the source at `loc` are named under.
-    *
-    * A package is named under its own root, so that its declarations are reached through a mount
-    * rather than by sharing a namespace with every other package. Everything else is named under
-    * [[Name.RootNS]].
-    */
-  private def rootOf(loc: SourceLocation): Name.NName = loc.source.origin match {
-    case Origin.Package(id) => packageRoot(id)
-    case _ => Name.RootNS
-  }
 
   /**
     * Returns every `Mod` declaration nested inside `decls`, including `decls` itself.
@@ -193,7 +176,7 @@ object Namer {
   private def visitUnit(unit: DesugaredAst.CompilationUnit)(implicit sctx: SharedContext, flix: Flix): NamedAst.CompilationUnit = unit match {
     case DesugaredAst.CompilationUnit(usesAndImports0, decls, loc) =>
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
-      val ds = decls.map(visitDecl(_, rootOf(loc))(sctx, flix))
+      val ds = decls.map(visitDecl(_, Name.rootOf(loc.source.origin))(sctx, flix))
       NamedAst.CompilationUnit(usesAndImports, ds, loc)
   }
 
@@ -224,7 +207,7 @@ object Namer {
       // Check for [[NameError.IllegalNestedPublicModule]] -- i.e. that public modules are declared
       // at the top level -- and [[NameError.IllegalModuleFile]] -- i.e. that they reside at correct paths.
       //
-      if (mod.isPublic && ns0 != rootOf(loc)) {
+      if (mod.isPublic && ns0 != Name.rootOf(loc.source.origin)) {
         // A nested public module is never at a correct path, so we report only this error.
         sctx.errors.add(NameError.IllegalNestedPublicModule(ns, qname.loc))
       } else if (mod.isPublic) {
@@ -594,7 +577,6 @@ object Namer {
       val body = bs.map(visitBodyPredicate)
       NamedAst.Constraint(cparams, head, body, loc)
   }
-
 
   /**
     * Performs naming on the given enum `enum0`.
