@@ -341,7 +341,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Trait '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Trait '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible trait", fmt)}
          |
@@ -364,7 +364,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Definition '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Definition '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible definition", fmt)}
          |
@@ -387,7 +387,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Effect '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Effect '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible effect", fmt)}
          |
@@ -410,7 +410,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Enum '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Enum '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible enum", fmt)}
          |
@@ -433,11 +433,15 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Module '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      val parts = Name.declaredParts(sym.ns)
+      s""">> Module '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible module", fmt)}
          |
-         |${underline("Tip:")} Mark the module as 'pub'.
+         |${underline("Tip:")} Declare the module as 'pub' at the top level of its own file:
+         |
+         |  // File ${parts.mkString("/")}.flix
+         |  pub mod ${parts.mkString(".")} { ... }
          |""".stripMargin
     }
   }
@@ -456,7 +460,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Struct '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Struct '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible struct", fmt)}
          |
@@ -479,7 +483,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Enum '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Enum '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible enum", fmt)}
          |
@@ -502,7 +506,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Signature '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Signature '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible signature", fmt)}
          |
@@ -525,7 +529,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Type alias '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Type alias '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible type alias", fmt)}
          |
@@ -819,7 +823,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Trait '${red(sym.toString)}' is sealed from the module '${cyan(ns.toString)}'.
+      s""">> Trait '${red(sym.toString)}' is sealed from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "sealed trait", fmt)}
          |
@@ -1461,4 +1465,11 @@ object ResolutionError {
     }
   }
 
+  /**
+    * Returns the phrase that names the module `ns` in a message, e.g. "the module 'A.B'".
+    *
+    * The root module has no name, so it is called "the root module" rather than "the module ''".
+    */
+  private def describeModule(ns: Name.NName, fmt: Formatter): String =
+    if (ns.isRoot) "the root module" else s"the module '${fmt.cyan(ns.toString)}'"
 }
