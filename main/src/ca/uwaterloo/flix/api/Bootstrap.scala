@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageSpec, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Options, Result}
-import org.tomlj.Toml
+import org.tomlj.{Toml, TomlParseResult}
 
 import java.io.{IOException, PrintStream}
 import java.nio.file.{FileSystems, Files, LinkOption, Path, StandardCopyOption}
@@ -202,11 +202,12 @@ object Bootstrap {
     }
 
     for {
-      manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
+      file <- readManifest(tomlPath)
+      manifest = file.manifest
       _ <- Result.traverse(pkgs)(pkg => checkUndeclared(manifest, pkg.id))
       versions <- Result.traverse(pkgs)(pkg => selectVersion(pkg, token))
       deps <- mkDependencies(manifest, pkgs.map(pkg => pkg.id).zip(versions), assumeYes)
-      _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies ++ deps), token,
+      _ <- rewriteManifest(p, file, manifest.copy(dependencies = manifest.dependencies ++ deps), token,
         deps.map(dep => s"Added '${dep.id.shortName}' v${dep.version}, mounted at '${dep.mount}'."))
     } yield ()
   }
@@ -243,9 +244,10 @@ object Bootstrap {
     }
 
     for {
-      manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
+      file <- readManifest(tomlPath)
+      manifest = file.manifest
       deps <- Result.traverse(pkgs)(pkg => findDeclared(manifest, pkg.id))
-      _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies.filterNot(d => deps.contains(d))), token,
+      _ <- rewriteManifest(p, file, manifest.copy(dependencies = manifest.dependencies.filterNot(d => deps.contains(d))), token,
         deps.map(dep => s"Removed '${dep.id.shortName}' v${dep.version}, which was mounted at '${dep.mount}'."))
     } yield ()
   }
@@ -295,7 +297,8 @@ object Bootstrap {
     }
 
     for {
-      manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
+      file <- readManifest(tomlPath)
+      manifest = file.manifest
       pkgs = if (named.isEmpty) manifest.flixDependencies.map(dep => PackageSpec(dep.id, None)) else named
       deps <- Result.traverse(pkgs)(pkg => findDeclared(manifest, pkg.id))
       upgrades <- Result.traverse(pkgs.zip(deps)) { case (pkg, dep) => selectUpgradeVersion(pkg, dep, token).map(upgrade => (dep, upgrade)) }
@@ -309,7 +312,7 @@ object Bootstrap {
         Ok(())
       } else {
         val dependencies = changed.foldLeft(manifest.dependencies) { case (acc, (dep, upgrade)) => replaceVersion(acc, dep, upgrade.version) }
-        rewriteManifest(p, manifest.copy(dependencies = dependencies), token,
+        rewriteManifest(p, file, manifest.copy(dependencies = dependencies), token,
           changed.map { case (dep, upgrade) => s"${if (upgrade.version > dep.version) "Upgraded" else "Downgraded"} '${dep.id.shortName}' v${dep.version} -> v${upgrade.version}." })
       }
       _ = reportNewerMajors(upgrades)
@@ -551,29 +554,48 @@ object Bootstrap {
   }
 
   /**
-    * Writes `updated` to the `flix.toml` of the project at `p`, and then bootstraps the project
-    * so that its dependencies are the ones it now declares. Reports each of `successes` once they
-    * are.
-    *
-    * The dependencies are written in the form the manifest that was there declared them in, see
-    * [[Manifest.format]].
-    *
-    * The manifest that was there is put back if the project does not resolve with the
-    * dependencies changed, so that a command that fails leaves a project that still builds. What
-    * is put back are the bytes that were read, and not the manifest that was parsed from them,
-    * so a failure costs neither the comments nor the keys that a rewrite would.
+    * A `flix.toml` as read: its text, the TOML parsed from the text, and the manifest parsed from
+    * the TOML.
     */
-  private def rewriteManifest(p: Path, updated: Manifest, token: Option[String], successes: List[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
-    val tomlPath = getManifestFile(p)
+  private case class ManifestFile(text: String, toml: TomlParseResult, manifest: Manifest)
 
-    val original = try {
+  /**
+    * Reads the `flix.toml` at `tomlPath` once, as its text, its TOML, and its manifest.
+    *
+    * The three are read together, so that a rewrite writes the manifest in the form the text
+    * declares, and puts the text back if it fails, with nothing read twice in between.
+    */
+  private def readManifest(tomlPath: Path): Result[ManifestFile, BootstrapError] = {
+    val text = try {
       Files.readString(tomlPath)
     } catch {
       case e: IOException => return Err(BootstrapError.FileError(s"Unable to read '$FLIX_TOML': ${e.getMessage}"))
     }
+    // The TOML parser collects its errors rather than throwing, and the manifest parser reports them.
+    val toml = Toml.parse(text)
+    ManifestParser.parse(toml, tomlPath) match {
+      case Ok(manifest) => Ok(ManifestFile(text, toml, manifest))
+      case Err(e) => Err(BootstrapError.ManifestParseError(e))
+    }
+  }
+
+  /**
+    * Writes `updated` to the `flix.toml` of the project at `p`, which was read as `file`, and
+    * then bootstraps the project so that its dependencies are the ones it now declares. Reports
+    * each of `successes` once they are.
+    *
+    * The dependencies are written in the form `file` declares them in, see [[Manifest.format]].
+    *
+    * The manifest that was there is put back if the project does not resolve with the
+    * dependencies changed, so that a command that fails leaves a project that still builds. What
+    * is put back is the text of `file`, and not the manifest that was parsed from it, so a
+    * failure costs neither the comments nor the keys that a rewrite would.
+    */
+  private def rewriteManifest(p: Path, file: ManifestFile, updated: Manifest, token: Option[String], successes: List[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+    val tomlPath = getManifestFile(p)
 
     try {
-      FileOps.writeString(tomlPath, Manifest.format(updated, Toml.parse(original)))
+      FileOps.writeString(tomlPath, Manifest.format(updated, file.toml))
     } catch {
       case e: IOException => return Err(BootstrapError.FileError(s"Unable to write '$FLIX_TOML': ${e.getMessage}"))
     }
@@ -584,7 +606,7 @@ object Bootstrap {
         Ok(())
       case Err(e) =>
         try {
-          FileOps.writeString(tomlPath, original)
+          FileOps.writeString(tomlPath, file.text)
         } catch {
           // The failure that stopped the command is the one to report, but a manifest that could
           // not be put back is not something to leave unsaid.

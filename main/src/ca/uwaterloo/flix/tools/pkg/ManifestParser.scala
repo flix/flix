@@ -31,7 +31,7 @@ object ManifestParser {
     } catch {
       case e: IOException => return Err(ManifestError.IOError(p, e.getMessage))
     }
-    createManifest(parser, p)
+    parse(parser, p)
   }
 
   /**
@@ -48,15 +48,17 @@ object ManifestParser {
     } catch {
       case e: IOException => return Err(ManifestError.IOError(p, e.getMessage))
     }
-    createManifest(parser, p)
+    parse(parser, p)
   }
 
   /**
-    * Creates a Manifest from the TomlParseResult
-    * which should be at path `p` and returns an
-    * error if there are parsing errors.
+    * Creates a Manifest from `parser`, the TOML of the file at path `p`, and returns an error if
+    * there are parsing errors.
+    *
+    * A caller that keeps `parser` can hand it to [[Manifest.format]], which writes a manifest in
+    * the form `parser` declares its dependencies in.
     */
-  private def createManifest(parser: TomlParseResult, p: Path): Result[Manifest, ManifestError] = {
+  def parse(parser: TomlParseResult, p: Path): Result[Manifest, ManifestError] = {
     val errors = parser.errors
     if (errors.size() > 0) {
       var errorString = ""
