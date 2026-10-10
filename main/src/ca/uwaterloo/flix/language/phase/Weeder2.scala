@@ -466,7 +466,7 @@ object Weeder2 {
 
     private def visitStructField(tree: Tree)(implicit sctx: SharedContext): StructField = {
       expect(tree, TreeKind.StructField)
-      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub, TokenKind.KeywordMut))
+      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordMut))
       val ident = pickNameIdent(tree)
       val ttype = Types.pickType(tree)
       // Make a source location that spans the name and type
