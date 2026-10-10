@@ -15,7 +15,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.io.{IOException, PrintStream}
-import java.nio.file.{Files, Path, StandardCopyOption}
+import java.nio.file.{Files, Path}
 import scala.collection.mutable
 
 object FlixPackageManager {
@@ -510,41 +510,14 @@ object FlixPackageManager {
     } else {
       out.print(s"  Downloading `${asset.name}` from `${formatter.blue(s"${proj.owner}/${proj.repo}")}` (${formatter.cyan(s"v$version")})... ")
       out.flush()
-      GitHub.downloadReleaseAsset(proj, version, asset.name, token) match {
+      GitHub.downloadReleaseAsset(proj, version, asset.name, assetPath, token) match {
+        case Ok(()) =>
+          out.println("OK.")
+          verifyDownloaded(assetPath, id, version, asset, lockfile)
+
         case Err(e) =>
           out.println("ERROR.")
           Err(e)
-
-        case Ok(stream) =>
-          try {
-            try {
-              Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
-            } finally {
-              // Best-effort: the stream is already broken if the copy above failed, so a
-              // close failure here must not mask that error.
-              try stream.close() catch { case _: IOException => () }
-            }
-          } catch {
-            case e: IOException =>
-              // Remove a truncated file so the cache check above doesn't trust it next run. A
-              // failure here is attached rather than swallowed, since it means the filesystem
-              // itself is in an unexpected state -- but it must not prevent the original
-              // download error from being reported below.
-              try {
-                Files.deleteIfExists(assetPath)
-              } catch {
-                case e2: IOException => e.addSuppressed(e2)
-              }
-              out.println(s"ERROR: ${e.getMessage}.")
-              return Err(PackageError.DownloadError(assetName, Some(e.getMessage)))
-          }
-          if (Files.exists(assetPath)) {
-            out.println(s"OK.")
-            verifyDownloaded(assetPath, id, version, asset, lockfile)
-          } else {
-            out.println(s"ERROR: File was not created.")
-            Err(PackageError.DownloadError(assetName, None))
-          }
       }
     }
   }

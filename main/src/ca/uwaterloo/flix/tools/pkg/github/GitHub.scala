@@ -20,7 +20,7 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{MalformedURLException, URI, URISyntaxException, URL, URLEncoder}
 import java.nio.charset.StandardCharsets
-import java.nio.file.Path
+import java.nio.file.{Files, Path, StandardCopyOption}
 import java.util.Locale
 
 /**
@@ -268,38 +268,61 @@ object GitHub {
   }
 
   /**
-    * Opens a stream over `url`, following redirects, carrying `token` if `url` is an address it
-    * may be sent to. The caller closes the stream.
+    * Downloads `url` to `path`, following redirects, carrying `token` if `url` is an address it
+    * may be sent to.
     *
     * A release asset redirects to the storage it is served from, which is not GitHub and
     * authorizes requests its own way. The JDK drops the `Authorization` header across a redirect,
     * so the token reaches GitHub and nothing past it; following redirects by hand would have to
     * do the same.
     *
-    * Kept apart: a refusal (403/429, usually a rate limit), any other unexpected status, and never
-    * reaching a server at all.
+    * Kept apart: a refusal (403/429, usually a rate limit), any other unexpected status, never
+    * reaching a server at all, and a download that broke off partway.
     */
-  def download(url: URL, token: Option[String]): Result[InputStream, PackageError] =
-    open(newRequest(url, token).GET().build(), url, token)
+  def download(url: URL, path: Path, token: Option[String]): Result[Unit, PackageError] =
+    fetch(newRequest(url, token).GET().build(), url, path, token)
 
   /**
-    * Sends `request`, which is to `url` and carries `token` if it may, and opens a stream over
-    * the answer. The caller closes the stream. See [[download]].
+    * Sends `request`, which is to `url` and carries `token` if it may, and writes the answer to
+    * `path`. See [[download]].
+    *
+    * The body is streamed to the file rather than read into memory, since a package or a jar can
+    * be large. A download that breaks off partway leaves a file that is cut short, which is
+    * removed so that a later build does not take it for a cached one.
     */
-  private def open(request: HttpRequest, url: URL, token: Option[String]): Result[InputStream, PackageError] = {
+  private def fetch(request: HttpRequest, url: URL, path: Path, token: Option[String]): Result[Unit, PackageError] = {
     val response = try {
       Client.sendStreamingRequest(request)
     } catch {
       case ex: IOException => return Err(PackageError.DownloadUnreachable(url, ex.getMessage))
     }
 
-    response.statusCode() match {
-      case status if status >= 200 && status < 300 =>
-        Ok(response.body())
-      case status =>
-        // A close failure must not shadow the status being reported.
-        try response.body().close() catch { case _: IOException => () }
-        Err(failure(url, status, response, token))
+    val stream = response.body()
+    val status = response.statusCode()
+    if (status < 200 || status >= 300) {
+      // A close failure must not shadow the status being reported.
+      try stream.close() catch { case _: IOException => () }
+      return Err(failure(url, status, response, token))
+    }
+
+    try {
+      Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
+      Ok(())
+    } catch {
+      case e: IOException =>
+        // Whether the file could be removed is part of what is reported: one that could not be
+        // is for the user to delete, since the filesystem is in a state nothing here can fix.
+        val removed = try {
+          Files.deleteIfExists(path)
+          true
+        } catch {
+          case _: IOException => false
+        }
+        Err(PackageError.DownloadIncomplete(url, path, e.getMessage, removed))
+    } finally {
+      // Best-effort: the stream is already broken if the copy above failed, so a close failure
+      // here must not mask that error.
+      try stream.close() catch { case _: IOException => () }
     }
   }
 
@@ -323,8 +346,7 @@ object GitHub {
   }
 
   /**
-    * Opens a stream over the `assetName` asset of `project`'s `version` release. The caller
-    * closes the stream.
+    * Downloads the `assetName` asset of `project`'s `version` release to `path`.
     *
     * The permanent address is read first, see [[downloadReleaseAssetDirectly]]: it costs nothing
     * against the API rate limit, and ignores a token it does not accept. An asset that is not
@@ -332,23 +354,23 @@ object GitHub {
     * [[downloadReleaseAssetViaApi]], which is where an asset of a private repository is. An
     * anonymous client is shown nothing more by the API, and does not ask.
     */
-  def downloadReleaseAsset(project: Project, version: SemVer, assetName: String, token: Option[String]): Result[InputStream, PackageError] =
-    (downloadReleaseAssetDirectly(project, version, assetName, token), token) match {
-      case (Err(_: PackageError.ReleaseAssetNotFound), Some(t)) => downloadReleaseAssetViaApi(project, version, assetName, t)
+  def downloadReleaseAsset(project: Project, version: SemVer, assetName: String, path: Path, token: Option[String]): Result[Unit, PackageError] =
+    (downloadReleaseAssetDirectly(project, version, assetName, path, token), token) match {
+      case (Err(_: PackageError.ReleaseAssetNotFound), Some(t)) => downloadReleaseAssetViaApi(project, version, assetName, path, t)
       case (result, _) => result
     }
 
   /**
-    * Opens a stream over the `assetName` asset of `project`'s `version` release from its
+    * Downloads the `assetName` asset of `project`'s `version` release to `path` from its
     * permanent address, without consulting the REST API -- a release asset's address is fully
-    * predictable from owner/repo/tag/name. The caller closes the stream.
+    * predictable from owner/repo/tag/name.
     *
     * The address is served for a browser and honours no token, so an asset of a private
     * repository is not found here whoever asks.
     */
-  private def downloadReleaseAssetDirectly(project: Project, version: SemVer, assetName: String, token: Option[String]): Result[InputStream, PackageError] = {
+  private def downloadReleaseAssetDirectly(project: Project, version: SemVer, assetName: String, path: Path, token: Option[String]): Result[Unit, PackageError] = {
     val url = releaseAssetUrl(project, version, assetName)
-    download(url, token) match {
+    download(url, path, token) match {
       case Err(PackageError.DownloadFailed(_, 404)) =>
         Err(PackageError.ReleaseAssetNotFound(project, version, assetName, url))
       case other => other
@@ -356,8 +378,8 @@ object GitHub {
   }
 
   /**
-    * Opens a stream over the `assetName` asset of `project`'s `version` release through the REST
-    * API, carrying `token`. The caller closes the stream.
+    * Downloads the `assetName` asset of `project`'s `version` release to `path` through the REST
+    * API, carrying `token`.
     *
     * The API honours a token where the permanent address does not, so this is where an asset of
     * a private repository is read. The release is read by its tag, which costs one request
@@ -369,7 +391,7 @@ object GitHub {
     * The API answers 404 alike for a release that is not there and for a project `token` cannot
     * see, so an asset it does not show is not found, whichever it is.
     */
-  private def downloadReleaseAssetViaApi(project: Project, version: SemVer, assetName: String, token: String): Result[InputStream, PackageError] = {
+  private def downloadReleaseAssetViaApi(project: Project, version: SemVer, assetName: String, path: Path, token: String): Result[Unit, PackageError] = {
     val url = releaseVersionUrl(project, version)
     val req = newApiRequest(url, Some(token)).GET().build()
     val response = try {
@@ -398,7 +420,7 @@ object GitHub {
         Err(PackageError.ReleaseAssetNotFound(project, version, assetName, url))
       case Some(assetUrl) =>
         val assetReq = newApiRequest(assetUrl, Some(token)).setHeader("Accept", AssetMediaType).GET().build()
-        open(assetReq, assetUrl, Some(token))
+        fetch(assetReq, assetUrl, path, Some(token))
     }
   }
 

@@ -6,8 +6,8 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
-import java.io.{IOException, PrintStream}
-import java.nio.file.{Files, Path, StandardCopyOption}
+import java.io.PrintStream
+import java.nio.file.{Files, Path}
 
 object JarPackageManager {
 
@@ -58,33 +58,14 @@ object JarPackageManager {
     } else {
       out.print(s"  Downloading `${dep.fileName}` from `${dep.url.toString}`... ")
       out.flush()
-      GitHub.download(dep.getUrl, token) match {
+      GitHub.download(dep.getUrl, assetPath, token) match {
+        case Ok(()) =>
+          out.println("OK.")
+          Ok(assetPath)
+
         case Err(e) =>
           out.println("ERROR.")
           Err(e)
-
-        case Ok(stream) =>
-          try {
-            try {
-              Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
-            } finally {
-              // Best-effort: the stream is already broken if the copy above failed, so a close
-              // failure here must not mask that error.
-              try stream.close() catch { case _: IOException => () }
-            }
-            out.println("OK.")
-            Ok(assetPath)
-          } catch {
-            case e: IOException =>
-              // Remove a truncated file so the cache check above doesn't trust it next run.
-              try {
-                Files.deleteIfExists(assetPath)
-              } catch {
-                case e2: IOException => e.addSuppressed(e2)
-              }
-              out.println(s"ERROR: ${e.getMessage}.")
-              Err(PackageError.DownloadErrorJar(dep.url, dep.fileName, Some(e.getMessage)))
-          }
       }
     }
   }
