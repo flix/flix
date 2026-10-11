@@ -2302,6 +2302,7 @@ object Resolver {
         checkEffectAccessibility(op.sym.eff, ns0, qname.loc)
         ResolvedQName.Op(op)
       case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: _ =>
+        checkEnumAccessibility(caze.sym.enumSym, ns0, qname.loc)
         ResolvedQName.Tag(caze)
       // TODO NS-REFACTOR check accessibility
       case Resolution.Declaration(caze: NamedAst.Declaration.RestrictableCase) :: Nil =>
@@ -2334,7 +2335,8 @@ object Resolver {
   /**
     * Finds the enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
-  private def lookupTag(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Case, ResolutionError.UndefinedTag] = {
+  private def lookupTag(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Result[NamedAst.Declaration.Case, ResolutionError.UndefinedTag] = {
+    implicit val implicitRoot: NamedAst.Root = root
     // look up the name
     val matches = tryLookupName(qname, scp0, ns0, root).collect {
       case Resolution.Declaration(c: NamedAst.Declaration.Case) => c
@@ -2344,9 +2346,10 @@ object Resolver {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedTag(qname, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, ns0, qname.loc))
       // Case 1: A match was found. Success. Note that multiple matches can be found, but they are prioritized by tryLookupName so this is fine.
-      case caze :: _ => Result.Ok(caze)
+      case caze :: _ =>
+        checkEnumAccessibility(caze.sym.enumSym, ns0, qname.loc)
+        Result.Ok(caze)
     }
-    // TODO NS-REFACTOR check accessibility
   }
 
   /**
@@ -3257,6 +3260,22 @@ object Resolver {
       //
       val error = ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc)
       sctx.errors.add(error)
+    }
+  }
+
+  /**
+    * Reports [[InaccessibleEnum]] if the enum `sym` is not accessible from the namespace `ns0`.
+    *
+    * A case is referenced through its enum, e.g. `A.Color.Red`, and has no modifier of its own,
+    * so the enum that declares it must be checked when the case is referenced.
+    */
+  private def checkEnumAccessibility(sym: Symbol.EnumSym, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): Unit = {
+    val enumOpt = infallableLookupSym(sym, root).collectFirst {
+      case enum0: NamedAst.Declaration.Enum => enum0
+    }
+    enumOpt match {
+      case None => ()
+      case Some(enum0) => checkEnumIsAccessible(enum0, ns0, loc)
     }
   }
 

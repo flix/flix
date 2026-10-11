@@ -92,7 +92,7 @@ mod Test.Use.Tag {
 
     @CompileTest
     def testUseEnum12(): Bool =
-        use Test.Use.Tag.A.B.Currency.USD;
+        use Test.Use.Tag.B.Currency.USD;
         match USD {
             case USD => true
             case _   => false
@@ -100,7 +100,7 @@ mod Test.Use.Tag {
 
     @CompileTest
     def testUseEnum13(): Bool =
-        use Test.Use.Tag.A.B.Currency.CAD;
+        use Test.Use.Tag.B.Currency.CAD;
         match CAD {
             case CAD => true
             case _   => false
@@ -108,8 +108,8 @@ mod Test.Use.Tag {
 
     @CompileTest
     def testUseEnum14(): Bool =
-        use Test.Use.Tag.A.B.Currency.USD;
-        use Test.Use.Tag.A.B.Currency.CAD;
+        use Test.Use.Tag.B.Currency.USD;
+        use Test.Use.Tag.B.Currency.CAD;
         match USD {
             case USD => true
             case CAD => false
@@ -117,7 +117,7 @@ mod Test.Use.Tag {
 
     @CompileTest
     def testUseEnum15(): Bool =
-        use Test.Use.Tag.A.B.Currency.{USD, CAD};
+        use Test.Use.Tag.B.Currency.{USD, CAD};
         match USD {
             case USD => true
             case CAD => false
@@ -125,7 +125,7 @@ mod Test.Use.Tag {
 
     @CompileTest
     def testUseEnum16(): Bool =
-        use Test.Use.Tag.A.B.Currency;
+        use Test.Use.Tag.B.Currency;
         match Currency.USD {
             case Currency.USD => true
             case _            => false
@@ -133,7 +133,7 @@ mod Test.Use.Tag {
 
     @CompileTest
     def testUseEnum17(): Bool =
-        use Test.Use.Tag.A.B.Currency;
+        use Test.Use.Tag.B.Currency;
         match Currency.CAD {
             case Currency.CAD => true
             case _            => false
@@ -141,7 +141,7 @@ mod Test.Use.Tag {
 
     @CompileTest
     def testUseEnum18(): Bool =
-        use Test.Use.Tag.A.B.Currency;
+        use Test.Use.Tag.B.Currency;
         match Currency.USD {
             case Currency.CAD => false
             case Currency.USD => true
@@ -152,15 +152,18 @@ mod Test.Use.Tag {
             case Red,
             case Blu
         }
-        mod B {
-            pub enum Currency {
-                case USD,
-                case CAD
-            }
+    }
+
+    // `B` is a sibling of `A`: a private module nested inside `A` would not be
+    // visible from `Test.Use.Tag` or from `Test.Use.Tag.C`.
+    mod B {
+        pub enum Currency {
+            case USD,
+            case CAD
         }
     }
     mod C {
-        use Test.Use.Tag.A.B.Currency
+        use Test.Use.Tag.B.Currency
 
         @CompileTest
         def testUseEnum19(): Bool =

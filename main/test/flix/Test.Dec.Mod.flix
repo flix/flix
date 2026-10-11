@@ -55,6 +55,19 @@ mod Vis {
             def tick(x, k) = k(x)
         }
 
+    //
+    // The same holds for a private enum and its cases.
+    //
+    enum Light {
+        case On,
+        case Off
+    }
+
+    pub def isOn(l: Light): Bool = match l {
+        case Light.On => true
+        case Light.Off => false
+    }
+
     mod Private {
         pub def f(): Bool = true
 
@@ -76,6 +89,9 @@ mod Vis {
 
             // Likewise for the private effect `Tick`.
             pub def viaEffect(): Bool = Vis.runTick(() -> Vis.Tick.tick(true))
+
+            // Likewise for the private enum `Light`.
+            pub def viaCase(): Bool = Vis.isOn(Vis.Light.On)
         }
 
         pub def peer(): Bool = Peer.f()
@@ -83,6 +99,8 @@ mod Vis {
         pub def peerTrait(): Bool = Peer.viaTrait()
 
         pub def peerEffect(): Bool = Peer.viaEffect()
+
+        pub def peerCase(): Bool = Peer.viaCase()
     }
 
     // `Sibling` and `Private` are both declared in `Vis`, so `Sibling` can reach `Private`.
@@ -90,6 +108,7 @@ mod Vis {
         use Vis.Private.f
         use Vis.Flag.flag
         use Vis.Tick.tick
+        use Vis.Light.Off
 
         pub def viaPath(): Bool = Vis.Private.f()
 
@@ -104,6 +123,15 @@ mod Vis {
         pub def viaEffect(): Bool = Vis.runTick(() -> Vis.Tick.tick(true))
 
         pub def viaEffectUse(): Bool = Vis.runTick(() -> tick(true))
+
+        pub def viaCase(): Bool = Vis.isOn(Vis.Light.On)
+
+        pub def viaCaseUse(): Bool = not Vis.isOn(Off)
+
+        pub def viaCasePattern(): Bool = match Vis.Light.On {
+            case Vis.Light.On => true
+            case Vis.Light.Off => false
+        }
 
         // A descendant of a sibling can reach `Private` too.
         mod Nested {
@@ -143,6 +171,20 @@ mod Vis {
     pub def siblingEffectUse(): Bool = Sibling.viaEffectUse()
 
     pub def nestedEffect(): Bool = Private.peerEffect()
+
+    // `Vis` can construct and match the cases of its own private enum.
+    pub def ownCase(): Bool = match Light.On {
+        case Light.On => true
+        case Light.Off => false
+    }
+
+    pub def siblingCase(): Bool = Sibling.viaCase()
+
+    pub def siblingCaseUse(): Bool = Sibling.viaCaseUse()
+
+    pub def siblingCasePattern(): Bool = Sibling.viaCasePattern()
+
+    pub def nestedCase(): Bool = Private.peerCase()
 
 }
 
@@ -195,5 +237,20 @@ mod Test.Dec.Mod {
 
     @CompileTest
     def testVisEffect04(): Bool = Vis.nestedEffect()
+
+    @CompileTest
+    def testVisCase01(): Bool = Vis.ownCase()
+
+    @CompileTest
+    def testVisCase02(): Bool = Vis.siblingCase()
+
+    @CompileTest
+    def testVisCase03(): Bool = Vis.siblingCaseUse()
+
+    @CompileTest
+    def testVisCase04(): Bool = Vis.siblingCasePattern()
+
+    @CompileTest
+    def testVisCase05(): Bool = Vis.nestedCase()
 
 }
