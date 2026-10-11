@@ -1,4 +1,4 @@
-mod Test.DefaultHandler {
+mod Test.DefaultHandler.Simple {
     pub eff EUnit {
         def op(): Unit
     }
@@ -285,7 +285,7 @@ mod Test.DefaultHandler {
                 f()
             } with handler EEnum {
                 def op(k) = {
-                    k(Test.DefaultHandler.Color.Green)
+                    k(Test.DefaultHandler.Simple.Color.Green)
                 }
             }
     }

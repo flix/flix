@@ -1,4 +1,4 @@
-mod Test.Exp.Jvm.Generic.InvokeMethod {
+mod Test.Exp.Jvm.Generic.InvokeMethod.Simple {
 
     use Assert.{assertEq, assertTrue}
 

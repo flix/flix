@@ -1,4 +1,4 @@
-mod Test.Dec.Enum {
+mod Test.Dec.Enum.Simple {
 
     use Assert.{assertEq, assertTrue, success};
 

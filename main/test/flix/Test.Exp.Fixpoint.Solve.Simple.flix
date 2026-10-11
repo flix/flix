@@ -1,4 +1,4 @@
-mod Test.Exp.Fixpoint.Solve {
+mod Test.Exp.Fixpoint.Solve.Simple {
 
     use Assert.{assertEq, assertMemberOf}
 
