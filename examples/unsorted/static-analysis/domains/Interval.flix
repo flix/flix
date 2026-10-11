@@ -5,7 +5,7 @@
 ///
 /// See Cousot & Cousot '77 for details.
 ///
-mod Domain.Interval {
+mod Interval {
 
     ///
     /// The elements of the interval lattice.

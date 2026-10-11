@@ -3,7 +3,7 @@
 ///
 /// See Cousot & Cousot '77 for details.
 ///
-mod Domain.Sign {
+mod Sign {
 
     ///
     /// The elements of the sign lattice.
