@@ -44,6 +44,108 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleDef](result)
   }
 
+  test("InaccessibleEffect.01") {
+    val input =
+      """
+        |mod A {
+        |    eff Priv {
+        |        def op(x: Int32): Int32
+        |    }
+        |}
+        |
+        |mod B {
+        |    def f(): Int32 \ A.Priv = ??? // Not allowed: `A.Priv` is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEffect](result)
+  }
+
+  test("InaccessibleEffect.02") {
+    val input =
+      """
+        |mod A {
+        |    eff Priv {
+        |        def op(x: Int32): Int32
+        |    }
+        |}
+        |
+        |mod B {
+        |    def f(): Int32 =
+        |        run ??? with handler A.Priv { // Not allowed: `A.Priv` is private to `A`.
+        |            def op(x, k) = k(x)
+        |        }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEffect](result)
+  }
+
+  test("InaccessibleEffect.03") {
+    val input =
+      """
+        |mod A {
+        |    eff Priv {
+        |        def op(x: Int32): Int32
+        |    }
+        |
+        |    pub def handle(f: Unit -> Int32 \ Priv): Int32 =
+        |        run f() with handler Priv {
+        |            def op(x, k) = k(x)
+        |        }
+        |}
+        |
+        |def f(): Int32 = A.handle(() -> A.Priv.op(42)) // Not allowed: `A.Priv` is private to `A`.
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEffect](result)
+  }
+
+  test("InaccessibleEffect.04") {
+    val input =
+      """
+        |mod A {
+        |    eff Priv {
+        |        def op(x: Int32): Int32
+        |    }
+        |
+        |    pub def handle(f: Unit -> Int32 \ Priv): Int32 =
+        |        run f() with handler Priv {
+        |            def op(x, k) = k(x)
+        |        }
+        |}
+        |
+        |mod B {
+        |    def g(): Int32 = A.handle(() -> A.Priv.op(42)) // Not allowed: `A.Priv` is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEffect](result)
+  }
+
+  test("InaccessibleEffect.05") {
+    val input =
+      """
+        |mod A {
+        |    eff Priv {
+        |        def op(x: Int32): Int32
+        |    }
+        |
+        |    pub def handle(f: Unit -> Int32 \ Priv): Int32 =
+        |        run f() with handler Priv {
+        |            def op(x, k) = k(x)
+        |        }
+        |}
+        |
+        |mod B {
+        |    use A.Priv.op
+        |    def g(): Int32 = A.handle(() -> op(42)) // Not allowed: `op` belongs to `A.Priv`, which is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEffect](result)
+  }
+
   test("InaccessibleEnum.01") {
     val input =
       s"""
@@ -642,6 +744,30 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |    def g(): Int32 = foo()
          |}
          |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
+  test("InaccessibleModule.13") {
+    val input =
+      """
+        |mod A {
+        |    mod B {
+        |        pub eff Pub {
+        |            def op(x: Int32): Int32
+        |        }
+        |    }
+        |
+        |    pub def handle(f: Unit -> Int32 \ B.Pub): Int32 =
+        |        run f() with handler B.Pub {
+        |            def op(x, k) = k(x)
+        |        }
+        |}
+        |
+        |mod C {
+        |    def f(): Int32 = A.handle(() -> A.B.Pub.op(42)) // Not allowed: `A.B` is private to `A`.
+        |}
+        |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleModule](result)
   }

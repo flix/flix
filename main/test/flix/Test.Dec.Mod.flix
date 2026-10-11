@@ -43,6 +43,18 @@ mod Vis {
         pub def flag(x: Bool): Bool = x
     }
 
+    //
+    // The same holds for a private effect and its operations.
+    //
+    eff Tick {
+        def tick(x: Bool): Bool
+    }
+
+    pub def runTick(f: Unit -> Bool \ Tick): Bool =
+        run f() with handler Tick {
+            def tick(x, k) = k(x)
+        }
+
     mod Private {
         pub def f(): Bool = true
 
@@ -61,17 +73,23 @@ mod Vis {
 
             // `Peer` is nested within `Vis`, so it can reach the private trait `Flag`.
             pub def viaTrait(): Bool = Vis.Flag.flag(true)
+
+            // Likewise for the private effect `Tick`.
+            pub def viaEffect(): Bool = Vis.runTick(() -> Vis.Tick.tick(true))
         }
 
         pub def peer(): Bool = Peer.f()
 
         pub def peerTrait(): Bool = Peer.viaTrait()
+
+        pub def peerEffect(): Bool = Peer.viaEffect()
     }
 
     // `Sibling` and `Private` are both declared in `Vis`, so `Sibling` can reach `Private`.
     mod Sibling {
         use Vis.Private.f
         use Vis.Flag.flag
+        use Vis.Tick.tick
 
         pub def viaPath(): Bool = Vis.Private.f()
 
@@ -82,6 +100,10 @@ mod Vis {
         pub def viaTrait(): Bool = Vis.Flag.flag(true)
 
         pub def viaTraitUse(): Bool = flag(true)
+
+        pub def viaEffect(): Bool = Vis.runTick(() -> Vis.Tick.tick(true))
+
+        pub def viaEffectUse(): Bool = Vis.runTick(() -> tick(true))
 
         // A descendant of a sibling can reach `Private` too.
         mod Nested {
@@ -112,6 +134,15 @@ mod Vis {
     pub def siblingTraitUse(): Bool = Sibling.viaTraitUse()
 
     pub def nestedTrait(): Bool = Private.peerTrait()
+
+    // `Vis` can call an operation of its own private effect.
+    pub def ownEffect(): Bool = runTick(() -> Tick.tick(true))
+
+    pub def siblingEffect(): Bool = Sibling.viaEffect()
+
+    pub def siblingEffectUse(): Bool = Sibling.viaEffectUse()
+
+    pub def nestedEffect(): Bool = Private.peerEffect()
 
 }
 
@@ -152,5 +183,17 @@ mod Test.Dec.Mod {
 
     @CompileTest
     def testVisTrait04(): Bool = Vis.nestedTrait()
+
+    @CompileTest
+    def testVisEffect01(): Bool = Vis.ownEffect()
+
+    @CompileTest
+    def testVisEffect02(): Bool = Vis.siblingEffect()
+
+    @CompileTest
+    def testVisEffect03(): Bool = Vis.siblingEffectUse()
+
+    @CompileTest
+    def testVisEffect04(): Bool = Vis.nestedEffect()
 
 }

@@ -2299,6 +2299,7 @@ object Resolver {
         }
 
       case Resolution.Declaration(op: NamedAst.Declaration.Op) :: _ =>
+        checkEffectAccessibility(op.sym.eff, ns0, qname.loc)
         ResolvedQName.Op(op)
       case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: _ =>
         ResolvedQName.Tag(caze)
@@ -3440,6 +3441,22 @@ object Resolver {
       //
       val error = ResolutionError.InaccessibleEffect(eff0.sym, ns0, loc)
       sctx.errors.add(error)
+    }
+  }
+
+  /**
+    * Reports [[InaccessibleEffect]] if the effect `sym` is not accessible from the namespace `ns0`.
+    *
+    * An operation is referenced through its effect, e.g. `A.Eff.op(x)`, and has no modifier of its
+    * own, so the effect that declares it must be checked when the operation is referenced.
+    */
+  private def checkEffectAccessibility(sym: Symbol.EffSym, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): Unit = {
+    val effOpt = infallableLookupSym(sym, root).collectFirst {
+      case eff: NamedAst.Declaration.Effect => eff
+    }
+    effOpt match {
+      case None => ()
+      case Some(eff) => checkEffectIsAccessible(eff, ns0, loc)
     }
   }
 
