@@ -182,6 +182,97 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
+  test("InaccessibleEnum.03") {
+    val input =
+      """
+        |mod A {
+        |    enum Color {
+        |        case Red,
+        |        case Blue
+        |    }
+        |
+        |    pub def isRed(c: Color): Bool = match c {
+        |        case Color.Red => true
+        |        case Color.Blue => false
+        |    }
+        |}
+        |
+        |def f(): Bool = A.isRed(A.Color.Red) // Not allowed: `A.Color` is private to `A`.
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
+  test("InaccessibleEnum.04") {
+    val input =
+      """
+        |mod A {
+        |    enum Color {
+        |        case Red,
+        |        case Blue
+        |    }
+        |
+        |    pub def isRed(c: Color): Bool = match c {
+        |        case Color.Red => true
+        |        case Color.Blue => false
+        |    }
+        |}
+        |
+        |mod B {
+        |    def g(): Bool = A.isRed(A.Color.Red) // Not allowed: `A.Color` is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
+  test("InaccessibleEnum.05") {
+    val input =
+      """
+        |mod A {
+        |    enum Color {
+        |        case Red,
+        |        case Blue
+        |    }
+        |
+        |    pub def isRed(c: Color): Bool = match c {
+        |        case Color.Red => true
+        |        case Color.Blue => false
+        |    }
+        |}
+        |
+        |mod B {
+        |    use A.Color.Red
+        |    def g(): Bool = A.isRed(Red) // Not allowed: `Red` belongs to `A.Color`, which is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
+  test("InaccessibleEnum.06") {
+    val input =
+      """
+        |mod A {
+        |    enum Color {
+        |        case Red,
+        |        case Blue
+        |    }
+        |
+        |    pub def red(): Color = Color.Red
+        |}
+        |
+        |mod B {
+        |    def g(): Bool = match A.red() {
+        |        case A.Color.Red => true // Not allowed: `A.Color` is private to `A`.
+        |        case _ => false
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
   test("InaccessibleRestrictableEnum.01") {
     val input =
       s"""
@@ -766,6 +857,31 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |mod C {
         |    def f(): Int32 = A.handle(() -> A.B.Pub.op(42)) // Not allowed: `A.B` is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
+  test("InaccessibleModule.14") {
+    val input =
+      """
+        |mod A {
+        |    mod B {
+        |        pub enum Color {
+        |            case Red,
+        |            case Blue
+        |        }
+        |    }
+        |
+        |    pub def isRed(c: B.Color): Bool = match c {
+        |        case B.Color.Red => true
+        |        case B.Color.Blue => false
+        |    }
+        |}
+        |
+        |mod C {
+        |    def f(): Bool = A.isRed(A.B.Color.Red) // Not allowed: `A.B` is private to `A`.
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
