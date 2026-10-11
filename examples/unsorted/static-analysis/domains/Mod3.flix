@@ -3,7 +3,7 @@
 ///
 /// Note: The Parity domain (e.g. even and odd) can be viewed as the Mod2 domain.
 ///
-mod Domain.Mod3 {
+mod Mod3 {
 
     ///
     /// The elements of the modulo three lattice.
