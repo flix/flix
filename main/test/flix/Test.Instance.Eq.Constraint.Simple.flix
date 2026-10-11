@@ -1,4 +1,4 @@
-mod Test.Instance.Eq.Constraint {
+mod Test.Instance.Eq.Constraint.Simple {
 
     trait Producer[p] {
         type Elm: Type

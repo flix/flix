@@ -1,4 +1,4 @@
-mod Test.Exp.Jvm.InvokeConstructor {
+mod Test.Exp.Jvm.InvokeConstructor.Simple {
 
     import java.lang.Boolean
     import java.lang.Byte

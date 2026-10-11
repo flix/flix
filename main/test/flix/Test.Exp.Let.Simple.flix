@@ -1,4 +1,4 @@
-mod Test.Exp.Let {
+mod Test.Exp.Let.Simple {
 
     use Assert.{assertEq, assertTrue}
 

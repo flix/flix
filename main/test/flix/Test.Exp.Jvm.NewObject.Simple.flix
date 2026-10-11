@@ -1,4 +1,4 @@
-mod Test.Exp.Jvm.NewObject {
+mod Test.Exp.Jvm.NewObject.Simple {
 
     use Assert.{assertEq, assertTrue}
 
