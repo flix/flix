@@ -5,7 +5,7 @@
 ///
 /// See Cousot & Cousot '77 for details.
 ///
-mod Domain.IntervalAlt {
+mod IntervalAlt {
 
     ///
     /// The elements of the IntervalAlt lattice.
