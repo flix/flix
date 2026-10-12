@@ -114,13 +114,18 @@ object BootstrapError {
   }
 
   /**
-    * An error raised to indicate that `id` is not installed, and so cannot be locked.
+    * An error raised to indicate that the dependencies `ids` have no entry in the 'effects.lock'
+    * file, so that a check cannot say whether their signatures have changed.
+    *
+    * @param ids the packages that are not locked, in order of identifier.
     */
-  case class PackageNotInstalled(id: PackageId) extends BootstrapError {
-    override def message(f: Formatter): String =
-      s"""${f.red(id.shortName)} is not installed.
-         |Only a package the project has installed can be locked or checked. Run the command on its own to cover every installed package.
+  case class PackagesNotLocked(ids: List[PackageId]) extends BootstrapError {
+    override def message(f: Formatter): String = ids.map { id =>
+      s"""${f.red(id.shortName)} is not locked.
+         |The 'effects.lock' file records no signature of it, so the check cannot say whether it has changed.
+         |Run '${f.cyan(s"flix eff-lock ${id.shortName}")}' to lock it.
          |""".stripMargin
+    }.mkString(System.lineSeparator())
   }
 
   /**

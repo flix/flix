@@ -37,6 +37,9 @@ object EffectLock {
     *
     * A declaration is recorded by the name of [[nameOf]], e.g. `Museum.Clerk.buy`.
     *
+    * `targets` are the dependencies the project declares, and not the packages reached through
+    * them.
+    *
     * Only a package can be locked. The library bundled with the compiler cannot change under a
     * project, because the version of Flix that provides it is fixed by the manifest, so it has no
     * lock of its own.
@@ -80,6 +83,18 @@ object EffectLock {
     }
     CheckResult(results.map { case (compared, _) => compared }.sum, results.flatMap { case (_, changed) => changed })
   }
+
+  /**
+    * Returns the packages of `targets` that declare something publicly in `root` but that
+    * `lockfile` does not lock, in order of identifier.
+    *
+    * A package that declares nothing publicly is not reported, whether it is locked or not:
+    * nothing in it can be called, so there is nothing for a lock to vouch for. It has no entry in
+    * a lock file either, see [[lock]], so having no entry is not by itself what tells an unlocked
+    * package apart.
+    */
+  def unlocked(lockfile: EffectLockfile, root: TypedAst.Root, targets: Set[PackageId]): List[PackageId] =
+    declarationsOf(root, targets).keySet.diff(lockfile.packages.keySet).toList.sorted
 
   /**
     * Returns the name that a lock file records `sym` under: its namespace without the root of
