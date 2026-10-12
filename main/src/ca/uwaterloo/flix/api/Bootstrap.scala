@@ -191,7 +191,7 @@ object Bootstrap {
     * dependencies added puts the manifest that was there back, as does any failure before it.
     */
   def install(p: Path, specs: List[String], token: Option[String], assumeYes: Boolean)(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
-    val pkgs = parsePackageSpecs(specs, allowVersion = true) match {
+    val pkgs = parsePackageSpecs(specs, "install", allowVersion = true) match {
       case Ok(pkgs) => pkgs
       case Err(e) => return Err(e)
     }
@@ -232,7 +232,7 @@ object Bootstrap {
     * that were there.
     */
   def remove(p: Path, specs: List[String], token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
-    val pkgs = parsePackageSpecs(specs, allowVersion = false) match {
+    val pkgs = parsePackageSpecs(specs, "remove", allowVersion = false) match {
       case Ok(pkgs) => pkgs
       case Err(e) => return Err(e)
     }
@@ -284,7 +284,7 @@ object Bootstrap {
     * alone, and a command in which no package changes rewrites nothing.
     */
   def upgrade(p: Path, specs: List[String], token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
-    val named = parsePackageSpecs(specs, allowVersion = true) match {
+    val named = parsePackageSpecs(specs, "upgrade", allowVersion = true) match {
       case Ok(pkgs) => pkgs
       case Err(e) => return Err(e)
     }
@@ -340,17 +340,18 @@ object Bootstrap {
   /**
     * Returns `specs` as package specifications, or an error for the first that is not one.
     *
-    * A version is refused when `allowVersion` is false, as it is for a package to remove.
+    * A version is refused when `allowVersion` is false, as it is for a package to remove, and the
+    * error then names `command`, the command the specifications were given to.
     *
     * A package is named at most once, however it is written: `flix/museum-clerk` and
     * `github:flix/museum-clerk@2.1.3` name the same package. A package that is named twice is
     * either asked for twice or asked for at two versions, and a project declares a package once,
     * at one version.
     */
-  private def parsePackageSpecs(specs: List[String], allowVersion: Boolean): Result[List[PackageSpec], BootstrapError] =
+  private def parsePackageSpecs(specs: List[String], command: String, allowVersion: Boolean): Result[List[PackageSpec], BootstrapError] =
     Result.traverse(specs) { spec =>
       PackageSpec.mkPackageSpec(spec) match {
-        case Some(s) if s.version.isDefined && !allowVersion => Err(BootstrapError.UnexpectedVersion(spec, s.id))
+        case Some(s) if s.version.isDefined && !allowVersion => Err(BootstrapError.UnexpectedVersion(command, s.id))
         case Some(s) => Ok(s)
         case None => Err(BootstrapError.IllegalPackageSpec(spec))
       }
@@ -1958,7 +1959,7 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
       return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-check'"))
     }
 
-    val targets = targetsOf(spec) match {
+    val targets = targetsOf("eff-check", spec) match {
       case Ok(ts) => ts
       case Err(e) => return Err(e)
     }
@@ -1986,11 +1987,14 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     * `spec` is a package identifier, e.g. `flix/museum-clerk` or `github:flix/museum-clerk`. It
     * carries no version: a package is installed at one version, so there is nothing to choose
     * between. Naming no package names every package the project has installed.
+    *
+    * `command` is the command `spec` was given to, 'eff-lock' or 'eff-check', and is named if
+    * `spec` is refused.
     */
-  private def targetsOf(spec: Option[String]): Result[Set[PackageId], BootstrapError] = spec match {
+  private def targetsOf(command: String, spec: Option[String]): Result[Set[PackageId], BootstrapError] = spec match {
     case None => Ok(builtVersions.keySet)
     case Some(s) => PackageSpec.mkPackageSpec(s) match {
-      case Some(pkg) if pkg.version.isDefined => Err(BootstrapError.UnexpectedVersion(s, pkg.id))
+      case Some(pkg) if pkg.version.isDefined => Err(BootstrapError.UnexpectedVersion(command, pkg.id))
       case Some(pkg) if !builtVersions.contains(pkg.id) => Err(BootstrapError.PackageNotInstalled(pkg.id))
       case Some(pkg) => Ok(Set(pkg.id))
       case None => Err(BootstrapError.IllegalPackageSpec(s))
@@ -2053,7 +2057,7 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
       return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-lock'"))
     }
 
-    val targets = targetsOf(spec) match {
+    val targets = targetsOf("eff-lock", spec) match {
       case Ok(ts) => ts
       case Err(e) => return Err(e)
     }

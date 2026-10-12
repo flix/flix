@@ -396,8 +396,8 @@ class TestBootstrap extends AnyFunSuite {
 
     remove(p, "flix/museum-clerk@1.1.0") match {
       case Ok(_) => fail("Expected the version to be refused.")
-      case Err(BootstrapError.UnexpectedVersion(spec, id)) =>
-        assert(spec == "flix/museum-clerk@1.1.0")
+      case Err(BootstrapError.UnexpectedVersion(command, id)) =>
+        assert(command == "remove")
         assert(id == PackageId.mkPackageId("github:flix/museum-clerk").get)
       case Err(e) => fail(s"Expected an unexpected version, but got: ${e.message(Formatter.getDefault)}")
     }

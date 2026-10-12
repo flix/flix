@@ -91,15 +91,15 @@ object BootstrapError {
   }
 
   /**
-    * An error raised to indicate that `spec` carries a version where none is asked for.
+    * An error raised to indicate that a package was given to `command` with a version, which
+    * `command` does not take.
     *
-    * `id` is the package that `spec` names, so the hint can show how to write that package
-    * without its version.
+    * `id` is the package that was given, so the hint can show the command as it should be written.
     */
-  case class UnexpectedVersion(spec: String, id: PackageId) extends BootstrapError {
+  case class UnexpectedVersion(command: String, id: PackageId) extends BootstrapError {
     override def message(f: Formatter): String =
-      s"""${f.red(spec)} names a version, but a package is declared at one version, so there is none to choose.
-         |Write the package on its own, as ${f.cyan(id.shortName)}.
+      s"""The '${f.bold(command)}' command does not take a version.
+         |Write '${f.cyan(s"flix $command ${id.shortName}")}' instead.
          |""".stripMargin
   }
 
