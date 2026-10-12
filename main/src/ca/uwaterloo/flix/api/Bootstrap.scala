@@ -350,7 +350,7 @@ object Bootstrap {
   private def parsePackageSpecs(specs: List[String], allowVersion: Boolean): Result[List[PackageSpec], BootstrapError] =
     Result.traverse(specs) { spec =>
       PackageSpec.mkPackageSpec(spec) match {
-        case Some(s) if s.version.isDefined && !allowVersion => Err(BootstrapError.UnexpectedVersion(spec))
+        case Some(s) if s.version.isDefined && !allowVersion => Err(BootstrapError.UnexpectedVersion(spec, s.id))
         case Some(s) => Ok(s)
         case None => Err(BootstrapError.IllegalPackageSpec(spec))
       }
@@ -1990,7 +1990,7 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
   private def targetsOf(spec: Option[String]): Result[Set[PackageId], BootstrapError] = spec match {
     case None => Ok(builtVersions.keySet)
     case Some(s) => PackageSpec.mkPackageSpec(s) match {
-      case Some(pkg) if pkg.version.isDefined => Err(BootstrapError.UnexpectedVersion(s))
+      case Some(pkg) if pkg.version.isDefined => Err(BootstrapError.UnexpectedVersion(s, pkg.id))
       case Some(pkg) if !builtVersions.contains(pkg.id) => Err(BootstrapError.PackageNotInstalled(pkg.id))
       case Some(pkg) => Ok(Set(pkg.id))
       case None => Err(BootstrapError.IllegalPackageSpec(s))

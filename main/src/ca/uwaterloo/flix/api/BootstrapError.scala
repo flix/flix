@@ -92,11 +92,14 @@ object BootstrapError {
 
   /**
     * An error raised to indicate that `spec` carries a version where none is asked for.
+    *
+    * `id` is the package that `spec` names, so the hint can show how to write that package
+    * without its version.
     */
-  case class UnexpectedVersion(spec: String) extends BootstrapError {
+  case class UnexpectedVersion(spec: String, id: PackageId) extends BootstrapError {
     override def message(f: Formatter): String =
       s"""${f.red(spec)} names a version, but a package is declared at one version, so there is none to choose.
-         |Write the package on its own, as ${f.cyan("flix/museum-clerk")}.
+         |Write the package on its own, as ${f.cyan(id.shortName)}.
          |""".stripMargin
   }
 
