@@ -120,7 +120,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     // user's is the museum's.
     val one = EffectLock.check(lockfile, upgrade, Set(museum))
     assert(one.compared == 1)
-    assert(one.changed.map { case (id, name, _) => (id, name) } == List((museum, "m")))
+    assert(one.changed.map { case (id, sym, _) => (id, EffectLock.nameOf(sym)) } == List((museum, "m")))
     val both = EffectLock.check(lockfile, upgrade, Set(clerk, museum))
     assert(both.compared == 6)
     assert(changedNames(both) == List("m", "narrower", "wider", "Sellable.price"))
@@ -164,7 +164,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     val drifted = EffectLockfile(Map(extras -> LockedPackage(lockfile.packages(extras).defs + ("Extras.Graph.closure" -> other), Map.empty)))
     FileOps.writeString(p.resolve(Bootstrap.EFFECTS_LOCK), EffectLockfile.format(drifted))
     bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), None)(System.out) match {
-      case Err(BootstrapError.SignaturesChangedError(changes)) => assert(changes.map { case (_, name, _) => name } == List("Extras.Graph.closure"))
+      case Err(BootstrapError.SignaturesChangedError(changes)) => assert(changes.map { case (_, sym, _) => EffectLock.nameOf(sym) } == List("Extras.Graph.closure"))
       case Err(e) => fail(s"Expected a changed signature, but got: ${e.message(Formatter.NoFormatter)}")
       case Ok(()) => fail("Expected the changed signature to be reported.")
     }
@@ -193,6 +193,6 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     * Returns the names of the declarations that `result` reports as changed, in the order they
     * are reported.
     */
-  private def changedNames(result: CheckResult): List[String] = result.changed.map { case (_, name, _) => name }
+  private def changedNames(result: CheckResult): List[String] = result.changed.map { case (_, sym, _) => EffectLock.nameOf(sym) }
 
 }

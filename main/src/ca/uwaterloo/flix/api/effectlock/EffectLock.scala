@@ -6,8 +6,8 @@
  */
 package ca.uwaterloo.flix.api.effectlock
 
-import ca.uwaterloo.flix.language.ast.shared.{Origin, PackageId, Source}
-import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{Origin, PackageId, QualifiedSym, Source}
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.util.Sha256
 
 object EffectLock {
@@ -18,15 +18,14 @@ object EffectLock {
     * @param compared how many locked signatures were compared, which is how many of the locked
     *                 declarations the packages still declare publicly.
     * @param changed  the declarations whose signature is no longer the one that was locked: the
-    *                 package, the name of the declaration inside it, and the spec it is declared
-    *                 with now.
+    *                 package, the symbol, and the spec it is declared with now.
     */
-  case class CheckResult(compared: Int, changed: List[(PackageId, String, TypedAst.Spec)])
+  case class CheckResult(compared: Int, changed: List[(PackageId, QualifiedSym, TypedAst.Spec)])
 
   /**
-    * The public declarations of one package, each by its name inside the package.
+    * The public declarations of one package, each by its symbol.
     */
-  private case class Declarations(defs: Map[String, TypedAst.Spec], sigs: Map[String, TypedAst.Spec])
+  private case class Declarations(defs: Map[QualifiedSym, TypedAst.Spec], sigs: Map[QualifiedSym, TypedAst.Spec])
 
   private object Declarations {
     /** The declarations of a package that declares nothing publicly. */
@@ -36,8 +35,7 @@ object EffectLock {
   /**
     * Returns the hashes of the signatures of the public defs and sigs of `targets` in `root`.
     *
-    * A declaration is recorded by its name inside its package, e.g. `Museum.Clerk.buy`: the entry
-    * it is recorded under already names the package, so the name does not.
+    * A declaration is recorded by the name of [[nameOf]], e.g. `Museum.Clerk.buy`.
     *
     * Only a package can be locked. The library bundled with the compiler cannot change under a
     * project, because the version of Flix that provides it is fixed by the manifest, so it has no
@@ -77,37 +75,46 @@ object EffectLock {
         }
         val (comparedDefs, changedDefs) = compare(locked.defs, decls.defs)
         val (comparedSigs, changedSigs) = compare(locked.sigs, decls.sigs)
-        val changed = (changedDefs ::: changedSigs).map { case (name, spec) => (id, name, spec) }
+        val changed = (changedDefs ::: changedSigs).map { case (sym, spec) => (id, sym, spec) }
         (comparedDefs + comparedSigs, changed)
     }
     CheckResult(results.map { case (compared, _) => compared }.sum, results.flatMap { case (_, changed) => changed })
   }
 
   /**
-    * Returns how many of `locked` are declared in `current`, and those of them whose signature
+    * Returns the name that a lock file records `sym` under: its namespace without the root of
+    * its package, and then its own name, joined by dots, e.g. `Museum.Clerk.buy`.
+    *
+    * The entry a signature is recorded under names the package, so the name does not. The
+    * namespace of a sig ends with its trait, so a sig is named under the trait.
+    */
+  def nameOf(sym: QualifiedSym): String = (Name.declaredParts(sym.namespace) :+ sym.name).mkString(".")
+
+  /**
+    * Returns how many of `current` are locked by `locked`, and those of them whose signature
     * hashes to something other than what was locked, each with the spec it is declared with now,
     * in order of name.
     */
-  private def compare(locked: Map[String, Sha256], current: Map[String, TypedAst.Spec]): (Int, List[(String, TypedAst.Spec)]) = {
-    val declared = locked.toList.sortBy { case (name, _) => name }.flatMap {
-      case (name, hash) => current.get(name) match {
+  private def compare(locked: Map[String, Sha256], current: Map[QualifiedSym, TypedAst.Spec]): (Int, List[(QualifiedSym, TypedAst.Spec)]) = {
+    val declared = current.toList.flatMap {
+      case (sym, spec) => locked.get(nameOf(sym)) match {
         case None => Nil
-        case Some(spec) => List((name, hash, spec))
+        case Some(hash) => List((sym, hash, spec))
       }
     }
     val changed = declared.collect {
-      case (name, hash, spec) if HashType.hashScheme(spec.declaredScheme) != hash => (name, spec)
+      case (sym, hash, spec) if HashType.hashScheme(spec.declaredScheme) != hash => (sym, spec)
     }
-    (declared.length, changed)
+    (declared.length, changed.sortBy { case (sym, _) => nameOf(sym) })
   }
 
   /**
-    * Returns the public declarations of each of `targets` in `root`, each by its name inside its
-    * package. A package that declares nothing publicly has no entry.
+    * Returns the public declarations of each of `targets` in `root`, each by its symbol. A
+    * package that declares nothing publicly has no entry.
     */
   private def declarationsOf(root: TypedAst.Root, targets: Set[PackageId]): Map[PackageId, Declarations] = {
-    val defs = groupByPackage(root.defs.toList.map { case (sym, defn) => (sym.src, nameOf(sym), defn.spec) }, targets)
-    val sigs = groupByPackage(root.sigs.toList.map { case (sym, sig) => (sym.src, nameOf(sym), sig.spec) }, targets)
+    val defs = groupByPackage(root.defs.toList.map { case (sym, defn) => (sym.src, sym, defn.spec) }, targets)
+    val sigs = groupByPackage(root.sigs.toList.map { case (sym, sig) => (sym.src, sym, sig.spec) }, targets)
     (defs.keySet ++ sigs.keySet).toList.map {
       id => id -> Declarations(defs.getOrElse(id, Map.empty), sigs.getOrElse(id, Map.empty))
     }.toMap
@@ -115,12 +122,12 @@ object EffectLock {
 
   /**
     * Returns the public declarations of `decls` that belong to one of `targets`, grouped by the
-    * package each belongs to and keyed by name.
+    * package each belongs to and keyed by symbol.
     */
-  private def groupByPackage(decls: List[(Source, String, TypedAst.Spec)], targets: Set[PackageId]): Map[PackageId, Map[String, TypedAst.Spec]] = {
+  private def groupByPackage(decls: List[(Source, QualifiedSym, TypedAst.Spec)], targets: Set[PackageId]): Map[PackageId, Map[QualifiedSym, TypedAst.Spec]] = {
     decls.flatMap {
-      case (src, name, spec) => packageOf(src) match {
-        case Some(id) if spec.mod.isPublic && targets.contains(id) => List(id -> (name -> spec))
+      case (src, sym, spec) => packageOf(src) match {
+        case Some(id) if spec.mod.isPublic && targets.contains(id) => List(id -> (sym -> spec))
         case Some(_) => Nil
         case None => Nil
       }
@@ -134,24 +141,10 @@ object EffectLock {
   }
 
   /**
-    * Returns the hash of the signature of each of `decls`.
+    * Returns the hash of the signature of each of `decls`, by the name of [[nameOf]].
     */
-  private def hashesOf(decls: Map[String, TypedAst.Spec]): Map[String, Sha256] =
-    decls.map { case (name, spec) => name -> HashType.hashScheme(spec.declaredScheme) }
-
-  /**
-    * Returns the name of `sym` inside its package: the modules it is declared in, without the
-    * root of the package, and its own name, joined by dots.
-    */
-  private def nameOf(sym: Symbol.DefnSym): String =
-    (Name.declaredParts(sym.namespace) :+ sym.text).mkString(".")
-
-  /**
-    * Returns the name of `sym` inside its package: the modules its trait is declared in, without
-    * the root of the package, then the trait, then its own name, joined by dots.
-    */
-  private def nameOf(sym: Symbol.SigSym): String =
-    (Name.declaredParts(sym.trt.namespace) :+ sym.trt.name :+ sym.name).mkString(".")
+  private def hashesOf(decls: Map[QualifiedSym, TypedAst.Spec]): Map[String, Sha256] =
+    decls.map { case (sym, spec) => nameOf(sym) -> HashType.hashScheme(spec.declaredScheme) }
 
   /**
     * Returns the package `src` belongs to, if it belongs to one.
