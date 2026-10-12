@@ -38,10 +38,7 @@ object EffectLock {
     * A declaration is recorded by the name of [[nameOf]], e.g. `Museum.Clerk.buy`.
     *
     * `targets` are the dependencies the project declares, and not the packages reached through
-    * them: the project cannot call what it does not declare, since a package is reached only
-    * through a mount, and effects compose, so a widening below a dependency surfaces in the
-    * signature of that dependency or fails to compile. Locking what lies below would report
-    * changes the project cannot observe.
+    * them.
     *
     * Only a package can be locked. The library bundled with the compiler cannot change under a
     * project, because the version of Flix that provides it is fixed by the manifest, so it has no
