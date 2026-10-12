@@ -38,15 +38,10 @@ object EffectLock {
     * A declaration is recorded by the name of [[nameOf]], e.g. `Museum.Clerk.buy`.
     *
     * `targets` are the dependencies the project declares, and not the packages reached through
-    * them, for two reasons. The project cannot call what it does not declare: a package is named
-    * under a root that cannot be written in source, see [[PackageId.canonicalRoot]], so its
-    * declarations are reached only through a mount, and the project mounts only what it
-    * declares. And effects compose: a function that gains an effect forces every caller to
-    * declare it too, so a widening below the dependencies of the project surfaces in the
-    * signature of one of them, or fails to compile. Locking what lies below them would report
-    * changes the project cannot observe. A dependency that is allowed to hide an effect, as an
-    * unrestricted one is, could hide it from its own signatures as well, so its lock is no bound
-    * to begin with, and locking what lies below it would not make it one.
+    * them: the project cannot call what it does not declare, since a package is reached only
+    * through a mount, and effects compose, so a widening below a dependency surfaces in the
+    * signature of that dependency or fails to compile. Locking what lies below would report
+    * changes the project cannot observe.
     *
     * Only a package can be locked. The library bundled with the compiler cannot change under a
     * project, because the version of Flix that provides it is fixed by the manifest, so it has no
