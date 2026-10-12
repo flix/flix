@@ -12,7 +12,8 @@ import ca.uwaterloo.flix.util.Sha256
   * The signatures that one package is locked at.
   *
   * A signature is recorded by the hash of the scheme it was declared with, see [[HashType]], and
-  * is named by the symbol it belongs to, e.g. `Museum.Clerk.sell`.
+  * is named by the name of its declaration inside the package, e.g. `Museum.Clerk.sell`. The
+  * package itself is not part of the name: the entry the signature is recorded under names it.
   *
   * The defs and the sigs of a package are kept apart, so that a def and a sig may share a name
   * without one of them standing for the other.
