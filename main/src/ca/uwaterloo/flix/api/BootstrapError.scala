@@ -120,20 +120,12 @@ object BootstrapError {
     * @param ids the packages that are not locked, in order of identifier.
     */
   case class PackagesNotLocked(ids: List[PackageId]) extends BootstrapError {
-    override def message(f: Formatter): String = ids match {
-      case id :: Nil =>
-        s"""${f.red(id.shortName)} is not locked.
-           |The 'effects.lock' file records no signature of it, so the check cannot say whether it has changed.
-           |Run '${f.cyan(s"flix eff-lock ${id.shortName}")}' to lock it.
-           |""".stripMargin
-      case _ =>
-        val names = ids.map(id => s"  ${f.red(id.shortName)}").mkString(System.lineSeparator())
-        s"""These dependencies are not locked:
-           |$names
-           |The 'effects.lock' file records no signature of them, so the check cannot say whether they have changed.
-           |Run '${f.cyan("flix eff-lock <package>")}' to lock one, or '${f.cyan("flix eff-lock")}' to lock every dependency.
-           |""".stripMargin
-    }
+    override def message(f: Formatter): String = ids.map { id =>
+      s"""${f.red(id.shortName)} is not locked.
+         |The 'effects.lock' file records no signature of it, so the check cannot say whether it has changed.
+         |Run '${f.cyan(s"flix eff-lock ${id.shortName}")}' to lock it.
+         |""".stripMargin
+    }.mkString(System.lineSeparator())
   }
 
   /**
