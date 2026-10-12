@@ -153,10 +153,10 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), None)(System.out).unsafeGet
     bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/extras"))(System.out).unsafeGet
 
-    // A package the project has not installed can be neither locked nor checked, and both
+    // A package the project does not declare can be neither locked nor checked, and both
     // commands say so in the same way.
-    assert(bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/museum"))(System.out) == Err(BootstrapError.PackageNotInstalled(museum)))
-    assert(bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/museum"))(System.out) == Err(BootstrapError.PackageNotInstalled(museum)))
+    assert(bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/museum"))(System.out) == Err(BootstrapError.DependencyNotDeclared(museum)))
+    assert(bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/museum"))(System.out) == Err(BootstrapError.DependencyNotDeclared(museum)))
 
     // Lock `closure` at a signature it does not have, as an upgrade of `extras` might leave it,
     // and the check reports it, and it alone.

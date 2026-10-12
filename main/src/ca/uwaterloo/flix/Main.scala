@@ -750,7 +750,7 @@ object Main {
         .children(
           arg[String]("package").action((pkg, c) => c.copy(command = Command.EffCheck(Some(pkg))))
             .optional()
-            .text("the package to check, e.g. 'flix/museum-clerk'. Defaults to every installed package.")
+            .text("the package to check, e.g. 'flix/museum-clerk'. Defaults to every dependency of the project.")
         )
 
       cmd("eff-lock").text("  locks the current effect signatures.")
@@ -758,7 +758,7 @@ object Main {
         .children(
           arg[String]("package").action((pkg, c) => c.copy(command = Command.EffLock(Some(pkg))))
             .optional()
-            .text("the package to lock, e.g. 'flix/museum-clerk'. Defaults to every installed package.")
+            .text("the package to lock, e.g. 'flix/museum-clerk'. Defaults to every dependency of the project.")
         )
 
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
