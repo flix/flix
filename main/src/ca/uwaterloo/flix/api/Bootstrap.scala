@@ -2007,19 +2007,42 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
   /**
     * Helper function for [[checkEffects]] to be used in for comprehension.
     *
-    * Returns `Ok(())` if every locked signature is the one that was locked.
+    * Returns `Ok(())` if every locked signature that is still declared is the one that was
+    * locked, and says how many were compared.
     * Returns `Err(BootstrapError.SignaturesChangedError(changes))` otherwise.
     */
   private def reportChangedSignatures(lockfile: EffectLockfile, root: TypedAst.Root, targets: Set[PackageId], f: Formatter)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
     EffectLock.check(lockfile, root, targets) match {
-      case Nil =>
+      case EffectLock.CheckResult(compared, Nil) =>
         val checked = EffectLockfile(lockfile.packages.filter { case (id, _) => targets.contains(id) })
-        fmtLocked(checked) match {
-          case None => out.println(f.green("Nothing to check: no signature is locked."))
-          case Some(what) => out.println(f.green(s"Checked $what. Nothing has changed."))
-        }
+        out.println(fmtChecked(compared, checked, f))
         Ok(())
-      case changes => Err(BootstrapError.SignaturesChangedError(changes))
+      case EffectLock.CheckResult(_, changes) => Err(BootstrapError.SignaturesChangedError(changes))
+    }
+  }
+
+  /**
+    * Returns what a check that found no change is to say, when `compared` of the signatures that
+    * `lockfile` records were compared, e.g.
+    * `Checked 154 signatures of 'github:flix/extras'. Nothing has changed.`.
+    *
+    * A locked declaration that is no longer declared is not compared, so when fewer signatures
+    * were compared than are locked, both counts are given. A check that compared nothing found no
+    * change only because it did not look, so it says that instead, and not in the colour of
+    * success.
+    */
+  private def fmtChecked(compared: Int, lockfile: EffectLockfile, f: Formatter): String = {
+    val locked = lockfile.packages.values.map(locked => locked.defs.size + locked.sigs.size).sum
+    if (locked == 0) {
+      return f.green("Nothing to check: no signature is locked.")
+    }
+    val packages = fmtPackages(lockfile.packages.keys.toList.sorted)
+    if (compared == 0) {
+      f.yellow(s"Checked 0 of ${fmtSignatures(locked)} of $packages. None is still declared.")
+    } else if (compared < locked) {
+      f.green(s"Checked $compared of ${fmtSignatures(locked)} of $packages. Nothing has changed.")
+    } else {
+      f.green(s"Checked ${fmtSignatures(locked)} of $packages. Nothing has changed.")
     }
   }
 
@@ -2029,12 +2052,24 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     */
   private def fmtLocked(lockfile: EffectLockfile): Option[String] = {
     val n = lockfile.packages.values.map(locked => locked.defs.size + locked.sigs.size).sum
-    val signatures = if (n == 1) "1 signature" else s"$n signatures"
     lockfile.packages.keys.toList.sorted match {
       case Nil => None
-      case id :: Nil => Some(s"$signatures of '$id'")
-      case ids => Some(s"$signatures of ${ids.length} packages")
+      case ids => Some(s"${fmtSignatures(n)} of ${fmtPackages(ids)}")
     }
+  }
+
+  /**
+    * Returns `n` as a count of signatures, e.g. `1 signature` or `154 signatures`.
+    */
+  private def fmtSignatures(n: Int): String = if (n == 1) "1 signature" else s"$n signatures"
+
+  /**
+    * Returns `ids` as a message names them: the one package when there is one, e.g.
+    * `'github:flix/extras'`, and otherwise how many there are, e.g. `2 packages`.
+    */
+  private def fmtPackages(ids: List[PackageId]): String = ids match {
+    case id :: Nil => s"'$id'"
+    case _ => s"${ids.length} packages"
   }
 
   /**

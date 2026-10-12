@@ -170,7 +170,8 @@ object BootstrapError {
   /**
     * An error raised when a package no longer has the signatures it was locked at.
     *
-    * @param e the package, the symbol, and the spec the symbol is declared with now.
+    * @param e the package, the name of the declaration inside it, and the spec the declaration
+    *          is declared with now.
     */
   case class SignaturesChangedError(e: List[(PackageId, String, TypedAst.Spec)]) extends BootstrapError {
     override def message(f: Formatter): String = {
@@ -193,11 +194,11 @@ object BootstrapError {
     }
 
     /**
-      * Returns a formatted string containing each package, each of its symbols that no longer has
-      * the signature it was locked at, and the signature that symbol has now.
+      * Returns a formatted string containing each package, each of its declarations that no
+      * longer has the signature it was locked at, and the signature that declaration has now.
       *
-      * The symbol is named under the package it belongs to, so its name is written without the
-      * package, which the line above it already gives. The declaration goes on a line of its own:
+      * A declaration is named by its name inside its package, as the lock file names it, and the
+      * line above it gives the package. The declaration goes on a line of its own:
       * a polymorphic declaration with constraints is long, and putting it after the name of the
       * symbol leaves it nowhere to fit.
       *
@@ -222,9 +223,8 @@ object BootstrapError {
     }.map {
       case (id, changes) =>
         val formattedPkg = s"  ${f.bold(id.toString)}:"
-        val formattedChanges = changes.sortBy { case (_, sym, _) => sym }.map {
-          case (_, sym, spec) =>
-            val name = sym.stripPrefix(s"$id.")
+        val formattedChanges = changes.sortBy { case (_, name, _) => name }.map {
+          case (_, name, spec) =>
             val declaration = FormatSignature.formatSpecWithOptions(shortNameOf(name), spec, FormatOptions(FormatOptions.VarName.NameBased))
             s"    ${f.bold(name)}${System.lineSeparator()}      ${f.red(declaration)}"
         }.mkString(System.lineSeparator())
@@ -232,10 +232,10 @@ object BootstrapError {
     }.mkString(System.lineSeparator())
 
     /**
-      * Returns the name of `sym` without the modules it is declared in, which is how a
-      * declaration names itself.
+      * Returns `name` without the modules it is declared in, which is how a declaration names
+      * itself.
       */
-    private def shortNameOf(sym: String): String = sym.substring(sym.lastIndexOf('.') + 1)
+    private def shortNameOf(name: String): String = name.substring(name.lastIndexOf('.') + 1)
   }
 
   /**
