@@ -6,8 +6,8 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.effectlock.EffectLockError
-import ca.uwaterloo.flix.language.ast.shared.PackageId
+import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectLockError}
+import ca.uwaterloo.flix.language.ast.shared.{PackageId, QualifiedSym}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatSignature}
 import ca.uwaterloo.flix.tools.pkg
@@ -170,10 +170,9 @@ object BootstrapError {
   /**
     * An error raised when a package no longer has the signatures it was locked at.
     *
-    * @param e the package, the name of the declaration inside it, and the spec the declaration
-    *          is declared with now.
+    * @param e the package, the symbol, and the spec the symbol is declared with now.
     */
-  case class SignaturesChangedError(e: List[(PackageId, String, TypedAst.Spec)]) extends BootstrapError {
+  case class SignaturesChangedError(e: List[(PackageId, QualifiedSym, TypedAst.Spec)]) extends BootstrapError {
     override def message(f: Formatter): String = {
       s"""@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
          |@  WARNING! YOU MAY BE SUBJECT TO A SUPPLY CHAIN ATTACK!  @
@@ -197,8 +196,8 @@ object BootstrapError {
       * Returns a formatted string containing each package, each of its declarations that no
       * longer has the signature it was locked at, and the signature that declaration has now.
       *
-      * A declaration is named by its name inside its package, as the lock file names it, and the
-      * line above it gives the package. The declaration goes on a line of its own:
+      * A declaration is named as the lock file names it, see [[EffectLock.nameOf]], and the line
+      * above it gives the package. The declaration goes on a line of its own:
       * a polymorphic declaration with constraints is long, and putting it after the name of the
       * symbol leaves it nowhere to fit.
       *
@@ -223,19 +222,13 @@ object BootstrapError {
     }.map {
       case (id, changes) =>
         val formattedPkg = s"  ${f.bold(id.toString)}:"
-        val formattedChanges = changes.sortBy { case (_, name, _) => name }.map {
-          case (_, name, spec) =>
-            val declaration = FormatSignature.formatSpecWithOptions(shortNameOf(name), spec, FormatOptions(FormatOptions.VarName.NameBased))
-            s"    ${f.bold(name)}${System.lineSeparator()}      ${f.red(declaration)}"
+        val formattedChanges = changes.sortBy { case (_, sym, _) => EffectLock.nameOf(sym) }.map {
+          case (_, sym, spec) =>
+            val declaration = FormatSignature.formatSpecWithOptions(sym.name, spec, FormatOptions(FormatOptions.VarName.NameBased))
+            s"    ${f.bold(EffectLock.nameOf(sym))}${System.lineSeparator()}      ${f.red(declaration)}"
         }.mkString(System.lineSeparator())
         s"$formattedPkg${System.lineSeparator()}$formattedChanges"
     }.mkString(System.lineSeparator())
-
-    /**
-      * Returns `name` without the modules it is declared in, which is how a declaration names
-      * itself.
-      */
-    private def shortNameOf(name: String): String = name.substring(name.lastIndexOf('.') + 1)
   }
 
   /**
