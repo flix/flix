@@ -8,6 +8,7 @@ package ca.uwaterloo.flix.tools.fmt
 
 import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token, TokenKind}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
+import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.tools.fmt.Doc.{empty, hardStack, hardline, line, nest, pretty, space, text, Layout}
 
 import scala.annotation.tailrec
@@ -1792,7 +1793,9 @@ object PrettyPrinter {
     val mainDoc = mainChildren.foldLeft((empty: Doc, Option.empty[SyntaxTree.Child])) {
       case ((result, prev), child) =>
         val childDoc = child match {
-          case token: Token if ReservedKeywordNames.contains(token.text) => text("$" + token.text)
+          // The lexer drops the `$` of an escaped name such as `$if`, leaving a lowercase
+          // name whose text is a keyword. Restore it so the output lexes as a name again.
+          case token: Token if token.kind == TokenKind.NameLowercase && Lexer.isKeyword(token.text) => text("$" + token.text)
           case other => prettyChild(other)
         }
         val gap = prev match {
@@ -1806,20 +1809,6 @@ object PrettyPrinter {
       case None => mainDoc
     }
   }
-
-  private val ReservedKeywordNames: Set[String] = Set(
-    "alias", "and", "as", "case", "catch", "checked_cast", "checked_ecast",
-    "choose", "choose*", "def", "discard", "ematch", "eff", "else", "enum",
-    "false", "fix", "forA", "forM", "forall", "force", "foreach", "from",
-    "handler", "if", "import", "inject", "instance", "instanceof", "into",
-    "law", "lawful", "lazy", "let", "match", "mod", "new", "not", "null",
-    "open_variant", "open_variant_as", "or", "override", "par", "pquery",
-    "project", "psolve", "pub", "query", "redef", "region", "restrictable",
-    "rvadd", "rvand", "rvnot", "rvsub", "run", "sealed", "select", "solve",
-    "spawn", "static", "struct", "super", "throw", "trait", "true", "try",
-    "type", "unchecked_cast", "unsafe", "use", "where", "with", "xor",
-    "xvar", "yield"
-  )
 
   private def prettyStringInterpolation(tree: Tree): Doc =
     tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
