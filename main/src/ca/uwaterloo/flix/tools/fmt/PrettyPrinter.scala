@@ -207,7 +207,7 @@ object PrettyPrinter {
       case Array(head, tail) =>
         val headDoc = head match {
           case t: Tree =>
-            filterEmpty(t.children).filterNot(isToken(_, TokenKind.ColonColon)) match {
+            filterEmpty(t.children).filterNot(isToken(_, TokenKind.ColonColon, TokenKind.ColonColonTight)) match {
               case Array() => prettyChild(head)
               case Array(single) => prettyChild(single)
               case inner => joinWithGap(inner)
