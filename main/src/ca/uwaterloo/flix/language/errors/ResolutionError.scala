@@ -1,22 +1,13 @@
 /*
  *  Copyright 2016 Magnus Madsen
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, TraitUsageKind}
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Mountpoint, TraitUsageKind}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
@@ -350,7 +341,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Trait '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Trait '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible trait", fmt)}
          |
@@ -373,7 +364,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Definition '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Definition '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible definition", fmt)}
          |
@@ -396,7 +387,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Effect '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Effect '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible effect", fmt)}
          |
@@ -419,7 +410,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Enum '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Enum '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible enum", fmt)}
          |
@@ -442,11 +433,15 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Module '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      val parts = Name.declaredParts(sym.ns)
+      s""">> Module '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible module", fmt)}
          |
-         |${underline("Tip:")} Mark the module as 'pub'.
+         |${underline("Tip:")} Declare the module as 'pub' at the top level of its own file:
+         |
+         |  // File ${parts.mkString("/")}.flix
+         |  pub mod ${parts.mkString(".")} { ... }
          |""".stripMargin
     }
   }
@@ -465,7 +460,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Struct '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Struct '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible struct", fmt)}
          |
@@ -488,7 +483,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Enum '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Enum '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible enum", fmt)}
          |
@@ -511,7 +506,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Signature '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Signature '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible signature", fmt)}
          |
@@ -534,7 +529,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Type alias '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Type alias '${red(sym.toString)}' is not accessible from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "inaccessible type alias", fmt)}
          |
@@ -828,7 +823,7 @@ object ResolutionError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Trait '${red(sym.toString)}' is sealed from the module '${cyan(ns.toString)}'.
+      s""">> Trait '${red(sym.toString)}' is sealed from ${describeModule(ns, fmt)}.
          |
          |${highlight(loc, "sealed trait", fmt)}
          |
@@ -1230,23 +1225,68 @@ object ResolutionError {
   /**
     * Undefined Use Error (unrecoverable).
     *
+    * @param pkg the package the name was looked up in, if the use names one.
     * @param qn  the unresolved name.
     * @param ns  the current namespace.
     * @param env the variables in the scope.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedUse(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
+  case class UndefinedUse(pkg: Option[Name.Ident], qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3138
 
-    def summary: String = s"Undefined use: '${qn.toString}'."
+    def summary: String = s"Undefined use: '$path'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Undefined use '${red(qn.toString)}'.
+      s""">> Undefined use '${red(path)}'.
          |
          |${highlight(loc, "name not found", fmt)}
          |""".stripMargin
     }
+
+    /** The path as it was written, e.g. `flixball::Game.Board`. */
+    private def path: String = pkg match {
+      case Some(ident) => s"${ident.name}::$qn"
+      case None => qn.toString
+    }
+  }
+
+  /**
+    * An error raised to indicate that the package of a use, e.g. `flixball` in `use flixball::Board`, is not defined.
+    *
+    * @param pkg       the unresolved package.
+    * @param qn        the name that follows the package.
+    * @param available the packages that are defined where the use occurs.
+    * @param isModule  whether `pkg` names a module or a declaration with members, i.e. `::` was written where `.` was meant.
+    * @param loc       the location where the error occurred.
+    */
+  case class UndefinedPackage(pkg: Name.Ident, qn: Name.QName, available: List[Mountpoint], isModule: Boolean, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E3142
+
+    def summary: String = s"Undefined package: '${pkg.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Undefined package '${red(pkg.name)}'.
+         |
+         |${highlight(loc, "package not found", fmt)}
+         |
+         |${underline("Explanation:")} $explanation
+         |""".stripMargin
+    }
+
+    private def explanation: String =
+      if (isModule) {
+        s"""'${pkg.name}' is not a package. A '::' only follows a package.
+           |Everything else is separated by '.':
+           |
+           |  use ${pkg.name}.$qn
+           |""".stripMargin
+      } else if (available.isEmpty) {
+        "No packages are available here. A package is a dependency mounted in 'flix.toml'."
+      } else {
+        s"The packages available here are: ${available.sorted.map(m => s"'$m'").mkString(", ")}."
+      }
   }
 
   /**
@@ -1425,4 +1465,11 @@ object ResolutionError {
     }
   }
 
+  /**
+    * Returns the phrase that names the module `ns` in a message, e.g. "the module 'A.B'".
+    *
+    * The root module has no name, so it is called "the root module" rather than "the module ''".
+    */
+  private def describeModule(ns: Name.NName, fmt: Formatter): String =
+    if (ns.isRoot) "the root module" else s"the module '${fmt.cyan(ns.toString)}'"
 }

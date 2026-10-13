@@ -2,17 +2,8 @@
  * Copyright 2023 Lukas Rønn
  * Copyright 2025 Chenhao Gao
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
@@ -66,13 +57,14 @@ object EnumTagCompleter {
     * We need to first find the fully qualified namespace by looking up the local scope, then use it to provide completions.
     */
   private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, ectx: ExprContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    val fullyQualifiedNamespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
-      case Some(Resolution.Declaration(Enum(_, _, _, sym, _, _, _, _))) => sym.toString
-      case Some(Resolution.Declaration(Mod(_, _, _, name, _, _, _, _))) => name.toString
+    // The namespace is taken from the symbol and not from how it prints: a symbol of a package
+    // prints under the identifier of the package, which is not the namespace it is named under.
+    val namespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
+      case Some(Resolution.Declaration(Enum(_, _, _, sym, _, _, _, _))) => sym.namespace :+ sym.name
+      case Some(Resolution.Declaration(Mod(_, _, _, sym, _, _, _, _))) => sym.ns
       case _ => return Nil
     }
-    val namespaceTail = qn.namespace.idents.tail.map(_.name).mkString(".")
-    val fullyQualifiedEnum = if (namespaceTail.isEmpty) fullyQualifiedNamespaceHead else s"$fullyQualifiedNamespaceHead.$namespaceTail"
+    val fullyQualifiedEnum = (namespaceHead ::: qn.namespace.idents.tail.map(_.name)).mkString(".")
     for {
       enm <- root.enums.get(Symbol.mkEnumSym(fullyQualifiedEnum)).toList
       tag <- enm.cases.values

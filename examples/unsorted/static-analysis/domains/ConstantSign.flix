@@ -1,7 +1,7 @@
 ///
 /// An implementation of the sign domain lifted over the constant propagation domain.
 ///
-mod Domain.ConstantSign {
+mod ConstantSign {
 
     ///
     /// The elements of the constant-sign lattice.

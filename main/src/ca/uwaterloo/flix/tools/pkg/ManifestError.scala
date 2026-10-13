@@ -1,20 +1,13 @@
 /*
  * Copyright 2023 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId}
+import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Formatter
 
 import java.nio.file.Path
@@ -36,7 +29,7 @@ object ManifestError {
         case Some(e) => e
         case None => ""
       }}
-       |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+       |The toml file was found at ${f.cyan(path.toString)}.
        |""".stripMargin
   }
 
@@ -44,7 +37,7 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""The property ${f.bold(property)} is required to have a value of type ${f.bold(requiredType)}.
          |$message
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 
@@ -52,37 +45,32 @@ object ManifestError {
     override def message(f: Formatter): String = {
       s"""This toml file has a Flix version number of the wrong length: ${f.red(version)}.
          |A version in Flix should be formatted like so: 'x.x.x'.
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
     }
   }
-
 
   case class VersionNumberWrong(path: Path, version: String, message: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""This toml file has a version number which includes things that are not numbers: ${f.red(version)}.
          |$message
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 
-  case class FlixVersionFormatError(path: Option[Path], lib: String, version: String) extends ManifestError {
-    override def message(f: Formatter): String = {
-      val pathStr = path.map(_.toString).getOrElse("Unknown file path")
+  case class FlixVersionFormatError(path: Path, lib: String, version: String) extends ManifestError {
+    override def message(f: Formatter): String =
       s"""Unrecognized version format for package ${f.bold(lib)}: ${f.bold(f.red(version))}.
-         |The project file was found at ${f.cyan(pathStr)}
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
-    }
   }
 
-  case class FlixDependencySecurityType(path: Option[Path], lib: String, perm: AnyRef) extends ManifestError {
-    override def message(f: Formatter): String = {
-      val pStr = path.map(_.toString).getOrElse("\"unknown\"")
-      val typ = perm.getClass
-      s"""Unexpected security format of Flix dependency ${f.bold(lib)} in file ${f.cyan(pStr)}.
-         |Expected one of the following strings: "paranoid", "plain", or "unrestricted" but got: ${f.bold(f.red(typ.toString))}.
+  case class FlixDependencySecurityType(path: Path, lib: String, perm: AnyRef) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""Unexpected security format of Flix dependency ${f.bold(lib)}.
+         |Expected one of the following strings: "paranoid", "plain", or "unrestricted" but got: ${f.bold(f.red(perm.getClass.toString))}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
-    }
   }
 
   case class FlixUnknownSecurityValue(path: Path, lib: String, perm: String) extends ManifestError {
@@ -91,11 +79,69 @@ object ManifestError {
     }
   }
 
+  case class FlixDependencyMountType(path: Path, lib: String, mount: AnyRef) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""Unexpected mount type for Flix dependency ${f.bold(lib)}.
+         |Expected ${f.bold("String")} but found ${f.bold(f.red(mount.getClass.toString))}.
+         |The toml file was found at ${f.cyan(path.toString)}.
+         |""".stripMargin
+  }
+
+  case class FlixDependencyIllegalMount(path: Path, lib: String, mount: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""Illegal mount for Flix dependency ${f.bold(lib)}: ${f.red(mount)}.
+         |$reason
+         |The toml file was found at ${f.cyan(path.toString)}.
+         |""".stripMargin
+
+    private def reason: String =
+      if (Lexer.isKeyword(mount))
+        s"A mount is written before '::' in a use, where '$mount' would be read as a keyword."
+      else
+        "A mount is a letter followed by letters, digits, or underscores, e.g. 'ticTacToe'."
+  }
+
+  case class FlixDependencyUnderivableMount(path: Path, lib: PackageId) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""The Flix dependency ${f.bold(lib.toString)} declares no mount, and its name ${f.red(lib.name)} cannot be one.
+         |$reason
+         |Every Flix dependency has a mount, which is written before '::' in a use. Specify one explicitly:
+         |  "$lib" = { version = "x.y.z", mount = "someName" }
+         |The toml file was found at ${f.cyan(path.toString)}.
+         |""".stripMargin
+
+    private def reason: String =
+      if (Lexer.isKeyword(lib.name))
+        s"'${lib.name}' would be read as a keyword."
+      else if (lib.name.contains('-'))
+        "A mount is a letter followed by letters, digits, or underscores, and a hyphen would be read as a minus."
+      else
+        "A mount is a letter followed by letters, digits, or underscores."
+  }
+
+  case class FlixDependencyDuplicateMount(path: Path, mount: Mountpoint, lib1: PackageId, lib2: PackageId) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""The Flix dependencies ${f.bold(lib1.toString)} and ${f.bold(lib2.toString)} share the mount ${f.red(mount.toString)}.
+         |Every Flix dependency must have a distinct mount. Specify one explicitly:
+         |  "$lib2" = { version = "x.y.z", mount = "otherName" }
+         |The toml file was found at ${f.cyan(path.toString)}.
+         |""".stripMargin
+  }
+
+  case class IllegalDependencyKeyFound(path: Path, lib: String, key: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""The Flix dependency ${f.bold(lib)} has an entry named ${f.red(key)}, which is not allowed.
+         |Allowed entry names in a Flix dependency:
+         |  version, mount, security
+         |The toml file was found at ${f.cyan(path.toString)}.
+         |""".stripMargin
+  }
+
   case class RepositoryFormatError(path: Path, repository: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""A reference to a repository should be formatted like so: 'github:username/projectname'.
          |Instead found: ${f.red(repository)}.
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 
@@ -103,15 +149,16 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""A Maven dependency should be formatted like so: 'group:artifact'.
          |Instead found: ${f.red(depName)}.
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 
   case class FlixDependencyFormatError(path: Path, depName: String) extends ManifestError {
     override def message(f: Formatter): String =
-      s"""A Flix dependency should be formatted like so: 'repository:username/projectname'.
+      s"""A Flix dependency should be formatted like so: 'github:username/projectname'.
+         |The username and the project name may hold letters, digits, '_', and '-'.
          |Instead found: ${f.red(depName)}.
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 
@@ -119,7 +166,7 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""A jar dependency should be formatted like so: 'url:https://website/fileName.jar'.
          |Instead found: ${f.red(depUrl)}.
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 
@@ -127,7 +174,7 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""The file to save a jar in should have the extension .jar not .${f.red(extension)}.
          |Full name given: $depName.
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 
@@ -135,24 +182,23 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""The file to save a jar in should be formatted like so: 'fileName.jar'.
          |Instead found: ${f.red(depName)}.
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 
-  case class VersionTypeError(path: Option[Path], lib: String, ver: AnyRef) extends ManifestError {
-    override def message(f: Formatter): String = {
-      val pStr = path.map(_.toString).getOrElse("unknown file")
-      s"""Unexpected version type for dependency ${f.bold(lib)} in file ${f.cyan(pStr)}.
+  case class VersionTypeError(path: Path, lib: String, ver: AnyRef) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""Unexpected version type for dependency ${f.bold(lib)}.
          |Expected ${f.bold("String")} but found ${f.bold(f.red(ver.getClass.toString))}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
-    }
   }
 
   case class DependencyFormatError(path: Path, message: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""All versions should be of type String:
          |$message
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 
@@ -160,7 +206,7 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""All URLs should be of type String:
          |$message
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 
@@ -168,14 +214,7 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""Could not construct a URL from ${f.red(url)}:
          |$message
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
-         |""".stripMargin
-  }
-
-  case class AuthorNameError(path: Path) extends ManifestError {
-    override def message(f: Formatter): String =
-      s"""There was an author name which was not of type String:
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 
@@ -183,15 +222,7 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""There was a problem parsing the toml file with the following errors:
          |'$msg'
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
-         |""".stripMargin
-  }
-
-  case class UnsupportedRepository(path: Path, attemptedRepo: String) extends ManifestError {
-    override def message(f: Formatter): String =
-      s"""${f.red(attemptedRepo)} is not supported as a repository to download Flix dependencies from.
-         |Supported repositories: ${f.bold("github")}.
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 
@@ -200,7 +231,7 @@ object ManifestError {
       s"""A dependency includes a non-supported character: ${f.red(dependency)}
          |The dependencies in a toml file can only include the following characters:
          |a-z, A-Z, 0-9, ., :, -, _, /
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 
@@ -208,7 +239,7 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""An I/O error occured while parsing the toml file:
          |$message
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 
@@ -217,7 +248,7 @@ object ManifestError {
       s"""The toml file has a table named ${f.red(tableName)}, which is not allowed.
          |Allowed table names:
          |  package, dependencies, dev-dependencies, mvn-dependencies, dev-mvn-dependencies, jar-dependencies
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 
@@ -225,8 +256,8 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""The toml file has an entry in the package table named ${f.red(entryName)}, which is not allowed.
          |Allowed entry names in the package table:
-         |  name, description, version, repository, modules, flix, authors, license
-         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |  version, repository, flix
+         |The toml file was found at ${f.cyan(path.toString)}.
          |""".stripMargin
   }
 

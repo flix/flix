@@ -1,43 +1,35 @@
 /*
  * Copyright 2023 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
-import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
+import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, PACKAGES_LOCK, README}
+import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectLockfile, EffectLockfileParser}
 import ca.uwaterloo.flix.api.lsp.FormatterLsp as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, Origin, PackageId, SecurityContext}
+import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
-import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.jvm.JvmClass
 
 import java.lang.constant.ClassDesc
 import ca.uwaterloo.flix.runtime.{CompilationResult, JvmLoader}
 import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.{Stat, Tester}
+import ca.uwaterloo.flix.tools.doc.{HtmlDocumentor, MissingDoc}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Lockfile, LockfileParser, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageSpec, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Options, Result}
+import org.tomlj.Toml
 
 import java.io.{IOException, PrintStream}
 import java.nio.file.{FileSystems, Files, LinkOption, Path, StandardCopyOption}
 import java.util.zip.{ZipInputStream, ZipOutputStream}
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.io.StdIn.readLine
 import scala.jdk.CollectionConverters.IterableHasAsScala
@@ -88,11 +80,10 @@ object Bootstrap {
 
     FileOps.newFileIfAbsent(manifestFile) {
       s"""[package]
-         |name        = "$packageName"
-         |description = "test"
-         |version     = "0.1.0"
-         |flix        = "${Version.CurrentVersion}"
-         |authors     = ["John Doe <john@example.com>"]
+         |version = "0.1.0"
+         |flix    = "${Version.CurrentVersion}"
+         |
+         |# repository = "github:<owner>/$packageName"
          |""".stripMargin
     }
 
@@ -177,6 +168,734 @@ object Bootstrap {
     Result.Ok(())
   }
 
+  /**
+    * Adds the packages `specs` to the dependencies of the project at `p` and installs them.
+    *
+    * Each of `specs` is a package identifier with an optional version, e.g. `flix/museum-clerk`
+    * or `flix/museum-clerk@1.1.0`, see [[PackageSpec.mkPackageSpec]]. A package that is asked for
+    * at no particular version is added at its newest release. The version is a lower bound, so
+    * the package may still be built at a newer one if another dependency requires it. A package
+    * is named at most once, see [[parsePackageSpecs]].
+    *
+    * The packages are added together or not at all. The dependencies are written to `flix.toml`
+    * at once and the project is then bootstrapped once, so that `lib/` and `packages.lock`
+    * describe the project as it is now declared. Every package is checked against the manifest
+    * before GitHub is asked for any version, and every version is chosen before the user is asked
+    * for any mount, so that a mount is not asked for only to be thrown away by a later package.
+    *
+    * The manifest is written as a whole rather than edited in place, so comments do not
+    * survive. Nothing else is lost: a manifest declares only what [[Manifest]] models.
+    * `flix.toml` is the package manager's file to write.
+    *
+    * A project that does not resolve cannot be built, so a resolution that fails with the
+    * dependencies added puts the manifest that was there back, as does any failure before it.
+    */
+  def install(p: Path, specs: List[String], token: Option[String], assumeYes: Boolean)(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+    val pkgs = parsePackageSpecs(specs, "install", allowVersion = true) match {
+      case Ok(pkgs) => pkgs
+      case Err(e) => return Err(e)
+    }
+
+    val tomlPath = getManifestFile(p)
+    if (!Files.exists(tomlPath)) {
+      return Err(BootstrapError.NoProject(tomlPath))
+    }
+
+    for {
+      manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
+      _ <- Result.traverse(pkgs)(pkg => checkUndeclared(manifest, pkg.id))
+      versions <- Result.traverse(pkgs)(pkg => selectVersion(pkg, token))
+      deps <- mkDependencies(manifest, pkgs.map(pkg => pkg.id).zip(versions), assumeYes)
+      _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies ++ deps), token,
+        deps.map(dep => s"Added '${dep.id.shortName}' v${dep.version}, mounted at '${dep.mount}'."))
+    } yield ()
+  }
+
+  /**
+    * Removes the packages `specs` from the dependencies of the project at `p`.
+    *
+    * Each of `specs` is a package identifier, e.g. `flix/museum-clerk` or
+    * `github:flix/museum-clerk`. It carries no version: a package is declared at one version, so
+    * there is nothing to choose between. A package is named at most once, see
+    * [[parsePackageSpecs]].
+    *
+    * The packages are removed together or not at all. The declarations are dropped from
+    * `flix.toml` at once and the project is then bootstrapped once, so that `packages.lock`
+    * describes the project as it is now declared. Only what the project declares can be removed:
+    * a package that is reached through another dependency is that dependency's to declare, and
+    * stays.
+    *
+    * What a removed package left in `lib/` stays as well. A package is loaded because the
+    * resolution installs it and not because it is on disk, so what is left is inert.
+    *
+    * The manifest is rewritten as a whole, see [[install]], and a failure puts back the bytes
+    * that were there.
+    */
+  def remove(p: Path, specs: List[String], token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+    val pkgs = parsePackageSpecs(specs, "remove", allowVersion = false) match {
+      case Ok(pkgs) => pkgs
+      case Err(e) => return Err(e)
+    }
+
+    val tomlPath = getManifestFile(p)
+    if (!Files.exists(tomlPath)) {
+      return Err(BootstrapError.NoProject(tomlPath))
+    }
+
+    for {
+      manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
+      deps <- Result.traverse(pkgs)(pkg => findDeclared(manifest, pkg.id))
+      _ <- rewriteManifest(p, manifest.copy(dependencies = manifest.dependencies.filterNot(d => deps.contains(d))), token,
+        deps.map(dep => s"Removed '${dep.id.shortName}' v${dep.version}, which was mounted at '${dep.mount}'."))
+    } yield ()
+  }
+
+  /**
+    * Changes the versions of the packages `specs` in the dependencies of the project at `p`.
+    *
+    * Each of `specs` is a package identifier with an optional version, e.g. `flix/museum-clerk`
+    * or `flix/museum-clerk@1.1.0`, see [[PackageSpec.mkPackageSpec]]. A package that is asked for
+    * at no particular version is moved to the newest release that shares a major with the
+    * version it is declared at, see [[selectUpgradeVersion]]. A version that is asked for is
+    * taken as it is asked for, which includes another major, and a version below the one that is
+    * declared: a declaration is a version to pin as well as a version to raise. A package is
+    * named at most once, see [[parsePackageSpecs]].
+    *
+    * A command that names no package at all is one for every package the project declares, each
+    * moved to the newest release of the major it is declared at. It reports only the packages
+    * that change: a project has more packages that are current than there is reason to read
+    * about. A newer major is still reported rather than taken, so a package is never moved
+    * across a major without being named.
+    *
+    * Only the version changes. The mount, the security context, and whether the dependency is
+    * written as a version or as a table are the ones that were declared, which is what this
+    * command has over removing the package and adding it again.
+    *
+    * Only what the project declares can be changed: the version of a package that is reached
+    * through another dependency is that dependency's to declare.
+    *
+    * The packages are changed together or not at all, and the project is bootstrapped once with
+    * all of them changed. Packages whose majors have to move together can only be moved this
+    * way: a package whose new version requires a new major of another does not resolve with
+    * either one changed on its own.
+    *
+    * The manifest is rewritten as a whole, see [[install]], and a failure puts back the bytes
+    * that were there. A package that already declares the version it would be given is left
+    * alone, and a command in which no package changes rewrites nothing.
+    */
+  def upgrade(p: Path, specs: List[String], token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+    val named = parsePackageSpecs(specs, "upgrade", allowVersion = true) match {
+      case Ok(pkgs) => pkgs
+      case Err(e) => return Err(e)
+    }
+
+    val tomlPath = getManifestFile(p)
+    if (!Files.exists(tomlPath)) {
+      return Err(BootstrapError.NoProject(tomlPath))
+    }
+
+    for {
+      manifest <- ManifestParser.parse(tomlPath).mapErr(BootstrapError.ManifestParseError.apply)
+      pkgs = if (named.isEmpty) manifest.flixDependencies.map(dep => PackageSpec(dep.id, None)) else named
+      deps <- Result.traverse(pkgs)(pkg => findDeclared(manifest, pkg.id))
+      upgrades <- Result.traverse(pkgs.zip(deps)) { case (pkg, dep) => selectUpgradeVersion(pkg, dep, token).map(upgrade => (dep, upgrade)) }
+      (unchanged, changed) = upgrades.partition { case (dep, upgrade) => upgrade.version == dep.version }
+      // A command that names its packages says of each whether it changed. A command that names
+      // none says only what changed: a project has more packages that are current than there is
+      // reason to read about.
+      _ = if (named.nonEmpty) unchanged.foreach { case (dep, upgrade) => out.println(formatter.green(s"${dep.id.shortName} is already at v${upgrade.version}.")) }
+      _ <- if (changed.isEmpty) {
+        if (named.isEmpty) out.println(formatter.green("All dependencies are up to date."))
+        Ok(())
+      } else {
+        val dependencies = changed.foldLeft(manifest.dependencies) { case (acc, (dep, upgrade)) => replaceVersion(acc, dep, upgrade.version) }
+        rewriteManifest(p, manifest.copy(dependencies = dependencies), token,
+          changed.map { case (dep, upgrade) => s"${if (upgrade.version > dep.version) "Upgraded" else "Downgraded"} '${dep.id.shortName}' v${dep.version} -> v${upgrade.version}." })
+      }
+      _ = reportNewerMajors(upgrades)
+    } yield ()
+  }
+
+  /**
+    * Reports the packages of `upgrades` that have a newer major than the version they are given.
+    *
+    * A major is reported after the versions that changed, and not while they are being chosen: it
+    * is the one thing the command did not do, and a command that did nothing at all, because it
+    * failed, has nothing to add to.
+    */
+  private def reportNewerMajors(upgrades: List[(Dependency.FlixDependency, Upgrade)])(implicit formatter: Formatter, out: PrintStream): Unit = {
+    val newer = upgrades.collect { case (dep, Upgrade(_, Some(major))) => (dep.id, major) }
+    if (newer.nonEmpty) {
+      out.println()
+      out.println(if (newer.sizeIs == 1) "A newer major release is available, ask for it by name:" else "Newer major releases are available, ask for them by name:")
+      newer.foreach { case (id, major) => out.println(s"  ${formatter.cyan(s"flix upgrade ${id.shortName}@$major")}") }
+    }
+  }
+
+  /**
+    * The version to declare a package at, and the newer major that was not taken, if there is one.
+    */
+  private case class Upgrade(version: SemVer, newerMajor: Option[SemVer])
+
+  /**
+    * Returns `specs` as package specifications, or an error for the first that is not one.
+    *
+    * A version is refused when `allowVersion` is false, as it is for a package to remove, and the
+    * error then names `command`, the command the specifications were given to.
+    *
+    * A package is named at most once, however it is written: `flix/museum-clerk` and
+    * `github:flix/museum-clerk@2.1.3` name the same package. A package that is named twice is
+    * either asked for twice or asked for at two versions, and a project declares a package once,
+    * at one version.
+    */
+  private def parsePackageSpecs(specs: List[String], command: String, allowVersion: Boolean): Result[List[PackageSpec], BootstrapError] =
+    Result.traverse(specs) { spec =>
+      PackageSpec.mkPackageSpec(spec) match {
+        case Some(s) if s.version.isDefined && !allowVersion => Err(BootstrapError.UnexpectedVersion(command, s.id))
+        case Some(s) => Ok(s)
+        case None => Err(BootstrapError.IllegalPackageSpec(spec))
+      }
+    }.flatMap { pkgs =>
+      val ids = pkgs.map(pkg => pkg.id)
+      ids.find(id => ids.count(other => other == id) > 1) match {
+        case Some(id) => Err(BootstrapError.DuplicatePackageSpec(id))
+        case None => Ok(pkgs)
+      }
+    }
+
+  /**
+    * Returns a dependency on each of `pkgs`, at the version it is paired with and under the mount
+    * that [[selectMount]] chooses for it.
+    *
+    * The mounts are chosen in order, and each is taken before the next is chosen, so that two
+    * packages whose mounts would be the same are not both given it.
+    */
+  private def mkDependencies(manifest: Manifest, pkgs: List[(PackageId, SemVer)], assumeYes: Boolean)(implicit formatter: Formatter, out: PrintStream): Result[List[Dependency.FlixDependency], BootstrapError] = {
+    val deps = mutable.ListBuffer.empty[Dependency.FlixDependency]
+    for ((id, version) <- pkgs) {
+      selectMount(manifest.copy(dependencies = manifest.dependencies ++ deps), id, assumeYes) match {
+        case Ok(mount) => deps += Dependency.FlixDependency(id, version, mount, SecurityContext.Default)
+        case Err(e) => return Err(e)
+      }
+    }
+    Ok(deps.toList)
+  }
+
+  /**
+    * Returns `dependencies` with `dep` declared at `version`.
+    *
+    * The declaration is replaced where it is, rather than dropped and added, so that everything
+    * it declares besides the version is kept, and so that it stays where it is in the file.
+    */
+  private def replaceVersion(dependencies: List[Dependency], dep: Dependency.FlixDependency, version: SemVer): List[Dependency] =
+    dependencies.map {
+      case d if d == dep => dep.copy(version = version)
+      case d => d
+    }
+
+  /**
+    * Returns an error if `manifest` already declares a dependency on `id`.
+    *
+    * A package occurs at most once in `[dependencies]`, so a package that is already there is
+    * one to change the version of, and not one to add again.
+    */
+  private def checkUndeclared(manifest: Manifest, id: PackageId): Result[Unit, BootstrapError] =
+    manifest.flixDependencies.find(dep => dep.id == id) match {
+      case Some(dep) => Err(BootstrapError.DependencyAlreadyDeclared(id, dep.version))
+      case None => Ok(())
+    }
+
+  /**
+    * Returns the dependency on `id` that `manifest` declares, or an error if it declares none.
+    *
+    * A package that the project does not declare is not one it can drop or change, whether it is
+    * unknown or is reached through another dependency: what that dependency requires is its own
+    * to declare.
+    */
+  private def findDeclared(manifest: Manifest, id: PackageId): Result[Dependency.FlixDependency, BootstrapError] =
+    manifest.flixDependencies.find(dep => dep.id == id) match {
+      case Some(dep) => Ok(dep)
+      case None => Err(BootstrapError.DependencyNotDeclared(id))
+    }
+
+  /**
+    * Returns the version of `pkg` to declare: the one it asks for, if it asks for one, and the
+    * newest release of the package otherwise.
+    *
+    * A version that is asked for is taken as it is asked for, and not checked against the
+    * releases. Reading the listing costs a request against the API rate limit, and a version
+    * that was never released is reported by the resolution that follows anyway, which finds no
+    * manifest to download. A package that is asked for at no version has to be looked up, since
+    * the newest release is not knowable without the listing.
+    */
+  private def selectVersion(pkg: PackageSpec, token: Option[String]): Result[SemVer, BootstrapError] = pkg.version match {
+    case Some(version) => Ok(version)
+    case None =>
+      for {
+        versions <- releaseVersions(pkg.id, token)
+        version <- versions.maxOption match {
+          case Some(v) => Ok(v)
+          case None => Err(BootstrapError.NoReleases(pkg.id))
+        }
+      } yield version
+  }
+
+  /**
+    * Returns the version to declare `dep` at: the one that `pkg` asks for, if it asks for one,
+    * and otherwise the newest release that shares a major with the version that is declared.
+    *
+    * A major is a compatibility boundary, both for what a package can be built alongside -- see
+    * [[FlixPackageManager.selectVersion]] -- and for what the code that uses it can expect, so
+    * an upgrade that is not asked for a version stays within the major that is declared. A newer
+    * major is returned rather than taken, to be reported once the command is done, see
+    * [[reportNewerMajors]]: it is there to move to, but not without being asked for by name.
+    *
+    * The version that is declared is never lowered, whatever was released: a package whose
+    * declared version is newer than any release of its major stays where it is.
+    */
+  private def selectUpgradeVersion(pkg: PackageSpec, dep: Dependency.FlixDependency, token: Option[String]): Result[Upgrade, BootstrapError] = pkg.version match {
+    case Some(version) => Ok(Upgrade(version, None))
+    case None =>
+      releaseVersions(pkg.id, token).flatMap { versions =>
+        if (versions.isEmpty) {
+          Err(BootstrapError.NoReleases(pkg.id))
+        } else {
+          val newerMajor = versions.filter(v => v.major > dep.version.major).maxOption
+          Ok(Upgrade((dep.version :: versions.filter(v => v.major == dep.version.major)).max, newerMajor))
+        }
+      }
+  }
+
+  /**
+    * Returns the versions of `id` that have been released.
+    */
+  private def releaseVersions(id: PackageId, token: Option[String]): Result[List[SemVer], BootstrapError] =
+    GitHub.getReleaseVersions(GitHub.Project.mkProject(id), token).mapErr(BootstrapError.FlixPackageError.apply)
+
+  /**
+    * Returns the mount to declare the dependency on `id` under.
+    *
+    * The name of the package is used when it can be: it is what the package is known as. It
+    * cannot always, since a package name may hold `-` and may begin with a digit, neither of
+    * which a mount may. The user is then asked, and is offered the name with its separators
+    * removed and its parts capitalized -- `museum-clerk` becomes `MuseumClerk` -- when that is a
+    * mount. They are asked as well when the name is taken by another dependency, since only they
+    * know which of the two should be reached under it.
+    *
+    * A run that cannot ask, because it was told to assume yes, takes the offer it would have
+    * made, and fails if it has none.
+    */
+  private def selectMount(manifest: Manifest, id: PackageId, assumeYes: Boolean)(implicit formatter: Formatter, out: PrintStream): Result[Mountpoint, BootstrapError] = {
+    val taken = manifest.mounts.keySet
+
+    def available(s: String): Option[Mountpoint] = Mountpoint.mkMountpoint(s).filter(m => !taken.contains(m))
+
+    available(id.name) match {
+      case Some(mount) => Ok(mount)
+      case None =>
+        val offer = available(mkMountName(id.name))
+        if (assumeYes) {
+          offer match {
+            case Some(mount) => Ok(mount)
+            case None => Err(BootstrapError.NoMount(id))
+          }
+        } else {
+          askMount(id, offer, taken)
+        }
+    }
+  }
+
+  /**
+    * Returns `s` with its separators removed and its parts capitalized: `museum-clerk` becomes
+    * `MuseumClerk`.
+    *
+    * The result is not always a mount either: a name that begins with a digit still does.
+    */
+  private def mkMountName(s: String): String =
+    s.split("[-_]").filter(part => part.nonEmpty).map(part => part.capitalize).mkString
+
+  /**
+    * Asks which mount to declare the dependency on `id` under, until the answer is one that can
+    * be written before `::` and that no other dependency is mounted at.
+    *
+    * An empty answer takes `offer`, if there is one. An answer that cannot be given, because the
+    * input has ended, is not one to wait for.
+    */
+  private def askMount(id: PackageId, offer: Option[Mountpoint], taken: Set[Mountpoint])(implicit formatter: Formatter, out: PrintStream): Result[Mountpoint, BootstrapError] = {
+    val example = offer.map(mount => mount.toString).getOrElse("Clerk")
+    out.println(s"${formatter.blue(id.toString)} is reached through a mount, as in '${formatter.cyan(s"use $example::greet")}'.")
+
+    @tailrec
+    def loop(): Result[Mountpoint, BootstrapError] = {
+      out.print(s"Mount${offer.map(m => s" [$m]").getOrElse("")}: ")
+      val line = readLine()
+      if (line == null) {
+        Err(BootstrapError.NoMount(id))
+      } else line.trim match {
+        case "" => offer match {
+          case Some(mount) => Ok(mount)
+          case None => loop()
+        }
+        case answer => Mountpoint.mkMountpoint(answer) match {
+          case None =>
+            out.println(s"${formatter.red(answer)} cannot be written before '::': a mount is a letter followed by letters, digits, and underscores, and is not a keyword.")
+            loop()
+          case Some(mount) if taken.contains(mount) =>
+            out.println(s"${formatter.red(mount.toString)} is already the mount of another dependency.")
+            loop()
+          case Some(mount) => Ok(mount)
+        }
+      }
+    }
+
+    loop()
+  }
+
+  /**
+    * Writes `updated` to the `flix.toml` of the project at `p`, and then bootstraps the project
+    * so that its dependencies are the ones it now declares. Reports each of `successes` once they
+    * are.
+    *
+    * The dependencies are written in the form the manifest that was there declared them in, see
+    * [[Manifest.format]].
+    *
+    * The manifest that was there is put back if the project does not resolve with the
+    * dependencies changed, so that a command that fails leaves a project that still builds. What
+    * is put back are the bytes that were read, and not the manifest that was parsed from them,
+    * so a failure costs neither the comments nor the keys that a rewrite would.
+    */
+  private def rewriteManifest(p: Path, updated: Manifest, token: Option[String], successes: List[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+    val tomlPath = getManifestFile(p)
+
+    val original = try {
+      Files.readString(tomlPath)
+    } catch {
+      case e: IOException => return Err(BootstrapError.FileError(s"Unable to read '$FLIX_TOML': ${e.getMessage}"))
+    }
+
+    try {
+      FileOps.writeString(tomlPath, Manifest.format(updated, Toml.parse(original)))
+    } catch {
+      case e: IOException => return Err(BootstrapError.FileError(s"Unable to write '$FLIX_TOML': ${e.getMessage}"))
+    }
+
+    bootstrap(p, token) match {
+      case Ok(_) =>
+        successes.foreach(success => out.println(formatter.green(success)))
+        Ok(())
+      case Err(e) =>
+        try {
+          FileOps.writeString(tomlPath, original)
+        } catch {
+          // The failure that stopped the command is the one to report, but a manifest that could
+          // not be put back is not something to leave unsaid.
+          case _: IOException => out.println(s"Unable to restore '$FLIX_TOML'. It no longer declares the dependencies the project was built with.")
+        }
+        Err(e)
+    }
+  }
+
+  /**
+    * Deletes all compiled `.class` files, generated documentation, and pretty printed ASTs under
+    * the build directory of the project at `p`, and all jars and packages under its artifact
+    * directory, and removes any now-empty directories (including the `build` and `artifact`
+    * directories themselves). Performs safety checks to ensure:
+    *  - `p` is a Flix project (manifest present),
+    *  - no root or home directories are targeted,
+    *  - no ancestor of the project directory is targeted,
+    *  - every file in the build directory is a valid class file, a generated documentation file, or
+    *    a pretty printed AST,
+    *  - every file in the artifact directory is a jar, a package, or the manifest copied there by
+    *    `build-pkg`.
+    *
+    * Every file in both directories is checked before any file is deleted.
+    *
+    * The project is not bootstrapped: its manifest is not read, and its dependencies are neither
+    * resolved nor installed. A project is cleaned without the network, and can be cleaned when its
+    * manifest does not parse or its dependencies do not resolve.
+    *
+    * Returns `Ok(())` on success or `Err(...)` on validation or IO failures.
+    */
+  def clean(p: Path): Result[Unit, BootstrapError] = {
+    // Ensure project mode
+    val tomlPath = getManifestFile(p)
+    if (!Files.exists(tomlPath)) {
+      return Err(BootstrapError.NoProject(tomlPath))
+    }
+
+    // Ensure `cwd` is not dangerous
+    val cwd = Path.of(System.getProperty("user.dir"))
+    checkForSystemPath(cwd) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // Ensure `p` is not dangerous
+    checkForSystemPath(p) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    val buildDir = getBuildDirectory(p)
+    val classDir = getClassDirectory(p)
+    val docDir = getDocumentationDirectory(p)
+    val astDir = getAstDirectory(p)
+    val artifactDir = getArtifactDirectory(p)
+
+    // Ensure `buildDir` is not dangerous
+    checkForDangerousPath(buildDir, p) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // Ensure `artifactDir` is not dangerous
+    checkForDangerousPath(artifactDir, p) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // Ensure all files in `buildDir` are valid class files, documentation files, or AST files.
+    val buildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue).map(_.normalize())
+    for (file <- buildFiles) {
+      if (file.startsWith(classDir)) {
+        isValidClassFile(file, p) match {
+          case Err(e) => return Err(e)
+          case Ok(()) => ()
+        }
+      } else if (file.startsWith(docDir)) {
+        isValidDocumentFile(file, p) match {
+          case Err(e) => return Err(e)
+          case Ok(()) => ()
+        }
+      } else if (file.startsWith(astDir)) {
+        isValidAstFile(file, p) match {
+          case Err(e) => return Err(e)
+          case Ok(()) => ()
+        }
+      } else {
+        return Err(BootstrapError.FileError(s"Unexpected directory in build directory: '${p.relativize(file)}'"))
+      }
+
+      checkForDangerousPath(file, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+    }
+
+    // Ensure all files in `artifactDir` are jar files, package files, or the copied manifest.
+    val artifactFiles = FileOps.getFilesIn(artifactDir, Int.MaxValue).map(_.normalize())
+    for (file <- artifactFiles) {
+      isValidArtifactFile(file, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+
+      checkForDangerousPath(file, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+    }
+
+    // Delete only once every file in both directories has been checked.
+    for {
+      _ <- deleteDirectory(buildDir, buildFiles, p)
+      _ <- deleteDirectory(artifactDir, artifactFiles, p)
+    } yield ()
+  }
+
+  /**
+    * Deletes all `.class` files under the class directory of the project at `p`, and removes any
+    * now-empty directories (including the class directory itself).
+    *
+    * Every file in the class directory is checked to be a valid class file before any file is
+    * deleted.
+    */
+  private def cleanClassDirectory(p: Path): Result[Unit, BootstrapError] = {
+    val classDir = getClassDirectory(p)
+
+    // Ensure `classDir` is not dangerous
+    checkForDangerousPath(classDir, p) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // Ensure all files in `classDir` are valid class files.
+    val classFiles = FileOps.getFilesIn(classDir, Int.MaxValue).map(_.normalize())
+    for (file <- classFiles) {
+      isValidClassFile(file, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+
+      checkForDangerousPath(file, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+    }
+
+    // Delete only once every file has been checked.
+    deleteDirectory(classDir, classFiles, p)
+  }
+
+  /**
+    * Deletes `files`, which are the files in `dir`, and then every directory in `dir`, innermost
+    * first, including `dir` itself.
+    */
+  private def deleteDirectory(dir: Path, files: List[Path], p: Path): Result[Unit, BootstrapError] = {
+    // Delete files
+    for (file <- files) {
+      FileOps.delete(file) match {
+        case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete file '$file': $e"))
+        case Ok(_) => ()
+      }
+    }
+
+    // Delete empty directories
+    // Visit in reverse order to delete the innermost directories first
+    val directories = FileOps.getDirectoriesIn(dir, Int.MaxValue).map(_.normalize())
+    for (d <- directories.reverse) {
+      checkForDangerousPath(d, p) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+
+      FileOps.delete(d) match {
+        case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete directory '$d': $e"))
+        case Ok(_) => ()
+      }
+    }
+
+    Ok(())
+  }
+
+  /**
+    * Returns `Err` if `path` is one of the following:
+    *   - A root directory of the system
+    *   - The user's home directory (`"user.home"` system property, using [[System.getProperty]])
+    *   - Any ancestor of the project directory `p`
+    *
+    * Returns `Ok(())` otherwise.
+    */
+  private def checkForDangerousPath(path: Path, p: Path): Result[Unit, BootstrapError] = {
+    checkForSystemPath(path) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+    checkForAncestor(path, p) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is either a root directory or the user's home directory.
+    *
+    * @see [[checkForRootDir]]
+    * @see [[checkForHomeDir]]
+    */
+  private def checkForSystemPath(path: Path): Result[Unit, BootstrapError] = {
+    checkForRootDir(path) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+    checkForHomeDir(path) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is a root directory. */
+  private def checkForRootDir(path: Path): Result[Unit, BootstrapError] = {
+    val roots = FileSystems.getDefault.getRootDirectories.asScala.toList.map(_.normalize())
+    if (roots.contains(path.normalize())) {
+      return Err(BootstrapError.FileError("Refusing to delete file in root directory."))
+    }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is the user's home directory. */
+  private def checkForHomeDir(path: Path): Result[Unit, BootstrapError] = {
+    val home = Path.of(System.getProperty("user.home"))
+    if (home.normalize() == path.normalize()) {
+      return Err(BootstrapError.FileError("Refusing to delete file in home directory."))
+    }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is an ancestor of the project directory `p`. */
+  private def checkForAncestor(path: Path, p: Path): Result[Unit, BootstrapError] = {
+    if (p.normalize().startsWith(path.normalize())) {
+      return Err(BootstrapError.FileError(s"Refusing to delete file in ancestor of project directory: '${path.normalize()}"))
+    }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is not a class file that could be produced by `build-classes` in the project at `p`. */
+  private def isValidClassFile(path: Path, p: Path): Result[Unit, BootstrapError] = {
+    if (!FileOps.checkExt(path, "class")) {
+      return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${p.relativize(path)}'"))
+    }
+    if (!FileOps.isClassFile(path)) {
+      return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${p.relativize(path)}'"))
+    }
+
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is not a file that could be produced by [[HtmlDocumentor]] in the project at `p`. */
+  private def isValidDocumentFile(path: Path, p: Path): Result[Unit, BootstrapError] = {
+    val knownFiles = List("favicon.png", "highlight.css", "highlight.js", "index.js", "styles.css")
+    if (knownFiles.contains(path.getFileName.toString)) {
+      return Ok(())
+    }
+    if (FileOps.checkExt(path, "html")) {
+      return Ok(())
+    }
+    val iconsDir = getDocumentationDirectory(p).resolve("./icons/").normalize()
+    if (path.startsWith(iconsDir) && FileOps.checkExt(path, "svg")) {
+      return Ok(())
+    }
+
+    Err(BootstrapError.FileError(s"Unexpected file '${p.relativize(path)}'. Refusing to run 'clean'."))
+  }
+
+  /** Returns `Err` if `path` is not a file that could be produced by `AstPrinter` in the project at `p`. */
+  private def isValidAstFile(path: Path, p: Path): Result[Unit, BootstrapError] = {
+    val inAstDir = path.getParent == getAstDirectory(p)
+    if (inAstDir && path.getFileName.toString == "0phases.txt") {
+      return Ok(())
+    }
+    if (inAstDir && FileOps.checkExt(path, Flix.IrFileExtension)) {
+      return Ok(())
+    }
+
+    Err(BootstrapError.FileError(s"Unexpected file '${p.relativize(path)}'. Refusing to run 'clean'."))
+  }
+
+  /**
+    * Returns `Err` if `path` is not a file that could be produced by `build-jar`, `build-fatjar`, or
+    * `build-pkg` in the project at `p`.
+    *
+    * Any jar and any package in the artifact directory is accepted, not only the ones the project
+    * builds now: the jar is named after the project directory, which may have been renamed, and
+    * older versions of Flix named the package after it too.
+    */
+  private def isValidArtifactFile(path: Path, p: Path): Result[Unit, BootstrapError] = {
+    val inArtifactDir = path.getParent == getArtifactDirectory(p)
+    if (inArtifactDir && path.getFileName.toString == FLIX_TOML) {
+      return Ok(())
+    }
+    if (inArtifactDir && isJarFile(path)) {
+      return Ok(())
+    }
+    if (inArtifactDir && isPkgFile(path)) {
+      return Ok(())
+    }
+
+    Err(BootstrapError.FileError(s"Unexpected file '${p.relativize(path)}'. Refusing to run 'clean'."))
+  }
+
   /** The class file extension. Does not contain leading '.' */
   private val EXT_CLASS: String = "class"
 
@@ -194,6 +913,20 @@ object Bootstrap {
 
   /** The manifest / flix toml file name. */
   val FLIX_TOML: String = s"flix.$EXT_TOML"
+
+  /**
+    * The package file name.
+    *
+    * A constant, like [[FLIX_TOML]]: the two assets of a release are found at addresses that
+    * follow from the repository and the version alone, without reading anything.
+    */
+  val PACKAGE_FPKG: String = s"package.$EXT_FPKG"
+
+  /** The lock file name. */
+  val PACKAGES_LOCK: String = "packages.lock"
+
+  /** The effect lock file name. */
+  val EFFECTS_LOCK: String = "effects.lock"
 
   /** The license file name. */
   private val LICENSE: String = "LICENSE.md"
@@ -268,6 +1001,11 @@ object Bootstrap {
   def getDocumentationDirectory(p: Path): Path = getBuildDirectory(p).resolve("./doc/").normalize()
 
   /**
+    * Returns the directory of the pretty printed ASTs (see `--Xprint-phases`) relative to the given path `p`.
+    */
+  private def getAstDirectory(p: Path): Path = p.resolve(CompilerConstants.AstDirectory).normalize()
+
+  /**
     * Returns the path to the artifact directory relative to the given path `p`.
     */
   private def getResourcesDirectory(p: Path): Path = p.resolve("./resources/").normalize()
@@ -275,7 +1013,7 @@ object Bootstrap {
   /**
     * Returns the path to the `effects.lock` relative to the given path `p`.
     */
-  private def getEffectLockFile(p: Path): Path = p.resolve("effects.lock").normalize()
+  private def getEffectLockFile(p: Path): Path = p.resolve(EFFECTS_LOCK).normalize()
 
   /**
     * Returns the path to the LICENSE file relative to the given path `p`.
@@ -313,6 +1051,11 @@ object Bootstrap {
   private def getManifestFile(p: Path): Path = p.resolve(s"./$FLIX_TOML").normalize()
 
   /**
+    * Returns the path to the lock file relative to the given path `p`.
+    */
+  private def getLockFile(p: Path): Path = p.resolve(s"./$PACKAGES_LOCK").normalize()
+
+  /**
     * Returns the path to the .gitignore file relative to the given path `p`.
     */
   private def getGitIgnoreFile(p: Path): Path = p.resolve("./.gitignore").normalize()
@@ -330,7 +1073,8 @@ object Bootstrap {
   /**
     * Returns the path to the pkg file based on the given path `p`.
     */
-  private def getPkgFile(p: Path): Path = getArtifactDirectory(p).resolve(getPackageName(p) + s".$EXT_FPKG").normalize()
+  private def getPkgFile(p: Path): Path =
+    getArtifactDirectory(p).resolve(PACKAGE_FPKG).normalize()
 
   /**
     * Returns `true` if the given path `p` is a jar-file.
@@ -350,11 +1094,11 @@ object Bootstrap {
     * all .flix source files.
     * Then returns the initialized Bootstrap object or an error.
     */
-  def bootstrap(path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Bootstrap, BootstrapError] = {
+  def bootstrap(path: Path, token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Bootstrap, BootstrapError] = {
     //
     // Determine the mode: If `path/flix.toml` exists then "project" mode else "directory mode".
     //
-    val bootstrap = new Bootstrap(path, apiKey)
+    val bootstrap = new Bootstrap(path, token)
     val tomlPath = getManifestFile(path)
     if (Files.exists(tomlPath)) {
       out.println(s"Found '${formatter.blue(FLIX_TOML)}'. Checking dependencies...")
@@ -366,12 +1110,16 @@ object Bootstrap {
   }
 }
 
-class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
+class Bootstrap(val projectPath: Path, token: Option[String]) {
 
   // -- Fields Section --
 
   // The `flix.toml` manifest if in project mode, otherwise `None`
   private var optManifest: Option[Manifest] = None
+
+  // The version that every Flix package of the project is built at. Replaced as a whole whenever
+  // the dependencies are resolved.
+  private var builtVersions: Map[PackageId, SemVer] = Map.empty
 
   // The source files, packages, and JARs of the project. Replaced as a whole whenever the project is scanned.
   private var files: ProjectFiles = ProjectFiles(Nil, Nil, Nil)
@@ -390,10 +1138,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     for {
       manifest <- parseManifest(tomlPath)
       _ <- checkFlixVersion(manifest, tomlPath)
-      deps <- resolveFlixDependencies(manifest)
-      installed <- installDependencies(deps)
+      // Read before anything is resolved, so that every downloaded file can be checked against it
+      // as it lands, rather than once it has already been parsed or compiled.
+      lockfile <- readLockFile()
+      deps <- resolveFlixDependencies(manifest, lockfile)
+      installed <- installDependencies(deps, lockfile)
     } yield {
       val (pkgs, jars) = installed
+      builtVersions = FlixPackageManager.builtVersions(deps)
       files = ProjectFiles(scanSources(), pkgs, jars)
     }
   }
@@ -431,18 +1183,35 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Returns flix manifests of all dependencies of `manifest`. This includes transitive dependencies.
     * Requires network access.
     */
-  private def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Result[FlixPackageManager.SecureResolution, BootstrapError] = {
-    FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey).map(FlixPackageManager.resolveSecurityLevels) match {
+  private def resolveFlixDependencies(manifest: Manifest, lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[FlixPackageManager.SecureResolution, BootstrapError] = {
+    FlixPackageManager.resolve(manifest, projectPath, token, lockfile) match {
       case Err(e) => Err(BootstrapError.FlixPackageError(e))
-      case Ok(securityMap) =>
-        val securityResolutionErrors = FlixPackageManager.checkSecurity(securityMap)
-        if (securityResolutionErrors.isEmpty) {
-          Ok(securityMap)
+      case Ok(resolution) =>
+        // Every package must be one this version of Flix can build, before anything is installed.
+        // The project's own manifest is checked when it is read, and a package is checked here,
+        // once it is known which version of it is built: a package can be built at a version that
+        // no manifest the user has seen asks for, and that version can require a newer Flix than
+        // the one declared.
+        val graphErrors = FlixPackageManager.checkFlixVersions(resolution, SemVer.ofVersion(Version.CurrentVersion))
+        if (graphErrors.nonEmpty) {
+          Err(toBootstrapError(graphErrors))
         } else {
-          Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.message(formatter)).mkString(System.lineSeparator())))
+          val securityMap = FlixPackageManager.resolveSecurityLevels(resolution)
+          val securityErrors = FlixPackageManager.checkSecurity(securityMap)
+          if (securityErrors.isEmpty) {
+            Ok(securityMap)
+          } else {
+            Err(toBootstrapError(securityErrors))
+          }
         }
     }
   }
+
+  /**
+    * Returns the given non-empty list of package errors as a single [[BootstrapError]].
+    */
+  private def toBootstrapError(errors: List[PackageError])(implicit formatter: Formatter): BootstrapError =
+    BootstrapError.GeneralError(errors.map(_.message(formatter)).mkString(System.lineSeparator()))
 
   /**
     * Downloads and installs all `.fpkg` and `.jar` (maven and urls) dependencies of `resolution`
@@ -452,25 +1221,78 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Returns the installed packages with their security contexts, and the installed JARs
     * (Maven dependencies from `lib/cache/` before URL dependencies from `lib/external/`).
     */
-  private def installDependencies(resolution: FlixPackageManager.SecureResolution)(implicit formatter: Formatter, out: PrintStream): Result[(List[(Path, SecurityContext)], List[Path]), BootstrapError] = {
+  private def installDependencies(resolution: FlixPackageManager.SecureResolution, lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[(List[InstalledPackage], List[Path]), BootstrapError] = {
     for {
-      pkgs <- installFlixDependencies(resolution)
+      installation <- installFlixDependencies(resolution, lockfile)
       mavenJars <- installMavenDependencies(resolution.manifests)
       externalJars <- installJarDependencies(resolution.manifests)
+      // Written last, so that a failure part way through leaves the lock file of the previous
+      // build rather than one that records a resolution that was never fully installed.
+      _ <- writeLockFile(installation.lockfile)
     } yield {
       out.println("Dependency resolution completed.")
-      (pkgs, mavenJars ::: externalJars)
+      (installation.packages, mavenJars ::: externalJars)
+    }
+  }
+
+  /**
+    * Returns the `packages.lock` file of the project, or an empty lock file if it has none.
+    *
+    * A project with no lock file is one that has never been built by a version of Flix that
+    * writes one. Nothing is known about its dependencies yet, so nothing is checked, and the
+    * lock file that this build writes is what later builds are checked against.
+    */
+  private def readLockFile(): Result[Lockfile, BootstrapError] = {
+    val lockPath = Bootstrap.getLockFile(projectPath)
+    if (!Files.exists(lockPath)) {
+      Ok(Lockfile(Map.empty))
+    } else {
+      LockfileParser.parse(lockPath) match {
+        case Ok(lockfile) => Ok(lockfile)
+        case Err(e) => Err(BootstrapError.LockParseError(e))
+      }
+    }
+  }
+
+  /**
+    * Writes `lockfile` to the `packages.lock` file of the project.
+    *
+    * The file is written to a temporary file in the project directory and then moved into place,
+    * so that a build which is interrupted part way through leaves either the previous lock file
+    * or the new one, and never half of either.
+    */
+  private def writeLockFile(lockfile: Lockfile): Result[Unit, BootstrapError] = {
+    val lockPath = Bootstrap.getLockFile(projectPath)
+    try {
+      val tmpPath = Files.createTempFile(lockPath.getParent, PACKAGES_LOCK, ".tmp")
+      try {
+        Files.writeString(tmpPath, Lockfile.format(lockfile))
+        Files.move(tmpPath, lockPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+      } catch {
+        case e: IOException =>
+          // Leave no temporary file behind. A failure to remove it means the filesystem is in an
+          // unexpected state, but it must not replace the error that actually stopped the write.
+          try {
+            Files.deleteIfExists(tmpPath)
+          } catch {
+            case e2: IOException => e.addSuppressed(e2)
+          }
+          throw e
+      }
+      Ok(())
+    } catch {
+      case e: IOException => Err(BootstrapError.FileError(s"Unable to write '$PACKAGES_LOCK': ${e.getMessage}"))
     }
   }
 
   /**
     * Downloads and installs all `.fpkg` dependencies defined by `dependencyManifests` into the `lib/` directory.
     * Requires network access.
-    * Returns the paths to the installed dependencies with their security contexts.
+    * Returns the installed packages together with the lock file that records them.
     */
-  private def installFlixDependencies(resolution: FlixPackageManager.SecureResolution)(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, SecurityContext)], BootstrapError] = {
-    FlixPackageManager.installAll(resolution, projectPath, apiKey) match {
-      case Ok(pkgs) => Ok(pkgs)
+  private def installFlixDependencies(resolution: FlixPackageManager.SecureResolution, lockfile: Lockfile)(implicit formatter: Formatter, out: PrintStream): Result[FlixPackageManager.Installation, BootstrapError] = {
+    FlixPackageManager.installAll(resolution, projectPath, token, lockfile) match {
+      case Ok(installation) => Ok(installation)
       case Err(e) => Err(BootstrapError.FlixPackageError(e))
     }
   }
@@ -493,33 +1315,21 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Returns the paths to the installed dependencies.
     */
   private def installJarDependencies(dependencyManifests: List[Manifest])(implicit out: PrintStream): Result[List[Path], BootstrapError] = {
-    JarPackageManager.installAll(dependencyManifests, projectPath) match {
+    JarPackageManager.installAll(dependencyManifests, projectPath, token) match {
       case Ok(paths) => Ok(paths)
       case Err(e) => Err(BootstrapError.JarPackageError(e))
     }
   }
 
   /**
-    * Scans the project directory for source files and the `lib/` directory for packages and JARs.
+    * Scans the project directory for source files.
+    *
+    * Without a `flix.toml` the project has no dependencies: packages and JARs are loaded only
+    * when a manifest declares them, so the `lib/` directory is not scanned.
     */
   private def directoryMode(): Result[Unit, BootstrapError] = {
-    files = scan(Map.empty)
+    files = ProjectFiles(scanSources(), Nil, Nil)
     Result.Ok(())
-  }
-
-  /**
-    * Returns the files of the project as found on disk: the source files, the `.fpkg` files in
-    * `lib/`, and the `.jar` files in `lib/cache/` (Maven) followed by those in `lib/external/`.
-    *
-    * A package gets its security context from `securityLevels`, or [[SecurityContext.Plain]] if absent.
-    */
-  private def scan(securityLevels: Map[Path, SecurityContext]): ProjectFiles = {
-    val libDir = Bootstrap.getLibraryDirectory(projectPath)
-    val pkgPaths = FileOps.getFilesWithExtIn(libDir, EXT_FPKG, Int.MaxValue)
-    val mavenJars = FileOps.getFilesWithExtIn(libDir.resolve(MavenPackageManager.DirName), EXT_JAR, Int.MaxValue)
-    val externalJars = FileOps.getFilesWithExtIn(libDir.resolve(JarPackageManager.DirName), EXT_JAR, Int.MaxValue)
-    val pkgs = pkgPaths.map(p => (p, securityLevels.getOrElse(p, SecurityContext.Plain)))
-    ProjectFiles(scanSources(), pkgs, mavenJars ::: externalJars)
   }
 
   /**
@@ -591,53 +1401,47 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // The source files after applying the events.
     var sources = files.sources
-    // Whether a package or JAR appeared or disappeared.
-    var libsChanged = false
-    // Whether a package or JAR of the project was modified in place.
-    var dependencyModified = false
+    // Whether the source files must be re-scanned, e.g. after a directory was deleted.
+    var rescanSources = false
+    // Whether a dependency of the project was modified in place or removed.
+    var dependencyChanged = false
     for (event <- events) event match {
       case Created(path) =>
         if (FileOps.checkExt(path, EXT_FLIX)) {
           sources = path :: sources
           flix.addFile(path, SecurityContext.Unrestricted)
-        } else if (isDependencyFile(path)) {
-          libsChanged = true
         }
+      // A package or JAR that appears on disk is ignored: the dependencies are those the manifest declares.
 
       case Modified(path) =>
         if (FileOps.checkExt(path, EXT_FLIX)) {
           flix.addFile(path, SecurityContext.Unrestricted)
         } else if (files.isDependency(path)) {
-          dependencyModified = true
+          dependencyChanged = true
         }
 
       case Deleted(path) =>
         if (path.getFileName.toString.endsWith(s".$EXT_FLIX")) {
           sources = sources.filterNot(_ == path)
           flix.remFile(path)
-        } else if (isDependencyFile(path)) {
-          libsChanged = true
-        } else {
+        } else if (files.isDependency(path)) {
+          // A declared dependency was removed from disk. The caller must construct a new instance,
+          // so that the missing file is reported the next time the project is compiled.
+          dependencyChanged = true
+        } else if (!isDependencyFile(path)) {
           // No recognized file extension — likely a directory deletion.
-          // Remove all tracked source files that were children of this path and re-scan the project.
+          // Remove all tracked source files that were children of this path and re-scan the sources.
           val deletedFlix = sources.filter(_.startsWith(path))
           sources = sources.filterNot(_.startsWith(path))
           for (p <- deletedFlix) flix.remFile(p)
-          libsChanged = true
+          rescanSources = true
         }
 
       case Overflow => // already handled above
     }
 
-    if (libsChanged) {
-      val rescanned = rescan()
-      val dependenciesChanged = rescanned.dependencies != files.dependencies
-      files = rescanned
-      dependencyModified || dependenciesChanged
-    } else {
-      files = files.copy(sources = sources)
-      dependencyModified
-    }
+    files = if (rescanSources) rescan() else files.copy(sources = sources)
+    dependencyChanged
   }
 
   /**
@@ -649,11 +1453,19 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Re-scans the project, keeping the known security contexts of the packages.
+    * Re-scans the source files of the project, keeping its dependencies.
+    *
+    * The dependencies are those the manifest declares, and they are fixed for the lifetime of
+    * this instance.
     */
-  private def rescan(): ProjectFiles = scan(files.pkgs.toMap)
+  private def rescan(): ProjectFiles = files.copy(sources = scanSources())
 
   // -- Flix Instance Section --
+
+  /**
+    * Returns the files of this project: its source files, packages, and JARs.
+    */
+  def projectFiles: ProjectFiles = files
 
   /**
     * Returns a new Flix instance with the source files, packages, and JARs of this project.
@@ -662,7 +1474,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * source files are picked up by [[applyFileChanges]].
     */
   def mkFlix(options: Options, formatter: Formatter): Flix = {
-    val flix = new Flix(pkgs = files.pkgs, jars = files.jars)
+    val flix = new Flix(pkgs = files.pkgs, jars = files.jars, mounts = optManifest.map(_.mounts).getOrElse(Map.empty))
     flix.setOptions(options)
     flix.setFormatter(formatter)
     for (path <- files.sources) {
@@ -732,10 +1544,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds (compiles) the source files for the project in production mode and
     * writes the generated class files to the build directory.
+    *
+    * The class files of an earlier build are deleted first, but only once the project compiles.
+    * The names of generated classes differ from build to build, so they would otherwise accumulate.
     */
   def buildClasses(flix: Flix): Result[Unit, BootstrapError] = {
     for {
       result <- compileProject(flix, Build.Production)
+      _ <- Bootstrap.cleanClassDirectory(projectPath)
       _ <- writeClasses(result.getClasses)
     } yield {
       ()
@@ -895,20 +1711,23 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   /**
     * Builds a fatjar package for the project.
+    *
+    * The jars packed into it are the ones the dependencies of the project resolve to, and not every
+    * jar in `lib/`: a jar left there by a dependency that was since removed or upgraded is not part
+    * of the project, and must not shadow the classes of the jars that are.
     */
   def buildFatJar(flix: Flix): Result[Unit, BootstrapError] = {
     val jarFile = Bootstrap.getJarFile(projectPath)
-    val libDir = Bootstrap.getLibraryDirectory(projectPath)
+    val jars = files.jars
     for {
       _ <- configureJarOutput(flix)
       result <- compile(flix)
       _ <- validateJarFile(jarFile)
-      _ <- validateDirectory(libDir)
-      _ <- validateJarFilesIn(libDir)
+      _ <- Result.traverse(jars)(validateJarFile)
       contents = (zip: ZipOutputStream) => {
         addClassesToZip(result.getClasses, zip)
         addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath), zip)
-        addJarsFromDirToZip(libDir, zip)
+        addJarsToZip(jars, zip)
       }
       _ <- createJar(jarFile, contents)
     } yield {
@@ -917,33 +1736,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Returns `OK(())` if `dir` exists and is a readable directory.
-    * If `dir` does not exist, it returns `Ok(())` too.
-    */
-  private def validateDirectory(dir: Path): Result[Unit, BootstrapError] = {
-    if (Files.exists(dir)) {
-      if (!Files.isDirectory(dir)) {
-        return Err(BootstrapError.FileError(s"The path '${dir.toString}' is not a directory."))
-      }
-      if (!Files.isReadable(dir)) {
-        return Err(BootstrapError.FileError(s"The path '${dir.toString}' is not readable."))
-      }
-    }
-    Ok(())
-  }
-
-  /**
-    * Returns `Ok(())` if all files ending with `.jar` in `dir` are valid jar files.
-    *
-    * @see [[validateJarFile]]
-    */
-  private def validateJarFilesIn(dir: Path): Result[Unit, BootstrapError] = {
-    Result.traverse(FileOps.getFilesWithExtIn(dir, EXT_JAR, Int.MaxValue))(validateJarFile).map(_ => ())
-  }
-
-  /**
-    * Adds all jars in `dir` to `zip`.
-    * Ignores non-jar files and does nothing if `dir` does not exist.
+    * Adds the contents of `jars` to `zip`.
     *
     * Most of each dependency jar is copied verbatim — class files, ordinary resources
     * (native libraries, capability files, `.properties` files, ...), and library-specific
@@ -961,18 +1754,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     *         does not declare `Multi-Release: true`) and risk shadowing the base classes.
     *       - `module-info.class` cannot be merged: only one may live at the jar root.
     *
-    * Duplicate entry paths across jars are de-duplicated (first jar wins) so that the build
-    * does not abort with a `ZipException: duplicate entry`.
+    * Duplicate entry paths across jars are de-duplicated (the first of `jars` wins) so that the
+    * build does not abort with a `ZipException: duplicate entry`.
     */
-  private def addJarsFromDirToZip(dir: Path, zip: ZipOutputStream): Unit = {
-    // First, we get all jar files inside the lib folder.
-    // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
-    if (!Files.exists(dir)) {
-      return
-    }
+  private def addJarsToZip(jars: List[Path], zip: ZipOutputStream): Unit = {
     val servicesPrefix = "META-INF/services/"
     val metaInfPrefix = "META-INF/"
-    val jarDependencies = FileOps.getFilesWithExtIn(dir, EXT_JAR, Int.MaxValue)
 
     // Tracks entry names already written to `zip` so that an entry present in more than one
     // dependency jar is written only once (first jar wins) instead of throwing.
@@ -996,7 +1783,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Add jar dependencies.
-    jarDependencies.foreach(dep => {
+    jars.foreach(dep => {
       // Extract the runtime contents of the dependency into the fat jar.
       Using(new ZipInputStream(Files.newInputStream(dep))) {
         zipIn =>
@@ -1111,20 +1898,24 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   // -- Tooling Section --
 
   /**
-    * Generates API documentation.
+    * Generates API documentation for the declarations that come from a source with the origin
+    * `origin`: the project's own code, or the bundled library.
     */
-  def doc(flix: Flix): Result[Unit, BootstrapError] = {
-    typeCheck(flix).map(HtmlDocumentor.run(_, getPackageModules, Bootstrap.getDocumentationDirectory(projectPath))(flix))
+  def doc(flix: Flix, origin: Origin): Result[Unit, BootstrapError] = {
+    typeCheck(flix).map(HtmlDocumentor.run(_, origin, Bootstrap.getDocumentationDirectory(projectPath))(flix))
   }
 
   /**
-    * Returns the modules of the package if manifest is present.
-    * Returns [[PackageModules.All]] if manifest is not present.
+    * Prints a report of every documentable item that comes from a source with the origin `origin`
+    * and has no doc comment: one grep-able line per item, followed by a summary count. Prints
+    * nothing if there are none.
     */
-  private def getPackageModules: PackageModules = {
-    optManifest match {
-      case None => PackageModules.All
-      case Some(manifest) => manifest.modules
+  def checkMissingDocs(flix: Flix, origin: Origin)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
+    typeCheck(flix).map { root =>
+      val missing = MissingDoc.check(root, origin)
+      if (missing.nonEmpty) {
+        out.println(MissingDoc.format(missing, flix.getFormatter))
+      }
     }
   }
 
@@ -1144,7 +1935,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def stat(flix: Flix)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
     typeCheck(flix).map { root =>
-      val header = optManifest.map(m => s"${m.name} ${m.version}")
+      val header = optManifest.map(m => s"${m.displayName} ${m.version}")
       out.println(Stat.format(header, Stat.compute(root)))
     }
   }
@@ -1152,12 +1943,26 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   // -- Effect Locking Section --
 
   /**
-    * Returns `Ok(())` if the dependencies are consistent with the `effects.lock` file.
-    * Returns `Err(e)` if an error `e` occurred or if the dependencies are inconsistent with the `effect.lock` file.
+    * Returns `Ok(())` if the signatures that the 'effects.lock' file locks for `spec` are the
+    * ones the dependencies declare, and every package that `spec` names is locked.
+    *
+    * `spec` names the package to check, as it does for [[lockEffects]]: a package identifier
+    * without a version, e.g. `flix/museum-clerk` or `github:flix/museum-clerk`, which must be one
+    * the project declares. Checking no package in particular checks every dependency the project
+    * declares.
+    *
+    * A package is checked on its own, so that a package whose signatures have drifted does not
+    * stand in the way of checking another.
     */
-  def checkEffects(flix: Flix): Result[Unit, BootstrapError] = {
-    if (!isProjectMode) {
-      return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-check'"))
+  def checkEffects(flix: Flix, spec: Option[String])(implicit out: PrintStream): Result[Unit, BootstrapError] = {
+    val manifest = optManifest match {
+      case Some(m) => m
+      case None => return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-check'"))
+    }
+
+    val targets = targetsOf("eff-check", spec, manifest) match {
+      case Ok(ts) => ts
+      case Err(e) => return Err(e)
     }
 
     FileOps.exists(Bootstrap.getEffectLockFile(projectPath)) match {
@@ -1167,258 +1972,178 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     for {
-      json <- FileOps.readString(Bootstrap.getEffectLockFile(projectPath)).mapErr(e => BootstrapError.FileError(s"IO error: ${e.getMessage}"))
-      (lockedDefs, lockedSigs) <- EffectLock.deserialize(json).mapErr(BootstrapError.FileError.apply)
+      // Read before the program is type checked, so that an unreadable file is reported before
+      // the work of compiling the project is done.
+      lockfile <- EffectLockfileParser.parse(Bootstrap.getEffectLockFile(projectPath)).mapErr(BootstrapError.EffectLockParseError.apply)
       root <- typeCheck(flix)
-      errors <- reportEffectUpgradeErrors(lockedDefs, lockedSigs, root)(flix)
+      errors <- reportChangedSignatures(lockfile, root, targets, flix.getFormatter)
     } yield {
       errors
     }
   }
 
-  /** Returns `true` if in project mode. This is the case when a `flix.toml` file is present. */
-  private def isProjectMode: Boolean = optManifest.isDefined
+  /**
+    * Returns the packages that `spec` names, which is what 'eff-lock' and 'eff-check' act on.
+    *
+    * `spec` is a package identifier, e.g. `flix/museum-clerk` or `github:flix/museum-clerk`. It
+    * carries no version: a package is installed at one version, so there is nothing to choose
+    * between. It must be one that `manifest` declares: a package that is reached through another
+    * dependency is not one the project can call, see [[EffectLock.lock]], so it is not one the
+    * project locks. Naming no package names every dependency that `manifest` declares.
+    *
+    * `command` is the command `spec` was given to, 'eff-lock' or 'eff-check', and is named if
+    * `spec` is refused.
+    */
+  private def targetsOf(command: String, spec: Option[String], manifest: Manifest): Result[Set[PackageId], BootstrapError] = spec match {
+    case None => Ok(manifest.flixDependencies.map(dep => dep.id).toSet)
+    case Some(s) => PackageSpec.mkPackageSpec(s) match {
+      case Some(pkg) if pkg.version.isDefined => Err(BootstrapError.UnexpectedVersion(command, pkg.id))
+      case Some(pkg) => Bootstrap.findDeclared(manifest, pkg.id).map(dep => Set(dep.id))
+      case None => Err(BootstrapError.IllegalPackageSpec(s))
+    }
+  }
 
   /**
     * Helper function for [[checkEffects]] to be used in for comprehension.
     *
-    * Returns `Ok(())` if no effect upgrade errors are found.
-    * Returns `Err(BootstrapError.EffectUpgradeError(errors))` otherwise.
+    * Returns `Ok(())` if every locked signature that is still declared is the one that was
+    * locked and every target that declares something publicly is locked, and says how many
+    * signatures were compared.
+    * Returns `Err(BootstrapError.SignaturesChangedError(changes))` if a signature has changed.
+    * Returns `Err(BootstrapError.PackagesNotLocked(ids))` if none has, but a target is not locked.
+    *
+    * A changed signature is reported before an unlocked package: the cure for the latter is to
+    * lock, and locking every package would record the change unseen.
     */
-  private def reportEffectUpgradeErrors(lockedDefs: Map[Symbol.DefnSym, Scheme], lockedSigs: Map[Symbol.SigSym, Scheme], root: TypedAst.Root)(implicit flix: Flix): Result[Unit, BootstrapError] = {
-    // Compute the inverted use graph to get `f -> g` if `f` is used in `g`.
-    val useGraph = ListMap.from(UseGraph.computeGraph(root).invert.map {
-      case (UseGraph.UsedSym.DefnSym(f), UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
-      case (UseGraph.UsedSym.DefnSym(f), UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
-      case (UseGraph.UsedSym.SigSym(f), UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
-      case (UseGraph.UsedSym.SigSym(f), UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
-    })
-
-    // N.B.: We erase the keys of the maps to strings, since maps are invariant in the key
-    val erasedLockedDefs = lockedDefs.map { case (sym, scheme) => sym.toString -> scheme }
-    val erasedUpgradedDefs = root.defs.map { case (sym, defn) => sym.toString -> defn.spec.declaredScheme }
-    val erasedLockedSigs = lockedSigs.map { case (sym, scheme) => sym.toString -> scheme }
-    val erasedUpgradedSigs = root.sigs.map { case (sym, sig) => sym.toString -> sig.spec.declaredScheme }
-    val defnErrors = collectUpgradeErrors(erasedLockedDefs, erasedUpgradedDefs, useGraph)
-    val sigErrors = collectUpgradeErrors(erasedLockedSigs, erasedUpgradedSigs, useGraph)
-    val allErrors = defnErrors ::: sigErrors
-
-    if (allErrors.isEmpty) {
-      Ok(())
-    } else {
-      Err(BootstrapError.EffectUpgradeError(allErrors))
-    }
-  }
-
-  /**
-    * Collects a list of tuples `(sym, scheme, uses)` if function represented by `sym` is not an effect safe upgrade.
-    */
-  private def collectUpgradeErrors(lockedFunctions: Map[String, Scheme], upgradeFunctions: Map[String, Scheme], useGraph: ListMap[String, SourceLocation])(implicit flix: Flix): List[(String, Scheme, List[SourceLocation])] = {
-    val errors = mutable.ArrayBuffer.empty[(String, Scheme, List[SourceLocation])]
-    for ((sym, lockedScheme) <- lockedFunctions) {
-      if (upgradeFunctions.contains(sym)) {
-        val upgradedScheme = upgradeFunctions(sym)
-        val uses = useGraph.get(sym)
-        if (!(uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(lockedScheme, upgradedScheme)(flix))) {
-          errors.addOne((sym, upgradedScheme, uses))
+  private def reportChangedSignatures(lockfile: EffectLockfile, root: TypedAst.Root, targets: Set[PackageId], f: Formatter)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
+    EffectLock.check(lockfile, root, targets) match {
+      case EffectLock.CheckResult(_, changes@(_ :: _)) => Err(BootstrapError.SignaturesChangedError(changes))
+      case EffectLock.CheckResult(compared, Nil) =>
+        EffectLock.unlocked(lockfile, root, targets) match {
+          case Nil =>
+            val checked = EffectLockfile(lockfile.packages.filter { case (id, _) => targets.contains(id) })
+            out.println(fmtChecked(compared, checked, f))
+            Ok(())
+          case ids => Err(BootstrapError.PackagesNotLocked(ids))
         }
-      }
     }
-    errors.toList
   }
 
   /**
-    * Type checks the program and performs effect locking, overwriting the current 'effects.lock' file if it exists.
+    * Returns what a check that found no change is to say, when `compared` of the signatures that
+    * `lockfile` records were compared, e.g.
+    * `Checked 154 signatures of 'github:flix/extras'. Nothing has changed.`.
+    *
+    * A locked declaration that is no longer declared is not compared, so when fewer signatures
+    * were compared than are locked, both counts are given. A check that compared nothing found no
+    * change only because it did not look, so it says that instead, and not in the colour of
+    * success.
+    */
+  private def fmtChecked(compared: Int, lockfile: EffectLockfile, f: Formatter): String = {
+    val locked = lockfile.packages.values.map(locked => locked.defs.size + locked.sigs.size).sum
+    if (locked == 0) {
+      return f.green("Nothing to check: no signature is locked.")
+    }
+    val packages = fmtPackages(lockfile.packages.keys.toList.sorted)
+    if (compared == 0) {
+      f.yellow(s"Checked 0 of ${fmtSignatures(locked)} of $packages. None is still declared.")
+    } else if (compared < locked) {
+      f.green(s"Checked $compared of ${fmtSignatures(locked)} of $packages. Nothing has changed.")
+    } else {
+      f.green(s"Checked ${fmtSignatures(locked)} of $packages. Nothing has changed.")
+    }
+  }
+
+  /**
+    * Returns what `lockfile` records, e.g. `154 signatures of 'github:flix/extras'`, or `None` if
+    * it records nothing.
+    */
+  private def fmtLocked(lockfile: EffectLockfile): Option[String] = {
+    val n = lockfile.packages.values.map(locked => locked.defs.size + locked.sigs.size).sum
+    lockfile.packages.keys.toList.sorted match {
+      case Nil => None
+      case ids => Some(s"${fmtSignatures(n)} of ${fmtPackages(ids)}")
+    }
+  }
+
+  /**
+    * Returns `n` as a count of signatures, e.g. `1 signature` or `154 signatures`.
+    */
+  private def fmtSignatures(n: Int): String = if (n == 1) "1 signature" else s"$n signatures"
+
+  /**
+    * Returns `ids` as a message names them: the one package when there is one, e.g.
+    * `'github:flix/extras'`, and otherwise how many there are, e.g. `2 packages`.
+    */
+  private def fmtPackages(ids: List[PackageId]): String = ids match {
+    case id :: Nil => s"'$id'"
+    case _ => s"${ids.length} packages"
+  }
+
+  /**
+    * Type checks the program and locks the public defs and sigs of `spec`, writing them to the
+    * 'effects.lock' file.
+    *
+    * `spec` is a package identifier, e.g. `flix/museum-clerk` or `github:flix/museum-clerk`. It
+    * carries no version: a package is installed at one version, so there is nothing to choose
+    * between. The package must be one the project declares.
+    *
+    * A package is locked on its own: what `spec` locks replaces what was locked for that package
+    * and leaves every other package of the file as it was, including the entry of a package the
+    * project no longer declares. Locking no package in particular locks every dependency the
+    * project declares, and the file is then written as a whole, so that such an entry is dropped.
+    * A check ignores the entry either way, since it checks only what the project declares.
+    *
     * If the program does not type check, then effect locking is aborted without touching the file system.
     */
-  def lockEffects(flix: Flix): Result[Unit, BootstrapError] = {
-    if (!isProjectMode) {
-      return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-lock'"))
+  def lockEffects(flix: Flix, spec: Option[String])(implicit out: PrintStream): Result[Unit, BootstrapError] = {
+    val manifest = optManifest match {
+      case Some(m) => m
+      case None => return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-lock'"))
     }
+
+    val targets = targetsOf("eff-lock", spec, manifest) match {
+      case Ok(ts) => ts
+      case Err(e) => return Err(e)
+    }
+
     for {
+      // Read before the program is type checked, so that an unreadable file is reported before the
+      // work of compiling the project is done.
+      previous <- readEffectLockFile(merge = spec.isDefined)
       root <- typeCheck(flix)
     } yield {
-      EffectLock.lock(root) match {
-        case Err(e) => return Err(BootstrapError.GeneralError(s"Unexpected serialization error: $e"))
-        case Ok(json) =>
-          val path = Bootstrap.getEffectLockFile(projectPath)
-          // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
-          FileOps.writeString(path, json)
+      val locking = EffectLock.lock(root, targets)
+      val locked = EffectLockfile(previous.packages ++ locking.packages)
+      // N.B.: Do not use FileOps.writeTOML, since the lock file is formatted by Flix itself.
+      FileOps.writeString(Bootstrap.getEffectLockFile(projectPath), EffectLockfile.format(locked))
+      fmtLocked(locking) match {
+        case None => out.println(flix.getFormatter.green("Locked nothing: no package declares a public signature."))
+        case Some(what) => out.println(flix.getFormatter.green(s"Locked $what."))
       }
     }
-  }
-
-  // -- Clean Section --
-
-  /**
-    * Deletes all compiled `.class` files under the project's build directory and removes any now-empty
-    * directories (including the `build` directory itself). Performs safety checks to ensure:
-    *  - the current directory is a Flix project (manifest present),
-    *  - no root or home directories are targeted,
-    *  - no ancestor of the project directory is targeted,
-    *  - every file in the build directory has a `.class` extension and is a valid class file.
-    *
-    * Returns `Ok(())` on success or `Err(BootstrapError.FileError(...))` on validation or IO failures.
-    */
-  def clean(): Result[Unit, BootstrapError] = {
-    // Ensure project mode
-    if (optManifest.isEmpty) {
-      return Err(BootstrapError.FileError(s"No manifest found ('$FLIX_TOML'). Refusing to run 'clean' in a non-project directory."))
-    }
-
-    // Ensure `cwd` is not dangerous
-    val cwd = Path.of(System.getProperty("user.dir"))
-    checkForSystemPath(cwd) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
-    }
-
-    // Ensure `projectPath` is not dangerous
-    checkForSystemPath(projectPath) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
-    }
-
-    val buildDir = Bootstrap.getBuildDirectory(projectPath)
-    val classDir = Bootstrap.getClassDirectory(projectPath)
-    val docDir = Bootstrap.getDocumentationDirectory(projectPath)
-
-    // Ensure `buildDir` is not dangerous
-    checkForDangerousPath(buildDir) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
-    }
-
-    // Ensure all files in `buildDir` are valid class files.
-    val files = FileOps.getFilesIn(buildDir, Int.MaxValue).map(_.normalize())
-    for (file <- files) {
-      if (file.startsWith(classDir)) {
-        if (!FileOps.checkExt(file, "class")) {
-          return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${projectPath.relativize(file)}'"))
-        }
-
-        if (!FileOps.isClassFile(file)) {
-          return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${projectPath.relativize(file)}'"))
-        }
-      } else if (file.startsWith(docDir)) {
-        isValidDocumentFile(file) match {
-          case Err(e) => return Err(e)
-          case Ok(()) => ()
-        }
-      } else {
-        return Err(BootstrapError.FileError(s"Unexpected directory in build directory: '${projectPath.relativize(file)}'"))
-      }
-
-      checkForDangerousPath(file) match {
-        case Err(e) => return Err(e)
-        case Ok(()) => ()
-      }
-    }
-
-    // Delete files
-    for (file <- files) {
-      FileOps.delete(file) match {
-        case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete file '$file': $e"))
-        case Ok(_) => ()
-      }
-    }
-
-    // Delete empty directories
-    // Visit in reverse order to delete the innermost directories first
-    val directories = FileOps.getDirectoriesIn(buildDir, Int.MaxValue).map(_.normalize())
-    for (dir <- directories.reverse) {
-      checkForDangerousPath(dir) match {
-        case Err(e) => return Err(e)
-        case Ok(()) => ()
-      }
-
-      FileOps.delete(dir) match {
-        case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete directory '$dir': $e"))
-        case Ok(_) => ()
-      }
-    }
-
-    Ok(())
   }
 
   /**
-    * Returns `Err` if `path` is one of the following:
-    *   - A root directory of the system
-    *   - The user's home directory (`"user.home"` system property, using [[System.getProperty]])
-    *   - Any ancestor of [[projectPath]]
+    * Returns the packages the 'effects.lock' file locks, if what it locks is to be merged into.
     *
-    * Returns `Ok(())` otherwise.
-    */
-  private def checkForDangerousPath(path: Path): Result[Unit, BootstrapError] = {
-    checkForSystemPath(path) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
-    }
-    checkForAncestor(path) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
-    }
-    Ok(())
-  }
-
-  /** Returns `Err` if `path` is either a root directory or the user's home directory.
+    * The file is merged into when one package is locked, because the packages that are not being
+    * locked must stay as they are. It is not merged into when every package is locked, because
+    * each one is then written anew.
     *
-    * @see [[checkForRootDir]]
-    * @see [[checkForHomeDir]]
+    * A file that cannot be read is an error rather than one to overwrite: it may hold the lock of
+    * a package that is not being locked, and overwriting it would drop that lock silently.
     */
-  private def checkForSystemPath(path: Path): Result[Unit, BootstrapError] = {
-    checkForRootDir(path) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
+  private def readEffectLockFile(merge: Boolean): Result[EffectLockfile, BootstrapError] = {
+    val path = Bootstrap.getEffectLockFile(projectPath)
+    if (!merge) {
+      return Ok(EffectLockfile(Map.empty))
     }
-    checkForHomeDir(path) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
+    FileOps.exists(path) match {
+      case Err(e) => Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
+      case Ok(false) => Ok(EffectLockfile(Map.empty))
+      case Ok(true) => EffectLockfileParser.parse(path).mapErr(BootstrapError.EffectLockParseError.apply)
     }
-    Ok(())
-  }
-
-  /** Returns `Err` if `path` is a root directory. */
-  private def checkForRootDir(path: Path): Result[Unit, BootstrapError] = {
-    val roots = FileSystems.getDefault.getRootDirectories.asScala.toList.map(_.normalize())
-    if (roots.contains(path.normalize())) {
-      return Err(BootstrapError.FileError("Refusing to delete file in root directory."))
-    }
-    Ok(())
-  }
-
-  /** Returns `Err` if `path` is the user's home directory. */
-  private def checkForHomeDir(path: Path): Result[Unit, BootstrapError] = {
-    val home = Path.of(System.getProperty("user.home"))
-    if (home.normalize() == path.normalize()) {
-      return Err(BootstrapError.FileError("Refusing to delete file in home directory."))
-    }
-    Ok(())
-  }
-
-  /** Returns `Err` if `path` is an ancestor of `projectPath`. */
-  private def checkForAncestor(path: Path): Result[Unit, BootstrapError] = {
-    if (projectPath.normalize().startsWith(path.normalize())) {
-      return Err(BootstrapError.FileError(s"Refusing to delete file in ancestor of project directory: '${path.normalize()}"))
-    }
-    Ok(())
-  }
-
-  /** Returns `Err` if `path` is not a file that could be produced by [[HtmlDocumentor]]. */
-  private def isValidDocumentFile(path: Path): Result[Unit, BootstrapError] = {
-    val knownFiles = List("favicon.png", "index.js", "styles.css")
-    if (knownFiles.contains(path.getFileName.toString)) {
-      return Ok(())
-    }
-    if (FileOps.checkExt(path, "html")) {
-      return Ok(())
-    }
-    val iconsDir = Bootstrap.getDocumentationDirectory(projectPath).resolve("./icons/").normalize()
-    if (path.startsWith(iconsDir) && FileOps.checkExt(path, "svg")) {
-      return Ok(())
-    }
-
-    Err(BootstrapError.FileError(s"Unexpected file '${projectPath.relativize(path)}'. Refusing to run 'clean'."))
   }
 
   // -- Release and Outdated Section --
@@ -1442,9 +2167,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Check if `--github-token` option is present
-    val githubToken = flix.options.githubToken match {
+    val token = flix.options.githubToken match {
       case Some(k) => k
-      case None => return Result.Err(BootstrapError.ReleaseError(ReleaseError.MissingApiKey))
+      case None => return Result.Err(BootstrapError.ReleaseError(ReleaseError.MissingToken))
     }
 
     if (!flix.options.assumeYes) {
@@ -1468,7 +2193,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Publish to GitHub
     out.println("Publishing a new release...")
     val artifacts = List(Bootstrap.getPkgFile(projectPath), Bootstrap.getManifestFile(projectPath))
-    val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubToken)
+    val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, token)
     publishResult match {
       case Ok(()) => // Continue
       case Err(e) => return Result.Err(BootstrapError.ReleaseError(e))
@@ -1487,7 +2212,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Show dependencies which have newer versions available.
     *
-    * @return `true` if any outdated dependencies were found, `false` if everything is up to date.
+    * A dependency is compared by the version it is built at, which can be greater than the
+    * version the project declares, since a declaration is only the least version the project can
+    * be built with.
+    *
+    * A dependency that is built at its newest release has no newer version to move to, but it is
+    * listed all the same when the project declares a version below the one it is built at. The
+    * version it is built at is one the project can declare instead, and [[upgrade]] declares it.
+    *
+    * @return `true` if any dependency is listed, `false` if everything is up to date.
     */
   def outdated(flix: Flix)(implicit out: PrintStream): Result[Boolean, BootstrapError] = {
     implicit val formatter: Formatter = flix.getFormatter
@@ -1495,17 +2228,23 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val flixDeps = optManifest.map(FlixPackageManager.findFlixDependencies).getOrElse(Nil)
 
     val rows = flixDeps.flatMap { dep =>
-      val updates = FlixPackageManager.findAvailableUpdates(dep, flix.options.githubToken) match {
+      // A dependency that has not been resolved is built at no version, and is compared by the
+      // version that is declared.
+      val built = builtVersions.getOrElse(dep.id, dep.version)
+      val updates = FlixPackageManager.findAvailableUpdates(dep.id, built, flix.options.githubToken) match {
         case Ok(u) => u
         case Err(e) => return Result.Err(BootstrapError.FlixPackageError(e))
       }
 
-      if (updates.isEmpty)
+      // A dependency is listed when there is a newer version to move to, and when the version it
+      // is declared at is below the version it is built at, which is one it can declare instead.
+      if (updates.isEmpty && built == dep.version)
         None
       else
         Some(List(
-          s"${dep.username}/${dep.projectName}",
+          s"${dep.id.owner}/${dep.id.name}",
           dep.version.toString,
+          built.toString,
           updates.major.map(v => v.toString).getOrElse(""),
           updates.minor.map(v => v.toString).getOrElse(""),
           updates.patch.map(v => v.toString).getOrElse(""),
@@ -1522,8 +2261,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } else {
       out.println("")
       out.println(formatter.table(
-        List("package", "current", "major", "minor", "patch"),
-        List(formatter.blue, formatter.cyan, formatter.yellow, formatter.yellow, formatter.yellow),
+        List("package", "declared", "built", "major", "minor", "patch"),
+        List(formatter.blue, formatter.cyan, formatter.cyan, formatter.yellow, formatter.yellow, formatter.yellow),
         rows
       ))
       out.println("")

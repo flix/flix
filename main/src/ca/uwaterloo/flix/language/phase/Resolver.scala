@@ -2,17 +2,8 @@
  *  Copyright 2017 Magnus Madsen
  *  Copyright 2024 Alexander Dybdahl Troelsen
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.language.phase
@@ -166,8 +157,9 @@ object Resolver {
     * The uses and imports of the unit are resolved silently: any errors are reported by [[visitUnit]].
     */
   private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): List[ResolvedAst.Declaration.TypeAlias] = unit match {
-    case NamedAst.CompilationUnit(usesAndImports0, decls, _) =>
-      val usesAndImports = usesAndImports0.flatMap(visitUseOrImport(_, Name.RootNS, root).toOption)
+    case NamedAst.CompilationUnit(usesAndImports0, decls, loc) =>
+      val unitRoot = Name.rootOf(loc.source.origin)
+      val usesAndImports = usesAndImports0.flatMap(visitUseOrImport(_, unitRoot, root).toOption)
       val scp = appendAllUseScp(defaultUses, usesAndImports, root)
       val namespaces = decls.collect {
         case ns: NamedAst.Declaration.Mod => ns
@@ -175,7 +167,7 @@ object Resolver {
       val aliases0 = decls.collect {
         case alias: NamedAst.Declaration.TypeAlias => alias
       }
-      val aliases = aliases0.map(semiResolveTypeAlias(_, scp, Name.RootNS, root))
+      val aliases = aliases0.map(semiResolveTypeAlias(_, scp, unitRoot, root))
       val ns = namespaces.flatMap(semiResolveTypeAliasesInNamespace(_, defaultUses, root))
       aliases ::: ns
   }
@@ -364,9 +356,10 @@ object Resolver {
     */
   private def visitUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.CompilationUnit = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls0, loc) =>
-      val usesAndImports = resolveUsesAndImports(usesAndImports0, Name.RootNS, root)
+      val unitRoot = Name.rootOf(loc.source.origin)
+      val usesAndImports = resolveUsesAndImports(usesAndImports0, unitRoot, root)
       val scp = appendAllUseScp(defaultUses, usesAndImports, root)
-      val decls = decls0.flatMap(visitDecl(_, scp, Name.RootNS.copy(loc = loc), defaultUses))
+      val decls = decls0.flatMap(visitDecl(_, scp, unitRoot.copy(loc = loc), defaultUses))
       ResolvedAst.CompilationUnit(usesAndImports, decls, loc)
   }
 
@@ -876,9 +869,13 @@ object Resolver {
     case NamedAst.Expr.Use(use, exp, loc) =>
       // Lookup the used name and add it to the scp
       use match {
-        case NamedAst.UseOrImport.Use(qname, alias, _) =>
+        case NamedAst.UseOrImport.Use(pkg, qname, alias, useLoc) =>
           // TODO NS-REFACTOR allowing relative uses here...
-          lookupQualifiedName(qname, scp0, ns0, root) match {
+          val lookup = pkg match {
+            case Some(p) => lookupPackageUse(p, qname, scp0, ns0, root, useLoc)
+            case None => lookupQualifiedName(qname, scp0, ns0, root)
+          }
+          lookup match {
             case Result.Ok(decls) =>
               val scp = decls.foldLeft(scp0) {
                 case (acc, decl) => acc + (alias.name -> Resolution.Declaration(decl))
@@ -1830,7 +1827,6 @@ object Resolver {
     }
   }
 
-
   /**
     * Performs name resolution on the given constraint pattern `pat0` in the namespace `ns0`.
     * Constraint patterns do not introduce new variables.
@@ -1975,7 +1971,6 @@ object Resolver {
     case NamedAst.ExtTagPattern.Error(loc) =>
       (ResolvedAst.ExtTagPattern.Error(loc), List.empty)
   }
-
 
   /**
     * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
@@ -2294,6 +2289,7 @@ object Resolver {
         }
       case Resolution.Declaration(sig: NamedAst.Declaration.Sig) :: _ =>
         checkPathAccessibility(sig.sym.trt.namespace, ns0, qname.loc)
+        checkTraitAccessibility(sig.sym.trt, ns0, qname.loc)
         if (isSigAccessible(sig, ns0)) {
           ResolvedQName.Sig(sig)
         } else {
@@ -2303,8 +2299,10 @@ object Resolver {
         }
 
       case Resolution.Declaration(op: NamedAst.Declaration.Op) :: _ =>
+        checkEffectAccessibility(op.sym.eff, ns0, qname.loc)
         ResolvedQName.Op(op)
       case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: _ =>
+        checkEnumAccessibility(caze.sym.enumSym, ns0, qname.loc)
         ResolvedQName.Tag(caze)
       // TODO NS-REFACTOR check accessibility
       case Resolution.Declaration(caze: NamedAst.Declaration.RestrictableCase) :: Nil =>
@@ -2337,7 +2335,8 @@ object Resolver {
   /**
     * Finds the enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
-  private def lookupTag(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Case, ResolutionError.UndefinedTag] = {
+  private def lookupTag(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Result[NamedAst.Declaration.Case, ResolutionError.UndefinedTag] = {
+    implicit val implicitRoot: NamedAst.Root = root
     // look up the name
     val matches = tryLookupName(qname, scp0, ns0, root).collect {
       case Resolution.Declaration(c: NamedAst.Declaration.Case) => c
@@ -2347,9 +2346,10 @@ object Resolver {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedTag(qname, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, ns0, qname.loc))
       // Case 1: A match was found. Success. Note that multiple matches can be found, but they are prioritized by tryLookupName so this is fine.
-      case caze :: _ => Result.Ok(caze)
+      case caze :: _ =>
+        checkEnumAccessibility(caze.sym.enumSym, ns0, qname.loc)
+        Result.Ok(caze)
     }
-    // TODO NS-REFACTOR check accessibility
   }
 
   /**
@@ -2800,7 +2800,6 @@ object Resolver {
     case object NotFound extends TypeLookupResult
   }
 
-
   /**
     * Looks up the ambiguous type.
     */
@@ -2929,10 +2928,14 @@ object Resolver {
         }
       }
 
-      // 4th priority: names in the root namespace
-      val rootNames = root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration.apply)
+      // 4th priority: names at the root of the package the name occurs in
+      val viewerRoot = Name.rootOf(qname.loc.source.origin)
+      val packageNames = declarationsIn(viewerRoot, qname.ident.name, root)
 
-      scpNames ::: localNames ::: currentNamespace ::: rootNames
+      // 5th priority: names in the root namespace, where the bundled library is declared
+      val rootNames = if (viewerRoot == Name.RootNS) Nil else declarationsIn(Name.RootNS, qname.ident.name, root)
+
+      scpNames ::: localNames ::: currentNamespace ::: packageNames ::: rootNames
 
     } else {
       // Case 2. Qualified name. Look it up directly.
@@ -2946,7 +2949,7 @@ object Resolver {
   private def tryLookupQualifiedName(qname0: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Option[List[NamedAst.Declaration]] = {
     // First resolve the root of the qualified name
     val head = qname0.namespace.parts.head
-    tryLookupModule(head, scp0, ns0, root) match {
+    tryLookupModule(head, scp0, ns0, root, qname0.loc) match {
       case None => None
       case Some(prefix) =>
         val ns = prefix ::: qname0.namespace.parts.tail
@@ -2958,7 +2961,7 @@ object Resolver {
   /**
     * Looks up the given module in the root.
     */
-  private def tryLookupModule(name: String, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Option[List[String]] = {
+  private def tryLookupModule(name: String, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Option[List[String]] = {
     // First see if there's a module with this name imported into our LocalScope
     scp0(name).collectFirst {
       case Resolution.Declaration(ns: NamedAst.Declaration.Mod) => ns.sym.ns
@@ -2969,24 +2972,68 @@ object Resolver {
       case Resolution.Declaration(eff: NamedAst.Declaration.Effect) => eff.sym.namespace :+ eff.sym.name
     }.orElse {
       // Then see if there's a module with this name declared in our namespace
-      root.symbols.getOrElse(ns0, Map.empty).getOrElse(name, Nil).collectFirst {
-        case Declaration.Mod(_, _, _, sym, _, _, _, _) => sym.ns
-        case Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Effect(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
-      }
+      tryLookupModuleIn(ns0, name, root)
     }.orElse {
-      // Then see if there's a module with this name declared in the root namespace
-      root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(name, Nil).collectFirst {
-        case Declaration.Mod(_, _, _, sym, _, _, _, _) => sym.ns
-        case Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Effect(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
-      }
+      // Then see if there's a module with this name at the root of that package
+      tryLookupModuleIn(Name.rootOf(loc.source.origin), name, root)
+    }.orElse {
+      // Finally, the root namespace, where the bundled library is declared
+      tryLookupModuleIn(Name.RootNS, name, root)
+    }
+  }
+
+  /**
+    * Returns the namespace of the module `name` declared in the namespace `ns`, if there is one.
+    */
+  private def tryLookupModuleIn(ns: Name.NName, name: String, root: NamedAst.Root): Option[List[String]] =
+    root.symbols.getOrElse(ns, Map.empty).getOrElse(name, Nil).collectFirst {
+      case Declaration.Mod(_, _, _, sym, _, _, _, _) => sym.ns
+      case Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
+      case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
+      case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
+      case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
+      case Declaration.Effect(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
+    }
+
+  /**
+    * Returns the declarations of `name` in the namespace `ns`.
+    */
+  private def declarationsIn(ns: Name.NName, name: String, root: NamedAst.Root): List[Resolution] =
+    root.symbols.getOrElse(ns, Map.empty).getOrElse(name, Nil).map(Resolution.Declaration.apply)
+
+  /**
+    * Returns the mount table of the package the source at `loc` belongs to: the name of each mount
+    * to the root namespace of the package that mount names.
+    */
+  private def mountsOf(loc: SourceLocation, root: NamedAst.Root): Map[Mountpoint, Name.NName] =
+    loc.source.origin match {
+      case Origin.Package(id) => root.mounts.getOrElse(id, Map.empty)
+      case Origin.User => root.rootMounts
+      // The bundled library declares no dependencies, so the mounts of the project it is compiled
+      // with must not reach it.
+      case Origin.Library => Map.empty
+      case Origin.Unknown => Map.empty
+    }
+
+  /**
+    * Looks up the name `qname` in the package `pkg`, e.g. `Game.Board` in `flixball` for `use flixball::Game.Board`.
+    *
+    * The package is looked up in the mount table of the package the use occurs in. The name is looked
+    * up under the root of the package directly, not through `scp0`, so nothing in scope can shadow it.
+    */
+  private def lookupPackageUse(pkg: Name.Ident, qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Result[List[NamedAst.Declaration], ResolutionError] = {
+    val mounts = mountsOf(pkg.loc, root)
+    mounts.get(Mountpoint(pkg.name)) match {
+      case None =>
+        // The name may be a module, i.e. `use Game::Board` written for `use Game.Board`.
+        val isModule = tryLookupModule(pkg.name, scp0, ns0, root, pkg.loc).isDefined
+        Result.Err(ResolutionError.UndefinedPackage(pkg, qname, mounts.keys.toList, isModule, pkg.loc))
+      case Some(pkgRoot) =>
+        val ns = Name.mkUnlocatedNName(pkgRoot.parts ::: qname.namespace.parts)
+        root.symbols.getOrElse(ns, Map.empty).get(qname.ident.name) match {
+          case Some(decls) if decls.nonEmpty => Result.Ok(decls)
+          case _ => Result.Err(ResolutionError.UndefinedUse(Some(pkg), qname, ns0, Map.empty, loc))
+        }
     }
   }
 
@@ -3032,6 +3079,29 @@ object Resolver {
     } else {
       // Case 4: The trait is otherwise accessible
       TraitAccessibility.Accessible
+    }
+  }
+
+  /**
+    * Reports [[InaccessibleTrait]] if the trait `sym` is not accessible from the namespace `ns0`.
+    *
+    * A signature is referenced through its trait, e.g. `A.Show.show(x)`, and every signature is
+    * public, so [[isSigAccessible]] alone cannot reject a signature of a private trait. This check
+    * closes that gap. A sealed trait is accessible here: sealing only restricts implementation.
+    */
+  private def checkTraitAccessibility(sym: Symbol.TraitSym, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): Unit = {
+    val traitOpt = infallableLookupSym(sym, root).collectFirst {
+      case trt: NamedAst.Declaration.Trait => trt
+    }
+    traitOpt match {
+      case None => ()
+      case Some(trt) =>
+        getTraitAccessibility(trt, ns0) match {
+          case TraitAccessibility.Accessible => ()
+          case TraitAccessibility.Sealed => ()
+          case TraitAccessibility.Inaccessible =>
+            sctx.errors.add(ResolutionError.InaccessibleTrait(trt.sym, ns0, loc))
+        }
     }
   }
 
@@ -3160,7 +3230,6 @@ object Resolver {
     false
   }
 
-
   /**
     * Checks whether `enum0` is accessible from the given namespace `ns0`.
     *
@@ -3191,6 +3260,22 @@ object Resolver {
       //
       val error = ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc)
       sctx.errors.add(error)
+    }
+  }
+
+  /**
+    * Reports [[InaccessibleEnum]] if the enum `sym` is not accessible from the namespace `ns0`.
+    *
+    * A case is referenced through its enum, e.g. `A.Color.Red`, and has no modifier of its own,
+    * so the enum that declares it must be checked when the case is referenced.
+    */
+  private def checkEnumAccessibility(sym: Symbol.EnumSym, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): Unit = {
+    val enumOpt = infallableLookupSym(sym, root).collectFirst {
+      case enum0: NamedAst.Declaration.Enum => enum0
+    }
+    enumOpt match {
+      case None => ()
+      case Some(enum0) => checkEnumIsAccessible(enum0, ns0, loc)
     }
   }
 
@@ -3227,7 +3312,6 @@ object Resolver {
     }
   }
 
-
   /**
     * Checks whether `enum0` is accessible from the given namespace `ns0`.
     *
@@ -3260,7 +3344,6 @@ object Resolver {
       sctx.errors.add(error)
     }
   }
-
 
   /**
     * Returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
@@ -3381,6 +3464,22 @@ object Resolver {
   }
 
   /**
+    * Reports [[InaccessibleEffect]] if the effect `sym` is not accessible from the namespace `ns0`.
+    *
+    * An operation is referenced through its effect, e.g. `A.Eff.op(x)`, and has no modifier of its
+    * own, so the effect that declares it must be checked when the operation is referenced.
+    */
+  private def checkEffectAccessibility(sym: Symbol.EffSym, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): Unit = {
+    val effOpt = infallableLookupSym(sym, root).collectFirst {
+      case eff: NamedAst.Declaration.Effect => eff
+    }
+    effOpt match {
+      case None => ()
+      case Some(eff) => checkEffectIsAccessible(eff, ns0, loc)
+    }
+  }
+
+  /**
     * Returns the type of the given effect `eff0` if it is accessible from the given namespace `ns0`.
     */
   private def getEffectTypeIfAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): UnkindedType = {
@@ -3481,9 +3580,16 @@ object Resolver {
     * Resolves the given Use.
     */
   private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Result[UseOrImport, ResolutionError] = useOrImport match {
-    case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, LocalScope.empty, ns, root) match {
+    case NamedAst.UseOrImport.Use(Some(pkg), qname, alias, loc) =>
+      lookupPackageUse(pkg, qname, LocalScope.empty, ns, root, loc) match {
+        // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
+        case Result.Ok(decls) => Result.Ok(UseOrImport.Use(getSym(decls.head), alias, loc))
+        case Result.Err(error) => Result.Err(error)
+      }
+
+    case NamedAst.UseOrImport.Use(None, qname, alias, loc) => tryLookupName(qname, LocalScope.empty, ns, root) match {
       // Case 1: No matches. Error.
-      case Nil => Result.Err(ResolutionError.UndefinedUse(qname, ns, Map.empty, loc))
+      case Nil => Result.Err(ResolutionError.UndefinedUse(None, qname, ns, Map.empty, loc))
       // Case 2: A match. Map it to a use.
       // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
       case Resolution.Declaration(d) :: _ =>
@@ -3506,10 +3612,17 @@ object Resolver {
     * and dropped, so that names it would have brought into scope are simply undefined.
     */
   private def resolveUsesAndImports(usesAndImports0: List[NamedAst.UseOrImport], ns: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): List[UseOrImport] = {
+    // The uses of `use flixball::{Game, Board}` share one package, which is reported once.
+    val undefinedPackages = mutable.Set.empty[SourceLocation]
     usesAndImports0.flatMap {
       u =>
         visitUseOrImport(u, ns, root) match {
           case Result.Ok(useOrImport) => Some(useOrImport)
+          case Result.Err(error: ResolutionError.UndefinedPackage) =>
+            if (undefinedPackages.add(error.loc)) {
+              sctx.errors.add(error)
+            }
+            None
           case Result.Err(error) =>
             sctx.errors.add(error)
             None
@@ -3639,21 +3752,6 @@ object Resolver {
     case JavaClasses.BigInteger => UnkindedType.Cst(TypeConstructor.BigInt, loc)
     case JavaClasses.String => UnkindedType.Cst(TypeConstructor.Str, loc)
     case JavaClasses.Regex => UnkindedType.Cst(TypeConstructor.Regex, loc)
-    case JavaClasses.ObjFunction => UnkindedType.mkIoArrow(UnkindedType.mkObject(loc), UnkindedType.mkObject(loc), loc)
-    case JavaClasses.ObjConsumer => UnkindedType.mkIoArrow(UnkindedType.mkObject(loc), UnkindedType.mkUnit(loc), loc)
-    case JavaClasses.ObjPredicate => UnkindedType.mkIoArrow(UnkindedType.mkObject(loc), UnkindedType.mkBool(loc), loc)
-    case JavaClasses.IntFunction => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkObject(loc), loc)
-    case JavaClasses.IntConsumer => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkUnit(loc), loc)
-    case JavaClasses.IntPredicate => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkBool(loc), loc)
-    case JavaClasses.IntUnaryOperator => UnkindedType.mkIoArrow(UnkindedType.mkInt32(loc), UnkindedType.mkInt32(loc), loc)
-    case JavaClasses.LongFunction => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkObject(loc), loc)
-    case JavaClasses.LongConsumer => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkUnit(loc), loc)
-    case JavaClasses.LongPredicate => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkBool(loc), loc)
-    case JavaClasses.LongUnaryOperator => UnkindedType.mkIoArrow(UnkindedType.mkInt64(loc), UnkindedType.mkInt64(loc), loc)
-    case JavaClasses.DoubleFunction => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkObject(loc), loc)
-    case JavaClasses.DoubleConsumer => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkUnit(loc), loc)
-    case JavaClasses.DoublePredicate => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkBool(loc), loc)
-    case JavaClasses.DoubleUnaryOperator => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkFloat64(loc), loc)
     case _ => UnkindedType.UnappliedNative(clazz.desc, clazz.typeParameters.length, loc)
   }
 
@@ -3707,7 +3805,6 @@ object Resolver {
 
     case class Error(e: ResolutionError.UndefinedName) extends ResolvedQName
   }
-
 
   /**
     * Enum indicating whether a type variable may be a wildcard.

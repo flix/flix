@@ -1,3 +1,6 @@
+///
+/// Functions for reflecting on the runtime representation of values and types.
+///
 pub mod Reflect {
     import java.lang.{Object => JObject}
 
@@ -18,7 +21,9 @@ pub mod Reflect {
         case JvmType.JvmObject  => unchecked_cast(null as a)
     }
 
-    /// A reflected value, reflecting its erased runtime representation.
+    ///
+    /// Type of reflected values, reflecting their erased runtime representation.
+    ///
     pub enum JvmValue {
         case JvmBool(Bool)
         case JvmChar(Char)
@@ -40,7 +45,9 @@ pub mod Reflect {
     /// Returns the erased runtime representation of `t`.
     pub def reflectType(x: Proxy[t]): JvmType = %%REFLECT_TYPE%%(x)
 
-    /// A reflected type, reflecting its erased runtime representation.
+    ///
+    /// Type of reflected types, reflecting their erased runtime representation.
+    ///
     pub enum JvmType {
         case JvmBool
         case JvmChar
@@ -53,14 +60,20 @@ pub mod Reflect {
         case JvmObject
     }
 
-    /// A reflected effect, either Pure (no effects) or Impure (some effects).
+    ///
+    /// Type of reflected effects.
+    ///
+    /// A reflected effect is either `Pure` (no effects) or `Impure` (some effects).
+    ///
     pub enum Purity {
         case Pure
         case Impure
     }
 
     ///
-    /// Represents a zero-width position within a source, identified by line and column coordinates.
+    /// Type of zero-width positions within a source.
+    ///
+    /// A position is identified by line and column coordinates.
     ///
     /// Both line and column numbers use one-based indexing.
     /// (e.g., the first character of a source is at line 1, column 1).
@@ -75,8 +88,9 @@ pub mod Reflect {
     }
 
     ///
-    /// Represents a span or range within a source, defined by a source identifier and
-    /// start/end source positions.
+    /// Type of spans within a source.
+    ///
+    /// A span is defined by a source identifier and start/end source positions.
     ///
     /// Fields:
     ///

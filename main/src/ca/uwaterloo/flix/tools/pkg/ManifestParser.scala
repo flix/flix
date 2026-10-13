@@ -1,22 +1,12 @@
 /*
  * Copyright 2023 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result
@@ -26,16 +16,10 @@ import org.tomlj.*
 import java.io.{IOException, StringReader}
 import java.net.URI
 import java.nio.file.Path
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}
 
 object ManifestParser {
-  /**
-    * Regular expression defining a valid string for username and project name.
-    * Concretely, a valid name is a [[String]] consisting only of alphanumeric characters
-    * or the symbols `.`,`:`,`/`,`_` and `-`.
-    */
-  private val ValidName = "[a-zA-Z0-9.:/_-]+".r
-
   /**
     * Creates a Manifest from the .toml file
     * at path `p` and returns an error if
@@ -83,30 +67,18 @@ object ManifestParser {
     for (
       _ <- checkKeys(parser, p);
 
-      name <- getRequiredStringProperty("package.name", parser, p);
-
-      description <- getRequiredStringProperty("package.description", parser, p);
-
       version <- getRequiredStringProperty("package.version", parser, p);
       versionSemVer <- toFlixVer(version, p);
 
       repository <- getOptionalStringProperty("package.repository", parser, p);
       githubProject <- Result.traverseOpt(repository)(r => toGithubProject(r, p));
 
-      modules <- getOptionalArrayProperty("package.modules", parser, p);
-      moduleStrings <- Result.traverseOpt(modules)(m => convertTomlArrayToStringList(m, p));
-      packageModules <- toPackageModules(moduleStrings);
-
       flix <- getRequiredStringProperty("package.flix", parser, p);
       flixSemVer <- toFlixVer(flix, p);
 
-      license <- getOptionalStringProperty("package.license", parser, p);
-
-      authors <- getRequiredArrayProperty("package.authors", parser, p);
-      authorsList <- convertTomlArrayToStringList(authors, p);
-
       deps <- getOptionalTableProperty("dependencies", parser, p);
       depsList <- collectDependencies(deps, flixDep = true, jarDep = false, p);
+      _ <- checkDuplicateMounts(depsList, p);
 
       mvnDeps <- getOptionalTableProperty("mvn-dependencies", parser, p);
       mvnDepsList <- collectDependencies(mvnDeps, flixDep = false, jarDep = false, p);
@@ -114,9 +86,17 @@ object ManifestParser {
       jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
       jarDepsList <- collectDependencies(jarDeps, flixDep = false, jarDep = true, p)
 
-    ) yield Manifest(name, description, versionSemVer, githubProject, packageModules, flixSemVer, license, authorsList, depsList ++ mvnDepsList ++ jarDepsList)
+    ) yield Manifest(versionSemVer, githubProject, flixSemVer, depsList ++ mvnDepsList ++ jarDepsList)
   }
 
+  /**
+    * Checks that `parser` declares no table, and no key of the package table, that is not allowed.
+    *
+    * A manifest declares only what is read: the version the package is published at, the
+    * repository it is published from, and the version of Flix it is built with. A key that
+    * nothing reads says nothing, and is free to disagree with what is beside it -- `name` was
+    * free to disagree with the repository -- so the manifest does not carry one.
+    */
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
     val keySet: Set[String] = parser.keySet().asScala.toSet
     val allowedKeys = Set("package", "dependencies", "mvn-dependencies", "jar-dependencies")
@@ -128,7 +108,7 @@ object ManifestParser {
 
     val dottedKeys = parser.dottedKeySet().asScala.toSet
     val packageKeys = dottedKeys.filter(s => s.startsWith("package."))
-    val allowedPackageKeys = Set("package.name", "package.description", "package.version", "package.repository", "package.modules", "package.flix", "package.authors", "package.license")
+    val allowedPackageKeys = Set("package.version", "package.repository", "package.flix")
     val illegalPackageKeys = packageKeys.diff(allowedPackageKeys)
     if (illegalPackageKeys.nonEmpty) {
       return Err(ManifestError.IllegalPackageKeyFound(p, illegalPackageKeys.head))
@@ -166,38 +146,6 @@ object ManifestParser {
     } catch {
       case _: IllegalArgumentException => Ok(None)
       case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "String", e.getMessage))
-    }
-  }
-
-  /**
-    * Parses an Array which should be at `prop`
-    * and returns the Array or an error if the result
-    * cannot be found.
-    */
-  private def getRequiredArrayProperty(prop: String, parser: TomlParseResult, p: Path): Result[TomlArray, ManifestError] = {
-    try {
-      val array = parser.getArray(prop)
-      if (array == null) {
-        return Err(ManifestError.MissingRequiredProperty(p, prop, None))
-      }
-      Ok(array)
-    } catch {
-      case e: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, prop, Some(e.getMessage)))
-      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "Array", e.getMessage))
-    }
-  }
-
-  /**
-    * Parses an Array which might be at `prop`
-    * and returns the Array as an Option.
-    */
-  private def getOptionalArrayProperty(prop: String, parser: TomlParseResult, p: Path): Result[Option[TomlArray], ManifestError] = {
-    try {
-      val array = parser.getArray(prop)
-      Ok(Option(array))
-    } catch {
-      case _: IllegalArgumentException => Ok(None)
-      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "Array", e.getMessage))
     }
   }
 
@@ -267,9 +215,7 @@ object ManifestParser {
           if (jarDep) {
             createJarDep(depKey, depValue, p)
           } else if (flixDep) {
-            // Key needs this format to do typed look-ups.
-            val dottedDepKey = s"\"$depKey\""
-            createFlixDep(deps, dottedDepKey, p)
+            createFlixDep(deps, depKey, p)
           } else {
             createMavenDep(depKey, depValue, p)
           }
@@ -332,53 +278,41 @@ object ManifestParser {
   }
 
   /**
-    * Create a [[FlixDependency]].
+    * Creates a [[FlixDependency]] from the entry `depKey` of the table `deps` of Flix dependencies.
     *
-    * @param deps   [[TomlTable]] of declared Flix dependencies.
-    * @param depKey Repository address of the package.
-    * @param p      [[Path]] of the project Toml file.
-    * @return [[Result]] of the [[FlixDependency]] if succesful, otherwise a [[ManifestError]]
+    * The key is the identifier of the package, e.g. `github:flix/museum`, see [[PackageId.mkPackageId]].
     */
   private def createFlixDep(deps: TomlTable, depKey: String, p: Path): Result[FlixDependency, ManifestError] = {
-    // Regex for extracting repository, username, and project name.
-    // (.+) is a capturing group, where . matches any character.
-    val validPkg = s"^\"(.+):(.+)/(.+)\"$$".r
-    depKey match {
-      case validPkg(repoStr, username, projectName) =>
-        val repo = Repository.mkRepository(repoStr) match {
-          case Ok(r) => r
-          case Err(_) => return Err(ManifestError.UnsupportedRepository(p, repoStr))
-        }
+    // A typed look-up needs the key in quotes, since it holds `:` and `/`.
+    val quotedKey = s"\"$depKey\""
 
-        // Ensure the username is valid.
-        if (!username.matches(s"^$ValidName$$"))
-          return Err(ManifestError.IllegalName(p, depKey))
+    val id = PackageId.mkPackageId(depKey) match {
+      case Some(id) => id
+      case None => return Err(ManifestError.FlixDependencyFormatError(p, quotedKey))
+    }
 
-        // Ensure the project name is valid.
-        if (!projectName.matches(s"^$ValidName$$"))
-          return Err(ManifestError.IllegalName(p, depKey))
+    // If the dependency maps to a string, it declares only a version.
+    if (deps.isString(quotedKey)) {
+      for (
+        ver <- getFlixVersion(deps, quotedKey, p);
+        mount <- deriveMount(id, p)
+      ) yield FlixDependency(id, ver, mount, SecurityContext.Default)
 
-        // If the dependency maps to a string, parse the version.
-        if (deps.isString(depKey)) {
-          getFlixVersion(deps, depKey, p).map {
-            Dependency.FlixDependency(repo, username, projectName, _, SecurityContext.Plain)
-          }
+      // If the dependency maps to a table, get the version, security, and mount.
+    } else if (deps.isTable(quotedKey)) {
+      val depTbl = deps.getTable(quotedKey)
+      val verKey = "version"
+      val mountKey = "mount"
+      val securityKey = "security"
 
-
-          // If the dependency maps to a table, get the version and trust.
-        } else if (deps.isTable(depKey)) {
-          val depTbl = deps.getTable(depKey)
-          val verKey = "version"
-          val securityKey = "security"
-
-          for (
-            ver <- getFlixVersion(depTbl, verKey, p);
-            security <- getSecurity(depTbl, securityKey, p)
-          ) yield FlixDependency(repo, username, projectName, ver, security)
-        } else {
-          Err(ManifestError.VersionTypeError(Option.apply(p), depKey, deps.get(depKey)))
-        }
-      case _ => Err(ManifestError.FlixDependencyFormatError(p, depKey))
+      for (
+        _ <- checkDependencyKeys(depTbl, quotedKey, Set(verKey, mountKey, securityKey), p);
+        ver <- getFlixVersion(depTbl, verKey, p);
+        mount <- getMount(depTbl, mountKey, quotedKey, id, p);
+        security <- getSecurity(depTbl, securityKey, p)
+      ) yield FlixDependency(id, ver, mount, security)
+    } else {
+      Err(ManifestError.VersionTypeError(p, quotedKey, deps.get(quotedKey)))
     }
   }
 
@@ -388,12 +322,12 @@ object ManifestParser {
   private def getFlixVersion(deps: TomlTable, depKey: String, p: Path): Result[SemVer, ManifestError] = {
     // Ensure the version is a String.
     if (!deps.isString(depKey)) {
-      Err(ManifestError.VersionTypeError(Option.apply(p), depKey, deps.get(depKey)))
+      Err(ManifestError.VersionTypeError(p, depKey, deps.get(depKey)))
     } else {
       val depVer = deps.getString(depKey)
       SemVer.ofString(depVer) match {
         case Some(v) => Ok(v)
-        case None => Err(ManifestError.FlixVersionFormatError(Option.apply(p), depKey, depVer))
+        case None => Err(ManifestError.FlixVersionFormatError(p, depKey, depVer))
       }
     }
   }
@@ -408,7 +342,7 @@ object ManifestParser {
     }
     if (!depTbl.isString(key)) {
       val perms = depTbl.get(key)
-      Err(ManifestError.FlixDependencySecurityType(Some(path), key, perms))
+      Err(ManifestError.FlixDependencySecurityType(path, key, perms))
     } else {
       val value = depTbl.getString(key)
       SecurityContext.fromString(value) match {
@@ -416,6 +350,62 @@ object ManifestParser {
         case None => Err(ManifestError.FlixUnknownSecurityValue(path, key, value))
       }
     }
+  }
+
+  /**
+    * Returns an error if the dependency table `depTbl` of the dependency `depKey` has a key not in `allowed`.
+    */
+  private def checkDependencyKeys(depTbl: TomlTable, depKey: String, allowed: Set[String], p: Path): Result[Unit, ManifestError] = {
+    val illegalKeys = depTbl.keySet().asScala.toSet.diff(allowed)
+    illegalKeys.toList.sorted match {
+      case Nil => Ok(())
+      case key :: _ => Err(ManifestError.IllegalDependencyKeyFound(p, depKey, key))
+    }
+  }
+
+  /**
+    * Retrieves the mount of the dependency `depKey` on `id` from the table `depTbl` at `key`.
+    *
+    * A dependency that declares no mount is mounted at the name of its repository (see [[deriveMount]]).
+    */
+  private def getMount(depTbl: TomlTable, key: String, depKey: String, id: PackageId, p: Path): Result[Mountpoint, ManifestError] = {
+    if (!depTbl.contains(key)) {
+      deriveMount(id, p)
+    } else if (!depTbl.isString(key)) {
+      Err(ManifestError.FlixDependencyMountType(p, depKey, depTbl.get(key)))
+    } else {
+      val mount = depTbl.getString(key)
+      Mountpoint.mkMountpoint(mount) match {
+        case Some(m) => Ok(m)
+        case None => Err(ManifestError.FlixDependencyIllegalMount(p, depKey, mount))
+      }
+    }
+  }
+
+  /**
+    * Returns the mount of a dependency on `id` that declares none.
+    *
+    * The name of a repository that is not a mountpoint is an error, which asks for an explicit mount.
+    */
+  private def deriveMount(id: PackageId, p: Path): Result[Mountpoint, ManifestError] =
+    Mountpoint.ofRepoName(id) match {
+      case Some(m) => Ok(m)
+      case None => Err(ManifestError.FlixDependencyUnderivableMount(p, id))
+    }
+
+  /**
+    * Returns an error if two Flix dependencies in `deps` share a mount.
+    */
+  private def checkDuplicateMounts(deps: List[Dependency], p: Path): Result[Unit, ManifestError] = {
+    val mountedDeps = deps.collect { case dep: FlixDependency => (dep.mount, dep) }
+    val seen = mutable.Map.empty[Mountpoint, FlixDependency]
+    for ((mount, dep) <- mountedDeps) {
+      seen.get(mount) match {
+        case Some(prev) => return Err(ManifestError.FlixDependencyDuplicateMount(p, mount, prev.id, dep.id))
+        case None => seen += mount -> dep
+      }
+    }
+    Ok(())
   }
 
   /**
@@ -462,13 +452,19 @@ object ManifestParser {
     * Retrieves the file name for a jar dependency
     * and returns an error if it is not formatted correctly
     * or has characters that are not allowed.
+    *
+    * The jar is saved under this name in `lib/external/`, so it must be a file name and not a
+    * path: a name such as `../x.jar`, `/x.jar`, or `C:x.jar` would save it outside that directory.
     */
   private def getFileName(depName: String, p: Path): Result[String, ManifestError] = {
     val split = depName.split('.')
     if (split.length >= 2) {
       val extension = split.apply(split.length - 1)
       if (extension == "jar") {
-        checkNameCharacters(depName, p)
+        if (depName.contains('/') || depName.contains(':'))
+          Err(ManifestError.JarUrlFileNameError(p, depName))
+        else
+          checkNameCharacters(depName, p)
       } else {
         Err(ManifestError.JarUrlExtensionError(p, depName, extension))
       }
@@ -485,34 +481,6 @@ object ManifestParser {
       Ok(name)
     else
       Err(ManifestError.IllegalName(p, name))
-  }
-
-  /**
-    * Converts a TomlArray to a list of Strings. Returns
-    * an error if anything in the array is not a String.
-    */
-  private def convertTomlArrayToStringList(array: TomlArray, p: Path): Result[List[String], ManifestError] = {
-    val strings = array.toList.asScala.toList.map({
-      case s: String => s
-      case _ => return Err(ManifestError.AuthorNameError(p))
-    })
-    Ok(strings)
-  }
-
-  /**
-    * Creates the `PackageModules` object from `optList`.
-    */
-  private def toPackageModules(optList: Option[List[String]]): Result[PackageModules, ManifestError] = {
-    optList match {
-      case None =>
-        Ok(PackageModules.All)
-      case Some(list) =>
-        val moduleSet = list.map { string =>
-          val namespace = string.split('.').toList
-          Symbol.mkModuleSym(namespace)
-        }.toSet
-        Ok(PackageModules.Selected(moduleSet))
-    }
   }
 
 }

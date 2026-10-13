@@ -3,34 +3,20 @@ mod Test.Java.Function {
     use Assert.assertEq
 
     import java.lang.Object
-    import java.util.Optional
-    import java.util.function.Function
     import java.util.function.Consumer
-    import java.util.function.Predicate
-    import java.util.function.IntFunction
-    import java.util.function.IntConsumer
-    import java.util.function.IntPredicate
-    import java.util.function.IntUnaryOperator
-    import java.util.stream.IntStream
-    import java.util.function.LongFunction
-    import java.util.function.LongConsumer
-    import java.util.function.LongPredicate
-    import java.util.function.LongUnaryOperator
-    import java.util.stream.LongStream
-    import java.util.function.DoubleFunction
-    import java.util.function.DoubleConsumer
-    import java.util.function.DoublePredicate
-    import java.util.function.DoubleUnaryOperator
     import java.util.stream.DoubleStream
+    import java.util.stream.IntStream
+    import java.util.stream.LongStream
     import java.util.stream.Stream
 
     @Test
     def testFunction(): Unit \ { Assert, IO } = {
-        let mkObject = i -> new Object {
-            def toString(_this: Object): String = "${i}"
+        let stream0 = Stream.of("42");
+        let f = (s: String) -> new Object {
+            def toString(_this: Object): String = "[${s}]"
         };
-        let stream = Stream.of(mkObject(42));
-        assertEq(expected = "42", stream.findFirst().get().toString())
+        let stream1 = stream0.map(f);
+        assertEq(expected = "[42]", stream1.findFirst().get().toString())
     }
 
     @Test
@@ -41,6 +27,16 @@ mod Test.Java.Function {
         let st = Ref.fresh(Static, "<none>");
         let stream = Stream.of(mkObject(8));
         stream.forEach((obj: Object) -> let s1 = obj.toString(); Ref.put(s1, st));
+        assertEq(expected = "8", Ref.get(st))
+    }
+
+    @Test
+    def testConsumerAnonymousClass(): Unit \ { Assert, IO } = {
+        let st = Ref.fresh(Static, "<none>");
+        let stream = Stream.of("8");
+        stream.forEach(new Consumer[String] {
+            def accept(_this: Consumer[String], s: String): Unit \ IO = Ref.put(s, st)
+        });
         assertEq(expected = "8", Ref.get(st))
     }
 

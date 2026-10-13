@@ -1,17 +1,8 @@
 /*
  * Copyright 2024 Herluf Baggesen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.language.phase
 
@@ -159,6 +150,10 @@ object Lexer {
     )
     PrefixTree.mk(simpleTokens)
   }
+
+  /** Returns `true` if `s` lexes as a keyword rather than as a name. */
+  def isKeyword(s: String): Boolean =
+    Keywords.getNode(s).exists(_.getValue.isDefined)
 
   /** Operators - tokens consumed as long as no operator-like char follows (see [[isUserOp]]). */
   private val Operators: PrefixTree.Node[TokenKind] = {
@@ -388,7 +383,21 @@ object Lexer {
 
   /** Advance the current position past an operator if any operator completely matches the current position. */
   private def acceptIfOperator()(implicit s: State): Option[TokenKind] =
-    advanceIfInTree(Operators, c => !isUserOp(c))
+    advanceIfInTree(Operators, c => !isUserOp(c)) match {
+      case Some(TokenKind.ColonColon) =>
+        // If any whitespace exists around the `::`, it is `ColonColon`. Otherwise it is `ColonColonTight`.
+        // Examples:
+        // a::b:   ColonColonTight
+        // a ::b:  ColonColon
+        // a:: b:  ColonColon
+        // a :: b: ColonColon
+        if (s.sc.nthIs(-3, _.isWhitespace, outOfBounds = true) || s.sc.peekIs(_.isWhitespace, outOfBounds = true)) {
+          Some(TokenKind.ColonColon)
+        } else {
+          Some(TokenKind.ColonColonTight)
+        }
+      case res => res
+    }
 
   /** Advance the current position past a simple token if any simple token matches the current position. */
   private def acceptIfSimpleToken()(implicit s: State): Option[TokenKind] =

@@ -1,25 +1,19 @@
 /*
  * Copyright 2025 Jakob Schneider Villumsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.api.{Bootstrap, Flix, InstalledPackage, Version}
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, SecurityContext}
 import ca.uwaterloo.flix.util.{Formatter, Options}
 
-import java.nio.file.Path
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path}
+import java.util.zip.{ZipEntry, ZipOutputStream}
+import scala.util.Using
 
 /**
   * Contains a test utilities for the package manager tests that rely heavily on I/O
@@ -38,6 +32,20 @@ object PkgTestUtils {
   }
 
   /**
+    * The path a manifest parsed from a string is reported as coming from.
+    *
+    * A test holds a manifest as a literal rather than as a file, but an error still has to say
+    * where the manifest came from, so it names the file a manifest normally lives in.
+    */
+  val ManifestPath: Path = Path.of("flix.toml")
+
+  /**
+    * The lock file of a project that has never been built, which records nothing and so checks
+    * nothing. Used by the tests that are not about the lock file.
+    */
+  val NoLock: Lockfile = Lockfile(Map.empty)
+
+  /**
     * Returns a new [[Flix]] object that has the GitHub token of the CI runner set if available.
     */
   def mkFlix: Flix = mkFlix(Nil)
@@ -45,8 +53,14 @@ object PkgTestUtils {
   /**
     * Returns a new [[Flix]] object with the given packages that has the GitHub token of the CI runner set if available.
     */
-  def mkFlix(pkgs: List[(Path, SecurityContext)]): Flix = {
-    val flix = new Flix(pkgs = pkgs)
+  def mkFlix(pkgs: List[InstalledPackage]): Flix = mkFlix(pkgs, Map.empty)
+
+  /**
+    * Returns a new [[Flix]] object with the given packages and root mount table that has the
+    * GitHub token of the CI runner set if available.
+    */
+  def mkFlix(pkgs: List[InstalledPackage], mounts: Map[Mountpoint, PackageId]): Flix = {
+    val flix = new Flix(pkgs = pkgs, mounts = mounts)
     flix.setOptions(flix.options.copy(githubToken = gitHubToken, progress = false))
   }
 
@@ -56,14 +70,27 @@ object PkgTestUtils {
   def mkFlix(bootstrap: Bootstrap): Flix =
     bootstrap.mkFlix(Options.Default.copy(githubToken = gitHubToken, progress = false), Formatter.NoFormatter)
 
+  /**
+    * Writes an `.fpkg` named `name` whose `.flix` sources are `files`, each file name to its
+    * text, and returns its path.
+    */
+  def mkFpkg(name: String, files: Map[String, String]): Path = {
+    val p = Files.createTempDirectory("flix-fpkg-").resolve(s"$name.fpkg")
+    Using(new ZipOutputStream(Files.newOutputStream(p))) { zip =>
+      for ((fileName, text) <- files) {
+        zip.putNextEntry(new ZipEntry(fileName))
+        zip.write(text.getBytes(StandardCharsets.UTF_8))
+        zip.closeEntry()
+      }
+    }.get
+    p
+  }
+
   def mkTomlWithDeps(deps: String): String = {
     s"""
        |[package]
-       |name = "test"
-       |description = "test"
        |version = "0.1.0"
        |flix = "${Version.CurrentVersion}"
-       |authors = ["flix"]
        |
        |[dependencies]
        |$deps

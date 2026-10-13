@@ -1,4 +1,4 @@
-mod Display {
+pub mod Display {
     use Location.Loc
     use Weather.WeatherInfo
 

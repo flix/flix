@@ -1,17 +1,8 @@
 /*
  * Copyright 2022 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.tools
 
@@ -194,7 +185,7 @@ object Tester {
 
         try {
           // Run the test case.
-          val result = run()
+          run()
 
           // Compute elapsed time.
           val elapsed = System.nanoTime() - start
@@ -202,20 +193,12 @@ object Tester {
           // Restore std out and std err.
           redirect.restore()
 
-          result match {
-            case java.lang.Boolean.FALSE =>
-              // Case 1: Assertion Error.
-              queue.add(TestEvent.Failure(sym, "Assertion Error" :: redirect.stdOut ++ redirect.stdErr, Duration(elapsed)))
-
-            case _ =>
-              if (redirect.stdErr.isEmpty) {
-                // Case 2: Non-False result and no stderr output.
-                queue.add(TestEvent.Success(sym, Duration(elapsed)))
-              } else {
-                // Case 3: Non-False result, but with stderr output.
-                queue.add(TestEvent.Failure(sym, "Std Err Output" :: redirect.stdOut ++ redirect.stdErr, Duration(elapsed)))
-              }
-
+          if (redirect.stdErr.isEmpty) {
+            // Case 1: No stderr output.
+            queue.add(TestEvent.Success(sym, Duration(elapsed)))
+          } else {
+            // Case 2: Stderr output.
+            queue.add(TestEvent.Failure(sym, "Std Err Output" :: redirect.stdOut ++ redirect.stdErr, Duration(elapsed)))
           }
         } catch {
           case ex: Throwable =>
@@ -350,7 +333,7 @@ object Tester {
     * @param skip true if the test case should be skipped.
     * @param run  the code to run.
     */
-  case class TestCase(sym: Symbol.DefnSym, skip: Boolean, run: () => AnyRef) extends Ordered[TestCase] {
+  case class TestCase(sym: Symbol.DefnSym, skip: Boolean, run: () => Unit) extends Ordered[TestCase] {
     override def compare(that: TestCase): Int = this.sym.toString.compareTo(that.sym.toString)
   }
 

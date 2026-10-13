@@ -1,23 +1,17 @@
 /*
  * Copyright 2025 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of mutable hash sets that preserve insertion order, and its functions.
+///
 pub mod MutHashSet {
 
     ///
-    /// Represents a mutable hash set that preserves insertion order.
+    /// Type of mutable hash sets that preserve insertion order.
     ///
     pub struct MutHashSet[t: Type, r: Region] {
         inner: MutHashMap[t, Unit, r]
@@ -314,8 +308,7 @@ pub mod MutHashSet {
     ///
     /// Returns a string representation of the given mutable hash set `s`.
     ///
-    pub def toString(s: MutHashSet[a, r]): String \ r with ToString[a] = region rc {
-        "MutHashSet#{" + (MutHashSet.iterator(rc, s) |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(s: MutHashSet[a, r]): String \ r with ToString[a] =
+        "MutHashSet#{" + MutHashSet.join(", ", s) + "}"
 
 }

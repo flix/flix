@@ -1,17 +1,8 @@
 /*
  * Copyright 2020 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.api.lsp
 
@@ -36,6 +27,11 @@ sealed trait Request {
 object Request {
 
   /**
+    * A request to add the workspace root at the given uri.
+    */
+  case class AddWorkspace(requestId: String, uri: URI) extends Request
+
+  /**
     * A request to add (or update) the given uri with the given source code.
     */
   case class AddUri(requestId: String, name: SourceName, src: String) extends Request
@@ -45,30 +41,22 @@ object Request {
     */
   case class RemUri(requestId: String, name: SourceName) extends Request
 
-  /**
-    * A request to add (or update) the package at the given uri.
-    */
-  case class AddPkg(requestId: String, uri: URI) extends Request
 
-  /**
-    * A request to remove the package at the given uri.
-    */
-  case class RemPkg(requestId: String, uri: URI) extends Request
-
-  /**
-    * A request to add (or update) the JAR at the given uri.
-    */
-  case class AddJar(requestId: String, uri: URI) extends Request
-
-  /**
-    * A request to remove the package at the given uri.
-    */
-  case class RemJar(requestId: String, uri: URI) extends Request
 
   /**
     * A request for the compiler version.
     */
   case class Version(requestId: String) extends Request
+
+  /**
+    * A request for the oldest version of the VSCode extension the compiler can talk to.
+    */
+  case class MinVSCodeVersion(requestId: String) extends Request
+
+  /**
+    * A request to load the project again and start over with a fresh compiler.
+    */
+  case class Restart(requestId: String) extends Request
 
   /**
     * A request to shutdown the language server.
@@ -173,6 +161,16 @@ object Request {
   case class FoldingRange(requestId: String, name: SourceName) extends Request
 
   /**
+    * Tries to parse the given `json` value as a [[AddWorkspace]] request.
+    */
+  def parseAddWorkspace(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+    } yield Request.AddWorkspace(id, uri)
+  }
+
+  /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
     */
   def parseAddUri(json: json4s.JValue): Result[Request, String] = {
@@ -197,55 +195,8 @@ object Request {
     } yield Request.RemUri(id, name)
   }
 
-  /**
-    * Tries to parse the given `json` value as a [[AddPkg]] request.
-    *
-    * The package is read from the file at the uri. Older clients also send the contents of the
-    * package in a `base64` field, which is ignored.
-    */
-  def parseAddPkg(json: json4s.JValue): Result[Request, String] = {
-    for {
-      id <- parseId(json)
-      uri <- parseUri(json)
-    } yield Request.AddPkg(id, uri)
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[RemPkg]] request.
-    */
-  def parseRemPkg(json: json4s.JValue): Result[Request, String] = {
-    for {
-      id <- parseId(json)
-      uri <- parseUri(json)
-    } yield Request.RemPkg(id, uri)
-  }
 
 
-  /**
-    * Tries to parse the given `json` value as a [[AddJar]] request.
-    */
-  def parseAddJar(json: json4s.JValue): Result[Request, String] = {
-    try {
-      for {
-        id <- parseId(json)
-        uri <- parseUri(json)
-      } yield {
-        Request.AddJar(id, uri)
-      }
-    } catch {
-      case ex: IllegalArgumentException => Result.Err(ex.getMessage)
-    }
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[RemJar]] request.
-    */
-  def parseRemJar(json: json4s.JValue): Result[Request, String] = {
-    for {
-      id <- parseId(json)
-      uri <- parseUri(json)
-    } yield Request.RemJar(id, uri)
-  }
 
   /**
     * Tries to parse the given `json` value as a [[Version]] request.
@@ -254,6 +205,24 @@ object Request {
     for {
       id <- parseId(json)
     } yield Request.Version(id)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[MinVSCodeVersion]] request.
+    */
+  def parseMinVSCodeVersion(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+    } yield Request.MinVSCodeVersion(id)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Restart]] request.
+    */
+  def parseRestart(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+    } yield Request.Restart(id)
   }
 
   /**

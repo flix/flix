@@ -1,17 +1,8 @@
 /*
  *  Copyright 2017 Magnus Madsen
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.language.phase
@@ -53,6 +44,108 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleDef](result)
   }
 
+  test("InaccessibleEffect.01") {
+    val input =
+      """
+        |mod A {
+        |    eff Priv {
+        |        def op(x: Int32): Int32
+        |    }
+        |}
+        |
+        |mod B {
+        |    def f(): Int32 \ A.Priv = ??? // Not allowed: `A.Priv` is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEffect](result)
+  }
+
+  test("InaccessibleEffect.02") {
+    val input =
+      """
+        |mod A {
+        |    eff Priv {
+        |        def op(x: Int32): Int32
+        |    }
+        |}
+        |
+        |mod B {
+        |    def f(): Int32 =
+        |        run ??? with handler A.Priv { // Not allowed: `A.Priv` is private to `A`.
+        |            def op(x, k) = k(x)
+        |        }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEffect](result)
+  }
+
+  test("InaccessibleEffect.03") {
+    val input =
+      """
+        |mod A {
+        |    eff Priv {
+        |        def op(x: Int32): Int32
+        |    }
+        |
+        |    pub def handle(f: Unit -> Int32 \ Priv): Int32 =
+        |        run f() with handler Priv {
+        |            def op(x, k) = k(x)
+        |        }
+        |}
+        |
+        |def f(): Int32 = A.handle(() -> A.Priv.op(42)) // Not allowed: `A.Priv` is private to `A`.
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEffect](result)
+  }
+
+  test("InaccessibleEffect.04") {
+    val input =
+      """
+        |mod A {
+        |    eff Priv {
+        |        def op(x: Int32): Int32
+        |    }
+        |
+        |    pub def handle(f: Unit -> Int32 \ Priv): Int32 =
+        |        run f() with handler Priv {
+        |            def op(x, k) = k(x)
+        |        }
+        |}
+        |
+        |mod B {
+        |    def g(): Int32 = A.handle(() -> A.Priv.op(42)) // Not allowed: `A.Priv` is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEffect](result)
+  }
+
+  test("InaccessibleEffect.05") {
+    val input =
+      """
+        |mod A {
+        |    eff Priv {
+        |        def op(x: Int32): Int32
+        |    }
+        |
+        |    pub def handle(f: Unit -> Int32 \ Priv): Int32 =
+        |        run f() with handler Priv {
+        |            def op(x, k) = k(x)
+        |        }
+        |}
+        |
+        |mod B {
+        |    use A.Priv.op
+        |    def g(): Int32 = A.handle(() -> op(42)) // Not allowed: `op` belongs to `A.Priv`, which is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEffect](result)
+  }
+
   test("InaccessibleEnum.01") {
     val input =
       s"""
@@ -85,6 +178,97 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
+  test("InaccessibleEnum.03") {
+    val input =
+      """
+        |mod A {
+        |    enum Color {
+        |        case Red,
+        |        case Blue
+        |    }
+        |
+        |    pub def isRed(c: Color): Bool = match c {
+        |        case Color.Red => true
+        |        case Color.Blue => false
+        |    }
+        |}
+        |
+        |def f(): Bool = A.isRed(A.Color.Red) // Not allowed: `A.Color` is private to `A`.
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
+  test("InaccessibleEnum.04") {
+    val input =
+      """
+        |mod A {
+        |    enum Color {
+        |        case Red,
+        |        case Blue
+        |    }
+        |
+        |    pub def isRed(c: Color): Bool = match c {
+        |        case Color.Red => true
+        |        case Color.Blue => false
+        |    }
+        |}
+        |
+        |mod B {
+        |    def g(): Bool = A.isRed(A.Color.Red) // Not allowed: `A.Color` is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
+  test("InaccessibleEnum.05") {
+    val input =
+      """
+        |mod A {
+        |    enum Color {
+        |        case Red,
+        |        case Blue
+        |    }
+        |
+        |    pub def isRed(c: Color): Bool = match c {
+        |        case Color.Red => true
+        |        case Color.Blue => false
+        |    }
+        |}
+        |
+        |mod B {
+        |    use A.Color.Red
+        |    def g(): Bool = A.isRed(Red) // Not allowed: `Red` belongs to `A.Color`, which is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
+  test("InaccessibleEnum.06") {
+    val input =
+      """
+        |mod A {
+        |    enum Color {
+        |        case Red,
+        |        case Blue
+        |    }
+        |
+        |    pub def red(): Color = Color.Red
+        |}
+        |
+        |mod B {
+        |    def g(): Bool = match A.red() {
+        |        case A.Color.Red => true // Not allowed: `A.Color` is private to `A`.
+        |        case _ => false
+        |    }
+        |}
+        |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleEnum](result)
   }
@@ -342,6 +526,89 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleTrait](result)
   }
 
+  test("InaccessibleTrait.05") {
+    val input =
+      """
+        |mod A {
+        |    trait Show[a] {
+        |        pub def show(x: a): String
+        |    }
+        |
+        |    instance Show[Int32] {
+        |        pub def show(x: Int32): String = "Int32"
+        |    }
+        |}
+        |
+        |def f(): String = A.Show.show(42) // Not allowed: `show` is public, but `A.Show` is private to `A`.
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
+  test("InaccessibleTrait.06") {
+    val input =
+      """
+        |mod A {
+        |    trait Show[a] {
+        |        pub def show(x: a): String
+        |    }
+        |
+        |    instance Show[Int32] {
+        |        pub def show(x: Int32): String = "Int32"
+        |    }
+        |}
+        |
+        |mod B {
+        |    def g(): String = A.Show.show(42) // Not allowed: `A.Show` is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
+  test("InaccessibleTrait.07") {
+    val input =
+      """
+        |mod A {
+        |    trait Show[a] {
+        |        pub def show(x: a): String
+        |    }
+        |
+        |    instance Show[Int32] {
+        |        pub def show(x: Int32): String = "Int32"
+        |    }
+        |}
+        |
+        |mod B {
+        |    use A.Show.show
+        |    def g(): String = show(42) // Not allowed: `show` belongs to `A.Show`, which is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
+  test("InaccessibleTrait.08") {
+    val input =
+      """
+        |mod A {
+        |    sealed trait Show[a] {
+        |        pub def show(x: a): String
+        |    }
+        |
+        |    instance Show[Int32] {
+        |        pub def show(x: Int32): String = "Int32"
+        |    }
+        |}
+        |
+        |mod B {
+        |    def g(): String = A.Show.show(42) // Not allowed: `A.Show` is sealed but not `pub`, so it is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
   test("InaccessibleModule.01") {
     val input =
       s"""
@@ -568,6 +835,55 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |    def g(): Int32 = foo()
          |}
          |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
+  test("InaccessibleModule.13") {
+    val input =
+      """
+        |mod A {
+        |    mod B {
+        |        pub eff Pub {
+        |            def op(x: Int32): Int32
+        |        }
+        |    }
+        |
+        |    pub def handle(f: Unit -> Int32 \ B.Pub): Int32 =
+        |        run f() with handler B.Pub {
+        |            def op(x, k) = k(x)
+        |        }
+        |}
+        |
+        |mod C {
+        |    def f(): Int32 = A.handle(() -> A.B.Pub.op(42)) // Not allowed: `A.B` is private to `A`.
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleModule](result)
+  }
+
+  test("InaccessibleModule.14") {
+    val input =
+      """
+        |mod A {
+        |    mod B {
+        |        pub enum Color {
+        |            case Red,
+        |            case Blue
+        |        }
+        |    }
+        |
+        |    pub def isRed(c: B.Color): Bool = match c {
+        |        case B.Color.Red => true
+        |        case B.Color.Blue => false
+        |    }
+        |}
+        |
+        |mod C {
+        |    def f(): Bool = A.isRed(A.B.Color.Red) // Not allowed: `A.B` is private to `A`.
+        |}
+        |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleModule](result)
   }
@@ -808,6 +1124,85 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedNameUnrecoverable](result)
   }
 
+  test("UndefinedPackage.01") {
+    val input =
+      """
+        |use flixball::Board
+        |
+        |def f(): Int32 = 1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedPackage](result)
+  }
+
+  test("UndefinedPackage.02") {
+    val input =
+      """
+        |use ticTacToe::Game.Board.{empty, size => boardSize}
+        |
+        |def f(): Int32 = 1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedPackage](result)
+  }
+
+  test("UndefinedPackage.03") {
+    // The uses of a use many share one package, which is reported once.
+    val input =
+      """
+        |use flixball::{Game, Board}
+        |
+        |def f(): Int32 = 1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedPackage](result)
+    assert(result._2.count(_.isInstanceOf[ResolutionError.UndefinedPackage]) == 1)
+  }
+
+  test("UndefinedPackage.04") {
+    val input =
+      """
+        |def f(): Int32 = {
+        |    use flixball::Board.size;
+        |    size()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedPackage](result)
+  }
+
+  test("UndefinedPackage.Module.01") {
+    // A module written with `::`.
+    val input =
+      """
+        |use Game::Board
+        |
+        |mod Game {
+        |    mod Board {
+        |        pub def size(): Int32 = 3
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedPackage](result)
+  }
+
+  test("UndefinedPackage.Module.02") {
+    val input =
+      """
+        |mod Game {
+        |    pub def size(): Int32 = 3
+        |}
+        |
+        |def f(): Int32 = {
+        |    use Game::size;
+        |    size()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedPackage](result)
+  }
+
   test("UndefinedUse.01") {
     val input =
       s"""
@@ -966,7 +1361,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new File();
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ConstructorNotFound](result)
   }
 
@@ -978,8 +1373,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |def foo(): Unit \ IO =
            |    let _ = new File(0);
            |    ()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ConstructorNotFound](result)
   }
 
@@ -991,8 +1387,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |def foo(): Unit \ IO =
            |    let _ = new String(true);
            |    ()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ConstructorNotFound](result)
   }
 
@@ -1004,8 +1401,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |def foo(): Unit \ IO =
            |    let _ = new String(true, 'a', "test");
            |    ()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ConstructorNotFound](result)
   }
 
@@ -1017,7 +1415,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = unsafe new Baz();
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
@@ -1030,7 +1428,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = unsafe obj.f();
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
@@ -1042,7 +1440,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = unsafe Baz.f();
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
@@ -1056,7 +1454,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    pub def foo(x: Baz): Baz = x
            |}
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedJvmImport](result)
     expectError[ResolutionError.UndefinedType](result)
     assert(result._2.count(_.isInstanceOf[ResolutionError.UndefinedJvmImport]) == 1)
@@ -1069,7 +1467,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new NotImported();
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedNew](result)
   }
 
@@ -1081,7 +1479,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new Filr("path");
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedNew](result)
   }
 
@@ -1095,7 +1493,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = o.getFoo();
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -1109,7 +1507,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = o.charAt();
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -1123,7 +1521,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = o.charAt(0, 1);
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -1137,7 +1535,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = o.isEmpty(true);
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -1150,7 +1548,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = String.isEmpty();
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.StaticMethodNotFound](result)
   }
 
@@ -1164,7 +1562,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = o.valueOf(false);
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -1175,8 +1573,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def foo(): String \ IO = {
         |    Arrays.deepToString(Array#{} @ Static)
         |}
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1192,7 +1591,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = o.charAt(null);
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -1201,8 +1600,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
       raw"""
            |def foo(): String \ IO =
            |    (2).toString()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -1211,8 +1611,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
       raw"""
            |def foo(): Bool \ IO =
            |    true.equals(true)
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -1221,8 +1622,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
       raw"""
            |def foo(): Int32 \ IO =
            |    (2.0f64).hashCode()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -1231,8 +1633,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
       raw"""
            |def foo(): String \ IO =
            |    'a'.toString()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -1282,7 +1685,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ : Unit = o.hashCode();
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -1298,7 +1701,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ : Iterator[Object] = o.subSequence(4, -1);
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -1316,7 +1719,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ : AliasedReturnType = o.subSequence(-1, 18);
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -1328,7 +1731,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |
            |def foo(): Unit = Math.Foo
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedJvmStaticField](result)
   }
 
@@ -1339,7 +1742,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |
            |def foo(): Unit = Math.Abs
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedJvmStaticField](result)
   }
 
@@ -1351,7 +1754,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |
            |def foo(): Unit = File.PI
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedJvmStaticField](result)
   }
 
@@ -1572,7 +1975,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |type alias T[a] = a
         |type alias S = T
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
@@ -1582,7 +1985,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |type alias T[a, b] = (a, b)
         |type alias S = T[Int32]
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
@@ -1593,7 +1996,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |def f(x: T): Int32 = ???
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
@@ -1605,7 +2008,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |def f(x: E[T]): Int32 = ???
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
@@ -2852,8 +3255,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |        @String
            |        def toString(_this: Serializable): String = "hello"
            |    }
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalNonJavaAnnotation](result)
   }
 
@@ -2865,8 +3269,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new Object @ rc { };
            |    ()
            |}
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.NewObjectWithStructRegion](result)
   }
 
@@ -2878,8 +3283,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new Object @ rc { x = 1 };
            |    ()
            |}
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.NewObjectWithStructFields](result)
   }
 
@@ -2891,8 +3297,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new Object @ rc { x = 1 };
            |    ()
            |}
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.NewObjectWithStructRegion](result)
     expectError[ResolutionError.NewObjectWithStructFields](result)
   }
@@ -2904,8 +3311,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |def foo(): Unit \ IO =
            |    let _ = new S { def new(): S \ IO = super() };
            |    ()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.NewStructWithObjectConstructors](result)
   }
 
@@ -2917,7 +3325,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new S { def m(): Unit = () };
            |    ()
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.NewStructWithObjectMethods](result)
   }
 
@@ -2931,8 +3339,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |        def m(): Unit = ()
            |    };
            |    ()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.NewStructWithObjectConstructors](result)
     expectError[ResolutionError.NewStructWithObjectMethods](result)
   }
@@ -2943,8 +3352,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |def foo(): Unit \ IO =
            |    let _ = new Foo { def hello(): Unit = () };
            |    ()
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -2955,8 +3365,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new Foo @ rc { x = 1 };
            |    ()
            |}
+           |pub eff IO
        """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedStruct](result)
   }
 }

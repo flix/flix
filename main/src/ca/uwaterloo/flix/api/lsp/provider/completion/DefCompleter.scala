@@ -1,17 +1,8 @@
 /*
  * Copyright 2022 Paul Butcher, Lukas Rønn
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
@@ -62,14 +53,14 @@ object DefCompleter {
     *   - If `Net.Http.get` is fully qualified, then `Http.get` is partially qualified
     */
   private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, ectx: ExprContext)(implicit root: Root): Iterable[Completion] = {
-    val fullyQualifiedNamespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
-      case Some(Resolution.Declaration(Mod(_, _, _, name, _, _, _, _))) => name.toString
-      case Some(Resolution.Declaration(Effect(_, _, _, name, _, _, _))) => name.toString
+    // The namespace is taken from the symbol and not from how it prints: a symbol of a package
+    // prints under the identifier of the package, which is not the namespace it is named under.
+    val namespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
+      case Some(Resolution.Declaration(Mod(_, _, _, sym, _, _, _, _))) => sym.ns
+      case Some(Resolution.Declaration(Effect(_, _, _, sym, _, _, _))) => sym.namespace :+ sym.name
       case _ => return Nil
     }
-    val namespaceTail = qn.namespace.idents.tail.map(_.name).mkString(".")
-    val fullyQualifiedModule = if (namespaceTail.isEmpty) fullyQualifiedNamespaceHead else s"$fullyQualifiedNamespaceHead.$namespaceTail"
-    val moduleNamespace = fullyQualifiedModule.split('.').toList
+    val moduleNamespace = namespaceHead ::: qn.namespace.idents.tail.map(_.name)
     for {
       decl <- root.defs.values
       if CompletionUtils.isAvailable(decl.spec)

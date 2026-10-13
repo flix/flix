@@ -1,23 +1,17 @@
 /*
  * Copyright 2023 Anna Blume Jakobsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation}
+import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectLockError}
+import ca.uwaterloo.flix.language.ast.shared.{PackageId, QualifiedSym}
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatSignature}
 import ca.uwaterloo.flix.tools.pkg
-import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{LockError, ManifestError, PackageError, SemVer}
 import ca.uwaterloo.flix.util.Formatter
 
 import java.nio.file.Path
@@ -34,6 +28,10 @@ object BootstrapError {
     override def message(f: Formatter): String = e.message(f)
   }
 
+  case class LockParseError(e: LockError) extends BootstrapError {
+    override def message(f: Formatter): String = e.message(f)
+  }
+
   /**
     * An error raised to indicate that the project at `path` requires a newer version of Flix
     * than the one currently running.
@@ -47,6 +45,106 @@ object BootstrapError {
       s"""The project requires Flix version ${f.bold(required.toString)}, but the current version is ${f.red(current.toString)}.
          |Please upgrade to Flix ${f.bold(required.toString)} or newer.
          |The project file was found at ${f.cyan(path.toString)}.
+         |""".stripMargin
+  }
+
+  /**
+    * An error raised to indicate that `p` is not a Flix project: there is no manifest to add
+    * dependencies to, and no build output to clean.
+    */
+  case class NoProject(p: Path) extends BootstrapError {
+    override def message(f: Formatter): String =
+      s"""No ${f.cyan(p.toString)} found.
+         |Run ${f.bold("flix init")} to create a project.
+         |""".stripMargin
+  }
+
+  /**
+    * An error raised to indicate that `spec` does not name a package.
+    */
+  case class IllegalPackageSpec(spec: String) extends BootstrapError {
+    override def message(f: Formatter): String =
+      s"""${f.red(spec)} does not name a package.
+         |A package is written as ${f.bold("<owner>/<name>")}, optionally followed by ${f.bold("@<version>")}.
+         |For example: ${f.cyan("flix/museum-clerk")} or ${f.cyan("flix/museum-clerk@1.1.0")}.
+         |""".stripMargin
+  }
+
+  /**
+    * An error raised to indicate that `id` is named more than once in a single command.
+    */
+  case class DuplicatePackageSpec(id: PackageId) extends BootstrapError {
+    override def message(f: Formatter): String =
+      s"""${f.red(id.shortName)} is named more than once.
+         |A project declares a package once, at one version, so name each package once.
+         |""".stripMargin
+  }
+
+  /**
+    * An error raised to indicate that `id` is already a dependency of the project.
+    */
+  case class DependencyAlreadyDeclared(id: PackageId, version: SemVer) extends BootstrapError {
+    override def message(f: Formatter): String =
+      s"""${f.red(id.shortName)} is already a dependency of this project, at version ${f.bold(version.toString)}.
+         |Use ${f.bold("flix upgrade")} to declare it at another version.
+         |""".stripMargin
+  }
+
+  /**
+    * An error raised to indicate that a package was given to `command` with a version, which
+    * `command` does not take.
+    *
+    * `id` is the package that was given, so the hint can show the command as it should be written.
+    */
+  case class UnexpectedVersion(command: String, id: PackageId) extends BootstrapError {
+    override def message(f: Formatter): String =
+      s"""The '${f.bold(command)}' command does not take a version.
+         |Write '${f.cyan(s"flix $command ${id.shortName}")}' instead.
+         |""".stripMargin
+  }
+
+  /**
+    * An error raised to indicate that `id` is not a dependency of the project.
+    */
+  case class DependencyNotDeclared(id: PackageId) extends BootstrapError {
+    override def message(f: Formatter): String =
+      s"""${f.red(id.shortName)} is not a dependency of this project.
+         |A package that is reached through another dependency is declared by that dependency, and not by this project.
+         |""".stripMargin
+  }
+
+  /**
+    * An error raised to indicate that the dependencies `ids` have no entry in the 'effects.lock'
+    * file, so that a check cannot say whether their signatures have changed.
+    *
+    * @param ids the packages that are not locked, in order of identifier.
+    */
+  case class PackagesNotLocked(ids: List[PackageId]) extends BootstrapError {
+    override def message(f: Formatter): String = ids.map { id =>
+      s"""${f.red(id.shortName)} is not locked.
+         |The 'effects.lock' file records no signature of it, so the check cannot say whether it has changed.
+         |Run '${f.cyan(s"flix eff-lock ${id.shortName}")}' to lock it.
+         |""".stripMargin
+    }.mkString(System.lineSeparator())
+  }
+
+  /**
+    * An error raised to indicate that `id` has no release to install.
+    */
+  case class NoReleases(id: PackageId) extends BootstrapError {
+    override def message(f: Formatter): String =
+      s"""${f.red(id.shortName)} has no releases.
+         |""".stripMargin
+  }
+
+  /**
+    * An error raised to indicate that no mount could be chosen for `id` without asking, and that
+    * there was no one to ask.
+    */
+  case class NoMount(id: PackageId) extends BootstrapError {
+    override def message(f: Formatter): String =
+      s"""Unable to choose a mount for ${f.red(id.shortName)}.
+         |Run ${f.bold("flix install")} without ${f.bold("--yes")} to choose one, or add the dependency to ${f.cyan(Bootstrap.FLIX_TOML)} by hand.
          |""".stripMargin
   }
 
@@ -74,51 +172,77 @@ object BootstrapError {
     override def message(f: Formatter): String = e
   }
 
-  case class EffectUpgradeError(e: List[(String, Scheme, List[SourceLocation])]) extends BootstrapError {
+  /**
+    * An error raised when a package no longer has the signatures it was locked at.
+    *
+    * @param e the package, the symbol, and the spec the symbol is declared with now.
+    */
+  case class SignaturesChangedError(e: List[(PackageId, QualifiedSym, TypedAst.Spec)]) extends BootstrapError {
     override def message(f: Formatter): String = {
       s"""@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
          |@  WARNING! YOU MAY BE SUBJECT TO A SUPPLY CHAIN ATTACK!  @
          |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-         |            ~~ Effect signatures have changed! ~~
+         |            ~~ Signatures have changed! ~~
          |
-         |The following potentially harmful changes were detected:
-         |$fmtEffectSets
+         |These declarations are not the ones that were locked. A dependency may now
+         |be able to do things it could not do when you locked it.
          |
-         |The functions are used in these places:
-         |$fmtUses
+         |${fmtChanges(f)}
+         |
+         |Do not build or run this project until you know why. Find out who published
+         |the version you are building, and what changed in it.
+         |
+         |Record the new signatures with ${f.bold("flix eff-lock")} only once you are certain the
+         |change is one the author made, and one you want.
          |""".stripMargin
     }
 
     /**
-      * Returns a formatted string containing each symbol and what new effects it has.
+      * Returns a formatted string containing each package, each of its declarations that no
+      * longer has the signature it was locked at, and the signature that declaration has now.
       *
-      * E.g.,if `f` has effect set `A, B, C` then the string is formatted as
+      * A declaration is named as the lock file names it, see [[EffectLock.nameOf]], and the line
+      * above it gives the package. The declaration goes on a line of its own:
+      * a polymorphic declaration with constraints is long, and putting it after the name of the
+      * symbol leaves it nowhere to fit.
       *
-      * {{{"  + 'f' now uses *{ A, B, C }*"}}}
-      */
-    private def fmtEffectSets: String = e.map {
-      case (sym, upgrade, _) =>
-        val effs = upgrade.base.effects.mkString("*{ ", ", ", " }*")
-        s"  + '$sym' now uses $effs"
-    }.mkString(System.lineSeparator())
-
-    /**
-      * Returns a formatted string containing each symbol and where it is used.
+      * The declaration is written as it would be written in a source file, rather than as the
+      * type scheme it gives rise to, since that is the form the reader is being asked to look at
+      * the source and compare against.
       *
-      * E.g.,if `f` is used in `main` and `mainHelper` then the string is formatted as
+      * E.g., if `Clerk.work` of `github:flix/museum-clerk` is now `Unit -> Unit \ IO` then the
+      * string is formatted as
       *
       * {{{
-      * "  + 'f':
-      *      - main:13:2
-      *      - mainHelper:2:42
+      * "  github:flix/museum-clerk:
+      *     Clerk.work
+      *       def work(): Unit \ IO
       * "
       * }}}
       */
-    private def fmtUses: String = e.map {
-      case (sym, _, uses) =>
-        val formattedSym = s"  + '$sym':"
-        val formattedUses = uses.map(loc => s"    - $loc").mkString(System.lineSeparator())
-        s"$formattedSym${System.lineSeparator()}$formattedUses"
+    private def fmtChanges(f: Formatter): String = e.groupBy {
+      case (id, _, _) => id
+    }.toList.sortBy {
+      case (id, _) => id
+    }.map {
+      case (id, changes) =>
+        val formattedPkg = s"  ${f.bold(id.toString)}:"
+        val formattedChanges = changes.sortBy { case (_, sym, _) => EffectLock.nameOf(sym) }.map {
+          case (_, sym, spec) =>
+            val declaration = FormatSignature.formatSpecWithOptions(sym.name, spec, FormatOptions(FormatOptions.VarName.NameBased))
+            s"    ${f.bold(EffectLock.nameOf(sym))}${System.lineSeparator()}      ${f.red(declaration)}"
+        }.mkString(System.lineSeparator())
+        s"$formattedPkg${System.lineSeparator()}$formattedChanges"
     }.mkString(System.lineSeparator())
   }
+
+  /**
+    * An error raised when the `effects.lock` file cannot be read.
+    *
+    * @param e what is wrong with the file.
+    */
+  case class EffectLockParseError(e: EffectLockError) extends BootstrapError {
+    override def message(f: Formatter): String = e.message(f)
+  }
+
 }

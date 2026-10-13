@@ -1,27 +1,19 @@
 /*
  * Copyright 2023 Anna Blume Jakobsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{PackageId, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
-import ca.uwaterloo.flix.tools.pkg.github.GitHub.{Asset, Project}
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
+import ca.uwaterloo.flix.util.{Formatter, Sha256}
 
 import java.io.IOException
 import java.net.URL
+import java.nio.file.Path
 
 sealed trait PackageError {
   /**
@@ -31,11 +23,6 @@ sealed trait PackageError {
 }
 
 object PackageError {
-  case class VersionDoesNotExist(version: SemVer, project: Project) extends PackageError {
-    override def message(f: Formatter): String =
-      s"Version ${f.bold(version.toString)} does not exist for project ${f.bold(project.toString)}"
-  }
-
   case class InvalidProjectName(projectString: String) extends PackageError {
     override def message(f: Formatter): String =
       s"""A GitHub project should be formatted like so: 'owner/repository'.
@@ -43,12 +30,29 @@ object PackageError {
          |""".stripMargin
   }
 
-  case class ProjectNotFound(url: URL, project: Project, exception: IOException) extends PackageError {
+  /**
+    * A request about a project never reached a server at all.
+    */
+  case class ProjectUnreachable(url: URL, project: Project, exception: IOException) extends PackageError {
     override def message(f: Formatter): String =
       s"""An I/O error occurred while trying to read the following url:
          |${f.cyan(url.toString)}
          |Project: ${f.bold(project.toString)}
          |Error: ${f.red(exception.getMessage)}
+         |""".stripMargin
+  }
+
+  /**
+    * A project that GitHub answers 404 for.
+    *
+    * A private project answers the same way to whoever cannot see it, so the message names both
+    * possibilities: GitHub does not say which of the two it is.
+    */
+  case class ProjectDoesNotExist(project: Project, url: URL) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""There is no project ${f.red(project.toString)} to read releases from.
+         |Either it does not exist, or it is private and the API token in use cannot see it.
+         |Looked at ${f.cyan(url.toString)}.
          |""".stripMargin
   }
 
@@ -75,9 +79,27 @@ object PackageError {
   }
 
   /**
-    * A download refused (403/429), which for an anonymous request usually means a rate limit.
+    * A request GitHub answered 401 for, which it does only for a token it was offered and would
+    * not accept.
     */
-  case class DownloadRefused(url: URL, status: Int, retryAfter: Option[String])
+  case class TokenRejected(url: URL) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""GitHub rejected the token (HTTP ${f.red("401")}).
+         |It may have expired, been revoked, or been copied incompletely.
+         |Looked at ${f.cyan(url.toString)}.
+         |A request that carries no token is not refused this way: what is public can be read
+         |without one.
+         |""".stripMargin
+  }
+
+  /**
+    * A download refused (403/429), which for an anonymous request usually means a rate limit.
+    *
+    * `authorized` records whether the request carried a token. It decides whether setting one is
+    * worth suggesting: that is the answer for a client that has run out of anonymous requests,
+    * and noise for one that already holds a token.
+    */
+  case class DownloadRefused(url: URL, status: Int, retryAfter: Option[String], authorized: Boolean)
     extends PackageError {
     override def message(f: Formatter): String = {
       // Retry-After is delta-seconds per RFC 9110, but may also be an HTTP-date.
@@ -86,9 +108,18 @@ object PackageError {
         case Some(s) => s"Retry after $s."
         case None => "This is usually a rate limit."
       }
+      val hint =
+        if (authorized) ""
+        else
+          s"""|An anonymous client is limited more tightly than one with a token, which can be
+              |passed via:
+              |- The --github-token command line option.
+              |- A file named .GITHUB_TOKEN in the project's root.
+              |- The GITHUB_TOKEN environment variable.
+              |""".stripMargin
       s"""Refused (HTTP ${f.red(status.toString)}) by ${f.cyan(url.toString)}.
          |$when
-         |""".stripMargin
+         |$hint""".stripMargin
     }
   }
 
@@ -117,27 +148,83 @@ object PackageError {
          |""".stripMargin
   }
 
-  case class DownloadError(asset: Asset, message: Option[String]) extends PackageError {
+  /**
+    * A download that reached a server and then broke off partway through the body: the
+    * connection dropped, or the disk ran out. The file it left behind is cut short, and is
+    * removed so that a later build does not take it for a cached one; `removed` says whether
+    * that succeeded.
+    */
+  case class DownloadIncomplete(url: URL, path: Path, message: String, removed: Boolean) extends PackageError {
+    override def message(f: Formatter): String = {
+      val leftover =
+        if (removed) ""
+        else s"The incomplete file at ${f.cyan(path.toString)} could not be removed. Delete it before building again.\n"
+      s"""Could not download ${f.cyan(url.toString)} to ${f.cyan(path.toString)}.
+         |$message
+         |$leftover""".stripMargin
+    }
+  }
+
+  /**
+    * A file that was already in `lib/` is not the one `packages.lock` records for it.
+    *
+    * Nothing downloaded it during this build, so the file has changed on disk since the build
+    * that did. Deleting it is enough to recover: the next build downloads it again.
+    *
+    * @param identifier the identifier of the package, e.g. `github:flix/museum`.
+    * @param version    the version of the package.
+    * @param asset      the file of the package that does not match.
+    * @param path       the path of the file in `lib/`.
+    * @param expected   the digest that `packages.lock` records.
+    * @param actual     the digest of the file that is there.
+    */
+  case class MismatchedCachedDigest(identifier: PackageId, version: SemVer, asset: ReleaseAsset, path: Path, expected: Sha256, actual: Sha256) extends PackageError {
     override def message(f: Formatter): String =
-      s"""A download error occurred while downloading ${f.bold(asset.name)}
-         |${
-        message match {
-          case Some(e) => e
-          case None => ""
-        }
-      }
+      s"""The ${f.bold(asset.name)} of ${f.bold(identifier.toString)} ${f.bold(version.toString)} is not the one ${f.bold("packages.lock")} records.
+         |   expected: ${f.cyan(expected.toString)}
+         |  but found: ${f.red(actual.toString)}
+         |
+         |The file at ${f.cyan(path.toString)} has changed since it was downloaded.
+         |Delete it and build again to download it afresh, or update ${f.bold("packages.lock")} if the
+         |change was intended.
          |""".stripMargin
   }
 
-  case class DownloadErrorJar(url: String, fileName: String, message: Option[String]) extends PackageError {
+  /**
+    * A file that was just downloaded is not the one `packages.lock` records for it.
+    *
+    * The published release itself has changed, which GitHub permits: a release asset can be
+    * deleted and uploaded again at the same version. Deleting the file does not help, because
+    * downloading it again produces the same bytes.
+    *
+    * @param identifier the identifier of the package, e.g. `github:flix/museum`.
+    * @param version    the version of the package.
+    * @param asset      the file of the package that does not match.
+    * @param path       the path the file was downloaded to.
+    * @param expected   the digest that `packages.lock` records.
+    * @param actual     the digest of the file that was downloaded.
+    */
+  case class MismatchedDownloadedDigest(identifier: PackageId, version: SemVer, asset: ReleaseAsset, path: Path, expected: Sha256, actual: Sha256) extends PackageError {
     override def message(f: Formatter): String =
-      s"""A download error occurred while downloading ${f.bold(fileName)} from $url
-         |${
-        message match {
-          case Some(e) => e
-          case None => ""
-        }
-      }
+      s"""The ${f.bold(asset.name)} of ${f.bold(identifier.toString)} ${f.bold(version.toString)} is not the one ${f.bold("packages.lock")} records.
+         |        expected: ${f.cyan(expected.toString)}
+         |  but downloaded: ${f.red(actual.toString)}
+         |
+         |The published release has changed since ${f.bold("packages.lock")} was written. A release asset
+         |can be replaced at the same version, so this may be a supply chain attack.
+         |The file was written to ${f.cyan(path.toString)}.
+         |Update ${f.bold("packages.lock")} only if you know the change was intended.
+         |""".stripMargin
+  }
+
+  /**
+    * A file in `lib/` could not be read to compute its digest. The file was there a moment ago,
+    * so this means the filesystem is in an unexpected state rather than that a download failed.
+    */
+  case class DigestError(path: Path, message: String) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""An I/O error occurred while reading ${f.cyan(path.toString)}.
+         |Error: ${f.red(message)}
          |""".stripMargin
   }
 
@@ -145,19 +232,6 @@ object PackageError {
     override def message(f: Formatter): String =
       s"""An error occurred with Coursier:
          |$errorMsg
-         |""".stripMargin
-  }
-
-  case class NoSuchFile(project: String, extension: String) extends PackageError {
-    override def message(f: Formatter): String =
-      s"""There are no files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
-         |""".stripMargin
-  }
-
-  case class TooManyFiles(project: String, extension: String) extends PackageError {
-    override def message(f: Formatter): String =
-      s"""There are too many files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
-         |There should only be one $extension file in each project.
          |""".stripMargin
   }
 
@@ -177,7 +251,7 @@ object PackageError {
     // TODO: Maybe collect list of errors that can all be displayed in a single error message.
     override def message(f: Formatter): String = {
       s"""${f.underline("Found security violation in the dependency graph:")}
-         |  Dependency '$dependency' of package ${manifest.name} requires security context '${dependency.sctx}' but context '$sctx' was given.
+         |  Dependency '$dependency' of package ${manifest.displayName} requires security context '${dependency.sctx}' but context '$sctx' was given.
          |
          |  There are several possible actions:
          |    - Remove the offending dependency
@@ -198,7 +272,7 @@ object PackageError {
     // TODO: Maybe collect list of errors that can all be displayed in a single error message.
     override def message(f: Formatter): String = {
       s"""${f.underline("Found security violation in the dependency graph:")}
-         |  Project '${manifest.name}' declares Java dependency '$dependency' which requires security context '${SecurityContext.Unrestricted}' but only $sctx was given.
+         |  Project '${manifest.displayName}' declares Java dependency '$dependency' which requires security context '${SecurityContext.Unrestricted}' but only $sctx was given.
          |
          |  There are several possible actions:
          |    - Remove the offending dependency
@@ -209,21 +283,110 @@ object PackageError {
   }
 
   /**
-    * An error raised to indicate that the version number declared in `manifest`
-    * does not match the targeted version in `dependency`.
+    * An error raised to indicate that the package `identifier` is required at versions that do
+    * not share a major version, so that no version satisfies every dependent.
     *
-    * @param manifest   the manifest which [[dependency]] resolves to.
-    * @param dependency a valid flix dependency.
+    * @param identifier   the package that is required at incompatible versions.
+    * @param requirements every dependent that requires the package, paired with the
+    *                     dependency declaration that states the required version.
     */
-  case class MismatchedVersions(manifest: Manifest, dependency: FlixDependency) extends PackageError {
+  case class IncompatibleVersions(identifier: PackageId, requirements: List[(Manifest, FlixDependency)]) extends PackageError {
     override def message(f: Formatter): String = {
-      s"""Mismatched versions:
-         |  Dependency ${dependency.identifier} required version ${dependency.version}
-         |  but the manifest declared version ${manifest.version}
+      val lines = requirements.map {
+        case (dependent, dep) => s"    ${f.bold(dep.version.toString)} required by '${dependent.displayName}'"
+      }
+      s"""${f.underline("Found incompatible versions of the same package in the dependency graph:")}
+         |  The package '${f.red(identifier.toString)}' is required at versions that do not share a major version:
          |
-         |  Required: ${dependency.version}
-         |  Declared: ${manifest.version}
+         |${lines.mkString(System.lineSeparator())}
+         |
+         |  A package is built at one version, which must satisfy every dependent: it must
+         |  be at or above the version the dependent requires, and have the same major version.
+         |  No version satisfies these, so one of the dependents must move across a major version.
          |""".stripMargin
     }
+  }
+
+  /**
+    * An error raised to indicate that a release of the package `identifier` contains a manifest
+    * that declares another version than the one it is released as.
+    *
+    * @param identifier the package.
+    * @param release    the version the release is published as.
+    * @param declared   the version the manifest in the release declares.
+    */
+  case class MismatchedVersions(identifier: PackageId, release: SemVer, declared: SemVer) extends PackageError {
+    override def message(f: Formatter): String = {
+      s"""Mismatched versions:
+         |  The release ${f.bold(s"v$release")} of the package '${f.red(identifier.toString)}'
+         |  contains a manifest that declares version ${f.bold(declared.toString)}.
+         |
+         |  Released as: $release
+         |  Declared:    $declared
+         |
+         |  This is a mistake in how the package was released, which its author must fix.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a release of the package `identifier` contains a manifest
+    * that declares no repository.
+    *
+    * @param identifier the package the release was downloaded for.
+    * @param release    the version the release is published as.
+    */
+  case class MissingRepository(identifier: PackageId, release: SemVer) extends PackageError {
+    override def message(f: Formatter): String = {
+      s"""Missing repository:
+         |  The release ${f.bold(s"v$release")} of the package '${f.red(identifier.toString)}'
+         |  contains a manifest that declares no repository.
+         |
+         |  A package is identified by the repository it is published from, so its manifest must
+         |  declare it:
+         |
+         |    repository = "$identifier"
+         |
+         |  This is a mistake in how the package was released, which its author must fix.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a release of the package `identifier` contains a manifest
+    * that declares another repository than the one it was downloaded from.
+    *
+    * @param identifier the package the release was downloaded for.
+    * @param release    the version the release is published as.
+    * @param declared   the package the manifest in the release declares.
+    */
+  case class MismatchedRepository(identifier: PackageId, release: SemVer, declared: PackageId) extends PackageError {
+    override def message(f: Formatter): String = {
+      s"""Mismatched repositories:
+         |  The release ${f.bold(s"v$release")} of the package '${f.red(identifier.toString)}'
+         |  contains a manifest that declares the repository '${f.bold(declared.toString)}'.
+         |
+         |  Downloaded for: $identifier
+         |  Declared:       $declared
+         |
+         |  This is a mistake in how the package was released, which its author must fix.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that the package `identifier` requires a newer version of Flix
+    * than the one that is running.
+    *
+    * @param identifier the package.
+    * @param version    the version the package is built at.
+    * @param required   the oldest version of Flix the package can be built with.
+    * @param current    the version of Flix that is running.
+    */
+  case class FlixVersionTooOld(identifier: PackageId, version: SemVer, required: SemVer, current: SemVer) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""The package '${f.red(identifier.toString)}' ${f.bold(version.toString)} requires Flix version ${f.bold(required.toString)}, but the current version is ${f.red(current.toString)}.
+         |Please upgrade to Flix ${f.bold(required.toString)} or newer.
+         |""".stripMargin
   }
 }

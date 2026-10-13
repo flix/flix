@@ -1,20 +1,13 @@
 /*
  * Copyright 2015-2016 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.language.ast
+
+import ca.uwaterloo.flix.language.ast.shared.{Origin, PackageId}
 
 object Name {
 
@@ -22,6 +15,25 @@ object Name {
     * The root namespace.
     */
   val RootNS: NName = NName(Nil, SourceLocation.Unknown)
+
+  /**
+    * Returns the namespace the declarations of the package `id` are named under: its canonical root.
+    */
+  def packageRoot(id: PackageId): NName = mkUnlocatedNName(List(id.canonicalRoot))
+
+  /**
+    * Returns the namespace the declarations of a source of the given `origin` are named under.
+    *
+    * A package is named under its own root, so that its declarations are reached through a mount
+    * rather than by sharing a namespace with every other package. Everything else, the user's own
+    * code and the bundled library, is named under [[RootNS]].
+    */
+  def rootOf(origin: Origin): NName = origin match {
+    case Origin.Package(id) => packageRoot(id)
+    case Origin.User => RootNS
+    case Origin.Library => RootNS
+    case Origin.Unknown => RootNS
+  }
 
   /**
     * Returns the given string `fqn` as a qualified name.
@@ -124,6 +136,28 @@ object Name {
     * @param idents the identifiers of the namespace.
     * @param loc    the source location of the namespace.
     */
+  /**
+    * Returns the namespace `parts` as it is shown to a reader.
+    *
+    * A package is named under a root that cannot be written in source, so the root is shown as the
+    * identifier of the package instead of as the name the compiler gives it.
+    */
+  def nsToString(parts: List[String]): String = parts match {
+    case Nil => ""
+    case head :: rest => (PackageId.ofCanonicalRoot(head).map(_.toString).getOrElse(head) :: rest).mkString(".")
+  }
+
+  /**
+    * Returns the namespace `parts` as it is written where it is declared.
+    *
+    * A package is named under a root that is never written in source, so the root is dropped and
+    * what remains is the name relative to the package root.
+    */
+  def declaredParts(parts: List[String]): List[String] = parts match {
+    case head :: rest if PackageId.ofCanonicalRoot(head).isDefined => rest
+    case _ => parts
+  }
+
   case class NName(idents: List[Ident], loc: SourceLocation) {
     /**
       * Returns `true` if this is the root namespace.
@@ -166,7 +200,7 @@ object Name {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (idents.isEmpty) "" else idents.mkString(".")
+    override def toString: String = nsToString(parts)
   }
 
   /**

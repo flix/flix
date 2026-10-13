@@ -1,24 +1,20 @@
 /*
  * Copyright 2020 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of non-empty immutable lists, and its functions.
+///
 pub mod Nel {
     use Math.Shuffle
 
     ///
-    /// The NonEmptyList type.
+    /// Type of non-empty immutable lists.
+    ///
+    /// A non-empty list `Nel(x, xs)` consists of a head element `x` followed by a list `xs`.
     ///
     pub enum Nel[a] {
         case Nel(a, List[a])

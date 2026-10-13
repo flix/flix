@@ -1,28 +1,19 @@
 /*
  * Copyright 2021 Stephen Tetley
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 ///
-/// Parse the list of command line options supplied to the program.
+/// Functions for parsing command-line options.
 ///
 /// Acknowledgement: this is a port of Sven Panne's `System.Console.GetOpt` in the Haskell Base libraries.
 ///
 pub mod Util.GetOpt {
 
     ///
-    /// `ArgOrder` defines how to parse further arguments that follow non-options.
+    /// Type of policies for handling arguments that follow non-options.
     ///
     /// * `RequireOrder` after the first non-option all remain arguments are treated as non-options
     /// * `Permute` options and non-options are freely interspersed in the input stream
@@ -35,7 +26,9 @@ pub mod Util.GetOpt {
     }
 
     ///
-    /// `ArgDescr` defines whether or not the option takes an argument.
+    /// Type of option argument descriptors.
+    ///
+    /// Defines whether or not an option takes an argument.
     ///
     /// * `NoArg` expects no argument. The constructor takes a value of type `a` indicating the option that has been recognized.
     /// * `ReqArg` mandates an argument. The constructor takes a function to decode the argument and description string.

@@ -1,19 +1,13 @@
 /*
  * Copyright 2026 Flix Authors
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of JSON parsing and decoding errors, and its functions.
+///
 pub mod Util.Json.JsonError {
 
     use Util.Json.JsonPath
@@ -21,7 +15,7 @@ pub mod Util.Json.JsonError {
     use Util.Json.JsonPath.{cons, fromList, steps}
 
     ///
-    /// An error that can occur when parsing or decoding JSON.
+    /// Type of JSON parsing and decoding errors.
     ///
     /// `Parse` wraps a parser failure together with the UTF-16 code-unit
     /// offset into the input where the failure was detected.
@@ -35,8 +29,10 @@ pub mod Util.Json.JsonError {
     }
 
     ///
-    /// A parser-side failure: produced by `Json.parse` while reading raw JSON
-    /// text. Parser failures do not carry a `JsonPath`.
+    /// Type of JSON parser failures.
+    ///
+    /// Produced by `Json.parse` while reading raw JSON text. Parser failures
+    /// do not carry a `JsonPath`.
     ///
     pub enum ParseErrorKind with Eq {
         case DuplicateKey(String)
@@ -49,8 +45,10 @@ pub mod Util.Json.JsonError {
     }
 
     ///
-    /// A decoder-side failure: produced by `FromJson.fromJson` while turning a
-    /// parsed `Json` value into a typed value.
+    /// Type of JSON decoder failures.
+    ///
+    /// Produced by `FromJson.fromJson` while turning a parsed `Json` value
+    /// into a typed value.
     ///
     pub enum DecodeErrorKind with Eq {
         case MissingIndex(Int32)

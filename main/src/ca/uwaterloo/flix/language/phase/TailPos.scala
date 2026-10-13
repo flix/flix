@@ -1,23 +1,14 @@
 /*
  * Copyright 2016 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Purity
+import ca.uwaterloo.flix.language.ast.{Purity, Symbol}
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.shared.ExpPosition
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
@@ -42,12 +33,18 @@ object TailPos {
   /** Identifies expressions in tail position in `root`. */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("TailPos") {
     val defns = ParOps.parMapValues(root.defs)(defn => flix.profile(defn.sym, defn.loc)(visitDef(defn)))
-    root.copy(defs = defns)
+    val clos = ParOps.parMapValues(root.clos)(clo => flix.profile(clo.sym, clo.loc)(visitClo(clo)))
+    root.copy(defs = defns, clos = clos)
   }
 
   /** Identifies expressions in tail position in `defn`. */
   private def visitDef(defn: Def): Def = {
-    defn.copy(exp = visitExp(defn.exp)(defn))
+    defn.copy(exp = visitExp(defn.exp)(defn.sym, defn.exp.purity))
+  }
+
+  /** Identifies expressions in tail position in `clo`. */
+  private def visitClo(clo: Clo): Clo = {
+    clo.copy(exp = visitExp(clo.exp)(clo.sym, clo.exp.purity))
   }
 
   /**
@@ -55,8 +52,10 @@ object TailPos {
     *
     * Replaces every [[Expr.ApplyDef]] that calls the enclosing function and occurs in tail
     * position with [[Expr.ApplySelfTail]].
+    *
+    * The enclosing function or closure has symbol `sym0` and its body has purity `purity0`.
     */
-  private def visitExp(exp0: Expr)(implicit defn: Def): Expr = exp0 match {
+  private def visitExp(exp0: Expr)(implicit sym0: Symbol.DefnSym, purity0: Purity): Expr = exp0 match {
     case Expr.Let(sym, exp1, exp2, loc) =>
       // `exp2` is in tail position.
       val e2 = visitExp(exp2)
@@ -90,10 +89,10 @@ object TailPos {
 
     case Expr.ApplyDef(sym, exps, _, tpe, purity, loc) =>
       // Check whether this is a self recursive call.
-      if (defn.sym != sym) {
+      if (sym0 != sym) {
         // Mark expression as tail position.
         Expr.ApplyDef(sym, exps, ExpPosition.Tail, tpe, purity, loc)
-      } else if (!Purity.isControlPure(defn.exp.purity)) {
+      } else if (!Purity.isControlPure(purity0)) {
         // Self-recursive tail call in a control-impure function. Do NOT rewrite to
         // ApplySelfTail: that optimization mutates the enclosing function object's
         // arg/pc/lparam fields and jumps to the entry label. When the function may

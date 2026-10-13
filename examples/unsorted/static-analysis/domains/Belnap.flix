@@ -1,7 +1,7 @@
 ///
 /// An implementation of the four-valued boolean lattice named for Nuel Belnap.
 ///
-mod Belnap {
+pub mod Belnap {
 
     ///
     /// The elements of the boolean lattice.

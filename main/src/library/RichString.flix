@@ -1,25 +1,19 @@
 /*
  * Copyright 2025 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of rich strings composed of styled text spans, and its functions.
+///
 pub mod RichString {
 
     use Sys.Env
 
     ///
-    /// A rich string composed of multiple styled spans.
+    /// Type of rich strings composed of styled text spans.
     ///
     pub enum RichString {
         case RichString(Chain[RichString.Span])
@@ -50,7 +44,7 @@ pub mod RichString {
     }
 
     ///
-    /// Represents a color with RGB components or the terminal's default color.
+    /// Type of text colors, either RGB colors or the terminal's default color.
     ///
     /// For RGB, each component is a value from 0 to 255 representing red, green, and blue intensity.
     /// Default represents no color override, using the terminal's current color settings.
@@ -61,7 +55,7 @@ pub mod RichString {
     }
 
     ///
-    /// Represents text styling options.
+    /// Type of text styling options.
     ///
     /// Defines the visual appearance of text spans beyond color.
     ///
@@ -71,7 +65,7 @@ pub mod RichString {
     }
 
     ///
-    /// A text span with content, foreground color, background color, and styles.
+    /// Type of text spans with content, foreground color, background color, and styles.
     ///
     /// A span represents a contiguous piece of text with uniform styling.
     ///

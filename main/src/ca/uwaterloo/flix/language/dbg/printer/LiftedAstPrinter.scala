@@ -1,22 +1,14 @@
 /*
  * Copyright 2023 Jonathan Lindegaard Starup
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expr.*
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Modifiers}
 import ca.uwaterloo.flix.language.ast.{LiftedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.jvm.ClassDescs
@@ -29,10 +21,22 @@ object LiftedAstPrinter {
     */
   def print(root: LiftedAst.Root): DocAst.Program = {
     val defs = root.defs.values.map {
-      case LiftedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, _) =>
+      case LiftedAst.Def(ann, mod, sym, fparams, exp, tpe, _) =>
         DocAst.Def(
           ann,
           mod,
+          sym,
+          fparams.map(printFormalParam),
+          SimpleTypePrinter.print(tpe),
+          PurityPrinter.print(exp.purity),
+          print(exp)
+        )
+    }.toList
+    val clos = root.clos.values.map {
+      case LiftedAst.Clo(sym, cparams, fparams, exp, tpe, _) =>
+        DocAst.Def(
+          Annotations.Empty,
+          Modifiers.Empty,
           sym,
           (cparams ++ fparams).map(printFormalParam),
           SimpleTypePrinter.print(tpe),
@@ -40,7 +44,7 @@ object LiftedAstPrinter {
           print(exp)
         )
     }.toList
-    DocAst.Program(Nil, defs, Nil)
+    DocAst.Program(Nil, defs ++ clos, Nil)
   }
 
   /**

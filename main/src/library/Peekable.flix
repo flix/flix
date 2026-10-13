@@ -1,28 +1,24 @@
 /*
  *  Copyright 2025 Ry Wiese
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
-mod Peekable {
+///
+/// Trait for types that can be read from with lookahead, and its functions.
+///
+pub mod Peekable {
 
     import java.lang.String
 
     ///
+    /// Trait for types that can be read from with lookahead.
+    ///
     /// Extends `Readable` with the ability to `peek` at values that have not yet been `read`,
     /// `skip` values that don't need to be read, and perform other kinds of conditional reads.
     ///
-    trait Peekable[t] with Readable[t] {
+    pub trait Peekable[t] with Readable[t] {
 
         ///
         /// Returns `Ok(Some(x))` where x is the next value to be read, or `Ok(None)` if the `reader` is empty.

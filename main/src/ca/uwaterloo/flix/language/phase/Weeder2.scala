@@ -1,17 +1,8 @@
 /*
  * Copyright 2024 Herluf Baggesen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.language.phase
 
@@ -104,51 +95,68 @@ object Weeder2 {
 
   private def visitUse(tree: Tree)(implicit sctx: SharedContext): List[UseOrImport] = {
     expect(tree, TreeKind.UsesOrImports.Use)
+    val maybePackage = tryPick(TreeKind.UsesOrImports.Package, tree)
+    val pkg = maybePackage.map(pickNameIdent)
     val maybeUseMany = tryPick(TreeKind.UsesOrImports.UseMany, tree)
-    val qname = pickQName(tree)
-    val isTopLevelName = qname.namespace.idents.isEmpty
-    val isNotImportedByUse = maybeUseMany.isEmpty
-    val isUnqualifiedUse = isTopLevelName && isNotImportedByUse
-    if (isUnqualifiedUse) {
-      val error = UnqualifiedUse(qname, qname.loc)
-      sctx.errors.add(error)
-      List.empty
-    } else {
-      val nname = Name.NName(qname.namespace.idents :+ qname.ident, qname.loc)
-      maybeUseMany match {
-        // case: Use many.
-        case Some(useMany) =>
-          val uses = visitUseMany(useMany, nname)
-          // Issue an error if it's empty.
-          if (uses.isEmpty) {
-            val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, useMany.loc)
-            sctx.errors.add(error)
-          }
-          uses
-        // case: Use one. Use the qname.
-        case None =>
-          List(UseOrImport.Use(qname, qname.ident, qname.loc))
+    tryPickQName(tree) match {
+      // case: No name. The use many follows the package directly, e.g. `use flixball::{Game, Board}`.
+      case None => maybeUseMany match {
+        case Some(useMany) => visitUseMany(useMany, Name.NName(Nil, useMany.loc), pkg)
+        // The parser has already reported the missing name. A dangling `use flixball::` keeps its
+        // package, followed by an empty name, so that the name can be completed.
+        case None => maybePackage.toList.map { t =>
+          val loc = SourceLocation(isReal = true, t.loc.source, t.loc.end, t.loc.end)
+          val ident = Name.Ident("", loc)
+          UseOrImport.Use(pkg, Name.QName(Name.NName(Nil, loc), ident, loc), ident, loc)
+        }
       }
+
+      case Some(qname) =>
+        val isTopLevelName = qname.namespace.idents.isEmpty
+        val isNotImportedByUse = maybeUseMany.isEmpty
+        // A package counts as qualification, e.g. `use flixball::Board`.
+        val isUnqualifiedUse = isTopLevelName && isNotImportedByUse && pkg.isEmpty
+        if (isUnqualifiedUse) {
+          val error = UnqualifiedUse(qname, qname.loc)
+          sctx.errors.add(error)
+          List.empty
+        } else {
+          maybeUseMany match {
+            // case: Use many.
+            case Some(useMany) =>
+              val nname = Name.NName(qname.namespace.idents :+ qname.ident, qname.loc)
+              visitUseMany(useMany, nname, pkg)
+            // case: Use one. Use the qname.
+            case None =>
+              List(UseOrImport.Use(pkg, qname, qname.ident, qname.loc))
+          }
+        }
     }
   }
 
-  private def visitUseMany(tree: Tree, namespace: Name.NName)(implicit sctx: SharedContext): List[UseOrImport] = {
+  private def visitUseMany(tree: Tree, namespace: Name.NName, pkg: Option[Name.Ident])(implicit sctx: SharedContext): List[UseOrImport] = {
     expect(tree, TreeKind.UsesOrImports.UseMany)
-    pickAllMulti(tree, TreeKind.Ident, TreeKind.UsesOrImports.Alias).map { t =>
+    val uses = pickAllMulti(tree, TreeKind.Ident, TreeKind.UsesOrImports.Alias).map { t =>
       t.kind match {
-        case TreeKind.Ident => visitUseIdent(t, namespace)
-        case TreeKind.UsesOrImports.Alias => visitUseAlias(t, namespace)
+        case TreeKind.Ident => visitUseIdent(t, namespace, pkg)
+        case TreeKind.UsesOrImports.Alias => visitUseAlias(t, namespace, pkg)
         case k => throw InternalCompilerException(s"unexpected tree kind '$k'", t.loc)
       }
     }
+    // Issue an error if it's empty.
+    if (uses.isEmpty) {
+      val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, tree.loc)
+      sctx.errors.add(error)
+    }
+    uses
   }
 
-  private def visitUseIdent(tree: Tree, namespace: Name.NName)(implicit sctx: SharedContext): UseOrImport.Use = {
+  private def visitUseIdent(tree: Tree, namespace: Name.NName, pkg: Option[Name.Ident])(implicit sctx: SharedContext): UseOrImport.Use = {
     val ident = tokenToIdent(tree)
-    UseOrImport.Use(Name.QName(namespace, ident, tree.loc), ident, ident.loc)
+    UseOrImport.Use(pkg, Name.QName(namespace, ident, tree.loc), ident, ident.loc)
   }
 
-  private def visitUseAlias(tree: Tree, namespace: Name.NName)(implicit sctx: SharedContext): UseOrImport.Use = {
+  private def visitUseAlias(tree: Tree, namespace: Name.NName, pkg: Option[Name.Ident])(implicit sctx: SharedContext): UseOrImport.Use = {
     val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
     idents match {
       case ident :: alias :: _ =>
@@ -159,14 +167,14 @@ object Weeder2 {
           sctx.errors.add(error)
         }
         val qname = Name.QName(namespace, ident, tree.loc)
-        UseOrImport.Use(qname, alias, tree.loc)
+        UseOrImport.Use(pkg, qname, alias, tree.loc)
 
       // recover from missing alias by using ident
       case ident :: _ =>
         val error = Malformed(NamedTokenSet.Alias, SyntacticContext.Unknown, hint = Some(s"Give an alias after ${TokenKind.ArrowThickR.display}."), loc = tree.loc)
         sctx.errors.add(error)
         val qname = Name.QName(namespace, ident, tree.loc)
-        UseOrImport.Use(qname, ident, ident.loc)
+        UseOrImport.Use(pkg, qname, ident, ident.loc)
 
       case _ => throw InternalCompilerException("Parser passed malformed use with alias", tree.loc)
     }
@@ -458,7 +466,7 @@ object Weeder2 {
 
     private def visitStructField(tree: Tree)(implicit sctx: SharedContext): StructField = {
       expect(tree, TreeKind.StructField)
-      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub, TokenKind.KeywordMut))
+      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordMut))
       val ident = pickNameIdent(tree)
       val ttype = Types.pickType(tree)
       // Make a source location that spans the name and type
@@ -611,7 +619,6 @@ object Weeder2 {
         case "@Deprecated" => Deprecated(loc)
         case "@DontInline" => DontInline(loc)
         case "@Experimental" => Experimental(loc)
-        case "@Export" => Export(loc)
         case "@Inline" => Inline(loc)
         case "@Parallel" => Parallel(loc)
         case "@ParallelWhenPure" => ParallelWhenPure(loc)
@@ -1198,6 +1205,13 @@ object Weeder2 {
                   val error = ParseError.MissingBinaryOperator(SyntacticContext.Expr.OtherExpr, betweenLoc)
                   sctx.errors.add(error)
                   Expr.LetMatch(Pattern.Wild(tree.loc.asSynthetic), None, e1, e2, tree.loc)
+                // Infix function with a malformed name, e.g. 1 `checked_cast` 2.
+                // The parser has already reported the error, so we recover with an error operator and keep both operands.
+                case Token(TokenKind.Tick, _, _, _, _, _) =>
+                  val opExpr = op.children.collectFirst {
+                    case Tree(TreeKind.ErrorTree(err), _, _) => Expr.Error(err)
+                  }.getOrElse(throw InternalCompilerException("Expr.Binary infix function without a name", op.loc))
+                  Expr.Infix(e1, opExpr, e2, tree.loc)
                 // Standard operators.
                 case Token(kind, _, _, _, _, _) if tokenOperatorToName(kind).isDefined =>
                   mkApply(tokenOperatorToName(kind).get)
@@ -1205,7 +1219,7 @@ object Weeder2 {
                 // Special cases that create different AST nodes
                 case Token(TokenKind.KeywordAnd, _, _, _, _, _) => Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc)
                 case Token(TokenKind.KeywordOr, _, _, _, _, _) => Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc)
-                case Token(TokenKind.ColonColon, _, _, _, _, _) => Expr.FCons(e1, e2, tree.loc)
+                case Token(TokenKind.ColonColon | TokenKind.ColonColonTight, _, _, _, _, _) => Expr.FCons(e1, e2, tree.loc)
                 case Token(TokenKind.AngledPlus, _, _, _, _, _) => Expr.FixpointMerge(e1, e2, tree.loc)
                 case Token(TokenKind.KeywordInstanceOf, _, _, _, _, _) =>
                   tryPickQName(exprs(1)) match {
@@ -2963,10 +2977,8 @@ object Weeder2 {
     }
 
     private def visitSchemaRowType(parentTree: Tree)(implicit sctx: SharedContext): Type = {
-      val rest: Type = tryPick(TreeKind.Ident, parentTree).map(tokenToIdent) match {
-        case None => WeededAst.Type.SchemaRowEmpty(parentTree.loc)
-        case Some(name) => WeededAst.Type.Var(name, name.loc)
-      }
+      val maybeType = tryPick(TreeKind.Type.Type, parentTree).map(visitType)
+      val rest = maybeType.getOrElse(WeededAst.Type.SchemaRowEmpty(parentTree.loc))
       pickAllTrees(parentTree).foldRight(rest) {
         case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithAlias =>
           val qname = pickQName(tree)

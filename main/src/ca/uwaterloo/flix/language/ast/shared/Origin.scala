@@ -1,17 +1,8 @@
 /*
  * Copyright 2026 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.language.ast.shared
 
@@ -31,7 +22,7 @@ sealed trait Origin {
   def isUser: Boolean = this match {
     case Origin.User => true
     case Origin.Library => false
-    case Origin.Package => false
+    case Origin.Package(_) => false
     case Origin.Unknown => false
   }
 
@@ -51,8 +42,10 @@ object Origin {
 
   /**
     * A source unpacked from a Flix package the program depends on.
+    *
+    * @param id the package, e.g. `github:flix/museum-clerk`.
     */
-  case object Package extends Origin
+  case class Package(id: PackageId) extends Origin
 
   /**
     * A synthetic source with no origin. Used only by [[Source.Unknown]].

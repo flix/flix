@@ -1,17 +1,8 @@
 /*
  * Copyright 2024 Herluf Baggesen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.language.phase
 
@@ -688,6 +679,7 @@ object Parser2 {
   private val NAME_JAVA: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase)
   private val NAME_QNAME: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase)
   private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase, TokenKind.NameMath, TokenKind.GenericOperator)
+  private val NAME_PACKAGE: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase)
   private val NAME_FIELD: Set[TokenKind] = Set(TokenKind.NameLowercase)
   private val NAME_LOWERCASE: Set[TokenKind] = Set(TokenKind.NameLowercase)
   // TODO: Static is used as a type in Prelude.flix. Static is also an expression.
@@ -882,25 +874,56 @@ object Parser2 {
     assert(at(TokenKind.KeywordUse))
     val mark = open()
     expect(TokenKind.KeywordUse)
-    nameAllowQualified(NAME_USE, allowTrailingDot = true)
-    // Handle use many case.
-    if (eat(TokenKind.Dot)) {
-      if (at(TokenKind.CurlyL)) {
-        val mark = open()
-        zeroOrMore(
-          namedTokenSet = NamedTokenSet.Name,
-          getItem = () => aliasedName(NAME_USE),
-          checkForItem = NAME_USE.contains,
-          breakWhen = _.isRecoverInUseOrImport,
-          delimiterL = TokenKind.CurlyL,
-          delimiterR = TokenKind.CurlyR,
+    // Handle the package case: `use flixball::Game.Board`.
+    // A `::` with whitespace around it cannot otherwise occur in a use, so it is taken as the separator too.
+    // That is also what a dangling `use flixball::` at the end of a line lexes as.
+    val hasPackage = NAME_PACKAGE.contains(nth(0)) && (nth(1) == TokenKind.ColonColonTight || nth(1) == TokenKind.ColonColon)
+    if (hasPackage) {
+      val markPackage = open()
+      nameUnqualified(NAME_PACKAGE)
+      if (at(TokenKind.ColonColon) && (NAME_USE.contains(nth(1)) || nth(1) == TokenKind.CurlyL)) {
+        // A path follows, so the whitespace is around the `::` and not just the end of the line.
+        val error = Malformed(
+          namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.ColonColonTight)),
+          sctx = sctx,
+          hint = Some(s"Write ${TokenKind.ColonColonTight.display} without whitespace on either side, e.g. 'flixball::Game.Board'."),
+          loc = currentSourceLocation()
         )
-        close(mark, TreeKind.UsesOrImports.UseMany)
+        advanceWithError(error)
       } else {
-        expectAny(Set(TokenKind.NameLowercase, TokenKind.NameUppercase, TokenKind.CurlyL))
+        advance()
+      }
+      close(markPackage, TreeKind.UsesOrImports.Package)
+    }
+    if (hasPackage && at(TokenKind.CurlyL)) {
+      // Handle use many directly after the package: `use flixball::{Game, Board}`.
+      useMany()
+    } else {
+      nameAllowQualified(NAME_USE, allowTrailingDot = true)
+      // Handle use many case.
+      if (eat(TokenKind.Dot)) {
+        if (at(TokenKind.CurlyL)) {
+          useMany()
+        } else {
+          expectAny(Set(TokenKind.NameLowercase, TokenKind.NameUppercase, TokenKind.CurlyL))
+        }
       }
     }
     close(mark, TreeKind.UsesOrImports.Use)
+  }
+
+  private def useMany()(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
+    assert(at(TokenKind.CurlyL))
+    val mark = open()
+    zeroOrMore(
+      namedTokenSet = NamedTokenSet.Name,
+      getItem = () => aliasedName(NAME_USE),
+      checkForItem = NAME_USE.contains,
+      breakWhen = _.isRecoverInUseOrImport,
+      delimiterL = TokenKind.CurlyL,
+      delimiterR = TokenKind.CurlyR,
+    )
+    close(mark, TreeKind.UsesOrImports.UseMany)
   }
 
   private def iimport()(implicit s: State): Mark.Closed = {
@@ -1643,6 +1666,7 @@ object Parser2 {
         case TokenKind.AngledPlus => Some(BinaryOp.AngledPlus)
         case TokenKind.BangEqual => Some(BinaryOp.BangEqual)
         case TokenKind.ColonColon => Some(BinaryOp.ColonColon)
+        case TokenKind.ColonColonTight => Some(BinaryOp.ColonColon)
         case TokenKind.EqualEqual => Some(BinaryOp.EqualEqual)
         case TokenKind.KeywordAnd => Some(BinaryOp.And)
         case TokenKind.KeywordInstanceOf => Some(BinaryOp.InstanceOf)
@@ -1669,6 +1693,7 @@ object Parser2 {
       TokenKind.BangEqual,
       TokenKind.ColonColon,
       TokenKind.ColonColonColon,
+      TokenKind.ColonColonTight,
       TokenKind.EqualEqual,
       TokenKind.GenericOperator,
       TokenKind.KeywordAnd,
@@ -3299,7 +3324,7 @@ object Parser2 {
           closeWithError(mark, error)
       }
       // Handle FCons.
-      if (eat(TokenKind.ColonColon)) {
+      if (eat(TokenKind.ColonColon) || eat(TokenKind.ColonColonTight)) {
         lhs = close(openBefore(lhs), TreeKind.Pattern.Pattern)
         pattern()
         close(openBefore(lhs), TreeKind.Pattern.FCons)
@@ -3740,7 +3765,7 @@ object Parser2 {
         delimiterL = TokenKind.HashBar,
         delimiterR = TokenKind.BarHash,
         breakWhen = _.isRecoverInType,
-        optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
+        optionallyWith = Some((TokenKind.Bar, () => ttype())),
       )
       close(mark, TreeKind.Type.Extensible)
     }
@@ -3756,7 +3781,7 @@ object Parser2 {
         delimiterL = TokenKind.HashCurlyL,
         delimiterR = TokenKind.CurlyR,
         breakWhen = _.isRecoverInType,
-        optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
+        optionallyWith = Some((TokenKind.Bar, () => ttype())),
       )
       close(mark, TreeKind.Type.Schema)
     }
@@ -3771,7 +3796,7 @@ object Parser2 {
         checkForItem = NAME_PREDICATE.contains,
         delimiterL = TokenKind.HashParenL,
         breakWhen = _.isRecoverInType,
-        optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
+        optionallyWith = Some((TokenKind.Bar, () => ttype())),
       )
       close(mark, TreeKind.Type.SchemaRow)
     }

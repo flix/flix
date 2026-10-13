@@ -1,17 +1,8 @@
 /*
  * Copyright 2026 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.api.lsp
 
@@ -21,7 +12,7 @@ import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, SourceName}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.net.URI
-import java.nio.file.Path
+import java.nio.file.{FileSystemNotFoundException, Path}
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -54,6 +45,19 @@ object ClientUri {
     val name = parse(uri)
     spellings.put(name, uri.toString)
     name
+  }
+
+  /**
+    * Returns the path the client URI `uri` denotes, or `None` if it denotes no path.
+    *
+    * Used for a directory a client names, such as a workspace root. A source is named with
+    * [[toSourceName]] instead, which keeps a URI that denotes no path as a name of its own.
+    */
+  def toPath(uri: URI): Option[Path] = try {
+    Some(Path.of(uri).normalize())
+  } catch {
+    case _: IllegalArgumentException => None
+    case _: FileSystemNotFoundException => None
   }
 
   /**

@@ -1,23 +1,14 @@
 /*
  * Copyright 2015-2016 Magnus Madsen, Ming-Ho Yee
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Origin, SecurityContext, Source, SourceName}
+import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Mountpoint, Origin, PackageId, SecurityContext, Source, SourceName}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.jvm.{ByteBuddyJavaTypeProvider, DependencyClassPath, ExternalJarLoader, JavaTypeProvider}
@@ -71,10 +62,22 @@ object Flix {
   * The packages and JARs are immutable: they are registered once at construction and cannot be
   * changed afterwards. If they change, a new Flix compiler instance must be created.
   *
-  * @param pkgs the Flix package files (`.fpkg`) to compile, each paired with its security context.
-  * @param jars the JAR files whose classes are available to Java interop.
+  * @param pkgs   the Flix packages (`.fpkg`) to compile.
+  * @param jars   the JAR files whose classes are available to Java interop.
+  * @param mounts the mount table of the root project, as its `flix.toml` declares it. Empty when
+  *               the project has no manifest.
   */
-class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) extends AutoCloseable {
+class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil, mounts: Map[Mountpoint, PackageId] = Map.empty) extends AutoCloseable {
+
+  /**
+    * The mount table of the root project.
+    */
+  val rootMounts: Map[Mountpoint, PackageId] = mounts
+
+  /**
+    * The mount table of each package.
+    */
+  val packageMounts: Map[PackageId, Map[Mountpoint, PackageId]] = pkgs.map(pkg => pkg.id -> pkg.mounts).toMap
 
   /**
     * Whether [[close]] has been called. A closed instance cannot compile.
@@ -186,11 +189,11 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   val defaultCharset: Charset = Charset.forName("UTF-8")
 
   // Register the source files of the packages. The packages are read once, here.
-  for ((p, sctx) <- pkgs) {
-    FileOps.isValidFpkgFile(p) match {
+  for (pkg <- pkgs) {
+    FileOps.isValidFpkgFile(pkg.path) match {
       case Result.Err(e: Throwable) => throw e
       case Result.Ok(()) =>
-        for (source <- getSourcesOfPkg(p, sctx)) {
+        for (source <- getSourcesOfPkg(pkg)) {
           sources += source.sourceName -> source
         }
     }
@@ -814,9 +817,11 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
   }
 
   /**
-    * Returns the `.flix` source files inside the package at `p`, with the security context `sctx`.
+    * Returns the `.flix` source files inside `pkg`, each stamped with the identifier and the
+    * security context of the package.
     */
-  private def getSourcesOfPkg(p: Path, sctx: SecurityContext): List[Source] = {
+  private def getSourcesOfPkg(pkg: InstalledPackage): List[Source] = {
+    val p = pkg.path
     Using(new ZipFile(p.toFile)) { zip =>
       val result = mutable.ArrayBuffer.empty[Source]
       val iterator = zip.entries()
@@ -826,7 +831,7 @@ class Flix(pkgs: List[(Path, SecurityContext)] = Nil, jars: List[Path] = Nil) ex
         if (name.endsWith(".flix")) {
           val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
           val text = new String(bytes, defaultCharset)
-          result += Source.fromString(SourceName.PackageEntry(p, name), Origin.Package, sctx, text)
+          result += Source.fromString(SourceName.PackageEntry(p, name), Origin.Package(pkg.id), pkg.sctx, text)
         }
       }
       result.toList

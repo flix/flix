@@ -1,27 +1,18 @@
 /*
  * Copyright 2020 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider.*
-import ca.uwaterloo.flix.api.{CompilerLog, CrashHandler, Flix, Version}
+import ca.uwaterloo.flix.api.{CompilerLog, CrashHandler, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, SourceName}
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
+import ca.uwaterloo.flix.tools.pkg.SemVer
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -36,10 +27,8 @@ import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
 import java.net.InetSocketAddress
-import java.nio.file.{Files, Path}
 import java.text.SimpleDateFormat
 import java.util.Date
-import scala.collection.mutable
 
 /**
   * A Compiler Interface for the Language Server Protocol.
@@ -51,6 +40,7 @@ import scala.collection.mutable
   *
   * $ wscat -c ws://localhost:8000
   *
+  * > {"id": "0", "request": "api/addWorkspace", "uri": "file:///path/to/project"}
   * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(): Unit \ IO = println(\"Hello World\")"}
   * > {"id": "2", "request": "lsp/check"}
   * > {"id": "3", "request": "lsp/hover", "uri": "foo.flix", "position": {"line": 1, "character": 25}}
@@ -72,32 +62,17 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   private val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
   /**
-    * A map from source names to source code.
-    */
-  private val sources: mutable.Map[SourceName, String] = mutable.Map.empty
-
-  /**
-    * The packages added with `api/addPkg` and not removed with `api/remPkg`, in insertion order.
-    */
-  private val pkgs: mutable.LinkedHashSet[Path] = mutable.LinkedHashSet.empty
-
-  /**
-    * The JARs added with `api/addJar` and not removed with `api/remJar`, in insertion order.
-    */
-  private val jars: mutable.LinkedHashSet[Path] = mutable.LinkedHashSet.empty
-
-  /**
-    * Whether [[pkgs]] or [[jars]] changed since [[flix]] was constructed.
-    */
-  private var dependenciesChanged: Boolean = false
-
-  /**
-    * The Flix instance (the same instance is used for incremental compilation).
+    * The oldest version of the VSCode extension which can talk to this server.
     *
-    * Replaced by a new instance when the packages or JARs change (see [[processCheck]]), since
-    * the packages and JARs are fixed for the lifetime of an instance.
+    * The extension compares it against its own version and asks the user to update if it is too
+    * old. Must be bumped whenever a change to the protocol requires a newer extension.
     */
-  private var flix: Flix = mkFlix()
+  private val MinVSCodeVersion: SemVer = SemVer(1, 57, 0)
+
+  /**
+    * The project served by this server.
+    */
+  private val project: LspProject = new LspProject(o)
 
   /**
     * The current AST root. The root is null until the source code is compiled.
@@ -149,14 +124,42 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
           }
           ws.send(jsonCompact)
         }
-      case Err(msg) => log(msg)(ws)
+      case Err(msg) =>
+        log(msg)(ws)
+        answerUnparsable(data, msg)(ws)
     }
   } catch {
     case ex: Throwable =>
       // We try to scream everywhere to ensure the message is shown.
-      CrashHandler.handleCrash(ex)(flix)
+      CrashHandler.handleCrash(ex)(project.compiler)
       ex.printStackTrace(System.out)
       ex.printStackTrace(System.err)
+  }
+
+  /**
+    * Answers the message `data`, which could not be parsed as a request, with the error `msg`.
+    *
+    * A client may wait for a response to every message it sends, so a message it can match a
+    * response against is answered even when it is not a request the server knows. A message without
+    * an id is only logged: a response to it could not be matched against anything.
+    */
+  private def answerUnparsable(data: String, msg: String)(implicit ws: WebSocket): Unit = requestId(data) match {
+    case Some(id) if ws.isOpen =>
+      val result: JValue = ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> msg)
+      ws.send(JsonMethods.compact(JsonMethods.render(result)))
+    case _ => // nop
+  }
+
+  /**
+    * Returns the id of the message `data`, if it is JSON with an id.
+    */
+  private def requestId(data: String): Option[String] = try {
+    parse(data) \ "id" match {
+      case JString(id) => Some(id)
+      case _ => None
+    }
+  } catch {
+    case _: ParseException => None
   }
 
   /**
@@ -175,13 +178,12 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
 
     // Determine the type of request.
     json \\ "request" match {
+      case JString("api/addWorkspace") => Request.parseAddWorkspace(json)
       case JString("api/addUri") => Request.parseAddUri(json)
       case JString("api/remUri") => Request.parseRemUri(json)
-      case JString("api/addPkg") => Request.parseAddPkg(json)
-      case JString("api/remPkg") => Request.parseRemPkg(json)
-      case JString("api/addJar") => Request.parseAddJar(json)
-      case JString("api/remJar") => Request.parseRemJar(json)
       case JString("api/version") => Request.parseVersion(json)
+      case JString("api/minVSCodeVersion") => Request.parseMinVSCodeVersion(json)
+      case JString("api/restart") => Request.parseRestart(json)
       case JString("api/shutdown") => Request.parseShutdown(json)
       case JString("api/disconnect") => Request.parseDisconnect(json)
 
@@ -204,38 +206,13 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       case JString("lsp/formatting") => Request.parseFormatting(json)
       case JString("lsp/foldingRange") => Request.parseFoldingRange(json)
 
-      case _ => Err(s"Unsupported request: '$s'.")
+      // The name of the request is reported on its own: the message it came in is answered with
+      // this text, and a message may carry a whole source file or package.
+      case JString(request) => Err(s"Unsupported request: '$request'.")
+      case _ => Err("Malformed request. The 'request' field is missing or is not a string.")
     }
   } catch {
     case ex: ParseException => Err(s"Malformed request. Unable to parse JSON: '${ex.getMessage}'.")
-  }
-
-  /**
-    * Adds the given source code to the compiler under `name`.
-    */
-  private def addSource(name: SourceName, src: String): Unit = {
-    ClientUri.addSource(flix, name, src)
-    sources += (name -> src)
-  }
-
-  /**
-    * Removes the source named `name` from the compiler.
-    */
-  private def remSource(name: SourceName): Unit = {
-    ClientUri.remSource(flix, name)
-    sources -= name
-  }
-
-  /**
-    * Returns a new Flix instance with the current [[pkgs]], [[jars]], and [[sources]].
-    */
-  private def mkFlix(): Flix = {
-    val pkgsWithSctx = pkgs.toList.map(p => (p, SecurityContext.Unrestricted))
-    val flix = new Flix(pkgs = pkgsWithSctx, jars = jars.toList).setFormatter(NoFormatter).setOptions(o)
-    for ((name, src) <- sources) {
-      ClientUri.addSource(flix, name, src)
-    }
-    flix
   }
 
   /**
@@ -243,53 +220,28 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     */
   private def processRequest(request: Request)(implicit ws: WebSocket, root: Root): JValue = request match {
 
+    case Request.AddWorkspace(id, uri) =>
+      ClientUri.toPath(uri) match {
+        case Some(path) =>
+          project.addWorkspace(path)
+          ("id" -> id) ~ ("status" -> ResponseStatus.Success)
+        case None =>
+          ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"The uri '$uri' does not denote a directory.")
+      }
+
     case Request.AddUri(id, name, src) =>
-      addSource(name, src)
+      project.addSource(name, src)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.RemUri(id, name) =>
-      remSource(name)
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success)
-
-    case Request.AddPkg(id, uri) =>
-      val path = Path.of(uri)
-      FileOps.isValidFpkgFile(path) match {
-        case Ok(()) =>
-          // The package takes effect at the next check, which constructs a new Flix instance.
-          pkgs += path
-          dependenciesChanged = true
-          ("id" -> id) ~ ("status" -> ResponseStatus.Success)
-        case Err(ex) =>
-          ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> ex.getMessage)
-      }
-
-    case Request.RemPkg(id, uri) =>
-      val path = Path.of(uri)
-      if (pkgs.remove(path)) {
-        dependenciesChanged = true
-      }
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success)
-
-    case Request.AddJar(id, uri) =>
-      val path = Path.of(uri)
-      FileOps.isValidJarFile(path) match {
-        case Ok(()) =>
-          // The JAR takes effect at the next check, which constructs a new Flix instance.
-          jars += path
-          dependenciesChanged = true
-          ("id" -> id) ~ ("status" -> ResponseStatus.Success)
-        case Err(ex) =>
-          ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> ex.getMessage)
-      }
-
-    case Request.RemJar(id, uri) =>
-      val path = Path.of(uri)
-      if (jars.remove(path)) {
-        dependenciesChanged = true
-      }
+      project.remSource(name)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.Version(id) => processVersion(id)
+
+    case Request.MinVSCodeVersion(id) => processMinVSCodeVersion(id)
+
+    case Request.Restart(id) => processRestart(id)
 
     case Request.Shutdown(_) => processShutdown()
 
@@ -303,8 +255,8 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     case Request.Complete(id, name, pos) =>
       // Find the source of the given URI (which should always exist).
       val completions = CompletionProvider
-        .getCompletions(name, pos, currentErrors)(root, flix)
-        .map(_.toCompletionItem(flix))
+        .getCompletions(name, pos, currentErrors)(root, project.compiler)
+        .map(_.toCompletionItem(project.compiler))
       val completionList = CompletionList(isIncomplete = true, completions)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> completionList.toJSON)
 
@@ -316,7 +268,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
         ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON).toList))
 
     case Request.Hover(id, name, pos) =>
-      HoverProvider.processHover(name, pos)(root, flix) match {
+      HoverProvider.processHover(name, pos)(root, project.compiler) match {
         case Some(hover) => ("id" -> id) ~ hover.toJSON
         case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this hover.")
       }
@@ -349,7 +301,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> SemanticTokensProvider.provideSemanticTokens(name)(root)))
 
     case Request.Signature(id, name, pos) =>
-      SignatureHelpProvider.provideSignatureHelp(name, pos)(root, flix) match {
+      SignatureHelpProvider.provideSignatureHelp(name, pos)(root, project.compiler) match {
         case Some(signature) => ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> signature.toJSON)
         case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this signature.")
       }
@@ -358,13 +310,13 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.getInlayHints(name, range, currentErrors).map(_.toJSON))
 
     case Request.ShowAst(id) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("path" -> ShowAstProvider.showAst()(flix).toAbsolutePath.toString))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("path" -> ShowAstProvider.showAst()(project.compiler).toAbsolutePath.toString))
 
     case Request.CodeAction(id, name, range, _) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(name, range, currentErrors)(root, flix).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(name, range, currentErrors)(root, project.compiler).map(_.toJSON))
 
     case Request.Formatting(id, name, options) =>
-      val edits = FormattingProvider.formatDocument(name, options)(flix).map(_.toJSON)
+      val edits = FormattingProvider.formatDocument(name, options)(project.compiler).map(_.toJSON)
       ("id" -> id) ~ ("uri" -> ClientUri.fromSourceName(name)) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(edits))
 
     case Request.FoldingRange(id, name) =>
@@ -373,25 +325,25 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   }
 
   /**
+    * Processes a restart request: loads the project again and starts over with a fresh compiler.
+    */
+  private def processRestart(requestId: String): JValue = project.restart() match {
+    case None =>
+      ("id" -> requestId) ~ ("status" -> ResponseStatus.Success)
+    case Some(err) =>
+      ("id" -> requestId) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> err.message(NoFormatter))
+  }
+
+  /**
     * Processes a validate request.
     */
   private def processCheck(requestId: String): JValue = {
-    // The packages and JARs are fixed for the lifetime of a Flix instance: if they changed, replace
-    // the instance. A package or JAR that disappeared without a `api/remPkg` or `api/remJar`
-    // request is dropped.
-    if (dependenciesChanged) {
-      pkgs.filterInPlace(path => Files.isRegularFile(path))
-      jars.filterInPlace(path => Files.isRegularFile(path))
-      flix.close()
-      flix = mkFlix()
-      dependenciesChanged = false
-    }
-
     // Measure elapsed time.
     val t = System.nanoTime()
     try {
-      // Run the compiler up to the type checking phase.
-      flix.check() match {
+      // Run the compiler up to the type checking phase. The project is loaded again first if its
+      // packages or JARs changed.
+      project.check() match {
         case (Some(r), Nil) =>
           // Case 1: Compilation was successful. Build the reverse index.
           processSuccessfulCheck(requestId, r, List.empty, t)
@@ -412,7 +364,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       }
     } catch {
       case ex: Throwable =>
-        val reportPath = CrashHandler.handleCrash(ex)(flix)
+        val reportPath = CrashHandler.handleCrash(ex)(project.compiler)
         ("id" -> requestId) ~
           ("status" -> ResponseStatus.CompilerError) ~
           ("result" -> ("reportPath" -> reportPath.map(_.toString)))
@@ -434,7 +386,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     // println(s"lsp/check: ${e / 1_000_000}ms")
 
     // Compute Code Quality hints.
-    val codeHints = CodeHinter.run(sources.keySet.toSet)(root)
+    val codeHints = CodeHinter.run(project.sourceNames)(root)
 
     // Determine the status based on whether there are errors.
     // Merge by URI so that errors and code hints for the same file are combined into one entry rather than
@@ -450,7 +402,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * Processes a shutdown request.
     */
   private def processShutdown(): Nothing = {
-    flix.close()
+    project.close()
     System.exit(0)
     throw null // unreachable
   }
@@ -472,6 +424,17 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     val minor = Version.CurrentVersion.minor
     val revision = Version.CurrentVersion.revision
     val version = ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
+    ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> version)
+  }
+
+  /**
+    * Processes the minimum VSCode extension version request.
+    */
+  private def processMinVSCodeVersion(requestId: String): JValue = {
+    val major = MinVSCodeVersion.major
+    val minor = MinVSCodeVersion.minor
+    val patch = MinVSCodeVersion.patch
+    val version = ("major" -> major) ~ ("minor" -> minor) ~ ("patch" -> patch)
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> version)
   }
 

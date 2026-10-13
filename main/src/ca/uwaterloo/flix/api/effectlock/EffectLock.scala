@@ -1,127 +1,176 @@
 /*
  * Copyright 2025 Jakob Schneider Villumsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.api.effectlock
 
-import ca.uwaterloo.flix.api.effectlock.serialization.{Deserialize, Serialize}
-import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, TypedAst}
-import ca.uwaterloo.flix.api.effectlock.UseGraph.UsedSym
-import ca.uwaterloo.flix.language.ast.shared.{Origin, Source}
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.language.ast.shared.{Origin, PackageId, QualifiedSym, Source}
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
+import ca.uwaterloo.flix.util.Sha256
 
 object EffectLock {
 
   /**
-    * Deserializes `json` to a collection of schemes pointed to by either a def or sig.
-    */
-  def deserialize(json: String): Result[(Map[Symbol.DefnSym, Scheme], Map[Symbol.SigSym, Scheme]), String] = {
-    try {
-      implicit val formats: org.json4s.Formats = serialization.formats
-      val serializableAST = org.json4s.native.Serialization.read[Map[String, serialization.DefOrSig]](json)
-      val sdefs = serializableAST.collect {
-        case (_, defn: serialization.SDef) => defn
-      }
-      val ssigs = serializableAST.collect {
-        case (_, sig: serialization.SSig) => sig
-      }
-      val defs = sdefs.map(Deserialize.deserializeDef).toMap
-      val sigs = ssigs.map(Deserialize.deserializeSig).toMap
-      Result.Ok((defs, sigs))
-    } catch {
-      case e: Exception => Result.Err(s"Unexpected JSON: ${e.getMessage}")
-    }
-  }
-
-  /**
-    * Serializes the relevant functions  for effect locking in `root` and returns a JSON string.
-    * If it returns `Ok(json)`, then `json` may be written directly to a file.
-    */
-  def lock(root: TypedAst.Root): Result[String, String] = {
-    try {
-      val serializableAST = mkSerialization(root)
-      val typeHints = serialization.formats
-      val res = org.json4s.native.Serialization.write(serializableAST)(typeHints)
-      Result.Ok(res)
-    } catch {
-      case e: Exception => Result.Err(s"Invalid AST: ${e.getMessage}")
-    }
-  }
-
-  /**
-    * Returns a map of defs and signatures in `root` that must be effect locked.
-    * The map may directly be converted to a string using [[serialization.formats]] for type hints.
-    */
-  private def mkSerialization(root: TypedAst.Root): Map[String, serialization.DefOrSig] = {
-    val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_, root)).map { case (_, libDefn) => libDefn }
-    val defs = useGraph.flatMap(getLibraryDefn(_, root)).toMap
-    val defSerialization = defs.map { case (sym, defn) => sym.toString -> Serialize.serializeDef(defn) }
-    val sigs = useGraph.flatMap(getLibrarySig(_, root)).toMap
-    val sigSerialization = sigs.map { case (sym, sig) => sym.toString -> Serialize.serializeSig(sig) }
-    defSerialization ++ sigSerialization
-  }
-
-  /** Returns `true` if for the edge `f -> g`, `f` occurs in the source project and `g` occurs in a library and `g` is public. */
-  private def isPublicLibraryCall(graphEdge: (UsedSym, UsedSym), root: TypedAst.Root): Boolean = graphEdge match {
-    case (src, UsedSym.DefnSym(dst)) =>
-      isFromLocalProject(getSource(src)) &&
-        isLibraryFunction(dst.src) &&
-        root.defs.get(dst).exists(_.spec.mod.isPublic)
-
-    case (src, UsedSym.SigSym(dst)) =>
-      isFromLocalProject(getSource(src)) &&
-        isLibraryFunction(dst.src) &&
-        root.sigs.get(dst).exists(_.spec.mod.isPublic)
-  }
-
-  /** Returns the source of `sym0`. This is a helper function to reduce repetition. */
-  private def getSource(sym0: UsedSym): Source = sym0 match {
-    case UsedSym.DefnSym(sym) => sym.src
-    case UsedSym.SigSym(sym) => sym.src
-  }
-
-  /** Returns `true` if `src` is in the source project, i.e. was supplied by the user. */
-  private def isFromLocalProject(src: Source): Boolean = src.origin.isUser
-
-  /**
-    * Returns `true` if `src` is in a library: the library bundled with the compiler or a package.
+    * The outcome of checking a lock file against a program.
     *
-    * A synthetic source with an unknown origin is in no library.
+    * @param compared how many locked signatures were compared, which is how many of the locked
+    *                 declarations the packages still declare publicly.
+    * @param changed  the declarations whose signature is no longer the one that was locked: the
+    *                 package, the symbol, and the spec it is declared with now.
     */
-  private def isLibraryFunction(src: Source): Boolean = src.origin match {
-    case Origin.User => false
-    case Origin.Library => true
-    case Origin.Package => true
-    case Origin.Unknown => false
+  case class CheckResult(compared: Int, changed: List[(PackageId, QualifiedSym, TypedAst.Spec)])
+
+  /**
+    * The public declarations of one package, each by its symbol.
+    */
+  private case class Declarations(defs: Map[QualifiedSym, TypedAst.Spec], sigs: Map[QualifiedSym, TypedAst.Spec])
+
+  private object Declarations {
+    /** The declarations of a package that declares nothing publicly. */
+    val Empty: Declarations = Declarations(Map.empty, Map.empty)
   }
 
-  /** Returns the definition of `sym0` w.r.t. `root`. */
-  private def getLibraryDefn(sym0: UsedSym, root: TypedAst.Root): Option[(Symbol.DefnSym, TypedAst.Def)] = sym0 match {
-    case UsedSym.DefnSym(sym) =>
-      Some(sym -> root.defs(sym))
+  /**
+    * Returns the hashes of the signatures of the public defs and sigs of `targets` in `root`.
+    *
+    * A declaration is recorded by the name of [[nameOf]], e.g. `Museum.Clerk.buy`.
+    *
+    * `targets` are the dependencies the project declares, and not the packages reached through
+    * them.
+    *
+    * Only a package can be locked. The library bundled with the compiler cannot change under a
+    * project, because the version of Flix that provides it is fixed by the manifest, so it has no
+    * lock of its own.
+    */
+  def lock(root: TypedAst.Root, targets: Set[PackageId]): EffectLockfile =
+    EffectLockfile(declarationsOf(root, targets).map {
+      case (id, decls) => id -> LockedPackage(hashesOf(decls.defs), hashesOf(decls.sigs))
+    })
 
-    case UsedSym.SigSym(_) =>
-      None
+  /**
+    * Returns the outcome of checking `lockfile` against the declarations of `targets` in `root`:
+    * how many locked signatures were compared, and the declarations that `lockfile` locks at a
+    * signature they no longer have, each with the spec it is declared with now.
+    *
+    * A locked declaration is compared against the public declaration of the same name in the
+    * package it is locked under, and against nothing else. One that the package no longer
+    * declares, or no longer declares publicly, is not compared, and that is not an error: it
+    * cannot be called, so it cannot do anything the lock did not allow. The count of what was
+    * compared is returned so that a check that matched nothing can be told from one that found
+    * nothing changed.
+    *
+    * A package that `lockfile` locks but that `targets` does not name is not checked, which is
+    * how one package is checked without the drift of another standing in the way.
+    *
+    * The hash says whether a signature is the one that was locked, and nothing more. A change
+    * that only narrows what a declaration may do is reported like any other: telling the two
+    * apart would mean holding the signature that was locked, which the lock file does not.
+    */
+  def check(lockfile: EffectLockfile, root: TypedAst.Root, targets: Set[PackageId]): CheckResult = {
+    val declared = declarationsOf(root, targets)
+    val results = lockfile.packages.toList.filter { case (id, _) => targets.contains(id) }.sortBy { case (id, _) => id }.map {
+      case (id, locked) =>
+        val decls = declared.get(id) match {
+          case None => Declarations.Empty
+          case Some(d) => d
+        }
+        val (comparedDefs, changedDefs) = compare(locked.defs, decls.defs)
+        val (comparedSigs, changedSigs) = compare(locked.sigs, decls.sigs)
+        val changed = (changedDefs ::: changedSigs).map { case (sym, spec) => (id, sym, spec) }
+        (comparedDefs + comparedSigs, changed)
+    }
+    CheckResult(results.map { case (compared, _) => compared }.sum, results.flatMap { case (_, changed) => changed })
   }
 
-  /** Returns the definition of `sym0` w.r.t. `root`. */
-  private def getLibrarySig(graphEdge: UsedSym, root: TypedAst.Root): Option[(Symbol.SigSym, TypedAst.Sig)] = graphEdge match {
-    case UsedSym.DefnSym(_) =>
-      None
+  /**
+    * Returns the packages of `targets` that declare something publicly in `root` but that
+    * `lockfile` does not lock, in order of identifier.
+    *
+    * A package that declares nothing publicly is not reported, whether it is locked or not:
+    * nothing in it can be called, so there is nothing for a lock to vouch for. It has no entry in
+    * a lock file either, see [[lock]], so having no entry is not by itself what tells an unlocked
+    * package apart.
+    */
+  def unlocked(lockfile: EffectLockfile, root: TypedAst.Root, targets: Set[PackageId]): List[PackageId] =
+    declarationsOf(root, targets).keySet.diff(lockfile.packages.keySet).toList.sorted
 
-    case UsedSym.SigSym(sym) =>
-      Some(sym -> root.sigs(sym))
+  /**
+    * Returns the name that a lock file records `sym` under: its namespace without the root of
+    * its package, and then its own name, joined by dots, e.g. `Museum.Clerk.buy`.
+    *
+    * The entry a signature is recorded under names the package, so the name does not. The
+    * namespace of a sig ends with its trait, so a sig is named under the trait.
+    */
+  def nameOf(sym: QualifiedSym): String = (Name.declaredParts(sym.namespace) :+ sym.name).mkString(".")
+
+  /**
+    * Returns how many of `current` are locked by `locked`, and those of them whose signature
+    * hashes to something other than what was locked, each with the spec it is declared with now,
+    * in order of name.
+    */
+  private def compare(locked: Map[String, Sha256], current: Map[QualifiedSym, TypedAst.Spec]): (Int, List[(QualifiedSym, TypedAst.Spec)]) = {
+    val declared = current.toList.flatMap {
+      case (sym, spec) => locked.get(nameOf(sym)) match {
+        case None => Nil
+        case Some(hash) => List((sym, hash, spec))
+      }
+    }
+    val changed = declared.collect {
+      case (sym, hash, spec) if HashType.hashScheme(spec.declaredScheme) != hash => (sym, spec)
+    }
+    (declared.length, changed.sortBy { case (sym, _) => nameOf(sym) })
+  }
+
+  /**
+    * Returns the public declarations of each of `targets` in `root`, each by its symbol. A
+    * package that declares nothing publicly has no entry.
+    */
+  private def declarationsOf(root: TypedAst.Root, targets: Set[PackageId]): Map[PackageId, Declarations] = {
+    val defs = groupByPackage(root.defs.toList.map { case (sym, defn) => (sym.src, sym, defn.spec) }, targets)
+    val sigs = groupByPackage(root.sigs.toList.map { case (sym, sig) => (sym.src, sym, sig.spec) }, targets)
+    (defs.keySet ++ sigs.keySet).toList.map {
+      id => id -> Declarations(defs.getOrElse(id, Map.empty), sigs.getOrElse(id, Map.empty))
+    }.toMap
+  }
+
+  /**
+    * Returns the public declarations of `decls` that belong to one of `targets`, grouped by the
+    * package each belongs to and keyed by symbol.
+    */
+  private def groupByPackage(decls: List[(Source, QualifiedSym, TypedAst.Spec)], targets: Set[PackageId]): Map[PackageId, Map[QualifiedSym, TypedAst.Spec]] = {
+    decls.flatMap {
+      case (src, sym, spec) => packageOf(src) match {
+        case Some(id) if spec.mod.isPublic && targets.contains(id) => List(id -> (sym -> spec))
+        case Some(_) => Nil
+        case None => Nil
+      }
+    }.groupMap {
+      case (id, _) => id
+    } {
+      case (_, entry) => entry
+    }.map {
+      case (id, entries) => id -> entries.toMap
+    }
+  }
+
+  /**
+    * Returns the hash of the signature of each of `decls`, by the name of [[nameOf]].
+    */
+  private def hashesOf(decls: Map[QualifiedSym, TypedAst.Spec]): Map[String, Sha256] =
+    decls.map { case (sym, spec) => nameOf(sym) -> HashType.hashScheme(spec.declaredScheme) }
+
+  /**
+    * Returns the package `src` belongs to, if it belongs to one.
+    *
+    * A source of the user or of the bundled library belongs to no package.
+    */
+  private def packageOf(src: Source): Option[PackageId] = src.origin match {
+    case Origin.User => None
+    case Origin.Library => None
+    case Origin.Package(id) => Some(id)
+    case Origin.Unknown => None
   }
 
 }

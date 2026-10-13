@@ -1,24 +1,15 @@
 /*
  * Copyright 2026 Flix Authors
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider.FoldingRangeProvider
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, SourceName}
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{LibLevel, Options}
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestFoldingRangeProvider extends AnyFunSuite {
@@ -26,13 +17,9 @@ class TestFoldingRangeProvider extends AnyFunSuite {
   /**
     * The Flix object used across all the tests.
     *
-    * We first compile the stdlib so that every further compilation will be incremental.
+    * The tests do not use the library, so it is left out.
     */
-  private val Flix: Flix = {
-    val flix = new Flix().setOptions(Options.Default)
-    flix.check()
-    flix
-  }
+  private val Flix: Flix = new Flix().setOptions(Options.Default.copy(lib = LibLevel.Nix))
 
   /**
     * The uri of the test source.

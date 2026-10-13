@@ -1,24 +1,20 @@
 /*
  *  Copyright 2025 Ry Wiese
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of buffered readers, and its functions.
+///
 pub mod BufReader {
 
     ///
-    /// A `Readable` implementation that wraps an underlying `Readable` instance
-    /// and stores the items read from the underlying instance in an internal buffer.
+    /// Type of buffered readers.
+    ///
+    /// A `BufReader` is a `Readable` implementation that wraps an underlying `Readable`
+    /// instance and stores the items read from the underlying instance in an internal buffer.
     ///
     /// A call to `read` will read directly from the buffer if items are available, and
     /// will trigger a `read` from the underlying `reader` when the buffer is empty.

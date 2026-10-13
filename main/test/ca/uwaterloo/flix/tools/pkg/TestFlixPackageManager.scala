@@ -1,17 +1,18 @@
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.api.{Bootstrap, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.errors.SafetyError
+import ca.uwaterloo.flix.language.ast.shared.{PackageId, Repository, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.collection.ListMap
 import org.scalatest.{BeforeAndAfter, DoNotDiscover}
+import ca.uwaterloo.flix.tools.pkg.PkgTestUtils.ManifestPath
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.{File, PrintStream}
-import java.nio.file.{Files, Path}
+import java.nio.file.Files
 
 @DoNotDiscover
 class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
@@ -19,52 +20,36 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   private implicit val formatter: Formatter = Formatter.NoFormatter
   private implicit val out: PrintStream = System.out
 
-  private val Main: String =
-    """
-      |pub def main(): Unit \ IO =
-      |    TestPkgTrust.entry()
-      |""".stripMargin
-
-  private val MainTransitive: String =
-    """
-      |pub def main(): Unit \ IO =
-      |    TestPkgTrustTransitive.entry()
-      |""".stripMargin
-
   test("Install missing dependency.01") {
     assertResult(expected = true)(actual = {
       val toml = {
         """
           |[package]
-          |name = "test"
-          |description = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
-          |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:flix/museum-clerk" = "1.1.0"
+          |"github:flix/museum-clerk" = { version = "2.1.2", mount = "clerk" }
           |
           |[mvn-dependencies]
           |
           |""".stripMargin
       }
 
-      val manifest = ManifestParser.parse(toml, null) match {
+      val manifest = ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(formatter)) //should not happen
       }
 
       val path = Files.createTempDirectory("")
-      val resolution = FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken).map(FlixPackageManager.resolveSecurityLevels) match {
+      val resolution = FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
         case Ok(res) => res
         case Err(e) => fail(e.message(formatter))
       }
 
-      FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken) match {
+      FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
         case Ok(l) =>
-          val (p, _) = l.head
-          p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg")
+          l.packages.head.path.endsWith(s"flix${s}museum-clerk${s}2.1.2${s}museum-clerk-2.1.2.fpkg")
         case Err(e) => e.message(formatter)
       }
     })
@@ -75,34 +60,31 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val toml = {
         """
           |[package]
-          |name = "test"
-          |description = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
-          |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:flix/museum-giftshop" = "1.1.0"
+          |"github:flix/museum-giftshop" = { version = "2.0.2", mount = "giftshop" }
           |
           |[mvn-dependencies]
           |
           |""".stripMargin
       }
 
-      val manifest = ManifestParser.parse(toml, null) match {
+      val manifest = ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(formatter)) //should not happen
       }
 
       val path = Files.createTempDirectory("")
       val manifests =
-        FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken) match {
+        FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
           case Ok(resolution) => FlixPackageManager.resolveSecurityLevels(resolution)
           case Err(e) => fail(e.message(formatter))
         }
-      FlixPackageManager.installAll(manifests, path, PkgTestUtils.gitHubToken) match {
-        case Ok(l) => l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") } &&
-          l.exists { case (p, _) => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg") }
+      FlixPackageManager.installAll(manifests, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+        case Ok(l) => l.packages.exists(_.path.endsWith(s"flix${s}museum-giftshop${s}2.0.2${s}museum-giftshop-2.0.2.fpkg")) &&
+          l.packages.exists(_.path.endsWith(s"flix${s}museum-clerk${s}2.1.2${s}museum-clerk-2.1.2.fpkg"))
         case Err(e) => e
       }
     })
@@ -113,14 +95,11 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val toml1 = {
         """
           |[package]
-          |name = "test"
-          |description = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
-          |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:flix/museum-clerk" = "1.1.0"
+          |"github:flix/museum-clerk" = { version = "2.1.2", mount = "clerk" }
           |
           |[mvn-dependencies]
           |
@@ -130,45 +109,42 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val toml2 = {
         """
           |[package]
-          |name = "test"
-          |description = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
-          |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:flix/museum-giftshop" = "1.1.0"
+          |"github:flix/museum-giftshop" = { version = "2.0.2", mount = "giftshop" }
           |
           |[mvn-dependencies]
           |
           |""".stripMargin
       }
 
-      val manifest1 = ManifestParser.parse(toml1, null) match {
+      val manifest1 = ManifestParser.parse(toml1, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(formatter)) //should not happen
       }
-      val manifest2 = ManifestParser.parse(toml2, null) match {
+      val manifest2 = ManifestParser.parse(toml2, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(formatter)) //should not happen
       }
 
       val path = Files.createTempDirectory("")
 
-      val resolution1 = FlixPackageManager.findTransitiveDependencies(manifest1, path, PkgTestUtils.gitHubToken).map(FlixPackageManager.resolveSecurityLevels) match {
+      val resolution1 = FlixPackageManager.resolve(manifest1, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
         case Ok(res) => res
         case Err(e) => fail(e.message(formatter))
       }
-      val resolution2 = FlixPackageManager.findTransitiveDependencies(manifest2, path, PkgTestUtils.gitHubToken).map(FlixPackageManager.resolveSecurityLevels) match {
+      val resolution2 = FlixPackageManager.resolve(manifest2, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
         case Ok(res) => res
         case Err(e) => fail(e.message(formatter))
       }
-      val resolution = FlixPackageManager.SecureResolution(origin = manifest1, security = resolution1.security ++ resolution2.security, manifestToFlixDeps = resolution1.manifestToFlixDeps ++ resolution2.manifestToFlixDeps)
+      val resolution = FlixPackageManager.SecureResolution(origin = manifest1, security = resolution1.security ++ resolution2.security, manifestToFlixDeps = resolution1.manifestToFlixDeps ++ resolution2.manifestToFlixDeps, tomlDigests = resolution1.tomlDigests ++ resolution2.tomlDigests)
 
 
-      FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken) match {
-        case Ok(l) => l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") } &&
-          l.exists { case (p, _) => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg") }
+      FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+        case Ok(l) => l.packages.exists(_.path.endsWith(s"flix${s}museum-giftshop${s}2.0.2${s}museum-giftshop-2.0.2.fpkg")) &&
+          l.packages.exists(_.path.endsWith(s"flix${s}museum-clerk${s}2.1.2${s}museum-clerk-2.1.2.fpkg"))
         case Err(e) => e.message(formatter)
       }
     })
@@ -179,35 +155,32 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val toml = {
         """
           |[package]
-          |name = "test"
-          |description = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
-          |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:flix/museum-giftshop" = "1.1.0"
+          |"github:flix/museum-giftshop" = { version = "2.0.2", mount = "giftshop" }
           |
           |[mvn-dependencies]
           |
           |""".stripMargin
       }
 
-      val manifest = ManifestParser.parse(toml, null) match {
+      val manifest = ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(formatter)) //should not happen
       }
 
       val path = Files.createTempDirectory("")
 
-      val resolution = FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken).map(FlixPackageManager.resolveSecurityLevels) match {
+      val resolution = FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
         case Ok(res) => res
         case Err(e) => fail(e.message(formatter))
       }
-      FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken) // installs the dependency
-      FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken) match { // does nothing
+      FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) // installs the dependency
+      FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match { // does nothing
         case Ok(l) =>
-          l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") }
+          l.packages.exists(_.path.endsWith(s"flix${s}museum-giftshop${s}2.0.2${s}museum-giftshop-2.0.2.fpkg"))
         case Err(e) => e.message(formatter)
       }
     })
@@ -218,28 +191,27 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val toml = {
         """
           |[package]
-          |name = "test"
-          |description = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
-          |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:flix/museum-entrance" = "1.2.0"
+          |"github:flix/museum-entrance" = { version = "2.0.2", mount = "entrance" }
           |
           |[mvn-dependencies]
           |
           |""".stripMargin
       }
 
-      val manifest = ManifestParser.parse(toml, null) match {
+      val manifest = ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(formatter)) //should not happen
       }
 
       val path = Files.createTempDirectory("")
-      FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken) match {
-        case Ok(resolution) => resolution.manifests.contains(manifest) && resolution.manifests.exists(m => m.name == "museum-clerk")
+      FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+        case Ok(resolution) =>
+          val clerk = PackageId(Repository.GitHub, "flix", "museum-clerk")
+          resolution.manifests.contains(manifest) && resolution.tomlDigests.keys.exists { case (id, _) => id == clerk }
         case Err(e) => e.message(formatter)
       }
     })
@@ -249,27 +221,24 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val toml = {
       """
         |[package]
-        |name = "test"
-        |description = "test"
         |version = "0.0.0"
         |flix = "0.0.0"
-        |authors = ["Anna Blume"]
         |
         |[dependencies]
-        |"github:flix/does-not-exist" = "1.0.0"
+        |"github:flix/does-not-exist" = { version = "1.0.0", mount = "missing" }
         |
         |[mvn-dependencies]
         |
         |""".stripMargin
     }
 
-    val manifest = ManifestParser.parse(toml, null) match {
+    val manifest = ManifestParser.parse(toml, ManifestPath) match {
       case Ok(m) => m
       case Err(e) => fail(e.message(formatter)) //should not happen
     }
 
     val path = Files.createTempDirectory("")
-    FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken).map(FlixPackageManager.resolveSecurityLevels) match {
+    FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
       case Ok(res) => fail(res.toString)
       case Err(e) =>
         e.message(formatter)
@@ -278,35 +247,37 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   }
 
   test("Give error for missing version") {
-    assertResult(expected = PackageError.VersionDoesNotExist(SemVer(0, 0, 1), Project("flix", "museum")).message(formatter))(actual = {
-      val toml = {
-        """
-          |[package]
-          |name = "test"
-          |description = "test"
-          |version = "0.0.0"
-          |flix = "0.0.0"
-          |authors = ["Anna Blume"]
-          |
-          |[dependencies]
-          |"github:flix/museum" = "0.0.1"
-          |
-          |[mvn-dependencies]
-          |
-          |""".stripMargin
-      }
+    // A version that was never released publishes no `flix.toml`, which is where a resolution
+    // that asks for it stops. The release is addressed by name, so nothing reads the listing to
+    // find out that it is not there.
+    val toml = {
+      """
+        |[package]
+        |version = "0.0.0"
+        |flix = "0.0.0"
+        |
+        |[dependencies]
+        |"github:flix/museum" = "0.0.1"
+        |
+        |[mvn-dependencies]
+        |
+        |""".stripMargin
+    }
 
-      val manifest = ManifestParser.parse(toml, null) match {
-        case Ok(m) => m
-        case Err(e) => fail(e.message(formatter))
-      }
+    val manifest = ManifestParser.parse(toml, ManifestPath) match {
+      case Ok(m) => m
+      case Err(e) => fail(e.message(formatter))
+    }
 
-      val path = Files.createTempDirectory("")
-      FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken).map(FlixPackageManager.resolveSecurityLevels) match {
-        case Ok(res) => res
-        case Err(e) => e.message(formatter)
-      }
-    })
+    val path = Files.createTempDirectory("")
+    FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+      case Ok(res) => fail(s"Expected the missing release to be refused, but got: $res")
+      case Err(e: PackageError.ReleaseAssetNotFound) =>
+        assert(e.version == SemVer(0, 0, 1))
+        assert(e.project == Project("flix", "museum"))
+        assert(e.assetName == Bootstrap.FLIX_TOML)
+      case Err(e) => fail(s"Expected the missing release to be refused, but got: ${e.message(formatter)}")
+    }
   }
 
   test("Install transitive dependency") {
@@ -314,391 +285,448 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val toml = {
         """
           |[package]
-          |name = "test"
-          |description = "test"
           |version = "0.0.0"
           |flix = "0.0.0"
-          |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:flix/museum" = "1.4.0"
+          |"github:flix/museum" = "3.0.1"
           |
           |""".stripMargin
       }
 
-      val manifest = ManifestParser.parse(toml, null) match {
+      val manifest = ManifestParser.parse(toml, ManifestPath) match {
         case Ok(m) => m
         case Err(e) => fail(e.message(formatter)) //should not happen
       }
 
       val path = Files.createTempDirectory("")
 
-      val manifests = FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken) match {
+      val manifests = FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
         case Ok(resolution) => FlixPackageManager.resolveSecurityLevels(resolution)
         case Err(e) => fail(e.message(formatter))
       }
-      FlixPackageManager.installAll(manifests, path, PkgTestUtils.gitHubToken) match {
+      FlixPackageManager.installAll(manifests, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
         case Ok(l) =>
-          l.exists { case (p, _) => p.endsWith(s"flix${s}museum${s}1.4.0${s}museum-1.4.0.fpkg") } &&
-            l.exists { case (p, _) => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg") } &&
-            l.exists { case (p, _) => p.endsWith(s"flix${s}museum-entrance${s}1.2.0${s}museum-entrance-1.2.0.fpkg") } &&
-            l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") } &&
-            l.exists { case (p, _) => p.endsWith(s"flix${s}museum-restaurant${s}1.1.0${s}museum-restaurant-1.1.0.fpkg") }
+          l.packages.exists(_.path.endsWith(s"flix${s}museum${s}3.0.1${s}museum-3.0.1.fpkg")) &&
+            l.packages.exists(_.path.endsWith(s"flix${s}museum-clerk${s}2.1.2${s}museum-clerk-2.1.2.fpkg")) &&
+            l.packages.exists(_.path.endsWith(s"flix${s}museum-entrance${s}2.0.2${s}museum-entrance-2.0.2.fpkg")) &&
+            l.packages.exists(_.path.endsWith(s"flix${s}museum-giftshop${s}2.0.2${s}museum-giftshop-2.0.2.fpkg")) &&
+            l.packages.exists(_.path.endsWith(s"flix${s}museum-restaurant${s}2.0.2${s}museum-restaurant-2.0.2.fpkg"))
         case Err(e) => e.message(formatter)
       }
     })
   }
 
-  test("security:paranoid-dep:plain") {
-    val deps =
-      """
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.1", security = "paranoid" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, Main)
+  test("resolveSecurityLevels.strictest.01") {
+    // A package that one dependent declares paranoid is paranoid, whatever another declares.
+    assertResult(expected = SecurityContext.Paranoid)(actual = levelOfShared("paranoid", "unrestricted"))
+  }
 
-    if (forbidden) {
-      succeed
-    } else {
-      fail(message + System.lineSeparator() + "expected failure with security 'paranoid' and dependency plain")
+  test("resolveSecurityLevels.strictest.02") {
+    // The order in which the dependents are met makes no difference.
+    assertResult(expected = SecurityContext.Paranoid)(actual = levelOfShared("unrestricted", "paranoid"))
+  }
+
+  test("resolveSecurityLevels.strictest.03") {
+    assertResult(expected = SecurityContext.Plain)(actual = levelOfShared("unrestricted", "plain"))
+  }
+
+  test("resolveSecurityLevels.strictest.04") {
+    assertResult(expected = SecurityContext.Unrestricted)(actual = levelOfShared("unrestricted", "unrestricted"))
+  }
+
+  /**
+    * Returns the security context of a package that two dependents declare, the first with the
+    * security context `left` and the second with `right`. The project allows both dependents to
+    * be unrestricted.
+    */
+  private def levelOfShared(left: String, right: String): SecurityContext = {
+    val origin = mkManifest("origin",
+      """"github:flix/left" = { version = "1.0.0", security = "unrestricted" }
+        |"github:flix/right" = { version = "1.0.0", security = "unrestricted" }""".stripMargin)
+    val l = mkManifest("left", s""""github:flix/shared" = { version = "1.0.0", security = "$left" }""")
+    val r = mkManifest("right", s""""github:flix/shared" = { version = "1.0.0", security = "$right" }""")
+    val shared = mkManifest("shared", "")
+
+    val List(toLeft, toRight) = FlixPackageManager.findFlixDependencies(origin)
+    val resolution = FlixPackageManager.Resolution(
+      origin = origin,
+      manifests = List(origin, l, r, shared),
+      immediateDependents = Map(origin -> Nil, l -> List(origin), r -> List(origin), shared -> List(l, r)),
+      manifestToFlixDeps = ListMap(Map(
+        l -> List(toLeft),
+        r -> List(toRight),
+        shared -> (FlixPackageManager.findFlixDependencies(l) ::: FlixPackageManager.findFlixDependencies(r))
+      )),
+      tomlDigests = Map.empty
+    )
+    FlixPackageManager.resolveSecurityLevels(resolution).security(shared)
+  }
+
+  test("resolveSecurityLevels.cycle.01") {
+    // Two packages that each require the other. The level the project declares `left` with
+    // reaches `right` around the cycle, whatever `left` declares `right` with.
+    val origin = mkManifest("origin", """"github:flix/left" = { version = "1.0.0", security = "plain" }""")
+    val l = mkManifest("left", """"github:flix/right" = { version = "1.0.0", security = "unrestricted" }""")
+    val r = mkManifest("right", """"github:flix/left" = { version = "1.0.0", security = "unrestricted" }""")
+
+    val List(toLeft) = FlixPackageManager.findFlixDependencies(origin)
+    val List(toRight) = FlixPackageManager.findFlixDependencies(l)
+    val List(backToLeft) = FlixPackageManager.findFlixDependencies(r)
+    val resolution = FlixPackageManager.Resolution(
+      origin = origin,
+      manifests = List(origin, l, r),
+      immediateDependents = Map(origin -> Nil, l -> List(origin, r), r -> List(l)),
+      manifestToFlixDeps = ListMap(Map(l -> List(toLeft, backToLeft), r -> List(toRight))),
+      tomlDigests = Map.empty
+    )
+
+    val security = FlixPackageManager.resolveSecurityLevels(resolution).security
+    assertResult(expected = SecurityContext.Plain)(actual = security(l))
+    assertResult(expected = SecurityContext.Plain)(actual = security(r))
+  }
+
+  test("resolveSecurityLevels.cycle.02") {
+    // A package that requires an older version of itself is its own dependent, since a
+    // declaration leads to the version of the package that is built.
+    val origin = mkManifest("origin", """"github:flix/older" = { version = "1.1.0", security = "paranoid" }""")
+    val older = mkManifest("older", """"github:flix/older" = { version = "1.0.0", security = "unrestricted" }""")
+
+    val List(toOlder) = FlixPackageManager.findFlixDependencies(origin)
+    val List(toItself) = FlixPackageManager.findFlixDependencies(older)
+    val resolution = FlixPackageManager.Resolution(
+      origin = origin,
+      manifests = List(origin, older),
+      immediateDependents = Map(origin -> Nil, older -> List(older, origin)),
+      manifestToFlixDeps = ListMap(Map(older -> List(toOlder, toItself))),
+      tomlDigests = Map.empty
+    )
+
+    assertResult(expected = SecurityContext.Paranoid)(actual = FlixPackageManager.resolveSecurityLevels(resolution).security(older))
+  }
+
+  test("resolveSecurityLevels.cycle.03") {
+    // A cycle that nothing restricts stays unrestricted: a level is lowered only where a
+    // dependent or a declaration asks for it.
+    val origin = mkManifest("origin", """"github:flix/left" = { version = "1.0.0", security = "unrestricted" }""")
+    val l = mkManifest("left", """"github:flix/right" = { version = "1.0.0", security = "unrestricted" }""")
+    val r = mkManifest("right", """"github:flix/left" = { version = "1.0.0", security = "unrestricted" }""")
+
+    val List(toLeft) = FlixPackageManager.findFlixDependencies(origin)
+    val List(toRight) = FlixPackageManager.findFlixDependencies(l)
+    val List(backToLeft) = FlixPackageManager.findFlixDependencies(r)
+    val resolution = FlixPackageManager.Resolution(
+      origin = origin,
+      manifests = List(origin, l, r),
+      immediateDependents = Map(origin -> Nil, l -> List(origin, r), r -> List(l)),
+      manifestToFlixDeps = ListMap(Map(l -> List(toLeft, backToLeft), r -> List(toRight))),
+      tomlDigests = Map.empty
+    )
+
+    val security = FlixPackageManager.resolveSecurityLevels(resolution).security
+    assertResult(expected = SecurityContext.Unrestricted)(actual = security(l))
+    assertResult(expected = SecurityContext.Unrestricted)(actual = security(r))
+  }
+
+  test("checkFlixVersions.01") {
+    // A package that requires a newer Flix than the one that is running.
+    val resolution = mkResolutionOf(origin = "0.33.0", a = "0.80.0", b = "0.33.0")
+    assertResult(expected = List(PackageError.FlixVersionTooOld(PackageId(Repository.GitHub, "flix", "a"), SemVer(0, 1, 0), SemVer(0, 80, 0), SemVer(0, 76, 0))))(
+      actual = FlixPackageManager.checkFlixVersions(resolution, SemVer(0, 76, 0))
+    )
+  }
+
+  test("checkFlixVersions.02") {
+    // A package that requires the Flix that is running, or an older one, can be built.
+    val resolution = mkResolutionOf(origin = "0.33.0", a = "0.76.0", b = "0.10.0")
+    assertResult(expected = Nil)(actual = FlixPackageManager.checkFlixVersions(resolution, SemVer(0, 76, 0)))
+  }
+
+  test("checkFlixVersions.03") {
+    // The project is not checked here: whoever read its manifest knows where it came from.
+    val resolution = mkResolutionOf(origin = "0.80.0", a = "0.33.0", b = "0.33.0")
+    assertResult(expected = Nil)(actual = FlixPackageManager.checkFlixVersions(resolution, SemVer(0, 76, 0)))
+  }
+
+  test("checkFlixVersions.04") {
+    // Every package that cannot be built is reported, in order of identifier.
+    val resolution = mkResolutionOf(origin = "0.33.0", a = "0.80.0", b = "0.90.0")
+    assertResult(expected = List("github:flix/a", "github:flix/b"))(
+      actual = FlixPackageManager.checkFlixVersions(resolution, SemVer(0, 76, 0)).collect {
+        case e: PackageError.FlixVersionTooOld => e.identifier.toString
+      }
+    )
+  }
+
+  /**
+    * Returns the resolution of a project that requires the packages `a` and `b`, where the
+    * project and the two packages each require the given version of Flix.
+    */
+  private def mkResolutionOf(origin: String, a: String, b: String): FlixPackageManager.Resolution = {
+    val project = mkManifest("origin",
+      """"github:flix/b" = "0.1.0"
+        |"github:flix/a" = "0.1.0"""".stripMargin, flix = origin)
+    val manifestA = mkManifest("a", "", flix = a)
+    val manifestB = mkManifest("b", "", flix = b)
+    val List(toB, toA) = FlixPackageManager.findFlixDependencies(project)
+    FlixPackageManager.Resolution(
+      origin = project,
+      manifests = List(project, manifestB, manifestA),
+      immediateDependents = Map(project -> Nil, manifestA -> List(project), manifestB -> List(project)),
+      manifestToFlixDeps = ListMap(Map(manifestA -> List(toA), manifestB -> List(toB))),
+      tomlDigests = Map.empty
+    )
+  }
+
+  test("builtVersions.01") {
+    // A package is built at the version of the manifest its declarations resolve to, which here
+    // is greater than the version that is declared.
+    val origin = mkManifest("origin", """"github:flix/museum-clerk" = { version = "1.0.0", mount = "clerk" }""")
+    val clerk = mkManifest("museum-clerk", "").copy(version = SemVer(1, 1, 0))
+    val resolution = FlixPackageManager.SecureResolution(
+      origin = origin,
+      security = Map(origin -> SecurityContext.Unrestricted, clerk -> SecurityContext.Plain),
+      manifestToFlixDeps = ListMap(Map(clerk -> FlixPackageManager.findFlixDependencies(origin))),
+      tomlDigests = Map.empty
+    )
+    assertResult(expected = Map(PackageId(Repository.GitHub, "flix", "museum-clerk") -> SemVer(1, 1, 0)))(
+      actual = FlixPackageManager.builtVersions(resolution)
+    )
+  }
+
+  test("findAvailableUpdates.01") {
+    // museum-clerk has a release newer than 1.0.0 in the same major version.
+    val clerk = PackageId(Repository.GitHub, "flix", "museum-clerk")
+    FlixPackageManager.findAvailableUpdates(clerk, SemVer(1, 0, 0), PkgTestUtils.gitHubToken) match {
+      case Ok(updates) => assert(updates.minor.exists(_ >= SemVer(1, 1, 0)))
+      case Err(e) => fail(e.message(formatter))
     }
   }
 
-  test("security:plain-dep:plain") {
-    val deps =
-      """
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.1", security = "plain" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, Main)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with security 'plain' and dependency plain")
-    } else {
-      succeed
-    }
-  }
-
-  test("security:plain-dep:java") {
-    val deps =
-      """
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "plain" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, Main)
-
-    if (forbidden) {
-      succeed
-    } else {
-      fail(message + System.lineSeparator() + "expected failure with security 'plain' and dependency using Java")
-    }
-  }
-
-  test("security:plain-dep:unchecked-cast") {
-    val deps =
-      """
-        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.1", security = "plain" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, Main)
-
-    if (forbidden) {
-      succeed
-    } else {
-      fail(message + System.lineSeparator() + "expected failure with security 'plain' and dependency using unchecked cast")
-    }
-  }
-
-  test("security:unrestricted-dep:plain") {
-    val deps =
-      """
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.1", security = "unrestricted" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, Main)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted' and dependency plain")
-    } else {
-      succeed
-    }
-  }
-
-  test("security:unrestricted-dep:java") {
-    val deps =
-      """
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "unrestricted" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, Main)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted' and dependency using java")
-    } else {
-      succeed
-    }
-  }
-
-  test("security:unrestricted-dep:unchecked-cast") {
-    val deps =
-      """
-        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.1", security = "unrestricted" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, Main)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted' and dependency using unchecked cast")
-    } else {
-      succeed
-    }
-  }
-
-  test("transitive.security:plain->plain-dep:plain") {
-    val deps =
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.1", security = "plain" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with security 'plain->plain' and dependency plain")
-    } else {
-      succeed
-    }
-  }
-
-  test("transitive.security:unrestricted->plain-dep:plain") {
-    val deps =
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.1", security = "unrestricted" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted->plain' and dependency plain")
-    } else {
-      succeed
-    }
-  }
-
-  test("transitive.diamond.security:plain->plain+plain-dep:plain") {
-    val deps =
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.1", security = "plain" }
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.1", security = "plain" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with security 'plain->plain+plain' and dependency plain")
-    } else {
-      succeed
-    }
-  }
-
-  test("transitive.diamond.security:plain->plain+unrestricted-dep:plain") {
-    val deps =
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.1", security = "plain" }
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.1", security = "unrestricted" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with security 'plain->plain+unrestricted' and dependency plain")
-    } else {
-      succeed
-    }
-  }
-
-  test("transitive.diamond.security:paranoid->plain+plain-dep:plain") {
-    val deps =
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.1", security = "paranoid" }
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.1", security = "plain" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      succeed
-    } else {
-      fail(message + System.lineSeparator() + "expected failure with security 'paranoid->plain+plain' and dependency plain")
-    }
-  }
-
-  test("transitive.diamond.security:unrestricted->plain+plain-dep:plain") {
-    val deps =
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.1", security = "unrestricted" }
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.1", security = "plain" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted->plain+plain' and dependency plain")
-    } else {
-      succeed
-    }
-  }
-
-  test("transitive.diamond.security:unrestricted->plain+unrestricted-dep:plain") {
-    val deps =
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.1", security = "unrestricted" }
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.1", security = "unrestricted" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted->plain+unrestricted' and dependency plain")
-    } else {
-      succeed
-    }
-  }
-
-  test("transitive.security:plain->unrestricted-dep:java") {
-    val deps =
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.1", security = "plain" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      succeed
-    } else {
-      fail(message + System.lineSeparator() + "expected failure with security 'plain->unrestricted' and dependency using java")
-    }
-  }
-
-  test("transitive.security:unrestricted->unrestricted-dep:java") {
-    val deps =
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.1", security = "unrestricted" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted->unrestricted' and dependency using java")
-    } else {
-      succeed
-    }
-  }
-
-  test("transitive.diamond.security:plain->unrestricted+plain-dep:java") {
-    // Dep `jaschdoc/flix-test-pkg-trust-transitive-java` depends on `flix/test-pkg-trust-java` with unrestricted trust.
-    // Here `flix/test-pkg-trust-java` is depended upon with plain trust.
-    // This should result in an error, since `flix/test-pkg-trust-java` uses java
-    val deps =
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.1", security = "plain" }
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "plain" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      succeed
-    } else {
-      fail(message + System.lineSeparator() + "expected failure with security 'plain->unrestricted+plain' and dependency using java")
-    }
-  }
-
-  test("transitive.diamond.security:plain->unrestricted+unrestricted-dep:java") {
-    val deps =
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.1", security = "plain" }
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "unrestricted" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      succeed
-    } else {
-      fail(message + System.lineSeparator() + "expected failure with security 'plain->unrestricted+unrestricted' and dependency using java")
-    }
-  }
-
-  test("transitive.diamond.security:unrestricted->unrestricted+plain-dep:java") {
-    val deps =
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.1", security = "unrestricted" }
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "plain" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      succeed
-    } else {
-      fail(message + System.lineSeparator() + "expected failure with security 'unrestricted->unrestricted+plain' and dependency using java")
-    }
-  }
-
-  test("transitive.diamond.security:unrestricted->unrestricted+unrestricted-dep:java") {
-    val deps =
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.1", security = "unrestricted" }
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "unrestricted" }
-        |""".stripMargin
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted->unrestricted+unrestricted' and dependency using java")
-    } else {
-      succeed
+  test("findAvailableUpdates.02") {
+    // Nothing is newer than a version that is greater than every release.
+    val clerk = PackageId(Repository.GitHub, "flix", "museum-clerk")
+    FlixPackageManager.findAvailableUpdates(clerk, SemVer(999, 0, 0), PkgTestUtils.gitHubToken) match {
+      case Ok(updates) => assert(updates.isEmpty)
+      case Err(e) => fail(e.message(formatter))
     }
   }
 
   test("mismatched-versions") {
+    // A release that declares a version other than the one it is published as is refused, and is
+    // named by the version it is published as and the one it declares.
+    //
+    // The manifest is put in the cache rather than downloaded. A manifest is validated as it is
+    // installed, and a file that is already there is installed by being found, so the mistake is
+    // reached the same way whether it was fetched now or before -- and no release has to be
+    // published carrying it.
+    val id = PackageId(Repository.GitHub, "flix", "museum-clerk")
+    val released = SemVer(2, 1, 2)
+    val declared = SemVer(2, 1, 3)
+
+    val path = Files.createTempDirectory("")
+    val dir = Bootstrap.getLibraryDirectory(path)
+      .resolve("github").resolve(id.owner).resolve(id.name).resolve(released.toString)
+    Files.createDirectories(dir)
+    Files.writeString(dir.resolve(s"${id.name}-$released.${Bootstrap.EXT_TOML}"),
+      s"""
+         |[package]
+         |version = "$declared"
+         |repository = "$id"
+         |flix = "${Version.CurrentVersion}"
+         |""".stripMargin)
+
     val toml = PkgTestUtils.mkTomlWithDeps(
-      """
-        |"github:jaschdoc/flix-test-pkg-mismatched-versions" = "0.1.0"
-        |""".stripMargin
+      s"""
+         |"$id" = { version = "$released", mount = "clerk" }
+         |""".stripMargin
     )
-    val manifest = ManifestParser.parse(toml, null) match {
+    val manifest = ManifestParser.parse(toml, ManifestPath) match {
       case Ok(m) => m
       case Err(e) => fail(e.message(formatter))
     }
 
-    val path = Files.createTempDirectory("")
-    FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken) match {
+    FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
       case Ok(_) => fail("expected error, got success")
-      case Err(_: PackageError.MismatchedVersions) => succeed
+      case Err(e: PackageError.MismatchedVersions) =>
+        assert(e.identifier == id)
+        assert(e.release == released)
+        assert(e.declared == declared)
       case Err(e) => fail(e.message(formatter))
     }
   }
 
-  /**
-    * Returns `true` if a [[SafetyError.Forbidden]] error is found.
-    * Always returns all compiler messages in the second entry of the tuple.
-    */
-  private def checkForbidden(deps: String, main: String): (Boolean, String) = {
-    val path = Files.createTempDirectory("")
-    val toml = PkgTestUtils.mkTomlWithDeps(deps)
+  test("mkIncompatibleVersions.01") {
+    // The requirements are ordered by version, and then by dependent.
+    val beta = mkManifest("beta", """"github:flix/museum-clerk" = { version = "2.0.0", mount = "clerk" }""")
+    val alpha = mkManifest("alpha", """"github:flix/museum-clerk" = { version = "2.0.0", mount = "clerk" }""")
+    val gamma = mkManifest("gamma", """"github:flix/museum-clerk" = { version = "1.1.0", mount = "clerk" }""")
+    val id = PackageId(Repository.GitHub, "flix", "museum-clerk")
+    val requirements = List(beta, alpha, gamma).map(m => (m, FlixPackageManager.findFlixDependencies(m).head))
+    val error = FlixPackageManager.mkIncompatibleVersions(id, requirements)
+    assertResult(expected = id)(actual = error.identifier)
+    assertResult(expected = List(("flix/gamma", SemVer(1, 1, 0)), ("flix/alpha", SemVer(2, 0, 0)), ("flix/beta", SemVer(2, 0, 0))))(
+      actual = error.requirements.map { case (dependent, dep) => (dependent.displayName, dep.version) }
+    )
+  }
 
-    val manifest = ManifestParser.parse(toml, null) match {
+  test("resolve.raise.01") {
+    // museum 3.0.2 requires museum-clerk 2.1.3, and its museum-entrance and museum-giftshop
+    // require museum-clerk 2.1.2, so museum-clerk is built at 2.1.3, and at no other version.
+    val toml = PkgTestUtils.mkTomlWithDeps(
+      """
+        |"github:flix/museum" = "3.0.2"
+        |""".stripMargin
+    )
+    val manifest = ManifestParser.parse(toml, ManifestPath) match {
       case Ok(m) => m
       case Err(e) => fail(e.message(formatter))
     }
 
-    val allManifests = FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken) match {
-      case Ok(ms) => ms
+    val path = Files.createTempDirectory("")
+    FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock).map(FlixPackageManager.resolveSecurityLevels) match {
+      case Ok(resolution) =>
+        val clerk = PackageId(Repository.GitHub, "flix", "museum-clerk")
+        assertResult(expected = Some(SemVer(2, 1, 3)))(
+          actual = FlixPackageManager.builtVersions(resolution).get(clerk)
+        )
+      case Err(e) => fail(e.message(formatter))
+    }
+  }
+
+  test("resolve.raise.02") {
+    // What is installed and locked is the version that was selected, not a version that was declared.
+    val toml = PkgTestUtils.mkTomlWithDeps(
+      """
+        |"github:flix/museum" = "3.0.2"
+        |""".stripMargin
+    )
+    val manifest = ManifestParser.parse(toml, ManifestPath) match {
+      case Ok(m) => m
       case Err(e) => fail(e.message(formatter))
     }
 
-    val manifestsWithSecurity = FlixPackageManager.resolveSecurityLevels(allManifests)
-
-    val securityResolutionErrors = FlixPackageManager.checkSecurity(manifestsWithSecurity)
-    if (securityResolutionErrors.nonEmpty) {
-      return (true, securityResolutionErrors.mkString(System.lineSeparator()))
-    }
-
-    val pkgs = FlixPackageManager.installAll(manifestsWithSecurity, path, PkgTestUtils.gitHubToken) match {
-      case Ok(ps) => ps
+    val path = Files.createTempDirectory("")
+    val resolution = FlixPackageManager.resolve(manifest, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+      case Ok(r) => FlixPackageManager.resolveSecurityLevels(r)
       case Err(e) => fail(e.message(formatter))
     }
-
-    val flix = PkgTestUtils.mkFlix(pkgs)
-    flix.addSource(Path.of("Main.flix"), main, SecurityContext.Unrestricted)
-
-    val (optRoot, errors) = flix.check()
-    val forbidden = errors.exists {
-      case _: SafetyError.Forbidden => true
-      case _ => false
+    FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken, PkgTestUtils.NoLock) match {
+      case Ok(installation) =>
+        val clerk = PackageId(Repository.GitHub, "flix", "museum-clerk")
+        // Both versions are locked, since the manifest of each was read to resolve the graph. Only
+        // the package that was downloaded records an fpkg.
+        assertResult(expected = Some(true))(actual = installation.lockfile.packages.get((clerk, SemVer(2, 1, 3))).map(_.fpkg.isDefined))
+        assertResult(expected = Some(false))(actual = installation.lockfile.packages.get((clerk, SemVer(2, 1, 2))).map(_.fpkg.isDefined))
+        assertResult(expected = List(s"museum-clerk-2.1.3.fpkg"))(
+          actual = installation.packages.filter(_.id == clerk).map(_.path.getFileName.toString).distinct
+        )
+      case Err(e) => fail(e.message(formatter))
     }
-    (forbidden, CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot))
+  }
+
+  test("selectVersion.01") {
+    // The greatest of the required versions is the least one that satisfies them all.
+    assertResult(expected = Some(SemVer(1, 5, 1)))(
+      actual = FlixPackageManager.selectVersion(List(SemVer(1, 2, 0), SemVer(1, 5, 1), SemVer(1, 3, 9)))
+    )
+  }
+
+  test("selectVersion.02") {
+    // Versions that do not share a major have nothing to select.
+    assertResult(expected = None)(
+      actual = FlixPackageManager.selectVersion(List(SemVer(1, 2, 0), SemVer(2, 0, 0)))
+    )
+  }
+
+  test("selectVersion.03") {
+    // A pre-1.0 package is selected across a minor, since both versions have major 0.
+    assertResult(expected = Some(SemVer(0, 4, 2)))(
+      actual = FlixPackageManager.selectVersion(List(SemVer(0, 3, 0), SemVer(0, 4, 2)))
+    )
+  }
+
+  // The example in the documentation of `resolve`:
+  //
+  //   project  requires  A 1.0.0  and  B 1.0.0
+  //   A 1.0.0  requires  C 1.1.1
+  //   B 1.0.0  requires  C 1.1.2
+  //   C 1.1.1  requires  X 1.0.0
+  //   C 1.1.2  requires  nothing
+  private val A = PackageId(Repository.GitHub, "flix", "a")
+  private val B = PackageId(Repository.GitHub, "flix", "b")
+  private val C = PackageId(Repository.GitHub, "flix", "c")
+  private val X = PackageId(Repository.GitHub, "flix", "x")
+
+  private val ExampleNodes = List(
+    (A, SemVer(1, 0, 0)), (B, SemVer(1, 0, 0)), (C, SemVer(1, 1, 1)), (C, SemVer(1, 1, 2)), (X, SemVer(1, 0, 0))
+  )
+
+  private val ExampleRequires = Map(
+    (A, SemVer(1, 0, 0)) -> List(C),
+    (B, SemVer(1, 0, 0)) -> List(C),
+    (C, SemVer(1, 1, 1)) -> List(X)
+  )
+
+  test("select.01") {
+    // Every package is given the greatest version it is required at.
+    assertResult(expected = Ok(Map(A -> SemVer(1, 0, 0), B -> SemVer(1, 0, 0), C -> SemVer(1, 1, 2), X -> SemVer(1, 0, 0))))(
+      actual = FlixPackageManager.select(ExampleNodes)
+    )
+  }
+
+  test("select.02") {
+    // A package whose versions do not share a major has no version to be given.
+    assertResult(expected = Err(C))(
+      actual = FlixPackageManager.select((C, SemVer(2, 0, 0)) :: ExampleNodes)
+    )
+  }
+
+  test("live.01") {
+    // X is required only by C 1.1.1, which is not the selected version of C.
+    val selected = Map(A -> SemVer(1, 0, 0), B -> SemVer(1, 0, 0), C -> SemVer(1, 1, 2), X -> SemVer(1, 0, 0))
+    assertResult(expected = Set(A, B, C))(
+      actual = FlixPackageManager.live(List(A, B), selected, ExampleRequires)
+    )
+  }
+
+  test("live.02") {
+    // X is live if the selected version of C requires it too.
+    val selected = Map(A -> SemVer(1, 0, 0), B -> SemVer(1, 0, 0), C -> SemVer(1, 1, 2), X -> SemVer(1, 0, 0))
+    val requires = ExampleRequires + ((C, SemVer(1, 1, 2)) -> List(X))
+    assertResult(expected = Set(A, B, C, X))(
+      actual = FlixPackageManager.live(List(A, B), selected, requires)
+    )
+  }
+
+  test("live.03") {
+    // A cycle among the selected versions ends the walk.
+    val selected = Map(A -> SemVer(1, 0, 0), B -> SemVer(1, 0, 0))
+    val requires = Map((A, SemVer(1, 0, 0)) -> List(B), (B, SemVer(1, 0, 0)) -> List(A))
+    assertResult(expected = Set(A, B))(
+      actual = FlixPackageManager.live(List(A), selected, requires)
+    )
+  }
+
+  /**
+    * Returns a manifest named `name` with the given Flix dependency declarations `deps`, that
+    * requires the version `flix` of Flix.
+    */
+  private def mkManifest(name: String, deps: String, flix: String = "0.33.0"): Manifest = {
+    val toml =
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |repository = "github:flix/$name"
+         |flix = "$flix"
+         |
+         |[dependencies]
+         |$deps
+         |""".stripMargin
+    ManifestParser.parse(toml, ManifestPath) match {
+      case Ok(m) => m
+      case Err(e) => fail(e.message(formatter))
+    }
   }
 
 }

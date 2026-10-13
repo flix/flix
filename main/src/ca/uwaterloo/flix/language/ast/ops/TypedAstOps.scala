@@ -132,18 +132,13 @@ object TypedAstOps {
     *   - It is the main function (called `main` by default, but can configured
     *     to an arbitrary name).
     *   - It is a test (annotated with `@Test`).
-    *   - It is an exported function (annotated with `@Export`).
     */
   def isEntryPoint(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
-    isMain(defn) || isTest(defn) || isExport(defn)
+    isMain(defn) || isTest(defn)
 
   /** Returns `true` if `defn` is a test. */
   def isTest(defn: TypedAst.Def): Boolean =
     defn.spec.ann.isTest
-
-  /** Returns `true` if `defn` is an exported function. */
-  def isExport(defn: TypedAst.Def): Boolean =
-    defn.spec.ann.isExport
 
   /** Returns `true` if `defn` is the main function. */
   def isMain(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =

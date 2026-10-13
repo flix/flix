@@ -9,4 +9,7 @@ def main(): Unit \ Console =
             case _                             => Err("Please enter a number between 1 and 10.")
         }
     );
-    Console.println("You entered: ${n}")
+    match n {
+        case Some(i) => Console.println("You entered: ${i}")
+        case None    => Console.println("No number given.")
+    }

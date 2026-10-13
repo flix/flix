@@ -1,17 +1,8 @@
 /*
  * Copyright 2022 Paul Butcher, Lukas Rønn
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
@@ -20,7 +11,7 @@ import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.provider.completion.*
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.SourceName
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, SourceName}
 import ca.uwaterloo.flix.language.ast.shared.{SyntacticContext, TraitUsageKind}
 import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError, WeederError}
 
@@ -42,7 +33,13 @@ object CompletionProvider {
   /**
     * Returns all completions in the given `name` at the given position `pos`.
     */
-  def getCompletions(name: SourceName, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
+  def getCompletions(name: SourceName, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] =
+    getAllCompletions(name, pos, currentErrors).filter(_.isReachable)
+
+  /**
+    * Returns all completions, including those for symbols of packages the project does not mount.
+    */
+  private def getAllCompletions(name: SourceName, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
     if (currentErrors.isEmpty)
       HoleCompleter.getHoleCompletion(name, pos).toList
     else
@@ -51,7 +48,9 @@ object CompletionProvider {
           ExprSnippetCompleter.generateDefaultHandlerSnippet("@DefaultHandler template", Range.from(err.loc)) ::
             AnnotationCompleter.getAnnotations(err.name, Range.from(err.loc))
 
-        case err: WeederError.UnqualifiedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
+        case err: WeederError.UnqualifiedUse =>
+          val range = Range.from(err.loc)
+          UseCompleter.getCompletions(err.qn, range) ++ UseCompleter.getMountCompletions(err.qn.ident.name, range, separator = true)
 
         case err: ResolutionError.UndefinedTag =>
           val ap = err.ap
@@ -102,7 +101,14 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedOp => HandlerCompleter.getCompletions(err.op, Range.from(err.loc))
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
         case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err.qn, err.traitUseKind, Range.from(err.loc), err.ap, err.scp)
-        case err: ResolutionError.UndefinedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
+        case err: ResolutionError.UndefinedPackage =>
+          UseCompleter.getMountCompletions(err.pkg.name, Range.from(err.pkg.loc), separator = false)
+
+        case err: ResolutionError.UndefinedUse => err.pkg match {
+          case None => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
+          case Some(pkg) =>
+            flix.rootMounts.get(Mountpoint(pkg.name)).toList.flatMap(id => UseCompleter.getPackageCompletions(pkg, id, err.qn, err.loc))
+        }
 
         case err: TypeError.FieldNotFound =>
           MagicMatchCompleter.getCompletions(err.tpe, Range.from(err.loc), err.base) ++

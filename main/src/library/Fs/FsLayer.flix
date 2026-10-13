@@ -1,19 +1,11 @@
 /*
  * Copyright 2026 Flix Authors
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
+/// Low-level file system operations shared by the `Fs` effect handlers.
 mod Fs.FsLayer {
 
     import java.io.File
@@ -103,6 +95,7 @@ mod Fs.FsLayer {
 
     // ─── File-test operations ──────────────────────────────────────────
 
+    /// Returns `true` if the path `f` exists, without following symbolic links.
     pub def exists(f: String): Result[IoError, Bool] \ IO =
         try {
             Ok(Files.exists(Paths.get(f), noFollow()))
@@ -110,6 +103,7 @@ mod Fs.FsLayer {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
         }
 
+    /// Returns `true` if the path `f` is a directory, without following symbolic links.
     pub def isDirectory(f: String): Result[IoError, Bool] \ IO =
         try {
             Ok(Files.isDirectory(Paths.get(f), noFollow()))
@@ -117,6 +111,7 @@ mod Fs.FsLayer {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
         }
 
+    /// Returns `true` if the path `f` is a regular file, without following symbolic links.
     pub def isRegularFile(f: String): Result[IoError, Bool] \ IO =
         try {
             Ok(Files.isRegularFile(Paths.get(f), noFollow()))
@@ -124,6 +119,7 @@ mod Fs.FsLayer {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
         }
 
+    /// Returns `true` if the path `f` is a symbolic link.
     pub def isSymbolicLink(f: String): Result[IoError, Bool] \ IO =
         try {
             Ok(Files.isSymbolicLink(Paths.get(f)))
@@ -131,6 +127,7 @@ mod Fs.FsLayer {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
         }
 
+    /// Returns `true` if the file `f` is readable.
     pub def isReadable(f: String): Result[IoError, Bool] \ IO =
         try {
             Ok(Files.isReadable(Paths.get(f)))
@@ -138,6 +135,7 @@ mod Fs.FsLayer {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
         }
 
+    /// Returns `true` if the file `f` is writable.
     pub def isWritable(f: String): Result[IoError, Bool] \ IO =
         try {
             Ok(Files.isWritable(Paths.get(f)))
@@ -145,6 +143,7 @@ mod Fs.FsLayer {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
         }
 
+    /// Returns `true` if the file `f` is executable.
     pub def isExecutable(f: String): Result[IoError, Bool] \ IO =
         try {
             Ok(Files.isExecutable(Paths.get(f)))
@@ -154,6 +153,7 @@ mod Fs.FsLayer {
 
     // ─── File-time operations ──────────────────────────────────────────
 
+    /// Returns the last access time of the file `f` in milliseconds since the epoch.
     pub def accessTime(f: String): Result[IoError, Int64] \ IO =
         try {
             Ok(fileAttributes(Paths.get(f)).lastAccessTime().toMillis())
@@ -163,6 +163,7 @@ mod Fs.FsLayer {
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
+    /// Returns the creation time of the file `f` in milliseconds since the epoch.
     pub def creationTime(f: String): Result[IoError, Int64] \ IO =
         try {
             Ok(fileAttributes(Paths.get(f)).creationTime().toMillis())
@@ -172,6 +173,7 @@ mod Fs.FsLayer {
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
+    /// Returns the last modification time of the file `f` in milliseconds since the epoch.
     pub def modificationTime(f: String): Result[IoError, Int64] \ IO =
         try {
             Ok(fileAttributes(Paths.get(f)).lastModifiedTime().toMillis())
@@ -183,6 +185,7 @@ mod Fs.FsLayer {
 
     // ─── File-stat operations ──────────────────────────────────────────
 
+    /// Returns the size of the file `f`.
     pub def size(f: String): Result[IoError, Size] \ IO =
         try {
             Ok(bytes(fileAttributes(Paths.get(f)).size()))
@@ -194,6 +197,7 @@ mod Fs.FsLayer {
 
     // ─── Read operations ───────────────────────────────────────────────
 
+    /// Returns the contents of the file `f` as a string.
     pub def read(f: String): Result[IoError, String] \ IO =
         try {
             Ok(String.fromBytes(Array.toVector(Files.readAllBytes(Paths.get(f)))))
@@ -203,6 +207,7 @@ mod Fs.FsLayer {
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
+    /// Returns the lines of the file `f`.
     pub def readLines(f: String): Result[IoError, List[String]] \ IO =
         try {
             Ok(ToFlix.toFlix(Files.readAllLines(Paths.get(f))))
@@ -213,6 +218,7 @@ mod Fs.FsLayer {
             case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
+    /// Returns the contents of the file `f` as a vector of bytes.
     pub def readBytes(f: String): Result[IoError, Vector[Int8]] \ IO =
         try {
             Ok(Array.toVector(Files.readAllBytes(Paths.get(f))))
@@ -224,6 +230,7 @@ mod Fs.FsLayer {
 
     // ─── Directory listing ─────────────────────────────────────────────
 
+    /// Returns the names of the entries in the directory `f`.
     pub def list(f: String): Result[IoError, List[String]] \ IO =
         let file = new File(f);
         let arr = file.list();
@@ -239,6 +246,7 @@ mod Fs.FsLayer {
 
     // ─── Glob operation ─────────────────────────────────────────────────
 
+    /// Returns the paths under `base` that match the glob `pattern`.
     pub def glob(base: String, pattern: String): Result[IoError, List[String]] \ IO =
         try {
             let basePath = Paths.get(base);
@@ -269,6 +277,7 @@ mod Fs.FsLayer {
 
     // ─── Write operations ──────────────────────────────────────────────
 
+    /// Writes the string `data` to the file `f`, replacing any existing contents.
     pub def write(data: {str = String}, f: String): Result[IoError, Unit] \ IO =
         try {
             let bytes = data#str.getBytes(StandardCharsets.UTF_8);
@@ -280,6 +289,7 @@ mod Fs.FsLayer {
             case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
+    /// Writes the given lines to the file `f`, replacing any existing contents.
     pub def writeLines(data: {lines = List[String]}, f: String): Result[IoError, Unit] \ IO =
         try {
             let bf = Files.newBufferedWriter(Paths.get(f));
@@ -298,6 +308,7 @@ mod Fs.FsLayer {
             case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
+    /// Writes the bytes `data` to the file `f`, replacing any existing contents.
     pub def writeBytes(data: Vector[Int8], f: String): Result[IoError, Unit] \ IO =
         try {
             region rc {
@@ -313,6 +324,7 @@ mod Fs.FsLayer {
 
     // ─── Append operations ─────────────────────────────────────────────
 
+    /// Appends the string `data` to the file `f`, creating it if it does not exist.
     pub def append(data: {str = String}, f: String): Result[IoError, Unit] \ IO =
         try {
             let bytes = data#str.getBytes(StandardCharsets.UTF_8);
@@ -328,6 +340,7 @@ mod Fs.FsLayer {
             case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
+    /// Appends the given lines to the file `f`, creating it if it does not exist.
     pub def appendLines(data: {lines = List[String]}, f: String): Result[IoError, Unit] \ IO =
         try {
             let opts: Vector[OpenOption] = Vector#{
@@ -350,6 +363,7 @@ mod Fs.FsLayer {
             case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
+    /// Appends the bytes `data` to the file `f`, creating it if it does not exist.
     pub def appendBytes(data: Vector[Int8], f: String): Result[IoError, Unit] \ IO =
         try {
             region rc {
@@ -369,6 +383,7 @@ mod Fs.FsLayer {
 
     // ─── Truncate ──────────────────────────────────────────────────────
 
+    /// Truncates the existing file `f` to zero length.
     pub def truncate(f: String): Result[IoError, Unit] \ IO =
         try {
             region rc {
@@ -385,6 +400,7 @@ mod Fs.FsLayer {
 
     // ─── Copy operation ────────────────────────────────────────────────
 
+    /// Copies the file `src` to `dst` using the given copy options `opts`.
     pub def copyWith(src: {src = String}, dst: String, opts: Set[Fs.CopyOption]): Result[IoError, Unit] \ IO =
         try {
             let copyOpts: Vector[CopyOption] = Set.foldLeft(
@@ -405,11 +421,13 @@ mod Fs.FsLayer {
             case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
+    /// Copies the file `src` to `dst`, failing if `dst` already exists.
     pub def copy(src: {src = String}, dst: String): Result[IoError, Unit] \ IO =
         copyWith(src, dst, Set.empty())
 
     // ─── Move operation ────────────────────────────────────────────────
 
+    /// Moves the file `src` to `dst` using the given move options `opts`.
     pub def moveWith(src: {src = String}, dst: String, opts: Set[Fs.MoveOption]): Result[IoError, Unit] \ IO =
         try {
             let copyOpts: Vector[CopyOption] = Set.foldLeft(
@@ -430,11 +448,13 @@ mod Fs.FsLayer {
             case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
+    /// Moves the file `src` to `dst`, failing if `dst` already exists.
     pub def move(src: {src = String}, dst: String): Result[IoError, Unit] \ IO =
         moveWith(src, dst, Set.empty())
 
     // ─── Delete operation ────────────────────────────────────────────────
 
+    /// Deletes the file or empty directory `f`.
     pub def delete(f: String): Result[IoError, Unit] \ IO =
         try {
             Files.delete(Paths.get(f));
@@ -447,6 +467,7 @@ mod Fs.FsLayer {
 
     // ─── Directory operations ──────────────────────────────────────────
 
+    /// Creates the directory `d`, failing if it already exists.
     pub def mkDir(d: String): Result[IoError, Unit] \ IO =
         try {
             Files.createDirectory(Paths.get(d));
@@ -458,6 +479,7 @@ mod Fs.FsLayer {
             case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
+    /// Creates the directory `d` and any missing parent directories.
     pub def mkDirs(d: String): Result[IoError, Unit] \ IO =
         try {
             Files.createDirectories(Paths.get(d));
@@ -469,6 +491,7 @@ mod Fs.FsLayer {
             case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
+    /// Creates a new temporary directory whose name starts with `prefix` and returns its path.
     pub def mkTempDir(prefix: String): Result[IoError, String] \ IO =
         try {
             let path = Files.createTempDirectory(prefix);

@@ -1,21 +1,12 @@
 /*
  * Copyright 2023 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, SecurityContext}
 
 import java.net.{URI, URL}
 
@@ -23,15 +14,19 @@ sealed trait Dependency
 
 object Dependency {
 
-  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, sctx: SecurityContext) extends Dependency {
-    val identifier: String = {
-      val r = repo.toString.toLowerCase
-      s"$r:$username/$projectName"
-    }
-
-    override def toString: String = {
-      s"\"$identifier\" = { version = \"$version\", security = \"$sctx\" }"
-    }
+  /**
+    * A dependency on a Flix package.
+    *
+    * @param version the least version of the package that the dependent can be built with. The
+    *                version it is built with is the greatest one that any dependent requires,
+    *                which has the same major version, see [[FlixPackageManager.resolve]].
+    * @param mount the name of the top-level module the package is visible under, which is the
+    *              only way its declarations are reached. A dependency that declares no mount is
+    *              mounted at the name of its repository, when that name is a mountpoint.
+    */
+  case class FlixDependency(id: PackageId, version: SemVer, mount: Mountpoint, sctx: SecurityContext) extends Dependency {
+    override def toString: String =
+      s"\"$id\" = { version = \"$version\", mount = \"$mount\", security = \"$sctx\" }"
   }
 
   case class MavenDependency(groupId: String, artifactId: String, versionTag: String) extends Dependency {

@@ -1,17 +1,8 @@
 /*
  * Copyright 2015-2016 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.language.phase
@@ -65,8 +56,16 @@ object Namer {
 
       val modules = buildModuleMap(units)
 
+      // What each viewer, the root project and every package, reaches through its own mounts.
+      def resolveMounts(table: Map[Mountpoint, PackageId]): Map[Mountpoint, Name.NName] =
+        table.map { case (name, id) => name -> Name.packageRoot(id) }
+
+      val rootMounts = resolveMounts(flix.rootMounts)
+      val mounts = flix.packageMounts.map { case (id, table) => id -> resolveMounts(table) }
+
       val errors = sctx.errors.asScala.toList ++ checkOrphanModules(symbols)
-      (NamedAst.Root(symbols, instances, uses, units, modules, program.mainEntryPoint, locations, program.tokens), errors)
+
+      (NamedAst.Root(symbols, instances, uses, units, modules, mounts, rootMounts, program.mainEntryPoint, locations, program.tokens), errors)
     }
 
   /**
@@ -122,12 +121,14 @@ object Namer {
           decl match {
             // We check if it is a *public* module declaration.
             case Declaration.Mod(_, _, mod, sym, _, _, _, loc) if mod.isPublic =>
-              // Check if `sym` has parent.
+              // The root the module is named under, i.e. the root namespace or the root of its package, is implicitly declared.
+              val root = Name.rootOf(loc.source.origin).parts
               sym.parent() match {
                 case None => // No parent, nothing to check.
+                case Some(parentSym) if parentSym.ns == root => // The parent is the root, nothing to check.
                 case Some(parentSym) =>
-                  // We have a parent. We have A.B.C and we must check that A.B declares C.
-                  if (isOrphan(parentSym, symbols)) {
+                  // We have a parent. We have A.B.C and we must check that A.B is declared, i.e. that A declares B.
+                  if (isUndeclared(parentSym, symbols)) {
                     orphanedModules += ((sym, parentSym, loc))
                   }
               }
@@ -153,22 +154,20 @@ object Namer {
   /**
     * Given a module `A.B.C` returns `true` if `A.B` does *NOT* declare a module `C`.
     *
-    * Special case: If `sym` has no parent then no declaration is required.
+    * Given a top-level module `A` returns `true` if the root does *NOT* declare a module `A`.
     */
-  private def isOrphan(sym: Symbol.ModuleSym, symbols: Map[Name.NName, Map[String, List[Declaration]]]): Boolean = sym.parent() match {
-    case None => false
-    case Some(parentSym) =>
-      // Compute the declarations in the parent module.
-      val ns = Name.NName(parentSym.ns.map(s => Name.Ident(s, SourceLocation.Unknown)), SourceLocation.Unknown)
-      val decls = symbols.getOrElse(ns, Map.empty)
-      val ds = decls.getOrElse(sym.ns.last, Nil)
-      // Check that the declarations contain a module declaration for `sym`.
-      val exists = ds.exists {
-        case Declaration.Mod(_, _, _, otherSym, _, _, _, _) => sym == otherSym
-        case _ => false
-      }
-      // If no declaration exists then `sym` is an orphan.
-      !exists
+  private def isUndeclared(sym: Symbol.ModuleSym, symbols: Map[Name.NName, Map[String, List[Declaration]]]): Boolean = {
+    // Compute the declarations in the parent module. For a top-level module that is the root.
+    val ns = Name.mkUnlocatedNName(sym.ns.init)
+    val decls = symbols.getOrElse(ns, Map.empty)
+    val ds = decls.getOrElse(sym.ns.last, Nil)
+    // Check that the declarations contain a module declaration for `sym`.
+    val exists = ds.exists {
+      case Declaration.Mod(_, _, _, otherSym, _, _, _, _) => sym == otherSym
+      case _ => false
+    }
+    // If no declaration exists then `sym` is undeclared.
+    !exists
   }
 
   /**
@@ -177,7 +176,7 @@ object Namer {
   private def visitUnit(unit: DesugaredAst.CompilationUnit)(implicit sctx: SharedContext, flix: Flix): NamedAst.CompilationUnit = unit match {
     case DesugaredAst.CompilationUnit(usesAndImports0, decls, loc) =>
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
-      val ds = decls.map(visitDecl(_, Name.RootNS)(sctx, flix))
+      val ds = decls.map(visitDecl(_, Name.rootOf(loc.source.origin))(sctx, flix))
       NamedAst.CompilationUnit(usesAndImports, ds, loc)
   }
 
@@ -208,7 +207,7 @@ object Namer {
       // Check for [[NameError.IllegalNestedPublicModule]] -- i.e. that public modules are declared
       // at the top level -- and [[NameError.IllegalModuleFile]] -- i.e. that they reside at correct paths.
       //
-      if (mod.isPublic && !ns0.isRoot) {
+      if (mod.isPublic && ns0 != Name.rootOf(loc.source.origin)) {
         // A nested public module is never at a correct path, so we report only this error.
         sctx.errors.add(NameError.IllegalNestedPublicModule(ns, qname.loc))
       } else if (mod.isPublic) {
@@ -222,7 +221,7 @@ object Namer {
         val optPath = loc.source.origin match {
           case Origin.User => loc.source.sourceName.toPath
           case Origin.Library => loc.source.sourceName.toPath
-          case Origin.Package => loc.source.sourceName.toPath
+          case Origin.Package(_) => loc.source.sourceName.toPath
           case Origin.Unknown => None
         }
 
@@ -245,8 +244,39 @@ object Namer {
 
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))
+
+      //
+      // Check for [[NameError.CompanionMustBePublic]] and [[NameError.IllegalPublicCompanion]] -- i.e. that
+      // the companion of the module, if any, is public exactly when the module is.
+      //
+      checkCompanionVisibility(mod, qname, ds)
+
       val sym = new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone)
       NamedAst.Declaration.Mod(doc, ann, mod, sym, qname.loc, usesAndImports, ds, loc)
+  }
+
+  /**
+    * Checks that the companion of the module `qname`, if any, is public exactly when the module is.
+    *
+    * A companion is a declaration (enum, struct, effect, or trait) whose name matches its enclosing
+    * module. It is lifted into the parent namespace (see [[liftCompanion]]), so the module and its
+    * companion name the same entity and must have the same visibility.
+    */
+  private def checkCompanionVisibility(mod: Modifiers, qname: Name.QName, decls: List[NamedAst.Declaration])(implicit sctx: SharedContext): Unit = {
+    val name = qname.ident.name
+    val companionOpt: Option[(Modifiers, SourceLocation)] = decls.collectFirst {
+      case d: NamedAst.Declaration.Enum if d.sym.name == name => (d.mod, d.sym.loc)
+      case d: NamedAst.Declaration.Struct if d.sym.name == name => (d.mod, d.sym.loc)
+      case d: NamedAst.Declaration.Effect if d.sym.name == name => (d.mod, d.sym.loc)
+      case d: NamedAst.Declaration.Trait if d.sym.name == name => (d.mod, d.sym.loc)
+    }
+    companionOpt match {
+      case Some((companionMod, loc)) if mod.isPublic && !companionMod.isPublic =>
+        sctx.errors.add(NameError.CompanionMustBePublic(qname, loc))
+      case Some((companionMod, loc)) if !mod.isPublic && companionMod.isPublic =>
+        sctx.errors.add(NameError.IllegalPublicCompanion(qname, loc))
+      case _ => // Nop
+    }
   }
 
   /**
@@ -547,7 +577,6 @@ object Namer {
       val body = bs.map(visitBodyPredicate)
       NamedAst.Constraint(cparams, head, body, loc)
   }
-
 
   /**
     * Performs naming on the given enum `enum0`.
@@ -1785,7 +1814,7 @@ object Namer {
     * Performs naming on the given `use`.
     */
   private def visitUseOrImport(use: DesugaredAst.UseOrImport): NamedAst.UseOrImport = use match {
-    case DesugaredAst.UseOrImport.Use(qname, alias, loc) => NamedAst.UseOrImport.Use(qname, alias, loc)
+    case DesugaredAst.UseOrImport.Use(pkg, qname, alias, loc) => NamedAst.UseOrImport.Use(pkg, qname, alias, loc)
     case DesugaredAst.UseOrImport.Import(name, alias, loc) => NamedAst.UseOrImport.Import(name, alias, loc)
   }
 

@@ -1,27 +1,22 @@
 /*
  * Copyright 2026 Flix Authors
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
+///
+/// Type of paths locating values inside a `Json` document, and its functions.
+///
 pub mod Util.Json.JsonPath {
 
     use Util.Json
     use Util.Json.Json.{JArray, JObject}
 
     ///
-    /// A path locating a value inside a `Json` document, as a sequence of
-    /// `JsonStep`s.
+    /// Type of paths locating values inside a `Json` document.
+    ///
+    /// A path is a sequence of `JsonStep`s.
     ///
     /// The `List[JsonStep]` is stored head-at-root: the first element is the
     /// outermost step and the last element is the leaf. Walking head-to-tail
@@ -32,7 +27,9 @@ pub mod Util.Json.JsonPath {
     }
 
     ///
-    /// A single step in a `JsonPath`: either an array index or an object key.
+    /// Type of single steps in a `JsonPath`.
+    ///
+    /// A step is either an array index or an object key.
     ///
     pub enum JsonStep with Eq, ToString {
         case Index(Int32)

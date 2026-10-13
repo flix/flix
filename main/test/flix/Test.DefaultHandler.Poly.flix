@@ -182,10 +182,4 @@ mod Test.DefaultHandler.Poly {
     def testPairMixedParameters(): Unit \ Assert + Pair[Int32, String] =
         Assert.assertEq(expected = 42, Pair.first(42, "hello"))
 
-    mod Api {
-        @Export
-        pub def echoInt32(x: Int32): Int32 \ Test.DefaultHandler.Poly.Echo[Int32] =
-            Test.DefaultHandler.Poly.Echo.echo(x)
-    }
-
 }

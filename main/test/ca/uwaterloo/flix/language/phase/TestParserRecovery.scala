@@ -40,13 +40,68 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("MalformedInfixFunction.01") {
+    val input =
+      """
+        |def foo(): Int32 = 1 `checked_cast` 2
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MalformedInfixFunction.02") {
+    val input =
+      """
+        |def foo(): Int32 = 1 `A.checked_cast` 2
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MalformedInfixFunction.03") {
+    val input =
+      """
+        |def foo(): Int32 = 1 `123` 2
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MalformedInfixFunction.04") {
+    val input =
+      """
+        |def foo(): Int32 = 1 `` 2
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MalformedInfixFunction.05") {
+    val input =
+      """
+        |def foo(): Int32 = 1 `def` 2
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+    expectMain(result)
+  }
+
   test("TrailingComma.01") {
     val input =
       """
         |def b(): List[Int32] = List#{2, /**/}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -57,7 +112,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def A(): Unit = ()
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -70,7 +125,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -84,7 +139,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -98,7 +153,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -111,7 +166,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -125,7 +180,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -137,7 +192,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |enum Color { case Red }
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -149,7 +204,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |enum Color { case Red }
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -161,7 +216,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |enum Color { case Red }
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -172,7 +227,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |import java.lang.{StringBuffer,
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -183,7 +238,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |import java.lang.{StringBuffer => StrBuf
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -194,7 +249,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |import java.lang.{StringBuffer, , CharSequence};
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -205,7 +260,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(x: Int32, , z: Int32): Int32 = ???
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -216,7 +271,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(x: Int32,
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -227,7 +282,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |struct S { }
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -237,7 +292,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def main: Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -250,7 +305,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -263,7 +318,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    localFunc()
         |}
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -276,7 +331,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    ()
         |}
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -288,7 +343,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(x: Int32): Int32
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -299,7 +354,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(x: Int32) = ???
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -309,7 +364,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |} def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -320,7 +375,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |@Internal
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -331,7 +386,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |pub
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -342,7 +397,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |/// This documents nothing
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -355,7 +410,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -368,7 +423,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -382,7 +437,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -395,7 +450,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -412,7 +467,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -425,7 +480,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -436,7 +491,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |enum Legumes { Chickpea, Beans }
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -447,7 +502,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |enum Legumes[a { case Chickpea(a), case Beans }
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -458,7 +513,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |enum USD[a](a
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -487,7 +542,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |type alias M[k, = Map[k, Result[String, k]]
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -498,7 +553,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |type alias M[k] = Map[k, Result[String, ]
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -509,7 +564,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |type alias Magic
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -520,7 +575,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |type alias Magic =
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -533,7 +588,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |enum Legumes { case ChickPea, Beans }
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -558,7 +613,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): In32 = Bar.
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -569,7 +624,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): In32 = bar().
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -591,7 +646,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Int32 = # 2
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -603,7 +658,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Int32 = { () -> ; 1 }
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -614,7 +669,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Int32 = { (a, ) -> ; 1 }
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -625,7 +680,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): (Int32, Int32) = (1, )
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
   }
 
@@ -635,7 +690,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Int32 = { lazy; 1 }
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -647,7 +702,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    forA ( x <- bar(); y <- baz() yield ???
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -659,7 +714,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    forA ( x <- bar(); y <- baz(); yield ???
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -671,7 +726,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    forA ( x <- bar(), y <- baz() yield ???
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -682,7 +737,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Int32 = if 123 else 321
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -693,7 +748,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Int32 = if () 123 else 321
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -704,7 +759,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Int32 = if (false) 123
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -714,8 +769,10 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def foo(): Unit \ IO = if (false) if (true) println(1) else println(1)
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -729,7 +786,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -743,7 +800,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -757,7 +814,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -768,7 +825,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Int32 = match () { case }
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -779,7 +836,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def map(t: Int32): Int32 = match t
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -804,7 +861,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): List[Int32 = ???
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -815,7 +872,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Int32 -> = ???
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -826,7 +883,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Int32 -> Int32 \ { = ???
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -837,7 +894,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): #{ Node() | = ???
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -862,7 +919,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |}
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -890,7 +947,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    let f = () -> { g = () -> { h = () -> 12 } };
         |    f()#
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -904,7 +961,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    let f = () -> { g = () -> { h = () -> 12 } };
         |    f()#g()#
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -917,8 +974,10 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    println("Hello World!")
         |
         |def main(): Unit = ()
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -929,8 +988,9 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Unit \ IO =
         |    def bar(): Int32 = 123
         |def main(): Unit = ()
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -946,7 +1006,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -958,7 +1018,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    try { true } catch
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -970,7 +1030,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    let _ = { | {} };
         |    2
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -982,7 +1042,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    run { true }
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -994,7 +1054,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    try { true }
         |def main(): Unit = ()
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -1072,7 +1132,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |struct S[r] { x: Int32 }
         |def main(): Unit = region rc { let _ = new S @ rc; () }
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }
@@ -1083,7 +1143,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |struct S[r] { x: Int32 }
         |def main(): Unit = region rc { let _ = new S @ rc { 123 }; () }
         |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
     expectMain(result)
   }

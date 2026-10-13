@@ -1,17 +1,8 @@
 /*
  * Copyright 2017 Magnus Madsen
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the LICENSE.md file.
  */
 
 package ca.uwaterloo.flix.runtime.shell
@@ -19,7 +10,7 @@ package ca.uwaterloo.flix.runtime.shell
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, CompilerConstants, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.shared.{Origin, SecurityContext}
 import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.*
@@ -177,12 +168,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.BuildJar => execBootstrap(bootstrap.buildJar(flix))
       case Command.BuildFatJar => execBootstrap(bootstrap.buildFatJar(flix))
       case Command.BuildPkg => execBootstrap(bootstrap.buildPkg(flix))
-      case Command.Release => execBootstrap(bootstrap.release(flix))
       case Command.Check => execBootstrap(bootstrap.check(flix))
-      case Command.Doc => execBootstrap(bootstrap.doc(flix))
+      case Command.Doc => execBootstrap(bootstrap.doc(flix, Origin.User))
       case Command.Format => execBootstrap(bootstrap.format(flix))
       case Command.Test => execBootstrap(bootstrap.test(flix))
-      case Command.Outdated => execBootstrap(bootstrap.outdated(flix))
       case Command.Unknown(s) => execUnknown(s)
     }
   }
@@ -208,12 +197,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     w.println("  :build-jar                  Builds a jar-file from the current project.")
     w.println("  :build-fatjar               Builds a fatjar-file from the current project.")
     w.println("  :build-pkg                  Builds a fpkg-file from the current project.")
-    w.println("  :release                    Publishes a release of the current project to GitHub.")
     w.println("  :check :c                   Checks the current project for errors.")
-    w.println("  :doc :d                     Generates API documentation for the current project.")
+    w.println("  :doc                        Generates API documentation for the current project.")
     w.println("  :format                     Formats the source code of the current project.")
-    w.println("  :test :t                    Runs the tests for the current project.")
-    w.println("  :outdated                   Shows dependencies which have newer versions available.")
+    w.println("  :test                       Runs the tests for the current project.")
     w.println("  :quit :q                    Terminates the Flix shell.")
     w.println("  :help :h :?                 Shows this helpful information.")
     w.println()

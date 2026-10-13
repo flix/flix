@@ -1,5 +1,4 @@
-use Util.Stats
-use Json.JsonElement
+use Util.Json
 
 ///
 /// Gets all sorts of data from github.
@@ -25,16 +24,16 @@ pub eff Github {
     ///
     /// The language data should be a map from language name to the byte of code for this language in this repository.
     ///
-    def getLanguages(repo: String): JsonElement
+    def getLanguages(repo: String): Json
 
     ///
     /// Gets the detailed statistic of a specific commit in the repository.
     ///
-    def getCommit(repo: String, sha: String): JsonElement
+    def getCommit(repo: String, sha: String): Json
 }
 
 mod Github {
-    use Util.accessJson
+    use Net.Http
 
     ///
     /// The general header for a github request.
@@ -51,31 +50,31 @@ mod Github {
     ///
     /// The handler that gets data from github through REST API.
     ///
-    pub def runWithConfigHttp(f: Unit -> a \ ef): a \ ef - Github + Config + HttpWithResult + AnalysisFailure + IO = {
+    pub def runWithConfigHttp(f: Unit -> a \ ef): a \ ef - Github + Config + Http + AnalysisFailure = {
         run {
             f()
         } with handler Github {
             def getRepos(resume) = {
-                Util.getAllPages("https://api.github.com/user/repos?affiliation=owner,collaborator&per_page=100", buildHeader())
-                |> List.map(repoJson -> Util.accessJson("full_name", repoJson)) |> resume
+                Common.getAllPages("https://api.github.com/user/repos?affiliation=owner,collaborator&per_page=100", buildHeader())
+                |> List.map(repoJson -> Common.accessJson("full_name", repoJson)) |> resume
             }
 
             def getCommits(repos, resume) = {
                 List.foldLeft((acc, repo) -> {
                     let url = "https://api.github.com/repos/${repo}/commits?author=${Config.getName()}&per_page=100";
-                    let shas = Util.getAllPages(url, buildHeader()) |> List.map(Util.accessJson("sha"));
+                    let shas = Common.getAllPages(url, buildHeader()) |> List.map(Common.accessJson("sha"));
                     Map.insert(repo, shas, acc)
                 }, Map.empty(), repos) |> resume
             }
 
             def getLanguages(repo, resume) = {
                 let url = "https://api.github.com/repos/${repo}/languages";
-                Util.getAndParse(url, buildHeader()) |> resume
+                Common.getAndParse(url, buildHeader()) |> resume
             }
 
            def getCommit(repo, sha, resume) = {
                 let url = "https://api.github.com/repos/${repo}/commits/${sha}";
-                Util.getAndParse(url, buildHeader()) |> resume
+                Common.getAndParse(url, buildHeader()) |> resume
            }
         }
     }

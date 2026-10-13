@@ -1,12 +1,15 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Version}
-import ca.uwaterloo.flix.util.{FileOps, Formatter, Result}
+import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, Repository, SecurityContext}
+import ca.uwaterloo.flix.tools.pkg.github.GitHub
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.{FileOps, Formatter, Result, Sha256}
 import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
 
+import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.file.{Files, Path}
-import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipFile
@@ -16,6 +19,17 @@ import scala.jdk.CollectionConverters.EnumerationHasAsScala
 class TestBootstrap extends AnyFunSuite {
 
   private val ProjectPrefix: String = "flix-project-"
+
+  /** Returns the path of the package that `build-pkg` builds at `p`. */
+  private def packagePath(p: Path): Path =
+    p.resolve("artifact").resolve(Bootstrap.PACKAGE_FPKG)
+
+  /** Creates a project that can be packaged. Returns the project directory. */
+  private def mkPackageProject(): Path = {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    p
+  }
 
   test("init") {
     val p = Files.createTempDirectory(ProjectPrefix)
@@ -27,6 +41,719 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.check(PkgTestUtils.mkFlix(b))
+  }
+
+  test("packages.lock.01") {
+    val p = mkProjectWithDependency()
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
+    val entry = lockfile.packages((ClerkIdentifier, ClerkVersion))
+
+    assert(entry.toml == Sha256.ofFile(clerkFile(p, Bootstrap.EXT_TOML)))
+    assert(entry.fpkg.contains(Sha256.ofFile(clerkFile(p, Bootstrap.EXT_FPKG))))
+  }
+
+  test("packages.lock.02") {
+    // The second bootstrap finds every dependency cached, and must digest the cached files to
+    // arrive at the same lock file rather than leaving the entries out.
+    val p = mkProjectWithDependency()
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    val first = Files.readString(p.resolve(Bootstrap.PACKAGES_LOCK))
+
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    val second = Files.readString(p.resolve(Bootstrap.PACKAGES_LOCK))
+
+    assert(first == second)
+  }
+
+  test("packages.lock.03") {
+    // A project with no Flix dependencies still locks, and locks nothing.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
+    assert(lockfile.packages.isEmpty)
+  }
+
+  test("packages.lock.04") {
+    // A cached file that no longer matches the lock file is refused.
+    val p = mkProjectWithDependency()
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    Files.writeString(clerkFile(p, Bootstrap.EXT_FPKG), "not the package you are looking for")
+
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out) match {
+      case Ok(_) => fail("Expected the tampered package to be refused.")
+      case Err(BootstrapError.FlixPackageError(e: PackageError.MismatchedCachedDigest)) =>
+        assert(e.identifier == ClerkIdentifier)
+        assert(e.asset == ReleaseAsset.Fpkg)
+      case Err(e) => fail(s"Expected a mismatched digest, but got: ${e.message(Formatter.getDefault)}")
+    }
+  }
+
+  test("packages.lock.05") {
+    // A tampered file leaves the lock file alone, so the digest it recorded is not overwritten
+    // by the digest of whatever is there now.
+    val p = mkProjectWithDependency()
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    val before = Files.readString(p.resolve(Bootstrap.PACKAGES_LOCK))
+
+    Files.writeString(clerkFile(p, Bootstrap.EXT_FPKG), "not the package you are looking for")
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out)
+
+    assert(Files.readString(p.resolve(Bootstrap.PACKAGES_LOCK)) == before)
+  }
+
+  test("packages.lock.06") {
+    // An entry for a package the project does not depend on is dropped, not reported.
+    val p = mkProjectWithDependency()
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    val stale = Lockfile(LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet.packages
+      + ((PackageId(Repository.GitHub, "flix", "gone"), SemVer(9, 9, 9)) -> LockEntry(Sha256("a" * 64), Some(Sha256("b" * 64)))))
+    Files.writeString(p.resolve(Bootstrap.PACKAGES_LOCK), Lockfile.format(stale))
+
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
+    assert(lockfile.packages.keySet == Set((ClerkIdentifier, ClerkVersion)))
+  }
+
+  test("packages.lock.07") {
+    // A lock file that is not a lock file is reported rather than ignored.
+    val p = mkProjectWithDependency()
+    Files.writeString(p.resolve(Bootstrap.PACKAGES_LOCK), "[lock]\nversion = 99\n")
+
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out) match {
+      case Ok(_) => fail("Expected the unreadable lock file to be refused.")
+      case Err(BootstrapError.LockParseError(_: LockError.UnsupportedLockVersion)) => ()
+      case Err(e) => fail(s"Expected an unsupported lock version, but got: ${e.message(Formatter.getDefault)}")
+    }
+  }
+
+  test("outdated.01") {
+    // The project declares museum-clerk 2.1.2, and museum 3.0.2 requires museum-clerk 2.1.3, so
+    // museum-clerk is built at 2.1.3. It is compared by the version it is built at.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |# museum reaches museum-restaurant, which has a Maven dependency.
+         |"github:flix/museum" = { version = "3.0.2", security = "unrestricted" }
+         |"github:flix/museum-clerk" = { version = "2.1.2", mount = "clerk" }
+         |""".stripMargin)
+    val b = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    val bytes = new ByteArrayOutputStream()
+    b.outdated(PkgTestUtils.mkFlix(b))(new PrintStream(bytes)).unsafeGet
+    val lines = bytes.toString.linesIterator.map(_.trim.split("\\s+").toList).toList
+
+    // The table says what is declared and what is built.
+    assert(lines.exists(_.take(3) == List("package", "declared", "built")))
+
+    // museum is built at the version that is declared, and has a newer release.
+    assert(lines.exists(_.take(3) == List("flix/museum", "3.0.2", "3.0.2")))
+
+    // museum-clerk is declared at 2.1.2 and built at 2.1.3, which is its newest release, so no
+    // update is offered to it. It is listed all the same, since 2.1.3 is a version the project
+    // can declare instead of the 2.1.2 it declares.
+    assert(lines.exists(_ == List("flix/museum-clerk", "2.1.2", "2.1.3")))
+  }
+
+  test("install.01") {
+    // A package that is asked for at a version is declared at that version, under a mount
+    // derived from its name, and is installed. The dependencies that are already declared are
+    // still declared afterwards, with the versions and the mounts they were declared with.
+    val p = mkProjectWithDependency()
+    // A manifest declares only what is read, so a comment is the one thing in it that the
+    // package manager does not model.
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""${Files.readString(p.resolve(Bootstrap.FLIX_TOML))}
+         |# The clerk of the museum.
+         |""".stripMargin)
+
+    val added = PackageId(Repository.GitHub, "flix", "museum-giftshop")
+    install(p, s"flix/${added.name}@2.0.2").unsafeGet
+
+    val dep = flixDependency(p, added)
+    assert(dep.version == SemVer(2, 0, 2))
+    assert(dep.mount == Mountpoint("MuseumGiftshop"))
+
+    val clerk = flixDependency(p, ClerkIdentifier)
+    assert(clerk.version == ClerkVersion)
+    assert(clerk.mount == Mountpoint("Clerk"))
+
+    // The package is installed, and the lock file records it.
+    assert(Files.exists(libFile(p, added, SemVer(2, 0, 2), Bootstrap.EXT_FPKG)))
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
+    assert(lockfile.packages.contains((added, SemVer(2, 0, 2))))
+
+    // The manifest is rewritten as a whole rather than edited, so the comment does not survive.
+    assert(!Files.readString(p.resolve(Bootstrap.FLIX_TOML)).contains("The clerk of the museum"))
+  }
+
+  test("install.02") {
+    // A package that is asked for at no version is declared at its newest release.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    install(p, "flix/museum-giftshop").unsafeGet
+
+    val versions = GitHub.getReleaseVersions(GitHub.Project("flix", "museum-giftshop"), PkgTestUtils.gitHubToken).unsafeGet
+    val dep = flixDependency(p, PackageId(Repository.GitHub, "flix", "museum-giftshop"))
+    assert(dep.version == versions.max)
+  }
+
+  test("install.03") {
+    // A package that is already declared is not declared twice.
+    val p = mkProjectWithDependency()
+    val before = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+
+    install(p, "flix/museum-clerk@2.1.0") match {
+      case Ok(_) => fail("Expected the declared dependency to be refused.")
+      case Err(BootstrapError.DependencyAlreadyDeclared(id, version)) =>
+        assert(id == ClerkIdentifier)
+        assert(version == ClerkVersion)
+      case Err(e) => fail(s"Expected a declared dependency, but got: ${e.message(Formatter.getDefault)}")
+    }
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == before)
+  }
+
+  test("install.04") {
+    // A mount that another dependency already has is not one to take, and a run that assumes
+    // yes has no one to ask for another. The dependency that holds the mount is never resolved --
+    // the install is refused before anything is -- so it only has to be declared.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |"github:flix/museum-giftshop" = { version = "2.0.2", mount = "MuseumClerk" }
+         |""".stripMargin)
+    val before = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+
+    install(p, "flix/museum-clerk@1.1.0") match {
+      case Ok(_) => fail("Expected the taken mount to be refused.")
+      case Err(BootstrapError.NoMount(id)) => assert(id == ClerkIdentifier)
+      case Err(e) => fail(s"Expected a taken mount, but got: ${e.message(Formatter.getDefault)}")
+    }
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == before)
+  }
+
+  test("install.05") {
+    // A version that was never released is not one to declare. It is the resolution that says
+    // so -- the release publishes no `flix.toml` -- since a version that is asked for is taken
+    // as it is asked for, so the dependency is written before it is refused, and the manifest
+    // that was there is put back.
+    val p = mkProjectWithDependency()
+    val before = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+
+    install(p, "flix/museum-entrance@9.9.9") match {
+      case Ok(_) => fail("Expected the missing release to be refused.")
+      case Err(BootstrapError.FlixPackageError(e: PackageError.ReleaseAssetNotFound)) =>
+        assert(e.version == SemVer(9, 9, 9))
+      case Err(e) => fail(s"Expected a missing release, but got: ${e.message(Formatter.getDefault)}")
+    }
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == before)
+  }
+
+  test("install.06") {
+    // Packages that are installed together are declared together, each under a mount derived
+    // from its name, and are installed by the one bootstrap.
+    val p = mkProjectWithDependency()
+    val giftshop = PackageId(Repository.GitHub, "flix", "museum-giftshop")
+    val entrance = PackageId(Repository.GitHub, "flix", "museum-entrance")
+    install(p, "flix/museum-giftshop@2.0.2", "flix/museum-entrance@2.0.2").unsafeGet
+
+    val giftshopDep = flixDependency(p, giftshop)
+    assert(giftshopDep.version == SemVer(2, 0, 2))
+    assert(giftshopDep.mount == Mountpoint("MuseumGiftshop"))
+
+    val entranceDep = flixDependency(p, entrance)
+    assert(entranceDep.version == SemVer(2, 0, 2))
+    assert(entranceDep.mount == Mountpoint("MuseumEntrance"))
+
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
+    assert(lockfile.packages.contains((giftshop, SemVer(2, 0, 2))))
+    assert(lockfile.packages.contains((entrance, SemVer(2, 0, 2))))
+  }
+
+  test("install.07") {
+    // A package that is named twice is refused, however it is written, and before anything is
+    // asked of GitHub.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    val before = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+
+    install(p, "flix/museum-clerk", s"$ClerkIdentifier@$ClerkVersion") match {
+      case Ok(_) => fail("Expected the duplicate package to be refused.")
+      case Err(BootstrapError.DuplicatePackageSpec(id)) => assert(id == ClerkIdentifier)
+      case Err(e) => fail(s"Expected a duplicate package, but got: ${e.message(Formatter.getDefault)}")
+    }
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == before)
+  }
+
+  test("install.08") {
+    // Packages are installed together or not at all: a package whose version was never released
+    // refuses the others as well, and the manifest that was there is put back.
+    val p = mkProjectWithDependency()
+    val before = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+
+    install(p, "flix/museum-giftshop@2.0.2", "flix/museum-entrance@9.9.9") match {
+      case Ok(_) => fail("Expected the missing release to be refused.")
+      case Err(BootstrapError.FlixPackageError(e: PackageError.ReleaseAssetNotFound)) =>
+        assert(e.version == SemVer(9, 9, 9))
+      case Err(e) => fail(s"Expected a missing release, but got: ${e.message(Formatter.getDefault)}")
+    }
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == before)
+  }
+
+  test("install.09") {
+    // A mount that is given to one package is taken for the packages after it. Both packages
+    // are named museum-clerk, so both are offered MuseumClerk, and only the first can have it.
+    // Both versions are asked for, so nothing is asked of GitHub before the mounts are chosen.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    val before = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+
+    install(p, s"flix/museum-clerk@$ClerkVersion", "someone/museum-clerk@1.0.0") match {
+      case Ok(_) => fail("Expected the taken mount to be refused.")
+      case Err(BootstrapError.NoMount(id)) => assert(id == PackageId(Repository.GitHub, "someone", "museum-clerk"))
+      case Err(e) => fail(s"Expected a taken mount, but got: ${e.message(Formatter.getDefault)}")
+    }
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == before)
+  }
+
+  test("remove.01") {
+    // A package that is declared is no longer declared, and the lock file no longer records it.
+    // The dependencies that are left are still declared, with their versions and their mounts.
+    val p = mkProjectWithDependency()
+    val other = PackageId(Repository.GitHub, "flix", "museum-giftshop")
+    install(p, s"flix/${other.name}@2.0.2").unsafeGet
+
+    remove(p, s"flix/${other.name}").unsafeGet
+
+    val manifest = ManifestParser.parse(p.resolve(Bootstrap.FLIX_TOML)).unsafeGet
+    assert(!manifest.flixDependencies.exists(dep => dep.id == other))
+
+    val dep = flixDependency(p, ClerkIdentifier)
+    assert(dep.version == ClerkVersion)
+    assert(dep.mount == Mountpoint("Clerk"))
+
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
+    assert(lockfile.packages.keySet == Set((ClerkIdentifier, ClerkVersion)))
+  }
+
+  test("remove.02") {
+    // The only dependency of a project can be removed, which leaves a manifest that declares
+    // none, and that the project still bootstraps from.
+    val p = mkProjectWithDependency()
+    remove(p, "flix/museum-clerk").unsafeGet
+
+    val toml = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+    assert(!toml.contains("[dependencies]"))
+    assert(ManifestParser.parse(toml, Path.of(Bootstrap.FLIX_TOML)).unsafeGet.dependencies.isEmpty)
+
+    Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    assert(LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet.packages.isEmpty)
+  }
+
+  test("remove.03") {
+    // A package that the project does not declare is not one it can drop.
+    val p = mkProjectWithDependency()
+    val before = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+
+    remove(p, "flix/museum-entrance") match {
+      case Ok(_) => fail("Expected the undeclared package to be refused.")
+      case Err(BootstrapError.DependencyNotDeclared(id)) =>
+        assert(id == PackageId(Repository.GitHub, "flix", "museum-entrance"))
+      case Err(e) => fail(s"Expected an undeclared dependency, but got: ${e.message(Formatter.getDefault)}")
+    }
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == before)
+  }
+
+  test("remove.04") {
+    // A package is declared at one version, so a version is not part of a removal.
+    val p = mkProjectWithDependency()
+    val before = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+
+    remove(p, "flix/museum-clerk@1.1.0") match {
+      case Ok(_) => fail("Expected the version to be refused.")
+      case Err(BootstrapError.UnexpectedVersion(command, id)) =>
+        assert(command == "remove")
+        assert(id == PackageId.mkPackageId("github:flix/museum-clerk").get)
+      case Err(e) => fail(s"Expected an unexpected version, but got: ${e.message(Formatter.getDefault)}")
+    }
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == before)
+  }
+
+  test("remove.05") {
+    // What another dependency requires stays: museum-entrance requires museum-clerk, so dropping
+    // the declaration of museum-clerk leaves the package itself in the resolution, at the version
+    // museum-entrance requires rather than the one that was declared.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |"$ClerkIdentifier" = { version = "$ClerkVersion", mount = "Clerk" }
+         |"github:flix/museum-entrance" = { version = "2.0.2", mount = "Entrance" }
+         |""".stripMargin)
+
+    remove(p, "flix/museum-clerk").unsafeGet
+
+    val manifest = ManifestParser.parse(p.resolve(Bootstrap.FLIX_TOML)).unsafeGet
+    assert(manifest.flixDependencies.map(dep => dep.id) == List(PackageId(Repository.GitHub, "flix", "museum-entrance")))
+
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
+    assert(lockfile.packages.contains((ClerkIdentifier, SemVer(2, 1, 2))))
+  }
+
+  test("remove.06") {
+    // Packages that are removed together are no longer declared, and the lock file records only
+    // what is left.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |"$ClerkIdentifier" = { version = "$ClerkVersion", mount = "Clerk" }
+         |"github:flix/museum-entrance" = { version = "2.0.2", mount = "Entrance" }
+         |"github:flix/museum-giftshop" = { version = "2.0.2", mount = "Giftshop" }
+         |""".stripMargin)
+
+    remove(p, "flix/museum-entrance", "flix/museum-giftshop").unsafeGet
+
+    val manifest = ManifestParser.parse(p.resolve(Bootstrap.FLIX_TOML)).unsafeGet
+    assert(manifest.flixDependencies.map(dep => dep.id) == List(ClerkIdentifier))
+
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
+    assert(lockfile.packages.keySet == Set((ClerkIdentifier, ClerkVersion)))
+  }
+
+  test("remove.07") {
+    // Packages are removed together or not at all: a package that the project does not declare
+    // refuses the others as well.
+    val p = mkProjectWithDependency()
+    val before = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+
+    remove(p, "flix/museum-clerk", "flix/museum-entrance") match {
+      case Ok(_) => fail("Expected the undeclared package to be refused.")
+      case Err(BootstrapError.DependencyNotDeclared(id)) =>
+        assert(id == PackageId(Repository.GitHub, "flix", "museum-entrance"))
+      case Err(e) => fail(s"Expected an undeclared dependency, but got: ${e.message(Formatter.getDefault)}")
+    }
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == before)
+  }
+
+  test("upgrade.01") {
+    // Only the version changes: what else the declaration says, and where it says it, is what
+    // it said before.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |"$ClerkIdentifier" = { version = "2.1.2", mount = "Clerk", security = "paranoid" }
+         |"github:flix/museum-restaurant" = { version = "2.0.2", mount = "Restaurant", security = "unrestricted" }
+         |""".stripMargin)
+
+    upgrade(p, s"flix/museum-clerk@$ClerkVersion").unsafeGet
+
+    val dep = flixDependency(p, ClerkIdentifier)
+    assert(dep.version == ClerkVersion)
+    assert(dep.mount == Mountpoint("Clerk"))
+    assert(dep.sctx == SecurityContext.Paranoid)
+
+    // The declaration is replaced where it is, and not dropped and added.
+    val manifest = ManifestParser.parse(p.resolve(Bootstrap.FLIX_TOML)).unsafeGet
+    assert(manifest.flixDependencies.map(d => d.id) == List(ClerkIdentifier, PackageId(Repository.GitHub, "flix", "museum-restaurant")))
+
+    // The new version is installed, and the lock file records it.
+    assert(Files.exists(libFile(p, ClerkIdentifier, ClerkVersion, Bootstrap.EXT_FPKG)))
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
+    assert(lockfile.packages.contains((ClerkIdentifier, ClerkVersion)))
+    assert(!lockfile.packages.contains((ClerkIdentifier, SemVer(2, 1, 2))))
+  }
+
+  test("upgrade.02") {
+    // A package that is asked for at no version is moved to the newest release of the major it
+    // is declared at, and the newer major is offered rather than taken. museum is declared at
+    // 3.0.1 and has released 3.0.2 as well as 4.0.0.
+    val museum = PackageId(Repository.GitHub, "flix", "museum")
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |# museum reaches museum-restaurant, which has a Maven dependency.
+         |"$museum" = { version = "3.0.1", security = "unrestricted" }
+         |""".stripMargin)
+
+    val bytes = new ByteArrayOutputStream()
+    Bootstrap.upgrade(p, List("flix/museum"), PkgTestUtils.gitHubToken)(Formatter.NoFormatter, new PrintStream(bytes)).unsafeGet
+
+    val versions = GitHub.getReleaseVersions(GitHub.Project("flix", "museum"), PkgTestUtils.gitHubToken).unsafeGet
+    val newestOfMajor = versions.filter(v => v.major == 3).max
+    assert(flixDependency(p, museum).version == newestOfMajor)
+
+    // The newest release is of a newer major, and is named rather than taken.
+    val newest = versions.max
+    assert(newest.major > 3)
+    assert(flixDependency(p, museum).version != newest)
+    assert(bytes.toString.contains(s"flix upgrade flix/museum@$newest"))
+  }
+
+  test("upgrade.03") {
+    // A version below the one that is declared is taken as it is asked for: a declaration is a
+    // version to pin as well as a version to raise.
+    val p = mkProjectWithDependency()
+    val bytes = new ByteArrayOutputStream()
+    Bootstrap.upgrade(p, List("flix/museum-clerk@2.1.2"), PkgTestUtils.gitHubToken)(Formatter.NoFormatter, new PrintStream(bytes)).unsafeGet
+
+    val dep = flixDependency(p, ClerkIdentifier)
+    assert(dep.version == SemVer(2, 1, 2))
+    assert(dep.mount == Mountpoint("Clerk"))
+
+    // The version falls, so the command does not claim to have upgraded anything.
+    assert(bytes.toString.contains(s"Downgraded '${ClerkIdentifier.shortName}' v$ClerkVersion -> v2.1.2."))
+  }
+
+  test("upgrade.04") {
+    // A package that already declares the version it would be given is left alone, so a command
+    // that changes nothing rewrites nothing, comments included.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    val toml =
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |# The clerk of the museum.
+         |"$ClerkIdentifier" = { version = "$ClerkVersion", mount = "Clerk" }
+         |""".stripMargin
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML), toml)
+
+    upgrade(p, s"flix/museum-clerk@$ClerkVersion").unsafeGet
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == toml)
+  }
+
+  test("upgrade.05") {
+    // An upgrade that the project cannot be built with is refused, and the manifest that was
+    // there is put back. museum-entrance 2.0.2 requires museum-clerk 2.1.2, and a major is a
+    // compatibility boundary, so museum-clerk 1.1.0 is not a version both can be given.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |"$ClerkIdentifier" = { version = "$ClerkVersion", mount = "Clerk" }
+         |"github:flix/museum-entrance" = { version = "2.0.2", mount = "Entrance" }
+         |""".stripMargin)
+    val before = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+
+    upgrade(p, "flix/museum-clerk@1.1.0") match {
+      case Ok(_) => fail("Expected the incompatible version to be refused.")
+      case Err(_) => // Expected.
+    }
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == before)
+  }
+
+  test("upgrade.06") {
+    // A package that already declares the version it would be given is reported and left alone,
+    // and the packages beside it are still changed.
+    val giftshop = PackageId(Repository.GitHub, "flix", "museum-giftshop")
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |"$ClerkIdentifier" = { version = "2.1.2", mount = "Clerk" }
+         |"$giftshop" = { version = "2.0.2", mount = "Giftshop" }
+         |""".stripMargin)
+
+    val bytes = new ByteArrayOutputStream()
+    Bootstrap.upgrade(p, List(s"flix/museum-clerk@$ClerkVersion", "flix/museum-giftshop@2.0.2"), PkgTestUtils.gitHubToken)(Formatter.NoFormatter, new PrintStream(bytes)).unsafeGet
+
+    assert(flixDependency(p, ClerkIdentifier).version == ClerkVersion)
+    assert(flixDependency(p, giftshop).version == SemVer(2, 0, 2))
+    assert(bytes.toString.contains(s"${giftshop.shortName} is already at v2.0.2."))
+    assert(bytes.toString.contains(s"Upgraded '${ClerkIdentifier.shortName}' v2.1.2 -> v$ClerkVersion."))
+  }
+
+  test("upgrade.07") {
+    // Packages whose majors have to move together can be moved together. museum-entrance 1.2.0
+    // requires museum-clerk 1.1.0 and museum-entrance 2.0.2 requires museum-clerk 2.1.2, so
+    // neither resolves with its version changed on its own, see upgrade.05.
+    val entrance = PackageId(Repository.GitHub, "flix", "museum-entrance")
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |"$ClerkIdentifier" = { version = "1.1.0", mount = "Clerk" }
+         |"$entrance" = { version = "1.2.0", mount = "Entrance" }
+         |""".stripMargin)
+
+    upgrade(p, s"flix/museum-clerk@$ClerkVersion", "flix/museum-entrance@2.0.2").unsafeGet
+
+    assert(flixDependency(p, ClerkIdentifier).version == ClerkVersion)
+    assert(flixDependency(p, entrance).version == SemVer(2, 0, 2))
+
+    val lockfile = LockfileParser.parse(p.resolve(Bootstrap.PACKAGES_LOCK)).unsafeGet
+    assert(lockfile.packages.contains((ClerkIdentifier, ClerkVersion)))
+    assert(lockfile.packages.contains((entrance, SemVer(2, 0, 2))))
+    assert(!lockfile.packages.contains((ClerkIdentifier, SemVer(1, 1, 0))))
+    assert(!lockfile.packages.contains((entrance, SemVer(1, 2, 0))))
+  }
+
+  test("upgrade.08") {
+    // Packages are changed together or not at all: museum-entrance 2.0.1 resolves, but not
+    // beside museum-clerk 1.1.0, so neither change is kept and the manifest that was there is
+    // put back.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |"$ClerkIdentifier" = { version = "$ClerkVersion", mount = "Clerk" }
+         |"github:flix/museum-entrance" = { version = "2.0.2", mount = "Entrance" }
+         |""".stripMargin)
+    val before = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+
+    upgrade(p, "flix/museum-entrance@2.0.1", "flix/museum-clerk@1.1.0") match {
+      case Ok(_) => fail("Expected the incompatible version to be refused.")
+      case Err(_) => // Expected.
+    }
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == before)
+  }
+
+  test("upgrade.09") {
+    // A command that names no package moves every package the project declares to the newest
+    // release of the major it is declared at, and reports the newer major of museum rather than
+    // taking it. museum has released 3.0.2 as well as 4.0.0, and museum-clerk 2.1.3.
+    val museum = PackageId(Repository.GitHub, "flix", "museum")
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |# museum reaches museum-restaurant, which has a Maven dependency.
+         |"$museum" = { version = "3.0.1", security = "unrestricted" }
+         |"$ClerkIdentifier" = { version = "2.1.0", mount = "Clerk" }
+         |""".stripMargin)
+
+    val bytes = new ByteArrayOutputStream()
+    Bootstrap.upgrade(p, Nil, PkgTestUtils.gitHubToken)(Formatter.NoFormatter, new PrintStream(bytes)).unsafeGet
+
+    assert(flixDependency(p, museum).version == SemVer(3, 0, 2))
+    assert(flixDependency(p, ClerkIdentifier).version == ClerkVersion)
+    assert(bytes.toString.contains("A newer major release is available, ask for it by name:"))
+    assert(bytes.toString.contains("flix upgrade flix/museum@4.0.0"))
+
+    // The majors are reported after the versions that changed, and not before them.
+    assert(bytes.toString.indexOf("Upgraded") < bytes.toString.indexOf("A newer major release"))
+  }
+
+  test("upgrade.10") {
+    // Every package is declared at the newest release of its major, so nothing changes and
+    // nothing is rewritten, comments included.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    val toml =
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |# The clerk of the museum.
+         |"$ClerkIdentifier" = { version = "$ClerkVersion", mount = "Clerk" }
+         |""".stripMargin
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML), toml)
+
+    val bytes = new ByteArrayOutputStream()
+    Bootstrap.upgrade(p, Nil, PkgTestUtils.gitHubToken)(Formatter.NoFormatter, new PrintStream(bytes)).unsafeGet
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == toml)
+    assert(bytes.toString.contains("All dependencies are up to date."))
+
+    // A package that is current is not one to read about when no package was named.
+    assert(!bytes.toString.contains("is already at"))
+  }
+
+  test("upgrade.11") {
+    // A project that declares no dependencies has none to move, and is not a project the command
+    // fails on. Nothing is asked of GitHub, since there is nothing to ask about.
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    val toml = Files.readString(p.resolve(Bootstrap.FLIX_TOML))
+
+    val bytes = new ByteArrayOutputStream()
+    Bootstrap.upgrade(p, Nil, None)(Formatter.NoFormatter, new PrintStream(bytes)).unsafeGet
+
+    assert(Files.readString(p.resolve(Bootstrap.FLIX_TOML)) == toml)
+    assert(bytes.toString.contains("All dependencies are up to date."))
   }
 
   test("build") {
@@ -96,14 +823,14 @@ class TestBootstrap extends AnyFunSuite {
     // Use 1 thread for deterministic symbols
     flix1.setOptions(flix1.options.copy(threads = 1))
     b1.buildJar(flix1)
-    val hash1 = calcHash(jarPath)
+    val hash1 = Sha256.ofFile(jarPath)
 
     val b2 = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val flix2 = PkgTestUtils.mkFlix(b2)
     // Use 1 thread for deterministic symbols
     flix2.setOptions(flix2.options.copy(threads = 1))
     b2.buildJar(flix2)
-    val hash2 = calcHash(jarPath)
+    val hash2 = Sha256.ofFile(jarPath)
 
     assert(
       hash1 == hash2,
@@ -111,29 +838,25 @@ class TestBootstrap extends AnyFunSuite {
   }
 
   test("build-pkg") {
-    val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p)(System.out)
+    val p = mkPackageProject()
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault)
+    b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault).unsafeGet
 
-    val packageName = p.getFileName.toString
-    val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
-    assert(Files.exists(packagePath))
-    assert(packagePath.getFileName.toString.startsWith(ProjectPrefix))
+    // The package has a fixed name, and is not named after the directory it is built in: a
+    // release asset has to be found again from the repository and the version alone.
+    assert(Files.exists(packagePath(p)))
+    assert(!packagePath(p).getFileName.toString.startsWith(ProjectPrefix))
   }
 
   test("build-pkg generates ZIP entries with fixed time") {
-    val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p)(System.out)
+    val p = mkPackageProject()
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault)
+    b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault).unsafeGet
 
-    val packageName = p.getFileName.toString
-    val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
     val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-    for (e <- new ZipFile(packagePath.toFile).entries().asScala) {
+    for (e <- new ZipFile(packagePath(p).toFile).entries().asScala) {
       val time = new Date(e.getTime)
       val formatted = format.format(time)
       assert(formatted == "2014-06-27 00:00:00")
@@ -141,22 +864,19 @@ class TestBootstrap extends AnyFunSuite {
   }
 
   test("build-pkg always generates package that is byte-for-byte exactly the same") {
-    val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p)(System.out)
-    val packageName = p.getFileName.toString
-    val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
+    val p = mkPackageProject()
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val flix = PkgTestUtils.mkFlix(b)
     b.build(flix)
 
-    b.buildPkg(flix)(Formatter.getDefault)
+    b.buildPkg(flix)(Formatter.getDefault).unsafeGet
 
-    val hash1 = calcHash(packagePath)
+    val hash1 = Sha256.ofFile(packagePath(p))
 
-    b.buildPkg(flix)(Formatter.getDefault)
+    b.buildPkg(flix)(Formatter.getDefault).unsafeGet
 
-    val hash2 = calcHash(packagePath)
+    val hash2 = Sha256.ofFile(packagePath(p))
 
     assert(
       hash1 == hash2,
@@ -164,8 +884,7 @@ class TestBootstrap extends AnyFunSuite {
   }
 
   test("build-pkg refuses a project that does not check") {
-    val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p)(System.out)
+    val p = mkPackageProject()
     // A public module in a file whose path does not match its name.
     Files.writeString(p.resolve("src").resolve("Bar.flix"), "pub mod Foo { pub def f(): Int32 = 1 }")
 
@@ -173,9 +892,7 @@ class TestBootstrap extends AnyFunSuite {
     val result = b.buildPkg(PkgTestUtils.mkFlix(b))(Formatter.getDefault)
     assert(result.toOption.isEmpty)
 
-    val packageName = p.getFileName.toString
-    val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
-    assert(!Files.exists(packagePath))
+    assert(!Files.exists(packagePath(p)))
   }
 
   test("run") {
@@ -205,7 +922,7 @@ class TestBootstrap extends AnyFunSuite {
            |${buildFiles.mkString(System.lineSeparator())}
            |""".stripMargin)
     }
-    b.clean()
+    Bootstrap.clean(p)
     val newBuildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
     if (newBuildFiles.nonEmpty || Files.exists(buildDir)) {
       fail(
@@ -222,7 +939,7 @@ class TestBootstrap extends AnyFunSuite {
     b.buildClasses(PkgTestUtils.mkFlix(b))
     val buildDir = p.resolve("./build/").normalize()
     FileOps.writeString(buildDir.resolve("./other.txt").normalize(), "hello")
-    b.clean() match {
+    Bootstrap.clean(p) match {
       case Result.Ok(_) => fail("expected clean to abort")
       case Result.Err(_) => succeed
     }
@@ -231,12 +948,11 @@ class TestBootstrap extends AnyFunSuite {
   test("clean-should-succeed-on-non-existent-build-dir") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet
-    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val buildDir = p.resolve("./build/").normalize()
     if (Files.exists(buildDir)) {
       fail("did not expected build directory to exist")
     }
-    b.clean() match {
+    Bootstrap.clean(p) match {
       case Result.Ok(_) => succeed
       case Result.Err(_) => fail("expected success")
     }
@@ -248,183 +964,15 @@ class TestBootstrap extends AnyFunSuite {
       """
         |def main(): Unit = ()
         |""".stripMargin)
-    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val buildDir = p.resolve("./build/").normalize()
     if (Files.exists(buildDir)) {
       fail("did not expected build directory to exist")
     }
-    b.clean() match {
+    Bootstrap.clean(p) match {
       case Result.Ok(_) => fail("expected failure in directory mode")
-      case Result.Err(_) => succeed
+      case Result.Err(_: BootstrapError.NoProject) => succeed
+      case Result.Err(e) => fail(s"Expected BootstrapError.NoProject, but got: ${e.message(Formatter.NoFormatter)}")
     }
-  }
-
-  test("eff-lock should write effect lock file") {
-    val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
-
-    // Override manifest
-    val toml = PkgTestUtils.mkTomlWithDeps(
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.1", security = "unrestricted" }
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "unrestricted" }
-        |""".stripMargin
-    )
-    FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
-
-    // Override main file
-    val main =
-      """
-        |pub def main(): Unit \ IO =
-        |    TestPkgTrustTransitive.entry()
-        |""".stripMargin
-    FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
-
-    // Assert effects.lock does not exist
-    val effectLockFile = p.resolve("effects.lock").normalize()
-    if (Files.exists(effectLockFile)) {
-      fail("Unexpected 'effects.lock' file. File is not supposed to exist")
-    }
-
-    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-    val flix = PkgTestUtils.mkFlix(bootstrap)
-    bootstrap.lockEffects(flix).unsafeGet
-
-    // Assert that effects.lock exists now
-    if (Files.exists(effectLockFile)) {
-      succeed
-    } else {
-      fail("File 'effects.lock' does not exist")
-    }
-  }
-
-  test("eff-check on same version as before is ok") {
-    // Version 0.1.0 of the dependency has signature `Int32 -> Int32`.
-    // There is no upgrade done, but we assert that
-    // performing eff-check after eff-lock succeeds.
-    val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
-
-    // Override manifest
-    val toml = PkgTestUtils.mkTomlWithDeps(
-      """
-        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = "0.1.0"
-        |""".stripMargin
-    )
-    FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
-
-    // Override main file
-    val main =
-      """
-        |pub def main(): Unit \ IO =
-        |    println(Upgr.entrypoint(42))
-        |""".stripMargin
-    FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
-
-    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-    bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap)).unsafeGet
-
-    assert(bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap)) == Result.Ok(()))
-  }
-
-  test("eff-check on effect unsafe upgrade reports error") {
-    // Version 0.1.0 of the dependency has signature `Int32 -> Int32`.
-    // Version 0.1.1 of the dependency has signature `Int32 -> Int32 \ IO`.
-    // We upgrade from `Int32 -> Int32` to `Int32 -> Int32 \ IO`
-    // and assert that it does NOT succeed.
-    val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
-
-    val pkgAuthor = "jaschdoc"
-    val pkgName = "flix-test-pkg-eff-upgrade"
-    val vOld = "0.1.0"
-    val vNew = "0.1.1"
-
-    // Override manifest
-    val toml = PkgTestUtils.mkTomlWithDeps(
-      s"""
-         |"github:$pkgAuthor/$pkgName" = "$vOld"
-         |""".stripMargin
-    )
-    FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
-
-    // Override main file
-    val main =
-      """
-        |pub def main(): Unit \ IO =
-        |    println(Upgr.entrypoint(42))
-        |""".stripMargin
-    FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
-
-    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-    bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap)).unsafeGet
-
-    // Perform upgrade by overriding manifest
-    val tomlUpgr = PkgTestUtils.mkTomlWithDeps(
-      s"""
-         |"github:$pkgAuthor/$pkgName" = "$vNew"
-         |""".stripMargin
-    )
-    FileOps.writeString(p.resolve("flix.toml").normalize(), tomlUpgr)
-    // Delete old files
-    FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vOld/$pkgName-$vOld.toml")).unsafeGet
-    FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vOld/$pkgName-$vOld.fpkg")).unsafeGet
-
-    val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-
-    bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix(bootstrapUpgr)) match {
-      case Result.Err(BootstrapError.EffectUpgradeError(_)) => succeed
-      case Result.Err(e) => fail(e.message(Formatter.getDefault))
-      case Result.Ok(()) => fail("expected effect upgrade error")
-    }
-  }
-
-  test("eff-check on effect downgrade is ok") {
-    // Version 0.1.0 of the dependency has signature `Int32 -> Int32`.
-    // Version 0.1.1 of the dependency has signature `Int32 -> Int32 \ IO`.
-    // We downgrade from `Int32 -> Int32 \ IO` to `Int32 -> Int32`
-    // and assert that it succeeds.
-    val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
-
-    val pkgAuthor = "jaschdoc"
-    val pkgName = "flix-test-pkg-eff-upgrade"
-    val vSafe = "0.1.0"
-    val vUnsafe = "0.1.1"
-
-    // Override manifest
-    val toml = PkgTestUtils.mkTomlWithDeps(
-      s"""
-         |"github:$pkgAuthor/$pkgName" = "$vUnsafe"
-         |""".stripMargin
-    )
-    FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
-
-    // Override main file
-    val main =
-      """
-        |pub def main(): Unit \ IO =
-        |    println(Upgr.entrypoint(42))
-        |""".stripMargin
-    FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
-
-    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-    bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap)).unsafeGet
-
-    // Perform upgrade by overriding manifest
-    val tomlUpgr = PkgTestUtils.mkTomlWithDeps(
-      s"""
-         |"github:$pkgAuthor/$pkgName" = "$vSafe"
-         |""".stripMargin
-    )
-    FileOps.writeString(p.resolve("flix.toml").normalize(), tomlUpgr)
-    // Delete old files
-    FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vUnsafe/$pkgName-$vUnsafe.toml")).unsafeGet
-    FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vUnsafe/$pkgName-$vUnsafe.fpkg")).unsafeGet
-
-    val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-
-    assert(bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix(bootstrapUpgr)) == Result.Ok(()))
   }
 
   test("flix-version.current") {
@@ -476,17 +1024,85 @@ class TestBootstrap extends AnyFunSuite {
   private def mkTomlWithFlixVersion(v: String): String = {
     s"""
        |[package]
-       |name = "test"
-       |description = "test"
        |version = "0.1.0"
        |flix = "$v"
-       |authors = ["flix"]
        |""".stripMargin
   }
 
-  private def calcHash(p: Path): String = {
-    val sha = MessageDigest.getInstance("SHA-256")
-    sha.digest(Files.readAllBytes(p)).map("%02x".format(_)).mkString
+  /**
+    * The identifier of the package the lock file tests depend on.
+    */
+  private val ClerkIdentifier: PackageId = PackageId(Repository.GitHub, "flix", "museum-clerk")
+
+  /**
+    * The version of [[ClerkIdentifier]] that [[mkProjectWithDependency]] declares.
+    *
+    * A package is installed by downloading the `package.fpkg` of its release, so a version the
+    * tests build against is one that publishes it.
+    */
+  private val ClerkVersion: SemVer = SemVer(2, 1, 3)
+
+  /**
+    * Installs `specs` into the project at `p`, without asking anything of whoever runs the tests.
+    */
+  private def install(p: Path, specs: String*): Result[Unit, BootstrapError] =
+    Bootstrap.install(p, specs.toList, PkgTestUtils.gitHubToken, assumeYes = true)(Formatter.getDefault, System.out)
+
+  /**
+    * Removes `specs` from the project at `p`.
+    */
+  private def remove(p: Path, specs: String*): Result[Unit, BootstrapError] =
+    Bootstrap.remove(p, specs.toList, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out)
+
+  /**
+    * Declares `specs` at other versions in the project at `p`.
+    */
+  private def upgrade(p: Path, specs: String*): Result[Unit, BootstrapError] =
+    Bootstrap.upgrade(p, specs.toList, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out)
+
+  /**
+    * Returns the dependency on `id` that the manifest of the project at `p` declares.
+    */
+  private def flixDependency(p: Path, id: PackageId): Dependency.FlixDependency = {
+    val manifest = ManifestParser.parse(p.resolve(Bootstrap.FLIX_TOML)).unsafeGet
+    manifest.flixDependencies.find(dep => dep.id == id) match {
+      case Some(dep) => dep
+      case None => fail(s"Expected '$id' to be a dependency of the project.")
+    }
   }
+
+  /**
+    * Returns a new project directory whose manifest declares a single Flix dependency.
+    */
+  private def mkProjectWithDependency(): Path = {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    Files.writeString(p.resolve(Bootstrap.FLIX_TOML),
+      s"""
+         |[package]
+         |version = "0.1.0"
+         |flix = "${Version.CurrentVersion}"
+         |
+         |[dependencies]
+         |"$ClerkIdentifier" = { version = "$ClerkVersion", mount = "Clerk" }
+         |""".stripMargin)
+    p
+  }
+
+  /**
+    * Returns the path that the dependency of [[mkProjectWithDependency]] is installed at in the
+    * project at `p`, with the given extension.
+    */
+  private def clerkFile(p: Path, ext: String): Path =
+    libFile(p, ClerkIdentifier, ClerkVersion, ext)
+
+  /**
+    * Returns the path that `id` is installed at in the project at `p`, at `version` and with the
+    * given extension.
+    */
+  private def libFile(p: Path, id: PackageId, version: SemVer, ext: String): Path =
+    Bootstrap.getLibraryDirectory(p)
+      .resolve("github").resolve(id.owner).resolve(id.name).resolve(version.toString)
+      .resolve(s"${id.name}-$version.$ext")
 
 }
