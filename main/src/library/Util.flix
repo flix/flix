@@ -8,11 +8,4 @@
 ///
 /// Modules for general-purpose utilities.
 ///
-/// The submodules are:
-///
-/// - `Util.Checksum` computes cryptographic digests, such as SHA-256.
-/// - `Util.Codec` encodes and decodes data, such as Base64.
-/// - `Util.GetOpt` parses command-line options and arguments.
-/// - `Util.Json` parses, builds, and serializes JSON values.
-///
 pub mod Util {}

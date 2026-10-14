@@ -8,11 +8,6 @@
 ///
 /// Modules for mathematical utilities.
 ///
-/// The submodules are:
-///
-/// - `Math.Random` generates pseudorandom numbers.
-/// - `Math.Shuffle` produces random permutations of collections.
-///
 pub mod Math {
     /* empty */
 }
