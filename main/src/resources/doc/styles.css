@@ -15,6 +15,8 @@
     --ui-font: "Inter", sans-serif;
     --prose-font: "Open Sans", sans-serif;
     --code-font: "Fira Code", monospace;
+    --h1-font-weight: 300;
+    --h2-font-weight: 500;
 
     --bg-color-1: light-dark(#ffffff, #151719);
     --bg-color-2: light-dark(#fcfcfd, #101214);
@@ -25,6 +27,9 @@
     /* #8a8a8a on white is ~3.5:1, below the WCAG AA minimum (4.5:1) for body text; #6b6b6b is
        ~5.3:1 while still reading as a muted/faded gray. */
     --faded-text-color: light-dark(#6b6b6b, #8a8a8a);
+    --sidebar-bg-color: var(--bg-color-1);
+    --sidebar-text-color: var(--text-color);
+    --sidebar-heading-color: var(--heading-color);
     --annotation-color: light-dark(#b15422, #e7a37e);
     --keyword-color: light-dark(#030303, #fcfcfc);
     --name-color: light-dark(#b12250, #ff6696);
@@ -59,6 +64,84 @@
 }
 :root[data-theme="dark"] {
     color-scheme: dark;
+}
+
+/* Book: the Rust and Navy themes of mdBook, which doc.flix.dev is built with, so that the book and
+   this reference read as one site. The chrome follows the book's own variables, the code the
+   highlighting themes it pairs with each, and the fonts are its Open Sans and Source Code Pro.
+   Where a shade of the book falls short of the 4.5:1 contrast of body text, a darker or lighter
+   one stands in. */
+:root[data-theme="book-rust"] {
+    color-scheme: light;
+
+    --display-font: "Open Sans", sans-serif;
+    --body-font: "Open Sans", sans-serif;
+    --ui-font: "Open Sans", sans-serif;
+    --code-font: "Source Code Pro", monospace;
+    --h1-font-weight: 700;
+    --h2-font-weight: 700;
+
+    --bg-color-1: #eeeee9;
+    --bg-color-2: #e1e1db;
+    --bg-color-3: #e1e1db;
+    --border-color: #cbcbc2;
+    --heading-color: #262625;
+    --text-color: #262625;
+    --faded-text-color: #625f52;
+    --sidebar-bg-color: #3b2e2a;
+    --sidebar-text-color: #c8c9db;
+    --sidebar-heading-color: #c8c9db;
+    --annotation-color: #625f52;
+    --keyword-color: #262625;
+    --name-color: #8f2f1a;
+    --type-color: #1f6a91;
+    --kind-color: #625f52;
+    --effect-color: #8a5606;
+    --doc-code-color: #5a574c;
+    --show-hide-color: #1f6a91;
+    --show-hide-hover-color: #175273;
+    --shadow-color: transparent;
+    --highlight-color: #e69f67;
+
+    --comment-color: #575757;
+    --string-color: #007600;
+    --number-color: #b21e00;
+}
+:root[data-theme="book-navy"] {
+    color-scheme: dark;
+
+    --display-font: "Open Sans", sans-serif;
+    --body-font: "Open Sans", sans-serif;
+    --ui-font: "Open Sans", sans-serif;
+    --code-font: "Source Code Pro", monospace;
+    --h1-font-weight: 700;
+    --h2-font-weight: 700;
+
+    --bg-color-1: #1d2130;
+    --bg-color-2: #161923;
+    --bg-color-3: #161923;
+    --border-color: #30364b;
+    --heading-color: #dcdded;
+    --text-color: #bcbdd0;
+    --faded-text-color: #8a8ea8;
+    --sidebar-bg-color: #282d3f;
+    --sidebar-text-color: #c8c9db;
+    --sidebar-heading-color: #c8c9db;
+    --annotation-color: #8f93a8;
+    --keyword-color: #dcdded;
+    --name-color: #e6b673;
+    --type-color: #6cb4e4;
+    --kind-color: #8a8ea8;
+    --effect-color: #d19af0;
+    --doc-code-color: #c5c8c6;
+    --show-hide-color: #6cb4e4;
+    --show-hide-hover-color: #8fc8ee;
+    --shadow-color: transparent;
+    --highlight-color: #2b79a2;
+
+    --comment-color: #969896;
+    --string-color: #b5bd68;
+    --number-color: #de935f;
 }
 /* END THEMES */
 
@@ -112,14 +195,14 @@ h1, h2 {
 h1 {
     font-family: var(--display-font);
     font-size: 4.5rem;
-    font-weight: 300;
+    font-weight: var(--h1-font-weight);
     margin-bottom: 3rem;
 }
 
 h2 {
     font-family: var(--display-font);
     font-size: 2rem;
-    font-weight: 500;
+    font-weight: var(--h2-font-weight);
     margin-bottom: 1.5rem;
 }
 
@@ -352,7 +435,8 @@ nav {
     top: var(--header-height);
     height: calc(100dvh - var(--header-height));
 
-    background-color: var(--bg-color-1);
+    background-color: var(--sidebar-bg-color);
+    color: var(--sidebar-text-color);
     box-shadow: 0 0 10px 0 var(--shadow-color);
     border-right: var(--border);
     box-sizing: border-box;
@@ -361,6 +445,12 @@ nav {
     overflow-y: auto;
     z-index: 1;
 }
+nav a {
+    color: var(--sidebar-text-color);
+}
+nav h3 {
+    color: var(--sidebar-heading-color);
+}
 @media screen and (max-width: 800px) {
     nav {
         position: fixed;
@@ -368,7 +458,7 @@ nav {
         width: 100%;
         bottom: 0;
         border: none;
-        background-color: var(--bg-color-1);
+        background-color: var(--sidebar-bg-color);
         border-radius: 0.5rem;
         box-shadow: 0 0 10px 0 var(--shadow-color);
         border-top: var(--border);
