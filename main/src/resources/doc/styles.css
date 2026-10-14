@@ -39,16 +39,19 @@
     --doc-code-color: light-dark(#d63384, #ff66b3);
     --show-hide-color: light-dark(#0d6efd, #68a4fd);
     --show-hide-hover-color: light-dark(#0a58ca, #3c86f6);
-    --module-color: #a0a5ff;
-    --signature-color: #dfa0ff;
-    --trait-def-color: #bfb280;
-    --traits-color: #fc9d9a;
-    --enum-color: #c8c8a9;
-    --struct-color: #9ccfcf;
-    --op-color: #ccaeff;
-    --eff-color: #ffaefa;
-    --type-alias-color: #f9cdad;
-    --def-color: #83af9b;
+    /* The bullets of the sidebar, one color per kind of entry. A theme may set one color for all
+       of them instead, with `--sidebar-bullet-color`; Classic does not, so these fall back to its
+       own. */
+    --module-color: var(--sidebar-bullet-color, #a0a5ff);
+    --signature-color: var(--sidebar-bullet-color, #dfa0ff);
+    --trait-def-color: var(--sidebar-bullet-color, #bfb280);
+    --traits-color: var(--sidebar-bullet-color, #fc9d9a);
+    --enum-color: var(--sidebar-bullet-color, #c8c8a9);
+    --struct-color: var(--sidebar-bullet-color, #9ccfcf);
+    --op-color: var(--sidebar-bullet-color, #ccaeff);
+    --eff-color: var(--sidebar-bullet-color, #ffaefa);
+    --type-alias-color: var(--sidebar-bullet-color, #f9cdad);
+    --def-color: var(--sidebar-bullet-color, #83af9b);
     --shadow-color: light-dark(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.3));
     --highlight-color: light-dark(rgba(0, 0, 0, 0.3), hsla(50, 0%, 100%, 0.3));
 
@@ -67,8 +70,9 @@
 }
 
 /* Book: the Rust, Navy and Ayu themes of mdBook, which doc.flix.dev is built with, so that the book
-   and this reference read as one site. The chrome follows the book's own variables, the code the
-   highlighting theme it pairs with each, and the fonts are its Open Sans and Source Code Pro.
+   and this reference read as one site. The chrome follows the book's own variables, the bullets
+   of the sidebar take the color the book gives the open chapter, the code follows the
+   highlighting theme the book pairs with each, and the fonts are its Open Sans and Source Code Pro.
    Where a shade of the book falls short of the 4.5:1 contrast of body text, a darker or lighter
    one stands in. */
 :root[data-theme="book-rust"] {
@@ -91,6 +95,7 @@
     --sidebar-bg-color: #3b2e2a;
     --sidebar-text-color: #c8c9db;
     --sidebar-heading-color: #c8c9db;
+    --sidebar-bullet-color: #e69f67;
     --annotation-color: #625f52;
     --keyword-color: #262625;
     --name-color: #8f2f1a;
@@ -127,6 +132,7 @@
     --sidebar-bg-color: #282d3f;
     --sidebar-text-color: #c8c9db;
     --sidebar-heading-color: #c8c9db;
+    --sidebar-bullet-color: #2b79a2;
     --annotation-color: #8f93a8;
     --keyword-color: #dcdded;
     --name-color: #e6b673;
@@ -163,6 +169,7 @@
     --sidebar-bg-color: #14191f;
     --sidebar-text-color: #c8c9db;
     --sidebar-heading-color: #c8c9db;
+    --sidebar-bullet-color: #ffb454;
     --annotation-color: #ffee99;
     --keyword-color: #ff7733;
     --name-color: #ffb454;
