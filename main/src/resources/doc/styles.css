@@ -204,6 +204,13 @@ html, body {
     padding: 0;
 }
 
+/* The background of the root element is what the browser paints past the end of the page and
+   when the page is overscrolled. Without it that is the browser's own canvas, white in most
+   browsers, whatever the theme. */
+html {
+    background-color: var(--bg-color-2);
+}
+
 /* Keeps content available to screen readers while hiding it visually, without affecting layout. */
 .visually-hidden {
     position: absolute;
