@@ -85,6 +85,9 @@ object HtmlDocumentor {
     "system" -> "System",
     "light" -> "Light",
     "dark" -> "Dark",
+    "book-rust" -> "Book Rust",
+    "book-navy" -> "Book Navy",
+    "book-ayu" -> "Book Ayu",
   )
 
   /**
@@ -98,8 +101,9 @@ object HtmlDocumentor {
     "Fira+Code:wght@400;700",
     "Inter",
     "Noto+Sans",
-    "Open+Sans",
+    "Open+Sans:wght@400;700",
     "Oswald",
+    "Source+Code+Pro:wght@400;700",
   )
 
   /**
