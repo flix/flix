@@ -87,6 +87,7 @@ object HtmlDocumentor {
     "dark" -> "Dark",
     "book-rust" -> "Book Rust",
     "book-navy" -> "Book Navy",
+    "book-ayu" -> "Book Ayu",
   )
 
   /**

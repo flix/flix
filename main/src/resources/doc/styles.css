@@ -66,9 +66,9 @@
     color-scheme: dark;
 }
 
-/* Book: the Rust and Navy themes of mdBook, which doc.flix.dev is built with, so that the book and
-   this reference read as one site. The chrome follows the book's own variables, the code the
-   highlighting themes it pairs with each, and the fonts are its Open Sans and Source Code Pro.
+/* Book: the Rust, Navy and Ayu themes of mdBook, which doc.flix.dev is built with, so that the book
+   and this reference read as one site. The chrome follows the book's own variables, the code the
+   highlighting theme it pairs with each, and the fonts are its Open Sans and Source Code Pro.
    Where a shade of the book falls short of the 4.5:1 contrast of body text, a darker or lighter
    one stands in. */
 :root[data-theme="book-rust"] {
@@ -142,6 +142,42 @@
     --comment-color: #969896;
     --string-color: #b5bd68;
     --number-color: #de935f;
+}
+:root[data-theme="book-ayu"] {
+    color-scheme: dark;
+
+    --display-font: "Open Sans", sans-serif;
+    --body-font: "Open Sans", sans-serif;
+    --ui-font: "Open Sans", sans-serif;
+    --code-font: "Source Code Pro", monospace;
+    --h1-font-weight: 700;
+    --h2-font-weight: 700;
+
+    --bg-color-1: #191f26;
+    --bg-color-2: #0f141a;
+    --bg-color-3: #0f141a;
+    --border-color: #222e39;
+    --heading-color: #e6e1cf;
+    --text-color: #c5c5c5;
+    --faded-text-color: #868794;
+    --sidebar-bg-color: #14191f;
+    --sidebar-text-color: #c8c9db;
+    --sidebar-heading-color: #c8c9db;
+    --annotation-color: #ffee99;
+    --keyword-color: #ff7733;
+    --name-color: #ffb454;
+    --type-color: #36a3d9;
+    --kind-color: #868794;
+    --effect-color: #d2a6ff;
+    --doc-code-color: #ffb454;
+    --show-hide-color: #0096cf;
+    --show-hide-hover-color: #36a3d9;
+    --shadow-color: transparent;
+    --highlight-color: #ffb454;
+
+    --comment-color: #7e8996;
+    --string-color: #b8cc52;
+    --number-color: #ffee99;
 }
 /* END THEMES */
 
