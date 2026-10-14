@@ -8,18 +8,6 @@
 ///
 /// Modules for networking.
 ///
-/// The submodules are:
-///
-/// - `Http` and `Https` perform web requests.
-/// - `HttpRequest` and `HttpResponse` represent the messages exchanged.
-/// - `Method` represents an HTTP method and `Body` an HTTP message body.
-/// - `Retry` configures how failed requests are retried.
-/// - `Dns` resolves host names and `Ping` checks host reachability.
-/// - `TcpConnect`, `TcpBind`, and `TcpAccept` open and accept TCP connections.
-/// - `TcpServer` and `TcpSocket` represent a listening server and a connection.
-/// - `IpAddr`, `Ipv4Addr`, and `Ipv6Addr` represent IP addresses.
-/// - `SocketAddr` represents a socket address (an IP address and a port).
-///
 pub mod Net {
     /* empty */
 }
