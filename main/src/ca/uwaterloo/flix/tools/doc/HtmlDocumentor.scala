@@ -69,11 +69,44 @@ object HtmlDocumentor {
     */
   private val IconClasses: List[(String, String)] = List(
     "back" -> "back",
+    "check" -> "check",
     "close" -> "close",
-    "dark" -> "darkMode",
-    "light" -> "lightMode",
     "open" -> "menu",
+    "theme" -> "palette",
   )
+
+  /**
+    * The themes of the documentation, as pairs of the value of the `data-theme` attribute that
+    * selects a theme in the stylesheet and the name of the theme in the menu, in the order of the
+    * menu. `system` is no theme but the absence of one: with no attribute set, the stylesheet
+    * follows the system between the light and dark variants of the default theme.
+    */
+  private val Themes: List[(String, String)] = List(
+    "system" -> "System",
+    "light" -> "Light",
+    "dark" -> "Dark",
+  )
+
+  /**
+    * The font families that the stylesheet names, as `family` parameters of the Google Fonts CSS
+    * API. The families of every theme are listed: a browser fetches a font only for a family and
+    * weight that rendered text uses, so a reader never pays for the fonts of another theme. Only
+    * the regular weight is served unless others are named; the bold weight of the font of code
+    * sets the keywords of a source page.
+    */
+  private val FontFamilies: List[String] = List(
+    "Fira+Code:wght@400;700",
+    "Inter",
+    "Noto+Sans",
+    "Open+Sans",
+    "Oswald",
+  )
+
+  /**
+    * The one stylesheet that serves the fonts of [[FontFamilies]].
+    */
+  private val FontStylesheet: String =
+    FontFamilies.map("family=" + _).mkString("https://fonts.googleapis.com/css2?", "&", "&display=swap")
 
   /**
     * Generates the API documentation for `root` and writes it to `outputDir`.
@@ -595,7 +628,7 @@ object HtmlDocumentor {
     val sortedDefs = mod.defs.sortBy(_.sym.name)
 
     sb.append(mkHead(mod.qualifiedName, mod.fileName))
-    sb.append("<body class='no-script'>")
+    sb.append("<body>")
 
     docHeader()
 
@@ -678,7 +711,7 @@ object HtmlDocumentor {
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
     sb.append(mkHead(trt.qualifiedName, trt.fileName))
-    sb.append("<body class='no-script'>")
+    sb.append("<body>")
 
     docHeader()
 
@@ -786,7 +819,7 @@ object HtmlDocumentor {
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
     sb.append(mkHead(eff.qualifiedName, eff.fileName))
-    sb.append("<body class='no-script'>")
+    sb.append("<body>")
 
     docHeader()
 
@@ -884,7 +917,7 @@ object HtmlDocumentor {
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
     sb.append(mkHead(enm.qualifiedName, enm.fileName))
-    sb.append("<body class='no-script'>")
+    sb.append("<body>")
 
     docHeader()
 
@@ -977,7 +1010,7 @@ object HtmlDocumentor {
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
     sb.append(mkHead(struct.qualifiedName, struct.fileName))
-    sb.append("<body class='no-script'>")
+    sb.append("<body>")
 
     docHeader()
 
@@ -1059,7 +1092,7 @@ object HtmlDocumentor {
     implicit val sb: StringBuilder = new StringBuilder()
 
     sb.append(mkHead("Page Not Found", "404.html"))
-    sb.append("<body class='no-script'>")
+    sb.append("<body>")
 
     docHeader()
 
@@ -1086,7 +1119,7 @@ object HtmlDocumentor {
     implicit val sb: StringBuilder = new StringBuilder()
 
     sb.append(mkHead(name, fileName))
-    sb.append("<body class='no-script'>")
+    sb.append("<body>")
 
     docHeader()
 
@@ -1113,18 +1146,16 @@ object HtmlDocumentor {
        |<script>
        |(function () {
        |    try {
-       |        var stored = localStorage.getItem('flix-html-docs:use-dark-theme');
-       |        if (stored !== null) {
-       |            document.documentElement.dataset.theme = stored === 'true' ? 'dark' : 'light';
+       |        var theme = localStorage.getItem('flix-html-docs:theme');
+       |        if (theme !== null) {
+       |            document.documentElement.dataset.theme = theme;
        |        }
        |    } catch (e) {}
        |})();
        |</script>
-       |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>
-       |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
-       |<link href='https://fonts.googleapis.com/css?family=Noto+Sans&display=swap' rel='stylesheet'>
-       |<link href='https://fonts.googleapis.com/css?family=Inter&display=swap' rel='stylesheet'>
-       |<link href='https://fonts.googleapis.com/css?family=Open+Sans&display=swap' rel='stylesheet'>
+       |<!-- Without script the theme menu could not apply a choice, so it is not shown. -->
+       |<noscript><style>#theme-menu-button { display: none; }</style></noscript>
+       |<link href='$FontStylesheet' rel='stylesheet'>
        |<link href='styles.css' rel='stylesheet'>
        |<link href='favicon.png' rel='icon'>
        |<script type='module' src='./index.js'></script>
@@ -1152,10 +1183,22 @@ object HtmlDocumentor {
 
     sb.append("<div class='spacer' role='presentation'></div>")
 
-    sb.append("<button id='theme-toggle' class='toggle' aria-label='Toggle Theme'>")
-    docIcon("dark")
-    docIcon("light")
+    // The menu is a popover: the browser opens it, closes it on Escape or a click outside, and
+    // keeps it in the top layer. `index.js` applies and stores the choice, and moves the focus.
+    sb.append("<button id='theme-menu-button' class='toggle' popovertarget='theme-menu' aria-label='Choose theme'>")
+    docIcon("theme")
     sb.append("</button>")
+    sb.append("<div id='theme-menu' popover>")
+    sb.append("<ul role='menu' aria-label='Theme'>")
+    for ((value, name) <- Themes) {
+      // The stored theme, if any, is marked by `index.js`; until then the menu says System.
+      val checked = value == "system"
+      sb.append(s"<li role='none'><button role='menuitemradio' aria-checked='$checked' value='$value'>")
+      docIcon("check")
+      sb.append(s"$name</button></li>")
+    }
+    sb.append("</ul>")
+    sb.append("</div>")
 
     // A `<label>` wrapping the checkbox gives the toggle a proper accessible name and an
     // interactive area that matches its whole visual hit target (rather than a bare `<div>`).

@@ -273,17 +273,54 @@ header > .toggle:hover {
     color: var(--text-color)
 }
 
-.no-script #theme-toggle .light.icon,
-:root[data-theme="light"] #theme-toggle .light.icon {
-    display: none;
+/* The theme menu is a popover: the browser opens and closes it, and keeps it in the top layer. It
+   hangs from the right end of the header, below it on a wide screen and above it on a narrow one,
+   where the header sits at the bottom. */
+#theme-menu {
+    inset: var(--header-height) 1rem auto auto;
+    margin: 0;
+    padding: 0.25rem;
+    min-width: 8rem;
+
+    background-color: var(--bg-color-1);
+    color: var(--text-color);
+    border: var(--border);
+    border-radius: 0.2rem;
+    box-shadow: 0 0 10px 0 var(--shadow-color);
 }
-@media (prefers-color-scheme: dark) {
-    .no-script #theme-toggle .dark.icon {
-        display: none;
+@media screen and (max-width: 800px) {
+    #theme-menu {
+        inset: auto 1rem var(--header-height) auto;
     }
 }
-:root[data-theme="dark"] #theme-toggle .dark.icon {
-    display: none;
+#theme-menu > ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+#theme-menu button {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    width: 100%;
+    padding: 0.25rem 0.75rem 0.25rem 0.25rem;
+    border-radius: 0.2rem;
+
+    font-family: var(--ui-font);
+    font-size: 0.85rem;
+    color: var(--text-color);
+    text-align: left;
+}
+#theme-menu button:hover,
+#theme-menu button:focus-visible {
+    background-color: var(--bg-color-3);
+}
+/* The check mark of the chosen theme; the others keep its space, so the names line up. */
+#theme-menu button > .icon {
+    color: var(--show-hide-color);
+}
+#theme-menu button[aria-checked="false"] > .icon {
+    visibility: hidden;
 }
 
 #menu-toggle {

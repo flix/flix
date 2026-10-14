@@ -1,31 +1,67 @@
 function initTheme() {
-    const storeKey = "flix-html-docs:use-dark-theme";
+    const storeKey = "flix-html-docs:theme";
 
-    const root = document.querySelector(":root");
+    const root = document.documentElement;
+    const menu = document.querySelector("#theme-menu");
+    const items = Array.from(menu.querySelectorAll("[role='menuitemradio']"));
 
-    const body = document.querySelector("body");
-    body.classList.remove("no-script");
-
-    function setTheme(useDarkTheme) {
-        root.dataset.theme = useDarkTheme ? "dark" : "light";
+    // Storage can be unavailable, e.g. in a private window; the choice then lasts for the page.
+    function store(theme) {
+        try {
+            if (theme === null) {
+                localStorage.removeItem(storeKey);
+            } else {
+                localStorage.setItem(storeKey, theme);
+            }
+        } catch {}
     }
 
-    let dark;
-    const stored = localStorage.getItem(storeKey);
-    if (stored === null) {
-        // User has not stored any preference. Check if the browser prefers a dark theme.
-        dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    } else {
-        // User has set a preference. Use it.
-        dark = stored === "true";
+    function mark(theme) {
+        for (const item of items) {
+            item.setAttribute("aria-checked", item.value === theme);
+        }
     }
-    setTheme(dark);
 
-    const toggle = document.querySelector("#theme-toggle");
-    toggle.addEventListener("click", () => {
-        dark = !dark;
-        setTheme(dark);
-        localStorage.setItem(storeKey, dark);
+    // `system` is no theme: with the attribute unset, the stylesheet follows the system.
+    function select(theme) {
+        if (theme === "system") {
+            delete root.dataset.theme;
+            store(null);
+        } else {
+            root.dataset.theme = theme;
+            store(theme);
+        }
+        mark(theme);
+    }
+
+    // The head script has applied the stored theme before first paint; mark it in the menu. A
+    // stored theme the menu does not know counts as none.
+    const current = root.dataset.theme;
+    mark(items.some((item) => item.value === current) ? current : "system");
+
+    for (const item of items) {
+        item.addEventListener("click", () => {
+            select(item.value);
+            menu.hidePopover();
+        });
+    }
+
+    // The browser opens and closes the popover; the menu pattern adds the focus on the chosen
+    // theme when it opens, and the arrow keys between the themes.
+    menu.addEventListener("toggle", (e) => {
+        if (e.newState === "open") {
+            const checked = items.find((item) => item.getAttribute("aria-checked") === "true");
+            (checked ?? items[0]).focus();
+        }
+    });
+    menu.addEventListener("keydown", (e) => {
+        const i = items.indexOf(document.activeElement);
+        if (i < 0) return;
+        const moves = { ArrowDown: i + 1, ArrowUp: i - 1, Home: 0, End: items.length - 1 };
+        const j = moves[e.key];
+        if (j === undefined) return;
+        e.preventDefault();
+        items[(j + items.length) % items.length].focus();
     });
 }
 

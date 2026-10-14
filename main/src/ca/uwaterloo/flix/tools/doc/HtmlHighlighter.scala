@@ -130,8 +130,6 @@ object HtmlHighlighter {
     val segments = segmentsOf(path)
 
     sb.append("<link href='highlight.css' rel='stylesheet'>")
-    // The bold weight of the font of code, which the keywords are displayed in.
-    sb.append("<link href='https://fonts.googleapis.com/css?family=Fira+Code:700&display=swap' rel='stylesheet'>")
 
     if (segments.length > 1) {
       sb.append("<div class='breadcrumbs'>")
