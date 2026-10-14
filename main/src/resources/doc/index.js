@@ -7,13 +7,7 @@ function initTheme() {
     body.classList.remove("no-script");
 
     function setTheme(useDarkTheme) {
-        if (useDarkTheme) {
-            root.classList.remove("light");
-            root.classList.add("dark");
-        } else {
-            root.classList.remove("dark");
-            root.classList.add("light");
-        }
+        root.dataset.theme = useDarkTheme ? "dark" : "light";
     }
 
     let dark;

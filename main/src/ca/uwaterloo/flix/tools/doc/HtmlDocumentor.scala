@@ -1115,7 +1115,7 @@ object HtmlDocumentor {
        |    try {
        |        var stored = localStorage.getItem('flix-html-docs:use-dark-theme');
        |        if (stored !== null) {
-       |            document.documentElement.classList.add(stored === 'true' ? 'dark' : 'light');
+       |            document.documentElement.dataset.theme = stored === 'true' ? 'dark' : 'light';
        |        }
        |    } catch (e) {}
        |})();
