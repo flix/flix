@@ -1,48 +1,9 @@
 /* The formatting of a source page, see HtmlHighlighter.
 
-   Only a source page links to this stylesheet, and it does so after `styles.css`, whose variables
-   it uses. Every class of a token is specific to this stylesheet, so that the code can be styled
-   without affecting any other page. */
-
-/* BEGIN VARIABLES */
-:root, :root.light {
-    --light-comment-color: #767676;
-    --light-string-color: #2a7a3b;
-    --light-number-color: #7b3fc4;
-    --light-variable-color: #555555;
-    --light-selected-line-color: rgba(255, 196, 0, 0.22);
-
-    --dark-comment-color: #808080;
-    --dark-string-color: #7fd68f;
-    --dark-number-color: #c9a3ff;
-    --dark-variable-color: #b4b4b4;
-    --dark-selected-line-color: rgba(255, 196, 0, 0.16);
-
-    --comment-color: var(--light-comment-color);
-    --string-color: var(--light-string-color);
-    --number-color: var(--light-number-color);
-    --variable-color: var(--light-variable-color);
-    --selected-line-color: var(--light-selected-line-color);
-}
-@media (prefers-color-scheme: dark) {
-    :root {
-        --comment-color: var(--dark-comment-color);
-        --string-color: var(--dark-string-color);
-        --number-color: var(--dark-number-color);
-        --variable-color: var(--dark-variable-color);
-        --selected-line-color: var(--dark-selected-line-color);
-    }
-}
-:root.dark {
-    --comment-color: var(--dark-comment-color);
-    --string-color: var(--dark-string-color);
-    --number-color: var(--dark-number-color);
-    --variable-color: var(--dark-variable-color);
-    --selected-line-color: var(--dark-selected-line-color);
-}
-/* END VARIABLES */
-
-
+   Only a source page links to this stylesheet, and it does so after `styles.css`, whose tokens it
+   uses: the colors of code are part of each theme there, next to those of a signature. Every class
+   of a token is specific to this stylesheet, so that the code can be styled without affecting any
+   other page. */
 
 /* BEGIN PAGE */
 /* A source page has no sidebar, and gives the width it frees to the code. */
