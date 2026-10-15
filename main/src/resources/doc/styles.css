@@ -509,10 +509,27 @@ nav h3 {
         transform: translateY(0);
     }
 }
-nav > .back {
-    display: flex;
-    gap: 0.1rem;
+/* The head of the sidebar: the name of the page's item, with its parent module beneath. */
+.sidebar-head {
     margin-bottom: 1rem;
+    font-family: var(--ui-font);
+}
+.sidebar-head > h2 {
+    margin: 0;
+    font-family: var(--ui-font);
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--sidebar-heading-color);
+    overflow-wrap: anywhere;
+}
+.sidebar-head > .parent {
+    display: block;
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+.sidebar-head > .parent:hover {
+    opacity: 1;
 }
 nav ul {
     margin-top: 0.2rem;

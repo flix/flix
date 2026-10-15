@@ -1,6 +1,5 @@
 The following files in this directory:
 
-- back.svg
 - check.svg
 - close.svg
 - menu.svg
