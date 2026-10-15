@@ -68,7 +68,6 @@ object HtmlDocumentor {
     * its SVG file, relative to [[Icons]].
     */
   private val IconClasses: List[(String, String)] = List(
-    "back" -> "back",
     "check" -> "check",
     "close" -> "close",
     "open" -> "menu",
@@ -636,7 +635,7 @@ object HtmlDocumentor {
 
     docHeader()
 
-    docSideBar(mod.parent) { () =>
+    docSideBar(mod.parent, mod.name) { () =>
       docSubModules(mod)
       docSideBarSection(
         "Traits",
@@ -719,7 +718,7 @@ object HtmlDocumentor {
 
     docHeader()
 
-    docSideBar(Some(trt.parent)) { () =>
+    docSideBar(Some(trt.parent), trt.name) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Signatures",
@@ -827,7 +826,7 @@ object HtmlDocumentor {
 
     docHeader()
 
-    docSideBar(Some(eff.parent)) { () =>
+    docSideBar(Some(eff.parent), eff.name) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Operations",
@@ -925,7 +924,7 @@ object HtmlDocumentor {
 
     docHeader()
 
-    docSideBar(Some(enm.parent)) { () =>
+    docSideBar(Some(enm.parent), enm.name) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Traits",
@@ -1018,7 +1017,7 @@ object HtmlDocumentor {
 
     docHeader()
 
-    docSideBar(Some(struct.parent)) { () =>
+    docSideBar(Some(struct.parent), struct.name) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Traits",
@@ -1220,17 +1219,16 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSideBar(parent: Option[Symbol.ModuleSym])(docContents: () => Unit)(implicit sb: StringBuilder): Unit = {
+  private def docSideBar(parent: Option[Symbol.ModuleSym], name: String)(docContents: () => Unit)(implicit sb: StringBuilder): Unit = {
     sb.append("<nav aria-label='Sidebar navigation'>")
-    // Visually hidden: gives the section `h3` headings below a proper `h2` ancestor within the
-    // nav landmark's own heading structure, without changing how the sidebar looks.
-    sb.append("<h2 class='visually-hidden'>Sidebar navigation</h2>")
-    parent.map { p =>
-      sb.append(s"<a class='back' href='${escUrl(moduleFileName(p))}'>")
-      docIcon("back")
-      sb.append(moduleName(p))
-      sb.append("</a>")
+    // The name of the item heads the sidebar, as the `h2` that the section `h3`s below sit under
+    // in the outline of the nav landmark, with a link to the parent module beneath it.
+    sb.append("<div class='sidebar-head'>")
+    sb.append(s"<h2>${esc(name)}</h2>")
+    parent.foreach { p =>
+      sb.append(s"<a class='parent' href='${escUrl(moduleFileName(p))}'>in ${esc(moduleName(p))}</a>")
     }
+    sb.append("</div>")
     docContents()
     sb.append("</nav>")
   }
