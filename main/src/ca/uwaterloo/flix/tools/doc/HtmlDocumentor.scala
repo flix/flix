@@ -773,6 +773,7 @@ object HtmlDocumentor {
     sb.append("<main id='main-content'>")
     docBreadcrumbs(Some(trt.parent), trt.name)
     sb.append(s"<h1>${esc(trt.name)}</h1>")
+    mod.foreach(m => modDoc(m.doc))
 
     sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(trt.decl.ann)
@@ -786,7 +787,6 @@ object HtmlDocumentor {
     docActions(None, trt.decl.loc)
     sb.append("</div>")
     docDoc(trt.decl.doc)
-    mod.foreach(m => modDoc(m.doc))
     docSubSection("Associated Types", sortedAssocs, docAssoc)
     docCollapsableSubSection("Instances", sortedInstances, docInstance)
     sb.append("</div>")
@@ -874,6 +874,7 @@ object HtmlDocumentor {
     sb.append("<main id='main-content'>")
     docBreadcrumbs(Some(eff.parent), eff.name)
     sb.append(s"<h1>${esc(eff.name)}</h1>")
+    mod.foreach(m => modDoc(m.doc))
 
     sb.append(s"<div class='box'  id='main-box'>")
     docAnnotations(eff.decl.ann)
@@ -886,7 +887,6 @@ object HtmlDocumentor {
     docActions(None, eff.decl.loc)
     sb.append("</div>")
     docDoc(eff.decl.doc)
-    mod.foreach(m => modDoc(m.doc))
     docDefaultHandler(eff.defaultHandler)
     sb.append("</div>")
 
@@ -967,6 +967,7 @@ object HtmlDocumentor {
     sb.append("<main id='main-content'>")
     docBreadcrumbs(Some(enm.parent), enm.name)
     sb.append(s"<h1>${esc(enm.name)}</h1>")
+    mod.foreach(m => modDoc(m.doc))
 
     sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(enm.decl.ann)
@@ -981,7 +982,6 @@ object HtmlDocumentor {
     sb.append("</div>")
     docCases(enm.decl.cases.values.toList)
     docDoc(enm.decl.doc)
-    mod.foreach(m => modDoc(m.doc))
     docCollapsableSubSection("Instances", sortedInstances, docInstance)
     sb.append("</div>")
 
@@ -1060,6 +1060,7 @@ object HtmlDocumentor {
     sb.append("<main id='main-content'>")
     docBreadcrumbs(Some(struct.parent), struct.name)
     sb.append(s"<h1>${esc(struct.name)}</h1>")
+    mod.foreach(m => modDoc(m.doc))
 
     sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(struct.decl.ann)
@@ -1073,7 +1074,6 @@ object HtmlDocumentor {
     sb.append("</div>")
     docFields(struct.decl.fields.values.toList)
     docDoc(struct.decl.doc)
-    mod.foreach(m => modDoc(m.doc))
     docCollapsableSubSection("Instances", sortedInstances, docInstance)
     sb.append("</div>")
 
