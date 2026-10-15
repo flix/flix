@@ -572,6 +572,11 @@ main {
 main h2 {
     font-family: var(--display-font);
 }
+/* A section heading sits on a thin rule, as rustdoc's do. */
+main > section > h2 {
+    padding-bottom: 0.5rem;
+    border-bottom: var(--border);
+}
 
 .breadcrumbs {
     margin-bottom: 0.5rem;
