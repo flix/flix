@@ -39,19 +39,7 @@
     --doc-code-color: light-dark(#d63384, #ff66b3);
     --show-hide-color: light-dark(#0d6efd, #68a4fd);
     --show-hide-hover-color: light-dark(#0a58ca, #3c86f6);
-    /* The bullets of the sidebar, one color per kind of entry. A theme may set one color for all
-       of them instead, with `--sidebar-bullet-color`; Classic does not, so these fall back to its
-       own. */
-    --module-color: var(--sidebar-bullet-color, #a0a5ff);
-    --signature-color: var(--sidebar-bullet-color, #dfa0ff);
-    --trait-def-color: var(--sidebar-bullet-color, #bfb280);
-    --traits-color: var(--sidebar-bullet-color, #fc9d9a);
-    --enum-color: var(--sidebar-bullet-color, #c8c8a9);
-    --struct-color: var(--sidebar-bullet-color, #9ccfcf);
-    --op-color: var(--sidebar-bullet-color, #ccaeff);
-    --eff-color: var(--sidebar-bullet-color, #ffaefa);
-    --type-alias-color: var(--sidebar-bullet-color, #f9cdad);
-    --def-color: var(--sidebar-bullet-color, #83af9b);
+    --sidebar-bullet-color: var(--faded-text-color);
     --shadow-color: light-dark(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.3));
     --highlight-color: light-dark(rgba(0, 0, 0, 0.3), hsla(50, 0%, 100%, 0.3));
 
@@ -539,36 +527,7 @@ nav li {
 nav li::before {
     content: "●";
     margin-right: 0.3rem;
-}
-nav .sidebar-list-modules li::before {
-    color: var(--module-color);
-}
-nav .sidebar-list-signatures li::before {
-    color: var(--signature-color);
-}
-nav .sidebar-list-trait-defs li::before {
-    color: var(--trait-def-color);
-}
-nav .sidebar-list-traits li::before {
-    color: var(--traits-color);
-}
-nav .sidebar-list-enums li::before {
-    color: var(--enum-color);
-}
-nav .sidebar-list-structs li::before {
-    color: var(--struct-color);
-}
-nav .sidebar-list-operations li::before {
-    color: var(--op-color);
-}
-nav .sidebar-list-effects li::before {
-    color: var(--eff-color);
-}
-nav .sidebar-list-type-aliases li::before {
-    color: var(--type-alias-color);
-}
-nav .sidebar-list-definitions li::before {
-    color: var(--def-color);
+    color: var(--sidebar-bullet-color);
 }
 
 main {
