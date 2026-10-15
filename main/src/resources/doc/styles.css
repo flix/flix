@@ -242,18 +242,20 @@ h1, h2 {
     line-height: 1.2;
 }
 
+/* The sizes are those of the book, doc.flix.dev: the browser's defaults on a 16px body. The margin
+   below each heading follows its size. */
 h1 {
     font-family: var(--display-font);
-    font-size: 4.5rem;
+    font-size: 2rem;
     font-weight: var(--h1-font-weight);
-    margin-bottom: 3rem;
+    margin-bottom: calc(2em / 3);
 }
 
 h2 {
     font-family: var(--display-font);
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: var(--h2-font-weight);
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.75em;
 }
 
 /* Subsection headings are h2 in the document outline but keep the h3 look. */
