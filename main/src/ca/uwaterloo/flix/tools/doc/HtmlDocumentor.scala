@@ -779,6 +779,9 @@ object HtmlDocumentor {
     docAnnotations(trt.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
+    if (trt.decl.mod.isSealed) {
+      sb.append("<span class='keyword'>sealed</span> ")
+    }
     sb.append("<span class='keyword'>trait</span> ")
     sb.append(s"<span class='name'>${esc(trt.name)}</span>")
     docTypeParams(List(trt.decl.tparam))
