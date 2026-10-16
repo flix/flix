@@ -117,10 +117,10 @@ object EntryPoints {
     */
   private def rewriteShellEntryPoint(oldShell: TypedAst.Def): TypedAst.Def = {
     val exp = oldShell.exp.asInstanceOf[TypedAst.Expr.LocalDef]
-    val tpe = exp.bnd.tpe.asInstanceOf[Type.Apply]
     val spec = oldShell.spec.copy(
-      // Replace main's effects with the effects of _f
-      eff = tpe.tpe2,
+      // Replace main's effects with the effects of _f.
+      // The type of _f is the arrow `Unit -> tpe \ eff`. We want `eff`, not the result type `tpe`.
+      eff = exp.bnd.tpe.arrowEffectType,
     )
     // Substitute checked_ecast(()) for the contents of _f
     // Namely, println(exp)
