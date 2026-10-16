@@ -558,7 +558,7 @@ object Weeder2 {
         case Some(tree) =>
           // Strip the `///` prefix, one optional separator space, and trailing whitespace.
           // Internal indentation is preserved so that code blocks and ASCII layout survive.
-          var lines = text(tree).map { s =>
+          var lines = docCommentText(tree).map { s =>
             val s1 = s.stripPrefix("///")
             val s2 = if (s1.startsWith(" ")) s1.drop(1) else s1
             s2.stripTrailing()
@@ -3436,6 +3436,18 @@ object Weeder2 {
     */
   private def pickAllTokens(tree: Tree): Array[Token] = {
     tree.children.collect { case token@Token(_, _, _, _, _, _) => token }
+  }
+
+  /**
+    * Collects the text of the immediate `///` doc comment token children of `tree`.
+    *
+    * A `//` or `/* */` comment that sits inside a run of doc comments is skipped,
+    * since it is not part of the documentation.
+    */
+  private def docCommentText(tree: Tree): List[String] = {
+    tree.children.collect {
+      case token@Token(TokenKind.CommentDoc, _, _, _, _, _) => token.text
+    }.toList
   }
 
   /**
