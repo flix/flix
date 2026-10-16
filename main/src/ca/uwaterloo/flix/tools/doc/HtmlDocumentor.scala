@@ -112,6 +112,29 @@ object HtmlDocumentor {
     FontFamilies.map("family=" + _).mkString("https://fonts.googleapis.com/css2?", "&", "&display=swap")
 
   /**
+    * The built-in types in the order the "Primitives" line of a trait page lists them: the order in
+    * which the language reference presents them, which puts `Int8` before `Int16`, where the
+    * alphabet puts it after `Int64`. A built-in type absent from the list follows the ones on it.
+    */
+  private val PrimitiveOrder: List[TypeConstructor] = List(
+    TypeConstructor.Unit,
+    TypeConstructor.Bool,
+    TypeConstructor.Char,
+    TypeConstructor.Float32,
+    TypeConstructor.Float64,
+    TypeConstructor.BigDecimal,
+    TypeConstructor.Int8,
+    TypeConstructor.Int16,
+    TypeConstructor.Int32,
+    TypeConstructor.Int64,
+    TypeConstructor.BigInt,
+    TypeConstructor.Str,
+    TypeConstructor.Regex,
+    TypeConstructor.Array,
+    TypeConstructor.Vector,
+  )
+
+  /**
     * Generates the API documentation for `root` and writes it to `outputDir`.
     *
     * The declarations link to their source on the pages that [[HtmlHighlighter]] generates.
@@ -374,15 +397,42 @@ object HtmlDocumentor {
     *   1. It is for the type directly, e.g. `Eq[Boxed]`.
     *   1. It is for the type applied to some number of arguments, e.g. `Eq[Chain[a]] with Eq[a]`.
     */
-  private def instancesOf(root: TypedAst.Root)(isType: TypeConstructor => Boolean): List[TypedAst.Instance] = {
-    @tailrec
-    def matches(tpe: Type): Boolean = tpe match {
-      case Type.Cst(tc, _) => isType(tc)
-      case Type.Apply(t, _, _) => matches(t)
-      case _ => false
-    }
+  private def instancesOf(root: TypedAst.Root)(isType: TypeConstructor => Boolean): List[TypedAst.Instance] =
+    root.instances.values.filter(i => typeHead(i.tpe).exists(isType)).toList
 
-    root.instances.values.filter(i => matches(i.tpe)).toList
+  /**
+    * Returns the type constructor at the head of `tpe`, if it has one, e.g. `List` for `List[a]`.
+    */
+  @tailrec
+  private def typeHead(tpe: Type): Option[TypeConstructor] = tpe match {
+    case Type.Cst(tc, _) => Some(tc)
+    case Type.Apply(t, _, _) => typeHead(t)
+    case _ => None
+  }
+
+  /**
+    * Returns `true` if `tpe` is headed by a built-in type, such as `Int32`, `Vector` or a tuple,
+    * which the documentation calls a primitive, and `false` if by an enum or a struct.
+    */
+  private def isPrimitiveType(tpe: Type): Boolean = typeHead(tpe).exists {
+    case _: TypeConstructor.Enum | _: TypeConstructor.Struct => false
+    case _ => true
+  }
+
+  /**
+    * Returns the arity of `tpe` if it is a tuple type, e.g. `2` for `(a, b)`.
+    */
+  private def tupleArity(tpe: Type): Option[Int] = typeHead(tpe).collect {
+    case TypeConstructor.Tuple(arity) => arity
+  }
+
+  /**
+    * Returns the position of the head of `tpe` on [[PrimitiveOrder]], or the length of that list
+    * if it is not on it, so that such a type sorts after the ones that are.
+    */
+  private def primitiveRank(tpe: Type): Int = typeHead(tpe) match {
+    case Some(tc) if PrimitiveOrder.contains(tc) => PrimitiveOrder.indexOf(tc)
+    case _ => PrimitiveOrder.length
   }
 
   /**
@@ -695,7 +745,6 @@ object HtmlDocumentor {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedAssocs = trt.decl.assocs.sortBy(_.sym.name)
-    val sortedInstances = trt.instances.sortBy(i => FormatType.formatType(i.tpe))
     val sortedSigs = trt.signatures.sortBy(_.sym.name)
     val sortedTraitDefs = trt.defs.sortBy(_.sym.name)
 
@@ -785,7 +834,7 @@ object HtmlDocumentor {
     sb.append("</div>")
     docDoc(trt.decl.doc)
     docSubSection("Associated Types", sortedAssocs, docAssoc)
-    docCollapsableSubSection("Instances", sortedInstances, docInstance)
+    docInstanceTypes(trt.instances)
     sb.append("</div>")
 
     docSection("Signatures", sortedSigs, docSignature)
@@ -906,8 +955,6 @@ object HtmlDocumentor {
   private def documentEnum(enm: Enum)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
-    val sortedInstances = enm.instances.sortBy(_.trt.sym.name)
-
     val mod = enm.companionMod
     val sortedTraits = mod.map(_.traits).getOrElse(Nil).sortBy(_.name)
     val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.name)
@@ -979,7 +1026,7 @@ object HtmlDocumentor {
     sb.append("</div>")
     docCases(enm.decl.cases.values.toList)
     docDoc(enm.decl.doc)
-    docCollapsableSubSection("Instances", sortedInstances, docInstance)
+    docInstanceTraits(enm.instances)
     sb.append("</div>")
 
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
@@ -998,8 +1045,6 @@ object HtmlDocumentor {
     */
   private def documentStruct(struct: Struct)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
-
-    val sortedInstances = struct.instances.sortBy(_.trt.sym.name)
 
     val mod = struct.companionMod
     val sortedTraits = mod.map(_.traits).getOrElse(Nil).sortBy(_.name)
@@ -1071,7 +1116,7 @@ object HtmlDocumentor {
     sb.append("</div>")
     docFields(struct.decl.fields.values.toList)
     docDoc(struct.decl.doc)
-    docCollapsableSubSection("Instances", sortedInstances, docInstance)
+    docInstanceTraits(struct.instances)
     sb.append("</div>")
 
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
@@ -1379,30 +1424,6 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents a collapsable subsection, containing a `group` of items.
-    *
-    * The result will be appended to the given `StringBuilder`, `sb`.
-    *
-    * If `group` is empty, nothing will be generated.
-    *
-    * @param name   The name of the subsection, e.g. "Instances".
-    * @param group  The list of items in the section, in the order that they should appear.
-    * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
-    */
-  private def docCollapsableSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
-    if (group.isEmpty) {
-      return
-    }
-
-    sb.append(s"<details class='subsection'>")
-    sb.append(s"<summary><h2>${esc(name)}</h2></summary>")
-    for (e <- group) {
-      docElt(e)
-    }
-    sb.append("</details>")
-  }
-
-  /**
     * Documents the given `TypeAlias`, `ta`.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
@@ -1505,54 +1526,111 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the given `instance` of a trait.
-    *
-    * The result will be appended to the given `StringBuilder`, `sb`.
-    */
-  private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<div>")
-    docAnnotations(instance.ann)
-    sb.append("<div class='decl'>")
-    sb.append("<code>")
-    sb.append("<span class='keyword'>instance</span> ")
-    docTraitName(instance.trt.sym)
-    sb.append("[")
-    docType(instance.tpe)
-    sb.append("]")
-    docTraitConstraints(instance.tconstrs)
-    docEqualityConstraints(instance.econstrs)
-    sb.append("</code>")
-    docActions(None, instance.loc)
-    sb.append("</div>")
-    docAssocDefs(instance.assocs)
-    docDoc(instance.doc)
-    sb.append("</div>")
-  }
-
-  /**
-    * Documents the given list of `AssocTypeDef`s of an instance, e.g. `type Elm = Char`, each
-    * followed by its doc comment, if it has one.
+    * Documents the given `instances` of a trait by their types, under the heading "Instances", in
+    * two groups: the "Primitives", i.e. the built-in types, see [[docPrimitiveInstances]], and the
+    * "Non-primitives", i.e. the enums and structs, each a link to its page, in alphabetical order.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
-    * If `assocs` is empty, nothing will be generated.
+    * A group with no types is left out. If `instances` is empty, nothing will be generated.
     */
-  private def docAssocDefs(assocs: List[TypedAst.AssocTypeDef])(implicit flix: Flix, sb: StringBuilder): Unit = {
-    if (assocs.isEmpty) {
+  private def docInstanceTypes(instances: List[TypedAst.Instance])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (instances.isEmpty) {
       return
     }
 
-    sb.append("<div class='assocs'>")
-    for (a <- assocs.sortBy(_.loc)) {
-      sb.append("<code>")
-      sb.append("<span class='keyword'>type</span> ")
-      sb.append(s"<span class='name'>${esc(a.symUse.sym.name)}</span>")
-      sb.append(" = ")
-      docTypeOrEffect(a.tpe)
-      sb.append("</code>")
-      docDoc(a.doc)
+    val (primitives, nonPrimitives) = instances.partition(i => isPrimitiveType(i.tpe))
+    sb.append("<section class='subsection instances'>")
+    sb.append("<h2>Instances</h2>")
+    sb.append("<dl>")
+    docPrimitiveInstances(primitives)
+    if (nonPrimitives.nonEmpty) {
+      sb.append("<dt>Non-primitives</dt>")
+      sb.append("<dd><code>")
+      docList(nonPrimitives.sortBy(i => FormatType.formatType(i.tpe)))(i => docInstanceType(i.tpe))
+      sb.append("</code></dd>")
     }
-    sb.append("</div>")
+    sb.append("</dl>")
+    sb.append("</section>")
+  }
+
+  /**
+    * Documents the given `instances` of a trait for built-in types as the "Primitives" group of the
+    * instances of the trait: one comma-separated line, e.g. `Bool, Char, Int8, Int16, String,
+    * Vector[a] and tuples of 2 to 15 elements`.
+    *
+    * The types follow [[PrimitiveOrder]]. The tuple instances, one per arity, are summed up in
+    * words at the end, since fifteen of them, from `(a1, a2)` to `(a1, ..., a15)`, would swamp the
+    * line. They are listed as types only if their arities have a gap, which the words could not tell.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`, as a term and its description.
+    *
+    * If `instances` is empty, nothing will be generated.
+    */
+  private def docPrimitiveInstances(instances: List[TypedAst.Instance])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (instances.isEmpty) {
+      return
+    }
+
+    val (tuples, others) = instances.partition(i => tupleArity(i.tpe).isDefined)
+    val arities = tuples.flatMap(i => tupleArity(i.tpe)).sorted
+    val summarized = arities.length > 1 && arities == (arities.head to arities.last).toList
+    val listed = if (summarized) others else instances
+
+    sb.append("<dt>Primitives</dt>")
+    sb.append("<dd>")
+    if (listed.nonEmpty) {
+      sb.append("<code>")
+      docList(listed.sortBy(i => (primitiveRank(i.tpe), FormatType.formatType(i.tpe))))(i => docInstanceType(i.tpe))
+      sb.append("</code>")
+    }
+    if (summarized) {
+      val tuplesInWords = s"tuples of ${arities.head} to ${arities.last} elements"
+      sb.append(if (listed.isEmpty) tuplesInWords else s" and $tuplesInWords")
+    }
+    sb.append("</dd>")
+  }
+
+  /**
+    * Documents the given `instances` of a type by their traits, as one comma-separated line under
+    * the heading "Instances", e.g. `Eq, Order, ToString`. Each trait links to its page.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `instances` is empty, nothing will be generated.
+    */
+  private def docInstanceTraits(instances: List[TypedAst.Instance])(implicit sb: StringBuilder): Unit = {
+    if (instances.isEmpty) {
+      return
+    }
+
+    sb.append("<section class='subsection instances'>")
+    sb.append("<h2>Instances</h2>")
+    sb.append("<p><code>")
+    docList(instances.sortBy(_.trt.sym.name))(i => docTraitName(i.trt.sym))
+    sb.append("</code></p>")
+    sb.append("</section>")
+  }
+
+  /**
+    * Documents the type `tpe` of an instance. A type headed by an enum or a struct links to its
+    * page, with the qualified name as its title, since two types of different modules may share a
+    * name, e.g. `Chain.ViewLeft` and `Nec.ViewLeft`. Any other type is plain text, see [[docType]].
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docInstanceType(tpe: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    val page = typeHead(tpe).collect {
+      case TypeConstructor.Enum(sym, _) => (enumFileName(sym), s"enum ${enumQualifiedName(sym)}")
+      case TypeConstructor.Struct(sym, _) => (structFileName(sym), s"struct ${structQualifiedName(sym)}")
+    }
+    page match {
+      case Some((fileName, title)) =>
+        sb.append(s"<a class='type' href='${escUrl(fileName)}' title='${esc(title)}'>")
+        sb.append(esc(FormatType.formatType(tpe)))
+        sb.append("</a>")
+      case None => docType(tpe)
+    }
   }
 
   /**

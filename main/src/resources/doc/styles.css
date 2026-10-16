@@ -635,22 +635,30 @@ main > section > h2 {
 .subsection h2 {
     margin-left: -1.5rem;
 }
-.subsection > summary {
-    cursor: pointer;
-    list-style: none;
+/* The instances of an item: the heading, in bold, then comma-separated lists of names below it, one
+   on the page of a type and one per group, in labelled rows, on the page of a trait. A few words at
+   the size of the code may end a list. */
+.subsection.instances {
+    font-size: 0.85rem;
 }
-.subsection > summary::after {
-    content: "(show)";
-    font-size: 0.875em;
-    margin-left: 0.3rem;
-    color: var(--show-hide-color);
+.subsection.instances h2 {
+    font-weight: bold;
 }
-.subsection > summary:hover::after {
-    text-decoration: underline;
-    color: var(--show-hide-hover-color);
+.subsection.instances p,
+.subsection.instances dl {
+    margin: 0.4rem 0 0;
 }
-.subsection[open] > summary::after {
-    content: "(hide)";
+.subsection.instances dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.3rem 1rem;
+}
+.subsection.instances dt {
+    font-family: var(--ui-font);
+    color: var(--heading-color);
+}
+.subsection.instances dd {
+    margin: 0;
 }
 
 .subsection > div {
@@ -855,6 +863,8 @@ code .kind {
 code .effect {
     color: var(--effect-color);
 }
-code .tpe-constraint {
+/* A link inside code, to the page of a trait or a type, is told from plain text by its underline. */
+code .tpe-constraint,
+code a.type {
     text-decoration: underline;
 }
