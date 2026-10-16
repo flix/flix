@@ -593,19 +593,10 @@ main > section > h2 {
     color: var(--text-color);
 }
 
+/* An entry has no surface of its own. Its head, the annotations and the signature, sits on a faint
+   band, and the documentation hangs below it on the page. */
 .box {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    margin-left: -0.75rem;
-    margin-right: -0.75rem;
-
-    box-shadow: 0 0 10px 0 var(--shadow-color);
-    background-color: var(--bg-color-1);
-    border: var(--border);
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    margin-bottom: 0.8rem;
-    border-radius: 0.2rem;
+    padding: 0.8rem 0;
     box-sizing: border-box;
     overflow: auto;
 
@@ -615,8 +606,23 @@ main > section > h2 {
 .box:last-of-type {
     margin-bottom: 3rem;
 }
-.box:target {
-    box-shadow: 0 0 14px 0 var(--highlight-color);
+.box > .annotations,
+.box > .decl {
+    padding: 0.3rem 0.6rem;
+    background-color: color-mix(in srgb, var(--text-color) 5%, transparent);
+    border-radius: 0.2rem;
+}
+.box > .annotations {
+    padding-bottom: 0;
+    border-radius: 0.2rem 0.2rem 0 0;
+}
+.box > .annotations + .decl {
+    border-radius: 0 0 0.2rem 0.2rem;
+}
+/* The target of an anchor link is told by the color of its band. */
+.box:target > .annotations,
+.box:target > .decl {
+    background-color: color-mix(in srgb, var(--highlight-color) 20%, transparent);
 }
 .box code {
     font-size: 0.85rem;
