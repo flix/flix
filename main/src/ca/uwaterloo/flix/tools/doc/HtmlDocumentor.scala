@@ -1533,7 +1533,8 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the given list of `AssocTypeDef`s of an instance, e.g. `type Elm = Char`.
+    * Documents the given list of `AssocTypeDef`s of an instance, e.g. `type Elm = Char`, each
+    * followed by its doc comment, if it has one.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
@@ -1552,6 +1553,7 @@ object HtmlDocumentor {
       sb.append(" = ")
       docTypeOrEffect(a.tpe)
       sb.append("</code>")
+      docDoc(a.doc)
     }
     sb.append("</div>")
   }
