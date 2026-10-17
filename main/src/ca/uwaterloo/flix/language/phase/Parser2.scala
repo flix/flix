@@ -179,7 +179,8 @@ object Parser2 {
     *
     * Hence a node only has a comment as its first child if that is its [[TreeKind.DocComment]],
     * the span of a node never includes a comment, and a doc comment always belongs to the
-    * declaration below it.
+    * declaration below it. A doc comment that ends up in a [[TreeKind.PlainComment]] documents
+    * nothing, so it is reported as misplaced here.
     */
   private def buildTree()(implicit s: State): SyntaxTree.Tree = {
     // A node's children are not known until its Close event, but we want to allocate each node's
@@ -280,6 +281,8 @@ object Parser2 {
       val trailing = comments.take(numTrailing)
       val leading = comments.slice(numTrailing, docStart)
       val doc = comments.drop(docStart)
+      reportMisplacedDocComments(trailing)
+      reportMisplacedDocComments(leading)
 
       // The doc becomes the first child of the target. It goes in first: when the target is the
       // outermost node of the chain, the plain comments are inserted at the same index and must
@@ -363,6 +366,19 @@ object Parser2 {
 
   /** Returns the visible token at `pos`, an index into [[State.visible]]. */
   private def visibleToken(pos: Int)(implicit s: State): Token = s.tokens(s.visible(pos))
+
+  /**
+    * Reports the doc comments in `comments`, a run of comments that documents nothing, as one
+    * [[MisplacedDocComments]] error spanning the first to the last of them.
+    */
+  private def reportMisplacedDocComments(comments: Array[Token])(implicit s: State): Unit = {
+    val first = comments.indexWhere(_.kind == TokenKind.CommentDoc)
+    if (first != -1) {
+      val last = comments.lastIndexWhere(_.kind == TokenKind.CommentDoc)
+      val loc = mkSourceLocation(comments(first).start, comments(last).end)
+      s.errors.append(MisplacedDocComments(SyntacticContext.Unknown, loc))
+    }
+  }
 
   /**
     * Makes a node of `kind`, a [[TreeKind.PlainComment]] or a [[TreeKind.DocComment]], holding
