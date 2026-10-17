@@ -162,30 +162,6 @@ object Parser2 {
     (tree, s.errors.toList)
   }
 
-  /** The kinds of nodes that a doc comment may document. */
-  private val DocumentableKinds: Set[TreeKind] = Set(
-    TreeKind.Decl.AssociatedTypeDef,
-    TreeKind.Decl.AssociatedTypeSig,
-    TreeKind.Decl.Def,
-    TreeKind.Decl.Effect,
-    TreeKind.Decl.Enum,
-    TreeKind.Decl.Instance,
-    TreeKind.Decl.Module,
-    TreeKind.Decl.Op,
-    TreeKind.Decl.Redef,
-    TreeKind.Decl.RestrictableEnum,
-    TreeKind.Decl.Signature,
-    TreeKind.Decl.Struct,
-    TreeKind.Decl.Trait,
-    TreeKind.Decl.TypeAlias,
-    TreeKind.Case,
-    TreeKind.StructField,
-    TreeKind.Expr.JvmConstructor,
-    TreeKind.Expr.JvmMethod,
-    TreeKind.Expr.LocalDef,
-    TreeKind.Expr.RunWithRuleFragment
-  )
-
   /**
     * Builds the syntax tree from the events in state.
     *
@@ -196,7 +172,7 @@ object Parser2 {
     *     comments become a [[TreeKind.CommentList]] in the innermost node that was open when `p`
     *     was added, placed before any node that starts at `n`.
     *   - The other comments are leading comments. If a node that starts at `n` is documentable
-    *     (see [[DocumentableKinds]]) and the leading comments contain a doc comment, then the
+    *     (see [[TreeKind.isDocumentable]]) and the leading comments contain a doc comment, then the
     *     leading comments from the first doc comment onwards become a [[TreeKind.Doc]] that is the
     *     first child of the outermost such node. The remaining leading comments are placed like
     *     the trailing comments.
@@ -309,7 +285,7 @@ object Parser2 {
       var target = -1
       var d = chain
       while (target == -1 && d < startStack.length) {
-        if (DocumentableKinds.contains(kindStack(d))) {
+        if (kindStack(d).isDocumentable) {
           target = d
         }
         d += 1
