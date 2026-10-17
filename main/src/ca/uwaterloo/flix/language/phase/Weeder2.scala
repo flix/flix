@@ -86,14 +86,15 @@ object Weeder2 {
 
   /**
     * Reports a [[MisplacedDocComments]] error for every doc comment in `tree` that does not document
-    * a declaration, i.e. that is in a [[TreeKind.CommentList]] outside of a [[TreeKind.Doc]].
+    * a declaration, i.e. that is in a [[TreeKind.PlainComment]] outside of a
+    * [[TreeKind.DocComment]].
     *
-    * The parser attaches the doc comments above a declaration to it as a [[TreeKind.Doc]]. Any
-    * other doc comment is an ordinary comment to the parser, so it must be reported here.
+    * The parser attaches the doc comments above a declaration to it as a [[TreeKind.DocComment]].
+    * Any other doc comment is an ordinary comment to the parser, so it must be reported here.
     */
   private def checkDocComments(tree: Tree)(implicit sctx: SharedContext): Unit = tree.kind match {
-    case TreeKind.Doc => ()
-    case TreeKind.CommentList =>
+    case TreeKind.DocComment => ()
+    case TreeKind.PlainComment =>
       var first: Option[Token] = None
       var last: Option[Token] = None
       for (child <- tree.children) {
@@ -591,7 +592,7 @@ object Weeder2 {
     }
 
     private def pickDocumentation(tree0: Tree): Doc = {
-      val docTree: Option[Tree] = tryPick(TreeKind.Doc, tree0)
+      val docTree: Option[Tree] = tryPick(TreeKind.DocComment, tree0)
       docTree match {
         case None => Doc(List.empty, tree0.loc)
         case Some(tree) =>
@@ -963,7 +964,7 @@ object Weeder2 {
       }
       // Ignore comments so they cannot sit between an opener and its expression.
       val children = tree.children.filterNot {
-        case t: Tree => t.kind == TreeKind.CommentList
+        case t: Tree => t.kind == TreeKind.PlainComment
         case _ => false
       }
       children.sliding(2).collect {

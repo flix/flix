@@ -596,7 +596,7 @@ object PrettyPrinter {
     val children = filterEmpty(tree.children)
     val (prefixChildren, rest) = children.span {
       case t: Tree if t.kind == TreeKind.AnnotationList => true
-      case t: Tree if t.kind == TreeKind.Doc => true
+      case t: Tree if t.kind == TreeKind.DocComment => true
       case _ => false
     }
     val prefixDoc = hardStack(prefixChildren.map(prettyChild).toList)
@@ -898,7 +898,7 @@ object PrettyPrinter {
   private def prettyInstance(tree: Tree): Doc = {
     val nestLevel = {
       val children = filterEmpty(tree.children).dropWhile {
-        case t: Tree => t.kind == TreeKind.AnnotationList || t.kind == TreeKind.Doc
+        case t: Tree => t.kind == TreeKind.AnnotationList || t.kind == TreeKind.DocComment
         case _ => false
       }
       val braceIdx = indexOfToken(children, TokenKind.CurlyL)
@@ -1248,10 +1248,10 @@ object PrettyPrinter {
     children.sliding(2).foldLeft(prettyChild(children.head)) {
       case (result, Array(prev, next)) =>
         val sep = if (hadBlankLineBetween(prev, next)) hardline <> hardline else base
-        if (isCommentList(next) && onSameLine(prev, next)) {
+        if (isPlainComment(next) && onSameLine(prev, next)) {
           // A trailing comment stays on the line of the child it follows.
           result <+> prettyChild(next)
-        } else if (isCommentList(next)) {
+        } else if (isPlainComment(next)) {
           // A comment on its own line keeps its column, as it may belong to the child above it.
           result <> Doc.nestAbsolute(commentColumn(next), sep <> prettyChild(next))
         } else {
@@ -1436,7 +1436,7 @@ object PrettyPrinter {
     val beforeOp = if (opIdx < 0) Array.empty[SyntaxTree.Child] else children.slice(1, opIdx)
     val afterOp = if (opIdx < 0) Array.empty[SyntaxTree.Child] else children.slice(opIdx + 1, children.length - 1)
     val isWellFormed = opIdx >= 1 && opIdx < children.length - 1 &&
-      beforeOp.forall(isCommentList) && afterOp.forall(isCommentList)
+      beforeOp.forall(isPlainComment) && afterOp.forall(isPlainComment)
     if (!isWellFormed) {
       return joinChildrenSpaced(children)
     }
@@ -1484,8 +1484,8 @@ object PrettyPrinter {
     case _ => false
   }
 
-  private def isCommentList(child: SyntaxTree.Child): Boolean = child match {
-    case t: Tree => t.kind == TreeKind.CommentList
+  private def isPlainComment(child: SyntaxTree.Child): Boolean = child match {
+    case t: Tree => t.kind == TreeKind.PlainComment
     case _ => false
   }
 
@@ -1863,7 +1863,7 @@ object PrettyPrinter {
       val prevChild = children(i - 1)
       val nextChild = children(i)
       val sep = nextChild match {
-        case t: Tree if t.kind == TreeKind.CommentList =>
+        case t: Tree if t.kind == TreeKind.PlainComment =>
           if (onSameLine(prevChild, nextChild)) space else hardline
         case _ => empty
       }

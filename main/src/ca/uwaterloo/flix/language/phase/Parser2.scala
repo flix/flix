@@ -169,17 +169,17 @@ object Parser2 {
     * into the tree here. The comments between two visible tokens `p` and `n` are placed by one rule:
     *
     *   - A comment that starts on the line where `p` ends is a trailing comment. The trailing
-    *     comments become a [[TreeKind.CommentList]] in the innermost node that was open when `p`
+    *     comments become a [[TreeKind.PlainComment]] in the innermost node that was open when `p`
     *     was added, placed before any node that starts at `n`.
     *   - The other comments are leading comments. If a node that starts at `n` is documentable
     *     (see [[TreeKind.isDocumentable]]) and the leading comments contain a doc comment, then the
-    *     leading comments from the first doc comment onwards become a [[TreeKind.Doc]] that is the
-    *     first child of the outermost such node. The remaining leading comments are placed like
-    *     the trailing comments.
+    *     leading comments from the first doc comment onwards become a [[TreeKind.DocComment]] that
+    *     is the first child of the outermost such node. The remaining leading comments are placed
+    *     like the trailing comments.
     *
-    * Hence a node only has a comment as its first child if that is its [[TreeKind.Doc]], the span
-    * of a node never includes a comment, and a doc comment always belongs to the declaration
-    * below it.
+    * Hence a node only has a comment as its first child if that is its [[TreeKind.DocComment]],
+    * the span of a node never includes a comment, and a doc comment always belongs to the
+    * declaration below it.
     */
   private def buildTree()(implicit s: State): SyntaxTree.Tree = {
     // A node's children are not known until its Close event, but we want to allocate each node's
@@ -285,16 +285,17 @@ object Parser2 {
       // outermost node of the chain, the plain comments are inserted at the same index and must
       // end up in front of it.
       if (doc.nonEmpty) {
-        insertChildren(startStack(target), target, ArrayBuffer[SyntaxTree.Child](mkCommentList(TreeKind.Doc, doc)))
+        val docComment = mkComment(TreeKind.DocComment, doc)
+        insertChildren(startStack(target), target, ArrayBuffer[SyntaxTree.Child](docComment))
       }
       // The plain comments become children of the innermost node open before the chain, placed
       // just before the chain.
       val plain: ArrayBuffer[SyntaxTree.Child] = ArrayBuffer.empty
       if (trailing.nonEmpty) {
-        plain.append(mkCommentList(TreeKind.CommentList, trailing))
+        plain.append(mkComment(TreeKind.PlainComment, trailing))
       }
       if (leading.nonEmpty) {
-        plain.append(mkCommentList(TreeKind.CommentList, leading))
+        plain.append(mkComment(TreeKind.PlainComment, leading))
       }
       if (plain.nonEmpty) {
         val before = if (chain < startStack.length) startStack(chain) else workStack.length
@@ -364,10 +365,10 @@ object Parser2 {
   private def visibleToken(pos: Int)(implicit s: State): Token = s.tokens(s.visible(pos))
 
   /**
-    * Makes a node of `kind`, a [[TreeKind.CommentList]] or a [[TreeKind.Doc]], holding the given
-    * non-empty comment tokens.
+    * Makes a node of `kind`, a [[TreeKind.PlainComment]] or a [[TreeKind.DocComment]], holding
+    * the given non-empty comment tokens.
     */
-  private def mkCommentList(kind: TreeKind, comments: Array[Token])(implicit s: State): SyntaxTree.Tree = {
+  private def mkComment(kind: TreeKind, comments: Array[Token])(implicit s: State): SyntaxTree.Tree = {
     val children = new Array[SyntaxTree.Child](comments.length)
     var i = 0
     while (i < comments.length) {
