@@ -191,11 +191,9 @@ pub mod BufReader {
     ///
     def readWhileInto(rc: Region[rl], p: a -> Bool, results: MutList[a, rl], bufReader: BufReader[a, t, rb]): Result[IoError, Unit] \ Readable.Aef[t] + rb + rl with Readable[t] where Readable.Elm[t] ~ a =
         if (bufReader->size != 0) {
-            ///
-            /// Finds the index of the first element in the buffer that does not match predicate `p`.
-            /// If all elements in the buffer match, returns `i + 1` where `i = bufReader->cursor + bufReader->size`
-            /// is the last element in the logical buffer.
-            ///
+            // Finds the index of the first element in the buffer that does not match predicate `p`.
+            // If all elements in the buffer match, returns `i + 1` where `i = bufReader->cursor + bufReader->size`
+            // is the last element in the logical buffer.
             def findIndex(i) = {
                 if (i < bufReader->cursor + bufReader->size) {
                     let x = Array.get(i, bufReader->buffer);

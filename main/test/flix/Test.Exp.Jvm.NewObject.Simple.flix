@@ -315,7 +315,7 @@ mod Test.Exp.Jvm.NewObject.Simple {
     @CompileTest
     def testCommentBeforeJVMMethod01(): Unit \ IO =
         let _ = new TestBoolInterface {
-            /// We can write comments here.
+            // We can write comments here.
             def testMethod(_this: TestBoolInterface, x: Bool): Bool = not x
         };
         ()
