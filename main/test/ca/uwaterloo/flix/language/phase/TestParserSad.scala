@@ -704,4 +704,46 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("ParseError.MisplacedDocComments.01") {
+    val input =
+      """
+        |mod M {
+        |    /// dangling doc comment at the end of a module
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.MisplacedDocComments.02") {
+    val input =
+      """
+        |def f(): Int32 = 1
+        |/// dangling doc comment at the end of the file
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.MisplacedDocComments.03") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    /// doc comment on an expression
+        |    1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.MisplacedDocComments.04") {
+    val input =
+      """
+        |/// doc comment on a use
+        |use Foo.bar
+        |def f(): Int32 = 1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
 }
