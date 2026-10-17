@@ -75,10 +75,7 @@ object SyntaxTree {
       case TreeKind.Decl.TypeAlias => true
       case TreeKind.Case => true
       case TreeKind.StructField => true
-      case TreeKind.Expr.JvmConstructor => true
-      case TreeKind.Expr.JvmMethod => true
       case TreeKind.Expr.LocalDef => true
-      case TreeKind.Expr.RunWithRuleFragment => true
       case _ => false
     }
   }
