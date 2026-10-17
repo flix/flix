@@ -3401,7 +3401,7 @@ object Weeder2 {
     * Only use this if the structure of tree is well-known.
     * IE. Calling on a tree of kind [[TreeKind.Ident]] is fine, but if the kind is not known avoid using [[tokenToIdent]].
     */
-  private def tokenToIdent(tree: Tree)(implicit sctx: SharedContext): Name.Ident = {
+  private def tokenToIdent(tree: Tree): Name.Ident = {
     tree.children.headOption match {
       case Some(token@Token(_, src, _, _, sp1, sp2)) =>
         Name.Ident(token.text, SourceLocation(isReal = true, src, sp1, sp2))
@@ -3410,12 +3410,6 @@ object Weeder2 {
       // Doing it this way is most resilient, but phases down the line might have trouble with this sort of thing.
       case Some(t: Tree) if t.kind.isInstanceOf[TreeKind.ErrorTree] =>
         val name = text(tree).mkString("")
-        Name.Ident(name, tree.loc)
-      case Some(t: Tree) if t.kind == TreeKind.CommentList =>
-        // We hit a misplaced comment.
-        val name = text(tree).mkString("")
-        val error = MisplacedComments(SyntacticContext.Unknown, t.loc)
-        sctx.errors.add(error)
         Name.Ident(name, tree.loc)
       case _ => throw InternalCompilerException(s"Parse failure: expected first child of '${tree.kind}' to be Child.Token", tree.loc)
     }

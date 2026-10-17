@@ -314,11 +314,10 @@ sealed trait TokenKind {
   /**
     * Returns `true` if this token can validly appear as the first token of a declaration.
     *
-    * Note that a [[TokenKind.CommentDoc]], a modifier (see [[isModifier]]) and/or [[TokenKind.Annotation]] may lead a declaration.
+    * Note that a modifier (see [[isModifier]]) and/or [[TokenKind.Annotation]] may lead a declaration.
     */
   def isFirstInDecl: Boolean = this.isModifier || (this match {
     case TokenKind.Annotation => true
-    case TokenKind.CommentDoc => true
     case TokenKind.KeywordDef => true
     case TokenKind.KeywordEff => true
     case TokenKind.KeywordEnum => true
@@ -331,21 +330,13 @@ sealed trait TokenKind {
     case _ => false
   })
 
-  /** Returns `true` if this token can validly appear after [[TokenKind.CommentDoc]]. */
-  def isDocumentable: Boolean = this match {
-    case TokenKind.KeywordCase => true
-    case _ if this.isFirstInDecl => true
-    case _ => false
-  }
-
   /**
     * Returns `true` if this token can validly appear as the first token in a declaration within an effect.
     *
-    * Note that a [[TokenKind.CommentDoc]], a modifier (see [[isModifier]]) and/or [[TokenKind.Annotation]] may lead a declaration.
+    * Note that a modifier (see [[isModifier]]) and/or [[TokenKind.Annotation]] may lead a declaration.
     */
   def isFirstInEffDecl: Boolean = this match {
     case TokenKind.Annotation => true
-    case TokenKind.CommentDoc => true
     case TokenKind.KeywordDef => true
     case _ if this.isModifier => true
     case _ => false
@@ -354,11 +345,10 @@ sealed trait TokenKind {
   /**
     * Returns `true` if this token can validly appear as the first token in a declaration within an instance.
     *
-    * Note that a [[TokenKind.CommentDoc]], a modifier (see [[isModifier]]) and/or [[TokenKind.Annotation]] may lead a declaration.
+    * Note that a modifier (see [[isModifier]]) and/or [[TokenKind.Annotation]] may lead a declaration.
     */
   def isFirstInInstanceDecl: Boolean = this match {
     case TokenKind.Annotation => true
-    case TokenKind.CommentDoc => true
     case TokenKind.KeywordDef => true
     case TokenKind.KeywordType => true
     case _ if this.isModifier => true
@@ -367,12 +357,11 @@ sealed trait TokenKind {
 
   /**
     * Returns `true` if this token can validly appear as the first token in a declaration within a trait.
-    * *
-    * * Note that a [[TokenKind.CommentDoc]], a modifier (see [[isModifier]]) and/or [[TokenKind.Annotation]] may lead a declaration.
+    *
+    * Note that a modifier (see [[isModifier]]) and/or [[TokenKind.Annotation]] may lead a declaration.
     */
   def isFirstInTraitDecl: Boolean = this match {
     case TokenKind.Annotation => true
-    case TokenKind.CommentDoc => true
     case TokenKind.KeywordDef => true
     case TokenKind.KeywordType => true
     case _ if this.isModifier => true
