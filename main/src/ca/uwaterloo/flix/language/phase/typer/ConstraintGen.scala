@@ -1467,7 +1467,7 @@ object ConstraintGen {
     val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
     val subst = Substitution(substMap)
     val instantiatedFields = fields.map {
-      case KindedAst.StructField(mod, fieldSym, fieldTpe, _) =>
+      case KindedAst.StructField(_, mod, fieldSym, fieldTpe, _) =>
         fieldSym -> (mod.isMutable, subst(fieldTpe))
     }
     val regionOpt = struct.tparams.lastOption.map(region => substMap(region.sym))

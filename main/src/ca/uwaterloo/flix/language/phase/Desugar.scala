@@ -410,9 +410,9 @@ object Desugar {
     * Desugars the given [[WeededAst.StructField]] `field0`.
     */
   private def visitField(field0: WeededAst.StructField): DesugaredAst.StructField = field0 match {
-    case WeededAst.StructField(mod, name, tpe0, loc) =>
+    case WeededAst.StructField(doc, mod, name, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      DesugaredAst.StructField(mod, name, tpe, loc)
+      DesugaredAst.StructField(doc, mod, name, tpe, loc)
   }
 
   /**

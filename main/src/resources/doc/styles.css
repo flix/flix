@@ -750,11 +750,12 @@ main > section > h2 {
     margin-bottom: 0.7rem;
 }
 .cases > .case > code,
-.fields > code,
+.fields > .field > code,
 .assocs > code {
     display: block;
 }
-.case > .doc {
+.case > .doc,
+.field > .doc {
     margin-top: 0.2rem;
     margin-bottom: 0.7rem;
 }

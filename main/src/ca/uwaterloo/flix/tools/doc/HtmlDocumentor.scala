@@ -1754,6 +1754,9 @@ object HtmlDocumentor {
   /**
     * Documents the given list of `StructField`s of a struct.
     *
+    * Each field gets the id `field-<name>`, so it can be linked to, and its doc comment, if any,
+    * is rendered below it.
+    *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
     * If `fields` is empty, nothing will be generated.
@@ -1765,6 +1768,7 @@ object HtmlDocumentor {
 
     sb.append("<div class='fields'>")
     for (f <- fields.sortBy(_.loc)) {
+      sb.append(s"<div class='field' id='field-${esc(f.sym.name)}'>")
       sb.append("<code>")
       if (f.mod.isMutable) {
         sb.append("<span class='keyword'>mut</span> ")
@@ -1772,6 +1776,8 @@ object HtmlDocumentor {
       sb.append(s"<span>${esc(f.sym.name)}</span>: ")
       docType(f.tpe)
       sb.append("</code>")
+      docDoc(f.doc)
+      sb.append("</div>")
     }
     sb.append("</div>")
   }
