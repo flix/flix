@@ -591,7 +591,7 @@ object Weeder2 {
     }
 
     private def pickDocumentation(tree0: Tree): Doc = {
-      val docTree: Option[Tree] = tryPick(TreeKind.Doc, tree0).flatMap(tryPick(TreeKind.CommentList, _))
+      val docTree: Option[Tree] = tryPick(TreeKind.Doc, tree0)
       docTree match {
         case None => Doc(List.empty, tree0.loc)
         case Some(tree) =>

@@ -285,16 +285,16 @@ object Parser2 {
       // outermost node of the chain, the plain comments are inserted at the same index and must
       // end up in front of it.
       if (doc.nonEmpty) {
-        insertChildren(startStack(target), target, ArrayBuffer[SyntaxTree.Child](mkDoc(doc)))
+        insertChildren(startStack(target), target, ArrayBuffer[SyntaxTree.Child](mkCommentList(TreeKind.Doc, doc)))
       }
       // The plain comments become children of the innermost node open before the chain, placed
       // just before the chain.
       val plain: ArrayBuffer[SyntaxTree.Child] = ArrayBuffer.empty
       if (trailing.nonEmpty) {
-        plain.append(mkCommentList(trailing))
+        plain.append(mkCommentList(TreeKind.CommentList, trailing))
       }
       if (leading.nonEmpty) {
-        plain.append(mkCommentList(leading))
+        plain.append(mkCommentList(TreeKind.CommentList, leading))
       }
       if (plain.nonEmpty) {
         val before = if (chain < startStack.length) startStack(chain) else workStack.length
@@ -363,8 +363,11 @@ object Parser2 {
   /** Returns the visible token at `pos`, an index into [[State.visible]]. */
   private def visibleToken(pos: Int)(implicit s: State): Token = s.tokens(s.visible(pos))
 
-  /** Makes a [[TreeKind.CommentList]] of the given non-empty comment tokens. */
-  private def mkCommentList(comments: Array[Token])(implicit s: State): SyntaxTree.Tree = {
+  /**
+    * Makes a node of `kind`, a [[TreeKind.CommentList]] or a [[TreeKind.Doc]], holding the given
+    * non-empty comment tokens.
+    */
+  private def mkCommentList(kind: TreeKind, comments: Array[Token])(implicit s: State): SyntaxTree.Tree = {
     val children = new Array[SyntaxTree.Child](comments.length)
     var i = 0
     while (i < comments.length) {
@@ -372,13 +375,7 @@ object Parser2 {
       i += 1
     }
     val loc = mkSourceLocation(comments.head.start, comments.last.end)
-    SyntaxTree.Tree(TreeKind.CommentList, children, loc)
-  }
-
-  /** Makes a [[TreeKind.Doc]] of the given non-empty comment tokens. */
-  private def mkDoc(comments: Array[Token])(implicit s: State): SyntaxTree.Tree = {
-    val commentList = mkCommentList(comments)
-    SyntaxTree.Tree(TreeKind.Doc, Array(commentList), commentList.loc)
+    SyntaxTree.Tree(kind, children, loc)
   }
 
   /** Get the previous position of the parser as a [[SourceLocation]]. */
