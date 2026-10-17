@@ -110,20 +110,10 @@ object SyntaxTree {
 
     case object CaseBody extends TreeKind
 
-    /**
-      * A run of comments that document nothing. Its children are the comment tokens, and it is a
-      * sibling of the code around it: the comments on the line of the previous token, or the
-      * comments on their own lines before the next token that are not a [[Doc]].
-      */
     case object CommentList extends TreeKind
 
     case object DerivationList extends Type
 
-    /**
-      * The doc comment of a node whose kind [[isDocumentable]]. Its children are the comment
-      * tokens from the first `///` above the node onwards, including any plain comment lines inside
-      * that run, and it is always the first child of the node it documents.
-      */
     case object Doc extends TreeKind
 
     case object Ident extends TreeKind
