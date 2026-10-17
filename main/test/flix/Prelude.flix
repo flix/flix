@@ -12,6 +12,7 @@
 mod Test {}
 mod Test.Assoc {}
 mod Test.Assoc.Eff {}
+mod Test.Comment {}
 mod Test.Dec {}
 mod Test.Dec.Assoc {}
 mod Test.Dec.Assoc.Type {}
