@@ -1220,14 +1220,15 @@ object Parser2 {
       // Clear non-doc comments that appear before any cases.
       comments()
       while (!eof() && atAny(FIRST_ENUM_CASE)) {
-        val mark = open(consumeDocComments = false)
-        docComment()
-        if (!eat(TokenKind.KeywordCase)) {
-          expect(TokenKind.Comma)
-          // Handle comma followed by case keyword.
-          docComment()
-          eat(TokenKind.KeywordCase)
-        }
+        // A comma between two cases is kept outside the case nodes, so that the comments between
+        // the comma and the next case belong to that case.
+        eat(TokenKind.Comma)
+        // The doc comment is parsed before the case is opened around it, so that every comment
+        // after the comma lands inside the case's doc group rather than in a separate comment list.
+        val docMark = docComment()
+        val mark = openBefore(docMark)
+        // The `case` keyword may be omitted after a comma, as in `case A, B, C`.
+        eat(TokenKind.KeywordCase)
         nameUnqualified(NAME_TAG)
         if (at(TokenKind.ParenL)) {
           val markBody = open()
