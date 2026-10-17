@@ -73,7 +73,6 @@ object Weeder2 {
     */
   private def weed(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Option[CompilationUnit] = {
     try {
-      checkDocComments(tree)
       val usesAndImports = pickAllUsesAndImports(tree)
       val declarations = Decls.pickAllDeclarations(tree)
       Some(CompilationUnit(usesAndImports, declarations, tree.loc))
@@ -82,44 +81,6 @@ object Weeder2 {
         sctx.errors.add(error)
         None
     }
-  }
-
-  /**
-    * Reports a [[MisplacedDocComments]] error for every doc comment in `tree` that does not document
-    * a declaration, i.e. that is in a [[TreeKind.PlainComment]] outside of a
-    * [[TreeKind.DocComment]].
-    *
-    * The parser attaches the doc comments above a declaration to it as a [[TreeKind.DocComment]].
-    * Any other doc comment is an ordinary comment to the parser, so it must be reported here.
-    */
-  private def checkDocComments(tree: Tree)(implicit sctx: SharedContext): Unit = tree.kind match {
-    case TreeKind.DocComment => ()
-    case TreeKind.PlainComment =>
-      var first: Option[Token] = None
-      var last: Option[Token] = None
-      for (child <- tree.children) {
-        child match {
-          case token@Token(TokenKind.CommentDoc, _, _, _, _, _) =>
-            if (first.isEmpty) {
-              first = Some(token)
-            }
-            last = Some(token)
-          case _ => ()
-        }
-      }
-      (first, last) match {
-        case (Some(f), Some(l)) =>
-          val loc = SourceLocation(isReal = true, f.src, f.start, l.end)
-          sctx.errors.add(MisplacedDocComments(SyntacticContext.Unknown, loc))
-        case _ => ()
-      }
-    case _ =>
-      for (child <- tree.children) {
-        child match {
-          case t: Tree => checkDocComments(t)
-          case _ => ()
-        }
-      }
   }
 
   private def pickAllUsesAndImports(tree: Tree)(implicit sctx: SharedContext): List[UseOrImport] = {
