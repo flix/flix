@@ -64,6 +64,82 @@ mod Test.Comment.Dec {
         y: Int32
     }
 
+    ///
+    /// Doc on a module
+    ///
+    mod Docs {
+
+        /// Doc on a type alias
+        pub type alias Alias = Int32
+
+        /// Doc on an enum
+        pub enum Shape with Eq {
+            case Circle(Int32)
+        }
+
+        /// Doc on a restrictable enum
+        pub restrictable enum Expr[_] {
+            /// Doc on a restrictable case
+            case Cst
+        }
+
+        /// Doc on a struct
+        pub struct Pair[r] {
+            /// Doc on a mutable field
+            mut fst: Int32,
+            snd: Int32
+        }
+
+        /// Doc on an effect
+        pub eff Logger {
+            /// Doc on an op
+            def log(s: String): Unit
+        }
+
+        /// Doc on a sealed trait
+        pub sealed trait Sealed[a]
+
+        /// Doc on a trait
+        pub trait Container[a] {
+            /// Doc on an associated type signature
+            type Elem[a]: Type
+
+            /// Doc on a signature
+            pub def first(x: a): Option[Container.Elem[a]]
+
+            /// Doc on a signature with a default implementation
+            pub def isEmpty(x: a): Bool = Option.isEmpty(Container.first(x))
+        }
+
+        /// Doc on an instance
+        instance Container[String] {
+            /// Doc on an associated type definition
+            type Elem[String] = Char
+
+            /// Doc on a def in an instance
+            pub def first(x: String): Option[Char] = List.head(String.toList(x))
+
+            /// Doc on a redef
+            redef isEmpty(x: String): Bool = String.isEmpty(x)
+        }
+
+        /// Doc on a nested module
+        mod Inner {
+            /// Doc on a def in a nested module
+            pub def f(): Int32 = 1
+        }
+
+    }
+
+    // look-ahead in declaration headers
+    pub enum Payload {
+        case /* c */ A /* c */ (Int32), /* c */ B
+    }
+    pub def header01 /* c */ (x: a): a // c
+        with /* c */ Eq[a] = x
+    pub def header02(): Int32 \ /* c */ {} // c
+        = 1
+
 }
 
 // trailing comment at the end of the file
