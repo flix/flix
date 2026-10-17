@@ -707,27 +707,6 @@ object PrettyPrinter {
       case _ => space <> tailDoc
     }
 
-  private def splitTrailingCommentList(children: Array[SyntaxTree.Child]): (Array[SyntaxTree.Child], Option[Tree]) =
-    children.lastOption match {
-      case Some(t: Tree) if t.kind == TreeKind.CommentList => (children.init, Some(t))
-      case _ => (children, None)
-    }
-
-  private def appendTrailingCommentList(mainDoc: Doc, prev: Option[SyntaxTree.Child], commentList: Tree): Doc = {
-    val prevTok = prev.flatMap(rightMostToken)
-    val nextTok = leftMostToken(commentList)
-    (prevTok, nextTok) match {
-      case (Some(p), Some(n)) if p.end.lineOneIndexed == n.start.lineOneIndexed =>
-        mainDoc <+> prettyChild(commentList)
-      case (Some(p), Some(n)) =>
-        val gap = if (n.start.lineOneIndexed - p.end.lineOneIndexed > 1) hardline <> hardline else hardline
-        val col = n.start.colOneIndexed - 1
-        mainDoc <> Doc.nestAbsolute(col, gap <> prettyChild(commentList))
-      case _ =>
-        mainDoc <+> prettyChild(commentList)
-    }
-  }
-
   /**
     * Formatting for constructs with comma-separated bodies (e.g. literal vectors, lists, sets, maps, arrays).
     * Finds the first matching bracket pair and joins body children with commas and bars, without filtering out empty children.
@@ -847,28 +826,19 @@ object PrettyPrinter {
   /** Formatting for enum and restrictable enum declarations. */
   private def prettyEnum(tree: Tree): Doc = wrapWithAnn(tree, rest => {
     val hasBraces = containsToken(rest, TokenKind.CurlyL, TokenKind.CurlyR)
-
-    val filtered = filterEmpty(rest)
-    val (mainChildren, trailingComments) = splitTrailingCommentList(filtered)
-
-    val mainDoc =
-      if (!hasBraces)
-        spaceJoin(mainChildren, noSpacePairs = Set(
-          (TreeKind.Ident, TreeKind.TypeParameterList),
-          (TreeKind.TypeParameterList, TreeKind.CaseBody),
-          (TreeKind.Ident, TreeKind.CaseBody)
-        ))
-      else
-        prettyBracket(tree.copy(children = rest), mainChildren,
-          headerJoin = declHeaderJoin,
-          formatBody = body => joinEnumBody(filterEmpty(body)),
-          flatPad = space
-        )
-
-    trailingComments match {
-      case Some(commentList) => appendTrailingCommentList(mainDoc, mainChildren.lastOption, commentList)
-      case None => mainDoc
-    }
+    val children = filterEmpty(rest)
+    if (!hasBraces)
+      spaceJoin(children, noSpacePairs = Set(
+        (TreeKind.Ident, TreeKind.TypeParameterList),
+        (TreeKind.TypeParameterList, TreeKind.CaseBody),
+        (TreeKind.Ident, TreeKind.CaseBody)
+      ))
+    else
+      prettyBracket(tree.copy(children = rest), children,
+        headerJoin = declHeaderJoin,
+        formatBody = body => joinEnumBody(filterEmpty(body)),
+        flatPad = space
+      )
   })
 
   /**
@@ -1867,9 +1837,8 @@ object PrettyPrinter {
   private def keywordSpaced(tree: Tree, kind: TokenKind, keyword: String): Doc =
     joinChildren(tree.children, kind -> (text(keyword) <> space))
 
-  private def prettyIdent(tree: Tree): Doc = {
-    val (mainChildren, trailingComments) = splitTrailingCommentList(tree.children)
-    val mainDoc = mainChildren.foldLeft((empty: Doc, Option.empty[SyntaxTree.Child])) {
+  private def prettyIdent(tree: Tree): Doc =
+    tree.children.foldLeft((empty: Doc, Option.empty[SyntaxTree.Child])) {
       case ((result, prev), child) =>
         val childDoc = child match {
           // The lexer drops the `$` of an escaped name such as `$if`, leaving a lowercase
@@ -1883,11 +1852,6 @@ object PrettyPrinter {
         }
         (result <> gap <> childDoc, Some(child))
     }._1
-    trailingComments match {
-      case Some(commentList) => appendTrailingCommentList(mainDoc, mainChildren.lastOption, commentList)
-      case None => mainDoc
-    }
-  }
 
   private def prettyStringInterpolation(tree: Tree): Doc =
     tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)

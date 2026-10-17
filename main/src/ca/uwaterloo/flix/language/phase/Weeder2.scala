@@ -3432,15 +3432,10 @@ object Weeder2 {
       case _ => false
     })
 
-    // Find the first sub-tree that isn't a comment
-    tree.children.find {
-      case tree: Tree if tree.kind != TreeKind.CommentList => true
-      case _ => false
-    }.map {
-      case tree: Tree => tree
-      case _ => throw InternalCompilerException(s"expected '${tree.kind}' to have a tree child that is not a comment", tree.loc)
-    }.getOrElse(
-      throw InternalCompilerException(s"expected '${tree.kind}' to have a tree child that is not a comment", tree.loc)
+    // The parser opens a marker node before the first token of its content, so a comment ahead
+    // of the content lands outside the marker and the first tree child is the content.
+    tree.children.collectFirst { case t: Tree => t }.getOrElse(
+      throw InternalCompilerException(s"expected '${tree.kind}' to have a tree child", tree.loc)
     )
   }
 
