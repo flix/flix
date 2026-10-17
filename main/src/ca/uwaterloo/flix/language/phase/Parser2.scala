@@ -219,27 +219,6 @@ object Parser2 {
     val e = SourcePosition.FirstPosition
     var lastAdvance = Token(TokenKind.Eof, s.src, 0, 0, b, e)
 
-    /** Returns the next visible token. */
-    def nextVisible(): Token = s.tokens(s.visible(advanced))
-
-    /** Makes a [[TreeKind.CommentList]] of the given non-empty comment tokens. */
-    def mkCommentList(comments: Array[Token]): SyntaxTree.Tree = {
-      val children = new Array[SyntaxTree.Child](comments.length)
-      var i = 0
-      while (i < comments.length) {
-        children(i) = comments(i)
-        i += 1
-      }
-      val loc = mkSourceLocation(comments.head.start, comments.last.end)
-      SyntaxTree.Tree(TreeKind.CommentList, children, loc)
-    }
-
-    /** Makes a [[TreeKind.Doc]] of the given non-empty comment tokens. */
-    def mkDoc(comments: Array[Token]): SyntaxTree.Tree = {
-      val commentList = mkCommentList(comments)
-      SyntaxTree.Tree(TreeKind.Doc, Array(commentList), commentList.loc)
-    }
-
     /**
       * Inserts `children` into `workStack` at `index` as children of the node at `depth`, and moves
       * the start of every node above that node accordingly.
@@ -253,6 +232,31 @@ object Parser2 {
       }
     }
 
+    /**
+      * Returns the depth of the outermost open node that starts at the next visible token, or the
+      * current depth if no open node does. The nodes that start there are the ones opened since
+      * the last advance, except the root; they are the stack entries from that depth upwards.
+      */
+    def chainStart(): Int = {
+      var depth = startStack.length
+      while (depth > 1 && advancedStack(depth - 1) == advanced) {
+        depth -= 1
+      }
+      depth
+    }
+
+    /** Returns the depth of the outermost documentable open node at `from` or deeper, or -1. */
+    def outermostDocumentable(from: Int): Int = {
+      var depth = from
+      while (depth < startStack.length) {
+        if (kindStack(depth).isDocumentable) {
+          return depth
+        }
+        depth += 1
+      }
+      -1
+    }
+
     /** Places the comments between the last advanced token and the next visible token. */
     def placeComments(): Unit = {
       val end = s.visible(advanced)
@@ -262,55 +266,39 @@ object Parser2 {
       val comments = s.tokens.slice(nextUnplaced, end)
       nextUnplaced = end
 
-      // Before the first token every comment is a leading comment.
-      val numTrailing = if (advanced == 0) 0 else {
-        val firstLeading = comments.indexWhere(c => c.start.lineOneIndexed != lastAdvance.end.lineOneIndexed)
-        if (firstLeading == -1) comments.length else firstLeading
-      }
+      val chain = chainStart()
+      val target = outermostDocumentable(chain)
+
+      // Split the comments into three runs: the trailing comments on the line of the last advanced
+      // token, the plain leading comments, and the doc comment of the target, which runs from the
+      // first non-trailing doc comment. Before the first token the last line is 0, which no comment
+      // is on, so none is trailing.
+      val lastLine = if (advanced == 0) 0 else lastAdvance.end.lineOneIndexed
+      val numTrailing = comments.segmentLength(_.start.lineOneIndexed == lastLine)
+      val firstDoc = comments.indexWhere(_.kind == TokenKind.CommentDoc, numTrailing)
+      val docStart = if (target == -1 || firstDoc == -1) comments.length else firstDoc
       val trailing = comments.take(numTrailing)
-      val leading = comments.drop(numTrailing)
+      val leading = comments.slice(numTrailing, docStart)
+      val doc = comments.drop(docStart)
 
-      // The nodes that start at the next visible token are the nodes opened since the last
-      // advance, except the root. They are the stack entries from `chain` upwards.
-      var chain = startStack.length
-      while (chain > 1 && advancedStack(chain - 1) == advanced) {
-        chain -= 1
+      // The doc becomes the first child of the target. It goes in first: when the target is the
+      // outermost node of the chain, the plain comments are inserted at the same index and must
+      // end up in front of it.
+      if (doc.nonEmpty) {
+        insertChildren(startStack(target), target, ArrayBuffer[SyntaxTree.Child](mkDoc(doc)))
       }
-      // The innermost node open before the chain receives the comments that document nothing. They
-      // are placed just before the chain.
-      val parent = chain - 1
-      val before = if (chain < startStack.length) startStack(chain) else workStack.length
-
-      // Find the outermost documentable node that starts at the next visible token, if any.
-      var target = -1
-      var d = chain
-      while (target == -1 && d < startStack.length) {
-        if (kindStack(d).isDocumentable) {
-          target = d
-        }
-        d += 1
-      }
-
-      // The doc comment of the target is its leading comments from the first doc comment onwards.
-      val firstDoc = if (target == -1) -1 else leading.indexWhere(_.kind == TokenKind.CommentDoc)
+      // The plain comments become children of the innermost node open before the chain, placed
+      // just before the chain.
       val plain: ArrayBuffer[SyntaxTree.Child] = ArrayBuffer.empty
       if (trailing.nonEmpty) {
         plain.append(mkCommentList(trailing))
       }
-      if (firstDoc == -1) {
-        if (leading.nonEmpty) {
-          plain.append(mkCommentList(leading))
-        }
-      } else {
-        if (firstDoc > 0) {
-          plain.append(mkCommentList(leading.take(firstDoc)))
-        }
-        val documenting: ArrayBuffer[SyntaxTree.Child] = ArrayBuffer.empty
-        documenting.append(mkDoc(leading.drop(firstDoc)))
-        insertChildren(startStack(target), target, documenting)
+      if (leading.nonEmpty) {
+        plain.append(mkCommentList(leading))
       }
       if (plain.nonEmpty) {
-        insertChildren(before, parent, plain)
+        val before = if (chain < startStack.length) startStack(chain) else workStack.length
+        insertChildren(before, chain - 1, plain)
       }
     }
 
@@ -319,7 +307,7 @@ object Parser2 {
         case Event.Open(kind) =>
           startStack.append(workStack.length)
           kindStack.append(kind)
-          locationStack.append(nextVisible())
+          locationStack.append(visibleToken(advanced))
           advancedStack.append(advanced)
 
         case Event.Close =>
@@ -352,7 +340,7 @@ object Parser2 {
 
         case Event.Advance =>
           placeComments()
-          val token = nextVisible()
+          val token = visibleToken(advanced)
           lastAdvance = token
           workStack += token
           nextUnplaced += 1
@@ -366,7 +354,7 @@ object Parser2 {
     // The root is never closed (its Close was dropped above), so its children are exactly the
     // remaining contents of the work-stack. Finalize it here.
     assert(startStack.length == 1)
-    val eof = nextVisible()
+    val eof = visibleToken(advanced)
     assert(eof.kind == TokenKind.Eof)
     val loc = SourceLocation(isReal = true, s.src, SourcePosition.FirstPosition, eof.end)
     SyntaxTree.Tree(TreeKind.Root, workStack.toArray, loc)
@@ -374,6 +362,24 @@ object Parser2 {
 
   /** Returns the visible token at `pos`, an index into [[State.visible]]. */
   private def visibleToken(pos: Int)(implicit s: State): Token = s.tokens(s.visible(pos))
+
+  /** Makes a [[TreeKind.CommentList]] of the given non-empty comment tokens. */
+  private def mkCommentList(comments: Array[Token])(implicit s: State): SyntaxTree.Tree = {
+    val children = new Array[SyntaxTree.Child](comments.length)
+    var i = 0
+    while (i < comments.length) {
+      children(i) = comments(i)
+      i += 1
+    }
+    val loc = mkSourceLocation(comments.head.start, comments.last.end)
+    SyntaxTree.Tree(TreeKind.CommentList, children, loc)
+  }
+
+  /** Makes a [[TreeKind.Doc]] of the given non-empty comment tokens. */
+  private def mkDoc(comments: Array[Token])(implicit s: State): SyntaxTree.Tree = {
+    val commentList = mkCommentList(comments)
+    SyntaxTree.Tree(TreeKind.Doc, Array(commentList), commentList.loc)
+  }
 
   /** Get the previous position of the parser as a [[SourceLocation]]. */
   private def previousSourceLocation()(implicit s: State): SourceLocation = {
