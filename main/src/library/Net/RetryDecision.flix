@@ -16,9 +16,9 @@ pub mod Net.RetryDecision {
     /// Type of decisions returned by a retry strategy.
     ///
     pub enum RetryDecision with Eq, ToString {
-        /// Retry after the given duration.
+        // Retry after the given duration.
         case Retry(Duration)
-        /// Do not retry; propagate the last result.
+        // Do not retry; propagate the last result.
         case Stop
     }
 

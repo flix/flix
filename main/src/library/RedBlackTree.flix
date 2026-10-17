@@ -30,19 +30,13 @@ pub mod RedBlackTree {
     /// number of black nodes.
     ///
     pub enum RedBlackTree[k, v] {
-        ///
-        /// A black leaf.
-        ///
+        // A black leaf.
         case Leaf
 
-        ///
-        /// A double-black leaf.
-        ///
+        // A double-black leaf.
         case DoubleBlackLeaf
 
-        ///
-        /// A tree node consists of a color, left subtree, key, value and right subtree.
-        ///
+        // A tree node consists of a color, left subtree, key, value and right subtree.
         case Node(RedBlackTree.Color, RedBlackTree[k, v], k, v, RedBlackTree[k, v])
     }
 
@@ -101,9 +95,7 @@ pub mod RedBlackTree {
         case Red
         case Black
 
-        ///
-        /// The special color double-black is allowed temporarily during deletion.
-        ///
+        // The special color double-black is allowed temporarily during deletion.
         case DoubleBlack
     }
 

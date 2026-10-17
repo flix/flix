@@ -143,7 +143,7 @@ pub mod Graph {
     ///
     pub def distances(g: m[(t, Int32, t)]): Option[Map[(t, t), Int32]] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         // Algorithm based on floyd-warshall.
-        /// Returns the number of items in `s` less than `v`.
+        // Returns the number of items in `s` less than `v`.
         def rank(v, s) = s |> Set.partition(v0 -> v0 < v) |> fst |> Set.size;
         let edges = inject g into Edge/3;
         let negCycle = #{
