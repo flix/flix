@@ -122,7 +122,7 @@ object Lowering {
     case TypedAst.Enum(doc, ann, mod, sym, tparams0, _, cases0, loc) =>
       val tparams = tparams0.map(lowerTypeParam)
       val cases = cases0.map {
-        case (_, TypedAst.Case(caseSym, tpes0, _, caseLoc)) =>
+        case (_, TypedAst.Case(_, caseSym, tpes0, _, caseLoc)) =>
           val tpes = tpes0.map(lowerType)
           (caseSym, MonoAst.Case(caseSym, tpes, caseLoc))
       }

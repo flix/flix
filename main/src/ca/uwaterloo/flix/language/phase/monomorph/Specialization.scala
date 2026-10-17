@@ -410,8 +410,8 @@ object Specialization {
   /** Converts `caze`, simplifying its polymorphic type. */
   def visitEnumCase(caze: TypedAst.Case)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Case = {
     caze match {
-      case TypedAst.Case(sym, tpes, sc, loc) =>
-        TypedAst.Case(sym, tpes.map(simplify(_, isGround = false)), sc, loc)
+      case TypedAst.Case(doc, sym, tpes, sc, loc) =>
+        TypedAst.Case(doc, sym, tpes.map(simplify(_, isGround = false)), sc, loc)
     }
   }
 

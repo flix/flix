@@ -93,7 +93,7 @@ object Visitor {
   }
 
   private def visitCase(cse: Case)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Case(_, tpes, _, loc) = cse
+    val Case(_, _, tpes, _, loc) = cse
     if (!a.accept(loc)) {
       return
     }

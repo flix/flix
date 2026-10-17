@@ -132,7 +132,7 @@ object Resolver {
     case enum0: ResolvedAst.Declaration.RestrictableEnum => SymbolTable.empty.addRestrictableEnum(enum0)
     case alias: ResolvedAst.Declaration.TypeAlias => SymbolTable.empty.addTypeAlias(alias)
     case effect: ResolvedAst.Declaration.Effect => SymbolTable.empty.addEffect(effect)
-    case ResolvedAst.Declaration.Case(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
+    case ResolvedAst.Declaration.Case(_, sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.RestrictableCase(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.Op(sym, _, loc) => throw InternalCompilerException(s"Unexpected declaration: $sym", loc)
     case ResolvedAst.Declaration.Sig(sym, _, _, loc) => throw InternalCompilerException(s"Unexpected declaration: $sym", loc)
@@ -397,7 +397,7 @@ object Resolver {
       Some(resolveEffect(eff, scp0, taenv, ns0, root))
     case NamedAst.Declaration.Op(sym, _, _) => throw InternalCompilerException("unexpected op", sym.loc)
     case NamedAst.Declaration.Sig(sym, _, _, _) => throw InternalCompilerException("unexpected sig", sym.loc)
-    case NamedAst.Declaration.Case(sym, _, _) => throw InternalCompilerException("unexpected case", sym.loc)
+    case NamedAst.Declaration.Case(_, sym, _, _) => throw InternalCompilerException("unexpected case", sym.loc)
     case NamedAst.Declaration.StructField(_, sym, _, _) => throw InternalCompilerException("unexpected struct field", sym.loc)
     case NamedAst.Declaration.RestrictableCase(sym, _, _) => throw InternalCompilerException("unexpected case", sym.loc)
     case NamedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _) => throw InternalCompilerException("unexpected associated type definition", ident.loc)
@@ -613,9 +613,9 @@ object Resolver {
     * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
     */
   private def resolveCase(caze0: NamedAst.Declaration.Case, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.Declaration.Case = caze0 match {
-    case NamedAst.Declaration.Case(sym, tpes0, loc) =>
+    case NamedAst.Declaration.Case(doc, sym, tpes0, loc) =>
       val tpes = tpes0.map(resolveType(_, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix))
-      ResolvedAst.Declaration.Case(sym, tpes, loc)
+      ResolvedAst.Declaration.Case(doc, sym, tpes, loc)
   }
 
   /**
@@ -3543,7 +3543,7 @@ object Resolver {
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym
     case NamedAst.Declaration.Effect(_, _, _, sym, _, _, _) => sym
     case NamedAst.Declaration.Op(sym, _, _) => sym
-    case NamedAst.Declaration.Case(sym, _, _) => sym
+    case NamedAst.Declaration.Case(_, sym, _, _) => sym
     case NamedAst.Declaration.RestrictableCase(sym, _, _) => sym
     case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("unexpected associated type definition", loc)
     case NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => throw InternalCompilerException("unexpected instance", loc)

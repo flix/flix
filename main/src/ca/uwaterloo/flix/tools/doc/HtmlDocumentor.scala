@@ -1721,11 +1721,15 @@ object HtmlDocumentor {
   /**
     * Documents the given list of `Case`s of an enum.
     *
+    * Each case gets the id `case-<name>`, so it can be linked to, and its doc comment, if any,
+    * is rendered below it.
+    *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docCases(cases: List[TypedAst.Case])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<div class='cases'>")
     for (c <- cases.sortBy(_.loc)) {
+      sb.append(s"<div class='case' id='case-${esc(c.sym.name)}'>")
       sb.append("<code>")
       sb.append("<span class='keyword'>case</span> ")
       sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>")
@@ -1741,6 +1745,8 @@ object HtmlDocumentor {
       }
 
       sb.append("</code>")
+      docDoc(c.doc)
+      sb.append("</div>")
     }
     sb.append("</div>")
   }

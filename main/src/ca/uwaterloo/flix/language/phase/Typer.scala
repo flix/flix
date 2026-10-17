@@ -334,9 +334,9 @@ object Typer {
     * Reconstructs types in the given case.
     */
   private def visitCase(caze: KindedAst.Case)(implicit sctx: SharedContext): TypedAst.Case = caze match {
-    case KindedAst.Case(caseSym, tagTypes, sc, caseLoc) =>
+    case KindedAst.Case(doc, caseSym, tagTypes, sc, caseLoc) =>
       tagTypes.foreach(checkNoAssocTypes)
-      TypedAst.Case(caseSym, tagTypes, sc, caseLoc)
+      TypedAst.Case(doc, caseSym, tagTypes, sc, caseLoc)
   }
 
   /**

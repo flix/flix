@@ -337,7 +337,7 @@ object Namer {
     case NamedAst.Declaration.Op(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    case caze@NamedAst.Declaration.Case(sym, _, _) =>
+    case caze@NamedAst.Declaration.Case(_, sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, caze)
 
     case caze@NamedAst.Declaration.RestrictableCase(sym, _, _) =>
@@ -659,10 +659,10 @@ object Namer {
     * Performs naming on the given enum case.
     */
   private def visitCase(case0: DesugaredAst.Case, enumSym: Symbol.EnumSym, ordinal: Int)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Case = case0 match {
-    case DesugaredAst.Case(ident, tpes, loc) =>
+    case DesugaredAst.Case(doc, ident, tpes, loc) =>
       val ts = tpes.map(visitType)
       val caseSym = Symbol.mkCaseSym(enumSym, ident, ordinal)
-      NamedAst.Declaration.Case(caseSym, ts, loc)
+      NamedAst.Declaration.Case(doc, caseSym, ts, loc)
   }
 
   /**
@@ -1794,7 +1794,7 @@ object Namer {
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Effect(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Op(sym, _, _) => sym.loc
-    case NamedAst.Declaration.Case(sym, _, _) => sym.loc
+    case NamedAst.Declaration.Case(_, sym, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableCase(sym, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)

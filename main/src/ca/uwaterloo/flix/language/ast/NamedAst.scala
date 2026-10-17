@@ -59,7 +59,7 @@ object NamedAst {
 
     case class Op(sym: Symbol.OpSym, spec: Spec, loc: SourceLocation) extends Declaration
 
-    case class Case(sym: Symbol.CaseSym, tpes: List[Type], loc: SourceLocation) extends Declaration
+    case class Case(doc: Doc, sym: Symbol.CaseSym, tpes: List[Type], loc: SourceLocation) extends Declaration
 
     case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpes: List[Type], loc: SourceLocation) extends Declaration
   }

@@ -202,7 +202,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given case `case0`.
     */
   private def visitCase(case0: TypedAst.Case): Iterator[SemanticToken] = case0 match {
-    case TypedAst.Case(sym, tpes, _, _) =>
+    case TypedAst.Case(_, sym, tpes, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, sym.loc)
       tpes.foldLeft(Iterator(t)) {
         case (acc, tpe) => acc ++ visitType(tpe)
