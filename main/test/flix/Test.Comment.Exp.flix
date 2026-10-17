@@ -51,4 +51,18 @@ mod Test.Comment.Exp {
         def g(x: Int32): Int32 = x;
         g(1)
 
+    // infix operators
+    pub def infix01(): Int32 =
+        // a comment before the left operand
+        1
+        `plus`
+        // a comment before the right operand
+        2
+    pub def infix02(): Int32 = 1 /* c */ + /* c */ 2
+    pub def plus(x: Int32, y: Int32): Int32 = x + y
+
+    // collection literals
+    pub def collection01(): List[Int32] = List#{/* c */}
+    pub def collection02(): List[Int32] = List#{/* c */ 1 /* c */, /* c */ 2 /* c */}
+
 }
