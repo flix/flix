@@ -47,7 +47,7 @@ mod Test.Comment.Exp {
 
     // local def
     pub def localDef01(): Int32 =
-        /// doc on a local def
+        // comment on a local def
         def g(x: Int32): Int32 = x;
         g(1)
 
