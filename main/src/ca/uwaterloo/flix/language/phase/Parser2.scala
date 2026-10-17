@@ -158,13 +158,14 @@ object Parser2 {
     // always a contiguous suffix of `workStack`. On Open we remember where that suffix begins; on
     // Close we copy the suffix into a right-sized array, shrink the work-stack back to the start,
     // and push the finished node so it becomes a child of its parent.
-    //
-    // Lists are used as the remaining stacks: they have constant time prepend (+:) and tail, and
-    // their depth is only the current nesting level (small).
     val workStack: ArrayBuffer[SyntaxTree.Child] = ArrayBuffer.empty
-    var startStack: List[Int] = List.empty
-    var kindStack: List[TreeKind] = List.empty
-    var locationStack: List[Token] = List.empty
+
+    // The remaining stacks hold, for every currently-open node, where its children begin in
+    // `workStack`, its kind and the token it starts at. Their depth is only the current nesting
+    // level (small).
+    val startStack: ArrayBuffer[Int] = ArrayBuffer.empty
+    val kindStack: ArrayBuffer[TreeKind] = ArrayBuffer.empty
+    val locationStack: ArrayBuffer[Token] = ArrayBuffer.empty
 
     // Drop the last event, which must be a Close. This leaves the root node unclosed so that it is
     // never popped during the loop below; it is finalized separately afterwards, when the work-stack
@@ -183,14 +184,15 @@ object Parser2 {
     for (event <- s.events) {
       event match {
         case Event.Open(kind) =>
-          locationStack = tokens.head +: locationStack
-          startStack = workStack.length +: startStack
-          kindStack = kind +: kindStack
+          startStack.append(workStack.length)
+          kindStack.append(kind)
+          locationStack.append(tokens.head)
 
         case Event.Close =>
-          val start = startStack.head
-          val kind = kindStack.head
-          val openToken = locationStack.head
+          val top = startStack.length - 1
+          val start = startStack(top)
+          val kind = kindStack(top)
+          val openToken = locationStack(top)
           val numChildren = workStack.length - start
           val loc = if (numChildren == 0)
             // If the subtree has no children, give it a zero length position just after the last
@@ -208,9 +210,9 @@ object Parser2 {
             i += 1
           }
           workStack.dropRightInPlace(numChildren)
-          startStack = startStack.tail
-          kindStack = kindStack.tail
-          locationStack = locationStack.tail
+          startStack.dropRightInPlace(1)
+          kindStack.dropRightInPlace(1)
+          locationStack.dropRightInPlace(1)
           workStack += SyntaxTree.Tree(kind, childArray, loc)
 
         case Event.Advance =>
@@ -223,20 +225,10 @@ object Parser2 {
     // The root is never closed (its Close was dropped above), so its children are exactly the
     // remaining contents of the work-stack. Finalize it here.
     assert(startStack.length == 1)
-    val root = SyntaxTree.Tree(
-      kindStack.head,
-      workStack.toArray,
-      // Set source location of the root.
-      SourceLocation(
-        isReal = true,
-        s.src,
-        SourcePosition.FirstPosition,
-        tokens.head.end
-      )
-    )
-
-    assert(tokens.next().kind == TokenKind.Eof)
-    root
+    val eof = tokens.next()
+    assert(eof.kind == TokenKind.Eof)
+    val loc = SourceLocation(isReal = true, s.src, SourcePosition.FirstPosition, eof.end)
+    SyntaxTree.Tree(TreeKind.Root, workStack.toArray, loc)
   }
 
   /** Get first non-comment previous position of the parser as a [[SourceLocation]]. */
