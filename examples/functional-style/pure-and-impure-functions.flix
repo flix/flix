@@ -15,5 +15,5 @@ def twice(f: Int32 -> Int32, x: Int32): Int32 = f(f(x))
 /// We can pass a pure function to twice.
 pub def f(): Int32 = twice(inc, 42)
 
-/// But we *cannot* pass an impure function.
+// But we *cannot* pass an impure function.
 // pub def g(): Int32 = twice(printAndInc, 42)
