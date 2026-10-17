@@ -193,9 +193,9 @@ object Kinder {
     * Performs kinding on the given struct field under the given kind environment.
     */
   private def visitStructField(field0: ResolvedAst.Declaration.StructField, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.StructField = field0 match {
-    case ResolvedAst.Declaration.StructField(mod, sym, tpe0, loc) =>
+    case ResolvedAst.Declaration.StructField(doc, mod, sym, tpe0, loc) =>
       val t = visitType(tpe0, Kind.Star, kenv, root)
-      KindedAst.StructField(mod, sym, t, loc)
+      KindedAst.StructField(doc, mod, sym, t, loc)
   }
 
   /**

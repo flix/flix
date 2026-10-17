@@ -504,12 +504,13 @@ object Weeder2 {
 
     private def visitStructField(tree: Tree)(implicit sctx: SharedContext): StructField = {
       expect(tree, TreeKind.StructField)
+      val doc = pickDocumentation(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordMut))
       val ident = pickNameIdent(tree)
       val ttype = Types.pickType(tree)
       // Make a source location that spans the name and type
       val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.start, tree.loc.end)
-      StructField(mod, Name.mkLabel(ident), ttype, loc)
+      StructField(doc, mod, Name.mkLabel(ident), ttype, loc)
     }
 
     private def visitTypeAliasDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.TypeAlias = {

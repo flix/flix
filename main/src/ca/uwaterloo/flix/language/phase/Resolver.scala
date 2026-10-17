@@ -398,7 +398,7 @@ object Resolver {
     case NamedAst.Declaration.Op(sym, _, _) => throw InternalCompilerException("unexpected op", sym.loc)
     case NamedAst.Declaration.Sig(sym, _, _, _) => throw InternalCompilerException("unexpected sig", sym.loc)
     case NamedAst.Declaration.Case(_, sym, _, _) => throw InternalCompilerException("unexpected case", sym.loc)
-    case NamedAst.Declaration.StructField(_, sym, _, _) => throw InternalCompilerException("unexpected struct field", sym.loc)
+    case NamedAst.Declaration.StructField(_, _, sym, _, _) => throw InternalCompilerException("unexpected struct field", sym.loc)
     case NamedAst.Declaration.RestrictableCase(sym, _, _) => throw InternalCompilerException("unexpected case", sym.loc)
     case NamedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _) => throw InternalCompilerException("unexpected associated type definition", ident.loc)
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => throw InternalCompilerException("unexpected associated type signature", sym.loc)
@@ -622,9 +622,9 @@ object Resolver {
     * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
     */
   private def resolveStructField(field0: NamedAst.Declaration.StructField, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.Declaration.StructField = field0 match {
-    case NamedAst.Declaration.StructField(mod, sym, tpe0, loc) =>
+    case NamedAst.Declaration.StructField(doc, mod, sym, tpe0, loc) =>
       val tpe = resolveType(tpe0, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
-      ResolvedAst.Declaration.StructField(mod, sym, tpe, loc)
+      ResolvedAst.Declaration.StructField(doc, mod, sym, tpe, loc)
   }
 
   /**
@@ -3537,7 +3537,7 @@ object Resolver {
     case NamedAst.Declaration.Def(sym, _, _, _) => sym
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym
     case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) => sym
-    case NamedAst.Declaration.StructField(_, sym, _, _) => sym
+    case NamedAst.Declaration.StructField(_, _, sym, _, _) => sym
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym
