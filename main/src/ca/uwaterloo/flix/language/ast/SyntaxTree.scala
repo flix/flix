@@ -52,7 +52,36 @@ object SyntaxTree {
   /**
     * A common super-type for [[TreeKind]]s
     */
-  sealed trait TreeKind
+  sealed trait TreeKind {
+
+    /**
+      * Returns `true` if a node of this kind may carry a doc comment, i.e. if the `///` lines above
+      * it document it. These are the kinds the weeder reads documentation from.
+      */
+    def isDocumentable: Boolean = this match {
+      case TreeKind.Decl.AssociatedTypeDef => true
+      case TreeKind.Decl.AssociatedTypeSig => true
+      case TreeKind.Decl.Def => true
+      case TreeKind.Decl.Effect => true
+      case TreeKind.Decl.Enum => true
+      case TreeKind.Decl.Instance => true
+      case TreeKind.Decl.Module => true
+      case TreeKind.Decl.Op => true
+      case TreeKind.Decl.Redef => true
+      case TreeKind.Decl.RestrictableEnum => true
+      case TreeKind.Decl.Signature => true
+      case TreeKind.Decl.Struct => true
+      case TreeKind.Decl.Trait => true
+      case TreeKind.Decl.TypeAlias => true
+      case TreeKind.Case => true
+      case TreeKind.StructField => true
+      case TreeKind.Expr.JvmConstructor => true
+      case TreeKind.Expr.JvmMethod => true
+      case TreeKind.Expr.LocalDef => true
+      case TreeKind.Expr.RunWithRuleFragment => true
+      case _ => false
+    }
+  }
 
   /**
     * Different kinds of syntax nodes in a [[SyntaxTree]].

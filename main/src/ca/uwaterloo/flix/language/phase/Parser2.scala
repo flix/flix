@@ -16,7 +16,6 @@ import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
-import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -60,7 +59,24 @@ object Parser2 {
   }
 
   private class State(val tokens: Array[Token], val src: Source) {
-    /** The current token being considered by the parser. */
+    /**
+      * The indices into `tokens` of the tokens the grammar sees: every token that is not a comment,
+      * including the final [[TokenKind.Eof]]. The grammar never sees a comment. Instead
+      * [[buildTree]] puts the comments back into the syntax tree.
+      */
+    val visible: Array[Int] = {
+      val buf = new ArrayBuffer[Int](tokens.length)
+      var i = 0
+      while (i < tokens.length) {
+        if (!tokens(i).kind.isComment) {
+          buf.append(i)
+        }
+        i += 1
+      }
+      buf.toArray
+    }
+
+    /** The current token being considered by the parser, as an index into [[visible]]. */
     var position: Int = 0
 
     /**
@@ -93,11 +109,10 @@ object Parser2 {
     * Marks point to positions in a list of tokens where an Open or Close event resides.
     *
     * This is useful because it lets the parser open a group, without knowing exactly what
-    * [[TreeKind]] the group should have. For instance, we need to look past doc-comments,
-    * annotations and modifiers to see what kind of declaration we are dealing with (def, enum,
-    * trait...). The convention used throughout is to open a group with kind [[TreeKind.ErrorTree]]
-    * and then later close it with the correct kind. This happens via the [[open]] and [[close]]
-    * functions.
+    * [[TreeKind]] the group should have. For instance, we need to look past annotations and
+    * modifiers to see what kind of declaration we are dealing with (def, enum, trait...). The
+    * convention used throughout is to open a group with kind [[TreeKind.ErrorTree]] and then later
+    * close it with the correct kind. This happens via the [[open]] and [[close]] functions.
     *
     * Conversely, we sometimes need to open a group before the currently open one. The best example
     * is binary expressions. In '1 + 2' we first see '1' and open a group for a Literal. Then we see
@@ -147,9 +162,26 @@ object Parser2 {
     (tree, s.errors.toList)
   }
 
+  /**
+    * Builds the syntax tree from the events in state.
+    *
+    * The grammar only sees the visible tokens (see [[State.visible]]), so the comments are put back
+    * into the tree here. The comments between two visible tokens `p` and `n` are placed by one rule:
+    *
+    *   - A comment that starts on the line where `p` ends is a trailing comment. The trailing
+    *     comments become a [[TreeKind.CommentList]] in the innermost node that was open when `p`
+    *     was added, placed before any node that starts at `n`.
+    *   - The other comments are leading comments. If a node that starts at `n` is documentable
+    *     (see [[TreeKind.isDocumentable]]) and the leading comments contain a doc comment, then the
+    *     leading comments from the first doc comment onwards become a [[TreeKind.Doc]] that is the
+    *     first child of the outermost such node. The remaining leading comments are placed like
+    *     the trailing comments.
+    *
+    * Hence a node only has a comment as its first child if that is its [[TreeKind.Doc]], the span
+    * of a node never includes a comment, and a doc comment always belongs to the declaration
+    * below it.
+    */
   private def buildTree()(implicit s: State): SyntaxTree.Tree = {
-    val tokens = s.tokens.iterator.buffered
-
     // A node's children are not known until its Close event, but we want to allocate each node's
     // `Array[Child]` exactly once, at its final size, with each child copied exactly once.
     //
@@ -161,11 +193,12 @@ object Parser2 {
     val workStack: ArrayBuffer[SyntaxTree.Child] = ArrayBuffer.empty
 
     // The remaining stacks hold, for every currently-open node, where its children begin in
-    // `workStack`, its kind and the token it starts at. Their depth is only the current nesting
-    // level (small).
+    // `workStack`, its kind, the visible token it starts at, and how many visible tokens had been
+    // advanced when it was opened. Their depth is only the current nesting level (small).
     val startStack: ArrayBuffer[Int] = ArrayBuffer.empty
     val kindStack: ArrayBuffer[TreeKind] = ArrayBuffer.empty
     val locationStack: ArrayBuffer[Token] = ArrayBuffer.empty
+    val advancedStack: ArrayBuffer[Int] = ArrayBuffer.empty
 
     // Drop the last event, which must be a Close. This leaves the root node unclosed so that it is
     // never popped during the loop below; it is finalized separately afterwards, when the work-stack
@@ -177,16 +210,105 @@ object Parser2 {
       case _ => false
     })
 
+    // The number of visible tokens advanced so far.
+    var advanced = 0
+    // The index into `s.tokens` of the first token, comment or not, that is not yet in the tree.
+    var nextUnplaced = 0
     // Make a synthetic token to begin with, to make the SourceLocations generated below be correct.
     val b = SourcePosition.FirstPosition
     val e = SourcePosition.FirstPosition
     var lastAdvance = Token(TokenKind.Eof, s.src, 0, 0, b, e)
+
+    /**
+      * Inserts `children` into `workStack` at `index` as children of the node at `depth`, and moves
+      * the start of every node above that node accordingly.
+      */
+    def insertChildren(index: Int, depth: Int, children: ArrayBuffer[SyntaxTree.Child]): Unit = {
+      workStack.insertAll(index, children)
+      var d = depth + 1
+      while (d < startStack.length) {
+        startStack(d) += children.length
+        d += 1
+      }
+    }
+
+    /**
+      * Returns the depth of the outermost open node that starts at the next visible token, or the
+      * current depth if no open node does. The nodes that start there are the ones opened since
+      * the last advance, except the root; they are the stack entries from that depth upwards.
+      */
+    def chainStart(): Int = {
+      var depth = startStack.length
+      while (depth > 1 && advancedStack(depth - 1) == advanced) {
+        depth -= 1
+      }
+      depth
+    }
+
+    /** Returns the depth of the outermost documentable open node at `from` or deeper, or -1. */
+    def outermostDocumentable(from: Int): Int = {
+      var depth = from
+      while (depth < startStack.length) {
+        if (kindStack(depth).isDocumentable) {
+          return depth
+        }
+        depth += 1
+      }
+      -1
+    }
+
+    /** Places the comments between the last advanced token and the next visible token. */
+    def placeComments(): Unit = {
+      val end = s.visible(advanced)
+      if (nextUnplaced >= end) {
+        return
+      }
+      val comments = s.tokens.slice(nextUnplaced, end)
+      nextUnplaced = end
+
+      val chain = chainStart()
+      val target = outermostDocumentable(chain)
+
+      // Split the comments into three runs: the trailing comments on the line of the last advanced
+      // token, the plain leading comments, and the doc comment of the target, which runs from the
+      // first non-trailing doc comment. Before the first token the last line is 0, which no comment
+      // is on, so none is trailing.
+      val lastLine = if (advanced == 0) 0 else lastAdvance.end.lineOneIndexed
+      val numTrailing = comments.segmentLength(_.start.lineOneIndexed == lastLine)
+      val firstDoc = comments.indexWhere(_.kind == TokenKind.CommentDoc, numTrailing)
+      val docStart = if (target == -1 || firstDoc == -1) comments.length else firstDoc
+      val trailing = comments.take(numTrailing)
+      val leading = comments.slice(numTrailing, docStart)
+      val doc = comments.drop(docStart)
+
+      // The doc becomes the first child of the target. It goes in first: when the target is the
+      // outermost node of the chain, the plain comments are inserted at the same index and must
+      // end up in front of it.
+      if (doc.nonEmpty) {
+        insertChildren(startStack(target), target, ArrayBuffer[SyntaxTree.Child](mkDoc(doc)))
+      }
+      // The plain comments become children of the innermost node open before the chain, placed
+      // just before the chain.
+      val plain: ArrayBuffer[SyntaxTree.Child] = ArrayBuffer.empty
+      if (trailing.nonEmpty) {
+        plain.append(mkCommentList(trailing))
+      }
+      if (leading.nonEmpty) {
+        plain.append(mkCommentList(leading))
+      }
+      if (plain.nonEmpty) {
+        val before = if (chain < startStack.length) startStack(chain) else workStack.length
+        insertChildren(before, chain - 1, plain)
+      }
+    }
+
     for (event <- s.events) {
       event match {
         case Event.Open(kind) =>
           startStack.append(workStack.length)
           kindStack.append(kind)
-          locationStack.append(tokens.head)
+          locationStack.append(visibleToken(advanced))
+          advancedStack.append(advanced)
 
         case Event.Close =>
           val top = startStack.length - 1
@@ -213,40 +335,61 @@ object Parser2 {
           startStack.dropRightInPlace(1)
           kindStack.dropRightInPlace(1)
           locationStack.dropRightInPlace(1)
+          advancedStack.dropRightInPlace(1)
           workStack += SyntaxTree.Tree(kind, childArray, loc)
 
         case Event.Advance =>
-          val token = tokens.next()
+          placeComments()
+          val token = visibleToken(advanced)
           lastAdvance = token
           workStack += token
+          nextUnplaced += 1
+          advanced += 1
       }
     }
+
+    // Place the comments after the last visible token.
+    placeComments()
 
     // The root is never closed (its Close was dropped above), so its children are exactly the
     // remaining contents of the work-stack. Finalize it here.
     assert(startStack.length == 1)
-    val eof = tokens.next()
+    val eof = visibleToken(advanced)
     assert(eof.kind == TokenKind.Eof)
     val loc = SourceLocation(isReal = true, s.src, SourcePosition.FirstPosition, eof.end)
     SyntaxTree.Tree(TreeKind.Root, workStack.toArray, loc)
   }
 
-  /** Get first non-comment previous position of the parser as a [[SourceLocation]]. */
-  private def previousSourceLocation()(implicit s: State): SourceLocation = {
-    val prevPos = (s.position - previousNonComment(1)).max(0)
-    if (0 <= prevPos && prevPos < s.tokens.length) {
-      val token = s.tokens(prevPos)
-      token.mkSourceLocation()
-    } else {
-      // This cannot happen.
-      throw InternalCompilerException(s"Parser arrived in impossible case", currentSourceLocation())
+  /** Returns the visible token at `pos`, an index into [[State.visible]]. */
+  private def visibleToken(pos: Int)(implicit s: State): Token = s.tokens(s.visible(pos))
+
+  /** Makes a [[TreeKind.CommentList]] of the given non-empty comment tokens. */
+  private def mkCommentList(comments: Array[Token])(implicit s: State): SyntaxTree.Tree = {
+    val children = new Array[SyntaxTree.Child](comments.length)
+    var i = 0
+    while (i < comments.length) {
+      children(i) = comments(i)
+      i += 1
     }
+    val loc = mkSourceLocation(comments.head.start, comments.last.end)
+    SyntaxTree.Tree(TreeKind.CommentList, children, loc)
+  }
+
+  /** Makes a [[TreeKind.Doc]] of the given non-empty comment tokens. */
+  private def mkDoc(comments: Array[Token])(implicit s: State): SyntaxTree.Tree = {
+    val commentList = mkCommentList(comments)
+    SyntaxTree.Tree(TreeKind.Doc, Array(commentList), commentList.loc)
+  }
+
+  /** Get the previous position of the parser as a [[SourceLocation]]. */
+  private def previousSourceLocation()(implicit s: State): SourceLocation = {
+    val prevPos = (s.position - 1).max(0)
+    visibleToken(prevPos).mkSourceLocation()
   }
 
   /** Get current position of the parser as a [[SourceLocation]]. */
   private def currentSourceLocation()(implicit s: State): SourceLocation = {
-    val token = s.tokens(s.position)
-    token.mkSourceLocation()
+    visibleToken(s.position).mkSourceLocation()
   }
 
   /** Returns a real location of the current source and the given positions. */
@@ -257,24 +400,16 @@ object Parser2 {
   /**
     * Opens a group with kind [[TreeKind.UnclosedMark]].
     * Each call to [[open]] must have a pairing call to [[close]]. This is asserted in [[buildTree]].
-    * [[open]] consumes comments into the opened group.
     */
-  private def open(consumeDocComments: Boolean = true)(implicit s: State): Mark.Opened = {
+  private def open()(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(s.events.length)
     s.events.append(Event.Open(TreeKind.UnclosedMark))
-    // Consume any comments just before opening a new mark.
-    comments(consumeDocComments = consumeDocComments)
     mark
   }
 
-  /**
-    * Closes a group and marks it with `kind`. [[close]] consumes comments into the group before
-    * closing.
-    */
+  /** Closes a group and marks it with `kind`. */
   private def close(mark: Mark.Opened, kind: TreeKind)(implicit s: State): Mark.Closed = {
     s.events(mark.index) = Event.Open(kind)
-    // Consume any comments just before closing a mark.
-    comments()
     s.events.append(Event.Close)
     Mark.Closed(mark.index)
   }
@@ -329,7 +464,7 @@ object Parser2 {
 
   /** Check if the parser is at the end-of-file. */
   private def eof()(implicit s: State): Boolean = {
-    s.position == s.tokens.length - 1
+    s.position == s.visible.length - 1
   }
 
   /**
@@ -344,11 +479,11 @@ object Parser2 {
       throw InternalCompilerException(s"Parser is stuck", currentSourceLocation())
     }
 
-    if (s.position + lookahead >= s.tokens.length - 1) {
+    if (s.position + lookahead >= s.visible.length - 1) {
       TokenKind.Eof
     } else {
       s.fuel -= 1
-      s.tokens(s.position + lookahead).kind
+      visibleToken(s.position + lookahead).kind
     }
   }
 
@@ -364,11 +499,11 @@ object Parser2 {
       throw InternalCompilerException(s"Parser is stuck", currentSourceLocation())
     }
 
-    if (s.position + lookahead >= s.tokens.length - 1) {
+    if (s.position + lookahead >= s.visible.length - 1) {
       None
     } else {
       s.fuel -= 1
-      Some(s.tokens(s.position + lookahead))
+      Some(visibleToken(s.position + lookahead))
     }
   }
 
@@ -424,17 +559,7 @@ object Parser2 {
     }
   }
 
-  /**
-    * Advance past current token if it is of kind `kind`. Otherwise wrap it in an error.
-    *
-    * [[expect]] does not consume comments. That means that consecutive calls to [[expect]] work in
-    * an atomic manner.
-    *
-    * expect(TokenKind.KeywordIf)
-    * expect(TokenKind.ParenL)
-    *
-    * Means "if (" with no comment between "if" and "(".
-    */
+  /** Advance past current token if it is of kind `kind`. Otherwise wrap it in an error. */
   private def expect(kind: TokenKind, hint: Option[String] = None)(implicit sctx: SyntacticContext, s: State): Unit = {
     if (eat(kind)) {
       return
@@ -442,9 +567,6 @@ object Parser2 {
 
     val mark = open()
     val error = nth(0) match {
-      case TokenKind.CommentLine => MisplacedComments(sctx, currentSourceLocation())
-      case TokenKind.CommentBlock => MisplacedComments(sctx, currentSourceLocation())
-      case TokenKind.CommentDoc => MisplacedDocComments(sctx, currentSourceLocation())
       case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(kind)), actual = Some(at), sctx, hint = hint, loc = currentSourceLocation())
     }
     closeWithError(mark, error)
@@ -461,9 +583,6 @@ object Parser2 {
     }
     val mark = open()
     val error = nth(0) match {
-      case TokenKind.CommentLine => MisplacedComments(sctx, currentSourceLocation())
-      case TokenKind.CommentBlock => MisplacedComments(sctx, currentSourceLocation())
-      case TokenKind.CommentDoc => MisplacedDocComments(sctx, currentSourceLocation())
       case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(kinds), actual = Some(at), sctx, hint = hint, loc = currentSourceLocation())
     }
     closeWithError(mark, error)
@@ -481,9 +600,6 @@ object Parser2 {
     }
     val mark = open()
     val error = nth(0) match {
-      case TokenKind.CommentLine => MisplacedComments(sctx, currentSourceLocation())
-      case TokenKind.CommentBlock => MisplacedComments(sctx, currentSourceLocation())
-      case TokenKind.CommentDoc => MisplacedDocComments(sctx, currentSourceLocation())
       case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(kinds), actual = Some(at), sctx, hint = hint, loc = currentSourceLocation())
     }
     closeWithError(mark, error)
@@ -508,30 +624,6 @@ object Parser2 {
       }
     }
     false
-  }
-
-  /** Returns the distance to the first non-comment token after lookahead. */
-  @tailrec
-  private def nextNonComment(lookahead: Int)(implicit s: State): Int = {
-    if (s.position + lookahead > s.tokens.length - 1) {
-      lookahead
-    } else s.tokens(s.position + lookahead).kind match {
-      case t if t.isComment => nextNonComment(lookahead + 1)
-      case _ => lookahead
-    }
-  }
-
-  /**
-    * Returns the distance to the first non-comment token after lookahead.
-    */
-  @tailrec
-  private def previousNonComment(lookbehind: Int)(implicit s: State): Int = {
-    if (s.position - lookbehind < 1) {
-      lookbehind
-    } else s.tokens(s.position - lookbehind).kind match {
-      case t if t.isComment => previousNonComment(lookbehind + 1)
-      case _ => lookbehind
-    }
   }
 
   /** Separation permissions between a list of items. */
@@ -599,7 +691,6 @@ object Parser2 {
                         )(implicit sctx: SyntacticContext, s: State): Int = {
     def atEnd(): Boolean = at(delimiterR) || optionallyWith.exists { case (indicator, _) => at(indicator) }
 
-    comments()
     if (!at(delimiterL)) {
       expect(delimiterL)
       return 0
@@ -607,12 +698,10 @@ object Parser2 {
     expect(delimiterL)
     var continue = true
     var numItems = 0
-    comments()
     while (continue && !atEnd() && !eof()) {
       val kind = nth(0)
       if (checkForItem(kind)) {
         getItem()
-        comments()
         numItems += 1
         if (!atEnd()) {
           // Check for separator if needed.
@@ -621,7 +710,6 @@ object Parser2 {
             case Separation.Optional(separator, _) => eat(separator)
             case Separation.None =>
           }
-          comments()
           // Check for trailing separator if needed.
           if (atEnd()) {
             separation match {
@@ -642,14 +730,10 @@ object Parser2 {
           advanceWithError(error)
         }
       }
-      // Consume any comments trailing an item.
-      // This is needed because the comment might be just before delimiterR obscuring the atEnd check.
-      comments()
     }
     optionallyWith match {
       case Some((indicator, rule)) => if (eat(indicator)) {
         rule()
-        comments()
       }
       case None =>
     }
@@ -686,7 +770,7 @@ object Parser2 {
 
   /** Consumes a token if kind is in `kinds` and wraps it in a [[TreeKind.Ident]]. */
   private def nameUnqualified(kinds: Set[TokenKind])(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
-    val mark = open(consumeDocComments = false)
+    val mark = open()
 
     // Check if we are at a keyword and emit nice error if so.
     val current = nth(0)
@@ -720,7 +804,7 @@ object Parser2 {
     * @param allowTrailingDot If this is `false`, a trailing `.` will result in a parser error.
     */
   private def nameAllowQualified(kinds: Set[TokenKind], allowTrailingDot: Boolean = false, tail: Set[TokenKind] = NAME_LOWERCASE)(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
-    val mark = open(consumeDocComments = false)
+    val mark = open()
 
     // Check if we are at a keyword and emit nice error if so.
     val current = nth(0)
@@ -793,49 +877,11 @@ object Parser2 {
     close(openBefore(first), TreeKind.QName)
   }
 
-  /**
-    * Consumes comments.
-    *
-    * @param consumeDocComments If true, allow doc-comments to be parsed as a regular comment.
-    */
-  private def comments(consumeDocComments: Boolean = false)(implicit s: State): Unit = {
-    implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
-
-    // This function does not use nth on purpose, to avoid consuming fuel.
-    // Both open and close call this function, so using nth would consume all the parsers fuel on
-    // comments.
-    def atComment(): Boolean = {
-      val current = if (s.position >= s.tokens.length - 1) {
-        TokenKind.Eof
-      } else {
-        s.tokens(s.position).kind
-      }
-      if (consumeDocComments) current.isComment else current.isCommentNonDoc
-    }
-
-    if (atComment()) {
-      val mark = Mark.Opened(s.events.length)
-      s.events.append(Event.Open(TreeKind.UnclosedMark))
-      // This loop will also consume doc-comments that are preceded or surrounded by either line or
-      // block comments.
-      while (atComment() && !eof()) {
-        advance()
-      }
-      // Check for a trailing doc-comment that is not followed by a declaration.
-      val isDanglingDoc = consumeDocComments && nth(-1) == TokenKind.CommentDoc && !nth(0).isDocumentable
-      if (isDanglingDoc) {
-        val errMark = open()
-        closeWithError(errMark, MisplacedDocComments(sctx, previousSourceLocation()))
-      }
-      close(mark, TreeKind.CommentList)
-    }
-  }
-
   //////////////////////////////////////////////////////////////////////////////////////////////////
   /// GRAMMAR                                                                                     //
   //////////////////////////////////////////////////////////////////////////////////////////////////
   private def root()(implicit s: State): Unit = {
-    val mark = open(consumeDocComments = false)
+    val mark = open()
     usesOrImports()
     while (!eof()) {
       Decl.declaration()
@@ -844,10 +890,9 @@ object Parser2 {
   }
 
   private def usesOrImports()(implicit s: State): Mark.Closed = {
-    val mark = open(consumeDocComments = false)
+    val mark = open()
     var continue = true
     while (continue && !eof()) {
-      comments()
       nth(0) match {
         case TokenKind.KeywordUse =>
           use()
@@ -956,10 +1001,8 @@ object Parser2 {
   private object Decl {
     def declaration(nestingLevel: Int = 0)(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
-      val mark = open(consumeDocComments = false)
-      docComment()
+      val mark = open()
       // Handle declarations
-      val wasAtEofBeforeAnnotations = at(TokenKind.Eof)
       annotations()
       modifiers()
       // Handle modules.
@@ -975,7 +1018,6 @@ object Parser2 {
         case TokenKind.KeywordStruct => structDecl(mark)
         case TokenKind.KeywordType => typeAliasDecl(mark)
         case TokenKind.KeywordEff => effectDecl(mark)
-        case TokenKind.Eof if wasAtEofBeforeAnnotations => close(mark, TreeKind.CommentList) // Last tokens in the file were comments.
         case at =>
           val loc = currentSourceLocation()
           val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), sctx, loc = loc)
@@ -1030,13 +1072,12 @@ object Parser2 {
         expect(TokenKind.CurlyL)
         var continue = true
         while (continue && !eof()) {
-          val docMark = docComment()
-          annotations()
+          val annMark = annotations()
           modifiers()
           nth(0) match {
             case TokenKind.CurlyR => continue = false
-            case TokenKind.KeywordDef => signatureDecl(openBefore(docMark))
-            case TokenKind.KeywordType => associatedTypeSigDecl(openBefore(docMark))
+            case TokenKind.KeywordDef => signatureDecl(openBefore(annMark))
+            case TokenKind.KeywordType => associatedTypeSigDecl(openBefore(annMark))
             case at =>
               val errMark = open()
               val loc = currentSourceLocation()
@@ -1075,14 +1116,13 @@ object Parser2 {
         expect(TokenKind.CurlyL)
         var continue = true
         while (continue && !eof()) {
-          val docMark = docComment()
-          annotations()
+          val annMark = annotations()
           modifiers()
           nth(0) match {
             case TokenKind.CurlyR => continue = false
-            case TokenKind.KeywordDef => definitionDecl(openBefore(docMark))
-            case TokenKind.KeywordRedef => definitionDecl(openBefore(docMark), declKind = TokenKind.KeywordRedef)
-            case TokenKind.KeywordType => associatedTypeDefDecl(openBefore(docMark))
+            case TokenKind.KeywordDef => definitionDecl(openBefore(annMark))
+            case TokenKind.KeywordRedef => definitionDecl(openBefore(annMark), declKind = TokenKind.KeywordRedef)
+            case TokenKind.KeywordType => associatedTypeDefDecl(openBefore(annMark))
             case at =>
               val errMark = open()
               val loc = currentSourceLocation()
@@ -1205,20 +1245,15 @@ object Parser2 {
       close(mark, if (isRestrictable) TreeKind.Decl.RestrictableEnum else TreeKind.Decl.Enum)
     }
 
-    private val FIRST_ENUM_CASE: Set[TokenKind] = Set(TokenKind.CommentDoc, TokenKind.KeywordCase, TokenKind.Comma)
+    private val FIRST_ENUM_CASE: Set[TokenKind] = Set(TokenKind.KeywordCase, TokenKind.Comma)
 
     private def enumCases()(implicit s: State): Unit = {
       implicit val sctx: SyntacticContext = SyntacticContext.Decl.Enum
-      // Clear non-doc comments that appear before any cases.
-      comments()
       while (!eof() && atAny(FIRST_ENUM_CASE)) {
         // A comma between two cases is kept outside the case nodes, so that the comments between
         // the comma and the next case belong to that case.
         eat(TokenKind.Comma)
-        // The doc comment is parsed before the case is opened around it, so that every comment
-        // after the comma lands inside the case's doc group rather than in a separate comment list.
-        val docMark = docComment()
-        val mark = openBefore(docMark)
+        val mark = open()
         // The `case` keyword may be omitted after a comma, as in `case A, B, C`.
         eat(TokenKind.KeywordCase)
         nameUnqualified(NAME_TAG)
@@ -1258,7 +1293,6 @@ object Parser2 {
     private def structField()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Decl.Struct
       val mark = open()
-      docComment()
       modifiers()
       nameUnqualified(NAME_FIELD)
       expect(TokenKind.Colon)
@@ -1326,12 +1360,11 @@ object Parser2 {
       if (eat(TokenKind.CurlyL)) {
         var continue = true
         while (continue && !eof()) {
-          val docMark = docComment()
-          annotations()
+          val annMark = annotations()
           modifiers()
           nth(0) match {
             case TokenKind.CurlyR => continue = false
-            case TokenKind.KeywordDef => operationDecl(openBefore(docMark))
+            case TokenKind.KeywordDef => operationDecl(openBefore(annMark))
             case at =>
               val errMark = open()
               val loc = currentSourceLocation()
@@ -1394,12 +1427,6 @@ object Parser2 {
         advance()
       }
       close(mark, TreeKind.AnnotationList)
-    }
-
-    def docComment()(implicit s: State): Mark.Closed = {
-      // `open` consumes doc-comments.
-      val mark = open()
-      close(mark, TreeKind.Doc)
     }
 
     def parameters()(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
@@ -1630,13 +1657,8 @@ object Parser2 {
       }
       // Determines if a '{' is opening a block, a record literal, or a record operation.
       // We can discern between record ops and literals vs. blocks by looking at the next two
-      // non-comment tokens.
-      val nextTwoNonCommentTokens = {
-        val nextIdx = nextNonComment(1)
-        val nextNextIdx = nextNonComment(nextIdx + 1)
-        (nth(nextIdx), nth(nextNextIdx))
-      }
-      nextTwoNonCommentTokens match {
+      // tokens.
+      (nth(1), nth(2)) match {
         case (TokenKind.CurlyR, _)
              | (TokenKind.NameLowercase, TokenKind.Equal)
              | (TokenKind.Plus, TokenKind.NameLowercase)
@@ -2054,7 +2076,7 @@ object Parser2 {
             var level = 1
             var curlyLevel = 0
             var lookAhead = 0
-            val tokensLeft = s.tokens.length - s.position
+            val tokensLeft = s.visible.length - s.position
             while (level > 0 && lookAhead < tokensLeft && !eof()) {
               lookAhead += 1
               nth(lookAhead) match {
@@ -2238,9 +2260,8 @@ object Parser2 {
 
     private def localDefExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(atAny(Set(TokenKind.Annotation, TokenKind.KeywordDef, TokenKind.CommentDoc)))
-      val mark = open(consumeDocComments = false)
-      Decl.docComment()
+      assert(atAny(Set(TokenKind.Annotation, TokenKind.KeywordDef)))
+      val mark = open()
       Decl.annotations()
       expect(TokenKind.KeywordDef)
       nameUnqualified(NAME_FUNCTION)
@@ -2735,7 +2756,7 @@ object Parser2 {
         zeroOrMore(
           namedTokenSet = NamedTokenSet.WithRule,
           getItem = withRule,
-          checkForItem = kind => kind == TokenKind.KeywordDef || kind.isComment,
+          checkForItem = kind => kind == TokenKind.KeywordDef,
           breakWhen = _.isRecoverInExpr,
           separation = Separation.Optional(TokenKind.Comma),
           delimiterL = TokenKind.CurlyL,
@@ -2806,7 +2827,7 @@ object Parser2 {
 
     private def withRule()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(nth(0).isComment || at(TokenKind.KeywordDef))
+      assert(at(TokenKind.KeywordDef))
       val mark = open()
       expect(TokenKind.KeywordDef)
       nameUnqualified(NAME_LOWERCASE)
@@ -2874,19 +2895,15 @@ object Parser2 {
         // `new Type { ... }`.
         zeroOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef, TokenKind.Annotation)),
-          checkForItem = _ => {
-            val first = nth(nextNonComment(0))
-            first == TokenKind.KeywordDef || first == TokenKind.Annotation
-          },
+          checkForItem = kind => kind == TokenKind.KeywordDef || kind == TokenKind.Annotation,
           getItem = () => {
             // Skip past any annotations to find the `def` keyword.
-            var defOffset = nextNonComment(0)
+            var defOffset = 0
             while (nth(defOffset) == TokenKind.Annotation) {
-              defOffset = nextNonComment(defOffset + 1)
+              defOffset += 1
             }
             // If `def` is followed by `new`, parse as JvmConstructor; otherwise JvmMethod.
-            val afterDefOffset = nextNonComment(defOffset + 1)
-            if (nth(afterDefOffset) == TokenKind.KeywordNew) jvmConstructor()
+            if (nth(defOffset + 1) == TokenKind.KeywordNew) jvmConstructor()
             else jvmMethod()
           },
           breakWhen = _.isRecoverInExpr,
@@ -2913,7 +2930,6 @@ object Parser2 {
 
     private def jvmMethod()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      // Have to eat potential comments before the `assert`.
       val mark = open()
       Decl.annotations()
       assert(at(TokenKind.KeywordDef))
@@ -2956,7 +2972,6 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordSelect)
       expect(TokenKind.CurlyL)
-      comments()
       // We can't use zeroOrMore here because there's special semantics.
       // The wildcard rule `case _ => ...` must be the last one.
       var continue = true
