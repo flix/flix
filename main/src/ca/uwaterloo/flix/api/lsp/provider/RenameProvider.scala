@@ -129,7 +129,7 @@ object RenameProvider {
     case TypedAst.RestrictableChoosePattern.Error(_, loc) => loc.isReal
     case p: TypedAst.Predicate => p.loc.isReal
     case TypedAst.Binder(sym, _) => sym.loc.isReal
-    case TypedAst.Case(_, _, _, loc) => loc.isReal
+    case TypedAst.Case(_, _, _, _, loc) => loc.isReal
     case TypedAst.StructField(_, _, _, loc) => loc.isReal
     case TypedAst.RestrictableCase(_, _, _, loc) => loc.isReal
     case TypedAst.Constraint(_, _, _, loc) => loc.isReal

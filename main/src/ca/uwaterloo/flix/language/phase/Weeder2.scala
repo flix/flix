@@ -421,7 +421,7 @@ object Weeder2 {
           // enum Foo(Int32) { case Bar, case Baz }
           // ===>
           // enum Foo { case Foo(Int32), case Bar, case Baz }
-          val syntheticCase = WeededAst.Case(ident, ts, ident.loc)
+          val syntheticCase = WeededAst.Case(Doc(Nil, ident.loc), ident, ts, ident.loc)
           syntheticCase :: cs
         // Empty or Multiton enum
         case (None, cs) =>
@@ -432,13 +432,13 @@ object Weeder2 {
 
     private def visitEnumCase(tree: Tree)(implicit sctx: SharedContext): Case = {
       expect(tree, TreeKind.Case)
+      val doc = pickDocumentation(tree)
       val maybeType = tryPick(TreeKind.CaseBody, tree)
       val ident = pickNameIdent(tree)
-      // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       val tpes = maybeType.map(Types.visitCaseType).getOrElse(Nil)
       // Make a source location that spans the name and type, excluding 'case'.
       val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.start, tree.loc.end)
-      Case(ident, tpes, loc)
+      Case(doc, ident, tpes, loc)
     }
 
     private def visitRestrictableEnumDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.RestrictableEnum = {

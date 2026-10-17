@@ -323,7 +323,7 @@ object KindedAst {
 
   }
 
-  case class Case(sym: Symbol.CaseSym, tpes: List[Type], sc: Scheme, loc: SourceLocation)
+  case class Case(doc: Doc, sym: Symbol.CaseSym, tpes: List[Type], sc: Scheme, loc: SourceLocation)
 
   case class StructField(mod: Modifiers, sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 

@@ -10,7 +10,7 @@ package ca.uwaterloo.flix.language.phase.monomorph2
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Instance}
-import ca.uwaterloo.flix.language.ast.shared.RegionScope
+import ca.uwaterloo.flix.language.ast.shared.{Doc, RegionScope}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -338,9 +338,9 @@ private[monomorph2] object Specialize {
       val freshSym = Symbol.freshEnumSym(enm.sym)
       val subst = StrictSubstitution.mk(Substitution(substMap))
       val newCases = enm.cases.map {
-        case (caseSym, TypedAst.Case(_, tpes, sc, cloc)) =>
+        case (caseSym, TypedAst.Case(doc, _, tpes, sc, cloc)) =>
           val newCaseSym = new Symbol.CaseSym(freshSym, caseSym.name, caseSym.ordinal, caseSym.loc)
-          newCaseSym -> TypedAst.Case(newCaseSym, tpes.map(subst.apply), sc, cloc)
+          newCaseSym -> TypedAst.Case(doc, newCaseSym, tpes.map(subst.apply), sc, cloc)
       }
       val newEnum = TypedAst.Enum(enm.doc, enm.ann, enm.mod, freshSym, Nil, enm.derives, newCases, enm.loc)
       (sym, args, freshSym, newEnum)
@@ -363,7 +363,7 @@ private[monomorph2] object Specialize {
       val newCases = enm.cases.map {
         case (caseSym, TypedAst.RestrictableCase(_, tpes, sc, cloc)) =>
           val newCaseSym = new Symbol.CaseSym(freshSym, caseSym.name, Symbol.CaseSym.NoOrdinal, caseSym.loc)
-          newCaseSym -> TypedAst.Case(newCaseSym, tpes.map(subst.apply), sc, cloc)
+          newCaseSym -> TypedAst.Case(Doc(Nil, cloc), newCaseSym, tpes.map(subst.apply), sc, cloc)
       }
       val newEnum = TypedAst.Enum(enm.doc, enm.ann, enm.mod, freshSym, Nil, enm.derives, newCases, enm.loc)
       (sym, args, freshSym, newEnum)

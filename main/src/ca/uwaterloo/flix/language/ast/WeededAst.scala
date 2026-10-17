@@ -403,7 +403,7 @@ object WeededAst {
     case class Arrow(k1: Kind, k2: Kind, loc: SourceLocation) extends Kind
   }
 
-  case class Case(ident: Name.Ident, tpes: List[Type], loc: SourceLocation)
+  case class Case(doc: Doc, ident: Name.Ident, tpes: List[Type], loc: SourceLocation)
 
   case class StructField(mod: Modifiers, name: Name.Label, tpe: Type, loc: SourceLocation)
 

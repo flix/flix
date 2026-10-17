@@ -401,9 +401,9 @@ object Desugar {
     * Desugars the given [[WeededAst.Case]] `case0`.
     */
   private def visitCase(case0: WeededAst.Case): DesugaredAst.Case = case0 match {
-    case WeededAst.Case(ident, tpes0, loc) =>
+    case WeededAst.Case(doc, ident, tpes0, loc) =>
       val tpes = tpes0.map(visitType)
-      DesugaredAst.Case(ident, tpes, loc)
+      DesugaredAst.Case(doc, ident, tpes, loc)
   }
 
   /**

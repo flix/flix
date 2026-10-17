@@ -177,7 +177,7 @@ object Kinder {
     * Performs kinding on the given enum case under the given kind environment.
     */
   private def visitCase(caze0: ResolvedAst.Declaration.Case, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Case = caze0 match {
-    case ResolvedAst.Declaration.Case(sym, tpes0, loc) =>
+    case ResolvedAst.Declaration.Case(doc, sym, tpes0, loc) =>
       val ts = tpes0.map(visitType(_, Kind.Star, kenv, root))
       val quants = tparams.map(_.sym)
       // A nullary case is not a function, but the enum type itself.
@@ -186,7 +186,7 @@ object Kinder {
         case t :: tail => Type.mkPureUncurriedArrow(Nel(t, tail), resTpe, sym.loc.asSynthetic)
       }
       val sc = Scheme(quants, Nil, Nil, schemeBase)
-      KindedAst.Case(sym, ts, sc, loc)
+      KindedAst.Case(doc, sym, ts, sc, loc)
   }
 
   /**
