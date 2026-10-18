@@ -348,7 +348,7 @@ object PrettyPrinter {
 
         val condPart = text("if") <+> text(open) <> condDoc <> text(close)
         val thenPart = if (thenIsBlock) condPart <+> thenBody else condPart <> nest(Indent, line <> thenBody)
-        val thenEndsWithComment = thenChildren.lastOption.exists(endsWithComment)
+        val thenEndsWithComment = thenChildren.lastOption.exists(isComment)
         val elseConnector =
           if (thenEndsWithComment) hardline
           else if (thenIsBlock) space
@@ -698,7 +698,7 @@ object PrettyPrinter {
             val gap =
               if (first.start.lineOneIndexed - closeToken.end.lineOneIndexed > 1) hardline <> hardline
               else hardline
-            if (isCommentKind(first.kind)) {
+            if (firstTail.exists(isComment)) {
               val col = first.start.colOneIndexed - 1
               Doc.nestAbsolute(col, gap <> tailDoc)
             } else gap <> tailDoc
@@ -849,35 +849,16 @@ object PrettyPrinter {
     if (children.isEmpty) return empty
     children.sliding(2).foldLeft(prettyChild(children.head)) {
       case (result, Array(prev, next)) =>
-        val afterComma = isToken(prev, TokenKind.Comma) && onSameLine(prev, next) && !startsWithComment(next)
+        val afterComma = isToken(prev, TokenKind.Comma) && onSameLine(prev, next)
         val gap = if (afterComma) space else structuralGap(prev, next)
         result <> gap <> prettyChild(next)
       case (result, _) => result
     }
   }
 
-  private def prettyCase(tree: Tree): Doc = {
-    val children = filterEmpty(tree.children)
-    val caseKeywordIdx = indexOfToken(children, TokenKind.KeywordCase)
-    if (caseKeywordIdx < 0) return prettyFallback(tree)
-
-    val (leading, body) = children.splitAt(caseKeywordIdx)
-
-    val bodyDoc = spaceJoin(body, noSpacePairs = Set((TreeKind.Ident, TreeKind.CaseBody)))
-
-    if (leading.isEmpty) {
-      bodyDoc
-    } else {
-      val hasLeadingComma = leading.exists(isToken(_, TokenKind.Comma))
-      val comments = leading.filterNot(isToken(_, TokenKind.Comma))
-      comments.map(prettyChild).reduceLeftOption(_ <+> _) match {
-        case Some(commentDoc) =>
-          if (hasLeadingComma) space <> commentDoc <> hardline <> bodyDoc
-          else commentDoc <> hardline <> bodyDoc
-        case None => hardline <> bodyDoc
-      }
-    }
-  }
+  /** Formatting for enum cases. The `case` keyword may be absent after a comma, as in `case A, B, C`. */
+  private def prettyCase(tree: Tree): Doc = wrapWithAnn(tree, rest =>
+    spaceJoin(rest, noSpacePairs = Set((TreeKind.Ident, TreeKind.CaseBody))))
 
   private def prettyCaseBody(tree: Tree): Doc =
     splitAtBracket(tree.children) match {
@@ -1457,8 +1438,7 @@ object PrettyPrinter {
           case Some(first) if onSameLine(op, first) => prettyChild(op) <+> joinChildren(afterOp)
           case Some(_) => prettyChild(op) <> hardline <> joinChildren(afterOp)
         }
-        val operatorEndsWithComment = afterOp.nonEmpty || endsWithComment(op)
-        val sep = if (operatorEndsWithComment) hardline else space
+        val sep = if (afterOp.nonEmpty) hardline else space
         // The comments before the operator stay on the line of the left operand if they started
         // there, and otherwise sit on their own lines at the indentation of the operator.
         val beforeOpDoc = beforeOp.headOption match {
@@ -1471,7 +1451,7 @@ object PrettyPrinter {
             leftDoc <> nest(Indent, beforeOpDoc <> opDoc <> sep <> rightDoc)
           else if (leftEndsWithBrace)
             leftDoc <> space <> opDoc <> sep <> rightDoc
-          else if (operatorEndsWithComment)
+          else if (afterOp.nonEmpty)
             leftDoc <+> nest(Indent, opDoc <> hardline <> rightDoc)
           else
             leftDoc <> nest(Indent, line <> opDoc <> sep <> rightDoc)
@@ -1489,6 +1469,12 @@ object PrettyPrinter {
     case _ => false
   }
 
+  /** True if `child` is a [[TreeKind.PlainComment]] or [[TreeKind.DocComment]] node. */
+  private def isComment(child: SyntaxTree.Child): Boolean = child match {
+    case t: Tree => t.kind == TreeKind.PlainComment || t.kind == TreeKind.DocComment
+    case _ => false
+  }
+
   /** Joins `children` with spaces, breaking the line after a child that ends with a line comment. */
   private def joinChildrenSpaced(children: Array[SyntaxTree.Child]): Doc = {
     if (children.isEmpty) return empty
@@ -1500,9 +1486,9 @@ object PrettyPrinter {
     }
   }
 
-  /** Returns `true` if the last token of `child` is a line or doc comment, which runs to the end of its line. */
+  /** Returns `true` if `child` is a comment node whose last comment is a line or doc comment, which runs to the end of its line. */
   private def endsWithLineComment(child: SyntaxTree.Child): Boolean =
-    rightMostToken(child).exists(t => t.kind == TokenKind.CommentLine || t.kind == TokenKind.CommentDoc)
+    isComment(child) && rightMostToken(child).exists(t => t.kind == TokenKind.CommentLine || t.kind == TokenKind.CommentDoc)
 
   private val RightAssocBinaryKinds: Set[TokenKind] = Set(
     TokenKind.ColonColon,
@@ -1569,8 +1555,7 @@ object PrettyPrinter {
         val firstDoc = prettyChild(operands.head)
         val chainTail = operators.zip(operands.tail).foldLeft(empty: Doc) {
           case (accumulated, (operator, operand)) =>
-            val sep = if (endsWithComment(operator)) hardline else space
-            accumulated <> line <> prettyChild(operator) <> sep <> prettyChild(operand)
+            accumulated <> line <> prettyChild(operator) <+> prettyChild(operand)
         }
         localLayout(tree) {
           firstDoc <> nest(Indent, chainTail)
@@ -1638,7 +1623,7 @@ object PrettyPrinter {
             // as the `;`, keep it attached to the `;` (e.g. `...; // note`) instead of
             // moving it to its own line.
             val contStartsWithSameLineComment =
-              contExprs.headOption.exists(next => startsWithComment(next) && onSameLine(semiToken, next))
+              contExprs.headOption.exists(next => isPlainComment(next) && onSameLine(semiToken, next))
             val contSep =
               if (contStartsWithSameLineComment) space
               else {
@@ -1689,8 +1674,8 @@ object PrettyPrinter {
         child match {
           case token: Token if token.kind == TokenKind.Semi =>
             val nextOpt = if (i + 1 < children.length) Some(children(i + 1)) else None
-            val hasSameLineComment = nextOpt.exists(next => startsWithComment(next) && onSameLine(token, next))
-            val gap = if (prev.exists(endsWithComment)) hardline else empty
+            val hasSameLineComment = nextOpt.exists(next => isPlainComment(next) && onSameLine(token, next))
+            val gap = if (prev.exists(isComment)) hardline else empty
             val semiDoc =
               if (hasSameLineComment) text(";") <> space
               else {
@@ -1701,7 +1686,7 @@ object PrettyPrinter {
             (result <> gap <> semiDoc, Some(child))
           case _ =>
             val gap = prev match {
-              case Some(p) if endsWithComment(p) =>
+              case Some(p) if isComment(p) =>
                 if (hadBlankLineBetween(p, child)) hardline <> hardline else hardline
               case _ => empty
             }
@@ -1733,7 +1718,7 @@ object PrettyPrinter {
         } else {
           val bodyDoc = joinWithGap(body)
           val closeSep =
-            if (body.nonEmpty && endsWithComment(body.last)) hardline
+            if (body.nonEmpty && isComment(body.last)) hardline
             else Doc.layoutChoice(empty, line)
           Doc.setLayout(Layout.MultiLine,
             headerDoc <+> text(open) <>
@@ -1837,21 +1822,14 @@ object PrettyPrinter {
   private def keywordSpaced(tree: Tree, kind: TokenKind, keyword: String): Doc =
     joinChildren(tree.children, kind -> (text(keyword) <> space))
 
+  /** Formatting for identifiers, which hold a single name token. */
   private def prettyIdent(tree: Tree): Doc =
-    tree.children.foldLeft((empty: Doc, Option.empty[SyntaxTree.Child])) {
-      case ((result, prev), child) =>
-        val childDoc = child match {
-          // The lexer drops the `$` of an escaped name such as `$if`, leaving a lowercase
-          // name whose text is a keyword. Restore it so the output lexes as a name again.
-          case token: Token if token.kind == TokenKind.NameLowercase && Lexer.isKeyword(token.text) => text("$" + token.text)
-          case other => prettyChild(other)
-        }
-        val gap = prev match {
-          case None => empty
-          case Some(p) => structuralGap(p, child)
-        }
-        (result <> gap <> childDoc, Some(child))
-    }._1
+    tree.children.map {
+      // The lexer drops the `$` of an escaped name such as `$if`, leaving a lowercase
+      // name whose text is a keyword. Restore it so the output lexes as a name again.
+      case token: Token if token.kind == TokenKind.NameLowercase && Lexer.isKeyword(token.text) => text("$" + token.text)
+      case other => prettyChild(other)
+    }.reduceLeftOption(_ <> _).getOrElse(empty)
 
   private def prettyStringInterpolation(tree: Tree): Doc =
     tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
@@ -1996,11 +1974,11 @@ object PrettyPrinter {
       val child = children(i)
       child match {
         case token: Token if replMap.contains(token.kind) =>
-          val gap = if (prev.exists(endsWithComment)) hardline else empty
+          val gap = if (prev.exists(isComment)) hardline else empty
           val replDoc = replMap(token.kind)
           val nextOpt = if (i + 1 < children.length) Some(children(i + 1)) else None
           val hasSameLineComment = (token.kind == TokenKind.Semi || token.kind == TokenKind.Comma) &&
-            nextOpt.exists(next => startsWithComment(next) && onSameLine(token, next))
+            nextOpt.exists(next => isPlainComment(next) && onSameLine(token, next))
           if (hasSameLineComment) {
             result = result <> gap <> text(token.text)
             prevReplEndsWithLine = false
@@ -2011,17 +1989,17 @@ object PrettyPrinter {
           prev = Some(token)
           i += 1
         case _ =>
-          val isComment = startsWithComment(child)
-          val sameLine = isComment && prev.exists(p => onSameLine(p, child))
+          val startsComment = startsWithComment(child)
+          val sameLine = startsComment && prev.exists(p => onSameLine(p, child))
           val blank = prev.exists(p => hadBlankLineBetween(p, child))
           val gap =
             if (prev.isEmpty) empty
             else if (prevReplEndsWithLine) {
               if (blank) hardline else empty
-            } else if (prev.exists(endsWithComment)) {
+            } else if (prev.exists(isComment)) {
               if (blank) hardline <> hardline else hardline
             } else if (sameLine) space
-            else if (isComment) {
+            else if (startsComment) {
               if (blank) hardline <> hardline else hardline
             } else empty
           prevReplEndsWithLine = false
@@ -2078,22 +2056,20 @@ object PrettyPrinter {
   )
 
   /**
-    * Gap between two children. Handles interleaved comments that remain
-    * in the tree, and preserves blank lines from the source.
+    * Gap between two children. A comment node, or a declaration that starts with its doc comment,
+    * goes on its own line unless it is a trailing comment, and blank lines from the source are
+    * preserved.
     */
   private def structuralGap(prev: SyntaxTree.Child, next: SyntaxTree.Child): Doc = {
-    val prevKind = rightMostToken(prev).map(_.kind)
-    val nextKind = leftMostToken(next).map(_.kind)
+    if (isComment(prev)) return if (hadBlankLineBetween(prev, next)) hardline <> hardline else hardline
 
-    val afterComment = prevKind.exists(isCommentKind)
-    if (afterComment) return if (hadBlankLineBetween(prev, next)) hardline <> hardline else hardline
-
-    val nextIsComment = nextKind.exists(isCommentKind)
-    if (nextIsComment) {
+    if (startsWithComment(next)) {
       if (onSameLine(prev, next)) return space
       return if (hadBlankLineBetween(prev, next)) hardline <> hardline else hardline
     }
 
+    val prevKind = rightMostToken(prev).map(_.kind)
+    val nextKind = leftMostToken(next).map(_.kind)
     val afterSeparator = prevKind.exists(k => k == TokenKind.Comma || k == TokenKind.Semi)
     val tight = !afterSeparator && (prevKind.exists(TightAfter.contains) ||
       nextKind.exists(TightBefore.contains))
@@ -2110,11 +2086,12 @@ object PrettyPrinter {
     }
   }
 
+  /**
+    * Returns `true` if the first token of `child` is a comment: `child` is a comment node, or a
+    * declaration that starts with its doc comment, possibly wrapped in marker nodes.
+    */
   private def startsWithComment(child: SyntaxTree.Child): Boolean =
-    leftMostToken(child).exists(t => isCommentKind(t.kind))
-
-  private def endsWithComment(child: SyntaxTree.Child): Boolean =
-    rightMostToken(child).exists(t => isCommentKind(t.kind))
+    leftMostToken(child).exists(_.kind.isComment)
 
   private def docEndsWithLine(doc: Doc): Boolean = doc match {
     case Doc.Line => true
@@ -2138,7 +2115,7 @@ object PrettyPrinter {
         val sameLine = nextStartsWithComment && onSameLine(prev, next)
         val blank = hadBlankLineBetween(prev, next)
         val separator =
-          if (endsWithComment(prev) || (nextStartsWithComment && !sameLine)) {
+          if (isComment(prev) || (nextStartsWithComment && !sameLine)) {
             if (blank) hardline <> hardline else hardline
           } else if (sameLine) space
           else if (blank) gap <> Doc.layoutChoice(empty, hardline)
@@ -2217,11 +2194,6 @@ object PrettyPrinter {
       val closeChild = if (closeIdx >= 0 && closeIdx < children.length) Some(children(closeIdx)) else None
       bracketTail(closeChild, tail.headOption, joinWithGap(tail))
     }
-
-  private def isCommentKind(kind: TokenKind): Boolean =
-    kind == TokenKind.CommentLine ||
-      kind == TokenKind.CommentDoc ||
-      kind == TokenKind.CommentBlock
 
   private def defaultHeaderJoin(children: Array[SyntaxTree.Child]): Doc =
     children.map(prettyChild).reduceLeftOption(_ <+> _).getOrElse(empty)
@@ -2319,18 +2291,16 @@ object PrettyPrinter {
   }
 
   private def leftMostCodeToken(child: SyntaxTree.Child): Option[Token] = child match {
-    case token: Token if isCommentToken(token) => None
+    case token: Token if token.kind.isComment => None
     case token: Token => Some(token)
     case tree: Tree => tree.children.collectFirst(Function.unlift(c => leftMostCodeToken(c)))
   }
 
   private def rightMostCodeToken(child: SyntaxTree.Child): Option[Token] = child match {
-    case token: Token if isCommentToken(token) => None
+    case token: Token if token.kind.isComment => None
     case token: Token => Some(token)
     case tree: Tree => tree.children.reverse.collectFirst(Function.unlift(c => rightMostCodeToken(c)))
   }
-
-  private def isCommentToken(token: Token): Boolean = isCommentKind(token.kind)
 
   private def exprMatches(child: SyntaxTree.Child, pred: Tree => Boolean): Boolean = child match {
     case t: Tree if t.kind == TreeKind.Expr.Expr => t.children.exists(c => exprMatches(c, pred))
