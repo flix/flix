@@ -144,12 +144,9 @@ pub mod List {
     ///
     /// Renders the list `l` to a String.
     ///
-    pub def toString(l: List[a]): String with ToString[a] = region rc {
-        List.iterator(rc, l)
-            |> Iterator.map(ToString.toString)
-            |> xs ->
-                Iterator.append(xs, Iterator.singleton(rc, "Nil"))
-                    |> Iterator.join(" :: ")
+    pub def toString(l: List[a]): String with ToString[a] = match l {
+        case Nil => "Nil"
+        case _   => List.join(" :: ", l) + " :: Nil"
     }
 
     ///
