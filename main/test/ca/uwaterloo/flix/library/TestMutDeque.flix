@@ -55,6 +55,23 @@ mod TestMutDeque {
         assertEq(expected = "MutDeque#{1, 2, 3, 4, 5}", MutDeque.toString(d))
     }
 
+    @Test
+    def toString04(): Unit \ Assert = region rc {
+        let d: MutDeque[Int32, rc] = MutDeque.empty(rc);
+        MutDeque.pushFront(1, d);
+        assertEq(expected = "MutDeque#{1}", MutDeque.toString(d))
+    }
+
+    @Test
+    def toString05(): Unit \ Assert = region rc {
+        let d: MutDeque[Int32, rc] = MutDeque.empty(rc);
+        MutDeque.pushFront(2, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushBack(4, d);
+        assertEq(expected = "MutDeque#{1, 2, 3, 4}", MutDeque.toString(d))
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
     /////////////////////////////////////////////////////////////////////////////
@@ -549,6 +566,13 @@ mod TestMutDeque {
     }
 
 
+    @Test
+    def peekBack07(): Unit \ Assert = region rc {
+        let d = MutDeque.emptyWithCapacity(rc, 100);
+        List.forEach(x -> MutDeque.pushBack(x, d), List.range(1, 11));
+        assertEq(expected = Some(10), MutDeque.peekBack(d))
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
@@ -786,6 +810,13 @@ mod TestMutDeque {
     }
 
 
+    @Test
+    def foldLeft06(): Unit \ Assert = region rc {
+        let d = MutDeque.emptyWithCapacity(rc, 100);
+        List.forEach(x -> MutDeque.pushBack(x, d), List.range(0, 10));
+        assertEq(expected = List.range(0, 10), List.reverse(MutDeque.foldLeft((acc, x) -> x :: acc, Nil, d)))
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
@@ -826,6 +857,13 @@ mod TestMutDeque {
         assertEq(expected = 382, MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, d))
     }
 
+
+    @Test
+    def foldRight06(): Unit \ Assert = region rc {
+        let d = MutDeque.emptyWithCapacity(rc, 100);
+        List.forEach(x -> MutDeque.pushBack(x, d), List.range(0, 10));
+        assertEq(expected = List.range(0, 10), MutDeque.foldRight((x, acc) -> x :: acc, Nil, d))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                       //
@@ -912,6 +950,23 @@ mod TestMutDeque {
         assertEq(expected = 1 :: 2 :: 3 :: Nil, MutDeque.toList(d))
     }
 
+
+    @Test
+    def toList05(): Unit \ Assert = region rc {
+        let d = MutDeque.empty(rc);
+        MutDeque.pushFront(2, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushBack(4, d);
+        assertEq(expected = 1 :: 2 :: 3 :: 4 :: Nil, MutDeque.toList(d))
+    }
+
+    @Test
+    def toList06(): Unit \ Assert = region rc {
+        let d = MutDeque.emptyWithCapacity(rc, 100);
+        List.forEach(x -> MutDeque.pushBack(x, d), List.range(0, 10));
+        assertEq(expected = List.range(0, 10), MutDeque.toList(d))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
@@ -1035,6 +1090,15 @@ mod TestMutDeque {
     }
 
 
+    @Test
+    def join05(): Unit \ Assert = region rc {
+        let d = MutDeque.empty(rc);
+        MutDeque.pushFront(3, d);
+        MutDeque.pushFront(2, d);
+        MutDeque.pushFront(1, d);
+        assertEq(expected = "1,2,3", MutDeque.join(",", d))
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // joinWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
@@ -1070,6 +1134,15 @@ mod TestMutDeque {
         assertEq(expected = "11,22,33", MutDeque.joinWith(x -> x + x, ",", d))
     }
 
+
+    @Test
+    def joinWith05(): Unit \ Assert = region rc {
+        let d = MutDeque.empty(rc);
+        MutDeque.pushFront(3, d);
+        MutDeque.pushFront(2, d);
+        MutDeque.pushFront(1, d);
+        assertEq(expected = "2,3,4", MutDeque.joinWith(x -> "${x + 1}", ",", d))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // iterator                                                                //
@@ -1137,6 +1210,40 @@ mod TestMutDeque {
         assertEq(expected = List.range(0, 100), MutDeque.toList(d))
     }
 
+    @Test
+    def iterator07(): Unit \ Assert = region rc {
+        let d = MutDeque.empty(rc);
+        MutDeque.pushFront(1, d);
+        assertEq(expected = 1 :: Nil, MutDeque.iterator(rc, d) |> Iterator.toList)
+    }
+
+    @Test
+    def iterator08(): Unit \ Assert = region rc {
+        let d = MutDeque.empty(rc);
+        MutDeque.pushFront(2, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushBack(4, d);
+        assertEq(expected = 1 :: 2 :: 3 :: 4 :: Nil, MutDeque.iterator(rc, d) |> Iterator.toList)
+    }
+
+    @Test
+    def iterator09(): Unit \ Assert = region rc {
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushFront(x, d), List.range(0, 100));
+        assertEq(expected = List.reverse(List.range(0, 100)), MutDeque.iterator(rc, d) |> Iterator.toList);
+        assertEq(expected = List.reverse(List.range(0, 100)), MutDeque.toList(d))
+    }
+
+    @Test
+    def iterator10(): Unit \ Assert = region rc {
+        let d = MutDeque.emptyWithCapacity(rc, 100);
+        MutDeque.pushFront(2, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushBack(3, d);
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, MutDeque.iterator(rc, d) |> Iterator.toList)
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
@@ -1190,6 +1297,15 @@ mod TestMutDeque {
         let fn = x -> if (x > 0) Ref.put("T" :: Ref.get(l), l) else Ref.put("F" :: Ref.get(l), l);
         MutDeque.forEach(fn, d);
         assertEq(expected = "FT", List.reverse(Ref.get(l)) |> List.join(""))
+    }
+
+    @Test
+    def forEach06(): Unit \ Assert = region rc {
+        let d = MutDeque.emptyWithCapacity(rc, 100);
+        List.forEach(x -> MutDeque.pushBack(x, d), List.range(0, 10));
+        let l = Ref.fresh(rc, Nil);
+        MutDeque.forEach(x -> Ref.put(x :: Ref.get(l), l), d);
+        assertEq(expected = List.range(0, 10), List.reverse(Ref.get(l)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
