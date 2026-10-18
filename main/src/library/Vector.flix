@@ -179,9 +179,8 @@ pub mod Vector {
     ///
     /// Returns a string representation of the given vector `v`.
     ///
-    pub def toString(v: Vector[a]): String with ToString[a] = region rc {
-        "Vector#{" + (Vector.iterator(rc, v) |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(v: Vector[a]): String with ToString[a] =
+        "Vector#{" + Vector.join(", ", v) + "}"
 
     ///
     /// Version of `Array.updateSequence` where sub is a vector rather than an array,
@@ -1482,17 +1481,15 @@ pub mod Vector {
     /// Returns the concatenation of the string representation
     /// of each element in `v` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, v: Vector[a]): String with ToString[a] = region rc {
-        Vector.iterator(rc, v) |> Iterator.join(sep)
-    }
+    pub def join(sep: String, v: Vector[a]): String with ToString[a] =
+        Foldable.join(sep, v)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, v: Vector[a]): String \ ef = region rc {
-        Vector.iterator(rc, v) |> Iterator.joinWith(f, sep)
-    }
+    pub def joinWith(f: a -> String \ ef, sep: String, v: Vector[a]): String \ ef =
+        Foldable.joinWith(f, sep, v)
 
     ///
     /// Returns a sorted copy of vector `v`, where the elements are ordered from low to high according to
