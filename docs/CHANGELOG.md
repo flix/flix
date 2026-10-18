@@ -1,5 +1,10 @@
 # Changelog
 
+Version 0.79.0:
+- Compiler: Added a new pretty printer based on Wadler-Lindig (thanks gwydd!)
+- Compiler: Added support for themes to the generated API documentation (thanks Magnus!)
+- Compiler: Reworked handling of comments in the lexer, parser, and weeder (thanks Magnus!)
+
 Version 0.78.0:
 - Package Manager: Reworked the package management system (thanks Magnus!)
 - Compiler: Added summary tables, breadcrumbs, and a 404 page to the generated API documentation (thanks Ry!)
