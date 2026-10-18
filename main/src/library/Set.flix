@@ -470,7 +470,7 @@ pub mod Set {
         case 0 => Array#{} @ rc
         case sz =>
             let a = Array.empty(rc, sz);
-            Iterator.forEachWithIndex((i, b) -> Array.put(b, i, a), iterator(rc, s));
+            forEachWithIndex((i, b) -> Array.put(b, i, a), s);
             a
     }
 
@@ -479,7 +479,7 @@ pub mod Set {
     ///
     pub def toVector(s: Set[a]): Vector[a] = region rc {
         let arr = Array.empty(rc, size(s));
-        Iterator.forEachWithIndex((i, x) -> Array.put(x, i, arr), iterator(rc, s));
+        forEachWithIndex((i, x) -> Array.put(x, i, arr), s);
         Array.toVector(arr)
     }
 
