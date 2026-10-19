@@ -72,9 +72,8 @@ pub mod MutList {
     ///
     /// Returns a string representation of the given MutList `l`.
     ///
-    pub def toString(l: MutList[a, r]): String \ r with ToString[a] = region rc {
-        "MutList#{" + (MutList.iterator(rc, l) |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(l: MutList[a, r]): String \ r with ToString[a] =
+        "MutList#{" + MutList.join(", ", l) + "}"
 
     ///
     /// Returns an empty mutable list with a default capacity.
@@ -783,16 +782,19 @@ pub mod MutList {
     /// Returns the concatenation of the string representation
     /// of each element in `v` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, v: MutList[a, r]): String \ r with ToString[a] = region rc {
-        MutList.iterator(rc, v) |> Iterator.join(sep)
-    }
+    pub def join(sep: String, v: MutList[a, r]): String \ r with ToString[a] =
+        joinWith(ToString.toString, sep, v)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: a -> String \ ef, sep: String, v: MutList[a, r]): String \ { ef, r } = region rc {
-        MutList.iterator(rc, v) |> Iterator.joinWith(f, sep)
+        use StringBuilder.append;
+        let lastSep = String.length(sep);
+        let sb = StringBuilder.empty(rc);
+        forEach(x -> { append(f(x), sb); append(sep, sb) }, v);
+        StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 
     ///
