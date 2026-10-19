@@ -180,9 +180,9 @@ mod Test.Comment.Exp {
 
     // local defs
     pub def localDef02(): Int32 =
-        /// doc on the first local def
+        // comment on the first local def
         def g(x: Int32): Int32 = x;
-        /// doc on the second local def
+        // comment on the second local def
         def h(x: Int32): Int32 = g(x) + 1;
         h(1)
 
