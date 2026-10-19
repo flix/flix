@@ -401,18 +401,18 @@ object Desugar {
     * Desugars the given [[WeededAst.Case]] `case0`.
     */
   private def visitCase(case0: WeededAst.Case): DesugaredAst.Case = case0 match {
-    case WeededAst.Case(ident, tpes0, loc) =>
+    case WeededAst.Case(doc, ident, tpes0, loc) =>
       val tpes = tpes0.map(visitType)
-      DesugaredAst.Case(ident, tpes, loc)
+      DesugaredAst.Case(doc, ident, tpes, loc)
   }
 
   /**
     * Desugars the given [[WeededAst.StructField]] `field0`.
     */
   private def visitField(field0: WeededAst.StructField): DesugaredAst.StructField = field0 match {
-    case WeededAst.StructField(mod, name, tpe0, loc) =>
+    case WeededAst.StructField(doc, mod, name, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      DesugaredAst.StructField(mod, name, tpe, loc)
+      DesugaredAst.StructField(doc, mod, name, tpe, loc)
   }
 
   /**

@@ -73,7 +73,6 @@ object Weeder2 {
     */
   private def weed(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Option[CompilationUnit] = {
     try {
-      checkDocComments(tree)
       val usesAndImports = pickAllUsesAndImports(tree)
       val declarations = Decls.pickAllDeclarations(tree)
       Some(CompilationUnit(usesAndImports, declarations, tree.loc))
@@ -82,43 +81,6 @@ object Weeder2 {
         sctx.errors.add(error)
         None
     }
-  }
-
-  /**
-    * Reports a [[MisplacedDocComments]] error for every doc comment in `tree` that does not document
-    * a declaration, i.e. that is in a [[TreeKind.CommentList]] outside of a [[TreeKind.Doc]].
-    *
-    * The parser attaches the doc comments above a declaration to it as a [[TreeKind.Doc]]. Any
-    * other doc comment is an ordinary comment to the parser, so it must be reported here.
-    */
-  private def checkDocComments(tree: Tree)(implicit sctx: SharedContext): Unit = tree.kind match {
-    case TreeKind.Doc => ()
-    case TreeKind.CommentList =>
-      var first: Option[Token] = None
-      var last: Option[Token] = None
-      for (child <- tree.children) {
-        child match {
-          case token@Token(TokenKind.CommentDoc, _, _, _, _, _) =>
-            if (first.isEmpty) {
-              first = Some(token)
-            }
-            last = Some(token)
-          case _ => ()
-        }
-      }
-      (first, last) match {
-        case (Some(f), Some(l)) =>
-          val loc = SourceLocation(isReal = true, f.src, f.start, l.end)
-          sctx.errors.add(MisplacedDocComments(SyntacticContext.Unknown, loc))
-        case _ => ()
-      }
-    case _ =>
-      for (child <- tree.children) {
-        child match {
-          case t: Tree => checkDocComments(t)
-          case _ => ()
-        }
-      }
   }
 
   private def pickAllUsesAndImports(tree: Tree)(implicit sctx: SharedContext): List[UseOrImport] = {
@@ -421,7 +383,7 @@ object Weeder2 {
           // enum Foo(Int32) { case Bar, case Baz }
           // ===>
           // enum Foo { case Foo(Int32), case Bar, case Baz }
-          val syntheticCase = WeededAst.Case(ident, ts, ident.loc)
+          val syntheticCase = WeededAst.Case(Doc(Nil, ident.loc), ident, ts, ident.loc)
           syntheticCase :: cs
         // Empty or Multiton enum
         case (None, cs) =>
@@ -432,13 +394,13 @@ object Weeder2 {
 
     private def visitEnumCase(tree: Tree)(implicit sctx: SharedContext): Case = {
       expect(tree, TreeKind.Case)
+      val doc = pickDocumentation(tree)
       val maybeType = tryPick(TreeKind.CaseBody, tree)
       val ident = pickNameIdent(tree)
-      // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       val tpes = maybeType.map(Types.visitCaseType).getOrElse(Nil)
       // Make a source location that spans the name and type, excluding 'case'.
       val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.start, tree.loc.end)
-      Case(ident, tpes, loc)
+      Case(doc, ident, tpes, loc)
     }
 
     private def visitRestrictableEnumDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.RestrictableEnum = {
@@ -504,12 +466,13 @@ object Weeder2 {
 
     private def visitStructField(tree: Tree)(implicit sctx: SharedContext): StructField = {
       expect(tree, TreeKind.StructField)
+      val doc = pickDocumentation(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordMut))
       val ident = pickNameIdent(tree)
       val ttype = Types.pickType(tree)
       // Make a source location that spans the name and type
       val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.start, tree.loc.end)
-      StructField(mod, Name.mkLabel(ident), ttype, loc)
+      StructField(doc, mod, Name.mkLabel(ident), ttype, loc)
     }
 
     private def visitTypeAliasDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.TypeAlias = {
@@ -590,7 +553,7 @@ object Weeder2 {
     }
 
     private def pickDocumentation(tree0: Tree): Doc = {
-      val docTree: Option[Tree] = tryPick(TreeKind.Doc, tree0).flatMap(tryPick(TreeKind.CommentList, _))
+      val docTree: Option[Tree] = tryPick(TreeKind.DocComment, tree0)
       docTree match {
         case None => Doc(List.empty, tree0.loc)
         case Some(tree) =>
@@ -962,7 +925,7 @@ object Weeder2 {
       }
       // Ignore comments so they cannot sit between an opener and its expression.
       val children = tree.children.filterNot {
-        case t: Tree => t.kind == TreeKind.CommentList
+        case t: Tree => t.kind == TreeKind.PlainComment
         case _ => false
       }
       children.sliding(2).collect {
@@ -3432,15 +3395,10 @@ object Weeder2 {
       case _ => false
     })
 
-    // Find the first sub-tree that isn't a comment
-    tree.children.find {
-      case tree: Tree if tree.kind != TreeKind.CommentList => true
-      case _ => false
-    }.map {
-      case tree: Tree => tree
-      case _ => throw InternalCompilerException(s"expected '${tree.kind}' to have a tree child that is not a comment", tree.loc)
-    }.getOrElse(
-      throw InternalCompilerException(s"expected '${tree.kind}' to have a tree child that is not a comment", tree.loc)
+    // The parser opens a marker node before the first token of its content, so a comment ahead
+    // of the content lands outside the marker and the first tree child is the content.
+    tree.children.collectFirst { case t: Tree => t }.getOrElse(
+      throw InternalCompilerException(s"expected '${tree.kind}' to have a tree child", tree.loc)
     )
   }
 

@@ -334,9 +334,9 @@ object Typer {
     * Reconstructs types in the given case.
     */
   private def visitCase(caze: KindedAst.Case)(implicit sctx: SharedContext): TypedAst.Case = caze match {
-    case KindedAst.Case(caseSym, tagTypes, sc, caseLoc) =>
+    case KindedAst.Case(doc, caseSym, tagTypes, sc, caseLoc) =>
       tagTypes.foreach(checkNoAssocTypes)
-      TypedAst.Case(caseSym, tagTypes, sc, caseLoc)
+      TypedAst.Case(doc, caseSym, tagTypes, sc, caseLoc)
   }
 
   /**
@@ -361,9 +361,9 @@ object Typer {
     * Reconstructs types in the given struct field.
     */
   private def visitStructField(field: KindedAst.StructField)(implicit sctx: SharedContext): TypedAst.StructField = field match {
-    case KindedAst.StructField(mod, sym, tpe, loc) =>
+    case KindedAst.StructField(doc, mod, sym, tpe, loc) =>
       checkNoAssocTypes(tpe)
-      TypedAst.StructField(sym, mod, tpe, loc)
+      TypedAst.StructField(doc, sym, mod, tpe, loc)
   }
 
   /**

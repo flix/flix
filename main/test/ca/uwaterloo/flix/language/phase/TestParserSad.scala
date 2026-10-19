@@ -746,4 +746,71 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibNix)
     expectError[ParseError.MisplacedDocComments](result)
   }
+
+  test("ParseError.MisplacedDocComments.05") {
+    val input =
+      """
+        |enum Shape {
+        |    case Circle(Int32), /// a doc comment after the comma, on the same line
+        |    case Square(Int32)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.MisplacedDocComments.06") {
+    val input =
+      """
+        |trait Foo[t] {
+        |    /// dangling doc comment at the end of a trait
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.MisplacedDocComments.07") {
+    val input =
+      """
+        |trait Foo[t] {}
+        |instance Foo[Int32] {
+        |    /// dangling doc comment at the end of an instance
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.MisplacedDocComments.08") {
+    val input =
+      """
+        |eff Foo {
+        |    /// dangling doc comment at the end of an effect
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.TrailingSeparator.01") {
+    val input =
+      """
+        |pub def f(xs: List[Int32]): List[Int32] = forM (
+        |    x <- xs;
+        |    // a comment after a trailing semicolon
+        |) yield x
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.TrailingSeparator](result)
+  }
+
+  test("ParseError.TrailingSeparator.02") {
+    val input =
+      """
+        |pub def f(): List[Int32] = List#{/* c */ 1, /* c */}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.TrailingSeparator](result)
+  }
 }

@@ -93,7 +93,7 @@ object Visitor {
   }
 
   private def visitCase(cse: Case)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Case(_, tpes, _, loc) = cse
+    val Case(_, _, tpes, _, loc) = cse
     if (!a.accept(loc)) {
       return
     }
@@ -188,7 +188,7 @@ object Visitor {
   }
 
   private def visitStructField(field: StructField)(implicit a: Acceptor, c: Consumer): Unit = {
-    val StructField(_, _, tpe, loc) = field
+    val StructField(_, _, _, tpe, loc) = field
     if (!a.accept(loc)) {
       return
     }

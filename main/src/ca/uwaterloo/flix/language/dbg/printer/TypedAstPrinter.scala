@@ -216,7 +216,7 @@ object TypedAstPrinter {
     * Returns the [[DocAst.Case]] representation of `caze`.
     */
   private def printCase(caze: TypedAst.Case): DocAst.Case = caze match {
-    case TypedAst.Case(sym, tpes, _, _) => DocAst.Case(sym, tpes.map(TypePrinter.print))
+    case TypedAst.Case(_, sym, tpes, _, _) => DocAst.Case(sym, tpes.map(TypePrinter.print))
   }
 
   /**

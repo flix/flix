@@ -109,11 +109,9 @@ object SyntaxTree {
 
     case object CaseBody extends TreeKind
 
-    case object CommentList extends TreeKind
-
     case object DerivationList extends Type
 
-    case object Doc extends TreeKind
+    case object DocComment extends TreeKind
 
     case object Ident extends TreeKind
 
@@ -128,6 +126,8 @@ object SyntaxTree {
     case object Parameter extends TreeKind
 
     case object ParameterList extends TreeKind
+
+    case object PlainComment extends TreeKind
 
     case object PredicateAndArity extends TreeKind
 

@@ -402,59 +402,6 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
-  test("DanglingDocComment.02") {
-    val input =
-      """
-        |mod Foo {
-        |  /// This documents nothing
-        |}
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-    expectMain(result)
-  }
-
-  test("DanglingDocComment.03") {
-    val input =
-      """
-        |trait Foo[t] {
-        |  /// This documents nothing
-        |}
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-    expectMain(result)
-  }
-
-  test("DanglingDocComment.04") {
-    val input =
-      """
-        |trait Test[t] {}
-        |instance Test[Int32] {
-        |  /// This documents nothing
-        |}
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-    expectMain(result)
-  }
-
-  test("DanglingDocComment.05") {
-    val input =
-      """
-        |eff MyEff {
-        |  /// This documents nothing
-        |}
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-    expectMain(result)
-  }
-
   test("MangledModule.02") {
     val input =
       """

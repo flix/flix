@@ -1721,11 +1721,15 @@ object HtmlDocumentor {
   /**
     * Documents the given list of `Case`s of an enum.
     *
+    * Each case gets the id `case-<name>`, so it can be linked to, and its doc comment, if any,
+    * is rendered below it.
+    *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docCases(cases: List[TypedAst.Case])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<div class='cases'>")
     for (c <- cases.sortBy(_.loc)) {
+      sb.append(s"<div class='case' id='case-${esc(c.sym.name)}'>")
       sb.append("<code>")
       sb.append("<span class='keyword'>case</span> ")
       sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>")
@@ -1741,12 +1745,17 @@ object HtmlDocumentor {
       }
 
       sb.append("</code>")
+      docDoc(c.doc)
+      sb.append("</div>")
     }
     sb.append("</div>")
   }
 
   /**
     * Documents the given list of `StructField`s of a struct.
+    *
+    * Each field gets the id `field-<name>`, so it can be linked to, and its doc comment, if any,
+    * is rendered below it.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
@@ -1759,6 +1768,7 @@ object HtmlDocumentor {
 
     sb.append("<div class='fields'>")
     for (f <- fields.sortBy(_.loc)) {
+      sb.append(s"<div class='field' id='field-${esc(f.sym.name)}'>")
       sb.append("<code>")
       if (f.mod.isMutable) {
         sb.append("<span class='keyword'>mut</span> ")
@@ -1766,6 +1776,8 @@ object HtmlDocumentor {
       sb.append(s"<span>${esc(f.sym.name)}</span>: ")
       docType(f.tpe)
       sb.append("</code>")
+      docDoc(f.doc)
+      sb.append("</div>")
     }
     sb.append("</div>")
   }

@@ -164,7 +164,7 @@ object Redundancy {
     val result = new ArrayBuffer[RedundancyError]
     for ((_, decl) <- root.enums) {
       val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
-        case (sacc, (_, Case(_, tpes, _, _))) => sacc ++ tpes.flatMap(_.typeVars.map(_.sym))
+        case (sacc, (_, Case(_, _, tpes, _, _))) => sacc ++ tpes.flatMap(_.typeVars.map(_.sym))
       }
       val unusedTypeParams = decl.tparams.filter {
         tparam =>

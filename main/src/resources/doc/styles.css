@@ -749,10 +749,15 @@ main > section > h2 {
     margin-top: 0.7rem;
     margin-bottom: 0.7rem;
 }
-.cases > code,
-.fields > code,
+.cases > .case > code,
+.fields > .field > code,
 .assocs > code {
     display: block;
+}
+.case > .doc,
+.field > .doc {
+    margin-top: 0.2rem;
+    margin-bottom: 0.7rem;
 }
 .case-tag {
     font-style: italic;
