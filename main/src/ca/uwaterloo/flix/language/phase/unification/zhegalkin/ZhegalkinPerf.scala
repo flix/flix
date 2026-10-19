@@ -45,8 +45,8 @@ object ZhegalkinPerf {
   def run(n: Option[Int]): Unit = {
     val r = n.getOrElse(DefaultN)
 
-    rq1(r)
-    rq2()
+    //rq1(r)
+    //rq2()
     rq4(r)
     rq3(r)
   }

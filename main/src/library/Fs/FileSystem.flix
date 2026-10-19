@@ -472,216 +472,216 @@ pub mod Fs.FileSystem {
             def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
         }
 
-    ///
-    /// Middleware that intercepts the `FileSystem` effect, validating that all file paths
-    /// resolve within the given `chrootDir`. Rejects paths that escape the chroot with
-    /// a `PermissionDenied` error.
-    ///
-    /// The `mkTempDir` operation is blocked since it creates directories outside the chroot.
-    ///
-    pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
-        use IoError.IoError;
-        use IoError.ErrorKind;
-        let c = p -> Fs.FsLayer.chroot(chrootDir, p);
-        run { f() } with handler FileSystem {
-            def exists(filename, k)           = k(Result.flatMap(p -> FileSystem.exists(p), c(filename)))
-            def isDirectory(filename, k)      = k(Result.flatMap(p -> FileSystem.isDirectory(p), c(filename)))
-            def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileSystem.isRegularFile(p), c(filename)))
-            def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileSystem.isSymbolicLink(p), c(filename)))
-            def isReadable(filename, k)       = k(Result.flatMap(p -> FileSystem.isReadable(p), c(filename)))
-            def isWritable(filename, k)       = k(Result.flatMap(p -> FileSystem.isWritable(p), c(filename)))
-            def isExecutable(filename, k)     = k(Result.flatMap(p -> FileSystem.isExecutable(p), c(filename)))
-            def accessTime(filename, k)       = k(Result.flatMap(p -> FileSystem.accessTime(p), c(filename)))
-            def creationTime(filename, k)     = k(Result.flatMap(p -> FileSystem.creationTime(p), c(filename)))
-            def modificationTime(filename, k) = k(Result.flatMap(p -> FileSystem.modificationTime(p), c(filename)))
-            def size(filename, k)             = k(Result.flatMap(p -> FileSystem.size(p), c(filename)))
-            def read(filename, k)             = k(Result.flatMap(p -> FileSystem.read(p), c(filename)))
-            def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), c(filename)))
-            def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), c(filename)))
-            def list(filename, k)             = k(Result.flatMap(p -> FileSystem.list(p), c(filename)))
-            def glob(base, pattern, k)        = k(Result.flatMap(p -> FileSystem.glob(p, pattern), c(base)))
-            def write(data, file, k)          = k(Result.flatMap(p -> FileSystem.write(data, p), c(file)))
-            def writeLines(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeLines(data, p), c(file)))
-            def writeBytes(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeBytes(data, p), c(file)))
-            def append(data, file, k)         = k(Result.flatMap(p -> FileSystem.append(data, p), c(file)))
-            def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
-            def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
-            def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
-            def copyWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.copyWith(src = s, d, opts), c(dst)), c(src#src)))
-            def moveWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.moveWith(src = s, d, opts), c(dst)), c(src#src)))
-            def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
-            def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
-            def mkDirs(d, k)                  = k(Result.flatMap(p -> FileSystem.mkDirs(p), c(d)))
-            def mkTempDir(_prefix, k)         = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted inside a chroot")))
-        }
+//     ///
+//     /// Middleware that intercepts the `FileSystem` effect, validating that all file paths
+//     /// resolve within the given `chrootDir`. Rejects paths that escape the chroot with
+//     /// a `PermissionDenied` error.
+//     ///
+//     /// The `mkTempDir` operation is blocked since it creates directories outside the chroot.
+//     ///
+//     pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+//         use IoError.IoError;
+//         use IoError.ErrorKind;
+//         let c = p -> Fs.FsLayer.chroot(chrootDir, p);
+//         run { f() } with handler FileSystem {
+//             def exists(filename, k)           = k(Result.flatMap(p -> FileSystem.exists(p), c(filename)))
+//             def isDirectory(filename, k)      = k(Result.flatMap(p -> FileSystem.isDirectory(p), c(filename)))
+//             def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileSystem.isRegularFile(p), c(filename)))
+//             def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileSystem.isSymbolicLink(p), c(filename)))
+//             def isReadable(filename, k)       = k(Result.flatMap(p -> FileSystem.isReadable(p), c(filename)))
+//             def isWritable(filename, k)       = k(Result.flatMap(p -> FileSystem.isWritable(p), c(filename)))
+//             def isExecutable(filename, k)     = k(Result.flatMap(p -> FileSystem.isExecutable(p), c(filename)))
+//             def accessTime(filename, k)       = k(Result.flatMap(p -> FileSystem.accessTime(p), c(filename)))
+//             def creationTime(filename, k)     = k(Result.flatMap(p -> FileSystem.creationTime(p), c(filename)))
+//             def modificationTime(filename, k) = k(Result.flatMap(p -> FileSystem.modificationTime(p), c(filename)))
+//             def size(filename, k)             = k(Result.flatMap(p -> FileSystem.size(p), c(filename)))
+//             def read(filename, k)             = k(Result.flatMap(p -> FileSystem.read(p), c(filename)))
+//             def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), c(filename)))
+//             def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), c(filename)))
+//             def list(filename, k)             = k(Result.flatMap(p -> FileSystem.list(p), c(filename)))
+//             def glob(base, pattern, k)        = k(Result.flatMap(p -> FileSystem.glob(p, pattern), c(base)))
+//             def write(data, file, k)          = k(Result.flatMap(p -> FileSystem.write(data, p), c(file)))
+//             def writeLines(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeLines(data, p), c(file)))
+//             def writeBytes(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeBytes(data, p), c(file)))
+//             def append(data, file, k)         = k(Result.flatMap(p -> FileSystem.append(data, p), c(file)))
+//             def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
+//             def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
+//             def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
+//             def copyWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.copyWith(src = s, d, opts), c(dst)), c(src#src)))
+//             def moveWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.moveWith(src = s, d, opts), c(dst)), c(src#src)))
+//             def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
+//             def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
+//             def mkDirs(d, k)                  = k(Result.flatMap(p -> FileSystem.mkDirs(p), c(d)))
+//             def mkTempDir(_prefix, k)         = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted inside a chroot")))
+//         }
 
-    ///
-    /// Middleware that intercepts the `FileSystem` effect, validating that all file paths
-    /// resolve within one of the given `allowedDirs`. Rejects paths outside the
-    /// allow list with a `PermissionDenied` error.
-    ///
-    /// The `mkTempDir` operation is blocked since the temp directory location cannot be verified.
-    ///
-    pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
-        use IoError.IoError;
-        use IoError.ErrorKind;
-        let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
-        run { f() } with handler FileSystem {
-            def exists(filename, k)           = k(Result.flatMap(p -> FileSystem.exists(p), c(filename)))
-            def isDirectory(filename, k)      = k(Result.flatMap(p -> FileSystem.isDirectory(p), c(filename)))
-            def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileSystem.isRegularFile(p), c(filename)))
-            def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileSystem.isSymbolicLink(p), c(filename)))
-            def isReadable(filename, k)       = k(Result.flatMap(p -> FileSystem.isReadable(p), c(filename)))
-            def isWritable(filename, k)       = k(Result.flatMap(p -> FileSystem.isWritable(p), c(filename)))
-            def isExecutable(filename, k)     = k(Result.flatMap(p -> FileSystem.isExecutable(p), c(filename)))
-            def accessTime(filename, k)       = k(Result.flatMap(p -> FileSystem.accessTime(p), c(filename)))
-            def creationTime(filename, k)     = k(Result.flatMap(p -> FileSystem.creationTime(p), c(filename)))
-            def modificationTime(filename, k) = k(Result.flatMap(p -> FileSystem.modificationTime(p), c(filename)))
-            def size(filename, k)             = k(Result.flatMap(p -> FileSystem.size(p), c(filename)))
-            def read(filename, k)             = k(Result.flatMap(p -> FileSystem.read(p), c(filename)))
-            def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), c(filename)))
-            def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), c(filename)))
-            def list(filename, k)             = k(Result.flatMap(p -> FileSystem.list(p), c(filename)))
-            def glob(base, pattern, k)        = k(Result.flatMap(p -> FileSystem.glob(p, pattern), c(base)))
-            def write(data, file, k)          = k(Result.flatMap(p -> FileSystem.write(data, p), c(file)))
-            def writeLines(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeLines(data, p), c(file)))
-            def writeBytes(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeBytes(data, p), c(file)))
-            def append(data, file, k)         = k(Result.flatMap(p -> FileSystem.append(data, p), c(file)))
-            def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
-            def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
-            def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
-            def copyWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.copyWith(src = s, d, opts), c(dst)), c(src#src)))
-            def moveWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.moveWith(src = s, d, opts), c(dst)), c(src#src)))
-            def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
-            def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
-            def mkDirs(d, k)                  = k(Result.flatMap(p -> FileSystem.mkDirs(p), c(d)))
-            def mkTempDir(_prefix, k)         = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted with an allow list")))
-        }
+//     ///
+//     /// Middleware that intercepts the `FileSystem` effect, validating that all file paths
+//     /// resolve within one of the given `allowedDirs`. Rejects paths outside the
+//     /// allow list with a `PermissionDenied` error.
+//     ///
+//     /// The `mkTempDir` operation is blocked since the temp directory location cannot be verified.
+//     ///
+//     pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+//         use IoError.IoError;
+//         use IoError.ErrorKind;
+//         let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
+//         run { f() } with handler FileSystem {
+//             def exists(filename, k)           = k(Result.flatMap(p -> FileSystem.exists(p), c(filename)))
+//             def isDirectory(filename, k)      = k(Result.flatMap(p -> FileSystem.isDirectory(p), c(filename)))
+//             def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileSystem.isRegularFile(p), c(filename)))
+//             def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileSystem.isSymbolicLink(p), c(filename)))
+//             def isReadable(filename, k)       = k(Result.flatMap(p -> FileSystem.isReadable(p), c(filename)))
+//             def isWritable(filename, k)       = k(Result.flatMap(p -> FileSystem.isWritable(p), c(filename)))
+//             def isExecutable(filename, k)     = k(Result.flatMap(p -> FileSystem.isExecutable(p), c(filename)))
+//             def accessTime(filename, k)       = k(Result.flatMap(p -> FileSystem.accessTime(p), c(filename)))
+//             def creationTime(filename, k)     = k(Result.flatMap(p -> FileSystem.creationTime(p), c(filename)))
+//             def modificationTime(filename, k) = k(Result.flatMap(p -> FileSystem.modificationTime(p), c(filename)))
+//             def size(filename, k)             = k(Result.flatMap(p -> FileSystem.size(p), c(filename)))
+//             def read(filename, k)             = k(Result.flatMap(p -> FileSystem.read(p), c(filename)))
+//             def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), c(filename)))
+//             def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), c(filename)))
+//             def list(filename, k)             = k(Result.flatMap(p -> FileSystem.list(p), c(filename)))
+//             def glob(base, pattern, k)        = k(Result.flatMap(p -> FileSystem.glob(p, pattern), c(base)))
+//             def write(data, file, k)          = k(Result.flatMap(p -> FileSystem.write(data, p), c(file)))
+//             def writeLines(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeLines(data, p), c(file)))
+//             def writeBytes(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeBytes(data, p), c(file)))
+//             def append(data, file, k)         = k(Result.flatMap(p -> FileSystem.append(data, p), c(file)))
+//             def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
+//             def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
+//             def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
+//             def copyWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.copyWith(src = s, d, opts), c(dst)), c(src#src)))
+//             def moveWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.moveWith(src = s, d, opts), c(dst)), c(src#src)))
+//             def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
+//             def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
+//             def mkDirs(d, k)                  = k(Result.flatMap(p -> FileSystem.mkDirs(p), c(d)))
+//             def mkTempDir(_prefix, k)         = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted with an allow list")))
+//         }
 
-    ///
-    /// Middleware that intercepts the `FileSystem` effect, validating that all file paths
-    /// do not resolve within any of the given `deniedDirs`. Rejects paths inside a
-    /// denied directory with a `PermissionDenied` error.
-    ///
-    /// The `mkTempDir` operation is allowed since deny lists are default-allow.
-    ///
-    pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
-        let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
-        run { f() } with handler FileSystem {
-            def exists(filename, k)           = k(Result.flatMap(p -> FileSystem.exists(p), c(filename)))
-            def isDirectory(filename, k)      = k(Result.flatMap(p -> FileSystem.isDirectory(p), c(filename)))
-            def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileSystem.isRegularFile(p), c(filename)))
-            def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileSystem.isSymbolicLink(p), c(filename)))
-            def isReadable(filename, k)       = k(Result.flatMap(p -> FileSystem.isReadable(p), c(filename)))
-            def isWritable(filename, k)       = k(Result.flatMap(p -> FileSystem.isWritable(p), c(filename)))
-            def isExecutable(filename, k)     = k(Result.flatMap(p -> FileSystem.isExecutable(p), c(filename)))
-            def accessTime(filename, k)       = k(Result.flatMap(p -> FileSystem.accessTime(p), c(filename)))
-            def creationTime(filename, k)     = k(Result.flatMap(p -> FileSystem.creationTime(p), c(filename)))
-            def modificationTime(filename, k) = k(Result.flatMap(p -> FileSystem.modificationTime(p), c(filename)))
-            def size(filename, k)             = k(Result.flatMap(p -> FileSystem.size(p), c(filename)))
-            def read(filename, k)             = k(Result.flatMap(p -> FileSystem.read(p), c(filename)))
-            def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), c(filename)))
-            def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), c(filename)))
-            def list(filename, k)             = k(Result.flatMap(p -> FileSystem.list(p), c(filename)))
-            def glob(base, pattern, k)        = k(Result.flatMap(p -> FileSystem.glob(p, pattern), c(base)))
-            def write(data, file, k)          = k(Result.flatMap(p -> FileSystem.write(data, p), c(file)))
-            def writeLines(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeLines(data, p), c(file)))
-            def writeBytes(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeBytes(data, p), c(file)))
-            def append(data, file, k)         = k(Result.flatMap(p -> FileSystem.append(data, p), c(file)))
-            def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
-            def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
-            def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
-            def copyWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.copyWith(src = s, d, opts), c(dst)), c(src#src)))
-            def moveWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.moveWith(src = s, d, opts), c(dst)), c(src#src)))
-            def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
-            def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
-            def mkDirs(d, k)                  = k(Result.flatMap(p -> FileSystem.mkDirs(p), c(d)))
-            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
-        }
+//     ///
+//     /// Middleware that intercepts the `FileSystem` effect, validating that all file paths
+//     /// do not resolve within any of the given `deniedDirs`. Rejects paths inside a
+//     /// denied directory with a `PermissionDenied` error.
+//     ///
+//     /// The `mkTempDir` operation is allowed since deny lists are default-allow.
+//     ///
+//     pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+//         let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
+//         run { f() } with handler FileSystem {
+//             def exists(filename, k)           = k(Result.flatMap(p -> FileSystem.exists(p), c(filename)))
+//             def isDirectory(filename, k)      = k(Result.flatMap(p -> FileSystem.isDirectory(p), c(filename)))
+//             def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileSystem.isRegularFile(p), c(filename)))
+//             def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileSystem.isSymbolicLink(p), c(filename)))
+//             def isReadable(filename, k)       = k(Result.flatMap(p -> FileSystem.isReadable(p), c(filename)))
+//             def isWritable(filename, k)       = k(Result.flatMap(p -> FileSystem.isWritable(p), c(filename)))
+//             def isExecutable(filename, k)     = k(Result.flatMap(p -> FileSystem.isExecutable(p), c(filename)))
+//             def accessTime(filename, k)       = k(Result.flatMap(p -> FileSystem.accessTime(p), c(filename)))
+//             def creationTime(filename, k)     = k(Result.flatMap(p -> FileSystem.creationTime(p), c(filename)))
+//             def modificationTime(filename, k) = k(Result.flatMap(p -> FileSystem.modificationTime(p), c(filename)))
+//             def size(filename, k)             = k(Result.flatMap(p -> FileSystem.size(p), c(filename)))
+//             def read(filename, k)             = k(Result.flatMap(p -> FileSystem.read(p), c(filename)))
+//             def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), c(filename)))
+//             def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), c(filename)))
+//             def list(filename, k)             = k(Result.flatMap(p -> FileSystem.list(p), c(filename)))
+//             def glob(base, pattern, k)        = k(Result.flatMap(p -> FileSystem.glob(p, pattern), c(base)))
+//             def write(data, file, k)          = k(Result.flatMap(p -> FileSystem.write(data, p), c(file)))
+//             def writeLines(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeLines(data, p), c(file)))
+//             def writeBytes(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeBytes(data, p), c(file)))
+//             def append(data, file, k)         = k(Result.flatMap(p -> FileSystem.append(data, p), c(file)))
+//             def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
+//             def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
+//             def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
+//             def copyWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.copyWith(src = s, d, opts), c(dst)), c(src#src)))
+//             def moveWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.moveWith(src = s, d, opts), c(dst)), c(src#src)))
+//             def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
+//             def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
+//             def mkDirs(d, k)                  = k(Result.flatMap(p -> FileSystem.mkDirs(p), c(d)))
+//             def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+//         }
 
-    ///
-    /// Middleware that intercepts the `FileSystem` effect, validating that all file paths
-    /// match at least one of the given glob `patterns`. Rejects paths that do not match
-    /// with a `PermissionDenied` error.
-    ///
-    /// The `mkTempDir` operation is blocked since the temp directory location cannot be verified.
-    ///
-    pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
-        use IoError.IoError;
-        use IoError.ErrorKind;
-        let c = p -> Fs.FsLayer.allowGlob(patterns, p);
-        run { f() } with handler FileSystem {
-            def exists(filename, k)           = k(Result.flatMap(p -> FileSystem.exists(p), c(filename)))
-            def isDirectory(filename, k)      = k(Result.flatMap(p -> FileSystem.isDirectory(p), c(filename)))
-            def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileSystem.isRegularFile(p), c(filename)))
-            def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileSystem.isSymbolicLink(p), c(filename)))
-            def isReadable(filename, k)       = k(Result.flatMap(p -> FileSystem.isReadable(p), c(filename)))
-            def isWritable(filename, k)       = k(Result.flatMap(p -> FileSystem.isWritable(p), c(filename)))
-            def isExecutable(filename, k)     = k(Result.flatMap(p -> FileSystem.isExecutable(p), c(filename)))
-            def accessTime(filename, k)       = k(Result.flatMap(p -> FileSystem.accessTime(p), c(filename)))
-            def creationTime(filename, k)     = k(Result.flatMap(p -> FileSystem.creationTime(p), c(filename)))
-            def modificationTime(filename, k) = k(Result.flatMap(p -> FileSystem.modificationTime(p), c(filename)))
-            def size(filename, k)             = k(Result.flatMap(p -> FileSystem.size(p), c(filename)))
-            def read(filename, k)             = k(Result.flatMap(p -> FileSystem.read(p), c(filename)))
-            def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), c(filename)))
-            def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), c(filename)))
-            def list(filename, k)             = k(Result.flatMap(p -> FileSystem.list(p), c(filename)))
-            def glob(base, pattern, k)        = k(Result.flatMap(p -> FileSystem.glob(p, pattern), c(base)))
-            def write(data, file, k)          = k(Result.flatMap(p -> FileSystem.write(data, p), c(file)))
-            def writeLines(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeLines(data, p), c(file)))
-            def writeBytes(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeBytes(data, p), c(file)))
-            def append(data, file, k)         = k(Result.flatMap(p -> FileSystem.append(data, p), c(file)))
-            def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
-            def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
-            def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
-            def copyWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.copyWith(src = s, d, opts), c(dst)), c(src#src)))
-            def moveWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.moveWith(src = s, d, opts), c(dst)), c(src#src)))
-            def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
-            def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
-            def mkDirs(d, k)                  = k(Result.flatMap(p -> FileSystem.mkDirs(p), c(d)))
-            def mkTempDir(_prefix, k)         = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted with an allow glob")))
-        }
+//     ///
+//     /// Middleware that intercepts the `FileSystem` effect, validating that all file paths
+//     /// match at least one of the given glob `patterns`. Rejects paths that do not match
+//     /// with a `PermissionDenied` error.
+//     ///
+//     /// The `mkTempDir` operation is blocked since the temp directory location cannot be verified.
+//     ///
+//     pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+//         use IoError.IoError;
+//         use IoError.ErrorKind;
+//         let c = p -> Fs.FsLayer.allowGlob(patterns, p);
+//         run { f() } with handler FileSystem {
+//             def exists(filename, k)           = k(Result.flatMap(p -> FileSystem.exists(p), c(filename)))
+//             def isDirectory(filename, k)      = k(Result.flatMap(p -> FileSystem.isDirectory(p), c(filename)))
+//             def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileSystem.isRegularFile(p), c(filename)))
+//             def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileSystem.isSymbolicLink(p), c(filename)))
+//             def isReadable(filename, k)       = k(Result.flatMap(p -> FileSystem.isReadable(p), c(filename)))
+//             def isWritable(filename, k)       = k(Result.flatMap(p -> FileSystem.isWritable(p), c(filename)))
+//             def isExecutable(filename, k)     = k(Result.flatMap(p -> FileSystem.isExecutable(p), c(filename)))
+//             def accessTime(filename, k)       = k(Result.flatMap(p -> FileSystem.accessTime(p), c(filename)))
+//             def creationTime(filename, k)     = k(Result.flatMap(p -> FileSystem.creationTime(p), c(filename)))
+//             def modificationTime(filename, k) = k(Result.flatMap(p -> FileSystem.modificationTime(p), c(filename)))
+//             def size(filename, k)             = k(Result.flatMap(p -> FileSystem.size(p), c(filename)))
+//             def read(filename, k)             = k(Result.flatMap(p -> FileSystem.read(p), c(filename)))
+//             def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), c(filename)))
+//             def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), c(filename)))
+//             def list(filename, k)             = k(Result.flatMap(p -> FileSystem.list(p), c(filename)))
+//             def glob(base, pattern, k)        = k(Result.flatMap(p -> FileSystem.glob(p, pattern), c(base)))
+//             def write(data, file, k)          = k(Result.flatMap(p -> FileSystem.write(data, p), c(file)))
+//             def writeLines(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeLines(data, p), c(file)))
+//             def writeBytes(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeBytes(data, p), c(file)))
+//             def append(data, file, k)         = k(Result.flatMap(p -> FileSystem.append(data, p), c(file)))
+//             def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
+//             def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
+//             def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
+//             def copyWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.copyWith(src = s, d, opts), c(dst)), c(src#src)))
+//             def moveWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.moveWith(src = s, d, opts), c(dst)), c(src#src)))
+//             def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
+//             def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
+//             def mkDirs(d, k)                  = k(Result.flatMap(p -> FileSystem.mkDirs(p), c(d)))
+//             def mkTempDir(_prefix, k)         = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted with an allow glob")))
+//         }
 
-    ///
-    /// Middleware that intercepts the `FileSystem` effect, validating that all file paths
-    /// do not match any of the given glob `patterns`. Rejects paths that match a denied
-    /// pattern with a `PermissionDenied` error.
-    ///
-    /// The `mkTempDir` operation is allowed since deny globs are default-allow.
-    ///
-    pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
-        let c = p -> Fs.FsLayer.denyGlob(patterns, p);
-        run { f() } with handler FileSystem {
-            def exists(filename, k)           = k(Result.flatMap(p -> FileSystem.exists(p), c(filename)))
-            def isDirectory(filename, k)      = k(Result.flatMap(p -> FileSystem.isDirectory(p), c(filename)))
-            def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileSystem.isRegularFile(p), c(filename)))
-            def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileSystem.isSymbolicLink(p), c(filename)))
-            def isReadable(filename, k)       = k(Result.flatMap(p -> FileSystem.isReadable(p), c(filename)))
-            def isWritable(filename, k)       = k(Result.flatMap(p -> FileSystem.isWritable(p), c(filename)))
-            def isExecutable(filename, k)     = k(Result.flatMap(p -> FileSystem.isExecutable(p), c(filename)))
-            def accessTime(filename, k)       = k(Result.flatMap(p -> FileSystem.accessTime(p), c(filename)))
-            def creationTime(filename, k)     = k(Result.flatMap(p -> FileSystem.creationTime(p), c(filename)))
-            def modificationTime(filename, k) = k(Result.flatMap(p -> FileSystem.modificationTime(p), c(filename)))
-            def size(filename, k)             = k(Result.flatMap(p -> FileSystem.size(p), c(filename)))
-            def read(filename, k)             = k(Result.flatMap(p -> FileSystem.read(p), c(filename)))
-            def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), c(filename)))
-            def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), c(filename)))
-            def list(filename, k)             = k(Result.flatMap(p -> FileSystem.list(p), c(filename)))
-            def glob(base, pattern, k)        = k(Result.flatMap(p -> FileSystem.glob(p, pattern), c(base)))
-            def write(data, file, k)          = k(Result.flatMap(p -> FileSystem.write(data, p), c(file)))
-            def writeLines(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeLines(data, p), c(file)))
-            def writeBytes(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeBytes(data, p), c(file)))
-            def append(data, file, k)         = k(Result.flatMap(p -> FileSystem.append(data, p), c(file)))
-            def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
-            def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
-            def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
-            def copyWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.copyWith(src = s, d, opts), c(dst)), c(src#src)))
-            def moveWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.moveWith(src = s, d, opts), c(dst)), c(src#src)))
-            def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
-            def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
-            def mkDirs(d, k)                  = k(Result.flatMap(p -> FileSystem.mkDirs(p), c(d)))
-            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
-        }
+//     ///
+//     /// Middleware that intercepts the `FileSystem` effect, validating that all file paths
+//     /// do not match any of the given glob `patterns`. Rejects paths that match a denied
+//     /// pattern with a `PermissionDenied` error.
+//     ///
+//     /// The `mkTempDir` operation is allowed since deny globs are default-allow.
+//     ///
+//     pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+//         let c = p -> Fs.FsLayer.denyGlob(patterns, p);
+//         run { f() } with handler FileSystem {
+//             def exists(filename, k)           = k(Result.flatMap(p -> FileSystem.exists(p), c(filename)))
+//             def isDirectory(filename, k)      = k(Result.flatMap(p -> FileSystem.isDirectory(p), c(filename)))
+//             def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileSystem.isRegularFile(p), c(filename)))
+//             def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileSystem.isSymbolicLink(p), c(filename)))
+//             def isReadable(filename, k)       = k(Result.flatMap(p -> FileSystem.isReadable(p), c(filename)))
+//             def isWritable(filename, k)       = k(Result.flatMap(p -> FileSystem.isWritable(p), c(filename)))
+//             def isExecutable(filename, k)     = k(Result.flatMap(p -> FileSystem.isExecutable(p), c(filename)))
+//             def accessTime(filename, k)       = k(Result.flatMap(p -> FileSystem.accessTime(p), c(filename)))
+//             def creationTime(filename, k)     = k(Result.flatMap(p -> FileSystem.creationTime(p), c(filename)))
+//             def modificationTime(filename, k) = k(Result.flatMap(p -> FileSystem.modificationTime(p), c(filename)))
+//             def size(filename, k)             = k(Result.flatMap(p -> FileSystem.size(p), c(filename)))
+//             def read(filename, k)             = k(Result.flatMap(p -> FileSystem.read(p), c(filename)))
+//             def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), c(filename)))
+//             def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), c(filename)))
+//             def list(filename, k)             = k(Result.flatMap(p -> FileSystem.list(p), c(filename)))
+//             def glob(base, pattern, k)        = k(Result.flatMap(p -> FileSystem.glob(p, pattern), c(base)))
+//             def write(data, file, k)          = k(Result.flatMap(p -> FileSystem.write(data, p), c(file)))
+//             def writeLines(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeLines(data, p), c(file)))
+//             def writeBytes(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeBytes(data, p), c(file)))
+//             def append(data, file, k)         = k(Result.flatMap(p -> FileSystem.append(data, p), c(file)))
+//             def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
+//             def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
+//             def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
+//             def copyWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.copyWith(src = s, d, opts), c(dst)), c(src#src)))
+//             def moveWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.moveWith(src = s, d, opts), c(dst)), c(src#src)))
+//             def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
+//             def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
+//             def mkDirs(d, k)                  = k(Result.flatMap(p -> FileSystem.mkDirs(p), c(d)))
+//             def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+//         }
 
     ///
     /// Middleware that intercepts the `FileSystem` effect, resolving all file paths
@@ -1210,60 +1210,60 @@ pub mod Fs.FileSystem {
             def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
         }
 
-    ///
-    /// Middleware that intercepts the `FileSystem` effect, rejecting read, write,
-    /// and append operations where the data exceeds `maxBytes`. For reads and
-    /// `copyWith`, the file size is checked via `FileSystem.size`.
-    ///
-    /// String-based operations estimate byte count as `charCount * 4` (the
-    /// maximum bytes per character in UTF-8). Use byte-based operations for
-    /// exact enforcement.
-    ///
-    /// Operations that don't transfer data (`truncate`, `moveWith`, `delete`,
-    /// `mkDir`, `mkDirs`, `mkTempDir`) and metadata operations are passed
-    /// through unchanged.
-    ///
-    pub def withTransferLimit(maxSize: Size, f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
-        let check = sz -> Fs.FsLayer.checkTransferLimit(maxSize, sz);
-        let estStr = s -> Fs.FsLayer.estimateStringBytes(s);
-        run { f() } with handler FileSystem {
-            // Stat/test/metadata ops — pass through
-            def exists(filename, k)           = k(FileSystem.exists(filename))
-            def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
-            def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
-            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
-            def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
-            def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
-            def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
-            def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
-            def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
-            def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
-            def size(filename, k)             = k(FileSystem.size(filename))
-            def list(filename, k)             = k(FileSystem.list(filename))
-            def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
-
-            // Read ops — check file size before reading
-            def read(filename, k)             = k(Result.flatMap(_ -> FileSystem.read(filename), Result.flatMap(check, FileSystem.size(filename))))
-            def readLines(filename, k)        = k(Result.flatMap(_ -> FileSystem.readLines(filename), Result.flatMap(check, FileSystem.size(filename))))
-            def readBytes(filename, k)        = k(Result.flatMap(_ -> FileSystem.readBytes(filename), Result.flatMap(check, FileSystem.size(filename))))
-
-            // Write ops — check payload size
-            def write(data, file, k)          = k(Result.flatMap(_ -> FileSystem.write(data, file), check(estStr(data#str))))
-            def writeLines(data, file, k)     = k(Result.flatMap(_ -> FileSystem.writeLines(data, file), check(Fs.FsLayer.estimateStringListBytes(data#lines))))
-            def writeBytes(data, file, k)     = k(Result.flatMap(_ -> FileSystem.writeBytes(data, file), check(bytes(Int32.toInt64(Vector.length(data))))))
-            def append(data, file, k)         = k(Result.flatMap(_ -> FileSystem.append(data, file), check(estStr(data#str))))
-            def appendLines(data, file, k)    = k(Result.flatMap(_ -> FileSystem.appendLines(data, file), check(Fs.FsLayer.estimateStringListBytes(data#lines))))
-            def appendBytes(data, file, k)    = k(Result.flatMap(_ -> FileSystem.appendBytes(data, file), check(bytes(Int32.toInt64(Vector.length(data))))))
-            def copyWith(src, dst, opts, k)   = k(Result.flatMap(sz -> Result.flatMap(_ -> FileSystem.copyWith(src, dst, opts), check(sz)), FileSystem.size(src#src)))
-
-            // Non-data-transfer ops — pass through
-            def truncate(file, k)             = k(FileSystem.truncate(file))
-            def moveWith(src, dst, opts, k)   = k(FileSystem.moveWith(src, dst, opts))
-            def delete(file, k)               = k(FileSystem.delete(file))
-            def mkDir(d, k)                   = k(FileSystem.mkDir(d))
-            def mkDirs(d, k)                  = k(FileSystem.mkDirs(d))
-            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
-        }
+//     ///
+//     /// Middleware that intercepts the `FileSystem` effect, rejecting read, write,
+//     /// and append operations where the data exceeds `maxBytes`. For reads and
+//     /// `copyWith`, the file size is checked via `FileSystem.size`.
+//     ///
+//     /// String-based operations estimate byte count as `charCount * 4` (the
+//     /// maximum bytes per character in UTF-8). Use byte-based operations for
+//     /// exact enforcement.
+//     ///
+//     /// Operations that don't transfer data (`truncate`, `moveWith`, `delete`,
+//     /// `mkDir`, `mkDirs`, `mkTempDir`) and metadata operations are passed
+//     /// through unchanged.
+//     ///
+//     pub def withTransferLimit(maxSize: Size, f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+//         let check = sz -> Fs.FsLayer.checkTransferLimit(maxSize, sz);
+//         let estStr = s -> Fs.FsLayer.estimateStringBytes(s);
+//         run { f() } with handler FileSystem {
+//             // Stat/test/metadata ops — pass through
+//             def exists(filename, k)           = k(FileSystem.exists(filename))
+//             def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
+//             def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
+//             def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+//             def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
+//             def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
+//             def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
+//             def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
+//             def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
+//             def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
+//             def size(filename, k)             = k(FileSystem.size(filename))
+//             def list(filename, k)             = k(FileSystem.list(filename))
+//             def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
+//
+//             // Read ops — check file size before reading
+//             def read(filename, k)             = k(Result.flatMap(_ -> FileSystem.read(filename), Result.flatMap(check, FileSystem.size(filename))))
+//             def readLines(filename, k)        = k(Result.flatMap(_ -> FileSystem.readLines(filename), Result.flatMap(check, FileSystem.size(filename))))
+//             def readBytes(filename, k)        = k(Result.flatMap(_ -> FileSystem.readBytes(filename), Result.flatMap(check, FileSystem.size(filename))))
+//
+//             // Write ops — check payload size
+//             def write(data, file, k)          = k(Result.flatMap(_ -> FileSystem.write(data, file), check(estStr(data#str))))
+//             def writeLines(data, file, k)     = k(Result.flatMap(_ -> FileSystem.writeLines(data, file), check(Fs.FsLayer.estimateStringListBytes(data#lines))))
+//             def writeBytes(data, file, k)     = k(Result.flatMap(_ -> FileSystem.writeBytes(data, file), check(bytes(Int32.toInt64(Vector.length(data))))))
+//             def append(data, file, k)         = k(Result.flatMap(_ -> FileSystem.append(data, file), check(estStr(data#str))))
+//             def appendLines(data, file, k)    = k(Result.flatMap(_ -> FileSystem.appendLines(data, file), check(Fs.FsLayer.estimateStringListBytes(data#lines))))
+//             def appendBytes(data, file, k)    = k(Result.flatMap(_ -> FileSystem.appendBytes(data, file), check(bytes(Int32.toInt64(Vector.length(data))))))
+//             def copyWith(src, dst, opts, k)   = k(Result.flatMap(sz -> Result.flatMap(_ -> FileSystem.copyWith(src, dst, opts), check(sz)), FileSystem.size(src#src)))
+//
+//             // Non-data-transfer ops — pass through
+//             def truncate(file, k)             = k(FileSystem.truncate(file))
+//             def moveWith(src, dst, opts, k)   = k(FileSystem.moveWith(src, dst, opts))
+//             def delete(file, k)               = k(FileSystem.delete(file))
+//             def mkDir(d, k)                   = k(FileSystem.mkDir(d))
+//             def mkDirs(d, k)                  = k(FileSystem.mkDirs(d))
+//             def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+//         }
 
     ///
     /// Middleware that intercepts the `FileSystem` effect, providing optimistic
@@ -1425,74 +1425,74 @@ pub mod Fs.FileSystem {
             def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
         }
 
-    ///
-    /// Middleware that intercepts the `FileSystem` effect, providing data integrity
-    /// via checksum sidecar files. Write operations produce checksum sidecars;
-    /// read operations verify against them.
-    ///
-    /// `hash` is a pure function from file bytes to digest bytes.
-    /// `sidecar` is the file suffix (e.g., `".sha256"`).
-    ///
-    /// After write, append, truncate, and copy operations, the file is re-read
-    /// and a sidecar containing the hex digest is written. After move, the
-    /// sidecar is moved. After delete, the sidecar is removed.
-    ///
-    /// On read, if a sidecar exists, the file's contents are hashed and compared
-    /// against the stored checksum. If no sidecar exists, the read proceeds
-    /// normally.
-    ///
-    /// Stat, test, permission, time, size, list, and glob operations are
-    /// passed through unchanged.
-    ///
-    pub def withChecksum(
-        hash: Vector[Int8] -> Vector[Int8],
-        sidecar: String,
-        f: Unit -> a \ ef
-    ): a \ (ef - FileSystem) + FileSystem =
-        let computeHex = bytes -> Util.Codec.encodeHex(hash(bytes));
-        let doReadBytes = file -> FileSystem.readBytes(file);
-        let doReadSidecar = file -> FileSystem.read(file);
-        let updateSidecar = file -> Fs.FsLayer.updateSidecar(file, sidecar, computeHex, doReadBytes, (str, f1) -> FileSystem.write(str = str, f1));
-        let afterWrite = (file, doWrite) -> Fs.FsLayer.checksumAfterWrite(file, doWrite, updateSidecar);
-        let doMoveSidecar = (s, d) -> FileSystem.moveWith(src = s, d, Set#{Fs.MoveOption.ReplaceExisting});
-        let doDeleteSidecar = file -> FileSystem.delete(file);
-        run { f() } with handler FileSystem {
-            // ── Stat/test/perm/time/size — pass through ──
-            def exists(filename, k)           = k(FileSystem.exists(filename))
-            def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
-            def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
-            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
-            def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
-            def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
-            def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
-            def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
-            def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
-            def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
-            def size(filename, k)             = k(FileSystem.size(filename))
-            def list(filename, k)             = k(FileSystem.list(filename))
-            def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
-
-            // ── Read ops — verify checksum after read ──
-            def read(filename, k)             = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileSystem.read(filename), doReadBytes, doReadSidecar))
-            def readLines(filename, k)        = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileSystem.readLines(filename), doReadBytes, doReadSidecar))
-            def readBytes(filename, k)        = k(Fs.FsLayer.checksumOnReadBytes(filename, sidecar, computeHex, FileSystem.readBytes(filename), doReadSidecar))
-
-            // ── Write ops — update checksum sidecar after write ──
-            def write(data, file, k)          = k(afterWrite(file, () -> FileSystem.write(data, file)))
-            def writeLines(data, file, k)     = k(afterWrite(file, () -> FileSystem.writeLines(data, file)))
-            def writeBytes(data, file, k)     = k(afterWrite(file, () -> FileSystem.writeBytes(data, file)))
-            def append(data, file, k)         = k(afterWrite(file, () -> FileSystem.append(data, file)))
-            def appendLines(data, file, k)    = k(afterWrite(file, () -> FileSystem.appendLines(data, file)))
-            def appendBytes(data, file, k)    = k(afterWrite(file, () -> FileSystem.appendBytes(data, file)))
-            def truncate(file, k)             = k(afterWrite(file, () -> FileSystem.truncate(file)))
-            def copyWith(src, dst, opts, k)   = k(afterWrite(dst, () -> FileSystem.copyWith(src, dst, opts)))
-            def moveWith(src, dst, opts, k)   = k(Fs.FsLayer.checksumAfterMove(src#src, dst, sidecar, FileSystem.moveWith(src, dst, opts), doMoveSidecar))
-            def delete(file, k)               = k(Fs.FsLayer.checksumAfterDelete(file, sidecar, FileSystem.delete(file), doDeleteSidecar))
-
-            // ── Directory ops — pass through ──
-            def mkDir(d, k)                   = k(FileSystem.mkDir(d))
-            def mkDirs(d, k)                  = k(FileSystem.mkDirs(d))
-            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
-        }
+//     ///
+//     /// Middleware that intercepts the `FileSystem` effect, providing data integrity
+//     /// via checksum sidecar files. Write operations produce checksum sidecars;
+//     /// read operations verify against them.
+//     ///
+//     /// `hash` is a pure function from file bytes to digest bytes.
+//     /// `sidecar` is the file suffix (e.g., `".sha256"`).
+//     ///
+//     /// After write, append, truncate, and copy operations, the file is re-read
+//     /// and a sidecar containing the hex digest is written. After move, the
+//     /// sidecar is moved. After delete, the sidecar is removed.
+//     ///
+//     /// On read, if a sidecar exists, the file's contents are hashed and compared
+//     /// against the stored checksum. If no sidecar exists, the read proceeds
+//     /// normally.
+//     ///
+//     /// Stat, test, permission, time, size, list, and glob operations are
+//     /// passed through unchanged.
+//     ///
+//     pub def withChecksum(
+//         hash: Vector[Int8] -> Vector[Int8],
+//         sidecar: String,
+//         f: Unit -> a \ ef
+//     ): a \ (ef - FileSystem) + FileSystem =
+//         let computeHex = bytes -> Util.Codec.encodeHex(hash(bytes));
+//         let doReadBytes = file -> FileSystem.readBytes(file);
+//         let doReadSidecar = file -> FileSystem.read(file);
+//         let updateSidecar = file -> Fs.FsLayer.updateSidecar(file, sidecar, computeHex, doReadBytes, (str, f1) -> FileSystem.write(str = str, f1));
+//         let afterWrite = (file, doWrite) -> Fs.FsLayer.checksumAfterWrite(file, doWrite, updateSidecar);
+//         let doMoveSidecar = (s, d) -> FileSystem.moveWith(src = s, d, Set#{Fs.MoveOption.ReplaceExisting});
+//         let doDeleteSidecar = file -> FileSystem.delete(file);
+//         run { f() } with handler FileSystem {
+//             // ── Stat/test/perm/time/size — pass through ──
+//             def exists(filename, k)           = k(FileSystem.exists(filename))
+//             def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
+//             def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
+//             def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+//             def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
+//             def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
+//             def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
+//             def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
+//             def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
+//             def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
+//             def size(filename, k)             = k(FileSystem.size(filename))
+//             def list(filename, k)             = k(FileSystem.list(filename))
+//             def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
+//
+//             // ── Read ops — verify checksum after read ──
+//             def read(filename, k)             = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileSystem.read(filename), doReadBytes, doReadSidecar))
+//             def readLines(filename, k)        = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileSystem.readLines(filename), doReadBytes, doReadSidecar))
+//             def readBytes(filename, k)        = k(Fs.FsLayer.checksumOnReadBytes(filename, sidecar, computeHex, FileSystem.readBytes(filename), doReadSidecar))
+//
+//             // ── Write ops — update checksum sidecar after write ──
+//             def write(data, file, k)          = k(afterWrite(file, () -> FileSystem.write(data, file)))
+//             def writeLines(data, file, k)     = k(afterWrite(file, () -> FileSystem.writeLines(data, file)))
+//             def writeBytes(data, file, k)     = k(afterWrite(file, () -> FileSystem.writeBytes(data, file)))
+//             def append(data, file, k)         = k(afterWrite(file, () -> FileSystem.append(data, file)))
+//             def appendLines(data, file, k)    = k(afterWrite(file, () -> FileSystem.appendLines(data, file)))
+//             def appendBytes(data, file, k)    = k(afterWrite(file, () -> FileSystem.appendBytes(data, file)))
+//             def truncate(file, k)             = k(afterWrite(file, () -> FileSystem.truncate(file)))
+//             def copyWith(src, dst, opts, k)   = k(afterWrite(dst, () -> FileSystem.copyWith(src, dst, opts)))
+//             def moveWith(src, dst, opts, k)   = k(Fs.FsLayer.checksumAfterMove(src#src, dst, sidecar, FileSystem.moveWith(src, dst, opts), doMoveSidecar))
+//             def delete(file, k)               = k(Fs.FsLayer.checksumAfterDelete(file, sidecar, FileSystem.delete(file), doDeleteSidecar))
+//
+//             // ── Directory ops — pass through ──
+//             def mkDir(d, k)                   = k(FileSystem.mkDir(d))
+//             def mkDirs(d, k)                  = k(FileSystem.mkDirs(d))
+//             def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+//         }
 
 }
