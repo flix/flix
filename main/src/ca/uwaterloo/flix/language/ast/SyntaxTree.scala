@@ -75,7 +75,6 @@ object SyntaxTree {
       case TreeKind.Decl.TypeAlias => true
       case TreeKind.Case => true
       case TreeKind.StructField => true
-      case TreeKind.Expr.LocalDef => true
       case _ => false
     }
   }
