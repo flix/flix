@@ -17,6 +17,14 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
 
   def mkEq(f1: SetFormula, f2: SetFormula): Equation = Equation.mk(f1, f2, SourceLocation.Unknown)
 
+  /** Asserts that `input` is solved both one equation at a time and with combined SVE. */
+  def assertSolved(input: List[Equation]): Unit = {
+    val (eqs1, _) = SetUnification.solve(input)
+    assert(eqs1.isEmpty)
+    val (eqs2, _) = SetUnification.solve(input, combinedSve = true)
+    assert(eqs2.isEmpty)
+  }
+
   test("Array.scanLeft") {
     val input = List(
       mkEq(Union(TwoList(Cst(21), Cst(20), List())), Union(TwoList(Var(1), Var(2), List(Var(11))))),
@@ -42,8 +50,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(19), Var(18)),
       mkEq(Var(19), Var(11))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("Array.unzip") {
@@ -79,8 +86,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(15), Cst(25)),
       mkEq(Var(16), Cst(26))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("Iterator.mapWithIndex") {
@@ -108,8 +114,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(8), Cst(20)),
       mkEq(Var(9), Cst(21))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("MutDeque.toArray") {
@@ -148,8 +153,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(17), Cst(29)),
       mkEq(Var(16), Cst(29))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("MutList.map") {
@@ -196,8 +200,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(18), Union(TwoList(Var(17), Var(34), List()))),
       mkEq(Var(20), Cst(36))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("Nec.zipWith") {
@@ -240,8 +243,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(19), Var(17)),
       mkEq(Var(34), Var(20))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("RedBlackTree.findLeft") {
@@ -264,8 +266,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(16), Union(TwoList(Var(2), Var(10), List()))),
       mkEq(Var(17), Var(6))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
 }

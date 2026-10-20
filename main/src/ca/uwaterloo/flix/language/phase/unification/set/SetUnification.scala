@@ -45,6 +45,15 @@ object SetUnification {
   val VarElimPerRule: mutable.Map[Phase, Int] = mutable.Map.empty
 
   /**
+    * Tracks the number of connected components solved by combined SVE, the number of such
+    * components with more than one equation, and the number of such components whose variables
+    * exceed [[MaxVars]] (and hence fall back to sequential SVE). Only tracked for combined SVE.
+    */
+  var CombinedComponents: Int = 0
+  var CombinedMultiEqComponents: Int = 0
+  var CombinedOversizedComponents: Int = 0
+
+  /**
     * Represents the name of phase.
     */
   sealed trait Phase
@@ -83,8 +92,12 @@ object SetUnification {
     * All returned equations are either marked [[Equation.Status.Unsolvable]] or
     * [[Equation.Status.Timeout]]. The returned equations might not exist in `eqs` directly, but
     * will be derived from it.
+    *
+    * If `combinedSve` is set, the equations that remain after the rewrite rules are solved per
+    * connected component as a single equation (see [[SveAlgorithm.sveAllCombined]]). Otherwise
+    * they are solved one at a time.
     */
-  def solve(l: List[Equation]): (List[Equation], SetSubstitution) = {
+  def solve(l: List[Equation], combinedSve: Boolean = false): (List[Equation], SetSubstitution) = {
     val state = new State(l)
 
     if (EnableRewriteRules) {
@@ -98,7 +111,7 @@ object SetUnification {
       runWithState(state, runRule(trivial), Phase.Trivial)
     }
 
-    sveAll(state.eqs) match {
+    sveAll(state.eqs, combinedSve) match {
       case Result.Ok(s) =>
         // Success: We solved all equations using SVE.
         // Mark all equations as solved and update the substitution.
@@ -388,7 +401,7 @@ object SetUnification {
     * Returns `Result.Ok(s)` with a complete substitution `s` if all equations were solved.
     * Returns `Result.Err(l)` with a list of unsolveable equations. (At least one equation is unsolveable.)
     */
-  private def sveAll(eqs: List[Equation]): Result[SetSubstitution, List[Equation]] = {
+  private def sveAll(eqs: List[Equation], combinedSve: Boolean): Result[SetSubstitution, List[Equation]] = {
     // Return immediately if there are no equations to solve.
     if (eqs.isEmpty) {
       return Result.Ok(SetSubstitution.empty)
@@ -423,9 +436,18 @@ object SetUnification {
         (x, y)
     }
 
+    if (EnableStats && combinedSve) {
+      val components = SveAlgorithm.connectedComponents(l.map { case (x, y) => alg.mkXor(x, y) })
+      synchronized {
+        CombinedComponents += components.length
+        CombinedMultiEqComponents += components.count(_._1.lengthIs > 1)
+        CombinedOversizedComponents += components.count(_._2.size > MaxVars)
+      }
+    }
+
     // Solve *ALL* equations via SVE and obtain the substitution.
     try {
-      val subst = SveAlgorithm.sveAll(l)
+      val subst = if (combinedSve) SveAlgorithm.sveAllCombined(l, MaxVars) else SveAlgorithm.sveAll(l)
 
       // Reconstruct a set substitution.
       val m = subst.m.foldLeft(IntMap.empty[SetFormula]) {

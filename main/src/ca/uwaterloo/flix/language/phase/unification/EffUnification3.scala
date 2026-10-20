@@ -86,7 +86,7 @@ object EffUnification3 {
     if (EnableSmartSubeffecting) {
       try {
         val equations = toEquations(eqs, withSlack = false)
-        val (unsolvedEqns, resultSubst) = SetUnification.solve(equations)
+        val (unsolvedEqns, resultSubst) = SetUnification.solve(equations, flix.options.xcombinedsve)
         if (unsolvedEqns.isEmpty) {
           // We have found a valid solution without subeffecting. Return it immediately.
           return Result.Ok(fromSetSubst(resultSubst)(withSlack = false, m = bimap))
@@ -103,7 +103,7 @@ object EffUnification3 {
     try {
       val equations = toEquations(eqs, withSlack = true)
       flix.emitEvent(FlixEvent.SolveEffEquations(equations))
-      val (unsolvedEqns, resultSubst) = SetUnification.solve(equations)
+      val (unsolvedEqns, resultSubst) = SetUnification.solve(equations, flix.options.xcombinedsve)
       if (unsolvedEqns.isEmpty) {
         Result.Ok(fromSetSubst(resultSubst)(withSlack = true, m = bimap))
       } else {

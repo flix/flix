@@ -93,7 +93,8 @@ object Main {
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
       xchaosMonkey = Options.Default.xchaosMonkey,
-      xverify = cmdOpts.xverify
+      xverify = cmdOpts.xverify,
+      xcombinedsve = cmdOpts.xcombinedsve
     )
 
     // Don't use progress bar if benchmarking.
@@ -553,6 +554,7 @@ object Main {
     xverify: Boolean = false,
     xsubeffecting: Set[Subeffecting] = Set.empty,
     xnewmono: Boolean = false,
+    xcombinedsve: Boolean = false,
     XPerfN: Option[Int] = None,
     XPerfFrontend: Boolean = false,
     XPerfPar: Boolean = false,
@@ -863,6 +865,10 @@ object Main {
       // Xnewmono
       opt[Unit]("Xnewmono").action((_, c) => c.copy(xnewmono = true)).
         text("[experimental] uses the constraint-based monomorphization pipeline instead of the demand-driven one.")
+
+      // Xcombined-sve
+      opt[Unit]("Xcombined-sve").action((_, c) => c.copy(xcombinedsve = true)).
+        text("[experimental] solves each connected component of the residual effect equations as a single equation.")
 
       note("")
 
