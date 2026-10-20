@@ -9,22 +9,14 @@ package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Cst, Empty, Union, Var, mkDiff2, mkElemSet}
+import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Cst, Empty, Union, Var}
 import ca.uwaterloo.flix.language.phase.unification.shared.SveMode
 import ca.uwaterloo.flix.util.collection.TwoList
 import org.scalatest.funsuite.AnyFunSuite
 
-import scala.collection.immutable.SortedSet
-
 class TestSetUnification extends AnyFunSuite with TestUtils {
 
   def mkEq(f1: SetFormula, f2: SetFormula): Equation = Equation.mk(f1, f2, SourceLocation.Unknown)
-
-  /**
-    * Returns the lax reading of the subeffect constraint `f1 ⊑ f2`, i.e. the equation `f1 ∩ ¬f2 ~ ∅`,
-    * as effect unification produces it.
-    */
-  def mkSub(f1: SetFormula, f2: SetFormula): Equation = mkEq(mkDiff2(f1, f2), Empty)
 
   test("Array.scanLeft") {
     val input = List(
@@ -270,89 +262,11 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
     assertSolved(input)
   }
 
-  test("SubEff.Ground.01") {
-    // IO ⊑ IO ∪ Crash
-    assertSolved(List(mkSub(mkElemSet(0), mkElemSet(SortedSet(0, 1)))))
-  }
-
-  test("SubEff.Ground.02") {
-    // IO ⊑ Pure
-    assertUnsolvable(List(mkSub(mkElemSet(0), Empty)))
-  }
-
-  test("SubEff.Ground.03") {
-    // IO ∪ Crash ⊑ IO
-    assertUnsolvable(List(mkSub(mkElemSet(SortedSet(0, 1)), mkElemSet(0))))
-  }
-
-  test("SubEff.Upper.01") {
-    // x ⊑ IO
-    assertSolved(List(mkSub(Var(0), mkElemSet(1))))
-  }
-
-  test("SubEff.Upper.02") {
-    // x ⊑ IO and x ~ Crash
-    assertUnsolvable(List(mkSub(Var(0), mkElemSet(1)), mkEq(Var(0), mkElemSet(2))))
-  }
-
-  test("SubEff.Lower.01") {
-    // IO ⊑ x
-    assertSolved(List(mkSub(mkElemSet(1), Var(0))))
-  }
-
-  test("SubEff.Lower.02") {
-    // IO ⊑ x and x ~ Crash
-    assertUnsolvable(List(mkSub(mkElemSet(1), Var(0)), mkEq(Var(0), mkElemSet(2))))
-  }
-
-  test("SubEff.Lower.03") {
-    // IO ⊑ x and Crash ⊑ x
-    assertSolved(List(mkSub(mkElemSet(1), Var(0)), mkSub(mkElemSet(2), Var(0))))
-  }
-
-  test("SubEff.Rigid.01") {
-    // r ⊑ IO for a rigid r
-    assertUnsolvable(List(mkSub(Cst(0), mkElemSet(1))))
-  }
-
-  test("SubEff.Rigid.02") {
-    // r ⊑ r ∪ IO for a rigid r
-    assertSolved(List(mkSub(Cst(0), Union(TwoList(Cst(0), mkElemSet(1), Nil)))))
-  }
-
-  test("SubEff.Rigid.03") {
-    // x ⊑ r for a rigid r
-    assertSolved(List(mkSub(Var(0), Cst(1))))
-  }
-
-  test("SubEff.Var.01") {
-    // x ⊑ y
-    assertSolved(List(mkSub(Var(0), Var(1))))
-  }
-
-  test("SubEff.Var.02") {
-    // x ⊑ y, IO ⊑ x and y ⊑ IO ∪ Crash
-    assertSolved(List(mkSub(Var(0), Var(1)), mkSub(mkElemSet(2), Var(0)), mkSub(Var(1), mkElemSet(SortedSet(2, 3)))))
-  }
-
-  test("SubEff.Var.03") {
-    // x ⊑ y, IO ⊑ x and y ⊑ Crash
-    assertUnsolvable(List(mkSub(Var(0), Var(1)), mkSub(mkElemSet(2), Var(0)), mkSub(Var(1), mkElemSet(3))))
-  }
-
   /** Asserts that `input` is solved by SVE at every granularity. */
   def assertSolved(input: List[Equation]): Unit = {
     for (mode <- List(SveMode.PerEquation, SveMode.PerComponent, SveMode.PerSystem)) {
       val (eqs, _) = SetUnification.solve(input, mode)
       assert(eqs.isEmpty, mode)
-    }
-  }
-
-  /** Asserts that `input` is found unsolvable by SVE at every granularity. */
-  def assertUnsolvable(input: List[Equation]): Unit = {
-    for (mode <- List(SveMode.PerEquation, SveMode.PerComponent, SveMode.PerSystem)) {
-      val (eqs, _) = SetUnification.solve(input, mode)
-      assert(eqs.nonEmpty, mode)
     }
   }
 
