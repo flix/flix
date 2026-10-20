@@ -10,6 +10,7 @@ package ca.uwaterloo.flix.language.phase.unification.set
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Cst, Empty, Union, Var}
+import ca.uwaterloo.flix.language.phase.unification.shared.SveMode
 import ca.uwaterloo.flix.util.collection.TwoList
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -42,8 +43,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(19), Var(18)),
       mkEq(Var(19), Var(11))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("Array.unzip") {
@@ -79,8 +79,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(15), Cst(25)),
       mkEq(Var(16), Cst(26))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("Iterator.mapWithIndex") {
@@ -108,8 +107,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(8), Cst(20)),
       mkEq(Var(9), Cst(21))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("MutDeque.toArray") {
@@ -148,8 +146,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(17), Cst(29)),
       mkEq(Var(16), Cst(29))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("MutList.map") {
@@ -196,8 +193,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(18), Union(TwoList(Var(17), Var(34), List()))),
       mkEq(Var(20), Cst(36))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("Nec.zipWith") {
@@ -240,8 +236,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(19), Var(17)),
       mkEq(Var(34), Var(20))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("RedBlackTree.findLeft") {
@@ -264,8 +259,15 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(16), Union(TwoList(Var(2), Var(10), List()))),
       mkEq(Var(17), Var(6))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
+  }
+
+  /** Asserts that `input` is solved by SVE at every granularity. */
+  def assertSolved(input: List[Equation]): Unit = {
+    for (mode <- List(SveMode.PerEquation, SveMode.PerComponent, SveMode.PerSystem)) {
+      val (eqs, _) = SetUnification.solve(input, mode)
+      assert(eqs.isEmpty, mode)
+    }
   }
 
 }

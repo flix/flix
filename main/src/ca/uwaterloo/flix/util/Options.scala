@@ -8,6 +8,7 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.phase.unification.shared.SveMode
 
 object Options {
   // Enable constraint-based monomorphization if "XNEWMONO" env var is set.
@@ -36,6 +37,7 @@ object Options {
     XPerfFrontend = false,
     XPerfPar = false,
     xchaosMonkey = false,
+    xsve = SveMode.PerEquation,
     xverify = false
   )
 
@@ -94,6 +96,7 @@ case class Options(lib: LibLevel,
                    XPerfPar: Boolean,
                    XPerfN: Option[Int],
                    xchaosMonkey: Boolean,
+                   xsve: SveMode,
                    xverify: Boolean
                   )
 

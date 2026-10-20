@@ -12,6 +12,7 @@ import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Origin, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.phase.unification.shared.SveMode
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.runtime.shell.Shell
@@ -93,6 +94,7 @@ object Main {
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
       xchaosMonkey = Options.Default.xchaosMonkey,
+      xsve = cmdOpts.xsve,
       xverify = cmdOpts.xverify
     )
 
@@ -550,6 +552,7 @@ object Main {
     xnodeprecated: Boolean = false,
     xlib: LibLevel = LibLevel.All,
     xprintphases: Boolean = false,
+    xsve: SveMode = SveMode.PerEquation,
     xverify: Boolean = false,
     xsubeffecting: Set[Subeffecting] = Set.empty,
     xnewmono: Boolean = false,
@@ -661,6 +664,13 @@ object Main {
       case "ins-defs" => Subeffecting.InsDefs
       case "lambdas" => Subeffecting.Lambdas
       case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. Valid options are comma-separated combinations of 'mod-defs', 'ins-defs', and 'lambdas'.")
+    }
+
+    implicit val readSveMode: scopt.Read[SveMode] = scopt.Read.reads {
+      case "per-equation" => SveMode.PerEquation
+      case "per-component" => SveMode.PerComponent
+      case "per-system" => SveMode.PerSystem
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid SVE mode. Valid options are 'per-equation', 'per-component', and 'per-system'.")
     }
 
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
@@ -851,6 +861,10 @@ object Main {
       // Xprint-phase
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
         text("[experimental] writes the ASTs after each phase to './build/asts/'.")
+
+      // Xsve
+      opt[SveMode]("Xsve").action((mode, c) => c.copy(xsve = mode)).
+        text("[experimental] controls the granularity of SVE on effect equations (per-equation, per-component, per-system).")
 
       // Xverify
       opt[Unit]("Xverify").action((_, c) => c.copy(xverify = true)).
