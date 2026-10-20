@@ -162,7 +162,7 @@ class TypeContext {
   }
 
   /**
-    * Generates a constraint requiring the actual effect `eff1` to be a subset of the expected effect `eff2`.
+    * Generates a constraint requiring the effect `eff1` to be a subset of the effect `eff2`.
     *
     * {{{
     *   eff1 ⊑ eff2
