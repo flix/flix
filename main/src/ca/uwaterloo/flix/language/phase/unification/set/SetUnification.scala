@@ -10,7 +10,7 @@ package ca.uwaterloo.flix.language.phase.unification.set
 import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
-import ca.uwaterloo.flix.language.phase.unification.shared.{BoolUnificationException, CofiniteIntSet, SveAlgorithm}
+import ca.uwaterloo.flix.language.phase.unification.shared.{BoolUnificationException, CofiniteIntSet, SveAlgorithm, SveMode}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra}
 import ca.uwaterloo.flix.util.Result
 
@@ -84,11 +84,10 @@ object SetUnification {
     * [[Equation.Status.Timeout]]. The returned equations might not exist in `eqs` directly, but
     * will be derived from it.
     *
-    * If `combinedSve` is set, the equations that remain after the rewrite rules are solved per
-    * connected component as a single equation (see [[SveAlgorithm.sveAllCombined]]). Otherwise
-    * they are solved one at a time.
+    * The equations that remain after the rewrite rules are solved by SVE at the granularity
+    * given by `mode` (see [[SveAlgorithm.sveAll]]).
     */
-  def solve(l: List[Equation], combinedSve: Boolean): (List[Equation], SetSubstitution) = {
+  def solve(l: List[Equation], mode: SveMode): (List[Equation], SetSubstitution) = {
     val state = new State(l)
 
     if (EnableRewriteRules) {
@@ -102,7 +101,7 @@ object SetUnification {
       runWithState(state, runRule(trivial), Phase.Trivial)
     }
 
-    sveAll(state.eqs, combinedSve) match {
+    sveAll(state.eqs, mode) match {
       case Result.Ok(s) =>
         // Success: We solved all equations using SVE.
         // Mark all equations as solved and update the substitution.
@@ -392,7 +391,7 @@ object SetUnification {
     * Returns `Result.Ok(s)` with a complete substitution `s` if all equations were solved.
     * Returns `Result.Err(l)` with a list of unsolveable equations. (At least one equation is unsolveable.)
     */
-  private def sveAll(eqs: List[Equation], combinedSve: Boolean): Result[SetSubstitution, List[Equation]] = {
+  private def sveAll(eqs: List[Equation], mode: SveMode): Result[SetSubstitution, List[Equation]] = {
     // Return immediately if there are no equations to solve.
     if (eqs.isEmpty) {
       return Result.Ok(SetSubstitution.empty)
@@ -429,7 +428,7 @@ object SetUnification {
 
     // Solve *ALL* equations via SVE and obtain the substitution.
     try {
-      val subst = if (combinedSve) SveAlgorithm.sveAllCombined(l, MaxVars) else SveAlgorithm.sveAll(l)
+      val subst = SveAlgorithm.sveAll(l, mode, MaxVars)
 
       // Reconstruct a set substitution.
       val m = subst.m.foldLeft(IntMap.empty[SetFormula]) {

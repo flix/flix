@@ -10,6 +10,7 @@ package ca.uwaterloo.flix.language.phase.unification.set
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Cst, Empty, Union, Var}
+import ca.uwaterloo.flix.language.phase.unification.shared.SveMode
 import ca.uwaterloo.flix.util.collection.TwoList
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -261,12 +262,12 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
     assertSolved(input)
   }
 
-  /** Asserts that `input` is solved both one equation at a time and with combined SVE. */
+  /** Asserts that `input` is solved by SVE at every granularity. */
   def assertSolved(input: List[Equation]): Unit = {
-    val (eqs1, _) = SetUnification.solve(input, combinedSve = false)
-    assert(eqs1.isEmpty)
-    val (eqs2, _) = SetUnification.solve(input, combinedSve = true)
-    assert(eqs2.isEmpty)
+    for (mode <- List(SveMode.PerEquation, SveMode.PerComponent, SveMode.PerSystem)) {
+      val (eqs, _) = SetUnification.solve(input, mode)
+      assert(eqs.isEmpty, mode)
+    }
   }
 
 }

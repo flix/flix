@@ -32,11 +32,35 @@ object SveAlgorithm {
   }
 
   /**
-    * Performs success variable elimination on the given list of Boolean equations `l`.
+    * Performs successive variable elimination on the given list of Boolean equations `l` at the
+    * granularity given by `mode`:
+    *
+    *   - [[SveMode.PerEquation]]: solves the equations one at a time, applying the substitution
+    *     of each equation to the remaining equations.
+    *   - [[SveMode.PerComponent]]: solves each connected component (equations that share a
+    *     flexible variable) as a single equation.
+    *   - [[SveMode.PerSystem]]: solves the whole system as a single equation.
+    *
+    * The equations `f1 ~ g1, ..., fn ~ gn` of a group hold iff the single equation
+    * `(f1 ⊕ g1) ∨ ... ∨ (fn ⊕ gn) = ⊥` holds, which is solved by one run of SVE. A group with
+    * more than `maxVars` flexible variables is instead solved one equation at a time to avoid a
+    * blow-up in the size of the combined query.
     *
     * @throws `BoolUnificationException` if SVE fails.
     */
-  def sveAll[F](l: List[(F, F)])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+  def sveAll[F](l: List[(F, F)], mode: SveMode, maxVars: Int)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = mode match {
+    case SveMode.PerEquation => sveAllPerEquation(l)
+    case SveMode.PerComponent => sveAllPerComponent(l, maxVars)
+    case SveMode.PerSystem => sveAllPerSystem(l, maxVars)
+  }
+
+  /**
+    * Solves the equations `l` one at a time, applying the substitution of each equation to the
+    * remaining equations.
+    *
+    * @throws `BoolUnificationException` if SVE fails.
+    */
+  private def sveAllPerEquation[F](l: List[(F, F)])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
     var subst = BoolSubstitution.empty[F]
     var rest = l
     while (rest.nonEmpty) {
@@ -50,28 +74,43 @@ object SveAlgorithm {
   }
 
   /**
-    * Performs successive variable elimination on the given list of Boolean equations `l` by
-    * solving each connected component of the system as a single equation.
-    *
-    * Two equations are connected if they share a flexible variable. The equations
-    * `f1 ~ g1, ..., fn ~ gn` of a component hold iff the single equation
-    * `(f1 ⊕ g1) ∨ ... ∨ (fn ⊕ gn) = ⊥` holds, which is solved by one run of SVE.
-    *
-    * A component with more than `maxVars` flexible variables is instead solved one equation
-    * at a time (like [[sveAll]]) to avoid a blow-up in the size of the combined query.
+    * Solves each connected component of the equations `l` as a single equation.
     *
     * @throws `BoolUnificationException` if SVE fails.
     */
-  def sveAllCombined[F](l: List[(F, F)], maxVars: Int)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+  private def sveAllPerComponent[F](l: List[(F, F)], maxVars: Int)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
     val queries = l.map { case (f1, f2) => alg.mkXor(f1, f2) }
 
     // The components have pairwise disjoint flexible variables, so their substitutions have
     // disjoint domains and ranges and can be merged without composition.
     connectedComponents(queries).foldLeft(BoolSubstitution.empty[F]) {
-      case (acc, (qs, vars)) =>
-        val subst = if (vars.size > maxVars) sveOneByOne(qs) else sveOne(qs.reduce[F]((q1, q2) => alg.mkOr(q1, q2)))
-        acc ++ subst
+      case (acc, (qs, vars)) => acc ++ sveGroup(qs, vars, maxVars)
     }
+  }
+
+  /**
+    * Solves the whole system of equations `l` as a single equation.
+    *
+    * @throws `BoolUnificationException` if SVE fails.
+    */
+  private def sveAllPerSystem[F](l: List[(F, F)], maxVars: Int)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+    if (l.isEmpty) {
+      return BoolSubstitution.empty[F]
+    }
+    val queries = l.map { case (f1, f2) => alg.mkXor(f1, f2) }
+    val vars = queries.foldLeft(SortedSet.empty[Int])(_ ++ alg.freeVars(_))
+    sveGroup(queries, vars, maxVars)
+  }
+
+  /**
+    * Solves the non-empty group of queries `qs` with flexible variables `vars` as the single
+    * query `q1 ∨ q2 ∨ ... ∨ qn`, or one query at a time if `vars` has more than `maxVars`
+    * variables.
+    *
+    * @throws `BoolUnificationException` if SVE fails.
+    */
+  private def sveGroup[F](qs: List[F], vars: SortedSet[Int], maxVars: Int)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+    if (vars.size > maxVars) sveOneByOne(qs) else sveOne(qs.reduce[F]((q1, q2) => alg.mkOr(q1, q2)))
   }
 
   /**
