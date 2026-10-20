@@ -104,7 +104,7 @@ object EffUnification3 {
     //
     if (EnableSmartSubeffecting) {
       try {
-        val equations = toEquations(eqs, withSlack = false) ::: toStrictEquations(subs, withSlack = false)
+        val equations = toEquations(eqs, withSlack = false) ::: subs.map(sub => toStrictEquation(sub, withSlack = false))
         val (unsolvedEqns, resultSubst) = SetUnification.solve(equations, flix.options.xsve)
         if (unsolvedEqns.isEmpty) {
           // We have found a valid solution without subeffecting. Return it immediately.
@@ -155,22 +155,21 @@ object EffUnification3 {
   }
 
   /**
-    * Returns the given subeffect constraints as set equations for the strict phase: a constraint
-    * whose upper bound is a flexible variable is read strictly, so `s ⊑ x` becomes `x ~ s`, and
-    * every other constraint is read laxly (see [[toLaxEquation]]).
+    * Translates `sub` into an equation of [[SetFormula]] for the strict phase: a constraint whose
+    * upper bound is a flexible variable is read strictly, so `s ⊑ x` becomes `x ~ s`, and every
+    * other constraint is read laxly (see [[toLaxEquation]]).
     *
     * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
     */
-  private def toStrictEquations(l: List[TypeConstraint.SubEff], withSlack: Boolean)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): List[Equation] =
-    l.map {
-      case sub@TypeConstraint.SubEff(eff1, eff2, prov) =>
-        if (hasFlexibleUpperBound(sub)) {
-          // The expected effect is kept on the left, as in the equality `declared ~ inferred`.
-          Equation.mk(toSetFormula(eff2)(withSlack = withSlack, scope, renv, m), toSetFormula(eff1)(withSlack = withSlack, scope, renv, m), prov.loc)
-        } else {
-          toLaxEquation(sub, withSlack)
-        }
-    }
+  private def toStrictEquation(sub: TypeConstraint.SubEff, withSlack: Boolean)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): Equation = sub match {
+    case TypeConstraint.SubEff(eff1, eff2, prov) =>
+      if (hasFlexibleUpperBound(sub)) {
+        // The expected effect is kept on the left, as in the equality `declared ~ inferred`.
+        Equation.mk(toSetFormula(eff2)(withSlack = withSlack, scope, renv, m), toSetFormula(eff1)(withSlack = withSlack, scope, renv, m), prov.loc)
+      } else {
+        toLaxEquation(sub, withSlack)
+      }
+  }
 
   /**
     * Translates `sub` into an equation of [[SetFormula]] under the lax reading:
