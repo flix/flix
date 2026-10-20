@@ -263,7 +263,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
 
   /** Asserts that `input` is solved both one equation at a time and with combined SVE. */
   def assertSolved(input: List[Equation]): Unit = {
-    val (eqs1, _) = SetUnification.solve(input)
+    val (eqs1, _) = SetUnification.solve(input, combinedSve = false)
     assert(eqs1.isEmpty)
     val (eqs2, _) = SetUnification.solve(input, combinedSve = true)
     assert(eqs2.isEmpty)

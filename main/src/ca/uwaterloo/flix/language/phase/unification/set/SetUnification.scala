@@ -88,7 +88,7 @@ object SetUnification {
     * connected component as a single equation (see [[SveAlgorithm.sveAllCombined]]). Otherwise
     * they are solved one at a time.
     */
-  def solve(l: List[Equation], combinedSve: Boolean = false): (List[Equation], SetSubstitution) = {
+  def solve(l: List[Equation], combinedSve: Boolean): (List[Equation], SetSubstitution) = {
     val state = new State(l)
 
     if (EnableRewriteRules) {
