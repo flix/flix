@@ -93,8 +93,8 @@ object Main {
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
       xchaosMonkey = Options.Default.xchaosMonkey,
-      xverify = cmdOpts.xverify,
-      xcombinedsve = cmdOpts.xcombinedsve
+      xcombinedsve = cmdOpts.xcombinedsve,
+      xverify = cmdOpts.xverify
     )
 
     // Don't use progress bar if benchmarking.
@@ -548,13 +548,13 @@ object Main {
     xbenchmarkPhases: Boolean = false,
     xbenchmarkFrontend: Boolean = false,
     xbenchmarkThroughput: Boolean = false,
+    xcombinedsve: Boolean = false,
     xnodeprecated: Boolean = false,
     xlib: LibLevel = LibLevel.All,
     xprintphases: Boolean = false,
     xverify: Boolean = false,
     xsubeffecting: Set[Subeffecting] = Set.empty,
     xnewmono: Boolean = false,
-    xcombinedsve: Boolean = false,
     XPerfN: Option[Int] = None,
     XPerfFrontend: Boolean = false,
     XPerfPar: Boolean = false,
@@ -842,6 +842,10 @@ object Main {
       opt[Unit]("Xbenchmark-throughput").action((_, c) => c.copy(xbenchmarkThroughput = true)).
         text("[experimental] benchmarks the performance of the entire compiler.")
 
+      // Xcombined-sve
+      opt[Unit]("Xcombined-sve").action((_, c) => c.copy(xcombinedsve = true)).
+        text("[experimental] solves each connected component of the residual effect equations as a single equation.")
+
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
@@ -865,10 +869,6 @@ object Main {
       // Xnewmono
       opt[Unit]("Xnewmono").action((_, c) => c.copy(xnewmono = true)).
         text("[experimental] uses the constraint-based monomorphization pipeline instead of the demand-driven one.")
-
-      // Xcombined-sve
-      opt[Unit]("Xcombined-sve").action((_, c) => c.copy(xcombinedsve = true)).
-        text("[experimental] solves each connected component of the residual effect equations as a single equation.")
 
       note("")
 

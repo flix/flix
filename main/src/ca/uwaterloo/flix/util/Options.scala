@@ -36,8 +36,8 @@ object Options {
     XPerfFrontend = false,
     XPerfPar = false,
     xchaosMonkey = false,
-    xverify = false,
-    xcombinedsve = false
+    xcombinedsve = false,
+    xverify = false
   )
 
   /**
@@ -95,8 +95,8 @@ case class Options(lib: LibLevel,
                    XPerfPar: Boolean,
                    XPerfN: Option[Int],
                    xchaosMonkey: Boolean,
-                   xverify: Boolean,
-                   xcombinedsve: Boolean
+                   xcombinedsve: Boolean,
+                   xverify: Boolean
                   )
 
 /**
