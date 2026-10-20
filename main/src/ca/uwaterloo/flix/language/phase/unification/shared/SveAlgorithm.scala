@@ -89,10 +89,10 @@ object SveAlgorithm {
   /**
     * Solves the whole system of equations `l` as a single equation.
     *
-    * WARNING: This strategy seems not to terminate in practice. Building the single query
+    * WARNING: This strategy does not terminate on every program. Building the single query
     * `q1 ∨ q2 ∨ ... ∨ qn` multiplies the number of terms of independent equations. The standard
-    * library compiles, but on at least one program in the test suite the construction of the
-    * query alone did not finish within 15 minutes and had to be killed.
+    * library and the `Xperf` inputs compile, but on at least one program in the test suite the
+    * construction of the query alone did not finish within 15 minutes and had to be killed.
     *
     * @throws `BoolUnificationException` if SVE fails.
     */
