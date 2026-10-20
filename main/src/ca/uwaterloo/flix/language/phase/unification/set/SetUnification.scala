@@ -45,15 +45,6 @@ object SetUnification {
   val VarElimPerRule: mutable.Map[Phase, Int] = mutable.Map.empty
 
   /**
-    * Tracks the number of connected components solved by combined SVE, the number of such
-    * components with more than one equation, and the number of such components whose variables
-    * exceed [[MaxVars]] (and hence fall back to sequential SVE). Only tracked for combined SVE.
-    */
-  var CombinedComponents: Int = 0
-  var CombinedMultiEqComponents: Int = 0
-  var CombinedOversizedComponents: Int = 0
-
-  /**
     * Represents the name of phase.
     */
   sealed trait Phase
@@ -434,15 +425,6 @@ object SetUnification {
         val x = Zhegalkin.toZhegalkin(f1)(alg, CofiniteIntSet.LatticeOps)
         val y = Zhegalkin.toZhegalkin(f2)(alg, CofiniteIntSet.LatticeOps)
         (x, y)
-    }
-
-    if (EnableStats && combinedSve) {
-      val components = SveAlgorithm.connectedComponents(l.map { case (x, y) => alg.mkXor(x, y) })
-      synchronized {
-        CombinedComponents += components.length
-        CombinedMultiEqComponents += components.count(_._1.lengthIs > 1)
-        CombinedOversizedComponents += components.count(_._2.size > MaxVars)
-      }
     }
 
     // Solve *ALL* equations via SVE and obtain the substitution.

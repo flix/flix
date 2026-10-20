@@ -81,7 +81,7 @@ object SveAlgorithm {
     * Returns each component as its queries, in their original order, paired with its flexible
     * variables. A query without flexible variables forms a component of its own.
     */
-  def connectedComponents[F](qs: List[F])(implicit alg: BoolAlg[F]): List[(List[F], SortedSet[Int])] = {
+  private def connectedComponents[F](qs: List[F])(implicit alg: BoolAlg[F]): List[(List[F], SortedSet[Int])] = {
     // The components found so far. Each query is paired with its index to restore the order.
     var components: List[(List[(F, Int)], SortedSet[Int])] = Nil
     for ((q, i) <- qs.zipWithIndex) {
