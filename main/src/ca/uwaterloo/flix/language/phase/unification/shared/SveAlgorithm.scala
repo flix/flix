@@ -42,16 +42,14 @@ object SveAlgorithm {
     *   - [[SveMode.PerSystem]]: solves the whole system as a single equation.
     *
     * The equations `f1 ~ g1, ..., fn ~ gn` of a group hold iff the single equation
-    * `(f1 ⊕ g1) ∨ ... ∨ (fn ⊕ gn) = ⊥` holds, which is solved by one run of SVE. A group with
-    * more than `maxVars` flexible variables is instead solved one equation at a time to avoid a
-    * blow-up in the size of the combined query.
+    * `(f1 ⊕ g1) ∨ ... ∨ (fn ⊕ gn) = ⊥` holds, which is solved by one run of SVE.
     *
     * @throws `BoolUnificationException` if SVE fails.
     */
-  def sveAll[F](l: List[(F, F)], mode: SveMode, maxVars: Int)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = mode match {
+  def sveAll[F](l: List[(F, F)], mode: SveMode)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = mode match {
     case SveMode.PerEquation => sveAllPerEquation(l)
-    case SveMode.PerComponent => sveAllPerComponent(l, maxVars)
-    case SveMode.PerSystem => sveAllPerSystem(l, maxVars)
+    case SveMode.PerComponent => sveAllPerComponent(l)
+    case SveMode.PerSystem => sveAllPerSystem(l)
   }
 
   /**
@@ -78,49 +76,50 @@ object SveAlgorithm {
     *
     * @throws `BoolUnificationException` if SVE fails.
     */
-  private def sveAllPerComponent[F](l: List[(F, F)], maxVars: Int)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+  private def sveAllPerComponent[F](l: List[(F, F)])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
     val queries = l.map { case (f1, f2) => alg.mkXor(f1, f2) }
 
     // The components have pairwise disjoint flexible variables, so their substitutions have
     // disjoint domains and ranges and can be merged without composition.
     connectedComponents(queries).foldLeft(BoolSubstitution.empty[F]) {
-      case (acc, (qs, vars)) => acc ++ sveGroup(qs, vars, maxVars)
+      case (acc, qs) => acc ++ sveGroup(qs)
     }
   }
 
   /**
     * Solves the whole system of equations `l` as a single equation.
     *
-    * @throws `BoolUnificationException` if SVE fails.
-    */
-  private def sveAllPerSystem[F](l: List[(F, F)], maxVars: Int)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
-    if (l.isEmpty) {
-      return BoolSubstitution.empty[F]
-    }
-    val queries = l.map { case (f1, f2) => alg.mkXor(f1, f2) }
-    val vars = queries.foldLeft(SortedSet.empty[Int])(_ ++ alg.freeVars(_))
-    sveGroup(queries, vars, maxVars)
-  }
-
-  /**
-    * Solves the non-empty group of queries `qs` with flexible variables `vars` as the single
-    * query `q1 ∨ q2 ∨ ... ∨ qn`, or one query at a time if `vars` has more than `maxVars`
-    * variables.
+    * WARNING: This strategy seems not to terminate in practice. Building the single query
+    * `q1 ∨ q2 ∨ ... ∨ qn` multiplies the number of terms of independent equations. The standard
+    * library compiles, but on at least one program in the test suite the construction of the
+    * query alone did not finish within 15 minutes and had to be killed.
     *
     * @throws `BoolUnificationException` if SVE fails.
     */
-  private def sveGroup[F](qs: List[F], vars: SortedSet[Int], maxVars: Int)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
-    if (vars.size > maxVars) sveOneByOne(qs) else sveOne(qs.reduce[F]((q1, q2) => alg.mkOr(q1, q2)))
+  private def sveAllPerSystem[F](l: List[(F, F)])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+    if (l.isEmpty) {
+      return BoolSubstitution.empty[F]
+    }
+    sveGroup(l.map { case (f1, f2) => alg.mkXor(f1, f2) })
+  }
+
+  /**
+    * Solves the non-empty group of queries `qs` as the single query `q1 ∨ q2 ∨ ... ∨ qn`.
+    *
+    * @throws `BoolUnificationException` if SVE fails.
+    */
+  private def sveGroup[F](qs: List[F])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+    sveOne(qs.reduce[F]((q1, q2) => alg.mkOr(q1, q2)))
   }
 
   /**
     * Partitions the given queries `qs` into connected components, where two queries are
     * connected if they share a flexible variable.
     *
-    * Returns each component as its queries, in their original order, paired with its flexible
-    * variables. A query without flexible variables forms a component of its own.
+    * Returns each component as its queries, in their original order. A query without flexible
+    * variables forms a component of its own.
     */
-  private def connectedComponents[F](qs: List[F])(implicit alg: BoolAlg[F]): List[(List[F], SortedSet[Int])] = {
+  private def connectedComponents[F](qs: List[F])(implicit alg: BoolAlg[F]): List[List[F]] = {
     // The components found so far. Each query is paired with its index to restore the order.
     var components: List[(List[(F, Int)], SortedSet[Int])] = Nil
     for ((q, i) <- qs.zipWithIndex) {
@@ -132,25 +131,7 @@ object SveAlgorithm {
       }
       components = merged :: rest
     }
-    components.map { case (cQs, cVars) => (cQs.sortBy(_._2).map(_._1), cVars) }
-  }
-
-  /**
-    * Performs successive variable elimination on the given queries `qs`, one at a time.
-    *
-    * The substitution found for each query is applied to the remaining queries.
-    *
-    * @throws `BoolUnificationException` if SVE fails.
-    */
-  private def sveOneByOne[F](qs: List[F])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
-    var subst = BoolSubstitution.empty[F]
-    var rest = qs
-    while (rest.nonEmpty) {
-      val s1 = sveOne(rest.head)
-      rest = rest.tail.map(q => s1(q))
-      subst = s1 @@ subst
-    }
-    subst
+    components.map { case (cQs, _) => cQs.sortBy(_._2).map(_._1) }
   }
 
   /**

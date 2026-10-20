@@ -428,7 +428,7 @@ object SetUnification {
 
     // Solve *ALL* equations via SVE and obtain the substitution.
     try {
-      val subst = SveAlgorithm.sveAll(l, mode, MaxVars)
+      val subst = SveAlgorithm.sveAll(l, mode)
 
       // Reconstruct a set substitution.
       val m = subst.m.foldLeft(IntMap.empty[SetFormula]) {
