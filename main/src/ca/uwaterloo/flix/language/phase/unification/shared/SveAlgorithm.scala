@@ -79,8 +79,19 @@ object SveAlgorithm {
   private def sveAllPerComponent[F](l: List[(F, F)])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
     val queries = l.map { case (f1, f2) => alg.mkXor(f1, f2) }
 
-    // The components have pairwise disjoint flexible variables, so their substitutions have
-    // disjoint domains and ranges and can be merged without composition.
+    // The substitutions of the components are merged with `++` (a left-biased union) rather than
+    // composed with `@@`. This is sound because:
+    //
+    //   1. The components have pairwise disjoint flexible variables.
+    //   2. SVE binds exactly the flexible variables of its query, so the domain of a component's
+    //      substitution is a subset of the component's flexible variables.
+    //   3. Every binding has the form `x -> se(t0) or (x and not se(t1))`, built from the query, so
+    //      the range of a component's substitution mentions only the component's own flexible
+    //      variables (with `x` left as a free parameter), rigid variables, and constants. No fresh
+    //      variables are introduced.
+    //
+    // Hence the domains are disjoint, so `++` never discards a binding, and no range mentions a
+    // variable bound by another component, so `@@` would traverse every range and replace nothing.
     connectedComponents(queries).foldLeft(BoolSubstitution.empty[F]) {
       case (acc, qs) => acc ++ sveGroup(qs)
     }
