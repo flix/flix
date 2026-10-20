@@ -178,11 +178,11 @@ object EffUnification3 {
     *
     * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
     */
-  private def toLaxEquation(sub: TypeConstraint.SubEff, withSlack: Boolean)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): Equation = {
-    val TypeConstraint.SubEff(eff1, eff2, prov) = sub
-    val f1 = toSetFormula(eff1)(withSlack = withSlack, scope, renv, m)
-    val f2 = toSetFormula(eff2)(withSlack = withSlack, scope, renv, m)
-    Equation.mk(SetFormula.mkDiff2(f1, f2), SetFormula.Empty, prov.loc)
+  private def toLaxEquation(sub: TypeConstraint.SubEff, withSlack: Boolean)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): Equation = sub match {
+    case TypeConstraint.SubEff(eff1, eff2, prov) =>
+      val f1 = toSetFormula(eff1)(withSlack = withSlack, scope, renv, m)
+      val f2 = toSetFormula(eff2)(withSlack = withSlack, scope, renv, m)
+      Equation.mk(SetFormula.mkDiff2(f1, f2), SetFormula.Empty, prov.loc)
   }
 
   /**
