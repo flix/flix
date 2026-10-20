@@ -153,6 +153,7 @@ object Profiler {
     val vars = scala.collection.mutable.HashSet.empty[Type.Var]
     def collect(c: TypeConstraint): Unit = c match {
       case TypeConstraint.Equality(t1, t2, _)         => vars ++= t1.typeVars; vars ++= t2.typeVars
+      case TypeConstraint.SubEff(e1, e2, _)           => vars ++= e1.typeVars; vars ++= e2.typeVars
       case TypeConstraint.Trait(_, t, _)              => vars ++= t.typeVars
       case TypeConstraint.Conflicted(t1, t2, _)       => vars ++= t1.typeVars; vars ++= t2.typeVars
       case TypeConstraint.Purification(_, e1, e2, _, nested) =>

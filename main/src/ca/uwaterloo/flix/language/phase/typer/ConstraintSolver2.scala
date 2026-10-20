@@ -16,6 +16,7 @@ import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{ChaosMonkey, Result}
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 /**
   * The constraint solver reduces a collection of constraints by iteratively applying reduction rules.
@@ -235,6 +236,10 @@ object ConstraintSolver2 {
         val t1 = visitType(tpe1)
         val t2 = visitType(tpe2)
         if ((t1 eq tpe1) && (t2 eq tpe2)) constr else TypeConstraint.Equality(t1, t2, prov)
+      case TypeConstraint.SubEff(eff1, eff2, prov) =>
+        val e1 = visitType(eff1)
+        val e2 = visitType(eff2)
+        if ((e1 eq eff1) && (e2 eq eff2)) constr else TypeConstraint.SubEff(e1, e2, prov)
       case TypeConstraint.Trait(sym, tpe, loc) =>
         val t = visitType(tpe)
         if (t eq tpe) constr else TypeConstraint.Trait(sym, t, loc)
@@ -369,6 +374,20 @@ object ConstraintSolver2 {
             TypeConstraint.Equality(r1, r2, prov) :: cs1 ::: cs2
         }
     }
+
+    case TypeConstraint.SubEff(eff1, eff2, prov) =>
+      if (isEliminable(eff1) || isEliminable(eff2)) {
+        Nil
+      } else {
+        // (redU)
+        val (r1, cs1) = reduce(eff1)(scope, renv, progress, eqenv, flix)
+        val (r2, cs2) = reduce(eff2)(scope, renv, progress, eqenv, flix)
+        // Performance: Reuse this, if possible.
+        if ((r1 eq eff1) && (r2 eq eff2) && cs1.isEmpty && cs2.isEmpty)
+          constr :: Nil
+        else
+          TypeConstraint.SubEff(r1, r2, prov) :: cs1 ::: cs2
+      }
 
     case TypeConstraint.Trait(sym, tpe, loc) =>
       if (isEliminable(tpe)) {
@@ -507,6 +526,7 @@ object ConstraintSolver2 {
   private def contextReduction(constr: TypeConstraint, progress: Progress)(implicit scope: RegionScope, renv0: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): List[TypeConstraint] = constr match {
     // Case 1: Non-trait constraint. Do nothing.
     case c: TypeConstraint.Equality => List(c)
+    case c: TypeConstraint.SubEff => List(c)
     case c: TypeConstraint.Conflicted => List(c)
     case c: TypeConstraint.EffConflicted => List(c)
 
@@ -604,18 +624,26 @@ object ConstraintSolver2 {
     */
   private def blockEffectUnification(constrs0: List[TypeConstraint], progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
 
-    // Separate out the effect unification stuff
-    val (eqConstrs, rest0) = constrs0.partitionMap {
-      case eq@TypeConstraint.Equality(tpe1, _, _) if tpe1.kind == Kind.Eff => Left(eq)
-      case other => Right(other)
+    // Separate out the effect unification stuff: the effect equalities, the subeffect
+    // constraints, and everything else.
+    val eqConstrs = mutable.ArrayBuffer.empty[TypeConstraint.Equality]
+    val subConstrs = mutable.ArrayBuffer.empty[TypeConstraint.SubEff]
+    val rest0 = mutable.ArrayBuffer.empty[TypeConstraint]
+    for (constr <- constrs0) {
+      constr match {
+        case eq@TypeConstraint.Equality(tpe1, _, _) if tpe1.kind == Kind.Eff => eqConstrs += eq
+        case sub: TypeConstraint.SubEff => subConstrs += sub
+        case other => rest0 += other
+      }
     }
+    val hasEffConstrs = eqConstrs.nonEmpty || subConstrs.nonEmpty
 
     // First solve all the top-level constraints together
-    val (leftovers1, subst1) = EffUnification3.unifyAll(eqConstrs, scope, renv) match {
+    val (leftovers1, subst1) = EffUnification3.unifyAll(eqConstrs.toList, subConstrs.toList, scope, renv) match {
       case Result.Ok(subst) =>
         // If we solved everything, then we can use the new substitution.
         // We only mark progress if there was something to solve.
-        if (eqConstrs.nonEmpty) {
+        if (hasEffConstrs) {
           progress.markProgress()
         }
         (Nil, subst)
@@ -632,8 +660,8 @@ object ConstraintSolver2 {
 
     val tree0 = SubstitutionTree.shallow(subst1)
 
-    // Performance: If there were no equality constraints, reuse the original list.
-    val rest0a = if (eqConstrs.isEmpty) constrs0 else rest0
+    // Performance: If there were no effect constraints, reuse the original list.
+    val rest0a = if (hasEffConstrs) rest0.toList else constrs0
 
     // Apply the substitution to the remaining constraints
     val rest1 = ListOps.mapWithReuse(rest0a)(tree0.apply)

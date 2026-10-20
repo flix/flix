@@ -239,6 +239,10 @@ object ConstraintSolverInterface {
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
       List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
+    case TypeConstraint.SubEff(eff1, eff2, prov) =>
+      // The larger effect is the expected one, so it is reported first.
+      List(mkMismatchedTypesOrEffects(subst(eff2), subst(eff1), subst(eff2), subst(eff1), renv, prov.loc))
+
     // TODO We have simply duplicated equality here.
     // TODO We should establish invariants on conflicted/equality cases.
     case TypeConstraint.Conflicted(Type.UnresolvedJvmType(member, _), _, prov) =>

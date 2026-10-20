@@ -162,6 +162,21 @@ class TypeContext {
   }
 
   /**
+    * Generates a constraint requiring the effect `eff1` to be a subset of the effect `eff2`.
+    *
+    * {{{
+    *   eff1 ⊑ eff2
+    * }}}
+    *
+    * Both effects must have kind `Eff`.
+    */
+  def subEff(eff1: Type, eff2: Type, loc: SourceLocation): Unit = {
+    val prov = Provenance.ExpectEffect(expected = eff2, actual = eff1, loc)
+    val constr = TypeConstraint.SubEff(eff1, eff2, prov)
+    currentScopeConstraints.add(constr)
+  }
+
+  /**
     * Generates a constraint where an `actual` type is used where the `Unit` type is expected in a statement position.
     */
   def expectStmt(actual: Type, loc: SourceLocation): Unit = {
