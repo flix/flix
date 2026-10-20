@@ -156,8 +156,9 @@ object EffUnification3 {
 
   /**
     * Translates `sub` into an equation of [[SetFormula]] for the strict phase: a constraint whose
-    * upper bound is a flexible variable is read strictly, so `s ⊑ x` becomes `x ~ s`, and every
-    * other constraint is read laxly (see [[toLaxEquation]]).
+    * upper bound is a flexible variable is read strictly, i.e. solved by its minimal solution rather
+    * than its most general one, so `s ⊑ x` becomes `x ~ s`, and every other constraint is read
+    * laxly (see [[toLaxEquation]]).
     *
     * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
     */
