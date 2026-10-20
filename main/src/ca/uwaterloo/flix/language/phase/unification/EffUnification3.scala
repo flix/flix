@@ -121,7 +121,7 @@ object EffUnification3 {
     // constraint is read laxly.
     //
     try {
-      val equations = toEquations(eqs, withSlack = true) ::: toLaxEquations(subs, withSlack = true)
+      val equations = toEquations(eqs, withSlack = true) ::: subs.map(sub => toLaxEquation(sub, withSlack = true))
       flix.emitEvent(FlixEvent.SolveEffEquations(equations))
       val (unsolvedEqns, resultSubst) = SetUnification.solve(equations, flix.options.xsve)
       if (unsolvedEqns.isEmpty) {
@@ -171,14 +171,6 @@ object EffUnification3 {
           toLaxEquation(sub, withSlack)
         }
     }
-
-  /**
-    * Returns the given subeffect constraints as set equations under the lax reading.
-    *
-    * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
-    */
-  private def toLaxEquations(l: List[TypeConstraint.SubEff], withSlack: Boolean)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): List[Equation] =
-    l.map(sub => toLaxEquation(sub, withSlack))
 
   /**
     * Translates `sub` into an equation of [[SetFormula]] under the lax reading:
