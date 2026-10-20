@@ -69,7 +69,7 @@ object SveAlgorithm {
     // disjoint domains and ranges and can be merged without composition.
     connectedComponents(queries).foldLeft(BoolSubstitution.empty[F]) {
       case (acc, (qs, vars)) =>
-        val subst = if (vars.size > maxVars) sveSequential(qs) else sveOne(qs.reduce[F]((q1, q2) => alg.mkOr(q1, q2)))
+        val subst = if (vars.size > maxVars) sveOneByOne(qs) else sveOne(qs.reduce[F]((q1, q2) => alg.mkOr(q1, q2)))
         acc ++ subst
     }
   }
@@ -103,7 +103,7 @@ object SveAlgorithm {
     *
     * @throws `BoolUnificationException` if SVE fails.
     */
-  private def sveSequential[F](qs: List[F])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+  private def sveOneByOne[F](qs: List[F])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
     var subst = BoolSubstitution.empty[F]
     var rest = qs
     while (rest.nonEmpty) {
