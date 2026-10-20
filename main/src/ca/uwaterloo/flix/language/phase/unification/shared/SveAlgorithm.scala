@@ -6,7 +6,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.shared
 
-import scala.collection.immutable.SortedSet
+import scala.collection.mutable
 
 object SveAlgorithm {
 
@@ -128,22 +128,44 @@ object SveAlgorithm {
     * Partitions the given queries `qs` into connected components, where two queries are
     * connected if they share a flexible variable.
     *
-    * Returns each component as its queries, in their original order. A query without flexible
-    * variables forms a component of its own.
+    * Returns the components in order of their first query, and the queries of each component in
+    * their original order. A query without flexible variables forms a component of its own.
     */
   private def connectedComponents[F](qs: List[F])(implicit alg: BoolAlg[F]): List[List[F]] = {
-    // The components found so far. Each query is paired with its index to restore the order.
-    var components: List[(List[(F, Int)], SortedSet[Int])] = Nil
-    for ((q, i) <- qs.zipWithIndex) {
-      val vars = alg.freeVars(q)
-      // Merge `q` with every component that shares a variable with it.
-      val (connected, rest) = components.partition { case (_, vs) => vars.exists(vs.contains) }
-      val merged = connected.foldLeft((List((q, i)), vars)) {
-        case ((accQs, accVars), (cQs, cVars)) => (cQs ::: accQs, accVars ++ cVars)
+    val n = qs.length
+
+    // Union-find over the query indices `0 until n`. A root is its own parent. The smaller root
+    // always becomes the parent, so the root of a component is the index of its first query.
+    val parent = Array.tabulate(n)(i => i)
+
+    def find(i: Int): Int = {
+      if (parent(i) != i) {
+        parent(i) = find(parent(i)) // Path compression.
       }
-      components = merged :: rest
+      parent(i)
     }
-    components.map { case (cQs, _) => cQs.sortBy(_._2).map(_._1) }
+
+    def union(i: Int, j: Int): Unit = {
+      val ri = find(i)
+      val rj = find(j)
+      if (ri != rj) {
+        parent(math.max(ri, rj)) = math.min(ri, rj)
+      }
+    }
+
+    // Maps each flexible variable to the first query that mentions it. Every later query that
+    // mentions the variable is unioned with that first query.
+    val firstQueryOf = mutable.Map.empty[Int, Int]
+    for ((q, i) <- qs.zipWithIndex; x <- alg.freeVars(q)) {
+      union(i, firstQueryOf.getOrElseUpdate(x, i))
+    }
+
+    // Group the queries by their root.
+    val components = mutable.Map.empty[Int, mutable.ListBuffer[F]]
+    for ((q, i) <- qs.zipWithIndex) {
+      components.getOrElseUpdate(find(i), mutable.ListBuffer.empty) += q
+    }
+    components.toList.sortBy { case (root, _) => root }.map { case (_, cQs) => cQs.toList }
   }
 
   /**
