@@ -73,9 +73,6 @@ object TypeConstraint {
     * Both effects must have kind `Eff`. The constraint arises from subeffecting: a function body
     * may have fewer effects than its signature declares, a lambda may be given a larger effect
     * than its body, and so on.
-    *
-    * The constraint is solved by effect unification, which reads it as the equation
-    * `eff1 ∩ ¬eff2 ~ Pure` (or, when looking for a minimal solution, as `eff1 ~ eff2`).
     */
   case class SubEff(eff1: Type, eff2: Type, prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
