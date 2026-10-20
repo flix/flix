@@ -48,6 +48,10 @@ Xperf --frontend --par --n 50
 
 If the numbers are not stable, increase the sample count to `--n 100` or `--n 250`.
 
+Never run Xperf interleaved (e.g. alternating runs of the baseline and the change). It is always better to increase `--n` instead.
+
+If asked to do an extensive comparison, use `--n 250` or `--n 500`.
+
 Drop `--frontend` if the change affects the backend, so the benchmark covers the full pipeline.
 
 ## Commit Messages
