@@ -41,9 +41,6 @@ object SveAlgorithm {
     *     flexible variable) as a single equation.
     *   - [[SveMode.PerSystem]]: solves the whole system as a single equation.
     *
-    * The equations `f1 ~ g1, ..., fn ~ gn` of a group hold iff the single equation
-    * `(f1 ⊕ g1) ∨ ... ∨ (fn ⊕ gn) = ⊥` holds, which is solved by one run of SVE.
-    *
     * @throws `BoolUnificationException` if SVE fails.
     */
   def sveAll[F](l: List[(F, F)], mode: SveMode)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = mode match {
@@ -115,7 +112,11 @@ object SveAlgorithm {
   }
 
   /**
-    * Solves the non-empty group of queries `qs` as the single query `q1 ∨ q2 ∨ ... ∨ qn`.
+    * Solves the non-empty list of queries `qs` as the single query `q1 ∨ q2 ∨ ... ∨ qn`.
+    *
+    * Each query `qi = fi ⊕ gi` represents the equation `fi ~ gi`. The equations all hold iff the
+    * single equation `q1 ∨ q2 ∨ ... ∨ qn = ⊥` holds, since a union is empty iff every operand is,
+    * so one run of SVE on the union solves all of them.
     *
     * @throws `BoolUnificationException` if SVE fails.
     */
