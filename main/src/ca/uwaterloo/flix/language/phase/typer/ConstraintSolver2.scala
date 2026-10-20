@@ -16,6 +16,7 @@ import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{ChaosMonkey, Result}
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 /**
   * The constraint solver reduces a collection of constraints by iteratively applying reduction rules.
@@ -625,23 +626,20 @@ object ConstraintSolver2 {
 
     // Separate out the effect unification stuff: the effect equalities, the subeffect
     // constraints, and everything else.
-    var eqConstrs: List[TypeConstraint.Equality] = Nil
-    var subConstrs: List[TypeConstraint.SubEff] = Nil
-    var restRev: List[TypeConstraint] = Nil
+    val eqConstrs = mutable.ArrayBuffer.empty[TypeConstraint.Equality]
+    val subConstrs = mutable.ArrayBuffer.empty[TypeConstraint.SubEff]
+    val rest0 = mutable.ArrayBuffer.empty[TypeConstraint]
     for (constr <- constrs0) {
       constr match {
-        case eq@TypeConstraint.Equality(tpe1, _, _) if tpe1.kind == Kind.Eff => eqConstrs = eq :: eqConstrs
-        case sub: TypeConstraint.SubEff => subConstrs = sub :: subConstrs
-        case other => restRev = other :: restRev
+        case eq@TypeConstraint.Equality(tpe1, _, _) if tpe1.kind == Kind.Eff => eqConstrs += eq
+        case sub: TypeConstraint.SubEff => subConstrs += sub
+        case other => rest0 += other
       }
     }
-    eqConstrs = eqConstrs.reverse
-    subConstrs = subConstrs.reverse
-    val rest0 = restRev.reverse
     val hasEffConstrs = eqConstrs.nonEmpty || subConstrs.nonEmpty
 
     // First solve all the top-level constraints together
-    val (leftovers1, subst1) = EffUnification3.unifyAll(eqConstrs, subConstrs, scope, renv) match {
+    val (leftovers1, subst1) = EffUnification3.unifyAll(eqConstrs.toList, subConstrs.toList, scope, renv) match {
       case Result.Ok(subst) =>
         // If we solved everything, then we can use the new substitution.
         // We only mark progress if there was something to solve.
@@ -663,7 +661,7 @@ object ConstraintSolver2 {
     val tree0 = SubstitutionTree.shallow(subst1)
 
     // Performance: If there were no effect constraints, reuse the original list.
-    val rest0a = if (hasEffConstrs) rest0 else constrs0
+    val rest0a = if (hasEffConstrs) rest0.toList else constrs0
 
     // Apply the substitution to the remaining constraints
     val rest1 = ListOps.mapWithReuse(rest0a)(tree0.apply)
