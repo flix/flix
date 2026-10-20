@@ -43,19 +43,8 @@ object Options {
 
   /**
     * Default test options.
-    *
-    * Subeffecting is enabled for the whole test suite when the environment variable
-    * `FLIX_TEST_SUBEFFECTING` is set to `all`. Tests that set `xsubeffecting` explicitly are unaffected.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, xnodeprecated = true, xchaosMonkey = true, xverify = true, xsubeffecting = testSubeffecting)
-
-  /**
-    * Returns the subeffecting options requested through the environment for the test suite.
-    */
-  private def testSubeffecting: Set[Subeffecting] = sys.env.get("FLIX_TEST_SUBEFFECTING") match {
-    case Some("all") => Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas)
-    case _ => Set.empty
-  }
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, xnodeprecated = true, xchaosMonkey = true, xverify = true)
 
   /**
     * Default test options with the standard library.
