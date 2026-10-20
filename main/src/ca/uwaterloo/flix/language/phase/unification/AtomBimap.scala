@@ -17,7 +17,7 @@ import scala.collection.mutable
 private object AtomBimap {
 
   /**
-    * Returns an [[AtomBimap]] numbering the [[EffAtom]]s of `eqs` using [[EffAtom.collectAtoms]].
+    * Returns an [[AtomBimap]] numbering the [[EffAtom]]s of `eqs` and `subs` using [[EffAtom.collectAtoms]].
     * The map also records the type arguments of each polymorphic effect constructor so that the
     * effect applications can be reconstructed after set unification.
     *
@@ -25,8 +25,8 @@ private object AtomBimap {
     * runs since it determines the solving order in
     * [[ca.uwaterloo.flix.language.phase.unification.set.SetUnification]].
     */
-  def fromConstraints(eqs: List[TypeConstraint.Equality])(implicit scope: RegionScope, renv: RigidityEnv): AtomBimap = {
-    // The distinct effect atoms that occur in the equations.
+  def fromConstraints(eqs: List[TypeConstraint.Equality], subs: List[TypeConstraint.SubEff])(implicit scope: RegionScope, renv: RigidityEnv): AtomBimap = {
+    // The distinct effect atoms that occur in the constraints.
     val buf = mutable.HashSet.empty[EffAtom]
 
     // The arguments used to reconstruct each polymorphic effect after set unification.
@@ -34,6 +34,10 @@ private object AtomBimap {
     for (eq <- eqs) {
       EffAtom.collectAtoms(eq.tpe1, buf, effectArgs)
       EffAtom.collectAtoms(eq.tpe2, buf, effectArgs)
+    }
+    for (sub <- subs) {
+      EffAtom.collectAtoms(sub.eff1, buf, effectArgs)
+      EffAtom.collectAtoms(sub.eff2, buf, effectArgs)
     }
     fromAtoms(buf, effectArgs.toMap)
   }

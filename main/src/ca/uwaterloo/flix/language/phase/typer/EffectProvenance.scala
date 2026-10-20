@@ -286,32 +286,45 @@ object EffectProvenance {
   private def buildGraph(constraints: List[TypeConstraint])(implicit scope: RegionScope, renv: RigidityEnv): Option[Graph] = {
     var flow: List[Edge] = List()
     var v: Set[Vertex] = Set.empty
+
+    /**
+      * Adds the edges of a constraint under which the effect `tpe2` flows into the effect `tpe1`.
+      */
+    def addEdges(tpe1: Type, tpe2: Type, prov: TypeConstraint.Provenance): Unit = {
+      val inf = TypeConstraint.Provenance.unwrap(prov) match {
+        case TypeConstraint.Provenance.ExpectEffect(effs, _, _) =>
+          val l = if (effs.loc.isReal) effs.loc else prov.loc
+          Some((SinkNode, IntermediateNode, l))
+        case TypeConstraint.Provenance.Source(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
+        case TypeConstraint.Provenance.Match(_, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
+        case TypeConstraint.Provenance.PolyEffEq(_, _, _, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
+        case TypeConstraint.Provenance.ExpectType(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
+        case TypeConstraint.Provenance.ExpectArgument(arg, _, _, _, _) => Some((ArgNode, IntermediateNode, arg.loc))
+        case _ => None
+      }
+      inf match {
+        case None => ()
+        case Some((nt1, nt2, loc)) =>
+          val v1 = toVertex(tpe1, loc, nt1)
+          val v2 = toVertex(tpe2, loc, nt2)
+          (v1, v2) match {
+            case (Nil, _) => ()
+            case (_, Nil) => ()
+            case (toVertices, fromVertices) =>
+              v ++= fromVertices.toSet
+              v ++= toVertices.toSet
+              flow :::= createEdges(fromVertices, toVertices, prov.loc)
+          }
+      }
+    }
+
     constraints.foreach {
       case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-        val inf = TypeConstraint.Provenance.unwrap(prov) match {
-          case TypeConstraint.Provenance.ExpectEffect(effs, _, _) =>
-            val l = if (effs.loc.isReal) effs.loc else prov.loc
-            Some((SinkNode, IntermediateNode, l))
-          case TypeConstraint.Provenance.Source(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
-          case TypeConstraint.Provenance.Match(_, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
-          case TypeConstraint.Provenance.PolyEffEq(_, _, _, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
-          case TypeConstraint.Provenance.ExpectType(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
-          case TypeConstraint.Provenance.ExpectArgument(arg, _, _, _, _) => Some((ArgNode, IntermediateNode, arg.loc))
-          case _ => None
-        }
-        inf.map {
-          case (nt1, nt2, loc) =>
-            val v1 = toVertex(tpe1, loc, nt1)
-            val v2 = toVertex(tpe2, loc, nt2)
-            (v1, v2) match {
-              case (Nil, _) => ()
-              case (_, Nil) => ()
-              case (toVertices, fromVertices) =>
-                v ++= fromVertices.toSet
-                v ++= toVertices.toSet
-                flow :::= createEdges(fromVertices, toVertices, prov.loc)
-            }
-        }
+        addEdges(tpe1, tpe2, prov)
+
+      case TypeConstraint.SubEff(eff1, eff2, prov) =>
+        // The smaller effect flows into the larger effect, as an inferred effect flows into a declared one.
+        addEdges(eff2, eff1, prov)
 
       case _ => ()
     }

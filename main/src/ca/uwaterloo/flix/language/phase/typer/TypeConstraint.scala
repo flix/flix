@@ -22,6 +22,7 @@ sealed trait TypeConstraint {
     */
   def size: Int = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.size + tpe2.size
+    case TypeConstraint.SubEff(eff1, eff2, _) => eff1.size + eff2.size
     case TypeConstraint.Trait(_, tpe, _) => tpe.size
     case TypeConstraint.Purification(_, eff1, eff2, _, nested) => eff1.size + eff2.size + nested.map(_.size).sum
     case TypeConstraint.Conflicted(tpe1, tpe2, _) => tpe1.size + tpe2.size
@@ -30,6 +31,7 @@ sealed trait TypeConstraint {
 
   override def toString: String = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"$tpe1 ~ $tpe2"
+    case TypeConstraint.SubEff(eff1, eff2, _) => s"$eff1 ⊑ $eff2"
     case TypeConstraint.Trait(sym, tpe, _) => s"$sym[$tpe]"
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
     case TypeConstraint.Conflicted(tpe1, tpe2, _) => s"$tpe1 ≁ $tpe2"
@@ -58,6 +60,34 @@ object TypeConstraint {
         this
       } else {
         Equality(newTpe1, newTpe2, prov)
+      }
+    }
+  }
+
+  /**
+    * A constraint indicating that the effect `eff1` is a subset of the effect `eff2`.
+    * {{{
+    *   eff1 ⊑ eff2
+    * }}}
+    *
+    * Both effects must have kind `Eff`. The constraint arises from subeffecting: a function body
+    * may have fewer effects than its signature declares, a lambda may be given a larger effect
+    * than its body, and so on.
+    *
+    * The constraint is solved by effect unification, which reads it as the equation
+    * `eff1 ∩ ¬eff2 ~ Pure` (or, when looking for a minimal solution, as `eff1 ~ eff2`).
+    */
+  case class SubEff(eff1: Type, eff2: Type, prov: Provenance) extends TypeConstraint {
+    def loc: SourceLocation = prov.loc
+
+    /**
+      * Creates a new SubEff, reusing this one if the effects are unchanged.
+      */
+    def renew(newEff1: Type, newEff2: Type): SubEff = {
+      if ((eff1 eq newEff1) && (eff2 eq newEff2)) {
+        this
+      } else {
+        SubEff(newEff1, newEff2, prov)
       }
     }
   }

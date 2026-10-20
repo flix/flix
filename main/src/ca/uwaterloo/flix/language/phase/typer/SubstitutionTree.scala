@@ -41,6 +41,13 @@ class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.
         // Performance: Reuse eq, if possible.
         eq.renew(t1, t2)
 
+      case sub@TypeConstraint.SubEff(eff1, eff2, _) =>
+        // Check whether the substitution has to be applied.
+        val e1 = if (eff1.typeVars.isEmpty) eff1 else root(eff1)
+        val e2 = if (eff2.typeVars.isEmpty) eff2 else root(eff2)
+        // Performance: Reuse sub, if possible.
+        sub.renew(e1, e2)
+
       case TypeConstraint.Trait(sym, tpe, loc) =>
         // Check whether the substitution has to be applied.
         val t = if (tpe.typeVars.isEmpty) tpe else root(tpe)
