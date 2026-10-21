@@ -337,6 +337,8 @@ object ConstraintSolver2 {
     *   - (reflU): eliminates trivial equalities: `τ ~ τ` becomes `∅`
     *   - eliminates constraints containing unrecoverable errors (see [[isEliminable]])
     *   - (redU): reduces the types in the constraint
+    *   - (trivU): eliminates subeffect constraints that hold syntactically (see [[isTrivialSubEff]]): `Pure ⊑ φ` becomes `∅`
+    *   - (pureU): turns a subeffect constraint with an empty upper bound into the equality it is: `φ ⊑ Pure` becomes `Pure ~ φ`
     *
     * The rules are applied in the listed order to each constraint:
     * applications are broken down exhaustively, and then the remaining
@@ -382,11 +384,20 @@ object ConstraintSolver2 {
         // (redU)
         val (r1, cs1) = reduce(eff1)(scope, renv, progress, eqenv, flix)
         val (r2, cs2) = reduce(eff2)(scope, renv, progress, eqenv, flix)
-        // Performance: Reuse this, if possible.
-        if ((r1 eq eff1) && (r2 eq eff2) && cs1.isEmpty && cs2.isEmpty)
+        if (isTrivialSubEff(r1, r2)) {
+          // (trivU): the constraint holds syntactically and can be dropped.
+          progress.markProgress()
+          cs1 ::: cs2
+        } else if (r2 == Type.Pure) {
+          // (pureU): `φ ⊑ Pure` holds exactly when `φ ~ Pure`.
+          progress.markProgress()
+          TypeConstraint.Equality(r2, r1, prov) :: cs1 ::: cs2
+        } else if ((r1 eq eff1) && (r2 eq eff2) && cs1.isEmpty && cs2.isEmpty) {
+          // Performance: Reuse this, if possible.
           constr :: Nil
-        else
+        } else {
           TypeConstraint.SubEff(r1, r2, prov) :: cs1 ::: cs2
+        }
       }
 
     case TypeConstraint.Trait(sym, tpe, loc) =>
@@ -429,6 +440,16 @@ object ConstraintSolver2 {
 
     case TypeConstraint.EffConflicted(_) => constr :: Nil
   }
+
+  /**
+    * Returns `true` if `eff1 ⊑ eff2` holds syntactically, i.e. without consulting the effect solver:
+    * `eff1` is `Pure`, `eff2` is `Univ`, or the two are the same effect.
+    *
+    * The check is sound but not complete: a subeffect constraint that holds, but not syntactically,
+    * is left to the effect solver. The check never concludes that a constraint fails.
+    */
+  private def isTrivialSubEff(eff1: Type, eff2: Type): Boolean =
+    (eff1 == Type.Pure) || (eff2 == Type.Univ) || (eff1 == eff2)
 
   /**
     * Purifies empty regions in the constraint set.
