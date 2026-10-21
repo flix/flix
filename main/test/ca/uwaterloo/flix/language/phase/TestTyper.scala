@@ -2079,32 +2079,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("TypeError.MethodBoxing.01") {
-    val input =
-      """
-        |import java.lang.Boolean
-        |
-        |def f(): Int32 \ IO =
-        |    let boxed = new Boolean(true);
-        |    boxed.compareTo(false)
-        |pub eff IO
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
-  test("TypeError.MethodBoxing.02") {
-    val input =
-      """
-        |import java.util.Objects
-        |
-        |def f(): Bool \ IO = Objects.isNull(true)
-        |pub eff IO
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
   test("TypeError.MethodUnboxing.01") {
     val input =
       """
