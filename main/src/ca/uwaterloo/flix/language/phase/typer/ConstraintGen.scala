@@ -52,6 +52,8 @@ object ConstraintGen {
       case Expr.HoleWithExp(exp, _, tvar, evar, loc) =>
         // We ignore exp's type and allow the hole to have any type.
         // We allow the effect to be any superset of exp's effect.
+        // N.B.: This is deliberately not a SubEff constraint: the hole's effect must stay as wide
+        // as its context allows, rather than being solved to the minimal effect.
         val (_, eff) = visitExp(exp)
         val atLeastEff = Type.mkUnion(eff, freshVar(Kind.Eff, loc), loc.asSynthetic)
         c.unifyType(atLeastEff, evar, loc)
@@ -831,6 +833,9 @@ object ConstraintGen {
 
           case CheckedCastType.EffectCast =>
             // We union the effect with a fresh variable to allow unifying with a "larger" effect.
+            // N.B.: This is deliberately not a SubEff constraint: the cast's effect must stay as wide
+            // as its context allows, rather than being solved to the minimal effect, which would make
+            // every cast that the context does not force look redundant.
             val (tpe, eff) = visitExp(exp)
             c.unifyType(tvar, tpe, loc)
             val resTpe = tvar
