@@ -48,7 +48,7 @@ object FormatType {
     // Compute a substitution that maps the first flexible variable to id 1 and so forth.
     val m = flexibleVars.zipWithIndex.map {
       case (Type.Var(sym, loc), index) =>
-        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isSlack, sym.scope, loc), loc): Type)
+        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.scope, loc), loc): Type)
     }
     val s = Substitution(m.toMap)
 

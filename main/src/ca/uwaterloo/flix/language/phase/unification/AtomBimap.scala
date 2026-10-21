@@ -87,7 +87,7 @@ private final class AtomBimap(forward: Map[EffAtom, Int], backward: Array[EffAto
   /**
     * Optionally returns the atom at index `i`.
     *
-    * Callers probe indices outside `0..n-1` (e.g. slack variables introduced during
+    * Callers probe indices outside `0..n-1` (e.g. fresh variables introduced during
     * solving) and rely on `None` for those — the bounds check is load-bearing.
     */
   def getBackward(i: Int): Option[EffAtom] =

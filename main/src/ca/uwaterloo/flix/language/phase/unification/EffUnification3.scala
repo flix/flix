@@ -99,16 +99,16 @@ object EffUnification3 {
     implicit val bimap: AtomBimap = AtomBimap.fromConstraints(eqs0, subs0)
 
     //
-    // Phase 1: Try to solve without subeffecting: slack variables are read as the empty set and
-    // subeffect constraints with a flexible upper bound are read strictly.
+    // Phase 1: Try to solve without subeffecting: subeffect constraints with a flexible upper bound
+    // are read strictly.
     //
     if (EnableSmartSubeffecting) {
       try {
-        val equations = toEquations(eqs, withSlack = false) ::: subs.map(sub => toStrictEquation(sub, withSlack = false))
+        val equations = toEquations(eqs) ::: subs.map(toStrictEquation)
         val (unsolvedEqns, resultSubst) = SetUnification.solve(equations, flix.options.xsve)
         if (unsolvedEqns.isEmpty) {
           // We have found a valid solution without subeffecting. Return it immediately.
-          return Result.Ok(fromSetSubst(resultSubst)(withSlack = false, m = bimap))
+          return Result.Ok(fromSetSubst(resultSubst))
         }
         // Otherwise we fall through.
       } catch {
@@ -117,15 +117,14 @@ object EffUnification3 {
     }
 
     //
-    // Phase 2: With subeffecting: slack variables are ordinary variables and every subeffect
-    // constraint is read laxly.
+    // Phase 2: With subeffecting: every subeffect constraint is read laxly.
     //
     try {
-      val equations = toEquations(eqs, withSlack = true) ::: subs.map(sub => toLaxEquation(sub, withSlack = true))
+      val equations = toEquations(eqs) ::: subs.map(toLaxEquation)
       flix.emitEvent(FlixEvent.SolveEffEquations(equations))
       val (unsolvedEqns, resultSubst) = SetUnification.solve(equations, flix.options.xsve)
       if (unsolvedEqns.isEmpty) {
-        Result.Ok(fromSetSubst(resultSubst)(withSlack = true, m = bimap))
+        Result.Ok(fromSetSubst(resultSubst))
       } else {
         Result.Err(fromSetEquations(unsolvedEqns))
       }
@@ -141,17 +140,17 @@ object EffUnification3 {
   /**
     * Returns the given list of type equations as a list of set equations.
     */
-  private def toEquations(l: List[TypeConstraint.Equality], withSlack: Boolean)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): List[Equation] =
-    l.map(e => toEquation(e, withSlack))
+  private def toEquations(l: List[TypeConstraint.Equality])(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): List[Equation] =
+    l.map(toEquation)
 
   /**
     * Translates `eq` into a equation of [[SetFormula]].
     *
     * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
     */
-  private def toEquation(eq: TypeConstraint.Equality, withSlack: Boolean)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): Equation = {
+  private def toEquation(eq: TypeConstraint.Equality)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): Equation = {
     val TypeConstraint.Equality(tpe1, tpe2, prov) = eq
-    Equation.mk(toSetFormula(tpe1)(withSlack = withSlack, scope, renv, m), toSetFormula(tpe2)(withSlack = withSlack, scope, renv, m), prov.loc)
+    Equation.mk(toSetFormula(tpe1), toSetFormula(tpe2), prov.loc)
   }
 
   /**
@@ -162,13 +161,13 @@ object EffUnification3 {
     *
     * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
     */
-  private def toStrictEquation(sub: TypeConstraint.SubEff, withSlack: Boolean)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): Equation = sub match {
+  private def toStrictEquation(sub: TypeConstraint.SubEff)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): Equation = sub match {
     case TypeConstraint.SubEff(eff1, eff2, prov) =>
       if (hasFlexibleUpperBound(sub)) {
         // The expected effect is kept on the left, as in the equality `declared ~ inferred`.
-        Equation.mk(toSetFormula(eff2)(withSlack = withSlack, scope, renv, m), toSetFormula(eff1)(withSlack = withSlack, scope, renv, m), prov.loc)
+        Equation.mk(toSetFormula(eff2), toSetFormula(eff1), prov.loc)
       } else {
-        toLaxEquation(sub, withSlack)
+        toLaxEquation(sub)
       }
   }
 
@@ -178,10 +177,10 @@ object EffUnification3 {
     *
     * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
     */
-  private def toLaxEquation(sub: TypeConstraint.SubEff, withSlack: Boolean)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): Equation = sub match {
+  private def toLaxEquation(sub: TypeConstraint.SubEff)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): Equation = sub match {
     case TypeConstraint.SubEff(eff1, eff2, prov) =>
-      val f1 = toSetFormula(eff1)(withSlack = withSlack, scope, renv, m)
-      val f2 = toSetFormula(eff2)(withSlack = withSlack, scope, renv, m)
+      val f1 = toSetFormula(eff1)
+      val f2 = toSetFormula(eff2)
       Equation.mk(SetFormula.mkDiff2(f1, f2), SetFormula.Empty, prov.loc)
   }
 
@@ -198,7 +197,7 @@ object EffUnification3 {
     *
     * Throws [[InvalidType]] if `t` is not valid.
     */
-  private def toSetFormula(t: Type)(implicit withSlack: Boolean, scope: RegionScope, renv: RigidityEnv, m: AtomBimap): SetFormula = t match {
+  private def toSetFormula(t: Type)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): SetFormula = t match {
     case Type.Univ => SetFormula.Univ
     case Type.Pure => SetFormula.Empty
 
@@ -207,14 +206,7 @@ object EffUnification3 {
       val x = m.getForwardIndex(atom)
       if (x < 0) throw InternalCompilerException(s"Unexpected unbound type variable: '$tpe'.", tpe.loc)
       atom match {
-        case EffAtom.VarFlex(sym) =>
-          if (sym.isSlack && !withSlack) {
-            // Special Case: We have a slack variable and we want to ignore it. Return the empty set.
-            SetFormula.Empty
-          } else {
-            // General Case: A flexible type variable is a real Set variable.
-            SetFormula.Var(x)
-          }
+        case EffAtom.VarFlex(_) => SetFormula.Var(x) // A flexible variable is a set variable.
         case EffAtom.VarRigid(_) => SetFormula.Cst(x) // A rigid variable is a constant.
         case _ => throw InternalCompilerException(s"Unexpected atom representation ($atom) of variable ($tpe)", tpe.loc)
       }
@@ -283,20 +275,14 @@ object EffUnification3 {
   }
 
   /** Returns [[Substitution]] where each mapping in `s` is converted to [[Type]]. */
-  private def fromSetSubst(s: SetSubstitution)(implicit withSlack: Boolean, m: AtomBimap): Substitution = {
+  private def fromSetSubst(s: SetSubstitution)(implicit m: AtomBimap): Substitution = {
     Substitution(s.m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
       case (macc, (k, SetFormula.Var(x))) if k == x => macc
       case (macc, (k, v)) =>
         m.getBackward(k) match {
           case Some(EffAtom.VarFlex(sym)) =>
             // A proper var. Add it to the substitution.
-            if (sym.isSlack && !withSlack) {
-              // Special Case: The slack variable was set to the empty set.
-              macc + (sym -> Type.Pure)
-            } else {
-              // General Case: The map determines the type variable.
-              macc + (sym -> fromSetFormula(v, sym.loc))
-            }
+            macc + (sym -> fromSetFormula(v, sym.loc))
 
           case Some(EffAtom.Error(_)) =>
             // An error type. Don't add it to the substitution.
@@ -388,7 +374,7 @@ object EffUnification3 {
     implicit val renv: RigidityEnv = RigidityEnv.empty
     implicit val bimap: AtomBimap = AtomBimap.fromType(tpe)
 
-    val f0 = toSetFormula(tpe)(withSlack = true, scope, renv, bimap)
+    val f0 = toSetFormula(tpe)
     val z = Zhegalkin.toZhegalkin(f0)(Algebra, CofiniteIntSet.LatticeOps)
     val f1 = Zhegalkin.toSetFormula(z)
 
