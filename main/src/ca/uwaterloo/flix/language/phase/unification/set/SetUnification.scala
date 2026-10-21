@@ -105,10 +105,6 @@ object SetUnification {
       runWithState(state, runRule(trivial), Phase.Trivial)
       runWithState(state, recursiveAssignment, Phase.RecursiveAssignment)
       runWithState(state, runRule(trivial), Phase.Trivial)
-      // Variable and recursive assignment may substitute a union into an equation `x ∩ g ~ empty`
-      // that came from a subeffect constraint. A second round of constant propagation splits such an
-      // equation into one small equation per member of the union, and bound assignment then solves
-      // each of them without SVE.
       runWithState(state, runRule(constantPropagation), Phase.ConstantPropagation)
       runWithState(state, runRule(trivial), Phase.Trivial)
       runWithState(state, runRule(boundAssignment), Phase.BoundAssignment)
