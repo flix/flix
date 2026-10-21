@@ -183,9 +183,7 @@ object Typer {
     changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValuesWithPriority(_, sortBy) {
       case defn => flix.profile(defn.sym, defn.loc) {
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
-        // If no effect is specified, we assume the function is pure
-        val eff1 = defn.spec.eff.getOrElse(Type.Pure)
-        val bound = effectBound(eff1, Subeffecting.ModDefs)
+        val bound = effectBound(Subeffecting.ModDefs)
         visitDef(defn, tconstrs0 = Nil, econstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, bound)
       }
     })
@@ -253,10 +251,7 @@ object Typer {
         val constrs = context.getTypeConstraints
 
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs. Note: We consider signatures implemented in traits to be module-level.
-        // A small optimization: If the signature is pure there is no room for subeffecting.
-        // If no effect is specified, we assume the signature is pure
-        val eff1 = sig.spec.eff.getOrElse(Type.Pure)
-        val bound = effectBound(eff1, Subeffecting.ModDefs)
+        val bound = effectBound(Subeffecting.ModDefs)
 
         val infResult = InfResult(constrs, tpe, eff0, renv)
         val (subst, constraintErrors) = ConstraintSolverInterface.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root, bound)
@@ -300,9 +295,7 @@ object Typer {
         defn =>
           flix.profile(defn.sym, defn.loc) {
             // SUB-EFFECTING: Check if sub-effecting is enabled for instance-level defs.
-            // If no effect is specified, we assume the function is pure
-            val eff1 = defn.spec.eff.getOrElse(Type.Pure)
-            val bound = effectBound(eff1, Subeffecting.InsDefs)
+            val bound = effectBound(Subeffecting.InsDefs)
             visitDef(defn, tconstrs, econstrs, renv, root, traitEnv, eqEnv, bound)
           }
       }
@@ -540,16 +533,15 @@ object Typer {
   }
 
   /**
-    * Returns how the declared effect `eff` bounds the inferred effect of a def or signature.
-    *
-    * The bound is [[EffectBound.Upper]] if sub-effecting of the kind `subeffecting` is enabled and
-    * `eff` is not `Pure`, since a pure signature leaves no room for sub-effecting, and
+    * Returns how the declared effect of a def or signature bounds its inferred effect:
+    * [[EffectBound.Upper]] if sub-effecting of the kind `subeffecting` is enabled and
     * [[EffectBound.Exact]] otherwise.
+    *
+    * A pure signature needs no special case: the constraint `φ ⊑ Pure` is simplified to the
+    * equality `Pure ~ φ` by the solver.
     */
-  private def effectBound(eff: Type, subeffecting: Subeffecting)(implicit flix: Flix): EffectBound = {
-    val enabled = flix.options.xsubeffecting.contains(subeffecting)
-    val useless = eff == Type.Pure
-    if (enabled && !useless) EffectBound.Upper else EffectBound.Exact
+  private def effectBound(subeffecting: Subeffecting)(implicit flix: Flix): EffectBound = {
+    if (flix.options.xsubeffecting.contains(subeffecting)) EffectBound.Upper else EffectBound.Exact
   }
 
 
