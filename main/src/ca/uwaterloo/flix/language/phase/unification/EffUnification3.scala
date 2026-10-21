@@ -81,12 +81,10 @@ object EffUnification3 {
     implicit val renvImplicit: RigidityEnv = renv
 
     //
-    // Phase 0: Try to solve the system syntactically if all equations are atomic.
+    // Phase 0: Try to solve the system syntactically if all constraints are atomic.
     //
-    // The pre-solver does not handle subeffect constraints, so it is skipped if there are any.
-    //
-    if (EnableSmartSubeffecting && subs.isEmpty) {
-      PreEffUnification.preSolve(eqs) match {
+    if (EnableSmartSubeffecting) {
+      PreEffUnification.preSolve(eqs, subs) match {
         case PreSolveResult.Solved(subst) =>
           // The whole system was atomic and exactly solvable.
           return Result.Ok(subst)
