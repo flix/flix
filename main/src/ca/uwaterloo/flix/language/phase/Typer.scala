@@ -536,9 +536,6 @@ object Typer {
     * Returns how the declared effect of a def or signature bounds its inferred effect:
     * [[EffectBound.Upper]] if sub-effecting of the kind `subeffecting` is enabled and
     * [[EffectBound.Exact]] otherwise.
-    *
-    * A pure signature needs no special case: the constraint `φ ⊑ Pure` is simplified to the
-    * equality `Pure ~ φ` by the solver.
     */
   private def effectBound(subeffecting: Subeffecting)(implicit flix: Flix): EffectBound = {
     if (flix.options.xsubeffecting.contains(subeffecting)) EffectBound.Upper else EffectBound.Exact
