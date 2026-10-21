@@ -509,10 +509,10 @@ mod TestDelayList {
     @Test
     def mapFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> toDelayList |>
+        discard unchecked_cast(((1 :: 2 :: 3 :: Nil) |> toDelayList |>
         DelayList.map(x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); x } as _ \ {})) |>
         DelayList.map(x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); x } as _ \ {})) |>
-        DelayList.toList);
+        DelayList.toList) as _ \ IO);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
@@ -627,10 +627,10 @@ mod TestDelayList {
     @Test
     def filterFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> toDelayList |>
+        discard unchecked_cast(((1 :: 2 :: 3 :: Nil) |> toDelayList |>
         DelayList.filter(_x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); true } as _ \ {})) |>
         DelayList.filter(_x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); true } as _ \ {})) |>
-        DelayList.toList);
+        DelayList.toList) as _ \ IO);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
@@ -650,10 +650,10 @@ mod TestDelayList {
     @Test
     def mapFilterFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> toDelayList |>
+        discard unchecked_cast(((1 :: 2 :: 3 :: Nil) |> toDelayList |>
         DelayList.map(   x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); x }    as _ \ {})) |>
         DelayList.filter(_ -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); true } as _ \ {})) |>
-        DelayList.toList);
+        DelayList.toList) as _ \ IO);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
@@ -673,10 +673,10 @@ mod TestDelayList {
     @Test
     def filterThenMapFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> toDelayList |>
+        discard unchecked_cast(((1 :: 2 :: 3 :: Nil) |> toDelayList |>
         DelayList.filter(_ -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); true } as _ \ {})) |>
         DelayList.map(   x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); x    } as _ \ {})) |>
-        DelayList.toList);
+        DelayList.toList) as _ \ IO);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
@@ -1500,10 +1500,10 @@ mod TestDelayList {
     @Test
     def zipWithFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> toDelayList |>
+        discard unchecked_cast(((1 :: 2 :: 3 :: Nil) |> toDelayList |>
         DelayList.zipWith((x, y) -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); (x, y) } as _ \ {}), ECons(1, ECons(2, ECons(3, ENil)))) |>
         DelayList.zipWith((x, y) -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); (x, y) } as _ \ {}), ECons(1, ECons(2, ECons(3, ENil)))) |>
-        DelayList.toList);
+        DelayList.toList) as _ \ IO);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
@@ -1806,10 +1806,10 @@ mod TestDelayList {
     @Test
     def flatMapFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> toDelayList |>
+        discard unchecked_cast(((1 :: 2 :: 3 :: Nil) |> toDelayList |>
         DelayList.flatMap(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); ECons(i, ENil) } as _ \ {})) |>
         DelayList.flatMap(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); ECons(i, ENil) } as _ \ {})) |>
-        DelayList.toList);
+        DelayList.toList) as _ \ IO);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
@@ -2067,10 +2067,10 @@ mod TestDelayList {
     @Test
     def mapWithIndexFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> toDelayList |>
+        discard unchecked_cast(((1 :: 2 :: 3 :: Nil) |> toDelayList |>
         DelayList.mapWithIndex((_, x) -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); x } as _ \ {})) |>
         DelayList.mapWithIndex((_, x) -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); x } as _ \ {})) |>
-        DelayList.toList);
+        DelayList.toList) as _ \ IO);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
@@ -2302,30 +2302,30 @@ mod TestDelayList {
     @Test
     def takeWhileFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> toDelayList |>
+        discard unchecked_cast(((1 :: 2 :: 3 :: Nil) |> toDelayList |>
         DelayList.takeWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 4 } as _ \ {})) |>
         DelayList.takeWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 4 } as _ \ {})) |>
-        DelayList.toList);
+        DelayList.toList) as _ \ IO);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @Test
     def takeWhileFusion03(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> toDelayList |>
+        discard unchecked_cast(((1 :: 2 :: 3 :: Nil) |> toDelayList |>
         DelayList.takeWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
         DelayList.takeWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 2 } as _ \ {})) |>
-        DelayList.toList);
+        DelayList.toList) as _ \ IO);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @Test
     def takeWhileFusion04(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> toDelayList |>
+        discard unchecked_cast(((1 :: 2 :: 3 :: Nil) |> toDelayList |>
         DelayList.takeWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
         DelayList.takeWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
-        DelayList.toList);
+        DelayList.toList) as _ \ IO);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: Nil), List.reverse(Ref.get(l)))
     }
 
@@ -2460,30 +2460,30 @@ mod TestDelayList {
     @Test
     def dropWhileFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> toDelayList |>
+        discard unchecked_cast(((1 :: 2 :: 3 :: Nil) |> toDelayList |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 4 } as _ \ {})) |>
-        DelayList.toList);
+        DelayList.toList) as _ \ IO);
         assertEq(expected = ("a" :: "a" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @Test
     def dropWhileFusion03(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> toDelayList |>
+        discard unchecked_cast(((1 :: 2 :: 3 :: Nil) |> toDelayList |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 1 } as _ \ {})) |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
-        DelayList.toList);
+        DelayList.toList) as _ \ IO);
         assertEq(expected = ("a" :: "b" :: "b" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @Test
     def dropWhileFusion04(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> toDelayList |>
+        discard unchecked_cast(((1 :: 2 :: 3 :: Nil) |> toDelayList |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 2 } as _ \ {})) |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
-        DelayList.toList);
+        DelayList.toList) as _ \ IO);
         assertEq(expected = ("a" :: "a" :: "b" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
@@ -2679,10 +2679,10 @@ mod TestDelayList {
     @Test
     def filterMapFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> toDelayList |>
+        discard unchecked_cast(((1 :: 2 :: 3 :: Nil) |> toDelayList |>
         DelayList.filterMap(x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); Some(x) } as _ \ {})) |>
         DelayList.filterMap(x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); Some(x) } as _ \ {})) |>
-        DelayList.toList);
+        DelayList.toList) as _ \ IO);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
