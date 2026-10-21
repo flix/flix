@@ -339,7 +339,6 @@ object ConstraintSolver2 {
     *   - (redU): reduces the types in the constraint
     *   - (trivU): eliminates subeffect constraints that hold syntactically (see [[isTrivialSubEff]]): `Pure ⊑ φ` becomes `∅`
     *   - (pureU): turns a subeffect constraint with an empty upper bound into the equality it is: `φ ⊑ Pure` becomes `Pure ~ φ`
-    *   - (splitU): splits a subeffect constraint along the union on its left: `φ₁ ∪ φ₂ ⊑ ψ` becomes `φ₁ ⊑ ψ, φ₂ ⊑ ψ`
     *
     * The rules are applied in the listed order to each constraint:
     * applications are broken down exhaustively, and then the remaining
@@ -393,20 +392,11 @@ object ConstraintSolver2 {
           // (pureU): `φ ⊑ Pure` holds exactly when `φ ~ Pure`.
           progress.markProgress()
           TypeConstraint.Equality(r2, r1, prov) :: cs1 ::: cs2
+        } else if ((r1 eq eff1) && (r2 eq eff2) && cs1.isEmpty && cs2.isEmpty) {
+          // Performance: Reuse this, if possible.
+          constr :: Nil
         } else {
-          r1 match {
-            case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), _, _), _, _) =>
-              // (splitU): `φ₁ ∪ φ₂ ∪ .. ⊑ ψ` holds exactly when every `φᵢ ⊑ ψ` holds.
-              progress.markProgress()
-              val subs = unionMembers(r1).flatMap(m => if (isTrivialSubEff(m, r2)) Nil else TypeConstraint.SubEff(m, r2, prov) :: Nil)
-              subs ::: cs1 ::: cs2
-            case _ =>
-              // Performance: Reuse this, if possible.
-              if ((r1 eq eff1) && (r2 eq eff2) && cs1.isEmpty && cs2.isEmpty)
-                constr :: Nil
-              else
-                TypeConstraint.SubEff(r1, r2, prov) :: cs1 ::: cs2
-          }
+          TypeConstraint.SubEff(r1, r2, prov) :: cs1 ::: cs2
         }
       }
 
@@ -452,36 +442,14 @@ object ConstraintSolver2 {
   }
 
   /**
-    * Returns `true` if `eff1 ⊑ eff2` holds syntactically, i.e. without consulting the effect solver.
-    *
-    * This is the case when every member of the union `eff1` is trivially a subeffect of some member
-    * of the union `eff2` (see [[isTrivialAtomSubEff]]).
+    * Returns `true` if `eff1 ⊑ eff2` holds syntactically, i.e. without consulting the effect solver:
+    * `eff1` is `Pure`, `eff2` is `Univ`, or the two are the same effect.
     *
     * The check is sound but not complete: a subeffect constraint that holds, but not syntactically,
     * is left to the effect solver. The check never concludes that a constraint fails.
     */
-  private def isTrivialSubEff(eff1: Type, eff2: Type): Boolean = {
-    val members2 = unionMembers(eff2)
-    unionMembers(eff1).forall(m1 => members2.exists(m2 => isTrivialAtomSubEff(m1, m2)))
-  }
-
-  /**
-    * Returns `true` if `eff1 ⊑ eff2` holds syntactically for the non-union effects `eff1` and `eff2`:
-    * `eff1` is `Pure`, `eff2` is `Univ`, or the two are the same type.
-    */
-  private def isTrivialAtomSubEff(eff1: Type, eff2: Type): Boolean =
+  private def isTrivialSubEff(eff1: Type, eff2: Type): Boolean =
     (eff1 == Type.Pure) || (eff2 == Type.Univ) || (eff1 == eff2)
-
-  /**
-    * Returns the members of the (possibly nested) union `eff`.
-    *
-    * A type that is not a union is its own single member.
-    */
-  private def unionMembers(eff: Type): List[Type] = eff match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => unionMembers(tpe1) ::: unionMembers(tpe2)
-    case Type.Alias(_, _, tpe, _) => unionMembers(tpe)
-    case _ => eff :: Nil
-  }
 
   /**
     * Purifies empty regions in the constraint set.
