@@ -93,15 +93,15 @@ class TestHashType extends AnyFunSuite with TestUtils {
 
   test("alpha.05") {
     // Neither the name nor the identifier of a variable is hashed.
-    val sym1 = new Symbol.KindedTypeVarSym(1, VarText.SourceText("a"), Kind.Star, isSlack = false, scope, loc)
-    val sym2 = new Symbol.KindedTypeVarSym(7, VarText.SourceText("b"), Kind.Star, isSlack = false, scope, loc)
+    val sym1 = new Symbol.KindedTypeVarSym(1, VarText.SourceText("a"), Kind.Star, scope, loc)
+    val sym2 = new Symbol.KindedTypeVarSym(7, VarText.SourceText("b"), Kind.Star, scope, loc)
     assert(HashType.hashType(Type.Var(sym1, loc)) == HashType.hashType(Type.Var(sym2, loc)))
   }
 
   test("alpha.06") {
     // The kind of a variable is hashed, so two variables of different kinds are kept apart.
-    val sym1 = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, isSlack = false, scope, loc)
-    val sym2 = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Eff, isSlack = false, scope, loc)
+    val sym1 = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, scope, loc)
+    val sym2 = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Eff, scope, loc)
     assert(HashType.hashType(Type.Var(sym1, loc)) != HashType.hashType(Type.Var(sym2, loc)))
   }
 
@@ -256,7 +256,7 @@ class TestHashType extends AnyFunSuite with TestUtils {
 
   test("scheme.01") {
     // A quantified variable and a variable that is free.
-    val sym = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, isSlack = false, scope, loc)
+    val sym = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, scope, loc)
     val tpe = Type.Var(sym, loc)
     assert(HashType.hashScheme(Scheme(List(sym), Nil, Nil, tpe)) !=
       HashType.hashScheme(Scheme(Nil, Nil, Nil, tpe)))
@@ -264,8 +264,8 @@ class TestHashType extends AnyFunSuite with TestUtils {
 
   test("scheme.02") {
     // A quantifier that the scheme does not use does not affect the hash.
-    val sym1 = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, isSlack = false, scope, loc)
-    val sym2 = new Symbol.KindedTypeVarSym(2, VarText.Absent, Kind.Star, isSlack = false, scope, loc)
+    val sym1 = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, scope, loc)
+    val sym2 = new Symbol.KindedTypeVarSym(2, VarText.Absent, Kind.Star, scope, loc)
     val tpe = Type.Var(sym1, loc)
     assert(HashType.hashScheme(Scheme(List(sym1), Nil, Nil, tpe)) ==
       HashType.hashScheme(Scheme(List(sym1, sym2), Nil, Nil, tpe)))
@@ -273,8 +273,8 @@ class TestHashType extends AnyFunSuite with TestUtils {
 
   test("scheme.03") {
     // The order of the quantifiers is not hashed.
-    val sym1 = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, isSlack = false, scope, loc)
-    val sym2 = new Symbol.KindedTypeVarSym(2, VarText.Absent, Kind.Star, isSlack = false, scope, loc)
+    val sym1 = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, scope, loc)
+    val sym2 = new Symbol.KindedTypeVarSym(2, VarText.Absent, Kind.Star, scope, loc)
     val tpe = Type.mkTuple(List(Type.Var(sym1, loc), Type.Var(sym2, loc)), loc)
     assert(HashType.hashScheme(Scheme(List(sym1, sym2), Nil, Nil, tpe)) ==
       HashType.hashScheme(Scheme(List(sym2, sym1), Nil, Nil, tpe)))
@@ -283,7 +283,7 @@ class TestHashType extends AnyFunSuite with TestUtils {
   test("scheme.04") {
     // The order of the trait constraints is hashed: the hash is structural, so equal hashes mean
     // that two schemes are the same, whereas different hashes mean only that they may differ.
-    val sym = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, isSlack = false, scope, loc)
+    val sym = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, scope, loc)
     val tpe = Type.Var(sym, loc)
     val tconstr1 = TraitConstraint(TraitSymUse(new Symbol.TraitSym(Nil, "Eq", loc), loc), tpe, loc)
     val tconstr2 = TraitConstraint(TraitSymUse(new Symbol.TraitSym(Nil, "Order", loc), loc), tpe, loc)
@@ -293,7 +293,7 @@ class TestHashType extends AnyFunSuite with TestUtils {
 
   test("scheme.05") {
     // Which trait constraints a scheme has is hashed.
-    val sym = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, isSlack = false, scope, loc)
+    val sym = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, scope, loc)
     val tpe = Type.Var(sym, loc)
     val tconstr1 = TraitConstraint(TraitSymUse(new Symbol.TraitSym(Nil, "Eq", loc), loc), tpe, loc)
     val tconstr2 = TraitConstraint(TraitSymUse(new Symbol.TraitSym(Nil, "Order", loc), loc), tpe, loc)
@@ -304,8 +304,8 @@ class TestHashType extends AnyFunSuite with TestUtils {
   test("scheme.06") {
     // Two constraints on different variables are kept apart when the two schemes differ only in
     // which variable each constraint is on.
-    val sym1 = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, isSlack = false, scope, loc)
-    val sym2 = new Symbol.KindedTypeVarSym(2, VarText.Absent, Kind.Star, isSlack = false, scope, loc)
+    val sym1 = new Symbol.KindedTypeVarSym(1, VarText.Absent, Kind.Star, scope, loc)
+    val sym2 = new Symbol.KindedTypeVarSym(2, VarText.Absent, Kind.Star, scope, loc)
     val tpe1 = Type.Var(sym1, loc)
     val tpe2 = Type.Var(sym2, loc)
     val tpe = Type.mkTuple(List(tpe1, tpe2), loc)

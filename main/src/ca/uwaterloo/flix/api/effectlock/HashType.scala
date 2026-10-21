@@ -106,8 +106,8 @@ object HashType {
 
   private def visitType(tpe0: Type)(implicit lctx: LocalContext): Array[Byte] = tpe0 match {
     case Type.Var(sym, _) =>
-      // N.B.: Only the index and the kind of the variable are hashed. Its name, its identifier,
-      // and whether it is slack are not: none of them changes which type this is.
+      // N.B.: Only the index and the kind of the variable are hashed. Its name and its identifier
+      // are not: neither changes which type this is.
       node("Type.Var", hashInt(lctx.indexOf(sym)), visitKind(sym.kind))
 
     case Type.Cst(tc, loc) =>

@@ -396,7 +396,7 @@ class TestCaseSetUnification extends AnyFunSuite with TestUtils {
 
 
   private def mkTypeVarSym(name: String, enumSym: Symbol.RestrictableEnumSym): Symbol.KindedTypeVarSym = {
-    Symbol.freshKindedTypeVarSym(VarText.SourceText(name), Kind.CaseSet(enumSym), isSlack = false, loc)
+    Symbol.freshKindedTypeVarSym(VarText.SourceText(name), Kind.CaseSet(enumSym), loc)
   }
 
   private def assertUnifies(tpe1: Type, tpe2: Type, renv: RigidityEnv, enumSym: Symbol.RestrictableEnumSym): Unit = {
