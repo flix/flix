@@ -8,11 +8,13 @@
 package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.api.CompilerConstants
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolUnificationException, CofiniteIntSet, SveAlgorithm, SveMode}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra}
 import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.collection.TwoList
 
 import scala.collection.immutable.IntMap
 import scala.collection.mutable
@@ -56,6 +58,10 @@ object SetUnification {
 
     final case object VariableAssignment extends Phase
 
+    final case object RecursiveAssignment extends Phase
+
+    final case object BoundAssignment extends Phase
+
     final case object ReflexiveAndDuplicate extends Phase
 
     final case object SuccessiveVariableElimination extends Phase
@@ -96,6 +102,16 @@ object SetUnification {
       runWithState(state, runRule(variablePropagation), Phase.VariablePropagation)
       runWithState(state, runRule(trivial), Phase.Trivial)
       runWithState(state, runRule(variableAssignment), Phase.VariableAssignment)
+      runWithState(state, runRule(trivial), Phase.Trivial)
+      runWithState(state, recursiveAssignment, Phase.RecursiveAssignment)
+      runWithState(state, runRule(trivial), Phase.Trivial)
+      // Variable and recursive assignment may substitute a union into an equation `x ∩ g ~ empty`
+      // that came from a subeffect constraint. A second round of constant propagation splits such an
+      // equation into one small equation per member of the union, and bound assignment then solves
+      // each of them without SVE.
+      runWithState(state, runRule(constantPropagation), Phase.ConstantPropagation)
+      runWithState(state, runRule(trivial), Phase.Trivial)
+      runWithState(state, runRule(boundAssignment), Phase.BoundAssignment)
       runWithState(state, runRule(trivial), Phase.Trivial)
       runWithState(state, reflexiveAndDuplicate, Phase.ReflexiveAndDuplicate)
       runWithState(state, runRule(trivial), Phase.Trivial)
@@ -282,6 +298,7 @@ object SetUnification {
     *
     *   - `x ~ f` where [[SetFormula.isGround]] on `f` is true, becomes `({}, [x -> f])`
     *   - `f1 ∪ f2 ∪ .. ~ empty` becomes `({f1 ~ empty, f2 ~ empty, ..}, [])`
+    *   - `(f1 ∪ f2 ∪ ..) ∩ g ~ empty` becomes `({f1 ∩ g ~ empty, f2 ∩ g ~ empty, ..}, [])`
     *
     * The cases were determined by careful profiling.
     *
@@ -314,9 +331,43 @@ object SetUnification {
         val eqs = l.toList.map(Equation.mk(_, Empty, loc))
         Some((eqs, SetSubstitution.empty))
 
+      // (f1 ∪ f2 ∪ ..) ∩ g ~ empty
+      // ---
+      // {f1 ∩ g ~ empty, f2 ∩ g ~ empty, ..},
+      // []
+      case (Inter(l), Empty) =>
+        distributeUnionOverEmptyInter(l, loc)
+
+      // Symmetric Case.
+      case (Empty, Inter(l)) =>
+        distributeUnionOverEmptyInter(l, loc)
+
       case _ =>
         // Cannot do anything.
         None
+    }
+  }
+
+  /**
+    * Splits the equation `f1 ∩ f2 ∩ .. ~ empty`, whose members are `l`, along the first member
+    * that is a union: `(g1 ∪ g2 ∪ ..) ∩ h ~ empty` holds exactly when every `gi ∩ h ~ empty` holds,
+    * where `h` is the intersection of the remaining members.
+    *
+    * Returns [[None]] if no member is a union.
+    *
+    * The split keeps the equations produced by subeffect constraints small: `e1 ∪ e2 ∪ .. ⊑ t` is
+    * read as `(e1 ∪ e2 ∪ ..) ∩ ¬t ~ empty` and would otherwise collect the variables of every
+    * member in a single equation.
+    */
+  private def distributeUnionOverEmptyInter(l: TwoList[SetFormula], loc: SourceLocation): Option[(List[Equation], SetSubstitution)] = {
+    val members = l.toList
+    members.collectFirst { case u: Union => u } match {
+      case None => None
+      case Some(u) =>
+        // The intersection of the members other than `u`. There is at least one, since `l` has two or more members.
+        val h = members.filterNot(_ eq u).foldLeft(Univ: SetFormula)(mkInter)
+        val eqs = u.l.toList.map(g => Equation.mk(mkInter(g, h), Empty, loc))
+        Some((eqs, SetSubstitution.empty))
     }
   }
 
@@ -383,6 +434,156 @@ object SetUnification {
         // Cannot do anything.
         None
     }
+  }
+
+  /**
+    * Solves bounds on variables (e.g. `x ∩ ¬c ~ empty`, which is the inclusion `x ⊆ c`, and
+    * `c ∩ ¬x ~ empty`, which is the inclusion `c ⊆ x`).
+    *
+    * If no progress can be made, [[None]] is returned.
+    *
+    *   - `x ∩ g ~ empty` where `g` does not contain `x` becomes `({}, [x -> x ∩ ¬g])`
+    *   - `¬x ∩ g ~ empty` where `g` does not contain `x` becomes `({}, [x -> x ∪ g])`
+    *
+    * These are the substitutions that successive variable elimination computes for the equations:
+    * every solution of the first has `x ⊆ ¬g`, and `x ∩ ¬g` with `x` free ranges over exactly those
+    * sets; every solution of the second has `g ⊆ x`, and `x ∪ g` with `x` free ranges over exactly
+    * those sets.
+    *
+    * This also applies to the symmetric equations.
+    */
+  private def boundAssignment(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+    val Equation(f1, f2, _, _) = eq
+    (f1, f2) match {
+      case (Inter(l), Empty) => boundAssignmentOf(l)
+      case (Empty, Inter(l)) => boundAssignmentOf(l)
+      case _ => None
+    }
+  }
+
+  /**
+    * Returns the substitution `[x -> x ∩ ¬g]` for the equation `x ∩ g ~ empty` whose members are `l`,
+    * where `x` is the first member that is a variable not occurring in the other members `g`.
+    *
+    * Returns [[None]] if there is no such member.
+    */
+  private def boundAssignmentOf(l: TwoList[SetFormula]): Option[(List[Equation], SetSubstitution)] = {
+    val members = l.toList
+    members.collectFirst {
+      // x ∩ g ~ empty, where g does not contain x.
+      case v: Var if !members.exists(m => !(m eq v) && m.contains(v)) =>
+        val g = members.filterNot(_ eq v).foldLeft(Univ: SetFormula)(mkInter)
+        (Nil, SetSubstitution.singleton(v.x, mkInter(v, mkCompl(g))))
+
+      // ¬x ∩ g ~ empty, where g does not contain x.
+      case c@Compl(v: Var) if !members.exists(m => !(m eq c) && m.contains(v)) =>
+        val g = members.filterNot(_ eq c).foldLeft(Univ: SetFormula)(mkInter)
+        (Nil, SetSubstitution.singleton(v.x, mkUnion2(v, g)))
+    }
+  }
+
+  /**
+    * Solves equations in which a variable occurs on both sides, as the variable itself on one side
+    * and as a member of a union or an intersection on the other (e.g. `x ~ x ∪ f`, which is the
+    * effect of a handler whose cases call the continuation).
+    *
+    * If no progress can be made, [[None]] is returned.
+    *
+    *   - `x ~ x ∪ f1 ∪ .. ∪ fn` where no `fi` contains `x` becomes `({}, [x -> x ∪ f1 ∪ .. ∪ fn])`
+    *   - `x ~ x ∩ f1 ∩ .. ∩ fn` where no `fi` contains `x` becomes `({}, [x -> x ∩ f1 ∩ .. ∩ fn])`
+    *
+    * These are the substitutions that successive variable elimination computes for the equations:
+    * `x ~ x ∪ f` holds exactly when `f ⊆ x`, and `x ∪ f` with `x` free ranges over exactly those
+    * sets (dually for intersection). Nested unions (intersections) are flattened, and `x` may occur
+    * more than once among the members.
+    *
+    * The rule runs as a single pass over the equations. A variable that already occurs in the range
+    * of a substitution made by the pass is never bound by it: `x ~ x ∪ y` followed by `y ~ y ∪ x`
+    * would otherwise give `[x -> x ∪ y ∪ x, y -> y ∪ x]`, a cyclic substitution whose repeated
+    * application grows formulas exponentially. Such equations are left for successive variable
+    * elimination.
+    *
+    * This also applies to the symmetric equations.
+    */
+  private def recursiveAssignment(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
+    var subst = SetSubstitution.empty
+    // The variables that occur in the ranges of `subst`, including the bound variables themselves.
+    var rangeVars = Set.empty[Int]
+    var rest: List[Equation] = Nil
+    var changed = false
+
+    for (eq0 <- eqs) {
+      val eq = subst.apply(eq0)
+      recursiveAssignmentOf(eq) match {
+        case RecursiveAssignment.Trivial =>
+          changed = true
+
+        case RecursiveAssignment.Bind(x, f) if !rangeVars.contains(x) =>
+          // Since `x` occurs in no range of `subst`, the composition leaves the existing ranges unchanged.
+          subst = SetSubstitution.singleton(x, f) @@ subst
+          rangeVars = rangeVars ++ f.varsOf
+          changed = true
+
+        case _ =>
+          rest = eq :: rest
+      }
+    }
+
+    if (changed) Some((rest.reverse.map(subst.apply), subst)) else None
+  }
+
+  /** The outcome of [[recursiveAssignmentOf]] on one equation. */
+  private sealed trait RecursiveAssignment
+
+  private object RecursiveAssignment {
+    /** The rule does not apply. */
+    case object None extends RecursiveAssignment
+
+    /** The equation holds trivially (e.g. `x ~ x ∪ x`). */
+    case object Trivial extends RecursiveAssignment
+
+    /** The equation is solved by `[x -> f]`. */
+    case class Bind(x: Int, f: SetFormula) extends RecursiveAssignment
+  }
+
+  /** Matches `eq` against the shapes solved by [[recursiveAssignment]]. */
+  private def recursiveAssignmentOf(eq: Equation): RecursiveAssignment = {
+    val Equation(f1, f2, _, _) = eq
+    (f1, f2) match {
+      case (v@Var(_), Union(l)) => recursiveAssignmentOf(v, flattenUnions(l.toList), Empty, mkUnion2)
+      case (Union(l), v@Var(_)) => recursiveAssignmentOf(v, flattenUnions(l.toList), Empty, mkUnion2)
+      case (v@Var(_), Inter(l)) => recursiveAssignmentOf(v, flattenInters(l.toList), Univ, mkInter)
+      case (Inter(l), v@Var(_)) => recursiveAssignmentOf(v, flattenInters(l.toList), Univ, mkInter)
+      case _ => RecursiveAssignment.None
+    }
+  }
+
+  /**
+    * Matches `v ~ v ⊙ m1 ⊙ .. ⊙ mn` for the members `members` of the union or intersection (`⊙`) with
+    * unit `unit` and binary constructor `mk`. The rule applies if `v` is a member and no other
+    * member contains `v`.
+    */
+  private def recursiveAssignmentOf(v: Var, members: List[SetFormula], unit: SetFormula, mk: (SetFormula, SetFormula) => SetFormula): RecursiveAssignment = {
+    val (self, others) = members.partition(_ == v)
+    if (self.isEmpty || others.exists(_.contains(v))) {
+      RecursiveAssignment.None
+    } else if (others.isEmpty) {
+      RecursiveAssignment.Trivial
+    } else {
+      RecursiveAssignment.Bind(v.x, mk(v, others.foldLeft(unit)(mk)))
+    }
+  }
+
+  /** Returns `fs` with nested unions flattened into their members. */
+  private def flattenUnions(fs: List[SetFormula]): List[SetFormula] = fs.flatMap {
+    case Union(l) => flattenUnions(l.toList)
+    case f => f :: Nil
+  }
+
+  /** Returns `fs` with nested intersections flattened into their members. */
+  private def flattenInters(fs: List[SetFormula]): List[SetFormula] = fs.flatMap {
+    case Inter(l) => flattenInters(l.toList)
+    case f => f :: Nil
   }
 
   /**
