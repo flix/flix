@@ -28,33 +28,33 @@ object ConstraintSolverInterface {
   /**
     * Resolves constraints in the given definition using the given inference result.
     *
-    * If `open` is `true` the inferred effect may be a subeffect of the declared effect (sub-effecting);
-    * otherwise the two must be equal.
+    * With `bound` as [[EffectBound.Upper]] the inferred effect may be a subeffect of the declared effect
+    * (sub-effecting); with [[EffectBound.Exact]] the two must be equal.
     */
-  def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root, open: Boolean)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = defn match {
+  def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root, bound: EffectBound)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = defn match {
     case KindedAst.Def(_, spec, _, _) =>
-      visitSpec(spec, defn.loc, infResult, renv0, tconstrs0, econstrs0, tenv0, eqEnv0, root, open)
+      visitSpec(spec, defn.loc, infResult, renv0, tconstrs0, econstrs0, tenv0, eqEnv0, root, bound)
   }
 
   /**
     * Resolves constraints in the given signature using the given inference result.
     *
-    * If `open` is `true` the inferred effect may be a subeffect of the declared effect (sub-effecting);
-    * otherwise the two must be equal.
+    * With `bound` as [[EffectBound.Upper]] the inferred effect may be a subeffect of the declared effect
+    * (sub-effecting); with [[EffectBound.Exact]] the two must be equal.
     */
-  def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root, open: Boolean)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = sig match {
+  def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root, bound: EffectBound)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = sig match {
     case KindedAst.Sig(_, _, None, _) => (SubstitutionTree.empty, Nil)
     case KindedAst.Sig(_, spec, Some(_), _) =>
-      visitSpec(spec, sig.loc, infResult, renv0, tconstrs0, Nil, tenv0, eqEnv0, root, open)
+      visitSpec(spec, sig.loc, infResult, renv0, tconstrs0, Nil, tenv0, eqEnv0, root, bound)
   }
 
   /**
     * Resolves constraints in the given spec using the given inference result.
     *
-    * If `open` is `true` the inferred effect may be a subeffect of the declared effect (sub-effecting);
-    * otherwise the two must be equal.
+    * With `bound` as [[EffectBound.Upper]] the inferred effect may be a subeffect of the declared effect
+    * (sub-effecting); with [[EffectBound.Exact]] the two must be equal.
     */
-  def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root, open: Boolean)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = spec match {
+  def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root, bound: EffectBound)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = spec match {
     case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
@@ -84,13 +84,13 @@ object ConstraintSolverInterface {
       // We add extra constraints for the declared type and effect
       val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
       val declaredEffConstr = eff match {
-        case Some(e) => mkDeclaredEffConstr(e, infEff, loc, open)
+        case Some(e) => mkDeclaredEffConstr(e, infEff, loc, bound)
         case None => {
           // No effect annotation. The function is implicitly true.
           // We use the source location immediately to the right of the return type
           val tpos = moveRight(tpe.loc.end)
           val loc1 = SourceLocation(true, tpe.loc.source, tpe.loc.end, tpos)
-          mkDeclaredEffConstr(Type.Pure, infEff, loc1, open)
+          mkDeclaredEffConstr(Type.Pure, infEff, loc1, bound)
         }
       }
       val constrs0 = declaredTpeConstr :: declaredEffConstr :: infConstrs
@@ -119,7 +119,7 @@ object ConstraintSolverInterface {
             case Build.Development =>
               // Otherwise we have special logic for the [[Debug]] effect: We solve a new constraint system where [[Debug]] is allowed by the effect signature.
               val declaredEffWithDebug = Type.mkUnion(eff.getOrElse(Type.Pure), Type.Debug, loc)
-              val declaredEffConstrWithDebug = mkDeclaredEffConstr(declaredEffWithDebug, infEff, loc, open)
+              val declaredEffConstrWithDebug = mkDeclaredEffConstr(declaredEffWithDebug, infEff, loc, bound)
               val constrs0 = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
               val constrsWithDebug = constrs0.map(initialTree.apply)
               val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
@@ -137,17 +137,16 @@ object ConstraintSolverInterface {
   }
 
   /**
-    * Returns the constraint relating the declared effect `declared` to the inferred effect `inferred`.
-    *
-    * With sub-effecting (`open`) the inferred effect must be a subeffect of the declared effect;
-    * otherwise the two must be equal.
+    * Returns the constraint relating the declared effect `declared` to the inferred effect `inferred`
+    * according to `bound`: with [[EffectBound.Upper]] the inferred effect must be a subeffect of the
+    * declared effect; with [[EffectBound.Exact]] the two must be equal.
     */
-  private def mkDeclaredEffConstr(declared: Type, inferred: Type, loc: SourceLocation, open: Boolean): TypeConstraint = {
+  private def mkDeclaredEffConstr(declared: Type, inferred: Type, loc: SourceLocation, bound: EffectBound): TypeConstraint = {
     val prov = Provenance.ExpectEffect(expected = declared, actual = inferred, loc)
-    if (open)
-      TypeConstraint.SubEff(inferred, declared, prov)
-    else
-      TypeConstraint.Equality(declared, inferred, prov)
+    bound match {
+      case EffectBound.Exact => TypeConstraint.Equality(declared, inferred, prov)
+      case EffectBound.Upper => TypeConstraint.SubEff(inferred, declared, prov)
+    }
   }
 
   /**
