@@ -177,15 +177,15 @@ object ConstraintGen {
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions.
-        val shouldSubeffect = {
+        val bound = {
           val enabled = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
           val useless = exp match {
             case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
             case _ => false
           }
-          enabled && allowSubeffecting && !useless
+          if (enabled && allowSubeffecting && !useless) EffectBound.Upper else EffectBound.Exact
         }
-        val eff = if (shouldSubeffect) Type.mkUnion(eff0, Type.freshEffSlackVar(loc), loc) else eff0
+        val eff = mkBoundedEff(bound, eff0, loc)
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
         (resTpe, resEff)
@@ -479,15 +479,15 @@ object ConstraintGen {
         val (tpe1, eff1) = visitExp(exp1)
         fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions (which include local defs).
-        val shouldSubeffect = {
+        val bound = {
           val enabled = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
           val useless = exp1 match {
             case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
             case _ => false
           }
-          enabled && !useless
+          if (enabled && !useless) EffectBound.Upper else EffectBound.Exact
         }
-        val defEff = if (shouldSubeffect) Type.mkUnion(eff1, Type.freshEffSlackVar(loc), loc) else eff1
+        val defEff = mkBoundedEff(bound, eff1, loc)
         val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)
         val (tpe2, eff2) = visitExp(exp2)
@@ -1490,6 +1490,21 @@ object ConstraintGen {
   }
 
   /** Returns a fresh variable with a synthetic location. */
+  /**
+    * Returns the effect of a lambda or local def whose body has the effect `eff`, according to `bound`.
+    *
+    * With [[EffectBound.Exact]] the function has exactly the effect of its body. With [[EffectBound.Upper]]
+    * the function has a fresh effect variable of which the effect of the body must be a subeffect, so the
+    * function may be given a larger effect than its body.
+    */
+  private def mkBoundedEff(bound: EffectBound, eff: Type, loc: SourceLocation)(implicit c: TypeContext, scope: RegionScope, flix: Flix): Type = bound match {
+    case EffectBound.Exact => eff
+    case EffectBound.Upper =>
+      val evar = freshVar(Kind.Eff, loc)
+      c.subEff(eff, evar, loc)
+      evar
+  }
+
   private def freshVar(k: Kind, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Type.Var =
     Type.freshVar(k, loc.asSynthetic)
 }

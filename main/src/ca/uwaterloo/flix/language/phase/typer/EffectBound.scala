@@ -7,16 +7,17 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 /**
-  * How the declared effect of a def or signature bounds its inferred effect.
+  * How the effect of a function bounds the effect of its body: the declared effect of a def or
+  * signature, or the effect in the arrow type of a lambda or local def.
   */
 sealed trait EffectBound
 
 object EffectBound {
 
-  /** The inferred effect must equal the declared effect. */
+  /** The effect of the body must equal the effect of the function. */
   case object Exact extends EffectBound
 
-  /** The inferred effect may be a subeffect of the declared effect (sub-effecting). */
+  /** The effect of the body may be a subeffect of the effect of the function (sub-effecting). */
   case object Upper extends EffectBound
 
 }
