@@ -390,16 +390,13 @@ object ConstraintSolver2 {
           progress.markProgress()
           cs1 ::: cs2
         } else if (r2 == Type.Pure) {
-          // (pureU): `φ ⊑ Pure` holds exactly when `φ ~ Pure`. The equality is solved by the rules for
-          // equalities, which split a union against `Pure` and bind an atomic variable directly, and it
-          // keeps the provenance, so a conflict is reported as before.
+          // (pureU): `φ ⊑ Pure` holds exactly when `φ ~ Pure`.
           progress.markProgress()
           TypeConstraint.Equality(r2, r1, prov) :: cs1 ::: cs2
         } else {
           r1 match {
             case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), _, _), _, _) =>
-              // (splitU): `φ₁ ∪ φ₂ ∪ .. ⊑ ψ` holds exactly when every `φᵢ ⊑ ψ` holds. The members are
-              // smaller, are often atomic, and each may be discharged on its own.
+              // (splitU): `φ₁ ∪ φ₂ ∪ .. ⊑ ψ` holds exactly when every `φᵢ ⊑ ψ` holds.
               progress.markProgress()
               val subs = unionMembers(r1).flatMap(m => if (isTrivialSubEff(m, r2)) Nil else TypeConstraint.SubEff(m, r2, prov) :: Nil)
               subs ::: cs1 ::: cs2
@@ -457,22 +454,23 @@ object ConstraintSolver2 {
   /**
     * Returns `true` if `eff1 ⊑ eff2` holds syntactically, i.e. without consulting the effect solver.
     *
-    * This is the case when:
-    *   - `eff1` is `Pure`, or
-    *   - `eff2` is `Univ`, or
-    *   - every member of the union `eff1` is `Pure` or is also a member of the union `eff2`.
+    * This is the case when every member of the union `eff1` is trivially a subeffect of some member
+    * of the union `eff2` (see [[isTrivialAtomSubEff]]).
     *
     * The check is sound but not complete: a subeffect constraint that holds, but not syntactically,
     * is left to the effect solver. The check never concludes that a constraint fails.
     */
   private def isTrivialSubEff(eff1: Type, eff2: Type): Boolean = {
-    if ((eff1 == Type.Pure) || (eff2 == Type.Univ) || (eff1 eq eff2) || (eff1 == eff2)) {
-      true
-    } else {
-      val members2 = unionMembers(eff2)
-      unionMembers(eff1).forall(m => (m == Type.Pure) || members2.contains(m))
-    }
+    val members2 = unionMembers(eff2)
+    unionMembers(eff1).forall(m1 => members2.exists(m2 => isTrivialAtomSubEff(m1, m2)))
   }
+
+  /**
+    * Returns `true` if `eff1 ⊑ eff2` holds syntactically for the non-union effects `eff1` and `eff2`:
+    * `eff1` is `Pure`, `eff2` is `Univ`, or the two are the same type.
+    */
+  private def isTrivialAtomSubEff(eff1: Type, eff2: Type): Boolean =
+    (eff1 == Type.Pure) || (eff2 == Type.Univ) || (eff1 == eff2)
 
   /**
     * Returns the members of the (possibly nested) union `eff`.
