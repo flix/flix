@@ -13,7 +13,7 @@ import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.Phase
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetUnification}
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
-import ca.uwaterloo.flix.util.{FileOps, Options, Subeffecting}
+import ca.uwaterloo.flix.util.{FileOps, Options}
 
 import java.nio.file.Paths
 import scala.collection.mutable
@@ -27,9 +27,7 @@ object ZhegalkinPerf {
 
   private val DefaultN: Int = 2
 
-  private val FullSubeffecting: Set[Subeffecting] = Set(Subeffecting.Lambdas)
-
-  private val DefaultOpts: Options = Options.Default.copy(xsubeffecting = FullSubeffecting)
+  private val DefaultOpts: Options = Options.Default.copy(xlambdasubeffecting = true)
 
   private case class Config(
                              rewriteRules: Boolean = false,
@@ -214,7 +212,7 @@ object ZhegalkinPerf {
   private def rq3(n: Int): Unit = {
     println(RQ3)
 
-    val DefaultNoCaches = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, smartSubeffecting = false, opts = Options.Default.copy(xsubeffecting = FullSubeffecting))
+    val DefaultNoCaches = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, smartSubeffecting = false, opts = Options.Default.copy(xlambdasubeffecting = true))
 
     val m1 = runConfig(DefaultNoCaches, n).mdn
     val m2 = runConfig(DefaultNoCaches.copy(cacheInterCst = true), n).mdn
@@ -236,10 +234,10 @@ object ZhegalkinPerf {
   private def rq4(n: Int): Unit = {
     println(RQ4)
 
-    val DefaultNoSubeffecting = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = true, cacheXor = false, cacheSVE = false, opts = Options.Default.copy(xsubeffecting = Set.empty))
+    val DefaultNoSubeffecting = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = true, cacheXor = false, cacheSVE = false, opts = Options.Default.copy(xlambdasubeffecting = false))
 
-    val baseline = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = false, opts = Options.Default.copy(xsubeffecting = FullSubeffecting)), n).mdn
-    val solveAndRetry = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = true, opts = Options.Default.copy(xsubeffecting = FullSubeffecting)), n).mdn
+    val baseline = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = false, opts = Options.Default.copy(xlambdasubeffecting = true)), n).mdn
+    val solveAndRetry = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = true, opts = Options.Default.copy(xlambdasubeffecting = true)), n).mdn
     val optimal = runConfig(DefaultNoSubeffecting, n).mdn
 
     println("-" * 80)
