@@ -11,7 +11,6 @@ import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.unification.PreEffUnification.PreSolveResult
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
 import ca.uwaterloo.flix.language.phase.unification.shared.CofiniteIntSet
@@ -26,8 +25,8 @@ object EffUnification3 {
   val Algebra: ZhegalkinAlgebra[CofiniteIntSet] = new ZhegalkinAlgebra[CofiniteIntSet](CofiniteIntSet.LatticeOps)
 
   /**
-    * Controls whether to enable solve-and-retry for subeffecting: the syntactic pre-solver and the
-    * strict reading of subeffect constraints are tried before the lax reading.
+    * Controls whether to enable solve-and-retry for subeffecting: the strict reading of subeffect
+    * constraints is tried before the lax reading.
     */
   var EnableSmartSubeffecting: Boolean = true
 
@@ -79,20 +78,6 @@ object EffUnification3 {
     // Add to implicit context.
     implicit val scopeImplicit: RegionScope = scope
     implicit val renvImplicit: RigidityEnv = renv
-
-    //
-    // Phase 0: Try to solve the system syntactically if all equations are atomic.
-    //
-    // The pre-solver does not handle subeffect constraints, so it is skipped if there are any.
-    //
-    if (EnableSmartSubeffecting && subs.isEmpty) {
-      PreEffUnification.preSolve(eqs) match {
-        case PreSolveResult.Solved(subst) =>
-          // The whole system was atomic and exactly solvable.
-          return Result.Ok(subst)
-        case PreSolveResult.Opaque => () // Fall through to full solving.
-      }
-    }
 
     // Choose a unique number for each atom. Use the original constraint order so the effect
     // argument representative stored in the bimap is independent of the chaos monkey.
