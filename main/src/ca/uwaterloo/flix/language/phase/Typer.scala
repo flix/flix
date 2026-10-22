@@ -182,9 +182,7 @@ object Typer {
 
     changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValuesWithPriority(_, sortBy) {
       case defn => flix.profile(defn.sym, defn.loc) {
-        // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
-        val bound = effectBound(Subeffecting.ModDefs)
-        visitDef(defn, tconstrs0 = Nil, econstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, bound)
+        visitDef(defn, tconstrs0 = Nil, econstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, EffectBound.Exact)
       }
     })
   }
@@ -250,11 +248,8 @@ object Typer {
         val renv = context.getRigidityEnv
         val constrs = context.getTypeConstraints
 
-        // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs. Note: We consider signatures implemented in traits to be module-level.
-        val bound = effectBound(Subeffecting.ModDefs)
-
         val infResult = InfResult(constrs, tpe, eff0, renv)
-        val (subst, constraintErrors) = ConstraintSolverInterface.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root, bound)
+        val (subst, constraintErrors) = ConstraintSolverInterface.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
         constraintErrors.foreach(sctx.errors.add)
         TypeReconstruction.visitSig(sig, subst)
     }
