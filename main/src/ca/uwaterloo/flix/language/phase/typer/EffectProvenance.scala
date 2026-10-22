@@ -296,15 +296,10 @@ object EffectProvenance {
         case TypeConstraint.Provenance.ExpectEffect(effs, _, _) =>
           val l = if (effs.loc.isReal) effs.loc else prov.loc
           Some((SinkNode, IntermediateNode, l))
-        case TypeConstraint.Provenance.ExpectSubEff(effs, _, _) =>
-          if (isFlexibleVar(effs)) {
-            // The expected effect is the effect variable of a lambda or local def: the effect of the
-            // body flows on through it to wherever the function is used, not into a declared effect.
-            Some((IntermediateNode, IntermediateNode, prov.loc))
-          } else {
-            val l = if (effs.loc.isReal) effs.loc else prov.loc
-            Some((SinkNode, IntermediateNode, l))
-          }
+        case TypeConstraint.Provenance.ExpectSubEff(_, _, _) =>
+          // The expected effect is the effect variable of a lambda, local def, checked effect cast or
+          // hole: the effect flows on through it to wherever the expression is used.
+          Some((IntermediateNode, IntermediateNode, prov.loc))
         case TypeConstraint.Provenance.Source(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
         case TypeConstraint.Provenance.Match(_, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
         case TypeConstraint.Provenance.PolyEffEq(_, _, _, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
@@ -333,25 +328,13 @@ object EffectProvenance {
         addEdges(tpe1, tpe2, prov)
 
       case TypeConstraint.SubEff(eff1, eff2, prov) =>
-        // The smaller effect flows into the larger effect; the provenance says whether the larger
-        // effect is a declared effect or the effect variable of a lambda.
+        // The smaller effect flows into the larger effect.
         addEdges(eff2, eff1, prov)
 
       case _ => ()
     }
     if (flow.isEmpty) return None
     Some(Graph(v.toList, flow))
-  }
-
-  /**
-    * Returns `true` if `tpe` is a flexible type variable.
-    */
-  private def isFlexibleVar(tpe: Type)(implicit scope: RegionScope, renv: RigidityEnv): Boolean = tpe match {
-    case Type.Var(sym, _) => renv.get(sym) match {
-      case Rigidity.Flexible => true
-      case Rigidity.Rigid => false
-    }
-    case _ => false
   }
 
   /**
