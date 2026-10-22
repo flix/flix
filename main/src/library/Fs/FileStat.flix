@@ -223,17 +223,17 @@ pub mod Fs.FileStat {
     pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - FileStat) + FileStat =
         let c = p -> Fs.FsLayer.chroot(chrootDir, p);
         run { f() } with handler FileStat {
-            def exists(filename, k)           = k(Result.flatMap(p -> FileStat.exists(p), c(filename)))
-            def isDirectory(filename, k)      = k(Result.flatMap(p -> FileStat.isDirectory(p), c(filename)))
-            def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileStat.isRegularFile(p), c(filename)))
-            def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileStat.isSymbolicLink(p), c(filename)))
-            def isReadable(filename, k)       = k(Result.flatMap(p -> FileStat.isReadable(p), c(filename)))
-            def isWritable(filename, k)       = k(Result.flatMap(p -> FileStat.isWritable(p), c(filename)))
-            def isExecutable(filename, k)     = k(Result.flatMap(p -> FileStat.isExecutable(p), c(filename)))
-            def accessTime(filename, k)       = k(Result.flatMap(p -> FileStat.accessTime(p), c(filename)))
-            def creationTime(filename, k)     = k(Result.flatMap(p -> FileStat.creationTime(p), c(filename)))
-            def modificationTime(filename, k) = k(Result.flatMap(p -> FileStat.modificationTime(p), c(filename)))
-            def size(filename, k)             = k(Result.flatMap(p -> FileStat.size(p), c(filename)))
+            def exists(filename, k)           = k(Result.flatMap(FileStat.exists, c(filename)))
+            def isDirectory(filename, k)      = k(Result.flatMap(FileStat.isDirectory, c(filename)))
+            def isRegularFile(filename, k)    = k(Result.flatMap(FileStat.isRegularFile, c(filename)))
+            def isSymbolicLink(filename, k)   = k(Result.flatMap(FileStat.isSymbolicLink, c(filename)))
+            def isReadable(filename, k)       = k(Result.flatMap(FileStat.isReadable, c(filename)))
+            def isWritable(filename, k)       = k(Result.flatMap(FileStat.isWritable, c(filename)))
+            def isExecutable(filename, k)     = k(Result.flatMap(FileStat.isExecutable, c(filename)))
+            def accessTime(filename, k)       = k(Result.flatMap(FileStat.accessTime, c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(FileStat.creationTime, c(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(FileStat.modificationTime, c(filename)))
+            def size(filename, k)             = k(Result.flatMap(FileStat.size, c(filename)))
         }
 
     ///
@@ -244,17 +244,17 @@ pub mod Fs.FileStat {
     pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileStat) + FileStat =
         let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
         run { f() } with handler FileStat {
-            def exists(filename, k)           = k(Result.flatMap(p -> FileStat.exists(p), c(filename)))
-            def isDirectory(filename, k)      = k(Result.flatMap(p -> FileStat.isDirectory(p), c(filename)))
-            def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileStat.isRegularFile(p), c(filename)))
-            def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileStat.isSymbolicLink(p), c(filename)))
-            def isReadable(filename, k)       = k(Result.flatMap(p -> FileStat.isReadable(p), c(filename)))
-            def isWritable(filename, k)       = k(Result.flatMap(p -> FileStat.isWritable(p), c(filename)))
-            def isExecutable(filename, k)     = k(Result.flatMap(p -> FileStat.isExecutable(p), c(filename)))
-            def accessTime(filename, k)       = k(Result.flatMap(p -> FileStat.accessTime(p), c(filename)))
-            def creationTime(filename, k)     = k(Result.flatMap(p -> FileStat.creationTime(p), c(filename)))
-            def modificationTime(filename, k) = k(Result.flatMap(p -> FileStat.modificationTime(p), c(filename)))
-            def size(filename, k)             = k(Result.flatMap(p -> FileStat.size(p), c(filename)))
+            def exists(filename, k)           = k(Result.flatMap(FileStat.exists, c(filename)))
+            def isDirectory(filename, k)      = k(Result.flatMap(FileStat.isDirectory, c(filename)))
+            def isRegularFile(filename, k)    = k(Result.flatMap(FileStat.isRegularFile, c(filename)))
+            def isSymbolicLink(filename, k)   = k(Result.flatMap(FileStat.isSymbolicLink, c(filename)))
+            def isReadable(filename, k)       = k(Result.flatMap(FileStat.isReadable, c(filename)))
+            def isWritable(filename, k)       = k(Result.flatMap(FileStat.isWritable, c(filename)))
+            def isExecutable(filename, k)     = k(Result.flatMap(FileStat.isExecutable, c(filename)))
+            def accessTime(filename, k)       = k(Result.flatMap(FileStat.accessTime, c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(FileStat.creationTime, c(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(FileStat.modificationTime, c(filename)))
+            def size(filename, k)             = k(Result.flatMap(FileStat.size, c(filename)))
         }
 
     ///
@@ -265,17 +265,17 @@ pub mod Fs.FileStat {
     pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileStat) + FileStat =
         let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
         run { f() } with handler FileStat {
-            def exists(filename, k)           = k(Result.flatMap(p -> FileStat.exists(p), c(filename)))
-            def isDirectory(filename, k)      = k(Result.flatMap(p -> FileStat.isDirectory(p), c(filename)))
-            def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileStat.isRegularFile(p), c(filename)))
-            def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileStat.isSymbolicLink(p), c(filename)))
-            def isReadable(filename, k)       = k(Result.flatMap(p -> FileStat.isReadable(p), c(filename)))
-            def isWritable(filename, k)       = k(Result.flatMap(p -> FileStat.isWritable(p), c(filename)))
-            def isExecutable(filename, k)     = k(Result.flatMap(p -> FileStat.isExecutable(p), c(filename)))
-            def accessTime(filename, k)       = k(Result.flatMap(p -> FileStat.accessTime(p), c(filename)))
-            def creationTime(filename, k)     = k(Result.flatMap(p -> FileStat.creationTime(p), c(filename)))
-            def modificationTime(filename, k) = k(Result.flatMap(p -> FileStat.modificationTime(p), c(filename)))
-            def size(filename, k)             = k(Result.flatMap(p -> FileStat.size(p), c(filename)))
+            def exists(filename, k)           = k(Result.flatMap(FileStat.exists, c(filename)))
+            def isDirectory(filename, k)      = k(Result.flatMap(FileStat.isDirectory, c(filename)))
+            def isRegularFile(filename, k)    = k(Result.flatMap(FileStat.isRegularFile, c(filename)))
+            def isSymbolicLink(filename, k)   = k(Result.flatMap(FileStat.isSymbolicLink, c(filename)))
+            def isReadable(filename, k)       = k(Result.flatMap(FileStat.isReadable, c(filename)))
+            def isWritable(filename, k)       = k(Result.flatMap(FileStat.isWritable, c(filename)))
+            def isExecutable(filename, k)     = k(Result.flatMap(FileStat.isExecutable, c(filename)))
+            def accessTime(filename, k)       = k(Result.flatMap(FileStat.accessTime, c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(FileStat.creationTime, c(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(FileStat.modificationTime, c(filename)))
+            def size(filename, k)             = k(Result.flatMap(FileStat.size, c(filename)))
         }
 
     ///
@@ -286,17 +286,17 @@ pub mod Fs.FileStat {
     pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileStat) + FileStat =
         let c = p -> Fs.FsLayer.allowGlob(patterns, p);
         run { f() } with handler FileStat {
-            def exists(filename, k)           = k(Result.flatMap(p -> FileStat.exists(p), c(filename)))
-            def isDirectory(filename, k)      = k(Result.flatMap(p -> FileStat.isDirectory(p), c(filename)))
-            def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileStat.isRegularFile(p), c(filename)))
-            def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileStat.isSymbolicLink(p), c(filename)))
-            def isReadable(filename, k)       = k(Result.flatMap(p -> FileStat.isReadable(p), c(filename)))
-            def isWritable(filename, k)       = k(Result.flatMap(p -> FileStat.isWritable(p), c(filename)))
-            def isExecutable(filename, k)     = k(Result.flatMap(p -> FileStat.isExecutable(p), c(filename)))
-            def accessTime(filename, k)       = k(Result.flatMap(p -> FileStat.accessTime(p), c(filename)))
-            def creationTime(filename, k)     = k(Result.flatMap(p -> FileStat.creationTime(p), c(filename)))
-            def modificationTime(filename, k) = k(Result.flatMap(p -> FileStat.modificationTime(p), c(filename)))
-            def size(filename, k)             = k(Result.flatMap(p -> FileStat.size(p), c(filename)))
+            def exists(filename, k)           = k(Result.flatMap(FileStat.exists, c(filename)))
+            def isDirectory(filename, k)      = k(Result.flatMap(FileStat.isDirectory, c(filename)))
+            def isRegularFile(filename, k)    = k(Result.flatMap(FileStat.isRegularFile, c(filename)))
+            def isSymbolicLink(filename, k)   = k(Result.flatMap(FileStat.isSymbolicLink, c(filename)))
+            def isReadable(filename, k)       = k(Result.flatMap(FileStat.isReadable, c(filename)))
+            def isWritable(filename, k)       = k(Result.flatMap(FileStat.isWritable, c(filename)))
+            def isExecutable(filename, k)     = k(Result.flatMap(FileStat.isExecutable, c(filename)))
+            def accessTime(filename, k)       = k(Result.flatMap(FileStat.accessTime, c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(FileStat.creationTime, c(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(FileStat.modificationTime, c(filename)))
+            def size(filename, k)             = k(Result.flatMap(FileStat.size, c(filename)))
         }
 
     ///
@@ -307,17 +307,17 @@ pub mod Fs.FileStat {
     pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileStat) + FileStat =
         let c = p -> Fs.FsLayer.denyGlob(patterns, p);
         run { f() } with handler FileStat {
-            def exists(filename, k)           = k(Result.flatMap(p -> FileStat.exists(p), c(filename)))
-            def isDirectory(filename, k)      = k(Result.flatMap(p -> FileStat.isDirectory(p), c(filename)))
-            def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileStat.isRegularFile(p), c(filename)))
-            def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileStat.isSymbolicLink(p), c(filename)))
-            def isReadable(filename, k)       = k(Result.flatMap(p -> FileStat.isReadable(p), c(filename)))
-            def isWritable(filename, k)       = k(Result.flatMap(p -> FileStat.isWritable(p), c(filename)))
-            def isExecutable(filename, k)     = k(Result.flatMap(p -> FileStat.isExecutable(p), c(filename)))
-            def accessTime(filename, k)       = k(Result.flatMap(p -> FileStat.accessTime(p), c(filename)))
-            def creationTime(filename, k)     = k(Result.flatMap(p -> FileStat.creationTime(p), c(filename)))
-            def modificationTime(filename, k) = k(Result.flatMap(p -> FileStat.modificationTime(p), c(filename)))
-            def size(filename, k)             = k(Result.flatMap(p -> FileStat.size(p), c(filename)))
+            def exists(filename, k)           = k(Result.flatMap(FileStat.exists, c(filename)))
+            def isDirectory(filename, k)      = k(Result.flatMap(FileStat.isDirectory, c(filename)))
+            def isRegularFile(filename, k)    = k(Result.flatMap(FileStat.isRegularFile, c(filename)))
+            def isSymbolicLink(filename, k)   = k(Result.flatMap(FileStat.isSymbolicLink, c(filename)))
+            def isReadable(filename, k)       = k(Result.flatMap(FileStat.isReadable, c(filename)))
+            def isWritable(filename, k)       = k(Result.flatMap(FileStat.isWritable, c(filename)))
+            def isExecutable(filename, k)     = k(Result.flatMap(FileStat.isExecutable, c(filename)))
+            def accessTime(filename, k)       = k(Result.flatMap(FileStat.accessTime, c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(FileStat.creationTime, c(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(FileStat.modificationTime, c(filename)))
+            def size(filename, k)             = k(Result.flatMap(FileStat.size, c(filename)))
         }
 
     ///
@@ -335,17 +335,17 @@ pub mod Fs.FileStat {
             case Err(e)                              => Err(e)
         };
         run { f() } with handler FileStat {
-            def exists(filename, k)           = k(resolveBool(filename, p -> FileStat.exists(p)))
-            def isDirectory(filename, k)      = k(resolveBool(filename, p -> FileStat.isDirectory(p)))
-            def isRegularFile(filename, k)    = k(resolveBool(filename, p -> FileStat.isRegularFile(p)))
+            def exists(filename, k)           = k(resolveBool(filename, FileStat.exists))
+            def isDirectory(filename, k)      = k(resolveBool(filename, FileStat.isDirectory))
+            def isRegularFile(filename, k)    = k(resolveBool(filename, FileStat.isRegularFile))
             def isSymbolicLink(filename, k)   = k(FileStat.isSymbolicLink(filename))
-            def isReadable(filename, k)       = k(resolveBool(filename, p -> FileStat.isReadable(p)))
-            def isWritable(filename, k)       = k(resolveBool(filename, p -> FileStat.isWritable(p)))
-            def isExecutable(filename, k)     = k(resolveBool(filename, p -> FileStat.isExecutable(p)))
-            def accessTime(filename, k)       = k(Result.flatMap(p -> FileStat.accessTime(p), Fs.FsLayer.resolveRealPath(filename)))
-            def creationTime(filename, k)     = k(Result.flatMap(p -> FileStat.creationTime(p), Fs.FsLayer.resolveRealPath(filename)))
-            def modificationTime(filename, k) = k(Result.flatMap(p -> FileStat.modificationTime(p), Fs.FsLayer.resolveRealPath(filename)))
-            def size(filename, k)             = k(Result.flatMap(p -> FileStat.size(p), Fs.FsLayer.resolveRealPath(filename)))
+            def isReadable(filename, k)       = k(resolveBool(filename, FileStat.isReadable))
+            def isWritable(filename, k)       = k(resolveBool(filename, FileStat.isWritable))
+            def isExecutable(filename, k)     = k(resolveBool(filename, FileStat.isExecutable))
+            def accessTime(filename, k)       = k(Result.flatMap(FileStat.accessTime, Fs.FsLayer.resolveRealPath(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(FileStat.creationTime, Fs.FsLayer.resolveRealPath(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(FileStat.modificationTime, Fs.FsLayer.resolveRealPath(filename)))
+            def size(filename, k)             = k(Result.flatMap(FileStat.size, Fs.FsLayer.resolveRealPath(filename)))
         }
 
 }
