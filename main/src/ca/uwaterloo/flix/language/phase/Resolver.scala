@@ -1478,6 +1478,7 @@ object Resolver {
   private def mkPrefixPureLambda(fparams: List[ResolvedAst.FormalParam], body: ResolvedAst.Expr, loc: SourceLocation): ResolvedAst.Expr = {
     val (lambda, _) = fparams.foldRight((body, true)) {
       case (fp, (acc, first)) =>
+        // N.B.: Subeffecting is disabled for generated lambdas, since it introduces extra effect variables that make inference more expensive.
         if (first) (ResolvedAst.Expr.Lambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
         else (mkPureLambda(fp, acc, loc.asSynthetic), false)
     }
