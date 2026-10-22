@@ -27,7 +27,7 @@ object ZhegalkinPerf {
 
   private val DefaultN: Int = 2
 
-  private val DefaultOpts: Options = Options.Default.copy(xlambdasubeffecting = true)
+  private val DefaultOpts: Options = Options.Default.copy(xsubeffecting = true)
 
   private case class Config(
                              rewriteRules: Boolean = false,
@@ -212,7 +212,7 @@ object ZhegalkinPerf {
   private def rq3(n: Int): Unit = {
     println(RQ3)
 
-    val DefaultNoCaches = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, smartSubeffecting = false, opts = Options.Default.copy(xlambdasubeffecting = true))
+    val DefaultNoCaches = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, smartSubeffecting = false, opts = Options.Default.copy(xsubeffecting = true))
 
     val m1 = runConfig(DefaultNoCaches, n).mdn
     val m2 = runConfig(DefaultNoCaches.copy(cacheInterCst = true), n).mdn
@@ -234,10 +234,10 @@ object ZhegalkinPerf {
   private def rq4(n: Int): Unit = {
     println(RQ4)
 
-    val DefaultNoSubeffecting = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = true, cacheXor = false, cacheSVE = false, opts = Options.Default.copy(xlambdasubeffecting = false))
+    val DefaultNoSubeffecting = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = true, cacheXor = false, cacheSVE = false, opts = Options.Default.copy(xsubeffecting = false))
 
-    val baseline = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = false, opts = Options.Default.copy(xlambdasubeffecting = true)), n).mdn
-    val solveAndRetry = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = true, opts = Options.Default.copy(xlambdasubeffecting = true)), n).mdn
+    val baseline = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = false, opts = Options.Default.copy(xsubeffecting = true)), n).mdn
+    val solveAndRetry = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = true, opts = Options.Default.copy(xsubeffecting = true)), n).mdn
     val optimal = runConfig(DefaultNoSubeffecting, n).mdn
 
     println("-" * 80)

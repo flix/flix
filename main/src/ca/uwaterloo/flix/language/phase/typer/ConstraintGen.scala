@@ -177,7 +177,7 @@ object ConstraintGen {
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions.
-        val bound = if (flix.options.xlambdasubeffecting && allowSubeffecting) EffectBound.Upper else EffectBound.Exact
+        val bound = if (flix.options.xsubeffecting && allowSubeffecting) EffectBound.Upper else EffectBound.Exact
         val eff = mkBoundedEff(bound, eff0, loc)
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
@@ -472,7 +472,7 @@ object ConstraintGen {
         val (tpe1, eff1) = visitExp(exp1)
         fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions (which include local defs).
-        val bound = if (flix.options.xlambdasubeffecting) EffectBound.Upper else EffectBound.Exact
+        val bound = if (flix.options.xsubeffecting) EffectBound.Upper else EffectBound.Exact
         val defEff = mkBoundedEff(bound, eff1, loc)
         val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)

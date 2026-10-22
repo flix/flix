@@ -88,7 +88,7 @@ object Main {
       assumeYes = cmdOpts.assumeYes,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
-      xlambdasubeffecting = cmdOpts.xlambdasubeffecting,
+      xsubeffecting = cmdOpts.xsubeffecting,
       xnewmono = cmdOpts.xnewmono,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
@@ -554,7 +554,7 @@ object Main {
     xprintphases: Boolean = false,
     xsve: SveMode = SveMode.PerEquation,
     xverify: Boolean = false,
-    xlambdasubeffecting: Boolean = false,
+    xsubeffecting: Boolean = false,
     xnewmono: Boolean = false,
     XPerfN: Option[Int] = None,
     XPerfFrontend: Boolean = false,
@@ -863,8 +863,8 @@ object Main {
       opt[Unit]("Xverify").action((_, c) => c.copy(xverify = true)).
         text("[experimental] enables internal verifiers of compiler invariants.")
 
-      // Xlambda-subeffecting
-      opt[Unit]("Xlambda-subeffecting").action((_, c) => c.copy(xlambdasubeffecting = true)).
+      // Xsubeffecting
+      opt[Unit]("Xsubeffecting").action((_, c) => c.copy(xsubeffecting = true)).
         text("[experimental] enables sub-effecting for lambdas and local defs.")
 
       // Xnewmono
