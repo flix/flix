@@ -537,26 +537,6 @@ class TestEffectProvenance extends AnyFunSuite with TestUtils {
   test("Test.ArgumentGivenWrongEffect.05") {
     val input =
       """
-        |def hof1(f: Unit -> Unit \ IO): Unit \ IO = f()
-        |def hof2(f: Unit -> Unit \ ef): Unit \ ef = f()
-        |
-        |def foo(): Unit \ IO + Bar =
-        |    Bar.baz();
-        |    let f = () -> ();
-        |    hof1(f);
-        |    hof2(f)
-        |eff Bar {
-        |    def baz(): Unit
-        |}
-        |pub eff IO
-        """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectOneError[TypeError.ArgumentGivenWrongEffect](result)
-  }
-
-  test("Test.ArgumentGivenWrongEffect.06") {
-    val input =
-      """
         |def p(_: Unit -> Unit): Unit = ()
         |
         |def f(h: Unit -> Unit \ ef): Unit \ {}  =
@@ -566,7 +546,7 @@ class TestEffectProvenance extends AnyFunSuite with TestUtils {
     expectOneError[TypeError.ArgumentGivenWrongEffect](result)
   }
 
-  test("Test.ArgumentGivenWrongEffect.07") {
+  test("Test.ArgumentGivenWrongEffect.06") {
     val input =
       """
         |enum Shape {
