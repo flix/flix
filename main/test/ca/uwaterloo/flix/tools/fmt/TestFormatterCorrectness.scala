@@ -20,9 +20,6 @@ import org.scalatest.DoNotDiscover
   *   3. Non-destructiveness: forall c in C,  w(c) = w(p(f(c)))
   *
   * Each property is run on both corpora: the standard library and the `examples`.
-  *
-  * Not discovered by the main `flix.test` run: every sample re-runs the compiler front end, so the
-  * suite takes several minutes. It is executed by the dedicated `flix.testFormatter` task.
   */
 @DoNotDiscover
 class TestFormatterCorrectness extends TestFormatterCommon {
