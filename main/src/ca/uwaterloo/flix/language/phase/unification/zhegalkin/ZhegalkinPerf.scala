@@ -27,7 +27,7 @@ object ZhegalkinPerf {
 
   private val DefaultN: Int = 2
 
-  private val DefaultOpts: Options = Options.Default.copy(xsubeffecting = true)
+  private val DefaultOpts: Options = Options.Default
 
   private case class Config(
                              rewriteRules: Boolean = false,
@@ -212,7 +212,7 @@ object ZhegalkinPerf {
   private def rq3(n: Int): Unit = {
     println(RQ3)
 
-    val DefaultNoCaches = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, smartSubeffecting = false, opts = Options.Default.copy(xsubeffecting = true))
+    val DefaultNoCaches = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = false, cacheXor = false, cacheSVE = false, smartSubeffecting = false, opts = Options.Default)
 
     val m1 = runConfig(DefaultNoCaches, n).mdn
     val m2 = runConfig(DefaultNoCaches.copy(cacheInterCst = true), n).mdn
@@ -234,16 +234,15 @@ object ZhegalkinPerf {
   private def rq4(n: Int): Unit = {
     println(RQ4)
 
-    val DefaultNoSubeffecting = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = true, cacheXor = false, cacheSVE = false, opts = Options.Default.copy(xsubeffecting = false))
+    val Default = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = true, cacheXor = false, cacheSVE = false, opts = Options.Default)
 
-    val baseline = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = false, opts = Options.Default.copy(xsubeffecting = true)), n).mdn
-    val solveAndRetry = runConfig(DefaultNoSubeffecting.copy(smartSubeffecting = true, opts = Options.Default.copy(xsubeffecting = true)), n).mdn
-    val optimal = runConfig(DefaultNoSubeffecting, n).mdn
+    val baseline = runConfig(Default.copy(smartSubeffecting = false), n).mdn
+    val solveAndRetry = runConfig(Default.copy(smartSubeffecting = true), n).mdn
 
     println("-" * 80)
-    println("  Baseline |  Solve-and-Retry |  Optimal")
-    println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    println(f"$baseline%,10d & $solveAndRetry%,16d & $optimal%,8d \\\\")
+    println("  Baseline |  Solve-and-Retry")
+    println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    println(f"$baseline%,10d & $solveAndRetry%,16d \\\\")
     println("-" * 80)
     println()
     println()

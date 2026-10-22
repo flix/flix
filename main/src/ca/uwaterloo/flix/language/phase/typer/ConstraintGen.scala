@@ -175,12 +175,12 @@ object ConstraintGen {
       case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
-        // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions.
+        // SUB-EFFECTING: A lambda may have a larger effect than its body.
         //
         // A lambda whose body is itself a lambda is never sub-effected: its body is pure, so the bound
         // `Pure ⊑ x` would hold trivially and leave `x` unconstrained. A curried chain of n lambdas would
         // otherwise introduce n - 1 such variables, which makes type inference needlessly expensive.
-        val bound = if (flix.options.xsubeffecting && !isCurriedLambdaBody(exp)) EffectBound.Upper else EffectBound.Exact
+        val bound = if (isCurriedLambdaBody(exp)) EffectBound.Exact else EffectBound.Upper
         val eff = mkBoundedEff(bound, eff0, loc)
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
@@ -474,9 +474,8 @@ object ConstraintGen {
       case Expr.LocalDef(_, sym, fparams, exp1, exp2, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
         fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
-        // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions (which include local defs).
-        val bound = if (flix.options.xsubeffecting) EffectBound.Upper else EffectBound.Exact
-        val defEff = mkBoundedEff(bound, eff1, loc)
+        // SUB-EFFECTING: A local def may have a larger effect than its body.
+        val defEff = mkBoundedEff(EffectBound.Upper, eff1, loc)
         val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)
         val (tpe2, eff2) = visitExp(exp2)
