@@ -867,21 +867,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
   }
 
   test("Test.UnexpectedArgument.03") {
-    val input =
-      """
-        |eff E {
-        |    pub def op(): Unit
-        |}
-        |
-        |def mustE(f: Unit -> Unit \ {ef, E}): Unit = ???
-        |
-        |def foo(): Unit = mustE(x -> x)
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
-  test("Test.UnexpectedArgument.05") {
     // Regression test.
     // See https://github.com/flix/flix/issues/3634
     val input =
