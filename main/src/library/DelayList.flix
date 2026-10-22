@@ -645,7 +645,7 @@ pub mod DelayList {
             case LCons(x, xs) => loop(force xs, ks -> k(f(x, ks)))
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, x -> checked_ecast(x))
+        loop(l, x -> x)
 
     ///
     /// Returns the result of mapping each element and combining the results.
@@ -712,7 +712,7 @@ pub mod DelayList {
             case LList(xs)    => loop(force xs, k)
             case _            => unreachable!()
         };
-        if (isEmpty(l)) None else Some(loop(l, x -> checked_ecast(x)))
+        if (isEmpty(l)) None else Some(loop(l, x -> x))
 
     ///
     /// Returns a `DelayList` with every element in `l` that satisfies the predicate `f`.
@@ -846,7 +846,7 @@ pub mod DelayList {
             case LCons(x, xs) => loop(force xs, () -> if (f(x)) Some(x) else k())
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, _ -> checked_ecast(None))
+        loop(l, _ -> None)
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
