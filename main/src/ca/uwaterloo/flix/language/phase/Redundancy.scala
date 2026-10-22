@@ -718,7 +718,7 @@ object Redundancy {
     case Expr.InstanceOf(exp, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
+    case Expr.CheckedCast(cast, exp, tpe, _, loc) =>
       cast match {
         case CheckedCastType.TypeCast =>
           if (exp.tpe == tpe)
@@ -726,10 +726,7 @@ object Redundancy {
           else
             visitExp(exp, env0, rc)
         case CheckedCastType.EffectCast =>
-          if (exp.eff == eff && flix.options.xsubeffecting.isEmpty)
-            visitExp(exp, env0, rc) + RedundantCheckedEffectCast(exp.eff, loc)
-          else
-            visitExp(exp, env0, rc)
+          visitExp(exp, env0, rc)
       }
 
     case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
