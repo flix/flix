@@ -36,7 +36,6 @@ sealed trait TypeError extends CompilationMessage {
     case _: TypeError.ImplicitlyPureFunctionUsesEffect => true
     case _: TypeError.ImplicitlyPureFunctionUsesIO => true
     case _: TypeError.MismatchedEffects => true
-    case _: TypeError.UnusedEffectInSignature => true
     case _ => false
   }
 }
@@ -992,27 +991,6 @@ object TypeError {
     def summary: String = s"Unresolved static method"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = s"Unresolved static method"
-  }
-
-  /**
-    * An error raised when an effect declared in a function signature is unused.
-    *
-    * @param unusedEff the symbol of the unused effect in the function signature
-    * @param loc       the location of the unused effect in the function signature.
-    */
-  case class UnusedEffectInSignature(unusedEff: EffSymOrRigidVar, loc: SourceLocation) extends TypeError {
-    def code: ErrorCode = ErrorCode.E6217
-
-    def summary: String = s"Unused effect '${unusedEff.name}'"
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s"""${highlight(loc, s"Unused effect: '${magenta(unusedEff.name)}'", fmt)}
-         |
-         |${underline("Explanation:")} To fix this, either remove '${magenta(unusedEff.name)}' from the signature
-         |or use the effect in the function body
-         |""".stripMargin
-    }
   }
 
   /**

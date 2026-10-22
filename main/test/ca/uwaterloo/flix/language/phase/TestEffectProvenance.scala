@@ -414,54 +414,6 @@ class TestEffectProvenance extends AnyFunSuite with TestUtils {
     expectOneError[TypeError.EffectfulFunctionUsesOtherEffect](result)
   }
 
-  test("Test.UnusedEffectInSignature.01") {
-    val input =
-      """
-        |def foo(): Unit \ {IO, Bar} =
-        |    println("€")
-        |
-        |eff Bar {
-        |    def baz(): Unit
-        |}
-        |pub eff IO
-        |pub def println(_x: a): Unit \ IO = checked_ecast(())
-        """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectOneError[TypeError.UnusedEffectInSignature](result)
-  }
-
-  test("Test.UnusedEffectInSignature.02") {
-    val input =
-      """
-        |def foo(): Unit \ {Bar, Baz} =
-        |    Bar.op1()
-        |
-        |eff Bar {
-        |    def op1(): Unit
-        |}
-        |
-        |eff Baz {
-        |    def op2(): Unit
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectOneError[TypeError.UnusedEffectInSignature](result)
-  }
-
-  test("Test.UnusedEffectInSignature.03") {
-    val input =
-      """
-        |def foo(): Int32 \ Bar =
-        |    42
-        |
-        |eff Bar {
-        |    def baz(): Unit
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectOneError[TypeError.UnusedEffectInSignature](result)
-  }
-
   test("Test.ArgumentGivenWrongEffect.01") {
     val input =
       """

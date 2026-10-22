@@ -531,38 +531,6 @@ object EffectProvenance {
   }
 
   /**
-    * Produces an `UnusedEffectInSignature` error for a sink vertex whose declared effect
-    * is never actually used in the function body.
-    *
-    * @param sink the vertex representing the unused declared effect
-    * @return `Some(error)` if the sink is a recognized concrete effect, `None` otherwise
-    */
-  private def mkUnusedError(sink: Vertex): Option[EffConflicted] = sink match {
-    case IOVertex(loc) => Some(TypeConstraint.EffConflicted(TypeError.UnusedEffectInSignature(Eff(Symbol.IO), loc)))
-    case CstVertex(sym, loc) => Some(TypeConstraint.EffConflicted(TypeError.UnusedEffectInSignature(Eff(sym), loc)))
-    case RigidVarVertex(sym, loc) => Some(TypeConstraint.EffConflicted(TypeError.UnusedEffectInSignature(RigidVar(sym), loc)))
-    case _ => None
-
-  }
-
-  /**
-    * Identifies declared effects in `lhs` that are absent from the incoming effects in `rhs`.
-    *
-    * A "forward pass" checks the left-hand side (declared effects) against the right-hand side
-    * (observed effects) and returns those declared effects that were never observed.
-    * These represent effects declared in a signature that are never actually used.
-    *
-    * @param lhs the declared effect vertices (from the signature)
-    * @param rhs the observed effect vertices with their source locations
-    * @return the sub-list of `lhs` vertices that have no matching vertex in `rhs`
-    */
-  private def findUnused(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)]): List[Vertex] = {
-    lhs.foldLeft(List.empty[Vertex]) {
-      case (acc, e) => if (!rhs.exists(i => sameType(e, i._1))) e :: acc else acc
-    }
-  }
-
-  /**
     * Identifies observed effects in `rhs` that are not declared in `lhs`.
     *
     * A "backwards pass" checks the right-hand side (observed effects) against the
@@ -584,10 +552,7 @@ object EffectProvenance {
     * Produces errors for a `SignatureVertex` whose declared effects do not match the effects
     * that flow into it.
     *
-    * Combines two checks:
-    *   1. Forward pass: declared effects that are never used → `UnusedEffectInSignature` errors.
-    *   2. Backward pass: observed effects not present in the declaration →
-    *      `EffectfulFunctionUsesOtherEffect` errors.
+    * Observed effects not present in the declaration produce `EffectfulFunctionUsesOtherEffect` errors.
     *
     * @param lhs     the declared effect vertices from the signature
     * @param rhs     the observed effect vertices with their source locations
@@ -596,16 +561,9 @@ object EffectProvenance {
     * @return a list of `EffConflicted` errors (may be empty)
     */
   private def mkSignatureErrors(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)], symList: List[EffSymOrRigidVar], lhsLoc: SourceLocation) = {
-    val unused = findUnused(lhs, rhs)
-    val e1: List[EffConflicted] = if (unused.nonEmpty) unused.flatMap(mkUnusedError) else Nil
-
     // all of the used effects must be in the signature:
     val undefined = findUndeclared(lhs, rhs)
-    val e2: List[EffConflicted] =
-      if (undefined.nonEmpty)
-        undefined.flatMap{case (e, provLoc) => mkEffectfulErrorBySource(e, symList, lhsLoc, provLoc)}
-      else Nil
-    e1 ++ e2
+    undefined.flatMap { case (e, provLoc) => mkEffectfulErrorBySource(e, symList, lhsLoc, provLoc) }
   }
 
   /**
@@ -613,7 +571,7 @@ object EffectProvenance {
     *
     * Routes to the appropriate error-making helper depending on the kind of sink:
     *   - `ArgVertex`: delegates to `mkArgErrors`.
-    *   - `SignatureVertex` with a single effect: reports unused errors and recurses on the single element.
+    *   - `SignatureVertex` with a single effect: recurses on the single element.
     *   - `SignatureVertex` with multiple effects: delegates to `mkSignatureErrors`.
     *   - Any other concrete vertex: for each incoming vertex that differs in type, attempts
     *     `mkEffectfulError`, `mkExplicitPureError`, and `mkImplicitPureError`.
@@ -627,10 +585,7 @@ object EffectProvenance {
       case (ArgVertex(xs, aLoc), ys) => mkArgErrors(xs, ys, aLoc)
       case (s@SignatureVertex(xs, sigLoc), ys) => xs match {
         case Nil => Nil
-        case x :: Nil =>
-          val xUnused = findUnused(List(x), ys).nonEmpty
-          if (xUnused) mkUnusedError(x).toList ::: mkErrors(x, ys.toSet)
-          else mkErrors(x, ys.toSet)
+        case x :: Nil => mkErrors(x, ys.toSet)
         case _ => mkSignatureErrors(xs, ys, s.symbols, sigLoc)
       }
       case (x, ys) => ys.filter(e => !sameType(x, e._1)).flatMap { case (y, provLoc) =>

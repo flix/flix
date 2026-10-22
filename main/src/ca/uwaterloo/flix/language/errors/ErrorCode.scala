@@ -201,7 +201,6 @@ object ErrorCode {
   case object E6214 extends ErrorCode
   case object E6215 extends ErrorCode
   case object E6216 extends ErrorCode
-  case object E6217 extends ErrorCode
   case object E6218 extends ErrorCode
   case object E6221 extends ErrorCode
   case object E6247 extends ErrorCode
