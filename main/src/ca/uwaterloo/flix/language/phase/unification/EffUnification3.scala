@@ -56,8 +56,11 @@ object EffUnification3 {
     * reading would instead force the variables of `s` to absorb every effect of `t` that `s` does
     * not use, so such constraints are always read laxly.
     *
-    * The strict reading is tried first (phase 1) and the lax reading is used for every constraint
-    * (phase 2) if the first system has no solution.
+    * The strict reading is tried first (phase 1), but only at the top level of a def. A nested region
+    * solve sees the constraints of the region alone, so committing to the minimal solution there would
+    * decide a constraint whose upper bound the enclosing def forces, such as a checked cast inside a
+    * region of a def declared `IO`, before that force is in view. The lax reading is used for every
+    * constraint (phase 2) if the first system has no solution, and in every nested solve.
     *
     * Invariant: For every polymorphic effect constructor in the constraints, all saturated
     * occurrences must have identical type arguments. The caller must first equate and
@@ -85,9 +88,9 @@ object EffUnification3 {
 
     //
     // Phase 1: Try to solve without subeffecting: subeffect constraints with a flexible upper bound
-    // are read strictly.
+    // are read strictly. Only at the top level, where the whole system is in view.
     //
-    if (EnableSmartSubeffecting) {
+    if (EnableSmartSubeffecting && scope == RegionScope.Top) {
       try {
         val equations = toEquations(eqs) ::: subs.map(toStrictEquation)
         val (unsolvedEqns, resultSubst) = SetUnification.solve(equations, flix.options.xsve)
