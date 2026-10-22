@@ -83,7 +83,7 @@ object DesugaredAst {
 
     case class Apply(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
+    case class Lambda(fparam: FormalParam, exp: Expr, allowSubeffecting: Boolean, loc: SourceLocation) extends Expr
 
     case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, loc: SourceLocation) extends Expr
 
