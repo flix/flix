@@ -136,10 +136,10 @@ pub mod Fs.FileTest {
     pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - FileTest) + FileTest =
         let c = p -> Fs.FsLayer.chroot(chrootDir, p);
         run { f() } with handler FileTest {
-            def exists(filename, k)         = k(Result.flatMap(p -> FileTest.exists(p), c(filename)))
-            def isDirectory(filename, k)    = k(Result.flatMap(p -> FileTest.isDirectory(p), c(filename)))
-            def isRegularFile(filename, k)  = k(Result.flatMap(p -> FileTest.isRegularFile(p), c(filename)))
-            def isSymbolicLink(filename, k) = k(Result.flatMap(p -> FileTest.isSymbolicLink(p), c(filename)))
+            def exists(filename, k)         = k(Result.flatMap(FileTest.exists, c(filename)))
+            def isDirectory(filename, k)    = k(Result.flatMap(FileTest.isDirectory, c(filename)))
+            def isRegularFile(filename, k)  = k(Result.flatMap(FileTest.isRegularFile, c(filename)))
+            def isSymbolicLink(filename, k) = k(Result.flatMap(FileTest.isSymbolicLink, c(filename)))
         }
 
     ///
@@ -150,10 +150,10 @@ pub mod Fs.FileTest {
     pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileTest) + FileTest =
         let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
         run { f() } with handler FileTest {
-            def exists(filename, k)         = k(Result.flatMap(p -> FileTest.exists(p), c(filename)))
-            def isDirectory(filename, k)    = k(Result.flatMap(p -> FileTest.isDirectory(p), c(filename)))
-            def isRegularFile(filename, k)  = k(Result.flatMap(p -> FileTest.isRegularFile(p), c(filename)))
-            def isSymbolicLink(filename, k) = k(Result.flatMap(p -> FileTest.isSymbolicLink(p), c(filename)))
+            def exists(filename, k)         = k(Result.flatMap(FileTest.exists, c(filename)))
+            def isDirectory(filename, k)    = k(Result.flatMap(FileTest.isDirectory, c(filename)))
+            def isRegularFile(filename, k)  = k(Result.flatMap(FileTest.isRegularFile, c(filename)))
+            def isSymbolicLink(filename, k) = k(Result.flatMap(FileTest.isSymbolicLink, c(filename)))
         }
 
     ///
@@ -164,10 +164,10 @@ pub mod Fs.FileTest {
     pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileTest) + FileTest =
         let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
         run { f() } with handler FileTest {
-            def exists(filename, k)         = k(Result.flatMap(p -> FileTest.exists(p), c(filename)))
-            def isDirectory(filename, k)    = k(Result.flatMap(p -> FileTest.isDirectory(p), c(filename)))
-            def isRegularFile(filename, k)  = k(Result.flatMap(p -> FileTest.isRegularFile(p), c(filename)))
-            def isSymbolicLink(filename, k) = k(Result.flatMap(p -> FileTest.isSymbolicLink(p), c(filename)))
+            def exists(filename, k)         = k(Result.flatMap(FileTest.exists, c(filename)))
+            def isDirectory(filename, k)    = k(Result.flatMap(FileTest.isDirectory, c(filename)))
+            def isRegularFile(filename, k)  = k(Result.flatMap(FileTest.isRegularFile, c(filename)))
+            def isSymbolicLink(filename, k) = k(Result.flatMap(FileTest.isSymbolicLink, c(filename)))
         }
 
     ///
@@ -178,10 +178,10 @@ pub mod Fs.FileTest {
     pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileTest) + FileTest =
         let c = p -> Fs.FsLayer.allowGlob(patterns, p);
         run { f() } with handler FileTest {
-            def exists(filename, k)         = k(Result.flatMap(p -> FileTest.exists(p), c(filename)))
-            def isDirectory(filename, k)    = k(Result.flatMap(p -> FileTest.isDirectory(p), c(filename)))
-            def isRegularFile(filename, k)  = k(Result.flatMap(p -> FileTest.isRegularFile(p), c(filename)))
-            def isSymbolicLink(filename, k) = k(Result.flatMap(p -> FileTest.isSymbolicLink(p), c(filename)))
+            def exists(filename, k)         = k(Result.flatMap(FileTest.exists, c(filename)))
+            def isDirectory(filename, k)    = k(Result.flatMap(FileTest.isDirectory, c(filename)))
+            def isRegularFile(filename, k)  = k(Result.flatMap(FileTest.isRegularFile, c(filename)))
+            def isSymbolicLink(filename, k) = k(Result.flatMap(FileTest.isSymbolicLink, c(filename)))
         }
 
     ///
@@ -192,10 +192,10 @@ pub mod Fs.FileTest {
     pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileTest) + FileTest =
         let c = p -> Fs.FsLayer.denyGlob(patterns, p);
         run { f() } with handler FileTest {
-            def exists(filename, k)         = k(Result.flatMap(p -> FileTest.exists(p), c(filename)))
-            def isDirectory(filename, k)    = k(Result.flatMap(p -> FileTest.isDirectory(p), c(filename)))
-            def isRegularFile(filename, k)  = k(Result.flatMap(p -> FileTest.isRegularFile(p), c(filename)))
-            def isSymbolicLink(filename, k) = k(Result.flatMap(p -> FileTest.isSymbolicLink(p), c(filename)))
+            def exists(filename, k)         = k(Result.flatMap(FileTest.exists, c(filename)))
+            def isDirectory(filename, k)    = k(Result.flatMap(FileTest.isDirectory, c(filename)))
+            def isRegularFile(filename, k)  = k(Result.flatMap(FileTest.isRegularFile, c(filename)))
+            def isSymbolicLink(filename, k) = k(Result.flatMap(FileTest.isSymbolicLink, c(filename)))
         }
 
     ///
@@ -212,9 +212,9 @@ pub mod Fs.FileTest {
             case Err(e)                              => Err(e)
         };
         run { f() } with handler FileTest {
-            def exists(filename, k)         = k(resolveBool(filename, p -> FileTest.exists(p)))
-            def isDirectory(filename, k)    = k(resolveBool(filename, p -> FileTest.isDirectory(p)))
-            def isRegularFile(filename, k)  = k(resolveBool(filename, p -> FileTest.isRegularFile(p)))
+            def exists(filename, k)         = k(resolveBool(filename, FileTest.exists))
+            def isDirectory(filename, k)    = k(resolveBool(filename, FileTest.isDirectory))
+            def isRegularFile(filename, k)  = k(resolveBool(filename, FileTest.isRegularFile))
             def isSymbolicLink(filename, k) = k(FileTest.isSymbolicLink(filename))
         }
 

@@ -90,7 +90,7 @@ pub mod Fs.DirList {
     pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
         let c = p -> Fs.FsLayer.chroot(chrootDir, p);
         run { f() } with handler DirList {
-            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+            def list(filename, k) = k(Result.flatMap(DirList.list, c(filename)))
         }
 
     ///
@@ -101,7 +101,7 @@ pub mod Fs.DirList {
     pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
         let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
         run { f() } with handler DirList {
-            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+            def list(filename, k) = k(Result.flatMap(DirList.list, c(filename)))
         }
 
     ///
@@ -112,7 +112,7 @@ pub mod Fs.DirList {
     pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
         let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
         run { f() } with handler DirList {
-            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+            def list(filename, k) = k(Result.flatMap(DirList.list, c(filename)))
         }
 
     ///
@@ -123,7 +123,7 @@ pub mod Fs.DirList {
     pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
         let c = p -> Fs.FsLayer.allowGlob(patterns, p);
         run { f() } with handler DirList {
-            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+            def list(filename, k) = k(Result.flatMap(DirList.list, c(filename)))
         }
 
     ///
@@ -134,7 +134,7 @@ pub mod Fs.DirList {
     pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
         let c = p -> Fs.FsLayer.denyGlob(patterns, p);
         run { f() } with handler DirList {
-            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+            def list(filename, k) = k(Result.flatMap(DirList.list, c(filename)))
         }
 
     ///
