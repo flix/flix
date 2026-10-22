@@ -2115,7 +2115,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(): Unit \ IO = ()
         |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = Set(Subeffecting.Lambdas, Subeffecting.InsDefs)))
+    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = Set(Subeffecting.Lambdas)))
     expectError[TypeError](result)
   }
 
@@ -2129,44 +2129,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = Set(Subeffecting.Lambdas)))
     expectSuccess(result)
-  }
-
-  test("Subeffecting.Lambda.02") {
-    val input =
-      """
-        |def mustBeIO(f: Unit -> Unit \ IO): Unit \ IO = f()
-        |def f(): Unit \ IO =
-        |  mustBeIO(() -> ())
-        |pub eff IO
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
-    expectError[TypeError](result)
-  }
-
-  test("Subeffecting.Instance.01") {
-    val input =
-      """
-        |trait T[t] { pub def f(x: t): Unit \ IO }
-        |instance T[Char] {
-        |  pub def f(_x: Char): Unit \ IO = ()
-        |}
-        |pub eff IO
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
-    expectSuccess(result)
-  }
-
-  test("Subeffecting.Instance.02") {
-    val input =
-      """
-        |trait T[t] { pub def f(x: t): Unit \ IO }
-        |instance T[Char] {
-        |  pub def f(_x: Char): Unit \ IO = ()
-        |}
-        |pub eff IO
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = Set(Subeffecting.Lambdas)))
-    expectError[TypeError](result)
   }
 
   test("ErrorType.01") {
