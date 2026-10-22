@@ -51,14 +51,11 @@ object ConstraintGen {
 
       case Expr.HoleWithExp(exp, _, tvar, evar, loc) =>
         // We ignore exp's type and allow the hole to have any type.
-        // We allow the effect to be any superset of exp's effect.
-        // N.B.: This is deliberately not a SubEff constraint: the hole's effect must stay as wide
-        // as its context allows, rather than being solved to the minimal effect.
+        // The effect of the hole may be any effect that includes the effect of exp.
         val (_, eff) = visitExp(exp)
-        val atLeastEff = Type.mkUnion(eff, freshVar(Kind.Eff, loc), loc.asSynthetic)
-        c.unifyType(atLeastEff, evar, loc)
+        c.subEff(eff, evar, loc)
         val resTpe = tvar
-        val resEff = atLeastEff
+        val resEff = evar
         (resTpe, resEff)
 
       case e: Expr.OpenAs => RestrictableChooseConstraintGen.visitOpenAs(e)
@@ -818,14 +815,13 @@ object ConstraintGen {
             (resTpe, resEff)
 
           case CheckedCastType.EffectCast =>
-            // We union the effect with a fresh variable to allow unifying with a "larger" effect.
-            // N.B.: This is deliberately not a SubEff constraint: the cast's effect must stay as wide
-            // as its context allows, rather than being solved to the minimal effect, which would make
-            // every cast that the context does not force look redundant.
+            // A checked effect cast is an explicit use of subeffecting: the effect of the cast may
+            // be any effect that includes the effect of exp.
             val (tpe, eff) = visitExp(exp)
             c.unifyType(tvar, tpe, loc)
+            c.subEff(eff, evar, loc)
             val resTpe = tvar
-            val resEff = Type.mkUnion(eff, evar, loc)
+            val resEff = evar
             (resTpe, resEff)
         }
 
