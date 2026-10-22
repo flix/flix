@@ -27,8 +27,6 @@ object ConstraintSolverInterface {
 
   /**
     * Resolves constraints in the given definition using the given inference result.
-    *
-    * The inferred effect must equal the declared effect.
     */
   def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = defn match {
     case KindedAst.Def(_, spec, _, _) =>
@@ -37,8 +35,6 @@ object ConstraintSolverInterface {
 
   /**
     * Resolves constraints in the given signature using the given inference result.
-    *
-    * The inferred effect must equal the declared effect.
     */
   def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = sig match {
     case KindedAst.Sig(_, _, None, _) => (SubstitutionTree.empty, Nil)
@@ -48,8 +44,6 @@ object ConstraintSolverInterface {
 
   /**
     * Resolves constraints in the given spec using the given inference result.
-    *
-    * The inferred effect must equal the declared effect.
     */
   def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = spec match {
     case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs) =>
@@ -81,13 +75,13 @@ object ConstraintSolverInterface {
       // We add extra constraints for the declared type and effect
       val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
       val declaredEffConstr = eff match {
-        case Some(e) => mkDeclaredEffConstr(e, infEff, loc)
+        case Some(e) => TypeConstraint.Equality(e, infEff, Provenance.ExpectEffect(expected = e, actual = infEff, loc))
         case None => {
           // No effect annotation. The function is implicitly true.
           // We use the source location immediately to the right of the return type
           val tpos = moveRight(tpe.loc.end)
           val loc1 = SourceLocation(true, tpe.loc.source, tpe.loc.end, tpos)
-          mkDeclaredEffConstr(Type.Pure, infEff, loc1)
+          TypeConstraint.Equality(Type.Pure, infEff, Provenance.ExpectEffect(expected = Type.Pure, actual = infEff, loc1))
         }
       }
       val constrs0 = declaredTpeConstr :: declaredEffConstr :: infConstrs
@@ -116,7 +110,7 @@ object ConstraintSolverInterface {
             case Build.Development =>
               // Otherwise we have special logic for the [[Debug]] effect: We solve a new constraint system where [[Debug]] is allowed by the effect signature.
               val declaredEffWithDebug = Type.mkUnion(eff.getOrElse(Type.Pure), Type.Debug, loc)
-              val declaredEffConstrWithDebug = mkDeclaredEffConstr(declaredEffWithDebug, infEff, loc)
+              val declaredEffConstrWithDebug = TypeConstraint.Equality(declaredEffWithDebug, infEff, Provenance.ExpectEffect(expected = declaredEffWithDebug, actual = infEff, loc))
               val constrs0 = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
               val constrsWithDebug = constrs0.map(initialTree.apply)
               val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
@@ -131,14 +125,6 @@ object ConstraintSolverInterface {
               }
           }
       }
-  }
-
-  /**
-    * Returns the constraint equating the declared effect `declared` with the inferred effect `inferred`.
-    */
-  private def mkDeclaredEffConstr(declared: Type, inferred: Type, loc: SourceLocation): TypeConstraint = {
-    val prov = Provenance.ExpectEffect(expected = declared, actual = inferred, loc)
-    TypeConstraint.Equality(declared, inferred, prov)
   }
 
   /**
