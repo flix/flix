@@ -118,9 +118,9 @@ pub mod Fs.FileRead {
     pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
         let c = p -> Fs.FsLayer.chroot(chrootDir, p);
         run { f() } with handler FileRead {
-            def read(filename, k)      = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
-            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
-            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+            def read(filename, k)      = k(Result.flatMap(FileRead.read, c(filename)))
+            def readLines(filename, k) = k(Result.flatMap(FileRead.readLines, c(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(FileRead.readBytes, c(filename)))
         }
 
     ///
@@ -131,9 +131,9 @@ pub mod Fs.FileRead {
     pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
         let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
         run { f() } with handler FileRead {
-            def read(filename, k)      = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
-            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
-            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+            def read(filename, k)      = k(Result.flatMap(FileRead.read, c(filename)))
+            def readLines(filename, k) = k(Result.flatMap(FileRead.readLines, c(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(FileRead.readBytes, c(filename)))
         }
 
     ///
@@ -144,9 +144,9 @@ pub mod Fs.FileRead {
     pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
         let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
         run { f() } with handler FileRead {
-            def read(filename, k)      = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
-            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
-            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+            def read(filename, k)      = k(Result.flatMap(FileRead.read, c(filename)))
+            def readLines(filename, k) = k(Result.flatMap(FileRead.readLines, c(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(FileRead.readBytes, c(filename)))
         }
 
     ///
@@ -157,9 +157,9 @@ pub mod Fs.FileRead {
     pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
         let c = p -> Fs.FsLayer.allowGlob(patterns, p);
         run { f() } with handler FileRead {
-            def read(filename, k)      = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
-            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
-            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+            def read(filename, k)      = k(Result.flatMap(FileRead.read, c(filename)))
+            def readLines(filename, k) = k(Result.flatMap(FileRead.readLines, c(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(FileRead.readBytes, c(filename)))
         }
 
     ///
@@ -170,9 +170,9 @@ pub mod Fs.FileRead {
     pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
         let c = p -> Fs.FsLayer.denyGlob(patterns, p);
         run { f() } with handler FileRead {
-            def read(filename, k)      = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
-            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
-            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+            def read(filename, k)      = k(Result.flatMap(FileRead.read, c(filename)))
+            def readLines(filename, k) = k(Result.flatMap(FileRead.readLines, c(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(FileRead.readBytes, c(filename)))
         }
 
     ///
