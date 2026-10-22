@@ -142,6 +142,12 @@ object TypeConstraint {
     case class ExpectEffect(expected: Type, actual: Type, loc: SourceLocation) extends Provenance
 
     /**
+      * The constraint indicates that the effect `actual` must be a subeffect of the effect `expected`,
+      * which is the effect its context allows.
+      */
+    case class ExpectSubEff(expected: Type, actual: Type, loc: SourceLocation) extends Provenance
+
+    /**
       * The constraint indicates that the left type is the expected type of the `n`th argument to a function.
       */
     case class ExpectArgument(expected: Type, actual: Type, sym: Symbol, num: Int, loc: SourceLocation) extends Provenance

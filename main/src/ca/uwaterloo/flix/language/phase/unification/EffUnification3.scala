@@ -114,7 +114,7 @@ object EffUnification3 {
       if (unsolvedEqns.isEmpty) {
         Result.Ok(fromSetSubst(resultSubst))
       } else {
-        Result.Err(fromSetEquations(unsolvedEqns))
+        Result.Err(fromSetEquations(unsolvedEqns, eqs, subs))
       }
     } catch {
       case InvalidType(_) =>
@@ -288,20 +288,75 @@ object EffUnification3 {
   }
 
   /**
-    * Returns the given list of equations as a list of type equalities.
+    * Returns the unsolved set equations `l` as [[TypeConstraint.Conflicted]] constraints to report.
+    *
+    * An unsolvable equation that came from a subeffect constraint, a constraint in `subs` or an
+    * equality in `eqs` that simplification made from one, is reported with the provenance of that
+    * constraint, so that it can be shown as a subeffect error. Its lax equation `s ∩ ¬t ~ ∅` cannot be
+    * split back into the two sides, but the unsolvable part `f ~ ∅` names the effects of `s` that `t`
+    * lacks, so the conflict is returned as `f ~ Pure` under the provenance; several equations from one
+    * constraint, as after a union split, are joined into one conflict. The equation is recognised by its
+    * source location, which the rewrite rules of [[SetUnification]] preserve, and by its shape `f ~ ∅`:
+    * the effect equalities that share a location with a subeffect constraint, those of the arguments
+    * of an application with the lambda passed to it, have a variable on one side. A location with two
+    * subeffect constraints is left alone. Every other equation keeps its own sides and a
+    * [[Provenance.Match]].
+    *
+    * The conflicts replace the constraints they came from, which must not be solved again: without the
+    * equalities that failed alongside, a subeffect constraint on its own is usually solvable.
     */
-  private def fromSetEquations(l: List[Equation])(implicit m: AtomBimap): List[TypeConstraint] =
-    l.map {
-      case Equation(f1, f2, status, loc) =>
-        val t1 = fromSetFormula(f1, loc)
-        val t2 = fromSetFormula(f2, loc)
-        val prov = status match {
-          case Status.Pending => Provenance.Match(t1, t2, loc)
-          case Status.Unsolvable => Provenance.Match(t1, t2, loc)
-          case Status.Timeout(msg) => Provenance.Timeout(msg, loc)
-        }
-        TypeConstraint.Conflicted(t1, t2, prov)
+  private def fromSetEquations(l: List[Equation], eqs: List[TypeConstraint.Equality], subs: List[TypeConstraint.SubEff])(implicit m: AtomBimap): List[TypeConstraint] = {
+    // The provenance of the subeffect constraint at each location that has exactly one.
+    val subEffProvs = (eqs.map(eq => eq.loc -> eq.prov) ::: subs.map(sub => sub.loc -> sub.prov))
+      .filter { case (_, prov) => isSubEffProv(prov) }
+      .groupBy { case (loc, _) => loc }
+      .collect { case (loc, (_, prov) :: Nil) => loc -> prov }
+
+    val (traced, rest) = l.partition(eq => eq.isUnsolvable && isEmptyEquation(eq) && subEffProvs.contains(eq.loc))
+    val tracedConflicts = traced.map(_.loc).distinct.map { loc =>
+      val excess = Type.mkUnion(traced.filter(_.loc == loc).map(excessOf), loc)
+      TypeConstraint.Conflicted(excess, Type.Pure, subEffProvs(loc))
     }
+    rest.map(toConflicted) ::: tracedConflicts
+  }
+
+  /** Returns `true` if `prov` is the provenance of a subeffect constraint. */
+  private def isSubEffProv(prov: Provenance): Boolean = Provenance.unwrap(prov) match {
+    case Provenance.ExpectSubEff(_, _, _) => true
+    case _ => false
+  }
+
+  /** Returns `true` if `eq` is `f ~ ∅` or `∅ ~ f` for a formula `f` that is not a bare variable. */
+  private def isEmptyEquation(eq: Equation): Boolean = (eq.f1, eq.f2) match {
+    case (SetFormula.Var(_), _) => false
+    case (_, SetFormula.Var(_)) => false
+    case (_, SetFormula.Empty) => true
+    case (SetFormula.Empty, _) => true
+    case _ => false
+  }
+
+  /**
+    * Returns the effects that make the unsolvable equation `eq` fail: the non-empty side of `f ~ ∅`,
+    * and the symmetric difference of the sides otherwise.
+    */
+  private def excessOf(eq: Equation)(implicit m: AtomBimap): Type = eq match {
+    case Equation(f, SetFormula.Empty, _, loc) => fromSetFormula(f, loc)
+    case Equation(SetFormula.Empty, f, _, loc) => fromSetFormula(f, loc)
+    case Equation(f1, f2, _, loc) => fromSetFormula(SetFormula.mkXor2(f1, f2), loc)
+  }
+
+  /** Returns the unsolved set equation `eq` as a [[TypeConstraint.Conflicted]]. */
+  private def toConflicted(eq: Equation)(implicit m: AtomBimap): TypeConstraint = eq match {
+    case Equation(f1, f2, status, loc) =>
+      val t1 = fromSetFormula(f1, loc)
+      val t2 = fromSetFormula(f2, loc)
+      val prov = status match {
+        case Status.Pending => Provenance.Match(t1, t2, loc)
+        case Status.Unsolvable => Provenance.Match(t1, t2, loc)
+        case Status.Timeout(msg) => Provenance.Timeout(msg, loc)
+      }
+      TypeConstraint.Conflicted(t1, t2, prov)
+  }
 
   /**
     * Returns `f` as a type with location `loc`.

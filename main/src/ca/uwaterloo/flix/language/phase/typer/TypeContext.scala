@@ -171,7 +171,7 @@ class TypeContext {
     * Both effects must have kind `Eff`.
     */
   def subEff(eff1: Type, eff2: Type, loc: SourceLocation): Unit = {
-    val prov = Provenance.ExpectEffect(expected = eff2, actual = eff1, loc)
+    val prov = Provenance.ExpectSubEff(expected = eff2, actual = eff1, loc)
     val constr = TypeConstraint.SubEff(eff1, eff2, prov)
     currentScopeConstraints.add(constr)
   }

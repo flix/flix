@@ -14,7 +14,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.SourcePosition.moveRight
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
+import ca.uwaterloo.flix.language.phase.unification.{EffUnification3, EqualityEnv, Substitution, TraitEnv}
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 import ca.uwaterloo.flix.util.Build
 
@@ -236,12 +236,15 @@ object ConstraintSolverInterface {
           }
       }
 
+    case TypeConstraint.Equality(_, _, Provenance.ExpectSubEff(expected, actual, loc)) =>
+      // A subeffect constraint `φ ⊑ Pure` that simplification turned into the equality `Pure ~ φ`.
+      List(mkUnexpectedEffect(subst(expected), subst(actual), None, renv, loc))
+
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
       List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
     case TypeConstraint.SubEff(eff1, eff2, prov) =>
-      // The larger effect is the expected one, so it is reported first.
-      List(mkMismatchedTypesOrEffects(subst(eff2), subst(eff1), subst(eff2), subst(eff1), renv, prov.loc))
+      List(mkUnexpectedEffect(subst(eff2), subst(eff1), None, renv, prov.loc))
 
     // TODO We have simply duplicated equality here.
     // TODO We should establish invariants on conflicted/equality cases.
@@ -256,6 +259,10 @@ object ConstraintSolverInterface {
 
     case TypeConstraint.Conflicted(_, _, Provenance.ExpectArgument(expected, actual, sym, num, loc)) =>
       List(TypeError.UnexpectedArg(sym, num, expected = subst(expected), actual = subst(actual), renv, loc))
+
+    case TypeConstraint.Conflicted(excess, _, Provenance.ExpectSubEff(expected, actual, loc)) =>
+      // The conflict is the unsolvable part `excess ~ Pure` of the constraint, see `EffUnification3.fromSetEquations`.
+      List(mkUnexpectedEffect(subst(expected), subst(actual), Some(subst(excess)), renv, loc))
 
     case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.Match(baseTpe1, baseTpe2, loc)) =>
       List(mkMismatchedTypesOrEffects(subst(baseTpe1), subst(baseTpe2), subst(tpe1), subst(tpe2), renv, loc))
@@ -308,6 +315,24 @@ object ConstraintSolverInterface {
   }
 
   /**
+    * Returns a [[TypeError.UnexpectedEffect]] for an effect `actual` that is not a subeffect of the effect `expected`.
+    *
+    * The effects of `actual` that `expected` lacks are named when they can be computed: from `excess`,
+    * the part of the constraint that effect unification found unsolvable, if it is given, and otherwise
+    * from the difference `actual - expected`; in both cases only when the effect simplifies to a
+    * non-empty effect without variables.
+    */
+  private def mkUnexpectedEffect(expected: Type, actual: Type, excess: Option[Type], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+    val diff = excess match {
+      case Some(eff) => eff
+      case None => Type.mkDifference(actual, expected, loc)
+    }
+    val simplified = EffUnification3.simplify(diff)
+    val missing = if (simplified.typeVars.nonEmpty || simplified == Type.Pure) None else Some(simplified)
+    TypeError.UnexpectedEffect(expected, actual, missing, renv, loc)
+  }
+
+  /**
     * Create either the MismatchedTypes or MismatchedEffects error based on the kind of the type.
     */
   private def mkMismatchedTypesOrEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
@@ -329,6 +354,7 @@ object ConstraintSolverInterface {
   private def enclosingTypes(prov: Provenance): Option[(Type, Type)] = prov match {
     case Provenance.ExpectType(expected, actual, _) => Some((expected, actual))
     case Provenance.ExpectEffect(expected, actual, _) => Some((expected, actual))
+    case Provenance.ExpectSubEff(expected, actual, _) => Some((expected, actual))
     case Provenance.ExpectArgument(expected, actual, _, _, _) => Some((expected, actual))
     case Provenance.Match(tpe1, tpe2, _) => Some((tpe1, tpe2))
     case Provenance.PolyEffEq(_, _, eff1, eff2, _) => Some((eff1, eff2))

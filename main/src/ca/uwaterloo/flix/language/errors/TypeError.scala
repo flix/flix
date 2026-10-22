@@ -36,6 +36,7 @@ sealed trait TypeError extends CompilationMessage {
     case _: TypeError.ImplicitlyPureFunctionUsesEffect => true
     case _: TypeError.ImplicitlyPureFunctionUsesIO => true
     case _: TypeError.MismatchedEffects => true
+    case _: TypeError.UnexpectedEffect => true
     case _: TypeError.UnusedEffectInSignature => true
     case _ => false
   }
@@ -918,6 +919,64 @@ object TypeError {
          |
          |Expected: ${cyan(formatType(expected, Some(renv)))}
          |  Actual: ${red(formatType(actual, Some(renv)))}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when the effect of an expression is not a subeffect of the effect its context allows.
+    *
+    * @param expected the effect allowed by the context, which the actual effect must be contained in.
+    * @param actual   the effect of the expression.
+    * @param missing  the effects of `actual` that `expected` lacks, if they could be computed.
+    * @param renv     the rigidity environment.
+    * @param loc      the location where the error occurred.
+    */
+  case class UnexpectedEffect(expected: Type, actual: Type, missing: Option[Type], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6219
+
+    /**
+      * Returns `true` if the expected effect is worth naming: it is not when it is an unsolved variable,
+      * as for a lambda whose effect its context decides.
+      */
+    private def expectedIsKnown: Boolean = expected match {
+      case Type.Var(_, _) => false
+      case _ => true
+    }
+
+    def summary: String = (missing, expectedIsKnown) match {
+      case (Some(eff), true) => s"Unexpected effect '${formatType(eff, Some(renv), minimizeEffs = true)}': not allowed by the expected effect '${formatType(expected, Some(renv))}'."
+      case (Some(eff), false) => s"Unexpected effect '${formatType(eff, Some(renv), minimizeEffs = true)}'."
+      case (None, true) => s"Unexpected effect: '${formatType(actual, Some(renv))}' exceeds the expected effect '${formatType(expected, Some(renv))}'."
+      case (None, false) => s"Unexpected effect: '${formatType(actual, Some(renv))}' exceeds the effect allowed here."
+    }
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      val headline = (missing, expectedIsKnown) match {
+        case (Some(eff), true) => s"Unexpected effect '${red(formatType(eff, Some(renv), minimizeEffs = true))}': not allowed by the expected effect '${magenta(formatType(expected, Some(renv)))}'."
+        case (Some(eff), false) => s"Unexpected effect '${red(formatType(eff, Some(renv), minimizeEffs = true))}'."
+        case (None, true) => s"Unexpected effect: '${red(formatType(actual, Some(renv)))}' exceeds the expected effect '${magenta(formatType(expected, Some(renv)))}'."
+        case (None, false) => s"Unexpected effect: '${red(formatType(actual, Some(renv)))}' exceeds the effect allowed here."
+      }
+      val effects = if (expectedIsKnown) {
+        s"""
+           |Expected effect: ${magenta(formatType(expected, Some(renv)))}
+           |Actual effect:   ${red(formatType(actual, Some(renv)))}
+           |""".stripMargin
+      } else {
+        ""
+      }
+      val notAllowed = missing match {
+        case Some(eff) => s"The effect '${red(formatType(eff, Some(renv), minimizeEffs = true))}' is not allowed here."
+        case None => "Every effect of the expression must be among the allowed effects."
+      }
+      s""">> $headline
+         |
+         |${highlight(loc, "unexpected effect.", fmt)}
+         |$effects
+         |${underline("Explanation:")} The expression may have any effect contained in the effect
+         |its context allows, but not more. $notAllowed
          |""".stripMargin
     }
   }
