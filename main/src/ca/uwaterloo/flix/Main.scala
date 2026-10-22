@@ -660,9 +660,8 @@ object Main {
     }
 
     implicit val readSubEffectLevel: scopt.Read[Subeffecting] = scopt.Read.reads {
-      case "ins-defs" => Subeffecting.InsDefs
       case "lambdas" => Subeffecting.Lambdas
-      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. Valid options are comma-separated combinations of 'ins-defs' and 'lambdas'.")
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. The only valid option is 'lambdas'.")
     }
 
     implicit val readSveMode: scopt.Read[SveMode] = scopt.Read.reads {

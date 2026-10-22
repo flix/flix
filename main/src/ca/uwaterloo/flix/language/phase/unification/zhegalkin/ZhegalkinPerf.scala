@@ -27,7 +27,7 @@ object ZhegalkinPerf {
 
   private val DefaultN: Int = 2
 
-  private val FullSubeffecting: Set[Subeffecting] = Set(Subeffecting.InsDefs, Subeffecting.Lambdas)
+  private val FullSubeffecting: Set[Subeffecting] = Set(Subeffecting.Lambdas)
 
   private val DefaultOpts: Options = Options.Default.copy(xsubeffecting = FullSubeffecting)
 
