@@ -173,8 +173,8 @@ object ConstraintGen {
       case Expr.Lambda(fparam, exp, allowSubeffecting, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
-        // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions.
-        val bound = if (flix.options.xsubeffecting && allowSubeffecting) EffectBound.Upper else EffectBound.Exact
+        // SUB-EFFECTING: A lambda may have a larger effect than its body, unless sub-effecting is disabled for it.
+        val bound = if (allowSubeffecting) EffectBound.Upper else EffectBound.Exact
         val eff = mkBoundedEff(bound, eff0, loc)
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
@@ -468,9 +468,8 @@ object ConstraintGen {
       case Expr.LocalDef(_, sym, fparams, exp1, exp2, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
         fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
-        // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions (which include local defs).
-        val bound = if (flix.options.xsubeffecting) EffectBound.Upper else EffectBound.Exact
-        val defEff = mkBoundedEff(bound, eff1, loc)
+        // SUB-EFFECTING: A local def may have a larger effect than its body.
+        val defEff = mkBoundedEff(EffectBound.Upper, eff1, loc)
         val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)
         val (tpe2, eff2) = visitExp(exp2)

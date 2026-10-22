@@ -2115,7 +2115,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(): Unit \ IO = ()
         |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = true))
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -2127,7 +2127,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  mustBeIO(() -> ())
         |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = true))
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 
