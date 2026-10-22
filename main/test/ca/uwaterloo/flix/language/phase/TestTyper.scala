@@ -10,7 +10,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.errors.TypeError.MismatchedTypes
-import ca.uwaterloo.flix.util.{Options, Subeffecting}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestTyper extends AnyFunSuite with TestUtils {
@@ -2115,7 +2115,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(): Unit \ IO = ()
         |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = Set(Subeffecting.Lambdas)))
+    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = true))
     expectError[TypeError](result)
   }
 
@@ -2127,7 +2127,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  mustBeIO(() -> ())
         |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = Set(Subeffecting.Lambdas)))
+    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = true))
     expectSuccess(result)
   }
 

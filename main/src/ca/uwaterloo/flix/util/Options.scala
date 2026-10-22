@@ -31,7 +31,7 @@ object Options {
     assumeYes = false,
     xprintphases = false,
     xnodeprecated = false,
-    xsubeffecting = Set.empty,
+    xsubeffecting = false,
     xnewmono = EnableMono2,
     XPerfN = None,
     XPerfFrontend = false,
@@ -90,7 +90,7 @@ case class Options(lib: LibLevel,
                    assumeYes: Boolean,
                    xprintphases: Boolean,
                    xnodeprecated: Boolean,
-                   xsubeffecting: Set[Subeffecting],
+                   xsubeffecting: Boolean,
                    xnewmono: Boolean,
                    XPerfFrontend: Boolean,
                    XPerfPar: Boolean,
@@ -137,16 +137,5 @@ object LibLevel {
     * Include the full standard library.
     */
   case object All extends LibLevel
-
-}
-
-sealed trait Subeffecting
-
-object Subeffecting {
-
-  /**
-    * Enable sub-effecting for lambda expressions.
-    */
-  case object Lambdas extends Subeffecting
 
 }

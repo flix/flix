@@ -554,7 +554,7 @@ object Main {
     xprintphases: Boolean = false,
     xsve: SveMode = SveMode.PerEquation,
     xverify: Boolean = false,
-    xsubeffecting: Set[Subeffecting] = Set.empty,
+    xsubeffecting: Boolean = false,
     xnewmono: Boolean = false,
     XPerfN: Option[Int] = None,
     XPerfFrontend: Boolean = false,
@@ -657,11 +657,6 @@ object Main {
       case "min" => LibLevel.Min
       case "all" => LibLevel.All
       case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
-    }
-
-    implicit val readSubEffectLevel: scopt.Read[Subeffecting] = scopt.Read.reads {
-      case "lambdas" => Subeffecting.Lambdas
-      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. The only valid option is 'lambdas'.")
     }
 
     implicit val readSveMode: scopt.Read[SveMode] = scopt.Read.reads {
@@ -869,8 +864,8 @@ object Main {
         text("[experimental] enables internal verifiers of compiler invariants.")
 
       // Xsubeffecting
-      opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
-        text("[experimental] enables sub-effecting in select places")
+      opt[Unit]("Xsubeffecting").action((_, c) => c.copy(xsubeffecting = true)).
+        text("[experimental] enables sub-effecting for lambdas and local defs.")
 
       // Xnewmono
       opt[Unit]("Xnewmono").action((_, c) => c.copy(xnewmono = true)).

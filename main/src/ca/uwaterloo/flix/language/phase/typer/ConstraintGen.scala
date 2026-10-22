@@ -16,7 +16,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 
 /**
@@ -177,10 +177,7 @@ object ConstraintGen {
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions.
-        val bound = {
-          val enabled = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
-          if (enabled && allowSubeffecting) EffectBound.Upper else EffectBound.Exact
-        }
+        val bound = if (flix.options.xsubeffecting && allowSubeffecting) EffectBound.Upper else EffectBound.Exact
         val eff = mkBoundedEff(bound, eff0, loc)
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
@@ -475,7 +472,7 @@ object ConstraintGen {
         val (tpe1, eff1) = visitExp(exp1)
         fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions (which include local defs).
-        val bound = if (flix.options.xsubeffecting.contains(Subeffecting.Lambdas)) EffectBound.Upper else EffectBound.Exact
+        val bound = if (flix.options.xsubeffecting) EffectBound.Upper else EffectBound.Exact
         val defEff = mkBoundedEff(bound, eff1, loc)
         val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)
