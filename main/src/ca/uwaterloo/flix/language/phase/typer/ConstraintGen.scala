@@ -828,15 +828,7 @@ object ConstraintGen {
             val (tpe, eff) = visitExp(exp)
             c.unifyType(tvar, tpe, loc)
             val resTpe = tvar
-
-            // Optimization: Check if subeffecting is enabled.
-            val resEff = if (flix.options.xsubeffecting == Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas)) {
-              // If all subeffecting options are enabled then we skip the fresh effect variable.
-              eff
-            } else {
-              // Otherwise we use the fresh effect variable.
-              Type.mkUnion(eff, evar, loc)
-            }
+            val resEff = Type.mkUnion(eff, evar, loc)
             (resTpe, resEff)
         }
 

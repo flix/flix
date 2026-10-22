@@ -39,13 +39,12 @@ object ConstraintSolverInterface {
   /**
     * Resolves constraints in the given signature using the given inference result.
     *
-    * With `bound` as [[EffectBound.Upper]] the inferred effect may be a subeffect of the declared effect
-    * (sub-effecting); with [[EffectBound.Exact]] the two must be equal.
+    * The inferred effect must equal the declared effect.
     */
-  def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root, bound: EffectBound)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = sig match {
+  def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = sig match {
     case KindedAst.Sig(_, _, None, _) => (SubstitutionTree.empty, Nil)
     case KindedAst.Sig(_, spec, Some(_), _) =>
-      visitSpec(spec, sig.loc, infResult, renv0, tconstrs0, Nil, tenv0, eqEnv0, root, bound)
+      visitSpec(spec, sig.loc, infResult, renv0, tconstrs0, Nil, tenv0, eqEnv0, root, EffectBound.Exact)
   }
 
   /**

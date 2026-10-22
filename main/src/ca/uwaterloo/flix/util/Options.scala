@@ -145,11 +145,6 @@ sealed trait Subeffecting
 object Subeffecting {
 
   /**
-    * Enable sub-effecting for module-level definitions.
-    */
-  case object ModDefs extends Subeffecting
-
-  /**
     * Enable sub-effecting for instance-level defs.
     */
   case object InsDefs extends Subeffecting
