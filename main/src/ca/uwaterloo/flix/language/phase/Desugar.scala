@@ -488,7 +488,7 @@ object Desugar {
     case WeededAst.Expr.Lambda(fparam, exp, loc) =>
       val fparam1 = visitFormalParam(fparam)
       val e = visitExp(exp)
-      Expr.Lambda(fparam1, e, loc)
+      Expr.Lambda(fparam1, e, allowSubeffecting = true, loc)
 
     case WeededAst.Expr.LambdaExtMatch(pat, exp, loc) =>
       val p = visitExtPattern(pat)
@@ -498,7 +498,7 @@ object Desugar {
     case WeededAst.Expr.LambdaMatch(pat, exp, loc) =>
       val p = visitPattern(pat)
       val e = visitExp(exp)
-      desugarLambdaMatch(p, e, loc)
+      desugarLambdaMatch(p, e, allowSubeffecting = true, loc)
 
     case WeededAst.Expr.Unary(sop, exp, loc) =>
       val e = visitExp(exp)
@@ -1083,7 +1083,8 @@ object Desugar {
     val lambda = frags0.foldRight(yieldExp) {
       case (WeededAst.ForFragment.Generator(pat, _, loc1), acc) =>
         val p = visitPattern(pat)
-        desugarLambdaMatch(p, acc, loc1)
+        // N.B.: Subeffecting is disabled for generated lambdas, since it introduces extra effect variables that make inference more expensive.
+        desugarLambdaMatch(p, acc, allowSubeffecting = false, loc1)
     }
 
     // Apply first fragment to Functor.map
@@ -1119,7 +1120,7 @@ object Desugar {
       case (WeededAst.ForFragment.Generator(pat1, exp1, loc1), acc) =>
         val p1 = visitPattern(pat1)
         val e1 = visitExp(exp1)
-        val lambda = desugarLambdaMatch(p1, acc, loc1)
+        val lambda = desugarLambdaMatch(p1, acc, allowSubeffecting = true, loc1)
         val fparams = List(lambda, e1)
         mkApplyFqn(fqnForEach, fparams, loc1.asSynthetic)
 
@@ -1160,7 +1161,7 @@ object Desugar {
       case (WeededAst.ForFragment.Generator(pat1, exp1, loc1), acc) =>
         val p1 = visitPattern(pat1)
         val e1 = visitExp(exp1)
-        val lambda = desugarLambdaMatch(p1, acc, loc1)
+        val lambda = desugarLambdaMatch(p1, acc, allowSubeffecting = true, loc1)
         val fparams = List(lambda, e1)
         mkApplyFqn(fqnFlatMap, fparams, loc1)
 
@@ -1387,7 +1388,7 @@ object Desugar {
 
     val fparam = DesugaredAst.FormalParam(ident, None, loc0.asSynthetic)
     val body = DesugaredAst.Expr.ExtMatch(paramVarExpr, List(rule), loc0.asSynthetic)
-    DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
+    DesugaredAst.Expr.Lambda(fparam, body, allowSubeffecting = true, loc0.asSynthetic)
   }
 
   /**
@@ -1405,11 +1406,12 @@ object Desugar {
     *   )
     * }}}
     *
-    * @param pat0 the pattern of the original match-lambda.
-    * @param exp0 the body of the lambda.
-    * @param loc0 the location of the entire lambda.
+    * @param pat0              the pattern of the original match-lambda.
+    * @param exp0              the body of the lambda.
+    * @param allowSubeffecting whether the lambda may have a larger effect than its body.
+    * @param loc0              the location of the entire lambda.
     */
-  private def desugarLambdaMatch(pat0: DesugaredAst.Pattern, exp0: DesugaredAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
+  private def desugarLambdaMatch(pat0: DesugaredAst.Pattern, exp0: DesugaredAst.Expr, allowSubeffecting: Boolean, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
     // The name of the lambda parameter.
     val ident = Name.Ident("matchVar" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
 
@@ -1419,7 +1421,7 @@ object Desugar {
 
     val fparam = DesugaredAst.FormalParam(ident, None, loc0.asSynthetic)
     val body = DesugaredAst.Expr.Match(paramVarExpr, List(rule), loc0.asSynthetic)
-    DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
+    DesugaredAst.Expr.Lambda(fparam, body, allowSubeffecting, loc0.asSynthetic)
   }
 
   /**
