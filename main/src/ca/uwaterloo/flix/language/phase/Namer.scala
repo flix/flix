@@ -919,10 +919,10 @@ object Namer {
       val es = exps.map(visitExp(_))
       NamedAst.Expr.Apply(e, es, loc)
 
-    case DesugaredAst.Expr.Lambda(fparam, exp, allowSubeffecting, loc) =>
+    case DesugaredAst.Expr.Lambda(fparam, exp, loc) =>
       val fp = visitFormalParam(fparam)
       val e = visitExp(exp)
-      NamedAst.Expr.Lambda(fp, e, allowSubeffecting, loc)
+      NamedAst.Expr.Lambda(fp, e, loc)
 
     case DesugaredAst.Expr.Unary(sop, exp, loc) =>
       val e = visitExp(exp)
