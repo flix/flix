@@ -18,6 +18,8 @@ import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import scala.annotation.tailrec
+
 
 /**
   * This phase generates a list of type constraints, which include
@@ -170,11 +172,15 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.Lambda(fparam, exp, allowSubeffecting, loc) =>
+      case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions.
-        val bound = if (flix.options.xsubeffecting && allowSubeffecting) EffectBound.Upper else EffectBound.Exact
+        //
+        // A lambda whose body is itself a lambda is never sub-effected: its body is pure, so the bound
+        // `Pure ⊑ x` would hold trivially and leave `x` unconstrained. A curried chain of n lambdas would
+        // otherwise introduce n - 1 such variables, which makes type inference needlessly expensive.
+        val bound = if (flix.options.xsubeffecting && !isCurriedLambdaBody(exp)) EffectBound.Upper else EffectBound.Exact
         val eff = mkBoundedEff(bound, eff0, loc)
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
@@ -1451,6 +1457,19 @@ object ConstraintGen {
     }
     val regionOpt = struct.tparams.lastOption.map(region => substMap(region.sym))
     (instantiatedFields.toMap, tpe, regionOpt)
+  }
+
+  /**
+    * Returns `true` if `exp` is the body of a curried lambda, i.e. if `exp` is itself a lambda.
+    *
+    * A match-lambda `match p -> e` desugars to `x -> match x { case p => e }`, so a match on a variable
+    * whose only rule has no guard is looked through to the body `e` of that rule.
+    */
+  @tailrec
+  private def isCurriedLambdaBody(exp: KindedAst.Expr): Boolean = exp match {
+    case Expr.Lambda(_, _, _) => true
+    case Expr.Match(Expr.Var(_, _), List(KindedAst.MatchRule(_, None, body, _)), _) => isCurriedLambdaBody(body)
+    case _ => false
   }
 
   /** Returns `true` if `exp` is a JVM interop invocation (constructor, method, or static method). */

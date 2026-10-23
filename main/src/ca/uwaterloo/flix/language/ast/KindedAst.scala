@@ -89,7 +89,7 @@ object KindedAst {
 
     case class ApplySig(symUse: SigSymUse, exps: List[Expr], targ: Type.Var, targs: List[Type.Var], itvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Lambda(fparam: FormalParam, exp: Expr, allowSubeffecting: Boolean, loc: SourceLocation) extends Expr
+    case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
