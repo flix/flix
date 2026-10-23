@@ -134,7 +134,7 @@ object TypeReconstruction {
       val tas = targs.map(subst.apply)
       TypedAst.Expr.ApplySig(symUse, es, ta, tas, subst(itvar), subst(tvar), subst(evar), ApplyPosition.NonTail, loc)
 
-    case KindedAst.Expr.Lambda(fparam, exp, _, loc) =>
+    case KindedAst.Expr.Lambda(fparam, exp, loc) =>
       val p = visitFormalParam(fparam, subst)
       val e = visitExp(exp)
       val t = Type.mkArrowWithEffect(p.tpe, e.eff, e.tpe, loc)

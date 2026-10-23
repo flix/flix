@@ -476,10 +476,10 @@ object Kinder {
         val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
         KindedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps, targ, targs, itvar, tvar, evar, loc2)
 
-      case ResolvedAst.Expr.Lambda(fparam0, exp0, allowSubeffecting, loc) =>
+      case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>
         val fparam = visitFormalParam(fparam0, kenv0, root)
         val exp = visitExp(exp0, kenv0, root)
-        KindedAst.Expr.Lambda(fparam, exp, allowSubeffecting, loc)
+        KindedAst.Expr.Lambda(fparam, exp, loc)
 
       case ResolvedAst.Expr.Unary(sop, exp0, loc) =>
         val exp = visitExp(exp0, kenv0, root)

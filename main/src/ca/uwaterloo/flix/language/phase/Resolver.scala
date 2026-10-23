@@ -943,11 +943,11 @@ object Resolver {
     case app@NamedAst.Expr.Apply(_, _, _) =>
       visitApplyClo(app, scp0)
 
-    case NamedAst.Expr.Lambda(fparam, exp, allowSubeffecting, loc) =>
+    case NamedAst.Expr.Lambda(fparam, exp, loc) =>
       val p = resolveFormalParam(fparam, Wildness.AllowWild, scp0, taenv, ns0, root)
       val scp = (scp0 ++ mkFormalParamScp(Nel.of(p))).withSuperClass(None) // super calls not allowed inside lambdas
       val e = resolveExp(exp, scp)
-      ResolvedAst.Expr.Lambda(p, e, allowSubeffecting, loc)
+      ResolvedAst.Expr.Lambda(p, e, loc)
 
     case NamedAst.Expr.Unary(sop, exp, loc) =>
       val e = resolveExp(exp, scp0)
@@ -1454,7 +1454,7 @@ object Resolver {
 
       val fullDefApplication = base(argInfo.map(_.arg) ++ argsPadding)
 
-      val fullDefLambda = mkPrefixPureLambda(fparamsPadding, fullDefApplication, loc.asSynthetic)
+      val fullDefLambda = mkCurriedLambda(fparamsPadding, fullDefApplication, loc.asSynthetic)
 
       // Let-bind the arguments that require it.
       argInfo.foldRight(fullDefLambda) {
@@ -1473,16 +1473,14 @@ object Resolver {
   }
 
   /**
-    * Returns a lambda `(fp_0, fp_1, .., fp_n) -> body \ ef` where all but the last lambda is pure.
+    * Returns the curried lambda `fp_0 -> fp_1 -> .. -> fp_n -> body`.
+    *
+    * All but the innermost lambda have a lambda as their body, so the typer gives them exactly the effect `Pure`.
     */
-  private def mkPrefixPureLambda(fparams: List[ResolvedAst.FormalParam], body: ResolvedAst.Expr, loc: SourceLocation): ResolvedAst.Expr = {
-    val (lambda, _) = fparams.foldRight((body, true)) {
-      case (fp, (acc, first)) =>
-        // N.B.: Subeffecting is disabled for generated lambdas, since it introduces extra effect variables that make inference more expensive.
-        if (first) (ResolvedAst.Expr.Lambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
-        else (mkPureLambda(fp, acc, loc.asSynthetic), false)
+  private def mkCurriedLambda(fparams: List[ResolvedAst.FormalParam], body: ResolvedAst.Expr, loc: SourceLocation): ResolvedAst.Expr = {
+    fparams.foldRight(body) {
+      case (fp, acc) => ResolvedAst.Expr.Lambda(fp, acc, loc.asSynthetic)
     }
-    lambda
   }
 
   /**
@@ -3958,11 +3956,6 @@ object Resolver {
     */
   def freshVarSym(name: String, boundBy: BoundBy, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Symbol.VarSym =
     Symbol.freshVarSym(name + Flix.Delimiter + flix.genSym.freshId(), boundBy, loc)
-
-  /** Returns a [[ResolvedAst.Expr.Lambda]] where the body is ascribed to have no effect. */
-  private def mkPureLambda(param: ResolvedAst.FormalParam, exp: ResolvedAst.Expr, loc: SourceLocation): ResolvedAst.Expr = {
-    ResolvedAst.Expr.Lambda(param, ResolvedAst.Expr.Ascribe(exp, None, Some(UnkindedType.Cst(TypeConstructor.Pure, loc)), loc), allowSubeffecting = false, loc)
-  }
 
   /**
     * Companion object for [[SharedContext]]
