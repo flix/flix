@@ -60,8 +60,10 @@ object flix extends ScalaModule with NativeImageModule {
 
     // ── Test files (saves ~5 MB) ────────────────────────────
     // The resources directive includes main/ which brings in main/test/.
-    // These .flix and .scala test files are not needed at runtime.
-    Rule.ExcludePattern("test/.*"),
+    // These .flix and .scala test files are not needed at runtime, except
+    // the library tests used as a workload by Xperf (CompilerPerf) and
+    // CompilerMemory.
+    Rule.ExcludePattern("test/(?!ca/uwaterloo/flix/library/Test[^/]*\\.flix$).*"),
 
     // ── Scala source files (saves ~4 MB) ────────────────────
     // The resources directive includes main/src/ for .flix library files,
