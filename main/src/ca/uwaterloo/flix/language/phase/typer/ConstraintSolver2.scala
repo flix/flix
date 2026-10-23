@@ -337,7 +337,7 @@ object ConstraintSolver2 {
     *   - (reflU): eliminates trivial equalities: `τ ~ τ` becomes `∅`
     *   - eliminates constraints containing unrecoverable errors (see [[isEliminable]])
     *   - (redU): reduces the types in the constraint
-    *   - (trivU): eliminates subeffect constraints that hold syntactically and constrain no flexible variable (see [[isTrivialSubEff]]): `Pure ⊑ IO` becomes `∅`
+    *   - (trivU): eliminates subeffect constraints that hold syntactically without losing information about flexible variables (see [[isTrivialSubEff]]): `Pure ⊑ IO` becomes `∅`
     *   - (pureU): turns a subeffect constraint with an empty upper bound into the equality it is: `φ ⊑ Pure` becomes `Pure ~ φ`
     *
     * The rules are applied in the listed order to each constraint:
@@ -385,7 +385,7 @@ object ConstraintSolver2 {
         val (r1, cs1) = reduce(eff1)(scope, renv, progress, eqenv, flix)
         val (r2, cs2) = reduce(eff2)(scope, renv, progress, eqenv, flix)
         if (isTrivialSubEff(r1, r2)) {
-          // (trivU): the constraint holds syntactically and constrains no flexible variable, so it can be dropped.
+          // (trivU): the constraint holds syntactically and dropping it loses no information about flexible variables.
           progress.markProgress()
           cs1 ::: cs2
         } else if (r2 == Type.Pure) {
@@ -443,19 +443,25 @@ object ConstraintSolver2 {
 
   /**
     * Returns `true` if `eff1 ⊑ eff2` holds syntactically, i.e. without consulting the effect solver,
-    * and dropping the constraint leaves no flexible variable unconstrained: `eff2` is `Univ`, the two
-    * are the same effect, or `eff1` is `Pure` and `eff2` has no flexible variables.
+    * and can be dropped without losing information about flexible variables: the two are the same
+    * effect, `eff1` is `Pure` and `eff2` has no flexible variables, or `eff2` is `Univ` and `eff1`
+    * has no flexible variables.
     *
-    * `Pure ⊑ e` with `e` flexible holds, but is kept: it is the only constraint on the effect of a
-    * lambda or local def whose body is pure, and the effect solver uses it to decide `e` at the top
-    * level. If it were dropped and `e` were used only inside a region, the nested solve of that region
-    * would see `e` as a rigid variable of the enclosing scope and could not decide it.
+    * The idea is that a region must not learn information about its flexible variables from outside
+    * the region. If a constraint on a flexible variable were dropped, a nested region could be the
+    * only place that variable occurs, and the region would then have to decide it on its own.
     *
     * The check is sound but not complete: a subeffect constraint that holds, but not syntactically,
     * is left to the effect solver. The check never concludes that a constraint fails.
     */
   private def isTrivialSubEff(eff1: Type, eff2: Type)(implicit scope: RegionScope, renv: RigidityEnv): Boolean =
-    (eff2 == Type.Univ) || (eff1 == eff2) || (eff1 == Type.Pure && eff2.typeVars.forall(tvar => renv.isRigid(tvar.sym)))
+    (eff1 == eff2) || (eff1 == Type.Pure && hasNoFlexibleVars(eff2)) || (eff2 == Type.Univ && hasNoFlexibleVars(eff1))
+
+  /**
+    * Returns `true` if `eff` has no flexible variables.
+    */
+  private def hasNoFlexibleVars(eff: Type)(implicit scope: RegionScope, renv: RigidityEnv): Boolean =
+    eff.typeVars.forall(tvar => renv.isRigid(tvar.sym))
 
   /**
     * Purifies empty regions in the constraint set.
