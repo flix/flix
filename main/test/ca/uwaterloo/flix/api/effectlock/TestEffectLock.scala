@@ -108,11 +108,11 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     val upgrade = rootOf(Map(clerk -> Map("Main.flix" -> after), museum -> Map("Main.flix" -> museumAfter)), user = "pub def shared(): Unit = ()")
     val lockfile = EffectLock.lock(locked, Set(clerk, museum))
 
-    // What the clerk still declares publicly is compared, and the changes are reported as the
-    // defs in order of name, then the sigs.
+    // What the clerk still declares publicly is compared, and the changes are reported in order
+    // of name.
     val result = EffectLock.check(lockfile, upgrade, Set(clerk))
     assert(result.compared == 5)
-    assert(changedNames(result) == List("narrower", "wider", "Sellable.price"))
+    assert(changedNames(result) == List("Sellable.price", "narrower", "wider"))
 
     // Naming one package checks that one and no other, so that a package whose signatures have
     // drifted does not stand in the way of checking another. A locked declaration is looked for
@@ -123,10 +123,42 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(one.changed.map { case (id, sym, _) => (id, EffectLock.nameOf(sym)) } == List((museum, "m")))
     val both = EffectLock.check(lockfile, upgrade, Set(clerk, museum))
     assert(both.compared == 6)
-    assert(changedNames(both) == List("m", "narrower", "wider", "Sellable.price"))
+    assert(changedNames(both) == List("m", "Sellable.price", "narrower", "wider"))
 
     // Naming no package checks nothing, since nothing is a target.
     assert(EffectLock.check(lockfile, upgrade, Set.empty) == CheckResult(0, Nil))
+  }
+
+  test("check.kind") {
+    // A locked def that the clerk now declares as a sig of the same name is compared against the
+    // sig, and a locked sig that is now a def against the def: the two tables of the lock file do
+    // not hide a declaration that changes kind. A def and a sig cannot share a name, so a name
+    // matches at most one declaration either way.
+    val before = Map(
+      "Main.flix" -> "pub def same(): Unit = ()\npub trait Sellable[a] {\n    pub def price(x: a): Int32\n}",
+      "Clerk.flix" -> "pub mod Clerk {\n    pub def buy(): Int32 = 1\n}")
+    val after = Map(
+      "Main.flix" ->
+        """
+          |eff Ef { def op(): Unit }
+          |pub def same(): Unit = ()
+          |pub trait Clerk[a] {
+          |    pub def buy(): a \ Ef   // reported: locked as a def, and now a sig with an effect.
+          |}
+          |""".stripMargin,
+      "Sellable.flix" ->
+        """
+          |pub mod Sellable {
+          |    pub def price(_x: a): Int32 \ Ef = { Ef.op(); 0 }   // reported: locked as a sig, and now a def with an effect.
+          |}
+          |""".stripMargin)
+    val lockfile = EffectLock.lock(rootOf(Map(clerk -> before), user = ""), Set(clerk))
+    assert(lockfile.packages(clerk).defs.keySet == Set("same", "Clerk.buy"))
+    assert(lockfile.packages(clerk).sigs.keySet == Set("Sellable.price"))
+
+    val result = EffectLock.check(lockfile, rootOf(Map(clerk -> after), user = ""), Set(clerk))
+    assert(result.compared == 3)
+    assert(changedNames(result) == List("Clerk.buy", "Sellable.price"))
   }
 
   test("effects.lock") {
