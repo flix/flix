@@ -19,7 +19,7 @@ class ZhegalkinCache[T] {
   var EnableUnionCache: Boolean = false
   var EnableInterCache: Boolean = true
   var EnableXorCache: Boolean = false
-  var EnableSVECache: Boolean = true
+  var EnableSVECache: Boolean = false
 
   /**
    * A cache that represents the intersection of the given Zhegalkin constant and expression.
