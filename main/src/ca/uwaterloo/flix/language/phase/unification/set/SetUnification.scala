@@ -497,6 +497,7 @@ object SetUnification {
     * `g`, and `xn` additionally covers what the others leave out. The first condition is ground and
     * is returned as an equation, unless `d` is `empty` or `g` itself. `d` is the union of the
     * ground members, or `empty` if there are none.
+    * Nested unions are flattened, since a pipeline of higher-order calls nests its effects.
     *
     * The rule keeps such equations away from successive variable elimination, whose cost is
     * exponential in the number of variables.
@@ -506,8 +507,8 @@ object SetUnification {
   private def unionAssignment(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
     val Equation(f1, f2, _, loc) = eq
     (f1, f2) match {
-      case (g, Union(l)) if g.isGround => unionAssignmentOf(g, l.toList, loc)
-      case (Union(l), g) if g.isGround => unionAssignmentOf(g, l.toList, loc)
+      case (g, Union(l)) if g.isGround => unionAssignmentOf(g, flattenUnions(l.toList), loc)
+      case (Union(l), g) if g.isGround => unionAssignmentOf(g, flattenUnions(l.toList), loc)
       case _ => None
     }
   }
