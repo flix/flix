@@ -1149,7 +1149,7 @@ pub mod List {
             case (x :: rs1, y :: rs2) => loop(rs1, rs2, ks -> k(((z, zs) -> z :: zs) <$> f(x, y) <*> ks))
             case (_, _)               => k(Applicative.point(Nil))
         };
-        loop(xs, ys, x -> checked_ecast(x))
+        loop(xs, ys, x -> x)
 
     ///
     /// Returns a pair of lists, the first containing all first components in `l`

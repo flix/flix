@@ -296,7 +296,7 @@ pub mod MutSet {
     /// Returns an iterator over `s`.
     ///
     pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
-        Set.iterator(rc, s->inner) |> Iterator.map(x -> checked_ecast(x))
+        Set.iterator(rc, s->inner) |> Iterator.map(x -> x)
 
     ///
     /// Returns `true` if MutSets `a` and `b` have the same elements, i.e. are structurally equal.
