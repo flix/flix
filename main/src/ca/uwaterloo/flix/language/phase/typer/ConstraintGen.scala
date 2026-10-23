@@ -180,7 +180,7 @@ object ConstraintGen {
         // A lambda whose body is itself a lambda is never sub-effected: its body is pure, so the bound
         // `Pure ⊑ x` would hold trivially and leave `x` unconstrained. A curried chain of n lambdas would
         // otherwise introduce n - 1 such variables, which makes type inference needlessly expensive.
-        val bound = if (flix.options.xsubeffecting && !isLambda(exp)) EffectBound.Upper else EffectBound.Exact
+        val bound = if (flix.options.xsubeffecting && !isCurriedLambdaBody(exp)) EffectBound.Upper else EffectBound.Exact
         val eff = mkBoundedEff(bound, eff0, loc)
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
@@ -1460,15 +1460,15 @@ object ConstraintGen {
   }
 
   /**
-    * Returns `true` if `exp` is syntactically a lambda.
+    * Returns `true` if `exp` is the body of a curried lambda, i.e. if `exp` is itself a lambda.
     *
     * A match-lambda `match p -> e` desugars to `x -> match x { case p => e }`, so a match on a variable
-    * whose only rule has no guard counts as a lambda if its body does.
+    * whose only rule has no guard is looked through to the body `e` of that rule.
     */
   @tailrec
-  private def isLambda(exp: KindedAst.Expr): Boolean = exp match {
+  private def isCurriedLambdaBody(exp: KindedAst.Expr): Boolean = exp match {
     case Expr.Lambda(_, _, _) => true
-    case Expr.Match(Expr.Var(_, _), List(KindedAst.MatchRule(_, None, body, _)), _) => isLambda(body)
+    case Expr.Match(Expr.Var(_, _), List(KindedAst.MatchRule(_, None, body, _)), _) => isCurriedLambdaBody(body)
     case _ => false
   }
 
