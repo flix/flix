@@ -62,6 +62,8 @@ object SetUnification {
 
     final case object BoundAssignment extends Phase
 
+    final case object UnionAssignment extends Phase
+
     final case object ReflexiveAndDuplicate extends Phase
 
     final case object SuccessiveVariableElimination extends Phase
@@ -110,6 +112,8 @@ object SetUnification {
       runWithState(state, runRule(boundAssignment), Phase.BoundAssignment)
       runWithState(state, runRule(trivial), Phase.Trivial)
       runWithState(state, reflexiveAndDuplicate, Phase.ReflexiveAndDuplicate)
+      runWithState(state, runRule(trivial), Phase.Trivial)
+      runWithState(state, runRule(unionAssignment), Phase.UnionAssignment)
       runWithState(state, runRule(trivial), Phase.Trivial)
     }
 
@@ -475,6 +479,66 @@ object SetUnification {
       case c@Compl(v: Var) if !members.exists(m => !(m eq c) && m.contains(v)) =>
         val g = members.filterNot(_ eq c).foldLeft(Univ: SetFormula)(mkInter)
         (Nil, SetSubstitution.singleton(v.x, mkUnion2(v, g)))
+    }
+  }
+
+  /**
+    * Solves equations between a ground formula and a union of ground formulas and variables (e.g.
+    * `c ~ c ∪ x1 ∪ x2`, which is the effect of a region whose statements are lambdas with free
+    * effects).
+    *
+    * If no progress can be made, [[None]] is returned.
+    *
+    *   - `g ~ d ∪ x1 ∪ .. ∪ xn` where `g` and `d` are ground and the `xi` are distinct variables
+    *     becomes `({d ∩ ¬g ~ empty}, [x1 -> x1 ∩ g, .., xn-1 -> xn-1 ∩ g, xn -> (xn ∩ g) ∪ (g ∩ ¬d ∩ ¬x1 ∩ .. ∩ ¬xn-1)])`
+    *
+    * The equation holds exactly when `d ⊆ g`, every `xi ⊆ g`, and the `xi` cover `g ∩ ¬d`. The
+    * substitution is a most general unifier of the last two conditions: every `xi` is restricted to
+    * `g`, and `xn` additionally covers what the others leave out. The first condition is ground and
+    * is returned as an equation, unless `d` is `empty` or `g` itself. `d` is the union of the
+    * ground members, or `empty` if there are none.
+    *
+    * The rule keeps such equations away from successive variable elimination, whose cost is
+    * exponential in the number of variables.
+    *
+    * This also applies to the symmetric equations.
+    */
+  private def unionAssignment(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+    val Equation(f1, f2, _, loc) = eq
+    (f1, f2) match {
+      case (g, Union(l)) if g.isGround => unionAssignmentOf(g, l.toList, loc)
+      case (Union(l), g) if g.isGround => unionAssignmentOf(g, l.toList, loc)
+      case _ => None
+    }
+  }
+
+  /**
+    * Returns the solution of `g ~ m1 ∪ .. ∪ mk` for the ground formula `g` and the members `members`,
+    * if every member is ground or a variable and at least one member is a variable.
+    *
+    * Returns [[None]] otherwise.
+    */
+  private def unionAssignmentOf(g: SetFormula, members: List[SetFormula], loc: SourceLocation): Option[(List[Equation], SetSubstitution)] = {
+    val xs = members.collect { case v: Var => v }.distinct
+    val grounds = members.filterNot(_.isInstanceOf[Var])
+    if (xs.isEmpty || !grounds.forall(_.isGround)) {
+      None
+    } else {
+      val d = grounds.foldLeft(Empty: SetFormula)(mkUnion2)
+      val init = xs.init
+      val last = xs.last
+
+      // x1 -> x1 ∩ g, .., xn-1 -> xn-1 ∩ g
+      val restricted = init.foldLeft(IntMap.empty[SetFormula]) {
+        case (acc, x) => acc.updated(x.x, mkInter(x, g))
+      }
+      // xn -> (xn ∩ g) ∪ (g ∩ ¬d ∩ ¬x1 ∩ .. ∩ ¬xn-1)
+      val rest = init.foldLeft(mkDiff2(g, d))((acc, x) => mkInter(acc, mkCompl(x)))
+      val subst = SetSubstitution(restricted.updated(last.x, mkUnion2(mkInter(last, g), rest)))
+
+      // d ⊆ g, i.e. d ∩ ¬g ~ empty
+      val eqs = if (d == Empty || d == g) Nil else List(Equation.mk(mkDiff2(d, g), Empty, loc))
+      Some((eqs, subst))
     }
   }
 
