@@ -262,6 +262,18 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
     assertSolved(input)
   }
 
+  test("DelayMap.insertWith.Fusion") {
+    // c0 ~ x10 ∪ x11 ∪ c0 ∪ (x8 ∪ x9 ∪ (x6 ∪ x7 ∪ (x4 ∪ x5 ∪ (x2 ∪ x3 ∪ (x0 ∪ x1)))))
+    val inner = Union(TwoList(Var(0), Var(1), List()))
+    val nested = List(2, 4, 6, 8).foldLeft(inner: SetFormula) {
+      case (acc, i) => Union(TwoList(Var(i), Var(i + 1), List(acc)))
+    }
+    val input = List(
+      mkEq(Cst(12), Union(TwoList(Var(10), Var(11), List(Cst(12), nested))))
+    )
+    assertSolved(input)
+  }
+
   /** Asserts that `input` is solved by SVE at every granularity. */
   def assertSolved(input: List[Equation]): Unit = {
     for (mode <- List(SveMode.PerEquation, SveMode.PerComponent, SveMode.PerSystem)) {
