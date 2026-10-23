@@ -160,6 +160,7 @@ sealed trait TokenKind {
       case TokenKind.MapHash => "'Map#'"
       case TokenKind.Minus => "'-'"
       case TokenKind.NameLowercase => "<name>"
+      case TokenKind.NameLowercaseEscaped => "<escaped name>"
       case TokenKind.NameMath => "<math name>"
       case TokenKind.NameUppercase => "<Name>"
       case TokenKind.ParenL => "'('"
@@ -950,6 +951,8 @@ object TokenKind {
   case object Minus extends TokenKind
 
   case object NameLowercase extends TokenKind
+
+  case object NameLowercaseEscaped extends TokenKind
 
   case object NameMath extends TokenKind
 
