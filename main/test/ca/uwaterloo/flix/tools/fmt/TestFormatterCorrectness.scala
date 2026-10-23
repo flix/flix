@@ -6,7 +6,7 @@
  */
 package ca.uwaterloo.flix.tools.fmt
 
-import org.scalatest.Ignore
+import org.scalatest.DoNotDiscover
 
 /**
   * Correctness tests for the Flix code formatter.
@@ -21,7 +21,7 @@ import org.scalatest.Ignore
   *
   * Each property is run on both corpora: the standard library and the `examples`.
   */
-@Ignore
+@DoNotDiscover
 class TestFormatterCorrectness extends TestFormatterCommon {
 
   /**
