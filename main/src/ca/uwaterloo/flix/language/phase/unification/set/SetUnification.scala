@@ -16,7 +16,7 @@ import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, Zhegal
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.TwoList
 
-import scala.collection.immutable.IntMap
+import scala.collection.immutable.{IntMap, SortedSet}
 import scala.collection.mutable
 
 object SetUnification {
@@ -25,6 +25,21 @@ object SetUnification {
    * The maximum number of variables an equation may contain before it is considered too complex.
    */
   val MaxVars: Int = CompilerConstants.MaxEffUnificationVars
+
+  /** The maximum number of passes over the rule sequence. */
+  private val MaxIterations: Int = 32
+
+  /** The maximum number of equations that distribution may produce per system. */
+  private val MaxSplits: Int = 512
+
+  /** The maximum number of equations that one distribution may produce. */
+  private val MaxSplitWidth: Int = 8
+
+  /** The maximum size of a substitution range before the rewrite rules stop. */
+  private val MaxRangeSize: Int = 256
+
+  /** The maximum number of members of a (flattened) symmetric difference that is expanded. */
+  private val MaxXorExpand: Int = 3
 
   /**
     * Enable simple rewrite rules.
@@ -69,6 +84,12 @@ object SetUnification {
     final case object SuccessiveVariableElimination extends Phase
 
     final case object Trivial extends Phase
+
+    final case object Simplify extends Phase
+
+    final case object InterAssignment extends Phase
+
+    final case object CoverAssignment extends Phase
   }
 
   /** Represents the running mutable state of the solver. */
@@ -77,6 +98,44 @@ object SetUnification {
     var eqs: List[Equation] = initialEquations
     /** The current substitution, which has already been applied to `eqs`. */
     var subst: SetSubstitution = SetSubstitution.empty
+    /** The number of equations produced by distribution so far (see [[MaxSplits]]). */
+    var splits: Int = 0
+
+    /**
+      * For each variable bound by the substitution built so far, the other variables that occur in
+      * its range. Used to refuse bindings that would make ranges depend on each other cyclically,
+      * since composing such bindings grows the substitution exponentially.
+      */
+    val deps: mutable.Map[Int, Set[Int]] = mutable.Map.empty
+
+    /** Returns `true` if `target` is reachable from `from` in the dependency graph. */
+    def reaches(from: Int, target: Int): Boolean = {
+      val seen = mutable.Set.empty[Int]
+      var work = List(from)
+      while (work.nonEmpty) {
+        val v = work.head
+        work = work.tail
+        if (v == target) return true
+        if (seen.add(v)) {
+          work = deps.getOrElse(v, Set.empty).toList ::: work
+        }
+      }
+      false
+    }
+
+    /** Returns `true` if binding `x -> f` would create a dependency cycle through another variable. */
+    def wouldCycle(x: Int, f: SetFormula): Boolean =
+      (f.varsOf - x).exists(v => reaches(v, x))
+
+    /** Records the binding `x -> f` in the dependency graph. */
+    def addBinding(x: Int, f: SetFormula): Unit = {
+      val vs = f.varsOf - x
+      val keepsX = f.varsOf.contains(x)
+      for ((u, ds) <- deps.toList if ds.contains(x)) {
+        deps(u) = ((if (keepsX) ds else ds - x) ++ vs) - u
+      }
+      deps(x) = (deps.getOrElse(x, Set.empty) ++ vs) - x
+    }
   }
 
   /**
@@ -92,6 +151,10 @@ object SetUnification {
     * [[Equation.Status.Timeout]]. The returned equations might not exist in `eqs` directly, but
     * will be derived from it.
     *
+    * The rewrite rules run as a sequence that is repeated until no rule makes progress (or
+    * [[MaxIterations]] is reached), since the substitution of one rule often enables another:
+    * a bound on a variable turns the equations of the lambdas inside a region into further bounds.
+    *
     * The equations that remain after the rewrite rules are solved by SVE at the granularity
     * given by `mode` (see [[SveAlgorithm.sveAll]]).
     */
@@ -99,22 +162,47 @@ object SetUnification {
     val state = new State(l)
 
     if (EnableRewriteRules) {
-      runWithState(state, runRule(constantPropagation), Phase.ConstantPropagation)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, runRule(variablePropagation), Phase.VariablePropagation)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, runRule(variableAssignment), Phase.VariableAssignment)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, recursiveAssignment, Phase.RecursiveAssignment)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, runRule(constantPropagation), Phase.ConstantPropagation)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, runRule(boundAssignment), Phase.BoundAssignment)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, reflexiveAndDuplicate, Phase.ReflexiveAndDuplicate)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, runRule(unionAssignment), Phase.UnionAssignment)
-      runWithState(state, runRule(trivial), Phase.Trivial)
+      var progress = true
+      var iterations = 0
+      while (progress && iterations < MaxIterations) {
+        progress = false
+        iterations += 1
+
+        def step(f: List[Equation] => Option[(List[Equation], SetSubstitution)], phase: Phase): Unit = {
+          val before = state.eqs
+          runWithState(state, f, phase)
+          if (state.eqs ne before) progress = true
+        }
+
+        step(runRule(state, simplify), Phase.Simplify)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, constantPropagation(state)), Phase.ConstantPropagation)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, variablePropagation), Phase.VariablePropagation)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, variableAssignment), Phase.VariableAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(recursiveAssignment(state), Phase.RecursiveAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, simplify), Phase.Simplify)
+        step(runRule(state, constantPropagation(state)), Phase.ConstantPropagation)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, boundAssignment(state)), Phase.BoundAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(reflexiveAndDuplicate, Phase.ReflexiveAndDuplicate)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, unionAssignment(state)), Phase.UnionAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, interAssignment), Phase.InterAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, coverAssignment), Phase.CoverAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+
+        // Safety valve: stop rewriting if the system or the substitution grows too much.
+        if (state.eqs.length > 4 * l.length + 64 || state.subst.m.valuesIterator.exists(_.size > MaxRangeSize)) {
+          progress = false
+        }
+      }
     }
 
     sveAll(state.eqs, mode) match {
@@ -173,22 +261,24 @@ object SetUnification {
   /**
     * Eliminates redundant equations:
     *   - (Reflexive): Equations where the left and right are the same, i.e. `[f ~ f, l] -> [l]`.
-    *   - (Duplicate): Equations that occur more than once, i.e. `[e, e, l] -> [e, l]`.
+    *   - (Duplicate): Equations that occur more than once, up to their location, i.e. `[e, e, l] -> [e, l]`.
     *
     * Always succeeds.
     */
   private def reflexiveAndDuplicate(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
     var result: List[Equation] = Nil
-    val seen = mutable.Set.empty[Equation]
+    val seen = mutable.Set.empty[(SetFormula, SetFormula)]
     var changed = false
 
     for (eq <- eqs) {
-      if (eq.f1 == eq.f2 || seen.contains(eq)) {
+      // Equations are compared without their locations, so that the same constraint from
+      // different sites (e.g. the cases of a handler) counts as a duplicate.
+      if (eq.f1 == eq.f2 || seen.contains((eq.f1, eq.f2))) {
         // Don't add to result.
         changed = true
       } else {
         // Add to result, thus not making a change.
-        seen.add(eq)
+        seen.add((eq.f1, eq.f2))
         result = eq :: result
       }
     }
@@ -197,7 +287,7 @@ object SetUnification {
   }
 
   /** Run a unification rule on an equation system in a fixpoint. */
-  private def runRule(rule: Equation => Option[(List[Equation], SetSubstitution)])(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
+  private def runRule(state: State, rule: Equation => Option[(List[Equation], SetSubstitution)])(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
     // Procedure:
     //   - Run the `rule` on all the (pending) equations in `iterationWorkList`, building
     //     `overallSubst` and producing `iterationOutput`.
@@ -229,6 +319,7 @@ object SetUnification {
 
             iterationOutput = outputEqs ++ iterationOutput
             overallSubst = outputSubst @@ overallSubst
+            for ((x, f) <- outputSubst.m) state.addBinding(x, f)
 
           case None =>
             // No progress, just add to the output.
@@ -263,6 +354,10 @@ object SetUnification {
     *   - `univ ~ univ` becomes `({}, [])`
     *   - `univ ~ empty` becomes `({univ ~error empty}, [])`
     *   - `x1 ~ x1` becomes `({}, [])`
+    *   - `f ~ f` becomes `({}, [])` for any `f` (the sides of normalized equations are comparable)
+    *   - `!c ~ empty` becomes `({!c ~error empty}, [])`, since `c` cannot be `univ`
+    *   - `c1 ∩ !c2 ∩ e ~ empty` becomes `({.. ~error empty}, [])`: an intersection of ground literals
+    *     without complementary pairs is non-empty for some instantiation of its constants
     *   - `x2 ~ univ` becomes `({x2 ~ univ}, [])`
     */
   private def trivial(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
@@ -278,6 +373,7 @@ object SetUnification {
       case (Cst(c1), Cst(c2)) if c1 == c2 => success
       case (Var(x1), Var(x2)) if x1 == x2 => success
       case (ElemSet(e1), ElemSet(e2)) if e1 == e2 => success
+      case _ if f1 == f2 => success
 
       // Equations that are in conflict.
       // The cases here were determined by careful profiling.
@@ -285,6 +381,15 @@ object SetUnification {
       case (Cst(_), Empty) => failure
       case (ElemSet(_), Empty) => failure
       case (Empty, ElemSet(_)) => failure
+      // `!c ~ empty` would force the constant `c` to be `univ`.
+      case (Compl(Cst(_)), Empty) => failure
+      case (Empty, Compl(Cst(_))) => failure
+      case (Compl(ElemSet(_)), Empty) => failure
+      case (Empty, Compl(ElemSet(_))) => failure
+      // An intersection of ground literals without complementary pairs is non-empty for some
+      // instantiation of its constants.
+      case (Inter(l), Empty) if l.forall(isGroundLiteral) => groundCube(f1, success, failure)
+      case (Empty, Inter(l)) if l.forall(isGroundLiteral) => groundCube(f2, success, failure)
 
       // Equations that are neither trivial nor in obvious conflict.
       case _ => None // Cannot do anything.
@@ -297,6 +402,7 @@ object SetUnification {
     * If no progress can be made, [[None]] is returned.
     *
     *   - `x ~ f` where [[SetFormula.isGround]] on `f` is true, becomes `({}, [x -> f])`
+    *   - `!x ~ empty` becomes `({}, [x -> univ])`
     *   - `f1 ∪ f2 ∪ .. ~ empty` becomes `({f1 ~ empty, f2 ~ empty, ..}, [])`
     *   - `(f1 ∪ f2 ∪ ..) ∩ g ~ empty` becomes `({f1 ∩ g ~ empty, f2 ∩ g ~ empty, ..}, [])`
     *
@@ -304,7 +410,7 @@ object SetUnification {
     *
     * This also applies to the symmetric equations.
     */
-  private def constantPropagation(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+  private def constantPropagation(state: State)(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
     val Equation(f1, f2, _, loc) = eq
     (f1, f2) match {
       // x ~ f, where f is ground
@@ -317,6 +423,17 @@ object SetUnification {
       // Symmetric case.
       case (f, Var(x)) if f.isGround =>
         Some((Nil, SetSubstitution.singleton(x, f)))
+
+      // !x ~ empty
+      // ---
+      // {},
+      // [x -> univ]
+      case (Compl(Var(x)), Empty) =>
+        Some((Nil, SetSubstitution.singleton(x, Univ)))
+
+      // Symmetric case.
+      case (Empty, Compl(Var(x))) =>
+        Some((Nil, SetSubstitution.singleton(x, Univ)))
 
       // f1 ∪ f2 ∪ .. ~ empty
       // ---
@@ -336,11 +453,11 @@ object SetUnification {
       // {f1 ∩ g ~ empty, f2 ∩ g ~ empty, ..},
       // []
       case (Inter(l), Empty) =>
-        distributeUnionOverEmptyInter(l, loc)
+        distributeUnionOverEmptyInter(state, l, loc)
 
       // Symmetric Case.
       case (Empty, Inter(l)) =>
-        distributeUnionOverEmptyInter(l, loc)
+        distributeUnionOverEmptyInter(state, l, loc)
 
       case _ =>
         // Cannot do anything.
@@ -358,15 +475,21 @@ object SetUnification {
     * The split keeps the equations produced by subeffect constraints small: `e1 ∪ e2 ∪ .. ⊑ t` is
     * read as `(e1 ∪ e2 ∪ ..) ∩ ¬t ~ empty` and would otherwise collect the variables of every
     * member in a single equation.
+    *
+    * Repeated splits amount to a disjunctive normal form, so a union with more than
+    * [[MaxSplitWidth]] members is not split, and at most [[MaxSplits]] equations are produced per
+    * system; the rest is left to SVE.
     */
-  private def distributeUnionOverEmptyInter(l: TwoList[SetFormula], loc: SourceLocation): Option[(List[Equation], SetSubstitution)] = {
+  private def distributeUnionOverEmptyInter(state: State, l: TwoList[SetFormula], loc: SourceLocation): Option[(List[Equation], SetSubstitution)] = {
     val members = l.toList
     members.collectFirst { case u: Union => u } match {
       case None => None
+      case Some(u) if u.l.length > MaxSplitWidth || state.splits + u.l.length > MaxSplits => None
       case Some(u) =>
+        state.splits += u.l.length
         // The intersection of the members other than `u`. There is at least one, since `l` has two or more members.
         val h = members.filterNot(_ eq u).foldLeft(Univ: SetFormula)(mkInter)
-        val eqs = u.l.toList.map(g => Equation.mk(mkInter(g, h), Empty, loc))
+        val eqs = u.l.toList.map(g => Equation.mk(norm(mkInter(g, h)), Empty, loc))
         Some((eqs, SetSubstitution.empty))
     }
   }
@@ -450,35 +573,44 @@ object SetUnification {
     * sets; every solution of the second has `g ⊆ x`, and `x ∪ g` with `x` free ranges over exactly
     * those sets.
     *
+    * A binding whose range would make the substitution cyclic (see [[State.wouldCycle]]) is not
+    * made, since every later composition would then substitute the range into itself.
+    *
     * This also applies to the symmetric equations.
     */
-  private def boundAssignment(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+  private def boundAssignment(state: State)(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
     val Equation(f1, f2, _, _) = eq
     (f1, f2) match {
-      case (Inter(l), Empty) => boundAssignmentOf(l)
-      case (Empty, Inter(l)) => boundAssignmentOf(l)
+      case (Inter(l), Empty) => boundAssignmentOf(state, l)
+      case (Empty, Inter(l)) => boundAssignmentOf(state, l)
       case _ => None
     }
   }
 
   /**
     * Returns the substitution `[x -> x ∩ ¬g]` for the equation `x ∩ g ~ empty` whose members are `l`,
-    * where `x` is the first member that is a variable not occurring in the other members `g`.
+    * where `x` is the first member that is a variable not occurring in the other members `g` and
+    * whose binding creates no dependency cycle.
     *
     * Returns [[None]] if there is no such member.
     */
-  private def boundAssignmentOf(l: TwoList[SetFormula]): Option[(List[Equation], SetSubstitution)] = {
+  private def boundAssignmentOf(state: State, l: TwoList[SetFormula]): Option[(List[Equation], SetSubstitution)] = {
     val members = l.toList
-    members.collectFirst {
+    val candidates = members.iterator.flatMap {
       // x ∩ g ~ empty, where g does not contain x.
       case v: Var if !members.exists(m => !(m eq v) && m.contains(v)) =>
         val g = members.filterNot(_ eq v).foldLeft(Univ: SetFormula)(mkInter)
-        (Nil, SetSubstitution.singleton(v.x, mkInter(v, mkCompl(g))))
+        Some((v.x, norm(mkInter(v, mkCompl(g)))))
 
       // ¬x ∩ g ~ empty, where g does not contain x.
       case c@Compl(v: Var) if !members.exists(m => !(m eq c) && m.contains(v)) =>
         val g = members.filterNot(_ eq c).foldLeft(Univ: SetFormula)(mkInter)
-        (Nil, SetSubstitution.singleton(v.x, mkUnion2(v, g)))
+        Some((v.x, norm(mkUnion2(v, g))))
+
+      case _ => None
+    }
+    candidates.find { case (x, f) => !state.wouldCycle(x, f) }.map {
+      case (x, f) => (Nil, SetSubstitution.singleton(x, f))
     }
   }
 
@@ -502,13 +634,16 @@ object SetUnification {
     * The rule keeps such equations away from successive variable elimination, whose cost is
     * exponential in the number of variables.
     *
+    * The rule does not apply if the range of `xn`, which mentions the other variables, would make
+    * the substitution cyclic (see [[State.wouldCycle]]).
+    *
     * This also applies to the symmetric equations.
     */
-  private def unionAssignment(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+  private def unionAssignment(state: State)(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
     val Equation(f1, f2, _, loc) = eq
     (f1, f2) match {
-      case (g, Union(l)) if g.isGround => unionAssignmentOf(g, flattenUnions(l.toList), loc)
-      case (Union(l), g) if g.isGround => unionAssignmentOf(g, flattenUnions(l.toList), loc)
+      case (g, Union(l)) if g.isGround => unionAssignmentOf(state, g, flattenUnions(l.toList), loc)
+      case (Union(l), g) if g.isGround => unionAssignmentOf(state, g, flattenUnions(l.toList), loc)
       case _ => None
     }
   }
@@ -519,10 +654,13 @@ object SetUnification {
     *
     * Returns [[None]] otherwise.
     */
-  private def unionAssignmentOf(g: SetFormula, members: List[SetFormula], loc: SourceLocation): Option[(List[Equation], SetSubstitution)] = {
+  private def unionAssignmentOf(state: State, g: SetFormula, members: List[SetFormula], loc: SourceLocation): Option[(List[Equation], SetSubstitution)] = {
     val xs = members.collect { case v: Var => v }.distinct
     val grounds = members.filterNot(_.isInstanceOf[Var])
     if (xs.isEmpty || !grounds.forall(_.isGround)) {
+      None
+    } else if (xs.init.exists(x => state.reaches(x.x, xs.last.x))) {
+      // The last variable's range mentions the other variables, which must not depend on it.
       None
     } else {
       val d = grounds.foldLeft(Empty: SetFormula)(mkUnion2)
@@ -531,11 +669,11 @@ object SetUnification {
 
       // x1 -> x1 ∩ g, .., xn-1 -> xn-1 ∩ g
       val restricted = init.foldLeft(IntMap.empty[SetFormula]) {
-        case (acc, x) => acc.updated(x.x, mkInter(x, g))
+        case (acc, x) => acc.updated(x.x, norm(mkInter(x, g)))
       }
       // xn -> (xn ∩ g) ∪ (g ∩ ¬d ∩ ¬x1 ∩ .. ∩ ¬xn-1)
       val rest = init.foldLeft(mkDiff2(g, d))((acc, x) => mkInter(acc, mkCompl(x)))
-      val subst = SetSubstitution(restricted.updated(last.x, mkUnion2(mkInter(last, g), rest)))
+      val subst = SetSubstitution(restricted.updated(last.x, norm(mkUnion2(mkInter(last, g), rest))))
 
       // d ⊆ g, i.e. d ∩ ¬g ~ empty
       val eqs = if (d == Empty || d == g) Nil else List(Equation.mk(mkDiff2(d, g), Empty, loc))
@@ -561,12 +699,13 @@ object SetUnification {
     * The rule runs as a single pass over the equations. A variable that already occurs in the range
     * of a substitution made by the pass is never bound by it: `x ~ x ∪ y` followed by `y ~ y ∪ x`
     * would otherwise give `[x -> x ∪ y ∪ x, y -> y ∪ x]`, a cyclic substitution whose repeated
-    * application grows formulas exponentially. Such equations are left for successive variable
-    * elimination.
+    * application grows formulas exponentially. The same holds across passes, through the
+    * dependency graph of the whole solve (see [[State.wouldCycle]]). Such equations are left for
+    * successive variable elimination.
     *
     * This also applies to the symmetric equations.
     */
-  private def recursiveAssignment(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
+  private def recursiveAssignment(state: State)(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
     var subst = SetSubstitution.empty
     // The variables that occur in the ranges of `subst`, including the bound variables themselves.
     var rangeVars = Set.empty[Int]
@@ -579,9 +718,10 @@ object SetUnification {
         case RecursiveAssignment.Trivial =>
           changed = true
 
-        case RecursiveAssignment.Bind(x, f) if !rangeVars.contains(x) =>
+        case RecursiveAssignment.Bind(x, f) if !rangeVars.contains(x) && !state.wouldCycle(x, f) =>
           // Since `x` occurs in no range of `subst`, the composition leaves the existing ranges unchanged.
           subst = SetSubstitution.singleton(x, f) @@ subst
+          state.addBinding(x, f)
           rangeVars = rangeVars ++ f.varsOf
           changed = true
 
@@ -631,7 +771,285 @@ object SetUnification {
     } else if (others.isEmpty) {
       RecursiveAssignment.Trivial
     } else {
-      RecursiveAssignment.Bind(v.x, mk(v, others.foldLeft(unit)(mk)))
+      RecursiveAssignment.Bind(v.x, norm(mk(v, others.foldLeft(unit)(mk))))
+    }
+  }
+
+  /** Decides `f ~ empty` for an intersection `f` of ground literals. */
+  private def groundCube(f: SetFormula, success: Option[(List[Equation], SetSubstitution)], failure: Option[(List[Equation], SetSubstitution)]): Option[(List[Equation], SetSubstitution)] = norm(f) match {
+    case Empty => success
+    case Cst(_) | ElemSet(_) | Compl(Cst(_)) | Compl(ElemSet(_)) => failure
+    case Inter(l) if l.forall(isGroundLiteral) => failure
+    case _ => None
+  }
+
+  /** Returns `true` if `f` is a constant or element, or the complement of one. */
+  private def isGroundLiteral(f: SetFormula): Boolean = f match {
+    case Cst(_) | ElemSet(_) | Compl(Cst(_)) | Compl(ElemSet(_)) => true
+    case _ => false
+  }
+
+  /**
+    * Solves equations between a ground formula and the intersection of a variable with ground
+    * formulas (e.g. `c ~ x ∩ d`, which arises when a variable restricted by an earlier rule is
+    * then equated to a ground effect).
+    *
+    *   - `g ~ x ∩ h` where `g` and `h` are ground becomes `({g ∩ ¬h ~ empty}, [x -> g ∪ (x ∩ ¬h)])`
+    *
+    * The equation holds exactly when `g ⊆ h` and `x ∩ h = g`, and `g ∪ (x ∩ ¬h)` with `x` free
+    * ranges over exactly the sets whose intersection with `h` is `g`. The range mentions no other
+    * variable, so it cannot make the substitution cyclic.
+    *
+    * This also applies to the symmetric equations.
+    */
+  private def interAssignment(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+    val Equation(f1, f2, _, loc) = eq
+    (f1, f2) match {
+      case (g, Inter(l)) if g.isGround => interAssignmentOf(g, l.toList, loc)
+      case (Inter(l), g) if g.isGround => interAssignmentOf(g, l.toList, loc)
+      case _ => None
+    }
+  }
+
+  /**
+    * Returns the solution of `g ~ m1 ∩ .. ∩ mk` for the ground formula `g` and the members `members`,
+    * if exactly one member is a variable and the others are ground.
+    *
+    * Returns [[None]] otherwise.
+    */
+  private def interAssignmentOf(g: SetFormula, members: List[SetFormula], loc: SourceLocation): Option[(List[Equation], SetSubstitution)] = {
+    val (xs, grounds) = members.partition(_.isInstanceOf[Var])
+    xs match {
+      case List(x: Var) if grounds.forall(_.isGround) =>
+        val h = grounds.foldLeft(Univ: SetFormula)(mkInter)
+        val subst = SetSubstitution.singleton(x.x, norm(mkUnion2(g, mkInter(x, mkCompl(h)))))
+        val check = norm(mkDiff2(g, h))
+        val eqs = if (check == Empty) Nil else List(Equation.mk(check, Empty, loc))
+        Some((eqs, subst))
+      case _ => None
+    }
+  }
+
+  /**
+    * Solves equations between a ground formula and a union that contains it (e.g.
+    * `c ~ c ∪ x1 ∪ (x2 ∩ d)`, the effect of a lambda whose body includes a call with the
+    * declared effect).
+    *
+    *   - `g ~ g ∪ f1 ∪ .. ∪ fn` where `g` is ground becomes `({(f1 ∪ .. ∪ fn) ∩ ¬g ~ empty}, [])`
+    *
+    * The equation holds exactly when every `fi ⊆ g`.
+    *
+    * This also applies to the symmetric equations.
+    */
+  private def coverAssignment(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+    val Equation(f1, f2, _, loc) = eq
+    (f1, f2) match {
+      case (g, Union(l)) if g.isGround => coverAssignmentOf(g, l.toList, loc)
+      case (Union(l), g) if g.isGround => coverAssignmentOf(g, l.toList, loc)
+      case _ => None
+    }
+  }
+
+  /**
+    * Returns the solution of `g ~ m1 ∪ .. ∪ mk` for the ground formula `g` and the members `members`,
+    * if `g` is one of the members.
+    *
+    * Returns [[None]] otherwise.
+    */
+  private def coverAssignmentOf(g: SetFormula, members: List[SetFormula], loc: SourceLocation): Option[(List[Equation], SetSubstitution)] = {
+    val (self, others) = members.partition(_ == g)
+    if (self.isEmpty) None
+    else {
+      val rest = norm(mkInter(others.foldLeft(Empty: SetFormula)(mkUnion2), mkCompl(g)))
+      Some((if (rest == Empty) Nil else List(Equation.mk(rest, Empty, loc)), SetSubstitution.empty))
+    }
+  }
+
+  /**
+    * Rewrites both sides of `eq` into the normal form of [[norm]], so that the other rules see flat
+    * unions and intersections with the complements on the atoms: `e ∩ ¬(x ∪ e) ~ empty` becomes
+    * `e ∩ ¬x ∩ ¬e ~ empty` and then `empty ~ empty`, and `e ∩ ¬(x ∪ c) ~ empty` becomes
+    * `e ∩ ¬x ∩ ¬c ~ empty`, which [[boundAssignment]] solves. Ground equations with equal sides
+    * (e.g. `c ~ c ∪ empty` after a substitution) are then removed by [[trivial]].
+    *
+    * Returns [[None]] if neither side changes.
+    */
+  private def simplify(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+    val Equation(f1, f2, status, loc) = eq
+    val n1 = norm(f1)
+    val n2 = norm(f2)
+    if (n1 == f1 && n2 == f2) None
+    else Some((List(Equation.mk(n1, n2, loc, status)), SetSubstitution.empty))
+  }
+
+  /**
+    * Returns `f` in negation normal form: complements occur only on constants, elements, and
+    * variables; unions and intersections are flattened, without units, duplicates, or a member
+    * together with its complement; elements are merged; and members are sorted.
+    */
+  def norm(f: SetFormula): SetFormula = f match {
+    case Univ | Empty | Cst(_) | Var(_) | ElemSet(_) => f
+    case Compl(g) => normCompl(g)
+    case Inter(l) => mkInterAll(l.toList.map(norm))
+    case Union(l) => mkUnionAll(l.toList.map(norm))
+    case Xor(l) =>
+      // Nested symmetric differences are flattened first: a Zhegalkin polynomial arrives as a
+      // left-nested chain of binary `⊕` nodes, and expanding each level would double the formula
+      // per level.
+      val ms = flattenXors(l).map(norm)
+      if (ms.length <= MaxXorExpand) ms.reduceLeft(normXor2) else Xor(ms)
+  }
+
+  /** Returns `fs` with nested symmetric differences flattened into their members. */
+  private def flattenXors(fs: List[SetFormula]): List[SetFormula] = fs.flatMap {
+    case Xor(l) => flattenXors(l)
+    case f => f :: Nil
+  }
+
+  /** Returns `¬g` in the normal form of [[norm]]. */
+  private def normCompl(g: SetFormula): SetFormula = g match {
+    case Univ => Empty
+    case Empty => Univ
+    case Cst(_) | Var(_) | ElemSet(_) => Compl(g)
+    case Compl(h) => norm(h)
+    case Inter(l) => mkUnionAll(l.toList.map(normCompl))
+    case Union(l) => mkInterAll(l.toList.map(normCompl))
+    case Xor(_) => norm(g) match {
+      case n@Xor(_) => Compl(n)
+      case n => normCompl(n)
+    }
+  }
+
+  /** Returns `a ⊕ b` as `(a ∩ ¬b) ∪ (¬a ∩ b)` for normalized `a` and `b`. */
+  private def normXor2(a: SetFormula, b: SetFormula): SetFormula =
+    mkUnionAll(List(mkInterAll(List(a, normCompl(b))), mkInterAll(List(normCompl(a), b))))
+
+  /** Returns the normalized intersection of the normalized formulas `ms0`. */
+  private def mkInterAll(ms0: List[SetFormula]): SetFormula = {
+    val ms = ms0.flatMap { case Inter(l) => l.toList; case m => List(m) }
+    if (ms.contains(Empty)) return Empty
+    var pos: Option[SortedSet[Int]] = None
+    var neg: SortedSet[Int] = SortedSet.empty
+    val rest = mutable.LinkedHashSet.empty[SetFormula]
+    for (m <- ms) m match {
+      case Univ => ()
+      case ElemSet(s) => pos = Some(pos.fold(s)(_ intersect s))
+      case Compl(ElemSet(s)) => neg = neg ++ s
+      case _ => rest += m
+    }
+    for (m <- rest) m match {
+      case Compl(h) => if (rest.contains(h)) return Empty
+      case _ => ()
+    }
+    val elems: List[SetFormula] = pos match {
+      case Some(s) =>
+        val d = s -- neg
+        if (d.isEmpty) return Empty else List(ElemSet(d))
+      case None => if (neg.isEmpty) Nil else List(Compl(ElemSet(neg)))
+    }
+    // Absorption: `a ∩ (a ∪ b) = a`. A union member is dropped if one of its members is implied by the
+    // other members of the intersection.
+    def covered(u: SetFormula): Boolean = u match {
+      case ElemSet(s) => pos.exists(_.subsetOf(s))
+      case Compl(ElemSet(s)) => pos.isEmpty && s.subsetOf(neg)
+      case Inter(l) => l.forall(covered)
+      case _ => rest.contains(u)
+    }
+    val kept = rest.toList.filter {
+      case Union(l) => !l.exists(covered)
+      case _ => true
+    }
+    (elems ++ kept).sorted(FormulaOrdering) match {
+      case Nil => Univ
+      case one :: Nil => one
+      case x :: y :: tail => Inter(TwoList(x, y, tail))
+    }
+  }
+
+  /** Returns the normalized union of the normalized formulas `ms0`. */
+  private def mkUnionAll(ms0: List[SetFormula]): SetFormula = {
+    val ms = ms0.flatMap { case Union(l) => l.toList; case m => List(m) }
+    if (ms.contains(Univ)) return Univ
+    var pos: SortedSet[Int] = SortedSet.empty
+    var neg: Option[SortedSet[Int]] = None
+    val rest = mutable.LinkedHashSet.empty[SetFormula]
+    for (m <- ms) m match {
+      case Empty => ()
+      case ElemSet(s) => pos = pos ++ s
+      case Compl(ElemSet(s)) => neg = Some(neg.fold(s)(_ intersect s))
+      case _ => rest += m
+    }
+    for (m <- rest) m match {
+      case Compl(h) => if (rest.contains(h)) return Univ
+      case _ => ()
+    }
+    val elems: List[SetFormula] = neg match {
+      case Some(n) =>
+        // pos ∪ ¬n = ¬(n ∖ pos)
+        val d = n -- pos
+        if (d.isEmpty) return Univ else List(Compl(ElemSet(d)))
+      case None => if (pos.isEmpty) Nil else List(ElemSet(pos))
+    }
+    // Absorption: `a ∪ (a ∩ b) = a`. An intersection member is dropped if one of its members is implied
+    // by the other members of the union.
+    def covered(u: SetFormula): Boolean = u match {
+      case ElemSet(s) => s.subsetOf(pos)
+      case Compl(ElemSet(s)) => neg.exists(_.subsetOf(s))
+      case Union(l) => l.forall(covered)
+      case _ => rest.contains(u)
+    }
+    val kept = rest.toList.filter {
+      case Inter(l) => !l.exists(covered)
+      case _ => true
+    }
+    (elems ++ kept).sorted(FormulaOrdering) match {
+      case Nil => Empty
+      case one :: Nil => one
+      case x :: y :: tail => Union(TwoList(x, y, tail))
+    }
+  }
+
+  /** A total order on formulas, used to sort the members of unions and intersections. */
+  private object FormulaOrdering extends Ordering[SetFormula] {
+    private def rank(f: SetFormula): Int = f match {
+      case Univ => 0
+      case Empty => 1
+      case Cst(_) => 2
+      case ElemSet(_) => 3
+      case Var(_) => 4
+      case Compl(_) => 5
+      case Inter(_) => 6
+      case Union(_) => 7
+      case Xor(_) => 8
+    }
+
+    def compare(a: SetFormula, b: SetFormula): Int = (a, b) match {
+      case (Cst(x), Cst(y)) => Integer.compare(x, y)
+      case (Var(x), Var(y)) => Integer.compare(x, y)
+      case (ElemSet(x), ElemSet(y)) => compareInts(x.toList, y.toList)
+      case (Compl(x), Compl(y)) => compare(x, y)
+      case (Inter(x), Inter(y)) => compareList(x.toList, y.toList)
+      case (Union(x), Union(y)) => compareList(x.toList, y.toList)
+      case (Xor(x), Xor(y)) => compareList(x, y)
+      case _ => Integer.compare(rank(a), rank(b))
+    }
+
+    private def compareList(x: List[SetFormula], y: List[SetFormula]): Int = (x, y) match {
+      case (Nil, Nil) => 0
+      case (Nil, _) => -1
+      case (_, Nil) => 1
+      case (a :: as, b :: bs) =>
+        val c = compare(a, b)
+        if (c != 0) c else compareList(as, bs)
+    }
+
+    private def compareInts(x: List[Int], y: List[Int]): Int = (x, y) match {
+      case (Nil, Nil) => 0
+      case (Nil, _) => -1
+      case (_, Nil) => 1
+      case (a :: as, b :: bs) =>
+        val c = Integer.compare(a, b)
+        if (c != 0) c else compareInts(as, bs)
     }
   }
 

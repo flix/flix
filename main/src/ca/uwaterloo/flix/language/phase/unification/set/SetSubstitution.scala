@@ -92,7 +92,12 @@ case class SetSubstitution(m: IntMap[SetFormula]) {
   /** Returns the number of bindings in `this`. */
   def numberOfBindings: Int = m.size
 
-  /** Returns a combined substitution, first applying `that` and then applying `this`. */
+  /**
+    * Returns a combined substitution, first applying `that` and then applying `this`.
+    *
+    * A range of `that` that changes is normalized (see [[SetUnification.norm]]), so that repeated
+    * compositions do not accumulate nested, duplicated, or complementary members.
+    */
   def @@(that: SetSubstitution): SetSubstitution = {
     if (this.m.isEmpty)
       that
@@ -105,7 +110,7 @@ case class SetSubstitution(m: IntMap[SetFormula]) {
       for ((x, f) <- that.m) {
         val t = this.apply(f)
         if (!(t eq f)) {
-          result = result.updated(x, t)
+          result = result.updated(x, SetUnification.norm(t))
         }
       }
 
