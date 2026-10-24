@@ -1825,9 +1825,7 @@ object PrettyPrinter {
   /** Formatting for identifiers, which hold a single name token. */
   private def prettyIdent(tree: Tree): Doc =
     tree.children.map {
-      // The lexer drops the `$` of an escaped name such as `$if`, leaving a lowercase
-      // name whose text is a keyword. Restore it so the output lexes as a name again.
-      case token: Token if token.kind == TokenKind.NameLowercase && Lexer.isKeyword(token.text) => text("$" + token.text)
+      case token: Token => text(token.text)
       case other => prettyChild(other)
     }.reduceLeftOption(_ <> _).getOrElse(empty)
 
