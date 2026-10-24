@@ -63,13 +63,16 @@ case class SetSubstitution(m: IntMap[SetFormula]) {
       val inner = visit(f1)
       if (inner eq f1) f0 else SetFormula.mkCompl(inner)
 
+    // A changed intersection or union is rebuilt simplified: flat, without units, duplicates, or
+    // complementary pairs (see [[SetFormula.simplify]]). Otherwise every application of a range
+    // `x -> x ∪ g` to a formula that mentions `x` adds a nesting level and a copy of `g`.
     case SetFormula.Inter(l) =>
       val inner = l.mapWithReuse(visit)
-      if (inner eq l) f0 else SetFormula.Inter(inner)
+      if (inner eq l) f0 else SetFormula.mkInterAll(inner.toList)
 
     case SetFormula.Union(l) =>
       val inner = l.mapWithReuse(visit)
-      if (inner eq l) f0 else SetFormula.Union(inner)
+      if (inner eq l) f0 else SetFormula.mkUnionAll(inner.toList)
 
     case SetFormula.Xor(l) =>
       val inner = ListOps.mapWithReuse(l)(visit)
@@ -92,7 +95,12 @@ case class SetSubstitution(m: IntMap[SetFormula]) {
   /** Returns the number of bindings in `this`. */
   def numberOfBindings: Int = m.size
 
-  /** Returns a combined substitution, first applying `that` and then applying `this`. */
+  /**
+    * Returns a combined substitution, first applying `that` and then applying `this`.
+    *
+    * A range of `that` that changes is rebuilt simplified by [[apply]], so that repeated
+    * compositions do not accumulate nested, duplicated, or complementary members.
+    */
   def @@(that: SetSubstitution): SetSubstitution = {
     if (this.m.isEmpty)
       that
