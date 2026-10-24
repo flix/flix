@@ -69,6 +69,10 @@ object SetUnification {
     final case object SuccessiveVariableElimination extends Phase
 
     final case object Trivial extends Phase
+
+    final case object CoverAssignment extends Phase
+
+    final case object InterAssignment extends Phase
   }
 
   /** Represents the running mutable state of the solver. */
@@ -109,11 +113,15 @@ object SetUnification {
       runWithState(state, runRule(trivial), Phase.Trivial)
       runWithState(state, runRule(constantPropagation), Phase.ConstantPropagation)
       runWithState(state, runRule(trivial), Phase.Trivial)
+      runWithState(state, runRule(coverAssignment), Phase.CoverAssignment)
+      runWithState(state, runRule(trivial), Phase.Trivial)
       runWithState(state, runRule(boundAssignment), Phase.BoundAssignment)
       runWithState(state, runRule(trivial), Phase.Trivial)
       runWithState(state, reflexiveAndDuplicate, Phase.ReflexiveAndDuplicate)
       runWithState(state, runRule(trivial), Phase.Trivial)
       runWithState(state, runRule(unionAssignment), Phase.UnionAssignment)
+      runWithState(state, runRule(trivial), Phase.Trivial)
+      runWithState(state, runRule(interAssignment), Phase.InterAssignment)
       runWithState(state, runRule(trivial), Phase.Trivial)
     }
 
@@ -173,22 +181,24 @@ object SetUnification {
   /**
     * Eliminates redundant equations:
     *   - (Reflexive): Equations where the left and right are the same, i.e. `[f ~ f, l] -> [l]`.
-    *   - (Duplicate): Equations that occur more than once, i.e. `[e, e, l] -> [e, l]`.
+    *   - (Duplicate): Equations that occur more than once, up to their location, i.e. `[e, e, l] -> [e, l]`.
     *
     * Always succeeds.
     */
   private def reflexiveAndDuplicate(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
     var result: List[Equation] = Nil
-    val seen = mutable.Set.empty[Equation]
+    val seen = mutable.Set.empty[(SetFormula, SetFormula)]
     var changed = false
 
     for (eq <- eqs) {
-      if (eq.f1 == eq.f2 || seen.contains(eq)) {
+      // Equations are compared without their locations, so that the same constraint from
+      // different sites (e.g. the cases of a handler) counts as a duplicate.
+      if (eq.f1 == eq.f2 || seen.contains((eq.f1, eq.f2))) {
         // Don't add to result.
         changed = true
       } else {
         // Add to result, thus not making a change.
-        seen.add(eq)
+        seen.add((eq.f1, eq.f2))
         result = eq :: result
       }
     }
@@ -297,6 +307,7 @@ object SetUnification {
     * If no progress can be made, [[None]] is returned.
     *
     *   - `x ~ f` where [[SetFormula.isGround]] on `f` is true, becomes `({}, [x -> f])`
+    *   - `!x ~ empty` becomes `({}, [x -> univ])`
     *   - `f1 ∪ f2 ∪ .. ~ empty` becomes `({f1 ~ empty, f2 ~ empty, ..}, [])`
     *   - `(f1 ∪ f2 ∪ ..) ∩ g ~ empty` becomes `({f1 ∩ g ~ empty, f2 ∩ g ~ empty, ..}, [])`
     *
@@ -317,6 +328,17 @@ object SetUnification {
       // Symmetric case.
       case (f, Var(x)) if f.isGround =>
         Some((Nil, SetSubstitution.singleton(x, f)))
+
+      // !x ~ empty
+      // ---
+      // {},
+      // [x -> univ]
+      case (Compl(Var(x)), Empty) =>
+        Some((Nil, SetSubstitution.singleton(x, Univ)))
+
+      // Symmetric case.
+      case (Empty, Compl(Var(x))) =>
+        Some((Nil, SetSubstitution.singleton(x, Univ)))
 
       // f1 ∪ f2 ∪ .. ~ empty
       // ---
@@ -540,6 +562,86 @@ object SetUnification {
       // d ⊆ g, i.e. d ∩ ¬g ~ empty
       val eqs = if (d == Empty || d == g) Nil else List(Equation.mk(mkDiff2(d, g), Empty, loc))
       Some((eqs, subst))
+    }
+  }
+
+  /**
+    * Solves equations between a ground formula and a union that contains it (e.g.
+    * `c ~ c ∪ x1 ∪ (x2 ∩ d)`, the effect of a lambda whose body includes a call with the
+    * declared effect).
+    *
+    *   - `g ~ g ∪ f1 ∪ .. ∪ fn` where `g` is ground becomes `({f1 ∩ ¬g ~ empty, .., fn ∩ ¬g ~ empty}, [])`
+    *
+    * The equation holds exactly when every `fi ⊆ g`. The inclusions are emitted one per member, so
+    * that [[boundAssignment]] can solve them in the same pass.
+    *
+    * This also applies to the symmetric equations.
+    */
+  private def coverAssignment(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+    val Equation(f1, f2, _, loc) = eq
+    (f1, f2) match {
+      case (g, Union(l)) if g.isGround => coverAssignmentOf(g, flattenUnions(l.toList), loc)
+      case (Union(l), g) if g.isGround => coverAssignmentOf(g, flattenUnions(l.toList), loc)
+      case _ => None
+    }
+  }
+
+  /**
+    * Returns the inclusions `fi ∩ ¬g ~ empty` for the members `fi` of `members` other than `g`,
+    * for the ground formula `g` and the members `members` of a union that contains `g`.
+    *
+    * Returns [[None]] if `g` is not a member.
+    */
+  private def coverAssignmentOf(g: SetFormula, members: List[SetFormula], loc: SourceLocation): Option[(List[Equation], SetSubstitution)] = {
+    val (self, others) = members.partition(_ == g)
+    if (self.isEmpty) {
+      None
+    } else {
+      val notG = mkCompl(g)
+      val eqs = others.map(f => Equation.mk(mkInter(f, notG), Empty, loc))
+      Some((eqs, SetSubstitution.empty))
+    }
+  }
+
+  /**
+    * Solves equations between a ground formula and the intersection of a variable with ground
+    * formulas (e.g. `c ~ x ∩ d`, which arises when a variable restricted by [[unionAssignment]]
+    * is then equated to a ground effect).
+    *
+    *   - `g ~ x ∩ h` where `g` and `h` are ground becomes `({g ∩ ¬h ~ empty}, [x -> g ∪ (x ∩ ¬h)])`
+    *
+    * The equation holds exactly when `g ⊆ h` and `x ∩ h = g`, and `g ∪ (x ∩ ¬h)` with `x` free
+    * ranges over exactly the sets whose intersection with `h` is `g`. The range mentions no other
+    * variable.
+    *
+    * This also applies to the symmetric equations.
+    */
+  private def interAssignment(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+    val Equation(f1, f2, _, loc) = eq
+    (f1, f2) match {
+      case (g, Inter(l)) if g.isGround => interAssignmentOf(g, flattenInters(l.toList), loc)
+      case (Inter(l), g) if g.isGround => interAssignmentOf(g, flattenInters(l.toList), loc)
+      case _ => None
+    }
+  }
+
+  /**
+    * Returns the solution of `g ~ m1 ∩ .. ∩ mk` for the ground formula `g` and the members `members`,
+    * if exactly one member is a variable and the others are ground.
+    *
+    * Returns [[None]] otherwise.
+    */
+  private def interAssignmentOf(g: SetFormula, members: List[SetFormula], loc: SourceLocation): Option[(List[Equation], SetSubstitution)] = {
+    val (xs, grounds) = members.partition(_.isInstanceOf[Var])
+    xs match {
+      case List(x: Var) if grounds.forall(_.isGround) =>
+        val h = grounds.foldLeft(Univ: SetFormula)(mkInter)
+        val subst = SetSubstitution.singleton(x.x, mkUnion2(g, mkInter(x, mkCompl(h))))
+        // g ⊆ h, i.e. g ∩ ¬h ~ empty
+        val check = mkDiff2(g, h)
+        val eqs = if (check == Empty || g == h) Nil else List(Equation.mk(check, Empty, loc))
+        Some((eqs, subst))
+      case _ => None
     }
   }
 
