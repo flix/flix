@@ -234,7 +234,10 @@ object SetFormula {
   /**
     * Returns the complement of `f` (`!f`).
     *
-    * Complements are pushed to the bottom of the formula.
+    * Complements are pushed to the atoms (negation normal form), so that a variable under a
+    * complemented union or intersection is visible to the rewrite rules of set unification:
+    * `e ∩ !(x ∪ c) ~ empty` becomes `e ∩ !x ∩ !c ~ empty`, which the bound rule solves.
+    * Complements of symmetric differences are kept as they are.
     *
     * Example
     *   - `mkCompl(x1 ∩ (!x2 ∪ x3)) = !x1 ∪ (x2 ∩ !x3)`
@@ -246,10 +249,12 @@ object SetFormula {
     case v@Var(_) => Compl(v)
     case e@ElemSet(_) => Compl(e)
     case Compl(f1) => f1
-    case inter@Inter(_) =>
-      Compl(inter)
-    case union@Union(_) =>
-      Compl(union)
+    case Inter(l) =>
+      // De Morgan: !(f1 ∩ f2 ∩ ..) = !f1 ∪ !f2 ∪ ..
+      l.toList.map(mkCompl).reduceLeft(mkUnion2)
+    case Union(l) =>
+      // De Morgan: !(f1 ∪ f2 ∪ ..) = !f1 ∩ !f2 ∩ ..
+      l.toList.map(mkCompl).reduceLeft(mkInter)
     case xor@Xor(_) =>
       Compl(xor)
   }
