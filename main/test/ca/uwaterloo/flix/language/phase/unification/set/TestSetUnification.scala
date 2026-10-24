@@ -9,8 +9,10 @@ package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Cst, Empty, Union, Var}
-import ca.uwaterloo.flix.language.phase.unification.shared.SveMode
+import ca.uwaterloo.flix.language.phase.unification.EffUnification3
+import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Compl, Cst, Empty, Inter, Union, Var}
+import ca.uwaterloo.flix.language.phase.unification.shared.{CofiniteIntSet, SveMode}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
 import ca.uwaterloo.flix.util.collection.TwoList
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -274,12 +276,76 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
     assertSolved(input)
   }
 
-  /** Asserts that `input` is solved by SVE at every granularity. */
+  test("CoverAssignment.01") {
+    // c1 ~ c1 ∪ x0 ∪ (x1 ∩ c2)
+    val input = List(
+      mkEq(Cst(1), Union(TwoList(Cst(1), Var(0), List(Inter(TwoList(Var(1), Cst(2), List()))))))
+    )
+    assertSolved(input)
+  }
+
+  test("CoverAssignment.02") {
+    // x0 ∪ (c1 ∪ x1) ~ c1, with the ground member in a nested union
+    val input = List(
+      mkEq(Union(TwoList(Var(0), Union(TwoList(Cst(1), Var(1), List())), List())), Cst(1))
+    )
+    assertSolved(input)
+  }
+
+  test("InterAssignment.01") {
+    // c1 ~ x0 ∩ (c1 ∪ c2)
+    val input = List(
+      mkEq(Cst(1), Inter(TwoList(Var(0), Union(TwoList(Cst(1), Cst(2), List())), List())))
+    )
+    assertSolved(input)
+  }
+
+  test("InterAssignment.02") {
+    // x0 ∩ c1 ~ c1, i.e. the restricted variable must cover c1
+    val input = List(
+      mkEq(Inter(TwoList(Var(0), Cst(1), List())), Cst(1))
+    )
+    assertSolved(input)
+  }
+
+  test("InterAssignment.03") {
+    // c1 ~ x0 ∪ x1 restricts x0 and x1 to c1; c1 ~ x0 then equates the restricted x0 to c1.
+    val input = List(
+      mkEq(Cst(1), Union(TwoList(Var(0), Var(1), List()))),
+      mkEq(Cst(1), Var(0))
+    )
+    assertSolved(input)
+  }
+
+  test("ConstantPropagation.ComplVar") {
+    // !x0 ~ empty
+    val input = List(
+      mkEq(Compl(Var(0)), Empty)
+    )
+    assertSolved(input)
+  }
+
+  /**
+    * Asserts that `input` is solved by SVE at every granularity, and that the substitution returned
+    * satisfies every equation of `input`.
+    */
   def assertSolved(input: List[Equation]): Unit = {
     for (mode <- List(SveMode.PerEquation, SveMode.PerComponent, SveMode.PerSystem)) {
-      val (eqs, _) = SetUnification.solve(input, mode)
+      val (eqs, subst) = SetUnification.solve(input, mode)
       assert(eqs.isEmpty, mode)
+      for (eq <- input) {
+        assert(isEquivalent(subst(eq.f1), subst(eq.f2)), s"$mode: $eq is not satisfied by $subst")
+      }
     }
+  }
+
+  /** Returns `true` if `f1` and `f2` denote the same set for every value of their variables and constants. */
+  private def isEquivalent(f1: SetFormula, f2: SetFormula): Boolean = {
+    implicit val alg: ZhegalkinAlgebra[CofiniteIntSet] = EffUnification3.Algebra
+    implicit val lat: CofiniteIntSet.LatticeOps.type = CofiniteIntSet.LatticeOps
+    val z1 = Zhegalkin.toZhegalkin(f1)
+    val z2 = Zhegalkin.toZhegalkin(f2)
+    ZhegalkinExpr.isEmpty(ZhegalkinExpr.mkXor(z1, z2))
   }
 
 }
