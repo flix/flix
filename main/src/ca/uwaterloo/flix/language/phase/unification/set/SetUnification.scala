@@ -26,6 +26,9 @@ object SetUnification {
    */
   val MaxVars: Int = CompilerConstants.MaxEffUnificationVars
 
+  /** The maximum number of passes over the rule sequence (see [[solve]]). */
+  private val MaxIterations: Int = 32
+
   /**
     * Enable simple rewrite rules.
     */
@@ -132,6 +135,11 @@ object SetUnification {
     * [[Equation.Status.Timeout]]. The returned equations might not exist in `eqs` directly, but
     * will be derived from it.
     *
+    * The rewrite rules run as a sequence that is repeated until no rule makes progress (or
+    * [[MaxIterations]] is reached), since the substitution of one rule often enables another: a
+    * bound on a variable turns the equations it occurs in into further bounds, and a restriction
+    * made by [[unionAssignment]] makes [[interAssignment]] applicable.
+    *
     * The equations that remain after the rewrite rules are solved by SVE at the granularity
     * given by `mode` (see [[SveAlgorithm.sveAll]]).
     */
@@ -139,26 +147,44 @@ object SetUnification {
     val state = new State(l)
 
     if (EnableRewriteRules) {
-      runWithState(state, runRule(state, constantPropagation), Phase.ConstantPropagation)
-      runWithState(state, runRule(state, trivial), Phase.Trivial)
-      runWithState(state, runRule(state, variablePropagation), Phase.VariablePropagation)
-      runWithState(state, runRule(state, trivial), Phase.Trivial)
-      runWithState(state, runRule(state, variableAssignment), Phase.VariableAssignment)
-      runWithState(state, runRule(state, trivial), Phase.Trivial)
-      runWithState(state, recursiveAssignment(state), Phase.RecursiveAssignment)
-      runWithState(state, runRule(state, trivial), Phase.Trivial)
-      runWithState(state, runRule(state, constantPropagation), Phase.ConstantPropagation)
-      runWithState(state, runRule(state, trivial), Phase.Trivial)
-      runWithState(state, runRule(state, coverAssignment), Phase.CoverAssignment)
-      runWithState(state, runRule(state, trivial), Phase.Trivial)
-      runWithState(state, runRule(state, boundAssignment(state)), Phase.BoundAssignment)
-      runWithState(state, runRule(state, trivial), Phase.Trivial)
-      runWithState(state, reflexiveAndDuplicate, Phase.ReflexiveAndDuplicate)
-      runWithState(state, runRule(state, trivial), Phase.Trivial)
-      runWithState(state, runRule(state, unionAssignment(state)), Phase.UnionAssignment)
-      runWithState(state, runRule(state, trivial), Phase.Trivial)
-      runWithState(state, runRule(state, interAssignment), Phase.InterAssignment)
-      runWithState(state, runRule(state, trivial), Phase.Trivial)
+      var progress = true
+      var iterations = 0
+      while (progress && iterations < MaxIterations) {
+        progress = false
+        iterations += 1
+
+        def step(f: List[Equation] => Option[(List[Equation], SetSubstitution)], phase: Phase): Unit = {
+          val before = state.eqs
+          runWithState(state, f, phase)
+          if (state.eqs ne before) progress = true
+        }
+
+        step(runRule(state, constantPropagation), Phase.ConstantPropagation)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, variablePropagation), Phase.VariablePropagation)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, variableAssignment), Phase.VariableAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(recursiveAssignment(state), Phase.RecursiveAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, constantPropagation), Phase.ConstantPropagation)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, coverAssignment), Phase.CoverAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, boundAssignment(state)), Phase.BoundAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(reflexiveAndDuplicate, Phase.ReflexiveAndDuplicate)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, unionAssignment(state)), Phase.UnionAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, interAssignment), Phase.InterAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+
+        // Safety valve: stop if distribution has grown the system far beyond its input.
+        if (state.eqs.length > 4 * l.length + 64) {
+          progress = false
+        }
+      }
     }
 
     sveAll(state.eqs, mode) match {
@@ -623,6 +649,7 @@ object SetUnification {
     * declared effect).
     *
     *   - `g ~ g ∪ f1 ∪ .. ∪ fn` where `g` is ground becomes `({f1 ∩ ¬g ~ empty, .., fn ∩ ¬g ~ empty}, [])`
+    *   - `g1 ∪ .. ∪ gk ~ g1 ∪ .. ∪ gk ∪ f1 ∪ .. ∪ fn` where the `gi` are ground becomes the same
     *
     * The equation holds exactly when every `fi ⊆ g`. The inclusions are emitted one per member, so
     * that [[boundAssignment]] can solve them in the same pass.
@@ -639,17 +666,22 @@ object SetUnification {
   }
 
   /**
-    * Returns the inclusions `fi ∩ ¬g ~ empty` for the members `fi` of `members` other than `g`,
-    * for the ground formula `g` and the members `members` of a union that contains `g`.
+    * Returns the inclusions `fi ∩ ¬g ~ empty` for the members `fi` of `members` that are not members
+    * of `g`, for the ground formula `g` and the members `members` of a union that contains `g`: the
+    * union contains `g` if `g` is a member, or if `g` is a union all of whose members are members.
     *
-    * Returns [[None]] if `g` is not a member.
+    * Returns [[None]] if the union does not contain `g`.
     */
   private def coverAssignmentOf(g: SetFormula, members: List[SetFormula], loc: SourceLocation): Option[(List[Equation], SetSubstitution)] = {
-    val (self, others) = members.partition(_ == g)
-    if (self.isEmpty) {
+    val gs = g match {
+      case Union(l) => flattenUnions(l.toList)
+      case _ => g :: Nil
+    }
+    if (!gs.forall(members.contains)) {
       None
     } else {
       val notG = mkCompl(g)
+      val others = members.filterNot(gs.contains)
       val eqs = others.map(f => simplify(mkInter(f, notG))).filter(_ != Empty).map(Equation.mk(_, Empty, loc))
       Some((eqs, SetSubstitution.empty))
     }

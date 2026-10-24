@@ -294,6 +294,23 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
     assertSolved(input)
   }
 
+  test("CoverAssignment.03") {
+    // (c1 ∪ c2) ~ (c1 ∪ x0 ∪ c2 ∪ (x1 ∩ c3)): the ground side is a union whose members all occur on the right
+    val input = List(
+      mkEq(Union(TwoList(Cst(1), Cst(2), List())), Union(TwoList(Cst(1), Var(0), List(Cst(2), Inter(TwoList(Var(1), Cst(3), List()))))))
+    )
+    assertSolved(input)
+  }
+
+  test("Fixpoint.RestrictionThenDistribution") {
+    // c4 ~ x1 ∪ x2 restricts x2 to a union; x2 ∩ c3 ~ empty then needs distribution and a bound in a second pass.
+    val input = List(
+      mkEq(Inter(TwoList(Var(2), Cst(3), List())), Empty),
+      mkEq(Cst(4), Union(TwoList(Var(1), Var(2), List())))
+    )
+    assertSolved(input)
+  }
+
   test("InterAssignment.01") {
     // c1 ~ x0 ∩ (c1 ∪ c2)
     val input = List(
