@@ -1824,10 +1824,7 @@ object PrettyPrinter {
 
   /** Formatting for identifiers, which hold a single name token. */
   private def prettyIdent(tree: Tree): Doc =
-    tree.children.map {
-      case token: Token => text(token.text)
-      case other => prettyChild(other)
-    }.reduceLeftOption(_ <> _).getOrElse(empty)
+    tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
 
   private def prettyStringInterpolation(tree: Tree): Doc =
     tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
