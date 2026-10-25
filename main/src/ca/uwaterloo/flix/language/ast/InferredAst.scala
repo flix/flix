@@ -27,9 +27,7 @@ object InferredAst {
 
   sealed trait Expr {
     def tpe: Type
-
     def eff: Type
-
     def loc: SourceLocation
   }
 
@@ -53,7 +51,6 @@ object InferredAst {
 
     case class Use(sym: Symbol, alias: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr {
       def tpe: Type = exp.tpe
-
       def eff: Type = exp.eff
     }
 
@@ -135,7 +132,6 @@ object InferredAst {
 
     case class VectorLength(exp: Expr, loc: SourceLocation) extends Expr {
       def eff: Type = exp.eff
-
       def tpe: Type = Type.Int32
     }
 
@@ -143,7 +139,6 @@ object InferredAst {
 
     case class InstanceOf(exp: Expr, clazz: ClassDesc, loc: SourceLocation) extends Expr {
       def eff: Type = exp.eff
-
       def tpe: Type = Type.Bool
     }
 
@@ -243,7 +238,6 @@ object InferredAst {
 
   sealed trait Pattern {
     def tpe: Type
-
     def loc: SourceLocation
   }
 
@@ -270,7 +264,6 @@ object InferredAst {
 
   sealed trait RestrictableChoosePattern {
     def tpe: Type
-
     def loc: SourceLocation
   }
 
@@ -306,7 +299,6 @@ object InferredAst {
 
   sealed trait ExtTagPattern {
     def tpe: Type
-
     def loc: SourceLocation
   }
 
