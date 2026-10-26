@@ -251,12 +251,42 @@ object SetFormula {
     case Compl(f1) => f1
     case Inter(l) =>
       // De Morgan: !(f1 ∩ f2 ∩ ..) = !f1 ∪ !f2 ∪ ..
-      l.toList.map(mkCompl).reduceLeft(mkUnion2)
+      mkUnionOrdered(l.toList.map(mkCompl))
     case Union(l) =>
       // De Morgan: !(f1 ∪ f2 ∪ ..) = !f1 ∩ !f2 ∩ ..
-      l.toList.map(mkCompl).reduceLeft(mkInter)
+      mkInterOrdered(l.toList.map(mkCompl))
     case xor@Xor(_) =>
       Compl(xor)
+  }
+
+  /**
+    * Returns the union of `fs` with the members in the given order, dropping units.
+    *
+    * The members are neither flattened nor deduplicated. The order is kept so that the complement
+    * of a formula is structurally the formula with every member complemented, which the complement
+    * absorption of [[mkInterAll]] and [[mkUnionAll]] relies on.
+    */
+  private def mkUnionOrdered(fs: List[SetFormula]): SetFormula = {
+    if (fs.contains(Univ)) {
+      return Univ
+    }
+    fs.filter(_ != Empty) match {
+      case Nil => Empty
+      case one :: Nil => one
+      case x :: y :: rest => Union(TwoList(x, y, rest))
+    }
+  }
+
+  /** Returns the intersection of `fs` with the members in the given order, dropping units (see [[mkUnionOrdered]]). */
+  private def mkInterOrdered(fs: List[SetFormula]): SetFormula = {
+    if (fs.contains(Empty)) {
+      return Empty
+    }
+    fs.filter(_ != Univ) match {
+      case Nil => Univ
+      case one :: Nil => one
+      case x :: y :: rest => Inter(TwoList(x, y, rest))
+    }
   }
 
   /**
@@ -348,90 +378,129 @@ object SetFormula {
     case _ => None
   }
 
-  /** Returns the simplified intersection of the simplified formulas `ms0`. */
+  /**
+    * Returns the simplified intersection of the simplified formulas `ms0`.
+    *
+    * Besides flattening, units, duplicates, complementary pairs, and the absorption
+    * `a ∩ (a ∪ b) = a`, the complement absorption `a ∩ (!a ∪ b) = a ∩ b` is applied: a member of a
+    * union member whose complement is a member of the intersection is dropped from the union. This
+    * keeps the composition of the bindings of set unification flat. A variable restricted to
+    * `x ∩ r` and then bound by the equation `x ∩ r ∩ k ~ empty` to `x ∩ !(r ∩ k)` composes to
+    * `x ∩ r ∩ !k` rather than to `x ∩ (!r ∪ !k) ∩ r`, whose size would double with every binding.
+    *
+    * The laws are applied until none applies. Every application removes a member or a member of a
+    * member, so the loop ends.
+    */
   private[set] def mkInterAll(ms0: List[SetFormula]): SetFormula = {
-    val ms = ms0.flatMap {
-      case Inter(l) => l.toList
-      case Univ => Nil
-      case m => m :: Nil
-    }.distinct
-    if (ms.contains(Empty)) {
-      return Empty
+    var ms = flattenInters(ms0)
+    var changed = true
+    while (changed) {
+      changed = false
+      if (ms.contains(Empty)) {
+        return Empty
+      }
+      val set = ms.toSet
+      // a ∩ !a = empty
+      if (ms.exists(m => complOf(m).exists(set.contains))) {
+        return Empty
+      }
+      var next: List[SetFormula] = Nil
+      for (m <- ms) m match {
+        case Union(l) if l.exists(set.contains) =>
+          // Absorption: a ∩ (a ∪ b) = a. The union is dropped.
+          changed = true
+        case Union(l) =>
+          // Complement absorption: a ∩ (!a ∪ b) = a ∩ b. The complemented members leave the union.
+          val kept = l.toList.filterNot(s => set.contains(mkCompl(s)))
+          if (kept.lengthCompare(l.length) == 0) {
+            next = m :: next
+          } else {
+            changed = true
+            kept match {
+              case Nil => return Empty // a ∩ b ∩ (!a ∪ !b) = empty
+              case one :: Nil => next = one :: next
+              case x :: y :: tail => next = Union(TwoList(x, y, tail)) :: next
+            }
+          }
+        case _ =>
+          next = m :: next
+      }
+      if (changed) {
+        // A union may have collapsed to an intersection, which is flattened, or to a duplicate.
+        ms = flattenInters(next.reverse)
+      }
     }
-    val set = ms.toSet
-    // a ∩ !a = empty
-    if (ms.exists(m => complOf(m).exists(set.contains))) {
-      return Empty
-    }
-    // Absorption: a ∩ (a ∪ b) = a. A union member is dropped if one of its members is also a member
-    // of the intersection.
-    // Complement absorption: a ∩ (!a ∪ b) = a ∩ b. A member of a union member is dropped if its
-    // complement is also a member of the intersection.
-    var reduced = false
-    val kept = ms.flatMap {
-      case Union(l) if l.exists(set.contains) => Nil
-      case u@Union(l) =>
-        val rest = l.toList.filterNot(m => complOf(m).exists(set.contains))
-        if (rest.lengthCompare(l.length) == 0) {
-          u :: Nil
-        } else {
-          reduced = true
-          mkUnionAll(rest) :: Nil
-        }
-      case m => m :: Nil
-    }
-    if (reduced) {
-      // A reduced union can be `empty`, an intersection, or a duplicate or complement of a member.
-      return mkInterAll(kept)
-    }
-    kept match {
+    ms match {
       case Nil => Univ
       case one :: Nil => one
       case x :: y :: tail => Inter(TwoList(x, y, tail))
     }
   }
 
-  /** Returns the simplified union of the simplified formulas `ms0`. */
+  /** Flattens the intersections among `ms`, drops `univ`, and removes duplicates. */
+  private def flattenInters(ms: List[SetFormula]): List[SetFormula] = ms.flatMap {
+    case Inter(l) => l.toList
+    case Univ => Nil
+    case m => m :: Nil
+  }.distinct
+
+  /**
+    * Returns the simplified union of the simplified formulas `ms0`.
+    *
+    * The dual of [[mkInterAll]]: besides flattening, units, duplicates, complementary pairs, and
+    * the absorption `a ∪ (a ∩ b) = a`, the complement absorption `a ∪ (!a ∩ b) = a ∪ b` is applied.
+    */
   private[set] def mkUnionAll(ms0: List[SetFormula]): SetFormula = {
-    val ms = ms0.flatMap {
-      case Union(l) => l.toList
-      case Empty => Nil
-      case m => m :: Nil
-    }.distinct
-    if (ms.contains(Univ)) {
-      return Univ
+    var ms = flattenUnions(ms0)
+    var changed = true
+    while (changed) {
+      changed = false
+      if (ms.contains(Univ)) {
+        return Univ
+      }
+      val set = ms.toSet
+      // a ∪ !a = univ
+      if (ms.exists(m => complOf(m).exists(set.contains))) {
+        return Univ
+      }
+      var next: List[SetFormula] = Nil
+      for (m <- ms) m match {
+        case Inter(l) if l.exists(set.contains) =>
+          // Absorption: a ∪ (a ∩ b) = a. The intersection is dropped.
+          changed = true
+        case Inter(l) =>
+          // Complement absorption: a ∪ (!a ∩ b) = a ∪ b. The complemented members leave the intersection.
+          val kept = l.toList.filterNot(s => set.contains(mkCompl(s)))
+          if (kept.lengthCompare(l.length) == 0) {
+            next = m :: next
+          } else {
+            changed = true
+            kept match {
+              case Nil => return Univ // a ∪ b ∪ (!a ∩ !b) = univ
+              case one :: Nil => next = one :: next
+              case x :: y :: tail => next = Inter(TwoList(x, y, tail)) :: next
+            }
+          }
+        case _ =>
+          next = m :: next
+      }
+      if (changed) {
+        // An intersection may have collapsed to a union, which is flattened, or to a duplicate.
+        ms = flattenUnions(next.reverse)
+      }
     }
-    val set = ms.toSet
-    // a ∪ !a = univ
-    if (ms.exists(m => complOf(m).exists(set.contains))) {
-      return Univ
-    }
-    // Absorption: a ∪ (a ∩ b) = a. An intersection member is dropped if one of its members is also
-    // a member of the union.
-    // Complement absorption: a ∪ (!a ∩ b) = a ∪ b. A member of an intersection member is dropped if
-    // its complement is also a member of the union.
-    var reduced = false
-    val kept = ms.flatMap {
-      case Inter(l) if l.exists(set.contains) => Nil
-      case i@Inter(l) =>
-        val rest = l.toList.filterNot(m => complOf(m).exists(set.contains))
-        if (rest.lengthCompare(l.length) == 0) {
-          i :: Nil
-        } else {
-          reduced = true
-          mkInterAll(rest) :: Nil
-        }
-      case m => m :: Nil
-    }
-    if (reduced) {
-      // A reduced intersection can be `univ`, a union, or a duplicate or complement of a member.
-      return mkUnionAll(kept)
-    }
-    kept match {
+    ms match {
       case Nil => Empty
       case one :: Nil => one
       case x :: y :: tail => Union(TwoList(x, y, tail))
     }
   }
+
+  /** Flattens the unions among `ms`, drops `empty`, and removes duplicates. */
+  private def flattenUnions(ms: List[SetFormula]): List[SetFormula] = ms.flatMap {
+    case Union(l) => l.toList
+    case Empty => Nil
+    case m => m :: Nil
+  }.distinct
 
 }
