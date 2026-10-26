@@ -27,6 +27,7 @@ sealed trait TypeConstraint {
     case TypeConstraint.Purification(_, eff1, eff2, _, nested) => eff1.size + eff2.size + nested.map(_.size).sum
     case TypeConstraint.Conflicted(tpe1, tpe2, _) => tpe1.size + tpe2.size
     case TypeConstraint.EffConflicted(_) => 0
+    case TypeConstraint.Speculative(tpe1, tpe2, _) => tpe1.size + tpe2.size
   }
 
   override def toString: String = this match {
@@ -36,6 +37,7 @@ sealed trait TypeConstraint {
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
     case TypeConstraint.Conflicted(tpe1, tpe2, _) => s"$tpe1 ≁ $tpe2"
     case TypeConstraint.EffConflicted(err) => err.toString
+    case TypeConstraint.Speculative(tpe1, tpe2, _) => s"$tpe1 ~? $tpe2"
   }
 
   def loc: SourceLocation
@@ -124,6 +126,25 @@ object TypeConstraint {
   case class EffConflicted(error: TypeError) extends TypeConstraint {
     def loc: SourceLocation = error.loc
   }
+
+  /**
+    * A constraint speculating that `tpe1` and `tpe2` are equal.
+    * {{{
+    *   tpe1 ~? tpe2
+    * }}}
+    *
+    * A speculation has no logical content: the constraint system holds whether or not the two types are
+    * equal, so it is never a leftover and never produces a type error. [[ConstraintSolverInterface]] uses
+    * the speculations of a system as a shortcut. It first solves the system with every speculated pair of
+    * variables identified, and accepts that solution if there is one, since any solution of the system and
+    * the speculations is a solution of the system. If there is none, it solves the system again without
+    * the speculations. The solver itself drops a speculation that reaches it.
+    *
+    * Type inference emits a speculation where two types are equal in every solution of a well-typed
+    * program, but where the solver would only find that out after work that the shortcut avoids. See the
+    * handler rule in `ConstraintGen`.
+    */
+  case class Speculative(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeConstraint
 
   sealed trait Provenance {
     def loc: SourceLocation
