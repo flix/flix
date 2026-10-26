@@ -160,6 +160,7 @@ object Profiler {
         vars ++= e1.typeVars; vars ++= e2.typeVars
         nested.foreach(collect)
       case TypeConstraint.EffConflicted(_)            => ()
+      case TypeConstraint.Speculative(t1, t2, _)      => vars ++= t1.typeVars; vars ++= t2.typeVars
     }
     cs.foreach(collect)
     var tv = 0L

@@ -177,6 +177,20 @@ class TypeContext {
   }
 
   /**
+    * Generates a constraint speculating that the given types are equal.
+    *
+    * {{{
+    *   tpe1 ~? tpe2
+    * }}}
+    *
+    * The speculation is a hint to the solver, not a requirement: see [[TypeConstraint.Speculative]].
+    */
+  def speculateEq(tpe1: Type, tpe2: Type, loc: SourceLocation): Unit = {
+    val constr = TypeConstraint.Speculative(tpe1, tpe2, loc)
+    currentScopeConstraints.add(constr)
+  }
+
+  /**
     * Generates a constraint where an `actual` type is used where the `Unit` type is expected in a statement position.
     */
   def expectStmt(actual: Type, loc: SourceLocation): Unit = {

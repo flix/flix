@@ -887,8 +887,35 @@ object ConstraintGen {
         val effectSubst = Substitution(ListOps.zip(effect.tparams.map(_.sym), effectArgs).toMap)
         val effectKind = Kind.mkArrowTo(effect.tparams.map(_.sym.kind), Kind.Eff)
 
-        val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2, effectSubst)).unzip
+        val (tpes, effs0) = rules.map(visitHandlerRule(_, tvar, evar2, effectSubst)).unzip
         c.unifyAllTypes(tvar :: tpes, loc)
+
+        // SPECULATION: A rule that uses its resumption `k` has the continuation effect `k_ef`: calling `k`
+        // adds `k_ef` to the body effect, and `k_ef` includes every body effect by the equation below. We
+        // speculate the equality (see [[TypeConstraint.Speculative]]) so that the solver interface can
+        // identify the body effects with `k_ef` up front. That collapses the equation below from one with
+        // a variable per rule, which grows past the variable limit of effect unification with the size of
+        // the handler, to one with a fixed number of variables. The speculation is exact for a well-typed
+        // rule that calls `k`, and the solver interface falls back to the plain system where it does not
+        // hold, e.g. for a rule that stores `k` without calling it. A rule whose resumption parameter is a
+        // wildcard never calls `k`, so its body effect may be strictly smaller, and it is not speculated.
+        val effs = ListOps.zip(rules, effs0).map {
+          case (rule, eff) =>
+            if (rule.fparams.last.sym.isWild) {
+              eff
+            } else {
+              // Name the body effect, so that the speculation identifies two variables.
+              val bodyEff = eff match {
+                case v@Type.Var(_, _) => v
+                case _ =>
+                  val v = freshVar(Kind.Eff, rule.loc)
+                  c.unifyType(v, eff, rule.loc)
+                  v
+              }
+              c.speculateEq(evar2, bodyEff, rule.loc)
+              bodyEff
+            }
+        }
 
         val handledEffectConstructor = Type.Cst(TypeConstructor.Effect(symUse.sym, effectKind), symUse.qname.loc)
         val handledEffect = Type.mkApply(handledEffectConstructor, effectArgs, symUse.qname.loc)
