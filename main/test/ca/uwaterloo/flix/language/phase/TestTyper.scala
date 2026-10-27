@@ -2154,7 +2154,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    42
         |}
         |""".stripMargin
-    val result = check(input, Options.TestWithLibAll.copy(xsubeffecting = true))
+    val result = check(input, Options.TestWithLibAll)
     expectError[TypeError.TooComplex](result)
   }
 
