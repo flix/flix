@@ -6,7 +6,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.api.{Flix, FlixEvent}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
@@ -23,12 +23,6 @@ object EffUnification3 {
     * The Global Zhegalkin Algebra used for effects.
     */
   val Algebra: ZhegalkinAlgebra[CofiniteIntSet] = new ZhegalkinAlgebra[CofiniteIntSet](CofiniteIntSet.LatticeOps)
-
-  /**
-    * Controls whether to enable solve-and-retry for subeffecting: the strict reading of subeffect
-    * constraints is tried before the lax reading.
-    */
-  var EnableSmartSubeffecting: Boolean = true
 
   /**
     * Computes an MGU for **ALL* equations in `eqs0` and subeffect constraints in `subs0`.
@@ -90,7 +84,7 @@ object EffUnification3 {
     // Phase 1: Try to solve without subeffecting: subeffect constraints with a flexible upper bound
     // are read strictly. Only at the top level, where the whole system is in view.
     //
-    if (EnableSmartSubeffecting && scope == RegionScope.Top) {
+    if (scope == RegionScope.Top) {
       try {
         val equations = toEquations(eqs) ::: subs.map(toStrictEquation)
         val (unsolvedEqns, resultSubst) = SetUnification.solve(equations, flix.options.xsve)
@@ -109,7 +103,6 @@ object EffUnification3 {
     //
     try {
       val equations = toEquations(eqs) ::: subs.map(toLaxEquation)
-      flix.emitEvent(FlixEvent.SolveEffEquations(equations))
       val (unsolvedEqns, resultSubst) = SetUnification.solve(equations, flix.options.xsve)
       if (unsolvedEqns.isEmpty) {
         Result.Ok(fromSetSubst(resultSubst))

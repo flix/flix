@@ -56,23 +56,6 @@ sealed trait SetFormula {
   }
 
   /**
-    * Returns the constants (i.e. "rigid variables") in `this` set formula.
-    */
-  final def cstsOf: SortedSet[Int] = this match {
-    case SetFormula.Univ => SortedSet.empty
-    case SetFormula.Empty => SortedSet.empty
-    case Cst(x) => SortedSet(x)
-    case Var(_) => SortedSet.empty
-    case ElemSet(_) => SortedSet.empty
-    case Compl(f) => f.cstsOf
-    case Inter(l) => l.toList.map(_.cstsOf).reduce(_ ++ _)
-    case Union(l) => l.toList.map(_.cstsOf).reduce(_ ++ _)
-    case Xor(l) => l.foldLeft(SortedSet.empty[Int]) {
-      case (acc, f) => acc ++ f.cstsOf
-    }
-  }
-
-  /**
     * Returns the variables (i.e. "flexible variables") in `this` set formula.
     */
   final def varsOf: SortedSet[Int] = this match {
@@ -86,23 +69,6 @@ sealed trait SetFormula {
     case Union(l) => l.toList.map(_.varsOf).reduce(_ ++ _)
     case Xor(other) => other.foldLeft(SortedSet.empty[Int]) {
       case (acc, f) => acc ++ f.varsOf
-    }
-  }
-
-  /**
-    * Returns the elements (i.e. "concrete members") in `this` set formula.
-    */
-  final def elmsOf: SortedSet[Int] = this match {
-    case SetFormula.Univ => SortedSet.empty
-    case SetFormula.Empty => SortedSet.empty
-    case Cst(_) => SortedSet.empty
-    case Var(_) => SortedSet.empty
-    case ElemSet(e) => e
-    case Compl(f) => f.cstsOf
-    case Inter(l) => l.toList.map(_.cstsOf).reduce(_ ++ _)
-    case Union(l) => l.toList.map(_.cstsOf).reduce(_ ++ _)
-    case Xor(other) => other.foldLeft(SortedSet.empty[Int]) {
-      case (acc, f) => acc ++ f.cstsOf
     }
   }
 

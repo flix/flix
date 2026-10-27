@@ -29,55 +29,6 @@ object SetUnification {
   /** The maximum number of passes over the rule sequence (see [[solve]]). */
   private val MaxIterations: Int = 32
 
-  /**
-    * Enable simple rewrite rules.
-    */
-  var EnableRewriteRules: Boolean = true
-
-  /**
-    * Enables simple statistics tracking.
-    */
-  var EnableStats: Boolean = false
-
-  /**
-    * Tracks the number of constraints eliminated by each rewrite rule.
-    */
-  val ElimPerRule: mutable.Map[Phase, Int] = mutable.Map.empty
-
-  /**
-   * Tracks the number of variables eliminated by each rewrite rule.
-   */
-  val VarElimPerRule: mutable.Map[Phase, Int] = mutable.Map.empty
-
-  /**
-    * Represents the name of phase.
-    */
-  sealed trait Phase
-
-  object Phase {
-    final case object ConstantPropagation extends Phase
-
-    final case object VariablePropagation extends Phase
-
-    final case object VariableAssignment extends Phase
-
-    final case object RecursiveAssignment extends Phase
-
-    final case object BoundAssignment extends Phase
-
-    final case object UnionAssignment extends Phase
-
-    final case object ReflexiveAndDuplicate extends Phase
-
-    final case object SuccessiveVariableElimination extends Phase
-
-    final case object Trivial extends Phase
-
-    final case object CoverAssignment extends Phase
-
-    final case object InterAssignment extends Phase
-  }
-
   /** Represents the running mutable state of the solver. */
   final class State(initialEquations: List[Equation]) {
     /** The remaining equations to solve. */
@@ -146,44 +97,42 @@ object SetUnification {
   def solve(l: List[Equation], mode: SveMode): (List[Equation], SetSubstitution) = {
     val state = new State(l)
 
-    if (EnableRewriteRules) {
-      var progress = true
-      var iterations = 0
-      while (progress && iterations < MaxIterations) {
+    var progress = true
+    var iterations = 0
+    while (progress && iterations < MaxIterations) {
+      progress = false
+      iterations += 1
+
+      def step(f: List[Equation] => Option[(List[Equation], SetSubstitution)]): Unit = {
+        val before = state.eqs
+        runWithState(state, f)
+        if (state.eqs ne before) progress = true
+      }
+
+      step(runRule(state, constantPropagation))
+      step(runRule(state, trivial))
+      step(runRule(state, variablePropagation))
+      step(runRule(state, trivial))
+      step(runRule(state, variableAssignment))
+      step(runRule(state, trivial))
+      step(recursiveAssignment(state))
+      step(runRule(state, trivial))
+      step(runRule(state, constantPropagation))
+      step(runRule(state, trivial))
+      step(runRule(state, coverAssignment))
+      step(runRule(state, trivial))
+      step(runRule(state, boundAssignment(state)))
+      step(runRule(state, trivial))
+      step(reflexiveAndDuplicate)
+      step(runRule(state, trivial))
+      step(runRule(state, unionAssignment(state)))
+      step(runRule(state, trivial))
+      step(runRule(state, interAssignment))
+      step(runRule(state, trivial))
+
+      // Safety valve: stop if distribution has grown the system far beyond its input.
+      if (state.eqs.length > 4 * l.length + 64) {
         progress = false
-        iterations += 1
-
-        def step(f: List[Equation] => Option[(List[Equation], SetSubstitution)], phase: Phase): Unit = {
-          val before = state.eqs
-          runWithState(state, f, phase)
-          if (state.eqs ne before) progress = true
-        }
-
-        step(runRule(state, constantPropagation), Phase.ConstantPropagation)
-        step(runRule(state, trivial), Phase.Trivial)
-        step(runRule(state, variablePropagation), Phase.VariablePropagation)
-        step(runRule(state, trivial), Phase.Trivial)
-        step(runRule(state, variableAssignment), Phase.VariableAssignment)
-        step(runRule(state, trivial), Phase.Trivial)
-        step(recursiveAssignment(state), Phase.RecursiveAssignment)
-        step(runRule(state, trivial), Phase.Trivial)
-        step(runRule(state, constantPropagation), Phase.ConstantPropagation)
-        step(runRule(state, trivial), Phase.Trivial)
-        step(runRule(state, coverAssignment), Phase.CoverAssignment)
-        step(runRule(state, trivial), Phase.Trivial)
-        step(runRule(state, boundAssignment(state)), Phase.BoundAssignment)
-        step(runRule(state, trivial), Phase.Trivial)
-        step(reflexiveAndDuplicate, Phase.ReflexiveAndDuplicate)
-        step(runRule(state, trivial), Phase.Trivial)
-        step(runRule(state, unionAssignment(state)), Phase.UnionAssignment)
-        step(runRule(state, trivial), Phase.Trivial)
-        step(runRule(state, interAssignment), Phase.InterAssignment)
-        step(runRule(state, trivial), Phase.Trivial)
-
-        // Safety valve: stop if distribution has grown the system far beyond its input.
-        if (state.eqs.length > 4 * l.length + 64) {
-          progress = false
-        }
       }
     }
 
@@ -204,35 +153,11 @@ object SetUnification {
   }
 
   /**
-    * Runs the given equation system solver `phase` on `state`.
+    * Runs the given equation system solver `f` on `state`.
     */
-  private def runWithState(state: State, f: List[Equation] => Option[(List[Equation], SetSubstitution)], phase: Phase): Unit = {
-    var numberOfVars: Int = 0
-    if (EnableStats) {
-      numberOfVars = state.eqs.map(_.varsOf.size).sum
-    }
-
+  private def runWithState(state: State, f: List[Equation] => Option[(List[Equation], SetSubstitution)]): Unit = {
     f(state.eqs) match {
       case Some((eqs, subst)) =>
-
-        if (EnableStats) {
-          synchronized {
-            {
-              // Eliminated Constraints
-              val count = ElimPerRule.getOrElse(phase, 0)
-              val delta = state.eqs.length - eqs.length
-              ElimPerRule.put(phase, count + delta)
-            }
-
-            {
-              // Eliminated Vars
-              val count = VarElimPerRule.getOrElse(phase, 0)
-              val delta = numberOfVars - eqs.map(_.varsOf.size).sum
-              VarElimPerRule.put(phase,  count + delta)
-            }
-          }
-        }
-
         state.eqs = eqs
         state.subst = subst @@ state.subst
 
@@ -851,13 +776,6 @@ object SetUnification {
       return Result.Err(eqs.map(_.toUnsolvable))
     }
 
-    if (EnableStats) {
-      // Eliminated Vars
-      val count = VarElimPerRule.getOrElse(Phase.SuccessiveVariableElimination, 0)
-      val delta = eqs.map(_.varsOf.size).sum
-      VarElimPerRule.put(Phase.SuccessiveVariableElimination,  count + delta)
-    }
-
     // Return immediately if there is an equation that has too many variables.
     for (eq <- eqs) {
       val allVars = eq.f1.varsOf ++ eq.f2.varsOf
@@ -882,11 +800,6 @@ object SetUnification {
       // Reconstruct a set substitution.
       val m = subst.m.foldLeft(IntMap.empty[SetFormula]) {
         case (acc, (x, e)) => acc.updated(x, Zhegalkin.toSetFormula(e))
-      }
-
-      if (EnableStats) {
-        val count = ElimPerRule.getOrElse(Phase.SuccessiveVariableElimination, 0)
-        ElimPerRule.put(Phase.SuccessiveVariableElimination, count + eqs.length)
       }
 
       Result.Ok(SetSubstitution(m))

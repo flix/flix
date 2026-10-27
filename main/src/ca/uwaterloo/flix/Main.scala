@@ -13,7 +13,6 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Origin, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.shared.SveMode
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
@@ -515,9 +514,6 @@ object Main {
         case Command.CompilerMemory =>
           CompilerMemory.run(options)
 
-        case Command.Zhegalkin =>
-          ZhegalkinPerf.run(options.XPerfN)
-
       }
     } catch {
       case ex: RuntimeException =>
@@ -618,8 +614,6 @@ object Main {
     case object CompilerPerf extends Command
 
     case object CompilerMemory extends Command
-
-    case object Zhegalkin extends Command
 
   }
 
@@ -775,12 +769,6 @@ object Main {
       ).hidden()
 
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
-
-      cmd("Xzhegalkin").action((_, c) => c.copy(command = Command.Zhegalkin)).children(
-        opt[Int]("n")
-          .action((v, c) => c.copy(XPerfN = Some(v)))
-          .text("number of compilations")
-      ).hidden()
 
       note("")
 
