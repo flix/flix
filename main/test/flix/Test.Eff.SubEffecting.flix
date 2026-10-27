@@ -5,7 +5,7 @@ mod Test.Eff.SubEffecting {
     ///
     /// Sub-effecting lets a lambda or local def have a larger effect than its body.
     ///
-    /// Every test except those in the last group is rejected without sub-effecting. The tests are grouped
+    /// Every test except those in the last two groups is rejected without sub-effecting. The tests are grouped
     /// by where the widening happens:
     ///
     ///   - A pure lambda or local def passed where an `IO` function is required.
@@ -20,6 +20,8 @@ mod Test.Eff.SubEffecting {
     ///   - User-defined effects, under a handler.
     ///   - Lambdas inside an instance def and a trait default def.
     ///   - Regions: a region absorbs the declared effect of its def, and a region effect is widened.
+    ///   - Recursive local defs: the effect variable of the def appears in its own bound. These compile
+    ///     without sub-effecting too.
     ///   - Programs that sub-effecting must keep accepting: the shapes that failed before #13583 and
     ///     #13585. These compile without sub-effecting too.
     ///
@@ -94,6 +96,19 @@ mod Test.Eff.SubEffecting {
         def inc(x) = x + 1;
         assertEq(expected = 2, requiresIO(x -> inc(x)))
 
+    @Test
+    def testLocalDef04(): Unit \ Assert + IO =
+        // One local def used at two sites that require IO.
+        def inc(x) = x + 1;
+        assertEq(expected = 4, requiresIO(inc) + requiresIO(inc))
+
+    @Test
+    def testLocalDef05(): Unit \ Assert + IO =
+        // A local def that calls another local def. Only the outer one is used where IO is required.
+        def inc(x) = x + 1;
+        def twice(x) = inc(inc(x));
+        assertEq(expected = 3, requiresIO(twice))
+
     /////////////////////////////////////////////////////////////////////////////
     // Defs and signatures passed as function values                           //
     /////////////////////////////////////////////////////////////////////////////
@@ -153,6 +168,17 @@ mod Test.Eff.SubEffecting {
         };
         assertEq(expected = 42, r)
 
+    @Test
+    def testNonPureBody04(): Unit \ Assert + IO =
+        // The body of a local def has effect Log; the local def is widened to IO + Log.
+        def logged(x) = { Log.log("x"); x + 1 };
+        let r = run {
+            requiresIOLog(logged)
+        } with handler Log {
+            def log(_, k) = k()
+        };
+        assertEq(expected = 2, r)
+
     /////////////////////////////////////////////////////////////////////////////
     // A rigid effect variable                                                 //
     /////////////////////////////////////////////////////////////////////////////
@@ -160,6 +186,10 @@ mod Test.Eff.SubEffecting {
     def both(f: Int32 -> Int32 \ ef, g: Int32 -> Int32 \ ef): Int32 \ ef = f(g(1))
 
     def useBoth(f: Int32 -> Int32 \ ef): Int32 \ ef = both(f, x -> x + 1)
+
+    def useBothLocalDef(f: Int32 -> Int32 \ ef): Int32 \ ef =
+        def inc(x) = x + 1;
+        both(f, inc)
 
     def constant2(x: a): b -> a \ ef = _ -> x
 
@@ -216,6 +246,19 @@ mod Test.Eff.SubEffecting {
         // A body with rigid effect `ef1` widened to `ef1 + ef2`, as in Iterator.
         let (a, b) = pair(() -> 1, () -> 2);
         assertEq(expected = 3, a() + b())
+
+    @Test
+    def testRigidEffectVar08(): Unit \ Assert =
+        // The local def in `useBothLocalDef` is widened to `ef`, here instantiated to Pure.
+        assertEq(expected = 3, useBothLocalDef(x -> x + 1))
+
+    @Test
+    def testRigidEffectVar09(): Unit \ Assert = region rc {
+        // The local def in `useBothLocalDef` is widened to `ef`, here instantiated to the region.
+        let r = Ref.fresh(rc, 0);
+        let v = useBothLocalDef(x -> { Ref.put(x, r); x });
+        assertEq(expected = (2, 2), (v, Ref.get(r)))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // Lambdas with different effects unified with each other                  //
@@ -316,6 +359,13 @@ mod Test.Eff.SubEffecting {
         assertEq(expected = 2, Callbacks.call(Callbacks.make(rc)))
     }
 
+    @Test
+    def testDeclaredType07(): Unit \ Assert + IO =
+        // A type ascription on a let, binding a local def.
+        def inc(x) = x + 1;
+        let f: Int32 -> Int32 \ IO = inc;
+        assertEq(expected = 2, f(1))
+
     /////////////////////////////////////////////////////////////////////////////
     // Curried lambdas                                                         //
     /////////////////////////////////////////////////////////////////////////////
@@ -330,6 +380,12 @@ mod Test.Eff.SubEffecting {
     @Test
     def testCurried02(): Unit \ Assert + IO =
         assertEq(expected = 3, requiresCurried((x, y) -> x + y))
+
+    @Test
+    def testCurried03(): Unit \ Assert + IO =
+        // A local def whose body is a lambda. The lambda is widened to IO.
+        def adder(x) = y -> x + y;
+        assertEq(expected = 3, requiresCurried(adder))
 
     /////////////////////////////////////////////////////////////////////////////
     // User-defined effects                                                    //
@@ -384,6 +440,17 @@ mod Test.Eff.SubEffecting {
         // A pure lambda widened to {ef, Log}. Rejected before sub-effecting as Test.UnexpectedArgument.03.
         assertEq(expected = 2, logOnly())
 
+    @Test
+    def testUserEffect04(): Unit \ Assert =
+        // A pure local def where Ask is required, handled in a pure def.
+        def inc(x) = x + 1;
+        let r = run {
+            requiresAsk(inc)
+        } with handler Ask {
+            def ask(k) = k(41)
+        };
+        assertEq(expected = 42, r)
+
     /////////////////////////////////////////////////////////////////////////////
     // Instance defs and trait default defs                                    //
     /////////////////////////////////////////////////////////////////////////////
@@ -437,6 +504,77 @@ mod Test.Eff.SubEffecting {
         // The body has the effect of the region; the lambda is widened to IO + rc.
         let r = Ref.fresh(rc, 0);
         requiresRegionIO(rc, x -> Ref.put(x, r));
+        assertEq(expected = 1, Ref.get(r))
+    }
+
+    @Test
+    def testRegionEffectWidened02(): Unit \ Assert + IO = region rc {
+        // The body of a local def has the effect of the region; the local def is widened to IO + rc.
+        let r = Ref.fresh(rc, 0);
+        def put(x) = Ref.put(x, r);
+        requiresRegionIO(rc, put);
+        assertEq(expected = 1, Ref.get(r))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Recursive local defs                                                    //
+    //                                                                         //
+    // These compile without sub-effecting too: a recursive call has the       //
+    // effect of the local def itself, so the effect of the def is already     //
+    // open and is fixed by its use. With sub-effecting the effect variable of //
+    // the def appears on both sides of its own bound.                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def useBothRecursive(f: Int32 -> Int32 \ ef): Int32 \ ef =
+        def loop(n) = if (n == 0) 0 else loop(n - 1);
+        both(f, loop)
+
+    @Test
+    def testRecursiveLocalDef01(): Unit \ Assert + IO =
+        def loop(n) = if (n == 0) 0 else loop(n - 1);
+        assertEq(expected = 0, requiresIO(loop))
+
+    @Test
+    def testRecursiveLocalDef02(): Unit \ Assert + IO =
+        // Two parameters, with an accumulator.
+        def loop(n, acc) = if (n == 0) acc else loop(n - 1, acc + n);
+        assertEq(expected = 3, requiresIO2(loop))
+
+    @Test
+    def testRecursiveLocalDef03(): Unit \ Assert + IO =
+        // Not tail recursive.
+        def sum(n) = if (n == 0) 0 else n + sum(n - 1);
+        assertEq(expected = 1, requiresIO(sum))
+
+    @Test
+    def testRecursiveLocalDef04(): Unit \ Assert + IO =
+        // A recursive local def that calls another local def.
+        def inc(x) = x + 1;
+        def loop(n) = if (n == 0) 0 else inc(loop(n - 1));
+        assertEq(expected = 1, requiresIO(loop))
+
+    @Test
+    def testRecursiveLocalDef05(): Unit \ Assert + IO =
+        // The body has effect Log; the local def is widened to IO + Log.
+        def loop(n) = if (n == 0) { Log.log("done"); 0 } else 1 + loop(n - 1);
+        let r = run {
+            requiresIOLog(loop)
+        } with handler Log {
+            def log(_, k) = k()
+        };
+        assertEq(expected = 1, r)
+
+    @Test
+    def testRecursiveLocalDef06(): Unit \ Assert =
+        // The recursive local def in `useBothRecursive` is widened to `ef`, here instantiated to Pure.
+        assertEq(expected = 1, useBothRecursive(x -> x + 1))
+
+    @Test
+    def testRecursiveLocalDef07(): Unit \ Assert + IO = region rc {
+        // The body has the effect of the region; the local def is widened to IO + rc.
+        let r = Ref.fresh(rc, 0);
+        def put(n) = if (n == 0) () else { Ref.put(Ref.get(r) + n, r); put(n - 1) };
+        requiresRegionIO(rc, put);
         assertEq(expected = 1, Ref.get(r))
     }
 
