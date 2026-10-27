@@ -862,7 +862,7 @@ object SetUnification {
     for (eq <- eqs) {
       val allVars = eq.f1.varsOf ++ eq.f2.varsOf
       if (allVars.size > MaxVars) {
-        return Result.Err(List(eq.toTimeout(s"Unification too complex: The equation contains ${allVars.size} variables which exceeds the limit of $MaxVars.")))
+        return Result.Err(List(eq.toTimeout(s"Unification too complex: The equation contains ${allVars.size} variables which exceeds the limit of $MaxVars")))
       }
     }
 
