@@ -202,7 +202,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given case `case0`.
     */
   private def visitCase(case0: TypedAst.Case): Iterator[SemanticToken] = case0 match {
-    case TypedAst.Case(sym, tpes, _, _) =>
+    case TypedAst.Case(_, sym, tpes, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, sym.loc)
       tpes.foldLeft(Iterator(t)) {
         case (acc, tpe) => acc ++ visitType(tpe)
@@ -231,7 +231,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given field `field0`
     */
   private def visitField(field0: StructField): Iterator[SemanticToken] = field0 match {
-    case StructField(sym, _, tpe, _) =>
+    case StructField(_, sym, _, tpe, _) =>
       val t = SemanticToken(SemanticTokenType.Property, Nil, sym.loc)
       Iterator(t) ++ visitType(tpe)
   }

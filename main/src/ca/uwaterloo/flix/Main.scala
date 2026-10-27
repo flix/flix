@@ -12,6 +12,7 @@ import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Origin, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.phase.unification.shared.SveMode
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.JvmLoader
 import ca.uwaterloo.flix.runtime.shell.Shell
@@ -93,6 +94,7 @@ object Main {
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
       xchaosMonkey = Options.Default.xchaosMonkey,
+      xsve = cmdOpts.xsve,
       xverify = cmdOpts.xverify
     )
 
@@ -550,8 +552,9 @@ object Main {
     xnodeprecated: Boolean = false,
     xlib: LibLevel = LibLevel.All,
     xprintphases: Boolean = false,
+    xsve: SveMode = SveMode.PerEquation,
     xverify: Boolean = false,
-    xsubeffecting: Set[Subeffecting] = Set.empty,
+    xsubeffecting: Boolean = false,
     xnewmono: Boolean = false,
     XPerfN: Option[Int] = None,
     XPerfFrontend: Boolean = false,
@@ -656,11 +659,11 @@ object Main {
       case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
     }
 
-    implicit val readSubEffectLevel: scopt.Read[Subeffecting] = scopt.Read.reads {
-      case "mod-defs" => Subeffecting.ModDefs
-      case "ins-defs" => Subeffecting.InsDefs
-      case "lambdas" => Subeffecting.Lambdas
-      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. Valid options are comma-separated combinations of 'mod-defs', 'ins-defs', and 'lambdas'.")
+    implicit val readSveMode: scopt.Read[SveMode] = scopt.Read.reads {
+      case "per-equation" => SveMode.PerEquation
+      case "per-component" => SveMode.PerComponent
+      case "per-system" => SveMode.PerSystem
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid SVE mode. Valid options are 'per-equation', 'per-component', and 'per-system'.")
     }
 
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
@@ -750,7 +753,7 @@ object Main {
         .children(
           arg[String]("package").action((pkg, c) => c.copy(command = Command.EffCheck(Some(pkg))))
             .optional()
-            .text("the package to check, e.g. 'flix/museum-clerk'. Defaults to every installed package.")
+            .text("the package to check, e.g. 'flix/museum-clerk'. Defaults to every dependency of the project.")
         )
 
       cmd("eff-lock").text("  locks the current effect signatures.")
@@ -758,7 +761,7 @@ object Main {
         .children(
           arg[String]("package").action((pkg, c) => c.copy(command = Command.EffLock(Some(pkg))))
             .optional()
-            .text("the package to lock, e.g. 'flix/museum-clerk'. Defaults to every installed package.")
+            .text("the package to lock, e.g. 'flix/museum-clerk'. Defaults to every dependency of the project.")
         )
 
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
@@ -852,13 +855,17 @@ object Main {
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
         text("[experimental] writes the ASTs after each phase to './build/asts/'.")
 
+      // Xsve
+      opt[SveMode]("Xsve").action((mode, c) => c.copy(xsve = mode)).
+        text("[experimental] controls the granularity of SVE on effect equations (per-equation, per-component, per-system).")
+
       // Xverify
       opt[Unit]("Xverify").action((_, c) => c.copy(xverify = true)).
         text("[experimental] enables internal verifiers of compiler invariants.")
 
       // Xsubeffecting
-      opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
-        text("[experimental] enables sub-effecting in select places")
+      opt[Unit]("Xsubeffecting").action((_, c) => c.copy(xsubeffecting = true)).
+        text("[experimental] enables sub-effecting for lambdas and local defs.")
 
       // Xnewmono
       opt[Unit]("Xnewmono").action((_, c) => c.copy(xnewmono = true)).

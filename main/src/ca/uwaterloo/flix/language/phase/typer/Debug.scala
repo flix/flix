@@ -128,6 +128,7 @@ object Debug {
     */
   private def toSubDot(constr: TypeConstraint): String = constr match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"""${constraintId(constr)} [label = "$tpe1 ~ $tpe2"];"""
+    case TypeConstraint.SubEff(eff1, eff2, _) => s"""${constraintId(constr)} [label = "$eff1 ⊑ $eff2"];"""
     case TypeConstraint.Trait(sym, tpe, _) => s"""${constraintId(constr)} [label = "$sym[$tpe]"];"""
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) =>
       val header = s"""${constraintId(constr)} [label = "$eff1 ~ ($eff2)[$sym ↦ Pure]"];"""

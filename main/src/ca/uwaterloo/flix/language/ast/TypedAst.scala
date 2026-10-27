@@ -382,9 +382,9 @@ object TypedAst {
 
   case class Binder(sym: Symbol.VarSym, tpe: Type)
 
-  case class Case(sym: Symbol.CaseSym, tpes: List[Type], sc: Scheme, loc: SourceLocation)
+  case class Case(doc: Doc, sym: Symbol.CaseSym, tpes: List[Type], sc: Scheme, loc: SourceLocation)
 
-  case class StructField(sym: Symbol.StructFieldSym, mod: Modifiers, tpe: Type, loc: SourceLocation)
+  case class StructField(doc: Doc, sym: Symbol.StructFieldSym, mod: Modifiers, tpe: Type, loc: SourceLocation)
 
   case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpes: List[Type], sc: Scheme, loc: SourceLocation)
 

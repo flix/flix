@@ -75,7 +75,7 @@ object EnumTagCompleter {
   private def inScope(tag: TypedAst.Case, scope: LocalScope): Boolean = {
     val thisName = tag.sym.toString
     val isResolved = scope.m.values.exists(_.exists {
-      case Resolution.Declaration(Case(thatName, _, _)) => thisName == thatName.toString
+      case Resolution.Declaration(Case(_, thatName, _, _)) => thisName == thatName.toString
       case _ => false
     })
     val isRoot = tag.sym.namespace.isEmpty

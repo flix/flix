@@ -191,7 +191,7 @@ object Bootstrap {
     * dependencies added puts the manifest that was there back, as does any failure before it.
     */
   def install(p: Path, specs: List[String], token: Option[String], assumeYes: Boolean)(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
-    val pkgs = parsePackageSpecs(specs, allowVersion = true) match {
+    val pkgs = parsePackageSpecs(specs, "install", allowVersion = true) match {
       case Ok(pkgs) => pkgs
       case Err(e) => return Err(e)
     }
@@ -232,7 +232,7 @@ object Bootstrap {
     * that were there.
     */
   def remove(p: Path, specs: List[String], token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
-    val pkgs = parsePackageSpecs(specs, allowVersion = false) match {
+    val pkgs = parsePackageSpecs(specs, "remove", allowVersion = false) match {
       case Ok(pkgs) => pkgs
       case Err(e) => return Err(e)
     }
@@ -284,7 +284,7 @@ object Bootstrap {
     * alone, and a command in which no package changes rewrites nothing.
     */
   def upgrade(p: Path, specs: List[String], token: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
-    val named = parsePackageSpecs(specs, allowVersion = true) match {
+    val named = parsePackageSpecs(specs, "upgrade", allowVersion = true) match {
       case Ok(pkgs) => pkgs
       case Err(e) => return Err(e)
     }
@@ -340,17 +340,18 @@ object Bootstrap {
   /**
     * Returns `specs` as package specifications, or an error for the first that is not one.
     *
-    * A version is refused when `allowVersion` is false, as it is for a package to remove.
+    * A version is refused when `allowVersion` is false, as it is for a package to remove, and the
+    * error then names `command`, the command the specifications were given to.
     *
     * A package is named at most once, however it is written: `flix/museum-clerk` and
     * `github:flix/museum-clerk@2.1.3` name the same package. A package that is named twice is
     * either asked for twice or asked for at two versions, and a project declares a package once,
     * at one version.
     */
-  private def parsePackageSpecs(specs: List[String], allowVersion: Boolean): Result[List[PackageSpec], BootstrapError] =
+  private def parsePackageSpecs(specs: List[String], command: String, allowVersion: Boolean): Result[List[PackageSpec], BootstrapError] =
     Result.traverse(specs) { spec =>
       PackageSpec.mkPackageSpec(spec) match {
-        case Some(s) if s.version.isDefined && !allowVersion => Err(BootstrapError.UnexpectedVersion(spec))
+        case Some(s) if s.version.isDefined && !allowVersion => Err(BootstrapError.UnexpectedVersion(command, s.id))
         case Some(s) => Ok(s)
         case None => Err(BootstrapError.IllegalPackageSpec(spec))
       }
@@ -1943,22 +1944,23 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
 
   /**
     * Returns `Ok(())` if the signatures that the 'effects.lock' file locks for `spec` are the
-    * ones the dependencies declare.
+    * ones the dependencies declare, and every package that `spec` names is locked.
     *
     * `spec` names the package to check, as it does for [[lockEffects]]: a package identifier
     * without a version, e.g. `flix/museum-clerk` or `github:flix/museum-clerk`, which must be one
-    * the project has installed. Checking no package in particular checks every package the
-    * project has installed.
+    * the project declares. Checking no package in particular checks every dependency the project
+    * declares.
     *
     * A package is checked on its own, so that a package whose signatures have drifted does not
     * stand in the way of checking another.
     */
   def checkEffects(flix: Flix, spec: Option[String])(implicit out: PrintStream): Result[Unit, BootstrapError] = {
-    if (!isProjectMode) {
-      return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-check'"))
+    val manifest = optManifest match {
+      case Some(m) => m
+      case None => return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-check'"))
     }
 
-    val targets = targetsOf(spec) match {
+    val targets = targetsOf("eff-check", spec, manifest) match {
       case Ok(ts) => ts
       case Err(e) => return Err(e)
     }
@@ -1985,37 +1987,70 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     *
     * `spec` is a package identifier, e.g. `flix/museum-clerk` or `github:flix/museum-clerk`. It
     * carries no version: a package is installed at one version, so there is nothing to choose
-    * between. Naming no package names every package the project has installed.
+    * between. It must be one that `manifest` declares: a package that is reached through another
+    * dependency is not one the project can call, see [[EffectLock.lock]], so it is not one the
+    * project locks. Naming no package names every dependency that `manifest` declares.
+    *
+    * `command` is the command `spec` was given to, 'eff-lock' or 'eff-check', and is named if
+    * `spec` is refused.
     */
-  private def targetsOf(spec: Option[String]): Result[Set[PackageId], BootstrapError] = spec match {
-    case None => Ok(builtVersions.keySet)
+  private def targetsOf(command: String, spec: Option[String], manifest: Manifest): Result[Set[PackageId], BootstrapError] = spec match {
+    case None => Ok(manifest.flixDependencies.map(dep => dep.id).toSet)
     case Some(s) => PackageSpec.mkPackageSpec(s) match {
-      case Some(pkg) if pkg.version.isDefined => Err(BootstrapError.UnexpectedVersion(s))
-      case Some(pkg) if !builtVersions.contains(pkg.id) => Err(BootstrapError.PackageNotInstalled(pkg.id))
-      case Some(pkg) => Ok(Set(pkg.id))
+      case Some(pkg) if pkg.version.isDefined => Err(BootstrapError.UnexpectedVersion(command, pkg.id))
+      case Some(pkg) => Bootstrap.findDeclared(manifest, pkg.id).map(dep => Set(dep.id))
       case None => Err(BootstrapError.IllegalPackageSpec(s))
     }
   }
 
-  /** Returns `true` if in project mode. This is the case when a `flix.toml` file is present. */
-  private def isProjectMode: Boolean = optManifest.isDefined
-
   /**
     * Helper function for [[checkEffects]] to be used in for comprehension.
     *
-    * Returns `Ok(())` if every locked signature is the one that was locked.
-    * Returns `Err(BootstrapError.SignaturesChangedError(changes))` otherwise.
+    * Returns `Ok(())` if every locked signature that is still declared is the one that was
+    * locked and every target that declares something publicly is locked, and says how many
+    * signatures were compared.
+    * Returns `Err(BootstrapError.SignaturesChangedError(changes))` if a signature has changed.
+    * Returns `Err(BootstrapError.PackagesNotLocked(ids))` if none has, but a target is not locked.
+    *
+    * A changed signature is reported before an unlocked package: the cure for the latter is to
+    * lock, and locking every package would record the change unseen.
     */
   private def reportChangedSignatures(lockfile: EffectLockfile, root: TypedAst.Root, targets: Set[PackageId], f: Formatter)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
     EffectLock.check(lockfile, root, targets) match {
-      case Nil =>
-        val checked = EffectLockfile(lockfile.packages.filter { case (id, _) => targets.contains(id) })
-        fmtLocked(checked) match {
-          case None => out.println(f.green("Nothing to check: no signature is locked."))
-          case Some(what) => out.println(f.green(s"Checked $what. Nothing has changed."))
+      case EffectLock.CheckResult(_, changes@(_ :: _)) => Err(BootstrapError.SignaturesChangedError(changes))
+      case EffectLock.CheckResult(compared, Nil) =>
+        EffectLock.unlocked(lockfile, root, targets) match {
+          case Nil =>
+            val checked = EffectLockfile(lockfile.packages.filter { case (id, _) => targets.contains(id) })
+            out.println(fmtChecked(compared, checked, f))
+            Ok(())
+          case ids => Err(BootstrapError.PackagesNotLocked(ids))
         }
-        Ok(())
-      case changes => Err(BootstrapError.SignaturesChangedError(changes))
+    }
+  }
+
+  /**
+    * Returns what a check that found no change is to say, when `compared` of the signatures that
+    * `lockfile` records were compared, e.g.
+    * `Checked 154 signatures of 'github:flix/extras'. Nothing has changed.`.
+    *
+    * A locked declaration that is no longer declared is not compared, so when fewer signatures
+    * were compared than are locked, both counts are given. A check that compared nothing found no
+    * change only because it did not look, so it says that instead, and not in the colour of
+    * success.
+    */
+  private def fmtChecked(compared: Int, lockfile: EffectLockfile, f: Formatter): String = {
+    val locked = lockfile.packages.values.map(locked => locked.defs.size + locked.sigs.size).sum
+    if (locked == 0) {
+      return f.green("Nothing to check: no signature is locked.")
+    }
+    val packages = fmtPackages(lockfile.packages.keys.toList.sorted)
+    if (compared == 0) {
+      f.yellow(s"Checked 0 of ${fmtSignatures(locked)} of $packages. None is still declared.")
+    } else if (compared < locked) {
+      f.green(s"Checked $compared of ${fmtSignatures(locked)} of $packages. Nothing has changed.")
+    } else {
+      f.green(s"Checked ${fmtSignatures(locked)} of $packages. Nothing has changed.")
     }
   }
 
@@ -2025,12 +2060,24 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     */
   private def fmtLocked(lockfile: EffectLockfile): Option[String] = {
     val n = lockfile.packages.values.map(locked => locked.defs.size + locked.sigs.size).sum
-    val signatures = if (n == 1) "1 signature" else s"$n signatures"
     lockfile.packages.keys.toList.sorted match {
       case Nil => None
-      case id :: Nil => Some(s"$signatures of '$id'")
-      case ids => Some(s"$signatures of ${ids.length} packages")
+      case ids => Some(s"${fmtSignatures(n)} of ${fmtPackages(ids)}")
     }
+  }
+
+  /**
+    * Returns `n` as a count of signatures, e.g. `1 signature` or `154 signatures`.
+    */
+  private def fmtSignatures(n: Int): String = if (n == 1) "1 signature" else s"$n signatures"
+
+  /**
+    * Returns `ids` as a message names them: the one package when there is one, e.g.
+    * `'github:flix/extras'`, and otherwise how many there are, e.g. `2 packages`.
+    */
+  private def fmtPackages(ids: List[PackageId]): String = ids match {
+    case id :: Nil => s"'$id'"
+    case _ => s"${ids.length} packages"
   }
 
   /**
@@ -2039,21 +2086,23 @@ class Bootstrap(val projectPath: Path, token: Option[String]) {
     *
     * `spec` is a package identifier, e.g. `flix/museum-clerk` or `github:flix/museum-clerk`. It
     * carries no version: a package is installed at one version, so there is nothing to choose
-    * between. The package must be one the project has installed.
+    * between. The package must be one the project declares.
     *
     * A package is locked on its own: what `spec` locks replaces what was locked for that package
-    * and leaves every other package of the file as it was. Locking no package in particular locks
-    * every package the project has installed, and the file is then written as a whole, so that a
-    * package the project no longer depends on is dropped from it.
+    * and leaves every other package of the file as it was, including the entry of a package the
+    * project no longer declares. Locking no package in particular locks every dependency the
+    * project declares, and the file is then written as a whole, so that such an entry is dropped.
+    * A check ignores the entry either way, since it checks only what the project declares.
     *
     * If the program does not type check, then effect locking is aborted without touching the file system.
     */
   def lockEffects(flix: Flix, spec: Option[String])(implicit out: PrintStream): Result[Unit, BootstrapError] = {
-    if (!isProjectMode) {
-      return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-lock'"))
+    val manifest = optManifest match {
+      case Some(m) => m
+      case None => return Err(BootstrapError.FileError(s"No '$FLIX_TOML' found. Refusing to run 'eff-lock'"))
     }
 
-    val targets = targetsOf(spec) match {
+    val targets = targetsOf("eff-lock", spec, manifest) match {
       case Ok(ts) => ts
       case Err(e) => return Err(e)
     }

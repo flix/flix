@@ -10,7 +10,10 @@ import ca.uwaterloo.flix.api.{Bootstrap, Flix, InstalledPackage, Version}
 import ca.uwaterloo.flix.language.ast.shared.{Mountpoint, PackageId, SecurityContext}
 import ca.uwaterloo.flix.util.{Formatter, Options}
 
-import java.nio.file.Path
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path}
+import java.util.zip.{ZipEntry, ZipOutputStream}
+import scala.util.Using
 
 /**
   * Contains a test utilities for the package manager tests that rely heavily on I/O
@@ -66,6 +69,22 @@ object PkgTestUtils {
     */
   def mkFlix(bootstrap: Bootstrap): Flix =
     bootstrap.mkFlix(Options.Default.copy(githubToken = gitHubToken, progress = false), Formatter.NoFormatter)
+
+  /**
+    * Writes an `.fpkg` named `name` whose `.flix` sources are `files`, each file name to its
+    * text, and returns its path.
+    */
+  def mkFpkg(name: String, files: Map[String, String]): Path = {
+    val p = Files.createTempDirectory("flix-fpkg-").resolve(s"$name.fpkg")
+    Using(new ZipOutputStream(Files.newOutputStream(p))) { zip =>
+      for ((fileName, text) <- files) {
+        zip.putNextEntry(new ZipEntry(fileName))
+        zip.write(text.getBytes(StandardCharsets.UTF_8))
+        zip.closeEntry()
+      }
+    }.get
+    p
+  }
 
   def mkTomlWithDeps(deps: String): String = {
     s"""

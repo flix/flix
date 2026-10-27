@@ -10,7 +10,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.errors.TypeError.MismatchedTypes
-import ca.uwaterloo.flix.util.{Options, Subeffecting}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestTyper extends AnyFunSuite with TestUtils {
@@ -867,21 +867,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
   }
 
   test("Test.UnexpectedArgument.03") {
-    val input =
-      """
-        |eff E {
-        |    pub def op(): Unit
-        |}
-        |
-        |def mustE(f: Unit -> Unit \ {ef, E}): Unit = ???
-        |
-        |def foo(): Unit = mustE(x -> x)
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
-  test("Test.UnexpectedArgument.05") {
     // Regression test.
     // See https://github.com/flix/flix/issues/3634
     val input =
@@ -2079,32 +2064,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("TypeError.MethodBoxing.01") {
-    val input =
-      """
-        |import java.lang.Boolean
-        |
-        |def f(): Int32 \ IO =
-        |    let boxed = new Boolean(true);
-        |    boxed.compareTo(false)
-        |pub eff IO
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
-  test("TypeError.MethodBoxing.02") {
-    val input =
-      """
-        |import java.util.Objects
-        |
-        |def f(): Bool \ IO = Objects.isNull(true)
-        |pub eff IO
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
   test("TypeError.MethodUnboxing.01") {
     val input =
       """
@@ -2156,17 +2115,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(): Unit \ IO = ()
         |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = Set(Subeffecting.ModDefs)))
-    expectSuccess(result)
-  }
-
-  test("Subeffecting.Def.02") {
-    val input =
-      """
-        |def f(): Unit \ IO = ()
-        |pub eff IO
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = Set(Subeffecting.Lambdas, Subeffecting.InsDefs)))
+    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = true))
     expectError[TypeError](result)
   }
 
@@ -2178,46 +2127,35 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  mustBeIO(() -> ())
         |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = Set(Subeffecting.Lambdas)))
+    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = true))
     expectSuccess(result)
   }
 
-  test("Subeffecting.Lambda.02") {
+  test("TooComplex.01") {
+    // Effect unification gives up on the region of `f`, which must be reported as too complex
+    // rather than as a conflict between the effects.
     val input =
       """
-        |def mustBeIO(f: Unit -> Unit \ IO): Unit \ IO = f()
-        |def f(): Unit \ IO =
-        |  mustBeIO(() -> ())
-        |pub eff IO
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
-    expectError[TypeError](result)
-  }
-
-  test("Subeffecting.Instance.01") {
-    val input =
-      """
-        |trait T[t] { pub def f(x: t): Unit \ IO }
-        |instance T[Char] {
-        |  pub def f(_x: Char): Unit \ IO = ()
+        |eff Crash { def crash(): Void }
+        |
+        |def ws(s: Ref[Int32, r]): Unit \ r = Ref.put(0, s)
+        |
+        |def p(k: Int32, s: Ref[Int32, r]): Option[Int32] \ r + Crash =
+        |    if (Ref.get(s) > k) Some(k) else if (Ref.get(s) < -k) Crash.crash() else None
+        |
+        |def f(s: Ref[Int32, r]): Int32 \ r + Crash = region rc {
+        |    let progress = Ref.fresh(rc, true);
+        |    def loop() = {
+        |        s !> ws |> p(1) |> Foldable.forEach(_ -> Ref.put(true, progress));
+        |        s !> ws |> p(2) |> Foldable.forEach(_ -> Ref.put(true, progress));
+        |        s !> ws |> p(3) |> Foldable.forEach(_ -> Ref.put(true, progress))
+        |    };
+        |    loop();
+        |    42
         |}
-        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
-    expectSuccess(result)
-  }
-
-  test("Subeffecting.Instance.02") {
-    val input =
-      """
-        |trait T[t] { pub def f(x: t): Unit \ IO }
-        |instance T[Char] {
-        |  pub def f(_x: Char): Unit \ IO = ()
-        |}
-        |pub eff IO
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = Set(Subeffecting.ModDefs, Subeffecting.Lambdas)))
-    expectError[TypeError](result)
+    val result = check(input, Options.TestWithLibAll.copy(xsubeffecting = true))
+    expectError[TypeError.TooComplex](result)
   }
 
   test("ErrorType.01") {

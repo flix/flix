@@ -182,11 +182,7 @@ object Typer {
 
     changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValuesWithPriority(_, sortBy) {
       case defn => flix.profile(defn.sym, defn.loc) {
-        // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
-        // If no effect is specified, we assume the function is pure
-        val eff1 = defn.spec.eff.getOrElse(Type.Pure)
-        val enableSubeffects = shouldSubeffect(eff1, Subeffecting.ModDefs)
-        visitDef(defn, tconstrs0 = Nil, econstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
+        visitDef(defn, tconstrs0 = Nil, econstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv)
       }
     })
   }
@@ -194,7 +190,7 @@ object Typer {
   /**
     * Reconstructs types in the given def.
     */
-  private def visitDef(defn: KindedAst.Def, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv, open: Boolean)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
+  private def visitDef(defn: KindedAst.Def, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
     implicit val scope: RegionScope = RegionScope.Top
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
@@ -204,10 +200,7 @@ object Typer {
 
     flix.emitEvent(FlixEvent.NewConstraintsDef(defn.sym, infTconstrs))
 
-    // SUB-EFFECTING: Check if the open flag is set (i.e. if we should enable subeffecting).
-    val eff = if (open) Type.mkUnion(eff0, Type.freshEffSlackVar(eff0.loc), eff0.loc) else eff0
-
-    val infResult = InfResult(infTconstrs, tpe, eff, infRenv)
+    val infResult = InfResult(infTconstrs, tpe, eff0, infRenv)
     val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, econstrs0, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
     checkSpecAssocTypes(defn.spec, tconstrs0, traitEnv)
@@ -253,14 +246,7 @@ object Typer {
         val renv = context.getRigidityEnv
         val constrs = context.getTypeConstraints
 
-        // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs. Note: We consider signatures implemented in traits to be module-level.
-        // A small optimization: If the signature is pure there is no room for subeffecting.
-        // If no effect is specified, we assume the signature is pure
-        val eff1 = sig.spec.eff.getOrElse(Type.Pure)
-        val open = shouldSubeffect(eff1, Subeffecting.ModDefs)
-        val eff = if (open) Type.mkUnion(eff0, Type.freshEffSlackVar(eff0.loc), eff0.loc) else eff0
-
-        val infResult = InfResult(constrs, tpe, eff, renv)
+        val infResult = InfResult(constrs, tpe, eff0, renv)
         val (subst, constraintErrors) = ConstraintSolverInterface.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
         constraintErrors.foreach(sctx.errors.add)
         TypeReconstruction.visitSig(sig, subst)
@@ -301,11 +287,7 @@ object Typer {
       val defs = defs0.map {
         defn =>
           flix.profile(defn.sym, defn.loc) {
-            // SUB-EFFECTING: Check if sub-effecting is enabled for instance-level defs.
-            // If no effect is specified, we assume the function is pure
-            val eff1 = defn.spec.eff.getOrElse(Type.Pure)
-            val open = shouldSubeffect(eff1, Subeffecting.InsDefs)
-            visitDef(defn, tconstrs, econstrs, renv, root, traitEnv, eqEnv, open)
+            visitDef(defn, tconstrs, econstrs, renv, root, traitEnv, eqEnv)
           }
       }
       val typedEconstrs = econstrs.map(ec => TypedAst.EqualityConstraint(Type.AssocType(ec.symUse, ec.tpe1, ec.tpe2.kind, ec.loc), ec.tpe2, ec.loc))
@@ -334,9 +316,9 @@ object Typer {
     * Reconstructs types in the given case.
     */
   private def visitCase(caze: KindedAst.Case)(implicit sctx: SharedContext): TypedAst.Case = caze match {
-    case KindedAst.Case(caseSym, tagTypes, sc, caseLoc) =>
+    case KindedAst.Case(doc, caseSym, tagTypes, sc, caseLoc) =>
       tagTypes.foreach(checkNoAssocTypes)
-      TypedAst.Case(caseSym, tagTypes, sc, caseLoc)
+      TypedAst.Case(doc, caseSym, tagTypes, sc, caseLoc)
   }
 
   /**
@@ -361,9 +343,9 @@ object Typer {
     * Reconstructs types in the given struct field.
     */
   private def visitStructField(field: KindedAst.StructField)(implicit sctx: SharedContext): TypedAst.StructField = field match {
-    case KindedAst.StructField(mod, sym, tpe, loc) =>
+    case KindedAst.StructField(doc, mod, sym, tpe, loc) =>
       checkNoAssocTypes(tpe)
-      TypedAst.StructField(sym, mod, tpe, loc)
+      TypedAst.StructField(doc, sym, mod, tpe, loc)
   }
 
   /**
@@ -539,16 +521,6 @@ object Typer {
     }
     val allSupers = directSupers.flatMap(withSupers(_, tenv))
     tconstr :: allSupers
-  }
-
-  /**
-    * Returns `true` if `subeffecting` is enabled by [[Flix]] and it is not redundant for a
-    * function with effect `eff`.
-    */
-  private def shouldSubeffect(eff: Type, subeffecting: Subeffecting)(implicit flix: Flix): Boolean = {
-    val enabled = flix.options.xsubeffecting.contains(subeffecting)
-    val useless = eff == Type.Pure
-    enabled && !useless
   }
 
 

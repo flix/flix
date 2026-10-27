@@ -7,10 +7,12 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Bootstrap
-import ca.uwaterloo.flix.language.ast.shared.PackageId
-import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
+import ca.uwaterloo.flix.api.effectlock.EffectLock.CheckResult
+import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, CompilerConstants, InstalledPackage}
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.shared.{PackageId, SecurityContext}
 import ca.uwaterloo.flix.tools.pkg.PkgTestUtils
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{FileOps, Formatter, Options, Sha256}
 import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
@@ -38,205 +40,159 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
 
   private val museum: PackageId = PackageId.mkPackageId("github:flix/museum").get
 
-  private val other: Sha256 = Sha256.parse("sha256:" + "1" * 64).get
+  test("lock") {
+    // The clerk declares a def at its root, a private def, a def in a nested module, and a sig.
+    val files = Map(
+      "Main.flix" -> "pub def f(x: Int32): Int32 = hidden(x)\ndef hidden(x: Int32): Int32 = x",
+      "Museum.flix" -> "pub mod Museum { }",
+      "Museum/Clerk.flix" ->
+        """
+          |pub mod Museum.Clerk {
+          |    pub def buy(): Unit = ()
+          |    pub trait Sellable[a] {
+          |        pub def price(x: a): Int32
+          |    }
+          |}
+          |""".stripMargin
+    )
+    val root = rootOf(Map(clerk -> files, museum -> Map("Main.flix" -> "pub def g(x: Bool): Bool = x")), user = "pub def h(x: Int32): Int32 = x")
 
-  /** A program whose `f` is pure. */
-  private val Pure: String = "pub def f(): Unit = ()"
+    // A declaration is locked by its name inside its package, which does not name the package,
+    // and only if it is public. Only a package that is named is locked, under its own
+    // identifier, and what the user wrote belongs to no package.
+    val lockfile = EffectLock.lock(root, Set(clerk))
+    assert(lockfile.packages.keySet == Set(clerk))
+    assert(lockfile.packages(clerk).defs.keySet == Set("f", "Museum.Clerk.buy"))
+    assert(lockfile.packages(clerk).sigs.keySet == Set("Museum.Clerk.Sellable.price"))
 
-  /** A program whose `f` has an effect, and is otherwise [[Pure]]. */
-  private val Effectful: String =
-    """
-      |eff Ef { def op(): Unit }
-      |pub def f(): Unit \ Ef = Ef.op()
-      |""".stripMargin
-
-  //
-  // Lock.
-  //
-
-  test("lock.01") {
-    // What the user wrote belongs to no package, so there is nothing to lock.
-    val root = rootOf("pub def f(x: Int32): Int32 = x")
-    assert(EffectLock.lock(root, Set(clerk)) == EffectLockfile(Map.empty))
-  }
-
-  test("lock.02") {
-    // Locking no package locks nothing, whatever the program declares.
-    val root = rootOf("pub def f(x: Int32): Int32 = x")
+    assert(EffectLock.lock(root, Set(museum)).packages(museum).defs.keySet == Set("g"))
+    assert(EffectLock.lock(root, Set(clerk, museum)).packages.keySet == Set(clerk, museum))
     assert(EffectLock.lock(root, Set.empty) == EffectLockfile(Map.empty))
   }
 
-  //
-  // Check.
-  //
-
-  test("check.01") {
-    // A signature that is the one that was locked is not reported.
-    val root = rootOf("pub def f(x: Int32): Int32 = x")
-    val lockfile = lockOf(defs = Map("f" -> hashOf("f", root)))
-    assert(EffectLock.check(lockfile, root, Set(clerk)).isEmpty)
-  }
-
-  test("check.02") {
-    // A signature that is not the one that was locked is reported.
-    val root = rootOf("pub def f(x: Int32): Int32 = x")
-    val lockfile = lockOf(defs = Map("f" -> other))
-    assert(EffectLock.check(lockfile, root, Set(clerk)).map { case (_, sym, _) => sym } == List("f"))
-  }
-
-  test("check.03") {
-    // A locked declaration that the program no longer has is not reported: it cannot be called,
-    // so it cannot do anything the lock did not allow.
-    val root = rootOf("pub def f(x: Int32): Int32 = x")
-    val lockfile = lockOf(defs = Map("g" -> other))
-    assert(EffectLock.check(lockfile, root, Set(clerk)).isEmpty)
-  }
-
-  test("check.04") {
-    // A declaration the lock does not mention is not reported.
-    val root = rootOf("pub def f(x: Int32): Int32 = x\npub def g(x: Bool): Bool = x")
-    val lockfile = lockOf(defs = Map("f" -> hashOf("f", root)))
-    assert(EffectLock.check(lockfile, root, Set(clerk)).isEmpty)
-  }
-
-  test("check.05") {
-    // Changes are reported in order of symbol.
-    val root = rootOf("pub def f(x: Int32): Int32 = x\npub def g(x: Bool): Bool = x")
-    val lockfile = lockOf(defs = Map("g" -> other, "f" -> other))
-    assert(EffectLock.check(lockfile, root, Set(clerk)).map { case (_, sym, _) => sym } == List("f", "g"))
-  }
-
-  test("check.06") {
-    // A sig is checked like a def.
-    val input =
+  test("check") {
+    // The clerk as it was locked, and after an upgrade. Each declaration of the upgrade stands
+    // for one rule of the check, as its comment says.
+    val before =
       """
+        |eff Ef { def op(): Unit }
+        |pub def same(): Unit = ()
+        |pub def wider(): Unit = ()
+        |pub def narrower(): Unit \ Ef = Ef.op()
+        |pub def renamed(x: a): a = x
+        |pub def gone(): Unit = ()
+        |pub def hidden(): Unit = ()
         |pub trait Sellable[a] {
         |    pub def price(x: a): Int32
         |}
         |""".stripMargin
-    val root = rootOf(input)
-    val lockfile = lockOf(sigs = Map("Sellable.price" -> other))
-    assert(EffectLock.check(lockfile, root, Set(clerk)).map { case (_, sym, _) => sym } == List("Sellable.price"))
-  }
+    val after =
+      """
+        |eff Ef { def op(): Unit }
+        |pub def same(): Unit = ()             // compared, and not reported.
+        |pub def wider(): Unit \ Ef = Ef.op()  // reported: an effect was added.
+        |pub def narrower(): Unit = ()         // reported: a narrowing is a change too.
+        |pub def renamed(x: b): b = x          // compared, and not reported: a type parameter is a binder.
+        |                                      // gone: not compared, since it is no longer declared.
+        |def hidden(): Unit = ()               // not compared: no longer public, so it cannot be called.
+        |pub def added(): Unit = hidden()      // not compared: not locked.
+        |pub def shared(): Unit = ()           // not compared: locked for the museum, not for the clerk.
+        |pub trait Sellable[a] {
+        |    pub def price(x: a): Int32 \ Ef   // reported: a sig is checked like a def, under its trait.
+        |}
+        |""".stripMargin
+    // The museum drifts too, and loses the `shared` that the clerk and the user then declare.
+    val museumBefore = "pub def m(): Unit = ()\npub def shared(): Unit = ()"
+    val museumAfter = "eff Ef { def op(): Unit }\npub def m(): Unit \\ Ef = Ef.op()"
+    val locked = rootOf(Map(clerk -> Map("Main.flix" -> before), museum -> Map("Main.flix" -> museumBefore)), user = "")
+    val upgrade = rootOf(Map(clerk -> Map("Main.flix" -> after), museum -> Map("Main.flix" -> museumAfter)), user = "pub def shared(): Unit = ()")
+    val lockfile = EffectLock.lock(locked, Set(clerk, museum))
 
-  test("check.07") {
-    // A widening of the effects of a declaration is reported.
-    val lockfile = lockOf(defs = Map("f" -> hashOf("f", rootOf(Pure))))
-    assert(EffectLock.check(lockfile, rootOf(Effectful), Set(clerk)).map { case (_, sym, _) => sym } == List("f"))
-  }
+    // What the clerk still declares publicly is compared, and the changes are reported as the
+    // defs in order of name, then the sigs.
+    val result = EffectLock.check(lockfile, upgrade, Set(clerk))
+    assert(result.compared == 5)
+    assert(changedNames(result) == List("narrower", "wider", "Sellable.price"))
 
-  test("check.08") {
-    // A narrowing of the effects of a declaration is reported too. The lock says whether a
-    // signature is the one that was locked, not whether the change to it was a safe one.
-    val lockfile = lockOf(defs = Map("f" -> hashOf("f", rootOf(Effectful))))
-    assert(EffectLock.check(lockfile, rootOf(Pure), Set(clerk)).map { case (_, sym, _) => sym } == List("f"))
-  }
-
-  test("check.09") {
-    // Renaming a type parameter is not a change.
-    val locked = rootOf("pub def f(x: a): a = x")
-    val upgrade = rootOf("pub def f(x: b): b = x")
-    val lockfile = lockOf(defs = Map("f" -> hashOf("f", locked)))
-    assert(EffectLock.check(lockfile, upgrade, Set(clerk)).isEmpty)
-  }
-
-  test("check.10") {
-    // A package that the targets do not name is not checked.
-    val root = rootOf("pub def f(x: Int32): Int32 = x")
-    val lockfile = lockOf(defs = Map("f" -> other))
-    assert(EffectLock.check(lockfile, root, Set(museum)).isEmpty)
-  }
-
-  test("check.11") {
     // Naming one package checks that one and no other, so that a package whose signatures have
-    // drifted does not stand in the way of checking another.
-    val root = rootOf("pub def f(x: Int32): Int32 = x\npub def g(x: Bool): Bool = x")
-    val lockfile = EffectLockfile(Map(
-      clerk -> LockedPackage(Map("f" -> other), Map.empty),
-      museum -> LockedPackage(Map("g" -> other), Map.empty)
-    ))
-    assert(EffectLock.check(lockfile, root, Set(clerk)).map { case (id, sym, _) => (id, sym) } == List((clerk, "f")))
-    assert(EffectLock.check(lockfile, root, Set(museum)).map { case (id, sym, _) => (id, sym) } == List((museum, "g")))
-    assert(EffectLock.check(lockfile, root, Set(clerk, museum)).map { case (id, sym, _) => sym } == List("g", "f"))
-  }
+    // drifted does not stand in the way of checking another. A locked declaration is looked for
+    // in the package it is locked under, and nowhere else: neither the clerk's `shared` nor the
+    // user's is the museum's.
+    val one = EffectLock.check(lockfile, upgrade, Set(museum))
+    assert(one.compared == 1)
+    assert(one.changed.map { case (id, sym, _) => (id, EffectLock.nameOf(sym)) } == List((museum, "m")))
+    val both = EffectLock.check(lockfile, upgrade, Set(clerk, museum))
+    assert(both.compared == 6)
+    assert(changedNames(both) == List("m", "narrower", "wider", "Sellable.price"))
 
-  test("check.12") {
     // Naming no package checks nothing, since nothing is a target.
-    val root = rootOf("pub def f(x: Int32): Int32 = x")
-    val lockfile = lockOf(defs = Map("f" -> other))
-    assert(EffectLock.check(lockfile, root, Set.empty).isEmpty)
+    assert(EffectLock.check(lockfile, upgrade, Set.empty) == CheckResult(0, Nil))
   }
 
-  //
-  // End to end.
-  //
-
-  test("effects.lock.01") {
-    // Lock the signatures of a package that is really downloaded, and check them.
+  test("effects.lock") {
+    // Lock the signatures of a package that is really downloaded, check them, and see a change to
+    // one of them reported.
     val p = Files.createTempDirectory("flix-project-")
     Bootstrap.init(p)(System.out)
     // N.B.: `extras` calls Java, which the default security context forbids.
     FileOps.writeString(p.resolve(Bootstrap.FLIX_TOML), PkgTestUtils.mkTomlWithDeps(
-      """"github:flix/extras" = { version = "0.3.0", security = "unrestricted" }"""))
+      """"github:flix/extras" = { version = "0.4.0", security = "unrestricted" }"""))
 
     val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.NoFormatter, System.out).unsafeGet
     bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), None)(System.out).unsafeGet
 
+    // A declaration is locked by its name inside the package, under the entry of the package.
     val lockfile = EffectLockfileParser.parse(p.resolve(Bootstrap.EFFECTS_LOCK)).unsafeGet
-    val id = PackageId.mkPackageId("github:flix/extras").get
-    val extras = lockfile.packages(id)
-    // A package is named under its own root, so a declaration is locked under the identifier of
-    // the package it belongs to.
-    assert(extras.defs.contains(s"$id.Extras.Graph.closure"))
-    assert(extras.sigs.isEmpty)
+    val extras = PackageId.mkPackageId("github:flix/extras").get
+    assert(lockfile.packages.keySet == Set(extras))
+    assert(lockfile.packages(extras).defs.contains("Extras.Graph.closure"))
+    assert(lockfile.packages(extras).sigs.isEmpty)
 
     // Nothing has changed since the signatures were locked, so the check passes, whether every
     // package is checked or only the one.
     bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), None)(System.out).unsafeGet
     bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/extras"))(System.out).unsafeGet
-  }
 
-  test("effects.lock.02") {
-    // A package the project has not installed can be neither locked nor checked, and both
+    // A package the project does not declare can be neither locked nor checked, and both
     // commands say so in the same way.
-    val p = Files.createTempDirectory("flix-project-")
-    Bootstrap.init(p)(System.out)
+    assert(bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/museum"))(System.out) == Err(BootstrapError.DependencyNotDeclared(museum)))
+    assert(bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/museum"))(System.out) == Err(BootstrapError.DependencyNotDeclared(museum)))
 
-    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.NoFormatter, System.out).unsafeGet
-    bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), None)(System.out).unsafeGet
-
-    assert(bootstrap.lockEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/extras"))(System.out).toOption.isEmpty)
-    assert(bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), Some("flix/extras"))(System.out).toOption.isEmpty)
+    // Lock `closure` at a signature it does not have, as an upgrade of `extras` might leave it,
+    // and the check reports it, and it alone.
+    val other = Sha256.parse("sha256:" + "1" * 64).get
+    val drifted = EffectLockfile(Map(extras -> LockedPackage(lockfile.packages(extras).defs + ("Extras.Graph.closure" -> other), Map.empty)))
+    FileOps.writeString(p.resolve(Bootstrap.EFFECTS_LOCK), EffectLockfile.format(drifted))
+    bootstrap.checkEffects(PkgTestUtils.mkFlix(bootstrap), None)(System.out) match {
+      case Err(BootstrapError.SignaturesChangedError(changes)) => assert(changes.map { case (_, sym, _) => EffectLock.nameOf(sym) } == List("Extras.Graph.closure"))
+      case Err(e) => fail(s"Expected a changed signature, but got: ${e.message(Formatter.NoFormatter)}")
+      case Ok(()) => fail("Expected the changed signature to be reported.")
+    }
   }
 
   /**
-    * Returns the root of `input`, which must compile.
+    * Returns the root of a program in which each of `packages` is installed with the given
+    * files, each file name to its source, and `user` is what the user wrote. The program must
+    * compile.
+    *
+    * Nothing mounts anything: a lock is about what a package declares, not what reaches it.
     */
-  private def rootOf(input: String): TypedAst.Root = {
-    val (root, errors) = check(input, TestOptions)
+  private def rootOf(packages: Map[PackageId, Map[String, String]], user: String): TypedAst.Root = {
+    val pkgs = packages.toList.map {
+      case (id, files) => InstalledPackage(PkgTestUtils.mkFpkg(id.name, files), id, SecurityContext.Unrestricted, Map.empty)
+    }
+    val flix = PkgTestUtils.mkFlix(pkgs, Map.empty)
+    flix.setOptions(TestOptions)
+    flix.addSource(CompilerConstants.VirtualTestFile, user, sctx)
+    val (root, errors) = flix.check()
     expectSuccess((root, errors))
     root.get
   }
 
   /**
-    * Returns the hash of the declared scheme of the def named `name` in `root`.
+    * Returns the names of the declarations that `result` reports as changed, in the order they
+    * are reported.
     */
-  private def hashOf(name: String, root: TypedAst.Root): Sha256 = {
-    HashType.hashScheme(schemeOf(name, root))
-  }
-
-  /**
-    * Returns the declared scheme of the def named `name` in `root`.
-    */
-  private def schemeOf(name: String, root: TypedAst.Root): Scheme = {
-    root.defs.collectFirst { case (sym, defn) if sym.text == name => defn.spec.declaredScheme }.get
-  }
-
-  /**
-    * Returns a lock file that locks `defs` and `sigs` for one package.
-    */
-  private def lockOf(defs: Map[String, Sha256] = Map.empty, sigs: Map[String, Sha256] = Map.empty): EffectLockfile = {
-    EffectLockfile(Map(clerk -> LockedPackage(defs, sigs)))
-  }
+  private def changedNames(result: CheckResult): List[String] = result.changed.map { case (_, sym, _) => EffectLock.nameOf(sym) }
 
 }

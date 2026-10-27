@@ -154,29 +154,6 @@ object ParseError {
   }
 
   /**
-    * An error raised to indicate that one or more sequential comments are misplaced.
-    *
-    * @param sctx The syntactic context.
-    * @param loc  The source location.
-    */
-  case class MisplacedComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
-    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
-
-    def code: ErrorCode = ErrorCode.E6176
-
-    def summary: String = s"Misplaced comment(s)."
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s""">> Misplaced comment(s).
-         |
-         |${src(loc, s"Here")}
-         |Hint: Place comments on their own line.
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate that one or more doc-comments are misplaced.
     *
     * @param sctx The syntactic context.

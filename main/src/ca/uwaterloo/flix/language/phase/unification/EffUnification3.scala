@@ -11,7 +11,6 @@ import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.unification.PreEffUnification.PreSolveResult
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
 import ca.uwaterloo.flix.language.phase.unification.shared.CofiniteIntSet
@@ -26,70 +25,78 @@ object EffUnification3 {
   val Algebra: ZhegalkinAlgebra[CofiniteIntSet] = new ZhegalkinAlgebra[CofiniteIntSet](CofiniteIntSet.LatticeOps)
 
   /**
-    * Controls whether to enable solve-and-retry for subeffecting.
+    * Controls whether to enable solve-and-retry for subeffecting: the strict reading of subeffect
+    * constraints is tried before the lax reading.
     */
   var EnableSmartSubeffecting: Boolean = true
 
   /**
-    * Computes an MGU for **ALL* equations in `eqns0`.
+    * Computes an MGU for **ALL* equations in `eqs0` and subeffect constraints in `subs0`.
     *
-    * Returns `Result.Ok(s)` if *ALL* equations in `eqns0` where solvable.
-    * The returned substitution `s` is an MGU for `eqns0`.
+    * Returns `Result.Ok(s)` if *ALL* constraints were solvable.
+    * The returned substitution `s` is an MGU for `eqs0` that also satisfies `subs0`.
     *
-    * Returns `Result.Err(l)` if *a single equation* in `eqns0` is unsolvable.
+    * Returns `Result.Err(l)` if *a single constraint* is unsolvable.
     * The returned list `l` is a non-empty list of equations that were unsolvable (i.e. in conflict).
-    * The equations in `l` are derived from `eqns0` but are not a strict subset of `eqns0`.
-    * That is, an equation in `l` may not directly correspond to any equation in `eqns0`. However, their source locations are valid.
+    * The equations in `l` are derived from the constraints but are not a strict subset of them.
+    * That is, an equation in `l` may not directly correspond to any input constraint. However, their source locations are valid.
     *
-    * Returns `Result.Err(eqns0)` if `eqns0` contains an equation that is ill-kinded. Hence, it is better to handle ill-kinded equations elsewhere.
+    * Returns `Result.Err(eqs0 ++ subs0)` if a constraint is ill-kinded. Hence, it is better to handle ill-kinded constraints elsewhere.
     *
-    * Note: Treats `Type.Error` as a constant, i.e. only equal to itself. Hence, it is better to drop equations that contain `Type.Error`.
+    * Note: Treats `Type.Error` as a constant, i.e. only equal to itself. Hence, it is better to drop constraints that contain `Type.Error`.
     *
-    * Invariant: For every polymorphic effect constructor in `eqns0`, all saturated
+    * A subeffect constraint `s ⊑ t` is read in one of two ways:
+    *   - strictly, as the equation `t ~ s`, whose solution is the minimal solution of the
+    *     constraint (a solution of the equation is always a solution of the constraint), or
+    *   - laxly, as the equation `s ∩ ¬t ~ ∅`, which is the constraint itself.
+    *
+    * The strict reading is only used when the upper bound `t` is a flexible variable, e.g. for a
+    * lambda whose effect must be at least that of its body: it binds the variable to the smallest
+    * effect. When the upper bound is not a variable, e.g. the declared effect of a def, the strict
+    * reading would instead force the variables of `s` to absorb every effect of `t` that `s` does
+    * not use, so such constraints are always read laxly.
+    *
+    * The strict reading is tried first (phase 1), but only at the top level of a def. A nested region
+    * solve sees the constraints of the region alone, so committing to the minimal solution there would
+    * decide a constraint whose upper bound the enclosing def forces, such as a checked cast inside a
+    * region of a def declared `IO`, before that force is in view. The lax reading is used for every
+    * constraint (phase 2) if the first system has no solution, and in every nested solve.
+    *
+    * Invariant: For every polymorphic effect constructor in the constraints, all saturated
     * occurrences must have identical type arguments. The caller must first equate and
-    * solve these arguments, and apply the resulting substitution to `eqns0`. For example,
+    * solve these arguments, and apply the resulting substitution to the constraints. For example,
     * `F[a]` and `F[b]` may reach this function only after `a` and `b` have become equal;
     * `F[Int32]` and `F[String]` must be rejected by ordinary type unification beforehand.
     */
-  def unifyAll(eqs0: List[TypeConstraint.Equality], scope: RegionScope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
-    // Performance: Nothing to do if the equation list is empty
-    if (eqs0.isEmpty) {
+  def unifyAll(eqs0: List[TypeConstraint.Equality], subs0: List[TypeConstraint.SubEff], scope: RegionScope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
+    // Performance: Nothing to do if there are no constraints.
+    if (eqs0.isEmpty && subs0.isEmpty) {
       return Result.Ok(Substitution.empty)
     }
 
     // Randomly reorder the constraints using the chaos monkey.
     val eqs = ChaosMonkey.chaos(eqs0)
+    val subs = ChaosMonkey.chaos(subs0)
 
     // Add to implicit context.
     implicit val scopeImplicit: RegionScope = scope
     implicit val renvImplicit: RigidityEnv = renv
 
-    //
-    // Phase 0: Try to solve the system syntactically if all equations are atomic.
-    //
-    if (EnableSmartSubeffecting) {
-      PreEffUnification.preSolve(eqs) match {
-        case PreSolveResult.Solved(subst) =>
-          // The whole system was atomic and exactly solvable.
-          return Result.Ok(subst)
-        case PreSolveResult.Opaque => () // Fall through to full solving.
-      }
-    }
-
     // Choose a unique number for each atom. Use the original constraint order so the effect
     // argument representative stored in the bimap is independent of the chaos monkey.
-    implicit val bimap: AtomBimap = AtomBimap.fromConstraints(eqs0)
+    implicit val bimap: AtomBimap = AtomBimap.fromConstraints(eqs0, subs0)
 
     //
-    // Phase 1: Try to solve without subeffecting.
+    // Phase 1: Try to solve without subeffecting: subeffect constraints with a flexible upper bound
+    // are read strictly. Only at the top level, where the whole system is in view.
     //
-    if (EnableSmartSubeffecting) {
+    if (EnableSmartSubeffecting && scope == RegionScope.Top) {
       try {
-        val equations = toEquations(eqs, withSlack = false)
-        val (unsolvedEqns, resultSubst) = SetUnification.solve(equations)
+        val equations = toEquations(eqs) ::: subs.map(toStrictEquation)
+        val (unsolvedEqns, resultSubst) = SetUnification.solve(equations, flix.options.xsve)
         if (unsolvedEqns.isEmpty) {
           // We have found a valid solution without subeffecting. Return it immediately.
-          return Result.Ok(fromSetSubst(resultSubst)(withSlack = false, m = bimap))
+          return Result.Ok(fromSetSubst(resultSubst))
         }
         // Otherwise we fall through.
       } catch {
@@ -98,39 +105,79 @@ object EffUnification3 {
     }
 
     //
-    // Phase 2: With subeffecting.
+    // Phase 2: With subeffecting: every subeffect constraint is read laxly.
     //
     try {
-      val equations = toEquations(eqs, withSlack = true)
+      val equations = toEquations(eqs) ::: subs.map(toLaxEquation)
       flix.emitEvent(FlixEvent.SolveEffEquations(equations))
-      val (unsolvedEqns, resultSubst) = SetUnification.solve(equations)
+      val (unsolvedEqns, resultSubst) = SetUnification.solve(equations, flix.options.xsve)
       if (unsolvedEqns.isEmpty) {
-        Result.Ok(fromSetSubst(resultSubst)(withSlack = true, m = bimap))
+        Result.Ok(fromSetSubst(resultSubst))
       } else {
         Result.Err(fromSetEquations(unsolvedEqns))
       }
     } catch {
       case InvalidType(_) =>
-        // The effect equations are invalid.
+        // The effect constraints are invalid.
         // We don't call these conflicted because TypeReduction may make these valid later.
-        Result.Err(eqs)
+        val constrs: List[TypeConstraint] = eqs ::: subs
+        Result.Err(constrs)
     }
   }
 
   /**
     * Returns the given list of type equations as a list of set equations.
     */
-  private def toEquations(l: List[TypeConstraint.Equality], withSlack: Boolean)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): List[Equation] =
-    l.map(e => toEquation(e, withSlack))
+  private def toEquations(l: List[TypeConstraint.Equality])(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): List[Equation] =
+    l.map(toEquation)
 
   /**
     * Translates `eq` into a equation of [[SetFormula]].
     *
     * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
     */
-  private def toEquation(eq: TypeConstraint.Equality, withSlack: Boolean)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): Equation = {
+  private def toEquation(eq: TypeConstraint.Equality)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): Equation = {
     val TypeConstraint.Equality(tpe1, tpe2, prov) = eq
-    Equation.mk(toSetFormula(tpe1)(withSlack = withSlack, scope, renv, m), toSetFormula(tpe2)(withSlack = withSlack, scope, renv, m), prov.loc)
+    Equation.mk(toSetFormula(tpe1), toSetFormula(tpe2), prov.loc)
+  }
+
+  /**
+    * Translates `sub` into an equation of [[SetFormula]] for the strict phase: a constraint whose
+    * upper bound is a flexible variable is read strictly, i.e. solved by its minimal solution rather
+    * than its most general one, so `s ⊑ x` becomes `x ~ s`, and every other constraint is read
+    * laxly (see [[toLaxEquation]]).
+    *
+    * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
+    */
+  private def toStrictEquation(sub: TypeConstraint.SubEff)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): Equation = sub match {
+    case TypeConstraint.SubEff(eff1, eff2, prov) =>
+      if (hasFlexibleUpperBound(sub)) {
+        // The expected effect is kept on the left, as in the equality `declared ~ inferred`.
+        Equation.mk(toSetFormula(eff2), toSetFormula(eff1), prov.loc)
+      } else {
+        toLaxEquation(sub)
+      }
+  }
+
+  /**
+    * Translates `sub` into an equation of [[SetFormula]] under the lax reading:
+    * `s ⊑ t` becomes `s ∩ ¬t ~ ∅`.
+    *
+    * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
+    */
+  private def toLaxEquation(sub: TypeConstraint.SubEff)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): Equation = sub match {
+    case TypeConstraint.SubEff(eff1, eff2, prov) =>
+      val f1 = toSetFormula(eff1)
+      val f2 = toSetFormula(eff2)
+      Equation.mk(SetFormula.mkDiff2(f1, f2), SetFormula.Empty, prov.loc)
+  }
+
+  /**
+    * Returns `true` if the upper bound of the subeffect constraint `sub` is a flexible variable.
+    */
+  private def hasFlexibleUpperBound(sub: TypeConstraint.SubEff)(implicit scope: RegionScope, renv: RigidityEnv): Boolean = sub.eff2 match {
+    case Type.Var(sym, _) => renv.isFlexible(sym)
+    case _ => false
   }
 
   /**
@@ -138,7 +185,7 @@ object EffUnification3 {
     *
     * Throws [[InvalidType]] if `t` is not valid.
     */
-  private def toSetFormula(t: Type)(implicit withSlack: Boolean, scope: RegionScope, renv: RigidityEnv, m: AtomBimap): SetFormula = t match {
+  private def toSetFormula(t: Type)(implicit scope: RegionScope, renv: RigidityEnv, m: AtomBimap): SetFormula = t match {
     case Type.Univ => SetFormula.Univ
     case Type.Pure => SetFormula.Empty
 
@@ -147,14 +194,7 @@ object EffUnification3 {
       val x = m.getForwardIndex(atom)
       if (x < 0) throw InternalCompilerException(s"Unexpected unbound type variable: '$tpe'.", tpe.loc)
       atom match {
-        case EffAtom.VarFlex(sym) =>
-          if (sym.isSlack && !withSlack) {
-            // Special Case: We have a slack variable and we want to ignore it. Return the empty set.
-            SetFormula.Empty
-          } else {
-            // General Case: A flexible type variable is a real Set variable.
-            SetFormula.Var(x)
-          }
+        case EffAtom.VarFlex(_) => SetFormula.Var(x) // A flexible variable is a set variable.
         case EffAtom.VarRigid(_) => SetFormula.Cst(x) // A rigid variable is a constant.
         case _ => throw InternalCompilerException(s"Unexpected atom representation ($atom) of variable ($tpe)", tpe.loc)
       }
@@ -223,20 +263,14 @@ object EffUnification3 {
   }
 
   /** Returns [[Substitution]] where each mapping in `s` is converted to [[Type]]. */
-  private def fromSetSubst(s: SetSubstitution)(implicit withSlack: Boolean, m: AtomBimap): Substitution = {
+  private def fromSetSubst(s: SetSubstitution)(implicit m: AtomBimap): Substitution = {
     Substitution(s.m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
       case (macc, (k, SetFormula.Var(x))) if k == x => macc
       case (macc, (k, v)) =>
         m.getBackward(k) match {
           case Some(EffAtom.VarFlex(sym)) =>
             // A proper var. Add it to the substitution.
-            if (sym.isSlack && !withSlack) {
-              // Special Case: The slack variable was set to the empty set.
-              macc + (sym -> Type.Pure)
-            } else {
-              // General Case: The map determines the type variable.
-              macc + (sym -> fromSetFormula(v, sym.loc))
-            }
+            macc + (sym -> fromSetFormula(v, sym.loc))
 
           case Some(EffAtom.Error(_)) =>
             // An error type. Don't add it to the substitution.
@@ -328,7 +362,7 @@ object EffUnification3 {
     implicit val renv: RigidityEnv = RigidityEnv.empty
     implicit val bimap: AtomBimap = AtomBimap.fromType(tpe)
 
-    val f0 = toSetFormula(tpe)(withSlack = true, scope, renv, bimap)
+    val f0 = toSetFormula(tpe)
     val z = Zhegalkin.toZhegalkin(f0)(Algebra, CofiniteIntSet.LatticeOps)
     val f1 = Zhegalkin.toSetFormula(z)
 

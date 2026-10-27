@@ -177,7 +177,7 @@ object Kinder {
     * Performs kinding on the given enum case under the given kind environment.
     */
   private def visitCase(caze0: ResolvedAst.Declaration.Case, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Case = caze0 match {
-    case ResolvedAst.Declaration.Case(sym, tpes0, loc) =>
+    case ResolvedAst.Declaration.Case(doc, sym, tpes0, loc) =>
       val ts = tpes0.map(visitType(_, Kind.Star, kenv, root))
       val quants = tparams.map(_.sym)
       // A nullary case is not a function, but the enum type itself.
@@ -186,16 +186,16 @@ object Kinder {
         case t :: tail => Type.mkPureUncurriedArrow(Nel(t, tail), resTpe, sym.loc.asSynthetic)
       }
       val sc = Scheme(quants, Nil, Nil, schemeBase)
-      KindedAst.Case(sym, ts, sc, loc)
+      KindedAst.Case(doc, sym, ts, sc, loc)
   }
 
   /**
     * Performs kinding on the given struct field under the given kind environment.
     */
   private def visitStructField(field0: ResolvedAst.Declaration.StructField, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.StructField = field0 match {
-    case ResolvedAst.Declaration.StructField(mod, sym, tpe0, loc) =>
+    case ResolvedAst.Declaration.StructField(doc, mod, sym, tpe0, loc) =>
       val t = visitType(tpe0, Kind.Star, kenv, root)
-      KindedAst.StructField(mod, sym, t, loc)
+      KindedAst.StructField(doc, mod, sym, t, loc)
   }
 
   /**
@@ -413,13 +413,13 @@ object Kinder {
 
       case ResolvedAst.Expr.Hole(sym, env, loc) =>
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-        val evar = Type.freshEffSlackVar(loc.asSynthetic)
+        val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
         KindedAst.Expr.Hole(sym, env, tvar, evar, loc)
 
       case ResolvedAst.Expr.HoleWithExp(exp0, env, loc) =>
         val exp = visitExp(exp0, kenv0, root)
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-        val evar = Type.freshEffSlackVar(loc.asSynthetic)
+        val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
         KindedAst.Expr.HoleWithExp(exp, env, tvar, evar, loc)
 
       case ResolvedAst.Expr.OpenAs(symUse, exp0, loc) =>
@@ -476,10 +476,10 @@ object Kinder {
         val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
         KindedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps, targ, targs, itvar, tvar, evar, loc2)
 
-      case ResolvedAst.Expr.Lambda(fparam0, exp0, allowSubeffecting, loc) =>
+      case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>
         val fparam = visitFormalParam(fparam0, kenv0, root)
         val exp = visitExp(exp0, kenv0, root)
-        KindedAst.Expr.Lambda(fparam, exp, allowSubeffecting, loc)
+        KindedAst.Expr.Lambda(fparam, exp, loc)
 
       case ResolvedAst.Expr.Unary(sop, exp0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
@@ -876,7 +876,7 @@ object Kinder {
 
       case ResolvedAst.Expr.Error(m) =>
         val tvar = Type.freshVar(Kind.Star, m.loc)
-        val evar = Type.freshEffSlackVar(m.loc)
+        val evar = Type.freshVar(Kind.Eff, m.loc)
         KindedAst.Expr.Error(m, tvar, evar)
     }
   }

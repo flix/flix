@@ -704,4 +704,125 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("ParseError.MisplacedDocComments.01") {
+    val input =
+      """
+        |mod M {
+        |    /// dangling doc comment at the end of a module
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.MisplacedDocComments.02") {
+    val input =
+      """
+        |def f(): Int32 = 1
+        |/// dangling doc comment at the end of the file
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.MisplacedDocComments.03") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    /// doc comment on an expression
+        |    1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.MisplacedDocComments.04") {
+    val input =
+      """
+        |/// doc comment on a use
+        |use Foo.bar
+        |def f(): Int32 = 1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.MisplacedDocComments.05") {
+    val input =
+      """
+        |enum Shape {
+        |    case Circle(Int32), /// a doc comment after the comma, on the same line
+        |    case Square(Int32)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.MisplacedDocComments.06") {
+    val input =
+      """
+        |trait Foo[t] {
+        |    /// dangling doc comment at the end of a trait
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.MisplacedDocComments.07") {
+    val input =
+      """
+        |trait Foo[t] {}
+        |instance Foo[Int32] {
+        |    /// dangling doc comment at the end of an instance
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.MisplacedDocComments.08") {
+    val input =
+      """
+        |eff Foo {
+        |    /// dangling doc comment at the end of an effect
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.MisplacedDocComments.09") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    /// doc comment on a local def
+        |    def g(x: Int32): Int32 = x;
+        |    g(1)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MisplacedDocComments](result)
+  }
+
+  test("ParseError.TrailingSeparator.01") {
+    val input =
+      """
+        |pub def f(xs: List[Int32]): List[Int32] = forM (
+        |    x <- xs;
+        |    // a comment after a trailing semicolon
+        |) yield x
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.TrailingSeparator](result)
+  }
+
+  test("ParseError.TrailingSeparator.02") {
+    val input =
+      """
+        |pub def f(): List[Int32] = List#{/* c */ 1, /* c */}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.TrailingSeparator](result)
+  }
 }

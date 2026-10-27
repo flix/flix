@@ -60,8 +60,10 @@ object flix extends ScalaModule with NativeImageModule {
 
     // ── Test files (saves ~5 MB) ────────────────────────────
     // The resources directive includes main/ which brings in main/test/.
-    // These .flix and .scala test files are not needed at runtime.
-    Rule.ExcludePattern("test/.*"),
+    // These .flix and .scala test files are not needed at runtime, except
+    // the library tests used as a workload by Xperf (CompilerPerf) and
+    // CompilerMemory.
+    Rule.ExcludePattern("test/(?!ca/uwaterloo/flix/library/Test[^/]*\\.flix$).*"),
 
     // ── Scala source files (saves ~4 MB) ────────────────────
     // The resources directive includes main/src/ for .flix library files,
@@ -146,6 +148,15 @@ object flix extends ScalaModule with NativeImageModule {
       "-cp", test.runClasspath().map(_.path).mkString(java.io.File.pathSeparator),
       "org.scalatest.tools.Runner",
       "-s", "ca.uwaterloo.flix.ExampleSuite", "-o"
+    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root, env = Task.env)
+  }
+
+  /** Run: ./mill flix.testFormatter */
+  def testFormatter = Task {
+    os.proc("java", "-Xmx3g",
+      "-cp", test.runClasspath().map(_.path).mkString(java.io.File.pathSeparator),
+      "org.scalatest.tools.Runner",
+      "-s", "ca.uwaterloo.flix.tools.fmt.TestFormatterCorrectness", "-o"
     ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root, env = Task.env)
   }
 

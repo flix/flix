@@ -1,161 +1,188 @@
-/* BEGIN VARIABLES */
-:root, :root.light {
-    --light-bg-color-1: #ffffff;
-    --light-bg-color-2: #fcfcfd;
-    --light-bg-color-3: #f8f9fa;
-    --light-border-color: rgba(0, 0, 0, 0.071);
-    --light-heading-color: #212529;
-    --light-text-color: #111111;
+/* BEGIN THEMES */
+/* A theme is one block of tokens, keyed by the `data-theme` attribute of the root element, and the
+   rules of this stylesheet and of `highlight.css` read nothing but these tokens.
+
+   Classic is the default, and the only theme with two variants: it holds its light and dark values
+   as pairs in `light-dark()`. With no theme chosen the site follows the system between them, and
+   `data-theme="light"` or `data-theme="dark"` picks one. Any other theme is a single scheme, light
+   or dark, with plain values and its own `color-scheme`; a token it leaves alone falls back to the
+   matching half of Classic. */
+:root {
+    color-scheme: light dark;
+
+    --display-font: "Oswald", sans-serif;
+    --body-font: "Noto Sans", sans-serif;
+    --ui-font: "Inter", sans-serif;
+    --prose-font: "Open Sans", sans-serif;
+    --code-font: "Fira Code", monospace;
+    --h1-font-weight: 300;
+    --h2-font-weight: 500;
+
+    --bg-color-1: light-dark(#ffffff, #151719);
+    --bg-color-2: light-dark(#fcfcfd, #101214);
+    --bg-color-3: light-dark(#f8f9fa, #0e0f11);
+    --border-color: light-dark(rgba(0, 0, 0, 0.071), rgba(255, 255, 255, 0.07));
+    --heading-color: light-dark(#212529, #e6e6e6);
+    --text-color: light-dark(#111111, #f7f7f7);
     /* #8a8a8a on white is ~3.5:1, below the WCAG AA minimum (4.5:1) for body text; #6b6b6b is
        ~5.3:1 while still reading as a muted/faded gray. */
-    --light-faded-text-color: #6b6b6b;
-    --light-annotation-color: #b15422;
-    --light-keyword-color: #030303;
-    --light-name-color: #b12250;
-    --light-type-color: #3061c4;
-    --light-kind-color: #6b6b6b;
-    --light-effect-color: #d4671e;
-    --light-doc-code-color: #d63384;
-    --light-show-hide-color: #0d6efd;
-    --light-show-hide-hover-color: #0a58ca;
-    --light-module-color: #a0a5ff;
-    --light-signature-color: #dfa0ff;
-    --light-trait-def-color: #bfb280;
-    --light-traits-color: #fc9d9a;
-    --light-enum-color: #c8c8a9;
-    --light-struct-color: #9ccfcf;
-    --light-op-color: #ccaeff;
-    --light-eff-color: #ffaefa;
-    --light-type-alias-color: #f9cdad;
-    --light-def-color: #83af9b;
-    --light-shadow-color: rgba(0, 0, 0, 0.05);
-    --light-highlight-color: rgba(0, 0, 0, 0.3);
+    --faded-text-color: light-dark(#6b6b6b, #8a8a8a);
+    --sidebar-bg-color: var(--bg-color-1);
+    --sidebar-text-color: var(--text-color);
+    --sidebar-heading-color: var(--heading-color);
+    --annotation-color: light-dark(#b15422, #e7a37e);
+    --keyword-color: light-dark(#030303, #fcfcfc);
+    --name-color: light-dark(#b12250, #ff6696);
+    --type-color: light-dark(#3061c4, #6699ff);
+    --kind-color: light-dark(#6b6b6b, #999999);
+    --effect-color: light-dark(#d4671e, #ff944d);
+    --doc-code-color: light-dark(#d63384, #ff66b3);
+    --show-hide-color: light-dark(#0d6efd, #68a4fd);
+    --show-hide-hover-color: light-dark(#0a58ca, #3c86f6);
+    --sidebar-bullet-color: var(--faded-text-color);
+    --shadow-color: light-dark(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.3));
+    --highlight-color: light-dark(rgba(0, 0, 0, 0.3), hsla(50, 0%, 100%, 0.3));
 
-    --dark-bg-color-1: #151719;
-    --dark-bg-color-2: #101214;
-    --dark-bg-color-3: #0e0f11;
-    --dark-border-color: rgba(255, 255, 255, 0.07);
-    --dark-heading-color: #e6e6e6;
-    --dark-text-color: #f7f7f7;
-    --dark-faded-text-color: #8a8a8a;
-    --dark-annotation-color: #e7a37e;
-    --dark-keyword-color: #fcfcfc;
-    --dark-name-color: #ff6696;
-    --dark-type-color: #6699ff;
-    --dark-kind-color: #999999;
-    --dark-effect-color: #ff944d;
-    --dark-doc-code-color: #ff66b3;
-    --dark-show-hide-color: #68a4fd;
-    --dark-show-hide-hover-color: #3c86f6;
-    --dark-module-color: #a0a5ff;
-    --dark-signature-color: #dfa0ff;
-    --dark-trait-def-color: #bfb280;
-    --dark-traits-color: #fc9d9a;
-    --dark-enum-color: #c8c8a9;
-    --dark-struct-color: #9ccfcf;
-    --dark-op-color: #ccaeff;
-    --dark-eff-color: #ffaefa;
-    --dark-type-alias-color: #f9cdad;
-    --dark-def-color: #83af9b;
-    --dark-shadow-color: rgba(0, 0, 0, 0.3);
-    --dark-highlight-color: hsla(50, 0%, 100%, 0.3);
+    /* The tokens of code on a source page, see `highlight.css`. */
+    --comment-color: light-dark(#767676, #808080);
+    --string-color: light-dark(#2a7a3b, #7fd68f);
+    --number-color: light-dark(#7b3fc4, #c9a3ff);
+    --variable-color: light-dark(#555555, #b4b4b4);
+    --selected-line-color: light-dark(rgba(255, 196, 0, 0.22), rgba(255, 196, 0, 0.16));
+}
+:root[data-theme="light"] {
+    color-scheme: light;
+}
+:root[data-theme="dark"] {
+    color-scheme: dark;
+}
 
-    --bg-color-1: var(--light-bg-color-1);
-    --bg-color-2: var(--light-bg-color-2);
-    --bg-color-3: var(--light-bg-color-3);
-    --border-color: var(--light-border-color);
-    --heading-color: var(--light-heading-color);
-    --text-color: var(--light-text-color);
-    --faded-text-color: var(--light-faded-text-color);
-    --annotation-color: var(--light-annotation-color);
-    --keyword-color: var(--light-keyword-color);
-    --name-color: var(--light-name-color);
-    --type-color: var(--light-type-color);
-    --kind-color: var(--light-kind-color);
-    --effect-color: var(--light-effect-color);
-    --doc-code-color: var(--light-doc-code-color);
-    --show-hide-color: var(--light-show-hide-color);
-    --show-hide-hover-color: var(--light-show-hide-hover-color);
-    --module-color: var(--light-module-color);
-    --signature-color: var(--light-signature-color);
-    --trait-def-color: var(--light-trait-def-color);
-    --traits-color: var(--light-traits-color);
-    --enum-color: var(--light-enum-color);
-    --struct-color: var(--light-struct-color);
-    --op-color: var(--light-op-color);
-    --eff-color: var(--light-eff-color);
-    --type-alias-color: var(--light-type-alias-color);
-    --def-color: var(--light-def-color);
-    --shadow-color: var(--light-shadow-color);
-    --highlight-color: var(--light-highlight-color);
+/* Book: the Rust, Navy and Ayu themes of mdBook, which doc.flix.dev is built with, so that the book
+   and this reference read as one site. The chrome follows the book's own variables, the bullets
+   of the sidebar take the color the book gives the open chapter, the code follows the
+   highlighting theme the book pairs with each, and the fonts are its Open Sans and Source Code Pro.
+   Where a shade of the book falls short of the 4.5:1 contrast of body text, a darker or lighter
+   one stands in. */
+:root[data-theme="book-rust"] {
     color-scheme: light;
 
+    --display-font: "Open Sans", sans-serif;
+    --body-font: "Open Sans", sans-serif;
+    --ui-font: "Open Sans", sans-serif;
+    --code-font: "Source Code Pro", monospace;
+    --h1-font-weight: 700;
+    --h2-font-weight: 700;
+
+    --bg-color-1: #eeeee9;
+    --bg-color-2: #e1e1db;
+    --bg-color-3: #e1e1db;
+    --border-color: #cbcbc2;
+    --heading-color: #262625;
+    --text-color: #262625;
+    --faded-text-color: #625f52;
+    --sidebar-bg-color: #3b2e2a;
+    --sidebar-text-color: #c8c9db;
+    --sidebar-heading-color: #c8c9db;
+    --sidebar-bullet-color: #e69f67;
+    --annotation-color: #625f52;
+    --keyword-color: #262625;
+    --name-color: #8f2f1a;
+    --type-color: #1f6a91;
+    --kind-color: #625f52;
+    --effect-color: #8a5606;
+    --doc-code-color: #5a574c;
+    --show-hide-color: #1f6a91;
+    --show-hide-hover-color: #175273;
+    --shadow-color: transparent;
+    --highlight-color: #e69f67;
+
+    --comment-color: #575757;
+    --string-color: #007600;
+    --number-color: #b21e00;
+}
+:root[data-theme="book-navy"] {
+    color-scheme: dark;
+
+    --display-font: "Open Sans", sans-serif;
+    --body-font: "Open Sans", sans-serif;
+    --ui-font: "Open Sans", sans-serif;
+    --code-font: "Source Code Pro", monospace;
+    --h1-font-weight: 700;
+    --h2-font-weight: 700;
+
+    --bg-color-1: #1d2130;
+    --bg-color-2: #161923;
+    --bg-color-3: #161923;
+    --border-color: #30364b;
+    --heading-color: #dcdded;
+    --text-color: #bcbdd0;
+    --faded-text-color: #8a8ea8;
+    --sidebar-bg-color: #282d3f;
+    --sidebar-text-color: #c8c9db;
+    --sidebar-heading-color: #c8c9db;
+    --sidebar-bullet-color: #2b79a2;
+    --annotation-color: #8f93a8;
+    --keyword-color: #dcdded;
+    --name-color: #e6b673;
+    --type-color: #6cb4e4;
+    --kind-color: #8a8ea8;
+    --effect-color: #d19af0;
+    --doc-code-color: #c5c8c6;
+    --show-hide-color: #6cb4e4;
+    --show-hide-hover-color: #8fc8ee;
+    --shadow-color: transparent;
+    --highlight-color: #2b79a2;
+
+    --comment-color: #969896;
+    --string-color: #b5bd68;
+    --number-color: #de935f;
+}
+:root[data-theme="book-ayu"] {
+    color-scheme: dark;
+
+    --display-font: "Open Sans", sans-serif;
+    --body-font: "Open Sans", sans-serif;
+    --ui-font: "Open Sans", sans-serif;
+    --code-font: "Source Code Pro", monospace;
+    --h1-font-weight: 700;
+    --h2-font-weight: 700;
+
+    --bg-color-1: #191f26;
+    --bg-color-2: #0f141a;
+    --bg-color-3: #0f141a;
+    --border-color: #222e39;
+    --heading-color: #e6e1cf;
+    --text-color: #c5c5c5;
+    --faded-text-color: #868794;
+    --sidebar-bg-color: #14191f;
+    --sidebar-text-color: #c8c9db;
+    --sidebar-heading-color: #c8c9db;
+    --sidebar-bullet-color: #ffb454;
+    --annotation-color: #ffee99;
+    --keyword-color: #ff7733;
+    --name-color: #ffb454;
+    --type-color: #36a3d9;
+    --kind-color: #868794;
+    --effect-color: #d2a6ff;
+    --doc-code-color: #ffb454;
+    --show-hide-color: #0096cf;
+    --show-hide-hover-color: #36a3d9;
+    --shadow-color: transparent;
+    --highlight-color: #ffb454;
+
+    --comment-color: #7e8996;
+    --string-color: #b8cc52;
+    --number-color: #ffee99;
+}
+/* END THEMES */
+
+
+
+/* BEGIN VARIABLES */
+/* Composed from the tokens above; no theme sets these. */
+:root {
     --border: 1px solid var(--border-color);
     --blur-transition: filter 0.3s;
-}
-@media (prefers-color-scheme: dark) {
-    :root {
-        --bg-color-1: var(--dark-bg-color-1);
-        --bg-color-2: var(--dark-bg-color-2);
-        --bg-color-3: var(--dark-bg-color-3);
-        --border-color: var(--dark-border-color);
-        --heading-color: var(--dark-heading-color);
-        --text-color: var(--dark-text-color);
-        --faded-text-color: var(--dark-faded-text-color);
-        --annotation-color: var(--dark-annotation-color);
-        --keyword-color: var(--dark-keyword-color);
-        --name-color: var(--dark-name-color);
-        --type-color: var(--dark-type-color);
-        --kind-color: var(--dark-kind-color);
-        --effect-color: var(--dark-effect-color);
-        --doc-code-color: var(--dark-doc-code-color);
-        --show-hide-color: var(--dark-show-hide-color);
-        --show-hide-hover-color: var(--dark-show-hide-hover-color);
-        --module-color: var(--dark-module-color);
-        --signature-color: var(--dark-signature-color);
-        --trait-def-color: var(--dark-trait-def-color);
-        --traits-color: var(--dark-traits-color);
-        --enum-color: var(--dark-enum-color);
-        --struct-color: var(--dark-struct-color);
-        --op-color: var(--dark-op-color);
-        --eff-color: var(--dark-eff-color);
-        --type-alias-color: var(--dark-type-alias-color);
-        --def-color: var(--dark-def-color);
-        --shadow-color: var(--dark-shadow-color);
-        --highlight-color: var(--dark-highlight-color);
-        color-scheme: dark;
-    }
-}
-:root.dark {
-    --bg-color-1: var(--dark-bg-color-1);
-    --bg-color-2: var(--dark-bg-color-2);
-    --bg-color-3: var(--dark-bg-color-3);
-    --border-color: var(--dark-border-color);
-    --heading-color: var(--dark-heading-color);
-    --text-color: var(--dark-text-color);
-    --faded-text-color: var(--dark-faded-text-color);
-    --annotation-color: var(--dark-annotation-color);
-    --keyword-color: var(--dark-keyword-color);
-    --name-color: var(--dark-name-color);
-    --type-color: var(--dark-type-color);
-    --kind-color: var(--dark-kind-color);
-    --effect-color: var(--dark-effect-color);
-    --doc-code-color: var(--dark-doc-code-color);
-    --show-hide-color: var(--dark-show-hide-color);
-    --show-hide-hover-color: var(--dark-show-hide-hover-color);
-    --module-color: var(--dark-module-color);
-    --signature-color: var(--dark-signature-color);
-    --trait-def-color: var(--dark-trait-def-color);
-    --traits-color: var(--dark-traits-color);
-    --enum-color: var(--dark-enum-color);
-    --struct-color: var(--dark-struct-color);
-    --op-color: var(--dark-op-color);
-    --eff-color: var(--dark-eff-color);
-    --type-alias-color: var(--dark-type-alias-color);
-    --def-color: var(--dark-def-color);
-    --shadow-color: var(--dark-shadow-color);
-    --highlight-color: var(--dark-highlight-color);
-    color-scheme: dark;
 }
 /* END VARIABLES */
 
@@ -170,6 +197,13 @@ html, body {
     min-height: 100dvh;
     margin: 0;
     padding: 0;
+}
+
+/* The background of the root element is what the browser paints past the end of the page and
+   when the page is overscrolled. Without it that is the browser's own canvas, white in most
+   browsers, whatever the theme. */
+html {
+    background-color: var(--bg-color-2);
 }
 
 /* Keeps content available to screen readers while hiding it visually, without affecting layout. */
@@ -197,24 +231,24 @@ h1, h2 {
 }
 
 h1 {
-    font-family: "Oswald", sans-serif;
-    font-size: 4.5rem;
-    font-weight: 300;
-    margin-bottom: 3rem;
+    font-family: var(--display-font);
+    font-size: 2rem;
+    font-weight: var(--h1-font-weight);
+    margin-bottom: calc(2em / 3);
 }
 
 h2 {
-    font-family: "Oswald", sans-serif;
-    font-size: 2rem;
-    font-weight: 500;
-    margin-bottom: 1.5rem;
+    font-family: var(--display-font);
+    font-size: 1.5rem;
+    font-weight: var(--h2-font-weight);
+    margin-bottom: 0.75em;
 }
 
 /* Subsection headings are h2 in the document outline but keep the h3 look. */
 h3,
 .subsection h2 {
     display: inline;
-    font-family: "Inter", sans-serif;
+    font-family: var(--ui-font);
     font-size: 0.9rem;
     font-weight: 200;
     line-height: normal;
@@ -259,7 +293,7 @@ body {
     grid-template-rows: var(--header-height) 1fr;
 
 
-    font-family: "Noto Sans", sans-serif;
+    font-family: var(--body-font);
     color: var(--text-color);
 }
 @media screen and (max-width: 800px) {
@@ -320,7 +354,7 @@ header {
     /* Not a heading element (see HtmlDocumentor.docHeader), so the `h1`/`h2` base rules above
        don't apply to it; restated here to keep the same look. */
     color: var(--heading-color);
-    font-family: "Oswald", sans-serif;
+    font-family: var(--display-font);
     line-height: 1.2;
     margin: 0;
 
@@ -360,17 +394,54 @@ header > .toggle:hover {
     color: var(--text-color)
 }
 
-.no-script #theme-toggle .light.icon,
-:root.light #theme-toggle .light.icon {
-    display: none;
+/* The theme menu is a popover: the browser opens and closes it, and keeps it in the top layer. It
+   hangs from the right end of the header, below it on a wide screen and above it on a narrow one,
+   where the header sits at the bottom. */
+#theme-menu {
+    inset: var(--header-height) 1rem auto auto;
+    margin: 0;
+    padding: 0.25rem;
+    min-width: 8rem;
+
+    background-color: var(--bg-color-1);
+    color: var(--text-color);
+    border: var(--border);
+    border-radius: 0.2rem;
+    box-shadow: 0 0 10px 0 var(--shadow-color);
 }
-@media (prefers-color-scheme: dark) {
-    .no-script #theme-toggle .dark.icon {
-        display: none;
+@media screen and (max-width: 800px) {
+    #theme-menu {
+        inset: auto 1rem var(--header-height) auto;
     }
 }
-:root.dark #theme-toggle .dark.icon {
-    display: none;
+#theme-menu > ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+#theme-menu button {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    width: 100%;
+    padding: 0.25rem 0.75rem 0.25rem 0.25rem;
+    border-radius: 0.2rem;
+
+    font-family: var(--ui-font);
+    font-size: 0.85rem;
+    color: var(--text-color);
+    text-align: left;
+}
+#theme-menu button:hover,
+#theme-menu button:focus-visible {
+    background-color: var(--bg-color-3);
+}
+/* The check mark of the chosen theme; the others keep its space, so the names line up. */
+#theme-menu button > .icon {
+    color: var(--show-hide-color);
+}
+#theme-menu button[aria-checked="false"] > .icon {
+    visibility: hidden;
 }
 
 #menu-toggle {
@@ -402,7 +473,8 @@ nav {
     top: var(--header-height);
     height: calc(100dvh - var(--header-height));
 
-    background-color: var(--bg-color-1);
+    background-color: var(--sidebar-bg-color);
+    color: var(--sidebar-text-color);
     box-shadow: 0 0 10px 0 var(--shadow-color);
     border-right: var(--border);
     box-sizing: border-box;
@@ -411,6 +483,12 @@ nav {
     overflow-y: auto;
     z-index: 1;
 }
+nav a {
+    color: var(--sidebar-text-color);
+}
+nav h3 {
+    color: var(--sidebar-heading-color);
+}
 @media screen and (max-width: 800px) {
     nav {
         position: fixed;
@@ -418,7 +496,7 @@ nav {
         width: 100%;
         bottom: 0;
         border: none;
-        background-color: var(--bg-color-1);
+        background-color: var(--sidebar-bg-color);
         border-radius: 0.5rem;
         box-shadow: 0 0 10px 0 var(--shadow-color);
         border-top: var(--border);
@@ -431,15 +509,32 @@ nav {
         transform: translateY(0);
     }
 }
-nav > .back {
-    display: flex;
-    gap: 0.1rem;
+/* The head of the sidebar: the name of the page's item, with its parent module beneath. */
+.sidebar-head {
     margin-bottom: 1rem;
+    font-family: var(--ui-font);
+}
+.sidebar-head > h2 {
+    margin: 0;
+    font-family: var(--ui-font);
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--sidebar-heading-color);
+    overflow-wrap: anywhere;
+}
+.sidebar-head > .parent {
+    display: block;
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+.sidebar-head > .parent:hover {
+    opacity: 1;
 }
 nav ul {
     margin-top: 0.2rem;
     padding-left: 0.5rem;
-    font-family: "Inter", sans-serif;
+    font-family: var(--ui-font);
     font-size: 13px;
     list-style: none;
 }
@@ -449,36 +544,7 @@ nav li {
 nav li::before {
     content: "●";
     margin-right: 0.3rem;
-}
-nav .sidebar-list-modules li::before {
-    color: var(--module-color);
-}
-nav .sidebar-list-signatures li::before {
-    color: var(--signature-color);
-}
-nav .sidebar-list-trait-defs li::before {
-    color: var(--trait-def-color);
-}
-nav .sidebar-list-traits li::before {
-    color: var(--traits-color);
-}
-nav .sidebar-list-enums li::before {
-    color: var(--enum-color);
-}
-nav .sidebar-list-structs li::before {
-    color: var(--struct-color);
-}
-nav .sidebar-list-operations li::before {
-    color: var(--op-color);
-}
-nav .sidebar-list-effects li::before {
-    color: var(--eff-color);
-}
-nav .sidebar-list-type-aliases li::before {
-    color: var(--type-alias-color);
-}
-nav .sidebar-list-definitions li::before {
-    color: var(--def-color);
+    color: var(--sidebar-bullet-color);
 }
 
 main {
@@ -504,13 +570,18 @@ main {
 }
 
 main h2 {
-    font-family: "Oswald", sans-serif;
+    font-family: var(--display-font);
+}
+/* A section heading sits on a thin rule, as rustdoc's do. */
+main > section > h2 {
+    padding-bottom: 0.5rem;
+    border-bottom: var(--border);
 }
 
 .breadcrumbs {
     margin-bottom: 0.5rem;
 
-    font-family: "Inter", sans-serif;
+    font-family: var(--ui-font);
     font-size: 0.9rem;
     color: var(--faded-text-color);
 }
@@ -522,19 +593,10 @@ main h2 {
     color: var(--text-color);
 }
 
+/* An entry has no surface of its own. Its head, the annotations and the signature, sits on a faint
+   band, and the documentation hangs below it on the page. */
 .box {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    margin-left: -0.75rem;
-    margin-right: -0.75rem;
-
-    box-shadow: 0 0 10px 0 var(--shadow-color);
-    background-color: var(--bg-color-1);
-    border: var(--border);
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    margin-bottom: 0.8rem;
-    border-radius: 0.2rem;
+    padding: 0.8rem 0;
     box-sizing: border-box;
     overflow: auto;
 
@@ -544,8 +606,23 @@ main h2 {
 .box:last-of-type {
     margin-bottom: 3rem;
 }
-.box:target {
-    box-shadow: 0 0 14px 0 var(--highlight-color);
+.box > .annotations,
+.box > .decl {
+    padding: 0.3rem 0.6rem;
+    background-color: color-mix(in srgb, var(--text-color) 5%, transparent);
+    border-radius: 0.2rem;
+}
+.box > .annotations {
+    padding-bottom: 0;
+    border-radius: 0.2rem 0.2rem 0 0;
+}
+.box > .annotations + .decl {
+    border-radius: 0 0 0.2rem 0.2rem;
+}
+/* The target of an anchor link is told by the color of its band. */
+.box:target > .annotations,
+.box:target > .decl {
+    background-color: color-mix(in srgb, var(--highlight-color) 20%, transparent);
 }
 .box code {
     font-size: 0.85rem;
@@ -558,22 +635,30 @@ main h2 {
 .subsection h2 {
     margin-left: -1.5rem;
 }
-.subsection > summary {
-    cursor: pointer;
-    list-style: none;
+/* The instances of an item: the heading, in bold, then comma-separated lists of names below it, one
+   on the page of a type and one per group, in labelled rows, on the page of a trait. A few words at
+   the size of the code may end a list. */
+.subsection.instances {
+    font-size: 0.85rem;
 }
-.subsection > summary::after {
-    content: "(show)";
-    font-size: 0.875em;
-    margin-left: 0.3rem;
-    color: var(--show-hide-color);
+.subsection.instances h2 {
+    font-weight: bold;
 }
-.subsection > summary:hover::after {
-    text-decoration: underline;
-    color: var(--show-hide-hover-color);
+.subsection.instances p,
+.subsection.instances dl {
+    margin: 0.4rem 0 0;
 }
-.subsection[open] > summary::after {
-    content: "(hide)";
+.subsection.instances dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.3rem 1rem;
+}
+.subsection.instances dt {
+    font-family: var(--ui-font);
+    color: var(--heading-color);
+}
+.subsection.instances dd {
+    margin: 0;
 }
 
 .subsection > div {
@@ -608,7 +693,7 @@ main h2 {
 
 .actions > * {
     color: inherit;
-    font-family: "Inter", sans-serif;
+    font-family: var(--ui-font);
     font-size: 0.75rem;
     text-decoration: none;
     background-color: var(--bg-color-3);
@@ -664,10 +749,15 @@ main h2 {
     margin-top: 0.7rem;
     margin-bottom: 0.7rem;
 }
-.cases > code,
-.fields > code,
+.cases > .case > code,
+.fields > .field > code,
 .assocs > code {
     display: block;
+}
+.case > .doc,
+.field > .doc {
+    margin-top: 0.2rem;
+    margin-bottom: 0.7rem;
 }
 .case-tag {
     font-style: italic;
@@ -709,7 +799,7 @@ td.align-right, th.align-right {
 
     max-width: 60rem;
 
-    font-family: "Open Sans", sans-serif;
+    font-family: var(--prose-font);
     font-size: 1rem;
 }
 .mod-doc p {
@@ -734,7 +824,7 @@ td.align-right, th.align-right {
 }
 .summary-table td:first-child {
     white-space: nowrap;
-    font-family: "Fira Code", monospace;
+    font-family: var(--code-font);
     font-size: 0.85rem;
 }
 .summary-table td:last-child {
@@ -751,7 +841,7 @@ td.align-right, th.align-right {
 }
 
 code {
-    font-family: "Fira Code", monospace;
+    font-family: var(--code-font);
 }
 code a {
     color: inherit;
@@ -778,6 +868,8 @@ code .kind {
 code .effect {
     color: var(--effect-color);
 }
-code .tpe-constraint {
+/* A link inside code, to the page of a trait or a type, is told from plain text by its underline. */
+code .tpe-constraint,
+code a.type {
     text-decoration: underline;
 }

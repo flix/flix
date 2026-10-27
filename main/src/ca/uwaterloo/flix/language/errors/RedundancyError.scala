@@ -100,28 +100,6 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that a checked effect cast is redundant.
-    *
-    * @param eff the effect of the expression.
-    * @param loc the source location of the cast.
-    */
-  case class RedundantCheckedEffectCast(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
-    def code: ErrorCode = ErrorCode.E7067
-
-    def summary: String = "Redundant effect cast."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Redundant effect cast.
-         |
-         |${highlight(loc, "redundant cast.", fmt)}
-         |
-         |The expression already has the '${cyan(FormatType.formatType(eff))}' effect.
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate that a checked type cast is redundant.
     *
     * @param tpe the type of the expression.

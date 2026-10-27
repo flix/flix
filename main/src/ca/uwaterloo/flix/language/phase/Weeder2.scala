@@ -383,7 +383,7 @@ object Weeder2 {
           // enum Foo(Int32) { case Bar, case Baz }
           // ===>
           // enum Foo { case Foo(Int32), case Bar, case Baz }
-          val syntheticCase = WeededAst.Case(ident, ts, ident.loc)
+          val syntheticCase = WeededAst.Case(Doc(Nil, ident.loc), ident, ts, ident.loc)
           syntheticCase :: cs
         // Empty or Multiton enum
         case (None, cs) =>
@@ -394,13 +394,13 @@ object Weeder2 {
 
     private def visitEnumCase(tree: Tree)(implicit sctx: SharedContext): Case = {
       expect(tree, TreeKind.Case)
+      val doc = pickDocumentation(tree)
       val maybeType = tryPick(TreeKind.CaseBody, tree)
       val ident = pickNameIdent(tree)
-      // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       val tpes = maybeType.map(Types.visitCaseType).getOrElse(Nil)
       // Make a source location that spans the name and type, excluding 'case'.
       val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.start, tree.loc.end)
-      Case(ident, tpes, loc)
+      Case(doc, ident, tpes, loc)
     }
 
     private def visitRestrictableEnumDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.RestrictableEnum = {
@@ -466,12 +466,13 @@ object Weeder2 {
 
     private def visitStructField(tree: Tree)(implicit sctx: SharedContext): StructField = {
       expect(tree, TreeKind.StructField)
+      val doc = pickDocumentation(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordMut))
       val ident = pickNameIdent(tree)
       val ttype = Types.pickType(tree)
       // Make a source location that spans the name and type
       val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.start, tree.loc.end)
-      StructField(mod, Name.mkLabel(ident), ttype, loc)
+      StructField(doc, mod, Name.mkLabel(ident), ttype, loc)
     }
 
     private def visitTypeAliasDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.TypeAlias = {
@@ -552,13 +553,13 @@ object Weeder2 {
     }
 
     private def pickDocumentation(tree0: Tree): Doc = {
-      val docTree: Option[Tree] = tryPick(TreeKind.Doc, tree0).flatMap(tryPick(TreeKind.CommentList, _))
+      val docTree: Option[Tree] = tryPick(TreeKind.DocComment, tree0)
       docTree match {
         case None => Doc(List.empty, tree0.loc)
         case Some(tree) =>
           // Strip the `///` prefix, one optional separator space, and trailing whitespace.
           // Internal indentation is preserved so that code blocks and ASCII layout survive.
-          var lines = text(tree).map { s =>
+          var lines = docCommentText(tree).map { s =>
             val s1 = s.stripPrefix("///")
             val s2 = if (s1.startsWith(" ")) s1.drop(1) else s1
             s2.stripTrailing()
@@ -922,9 +923,9 @@ object Weeder2 {
         case t: Tree => t.kind == TreeKind.Expr.Expr
         case _ => false
       }
-      // Ignore comment tokens so they cannot sit between an opener and its expression.
+      // Ignore comments so they cannot sit between an opener and its expression.
       val children = tree.children.filterNot {
-        case token@Token(_, _, _, _, _, _) => token.kind.isComment
+        case t: Tree => t.kind == TreeKind.PlainComment
         case _ => false
       }
       children.sliding(2).collect {
@@ -3363,7 +3364,7 @@ object Weeder2 {
     * Only use this if the structure of tree is well-known.
     * IE. Calling on a tree of kind [[TreeKind.Ident]] is fine, but if the kind is not known avoid using [[tokenToIdent]].
     */
-  private def tokenToIdent(tree: Tree)(implicit sctx: SharedContext): Name.Ident = {
+  private def tokenToIdent(tree: Tree): Name.Ident = {
     tree.children.headOption match {
       case Some(token@Token(_, src, _, _, sp1, sp2)) =>
         Name.Ident(token.text, SourceLocation(isReal = true, src, sp1, sp2))
@@ -3372,12 +3373,6 @@ object Weeder2 {
       // Doing it this way is most resilient, but phases down the line might have trouble with this sort of thing.
       case Some(t: Tree) if t.kind.isInstanceOf[TreeKind.ErrorTree] =>
         val name = text(tree).mkString("")
-        Name.Ident(name, tree.loc)
-      case Some(t: Tree) if t.kind == TreeKind.CommentList =>
-        // We hit a misplaced comment.
-        val name = text(tree).mkString("")
-        val error = MisplacedComments(SyntacticContext.Unknown, t.loc)
-        sctx.errors.add(error)
         Name.Ident(name, tree.loc)
       case _ => throw InternalCompilerException(s"Parse failure: expected first child of '${tree.kind}' to be Child.Token", tree.loc)
     }
@@ -3400,15 +3395,10 @@ object Weeder2 {
       case _ => false
     })
 
-    // Find the first sub-tree that isn't a comment
-    tree.children.find {
-      case tree: Tree if tree.kind != TreeKind.CommentList => true
-      case _ => false
-    }.map {
-      case tree: Tree => tree
-      case _ => throw InternalCompilerException(s"expected '${tree.kind}' to have a tree child that is not a comment", tree.loc)
-    }.getOrElse(
-      throw InternalCompilerException(s"expected '${tree.kind}' to have a tree child that is not a comment", tree.loc)
+    // The parser opens a marker node before the first token of its content, so a comment ahead
+    // of the content lands outside the marker and the first tree child is the content.
+    tree.children.collectFirst { case t: Tree => t }.getOrElse(
+      throw InternalCompilerException(s"expected '${tree.kind}' to have a tree child", tree.loc)
     )
   }
 
@@ -3436,6 +3426,18 @@ object Weeder2 {
     */
   private def pickAllTokens(tree: Tree): Array[Token] = {
     tree.children.collect { case token@Token(_, _, _, _, _, _) => token }
+  }
+
+  /**
+    * Collects the text of the immediate `///` doc comment token children of `tree`.
+    *
+    * A `//` or `/* */` comment that sits inside a run of doc comments is skipped,
+    * since it is not part of the documentation.
+    */
+  private def docCommentText(tree: Tree): List[String] = {
+    tree.children.collect {
+      case token@Token(TokenKind.CommentDoc, _, _, _, _, _) => token.text
+    }.toList
   }
 
   /**

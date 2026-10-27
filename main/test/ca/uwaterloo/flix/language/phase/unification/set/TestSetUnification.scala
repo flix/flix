@@ -9,9 +9,14 @@ package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Cst, Empty, Union, Var}
+import ca.uwaterloo.flix.language.phase.unification.EffUnification3
+import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Compl, Cst, ElemSet, Empty, Inter, Union, Var}
+import ca.uwaterloo.flix.language.phase.unification.shared.{CofiniteIntSet, SveMode}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
 import ca.uwaterloo.flix.util.collection.TwoList
 import org.scalatest.funsuite.AnyFunSuite
+
+import scala.collection.immutable.SortedSet
 
 class TestSetUnification extends AnyFunSuite with TestUtils {
 
@@ -42,8 +47,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(19), Var(18)),
       mkEq(Var(19), Var(11))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("Array.unzip") {
@@ -79,8 +83,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(15), Cst(25)),
       mkEq(Var(16), Cst(26))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("Iterator.mapWithIndex") {
@@ -108,8 +111,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(8), Cst(20)),
       mkEq(Var(9), Cst(21))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("MutDeque.toArray") {
@@ -148,8 +150,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(17), Cst(29)),
       mkEq(Var(16), Cst(29))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("MutList.map") {
@@ -196,8 +197,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(18), Union(TwoList(Var(17), Var(34), List()))),
       mkEq(Var(20), Cst(36))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("Nec.zipWith") {
@@ -240,8 +240,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(19), Var(17)),
       mkEq(Var(34), Var(20))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
   }
 
   test("RedBlackTree.findLeft") {
@@ -264,8 +263,136 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(16), Union(TwoList(Var(2), Var(10), List()))),
       mkEq(Var(17), Var(6))
     )
-    val (eqs, _) = SetUnification.solve(input)
-    assert(eqs.isEmpty)
+    assertSolved(input)
+  }
+
+  test("DelayMap.insertWith.Fusion") {
+    // c0 ~ x10 ∪ x11 ∪ c0 ∪ (x8 ∪ x9 ∪ (x6 ∪ x7 ∪ (x4 ∪ x5 ∪ (x2 ∪ x3 ∪ (x0 ∪ x1)))))
+    val inner = Union(TwoList(Var(0), Var(1), List()))
+    val nested = List(2, 4, 6, 8).foldLeft(inner: SetFormula) {
+      case (acc, i) => Union(TwoList(Var(i), Var(i + 1), List(acc)))
+    }
+    val input = List(
+      mkEq(Cst(12), Union(TwoList(Var(10), Var(11), List(Cst(12), nested))))
+    )
+    assertSolved(input)
+  }
+
+  test("CoverAssignment.01") {
+    // c1 ~ c1 ∪ x0 ∪ (x1 ∩ c2)
+    val input = List(
+      mkEq(Cst(1), Union(TwoList(Cst(1), Var(0), List(Inter(TwoList(Var(1), Cst(2), List()))))))
+    )
+    assertSolved(input)
+  }
+
+  test("CoverAssignment.02") {
+    // x0 ∪ (c1 ∪ x1) ~ c1, with the ground member in a nested union
+    val input = List(
+      mkEq(Union(TwoList(Var(0), Union(TwoList(Cst(1), Var(1), List())), List())), Cst(1))
+    )
+    assertSolved(input)
+  }
+
+  test("CoverAssignment.03") {
+    // (c1 ∪ c2) ~ (c1 ∪ x0 ∪ c2 ∪ (x1 ∩ c3)): the ground side is a union whose members all occur on the right
+    val input = List(
+      mkEq(Union(TwoList(Cst(1), Cst(2), List())), Union(TwoList(Cst(1), Var(0), List(Cst(2), Inter(TwoList(Var(1), Cst(3), List()))))))
+    )
+    assertSolved(input)
+  }
+
+  test("Fixpoint.RestrictionThenDistribution") {
+    // c4 ~ x1 ∪ x2 restricts x2 to a union; x2 ∩ c3 ~ empty then needs distribution and a bound in a second pass.
+    val input = List(
+      mkEq(Inter(TwoList(Var(2), Cst(3), List())), Empty),
+      mkEq(Cst(4), Union(TwoList(Var(1), Var(2), List())))
+    )
+    assertSolved(input)
+  }
+
+  test("InterAssignment.01") {
+    // c1 ~ x0 ∩ (c1 ∪ c2)
+    val input = List(
+      mkEq(Cst(1), Inter(TwoList(Var(0), Union(TwoList(Cst(1), Cst(2), List())), List())))
+    )
+    assertSolved(input)
+  }
+
+  test("InterAssignment.02") {
+    // x0 ∩ c1 ~ c1, i.e. the restricted variable must cover c1
+    val input = List(
+      mkEq(Inter(TwoList(Var(0), Cst(1), List())), Cst(1))
+    )
+    assertSolved(input)
+  }
+
+  test("InterAssignment.03") {
+    // c1 ~ x0 ∪ x1 restricts x0 and x1 to c1; c1 ~ x0 then equates the restricted x0 to c1.
+    val input = List(
+      mkEq(Cst(1), Union(TwoList(Var(0), Var(1), List()))),
+      mkEq(Cst(1), Var(0))
+    )
+    assertSolved(input)
+  }
+
+  test("BoundAssignment.Nested") {
+    // e1 ∩ ((!x0 ∩ !c2) ∩ !c2) ~ empty: the variable sits in a nested intersection
+    val input = List(
+      mkEq(Inter(TwoList(ElemSet(SortedSet(1)), Inter(TwoList(Inter(TwoList(Compl(Var(0)), Compl(Cst(2)), List())), Compl(Cst(2)), List())), List())), Empty)
+    )
+    assertSolved(input)
+  }
+
+  test("BoundAssignment.Complementary") {
+    // e1 ∩ !x0 ∩ !e1 ~ empty holds for every x0
+    val input = List(
+      mkEq(Inter(TwoList(ElemSet(SortedSet(1)), Compl(Var(0)), List(Compl(ElemSet(SortedSet(1)))))), Empty)
+    )
+    assertSolved(input)
+  }
+
+  test("BoundAssignment.MutualDependency") {
+    // Two inclusions whose bounds mention each other's variable, as the lambdas of a region produce.
+    val e = ElemSet(SortedSet(1))
+    val input = List(
+      mkEq(Inter(TwoList(e, Compl(Var(0)), List(Compl(Cst(2)), Compl(Var(1))))), Empty),
+      mkEq(Inter(TwoList(e, Compl(Var(1)), List(Compl(Cst(2)), Compl(Var(0))))), Empty),
+      mkEq(Inter(TwoList(e, Compl(Var(1)), List(Compl(Cst(2)), Compl(Var(0)), Compl(Var(3))))), Empty),
+      mkEq(Var(3), Union(TwoList(Var(0), Cst(2), List())))
+    )
+    assertSolved(input)
+  }
+
+  test("ConstantPropagation.ComplVar") {
+    // !x0 ~ empty
+    val input = List(
+      mkEq(Compl(Var(0)), Empty)
+    )
+    assertSolved(input)
+  }
+
+  /**
+    * Asserts that `input` is solved by SVE at every granularity, and that the substitution returned
+    * satisfies every equation of `input`.
+    */
+  def assertSolved(input: List[Equation]): Unit = {
+    for (mode <- List(SveMode.PerEquation, SveMode.PerComponent, SveMode.PerSystem)) {
+      val (eqs, subst) = SetUnification.solve(input, mode)
+      assert(eqs.isEmpty, mode)
+      for (eq <- input) {
+        assert(isEquivalent(subst(eq.f1), subst(eq.f2)), s"$mode: $eq is not satisfied by $subst")
+      }
+    }
+  }
+
+  /** Returns `true` if `f1` and `f2` denote the same set for every value of their variables and constants. */
+  private def isEquivalent(f1: SetFormula, f2: SetFormula): Boolean = {
+    implicit val alg: ZhegalkinAlgebra[CofiniteIntSet] = EffUnification3.Algebra
+    implicit val lat: CofiniteIntSet.LatticeOps.type = CofiniteIntSet.LatticeOps
+    val z1 = Zhegalkin.toZhegalkin(f1)
+    val z2 = Zhegalkin.toZhegalkin(f2)
+    ZhegalkinExpr.isEmpty(ZhegalkinExpr.mkXor(z1, z2))
   }
 
 }

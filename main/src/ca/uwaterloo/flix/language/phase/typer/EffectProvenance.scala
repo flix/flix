@@ -286,31 +286,65 @@ object EffectProvenance {
   private def buildGraph(constraints: List[TypeConstraint])(implicit scope: RegionScope, renv: RigidityEnv): Option[Graph] = {
     var flow: List[Edge] = List()
     var v: Set[Vertex] = Set.empty
+
+    /**
+      * Adds the edges of a constraint under which the effect `tpe2` flows into the effect `tpe1`,
+      * with the node types and the edge location determined by the provenance `prov`.
+      */
+    def addEdges(tpe1: Type, tpe2: Type, prov: TypeConstraint.Provenance): Unit = {
+      val inf = TypeConstraint.Provenance.unwrap(prov) match {
+        case TypeConstraint.Provenance.ExpectEffect(effs, _, _) =>
+          val l = if (effs.loc.isReal) effs.loc else prov.loc
+          Some((SinkNode, IntermediateNode, l))
+        case TypeConstraint.Provenance.Source(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
+        case TypeConstraint.Provenance.Match(_, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
+        case TypeConstraint.Provenance.PolyEffEq(_, _, _, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
+        case TypeConstraint.Provenance.ExpectType(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
+        case TypeConstraint.Provenance.ExpectArgument(arg, _, _, _, _) => Some((ArgNode, IntermediateNode, arg.loc))
+        case _ => None
+      }
+      inf match {
+        case None => ()
+        case Some((nt1, nt2, loc)) => addEdgesAs(tpe1, tpe2, nt1, nt2, loc, prov)
+      }
+    }
+
+    /**
+      * Adds the edges under which the effect `tpe2`, as a node of type `nt2`, flows into the effect
+      * `tpe1`, as a node of type `nt1`. The vertices are located at `loc` and the edges at `prov.loc`.
+      */
+    def addEdgesAs(tpe1: Type, tpe2: Type, nt1: NodeType, nt2: NodeType, loc: SourceLocation, prov: TypeConstraint.Provenance): Unit = {
+      val v1 = toVertex(tpe1, loc, nt1)
+      val v2 = toVertex(tpe2, loc, nt2)
+      (v1, v2) match {
+        case (Nil, _) => ()
+        case (_, Nil) => ()
+        case (toVertices, fromVertices) =>
+          v ++= fromVertices.toSet
+          v ++= toVertices.toSet
+          flow :::= createEdges(fromVertices, toVertices, prov.loc)
+      }
+    }
+
     constraints.foreach {
       case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-        val inf = TypeConstraint.Provenance.unwrap(prov) match {
-          case TypeConstraint.Provenance.ExpectEffect(effs, _, _) =>
-            val l = if (effs.loc.isReal) effs.loc else prov.loc
-            Some((SinkNode, IntermediateNode, l))
-          case TypeConstraint.Provenance.Source(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
-          case TypeConstraint.Provenance.Match(_, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
-          case TypeConstraint.Provenance.PolyEffEq(_, _, _, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
-          case TypeConstraint.Provenance.ExpectType(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
-          case TypeConstraint.Provenance.ExpectArgument(arg, _, _, _, _) => Some((ArgNode, IntermediateNode, arg.loc))
-          case _ => None
+        addEdges(tpe1, tpe2, prov)
+
+      case TypeConstraint.SubEff(eff1, eff2, prov) =>
+        val flexibleUpperBound = eff2 match {
+          case Type.Var(sym, _) => renv.get(sym) match {
+            case Rigidity.Flexible => true
+            case Rigidity.Rigid => false
+          }
+          case _ => false
         }
-        inf.map {
-          case (nt1, nt2, loc) =>
-            val v1 = toVertex(tpe1, loc, nt1)
-            val v2 = toVertex(tpe2, loc, nt2)
-            (v1, v2) match {
-              case (Nil, _) => ()
-              case (_, Nil) => ()
-              case (toVertices, fromVertices) =>
-                v ++= fromVertices.toSet
-                v ++= toVertices.toSet
-                flow :::= createEdges(fromVertices, toVertices, prov.loc)
-            }
+        if (flexibleUpperBound) {
+          // The upper bound is the effect variable of a lambda or local def: the effect of the body
+          // flows on through the variable to wherever the function is used, not into a declared effect.
+          addEdgesAs(eff2, eff1, IntermediateNode, IntermediateNode, prov.loc, prov)
+        } else {
+          // The smaller effect flows into the larger effect, as an inferred effect flows into a declared one.
+          addEdges(eff2, eff1, prov)
         }
 
       case _ => ()

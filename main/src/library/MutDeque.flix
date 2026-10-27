@@ -78,9 +78,8 @@ pub mod MutDeque {
     ///
     /// Returns a string representation of the given MutDeque `d`.
     ///
-    pub def toString(d: MutDeque[a, r]): String \ r with ToString[a] = region rc {
-        "MutDeque#{" + (MutDeque.iterator(rc, d) |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(d: MutDeque[a, r]): String \ r with ToString[a] =
+        "MutDeque#{" + MutDeque.join(", ", d) + "}"
 
     ///
     /// Returns an empty MutDeque.
@@ -147,12 +146,12 @@ pub mod MutDeque {
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, d: MutDeque[a, r]): b \ { ef, r } =
-        let c = capacity(d) - 1;
+        let c = capacity(d);
         def loop(i, e, acc) =
             if (i == e)
                 acc
             else
-                loop(Int32.bitwiseAnd(i + 1, c), e, f(acc, Array.get(i, d->values)));
+                loop((i + 1) `Int32.modulo` c, e, f(acc, Array.get(i, d->values)));
         loop(d->front, d->back, s)
 
     ///
@@ -161,12 +160,12 @@ pub mod MutDeque {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
     pub def foldRight(f: (a, b) -> b \ ef, s: b, d: MutDeque[a, r]): b \ { ef, r } =
-        let c = capacity(d) - 1;
+        let c = capacity(d);
         def loop(i, e, acc) =
             if (i == e)
                 acc
             else {
-                let j = Int32.bitwiseAnd(i - 1, c);
+                let j = (i - 1) `Int32.modulo` c;
                 loop(j, e, f(Array.get(j, d->values), acc))
             };
         loop(d->back, d->front, s)
@@ -250,8 +249,7 @@ pub mod MutDeque {
         if (f1 == b1)
             None
         else
-            let c = capacity(d) - 1;
-            let i = Int32.bitwiseAnd(b1 - 1, c);
+            let i = (b1 - 1) `Int32.modulo` capacity(d);
             Some(Array.get(i, d->values))
 
     ///
@@ -388,16 +386,19 @@ pub mod MutDeque {
     /// Returns the concatenation of the string representation
     /// of each element in `d` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, d: MutDeque[a, r]): String \ r with ToString[a] = region rc {
-        MutDeque.iterator(rc, d) |> Iterator.join(sep)
-    }
+    pub def join(sep: String, d: MutDeque[a, r]): String \ r with ToString[a] =
+        joinWith(ToString.toString, sep, d)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `d` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, r } = region rc {
-        MutDeque.iterator(rc, d) |> Iterator.joinWith(f, sep)
+        use StringBuilder.append;
+        let lastSep = String.length(sep);
+        let sb = StringBuilder.empty(rc);
+        forEach(x -> { append(f(x), sb); append(sep, sb) }, d);
+        StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 
     ///
@@ -408,12 +409,13 @@ pub mod MutDeque {
     pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let i = Ref.fresh(rc, d->front);
         let next = () -> {
-            if (Ref.get(i) < d->back) {
-                let x = Array.get(Ref.get(i), d->values);
-                Ref.put(Ref.get(i) + Int32.bitwiseAnd(1, capacity(d) - 1), i);
-                Some(x)
-            } else {
+            let j = Ref.get(i);
+            if (j == d->back) {
                 None
+            } else {
+                let x = Array.get(j, d->values);
+                Ref.put((j + 1) `Int32.modulo` capacity(d), i);
+                Some(x)
             }
         };
         Iterator.unfoldWithIter(rc, next)
@@ -422,7 +424,7 @@ pub mod MutDeque {
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.
     ///
     pub def forEach(f: a -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, r } =
-        let c = capacity(d) - 1;
+        let c = capacity(d);
 
         def loop(i) = {
             if (i == d->back) {
@@ -432,7 +434,7 @@ pub mod MutDeque {
                     case Some(x) => f(x)
                     case None    => bug!("An error occurred in MutDeque.forEach!")
                 };
-                loop(Int32.bitwiseAnd(i + 1, c))
+                loop((i + 1) `Int32.modulo` c)
             }
         };
         loop(d->front)

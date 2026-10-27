@@ -6,8 +6,8 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.effectlock.EffectLockError
-import ca.uwaterloo.flix.language.ast.shared.PackageId
+import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectLockError}
+import ca.uwaterloo.flix.language.ast.shared.{PackageId, QualifiedSym}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatSignature}
 import ca.uwaterloo.flix.tools.pkg
@@ -91,12 +91,15 @@ object BootstrapError {
   }
 
   /**
-    * An error raised to indicate that `spec` carries a version where none is asked for.
+    * An error raised to indicate that a package was given to `command` with a version, which
+    * `command` does not take.
+    *
+    * `id` is the package that was given, so the hint can show the command as it should be written.
     */
-  case class UnexpectedVersion(spec: String) extends BootstrapError {
+  case class UnexpectedVersion(command: String, id: PackageId) extends BootstrapError {
     override def message(f: Formatter): String =
-      s"""${f.red(spec)} names a version, but a package is declared at one version, so there is none to choose.
-         |Write the package on its own, as ${f.cyan("flix/museum-clerk")}.
+      s"""The '${f.bold(command)}' command does not take a version.
+         |Write '${f.cyan(s"flix $command ${id.shortName}")}' instead.
          |""".stripMargin
   }
 
@@ -111,13 +114,18 @@ object BootstrapError {
   }
 
   /**
-    * An error raised to indicate that `id` is not installed, and so cannot be locked.
+    * An error raised to indicate that the dependencies `ids` have no entry in the 'effects.lock'
+    * file, so that a check cannot say whether their signatures have changed.
+    *
+    * @param ids the packages that are not locked, in order of identifier.
     */
-  case class PackageNotInstalled(id: PackageId) extends BootstrapError {
-    override def message(f: Formatter): String =
-      s"""${f.red(id.shortName)} is not installed.
-         |Only a package the project has installed can be locked or checked. Run the command on its own to cover every installed package.
+  case class PackagesNotLocked(ids: List[PackageId]) extends BootstrapError {
+    override def message(f: Formatter): String = ids.map { id =>
+      s"""${f.red(id.shortName)} is not locked.
+         |The 'effects.lock' file records no signature of it, so the check cannot say whether it has changed.
+         |Run '${f.cyan(s"flix eff-lock ${id.shortName}")}' to lock it.
          |""".stripMargin
+    }.mkString(System.lineSeparator())
   }
 
   /**
@@ -169,7 +177,7 @@ object BootstrapError {
     *
     * @param e the package, the symbol, and the spec the symbol is declared with now.
     */
-  case class SignaturesChangedError(e: List[(PackageId, String, TypedAst.Spec)]) extends BootstrapError {
+  case class SignaturesChangedError(e: List[(PackageId, QualifiedSym, TypedAst.Spec)]) extends BootstrapError {
     override def message(f: Formatter): String = {
       s"""@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
          |@  WARNING! YOU MAY BE SUBJECT TO A SUPPLY CHAIN ATTACK!  @
@@ -190,11 +198,11 @@ object BootstrapError {
     }
 
     /**
-      * Returns a formatted string containing each package, each of its symbols that no longer has
-      * the signature it was locked at, and the signature that symbol has now.
+      * Returns a formatted string containing each package, each of its declarations that no
+      * longer has the signature it was locked at, and the signature that declaration has now.
       *
-      * The symbol is named under the package it belongs to, so its name is written without the
-      * package, which the line above it already gives. The declaration goes on a line of its own:
+      * A declaration is named as the lock file names it, see [[EffectLock.nameOf]], and the line
+      * above it gives the package. The declaration goes on a line of its own:
       * a polymorphic declaration with constraints is long, and putting it after the name of the
       * symbol leaves it nowhere to fit.
       *
@@ -219,20 +227,13 @@ object BootstrapError {
     }.map {
       case (id, changes) =>
         val formattedPkg = s"  ${f.bold(id.toString)}:"
-        val formattedChanges = changes.sortBy { case (_, sym, _) => sym }.map {
+        val formattedChanges = changes.sortBy { case (_, sym, _) => EffectLock.nameOf(sym) }.map {
           case (_, sym, spec) =>
-            val name = sym.stripPrefix(s"$id.")
-            val declaration = FormatSignature.formatSpecWithOptions(shortNameOf(name), spec, FormatOptions(FormatOptions.VarName.NameBased))
-            s"    ${f.bold(name)}${System.lineSeparator()}      ${f.red(declaration)}"
+            val declaration = FormatSignature.formatSpecWithOptions(sym.name, spec, FormatOptions(FormatOptions.VarName.NameBased))
+            s"    ${f.bold(EffectLock.nameOf(sym))}${System.lineSeparator()}      ${f.red(declaration)}"
         }.mkString(System.lineSeparator())
         s"$formattedPkg${System.lineSeparator()}$formattedChanges"
     }.mkString(System.lineSeparator())
-
-    /**
-      * Returns the name of `sym` without the modules it is declared in, which is how a
-      * declaration names itself.
-      */
-    private def shortNameOf(sym: String): String = sym.substring(sym.lastIndexOf('.') + 1)
   }
 
   /**

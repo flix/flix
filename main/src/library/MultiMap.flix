@@ -89,9 +89,9 @@ pub mod MultiMap {
     ///
     /// Returns a string representation of `m`.
     ///
-    pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region rc {
-        "MultiMap#{" + (MultiMap.iterator(rc, m) |> Iterator.map(match (k, v) -> "${k} => ${v}") |> Iterator.join(", ")) + "}"
-    }
+    pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] =
+        let MultiMap(m1) = m;
+        "MultiMap#{" + Map.joinWith((k, vs) -> "${k} => ${vs}", ", ", m1) + "}"
 
     ///
     /// Returns the empty MultiMap.

@@ -139,8 +139,8 @@ object FindReferencesProvider {
     case TypedAst.RestrictableChoosePattern.Error(_, loc) => loc.isReal
     case p: TypedAst.Predicate => p.loc.isReal
     case TypedAst.Binder(sym, _) => sym.loc.isReal
-    case TypedAst.Case(_, _, _, loc) => loc.isReal
-    case TypedAst.StructField(_, _, _, loc) => loc.isReal
+    case TypedAst.Case(_, _, _, _, loc) => loc.isReal
+    case TypedAst.StructField(_, _, _, _, loc) => loc.isReal
     case TypedAst.RestrictableCase(_, _, _, loc) => loc.isReal
     case TypedAst.Constraint(_, _, _, loc) => loc.isReal
     case TypedAst.ConstraintParam(_, _, loc) => loc.isReal
@@ -186,7 +186,7 @@ object FindReferencesProvider {
     case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(getAssocTypeSymOccurs(sym))
     case SymUse.AssocTypeSymUse(sym, _) => Some(getAssocTypeSymOccurs(sym))
     // Cases
-    case TypedAst.Case(sym, _, _, _) => Some(getCaseSymOccurs(sym))
+    case TypedAst.Case(_, sym, _, _, _) => Some(getCaseSymOccurs(sym))
     case SymUse.CaseSymUse(sym, _) => Some(getCaseSymOccurs(sym))
     // Defs
     case TypedAst.Def(sym, _, _, _) => Some(getDefnSymOccurs(sym))
@@ -208,7 +208,7 @@ object FindReferencesProvider {
     case TypedAst.Struct(_, _, _, sym, _, _, _, _) => Some(getStructSymOccurs(sym))
     case Type.Cst(TypeConstructor.Struct(sym, _), _) => Some(getStructSymOccurs(sym))
     // Struct Fields
-    case TypedAst.StructField(sym, _, _, _) => Some(getStructFieldSymOccurs(sym))
+    case TypedAst.StructField(_, sym, _, _, _) => Some(getStructFieldSymOccurs(sym))
     case SymUse.StructFieldSymUse(sym, _) => Some(getStructFieldSymOccurs(sym))
     // Traits
     case TypedAst.Trait(_, _, _, sym, _, _, _, _, _) => Some(getTraitSymOccurs(sym))

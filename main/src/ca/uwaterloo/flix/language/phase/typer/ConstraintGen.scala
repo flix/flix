@@ -16,7 +16,9 @@ import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
+import ca.uwaterloo.flix.util.InternalCompilerException
+
+import scala.annotation.tailrec
 
 
 /**
@@ -51,12 +53,11 @@ object ConstraintGen {
 
       case Expr.HoleWithExp(exp, _, tvar, evar, loc) =>
         // We ignore exp's type and allow the hole to have any type.
-        // We allow the effect to be any superset of exp's effect.
+        // The effect of the hole may be any effect that includes the effect of exp.
         val (_, eff) = visitExp(exp)
-        val atLeastEff = Type.mkUnion(eff, freshVar(Kind.Eff, loc), loc.asSynthetic)
-        c.unifyType(atLeastEff, evar, loc)
+        c.subEff(eff, evar, loc)
         val resTpe = tvar
-        val resEff = atLeastEff
+        val resEff = evar
         (resTpe, resEff)
 
       case e: Expr.OpenAs => RestrictableChooseConstraintGen.visitOpenAs(e)
@@ -171,19 +172,16 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.Lambda(fparam, exp, allowSubeffecting, loc) =>
+      case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions.
-        val shouldSubeffect = {
-          val enabled = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
-          val useless = exp match {
-            case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
-            case _ => false
-          }
-          enabled && allowSubeffecting && !useless
-        }
-        val eff = if (shouldSubeffect) Type.mkUnion(eff0, Type.freshEffSlackVar(loc), loc) else eff0
+        //
+        // A lambda whose body is itself a lambda is never sub-effected: its body is pure, so the bound
+        // `Pure ⊑ x` would hold trivially and leave `x` unconstrained. A curried chain of n lambdas would
+        // otherwise introduce n - 1 such variables, which makes type inference needlessly expensive.
+        val bound = if (flix.options.xsubeffecting && !isCurriedLambdaBody(exp)) EffectBound.Upper else EffectBound.Exact
+        val eff = mkBoundedEff(bound, eff0, loc)
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
         (resTpe, resEff)
@@ -477,15 +475,8 @@ object ConstraintGen {
         val (tpe1, eff1) = visitExp(exp1)
         fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions (which include local defs).
-        val shouldSubeffect = {
-          val enabled = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
-          val useless = exp1 match {
-            case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
-            case _ => false
-          }
-          enabled && !useless
-        }
-        val defEff = if (shouldSubeffect) Type.mkUnion(eff1, Type.freshEffSlackVar(loc), loc) else eff1
+        val bound = if (flix.options.xsubeffecting) EffectBound.Upper else EffectBound.Exact
+        val defEff = mkBoundedEff(bound, eff1, loc)
         val defTpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)
         val (tpe2, eff2) = visitExp(exp2)
@@ -830,19 +821,13 @@ object ConstraintGen {
             (resTpe, resEff)
 
           case CheckedCastType.EffectCast =>
-            // We union the effect with a fresh variable to allow unifying with a "larger" effect.
+            // A checked effect cast is an explicit use of subeffecting: the effect of the cast may
+            // be any effect that includes the effect of exp.
             val (tpe, eff) = visitExp(exp)
             c.unifyType(tvar, tpe, loc)
+            c.subEff(eff, evar, loc)
             val resTpe = tvar
-
-            // Optimization: Check if subeffecting is enabled.
-            val resEff = if (flix.options.xsubeffecting == Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas)) {
-              // If all subeffecting options are enabled then we skip the fresh effect variable.
-              eff
-            } else {
-              // Otherwise we use the fresh effect variable.
-              Type.mkUnion(eff, evar, loc)
-            }
+            val resEff = evar
             (resTpe, resEff)
         }
 
@@ -1467,11 +1452,24 @@ object ConstraintGen {
     val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
     val subst = Substitution(substMap)
     val instantiatedFields = fields.map {
-      case KindedAst.StructField(mod, fieldSym, fieldTpe, _) =>
+      case KindedAst.StructField(_, mod, fieldSym, fieldTpe, _) =>
         fieldSym -> (mod.isMutable, subst(fieldTpe))
     }
     val regionOpt = struct.tparams.lastOption.map(region => substMap(region.sym))
     (instantiatedFields.toMap, tpe, regionOpt)
+  }
+
+  /**
+    * Returns `true` if `exp` is the body of a curried lambda, i.e. if `exp` is itself a lambda.
+    *
+    * A match-lambda `match p -> e` desugars to `x -> match x { case p => e }`, so a match on a variable
+    * whose only rule has no guard is looked through to the body `e` of that rule.
+    */
+  @tailrec
+  private def isCurriedLambdaBody(exp: KindedAst.Expr): Boolean = exp match {
+    case Expr.Lambda(_, _, _) => true
+    case Expr.Match(Expr.Var(_, _), List(KindedAst.MatchRule(_, None, body, _)), _) => isCurriedLambdaBody(body)
+    case _ => false
   }
 
   /** Returns `true` if `exp` is a JVM interop invocation (constructor, method, or static method). */
@@ -1485,6 +1483,21 @@ object ConstraintGen {
   }
 
   /** Returns a fresh variable with a synthetic location. */
+  /**
+    * Returns the effect of a lambda or local def whose body has the effect `eff`, according to `bound`.
+    *
+    * With [[EffectBound.Exact]] the function has exactly the effect of its body. With [[EffectBound.Upper]]
+    * the function has a fresh effect variable of which the effect of the body must be a subeffect, so the
+    * function may be given a larger effect than its body.
+    */
+  private def mkBoundedEff(bound: EffectBound, eff: Type, loc: SourceLocation)(implicit c: TypeContext, scope: RegionScope, flix: Flix): Type = bound match {
+    case EffectBound.Exact => eff
+    case EffectBound.Upper =>
+      val evar = freshVar(Kind.Eff, loc)
+      c.subEff(eff, evar, loc)
+      evar
+  }
+
   private def freshVar(k: Kind, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Type.Var =
     Type.freshVar(k, loc.asSynthetic)
 }

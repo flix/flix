@@ -68,11 +68,70 @@ object HtmlDocumentor {
     * its SVG file, relative to [[Icons]].
     */
   private val IconClasses: List[(String, String)] = List(
-    "back" -> "back",
+    "check" -> "check",
     "close" -> "close",
-    "dark" -> "darkMode",
-    "light" -> "lightMode",
     "open" -> "menu",
+    "theme" -> "palette",
+  )
+
+  /**
+    * The themes of the documentation, as pairs of the value of the `data-theme` attribute that
+    * selects a theme in the stylesheet and the name of the theme in the menu, in the order of the
+    * menu. `system` is no theme but the absence of one: with no attribute set, the stylesheet
+    * follows the system between the light and dark variants of the default theme.
+    */
+  private val Themes: List[(String, String)] = List(
+    "system" -> "System",
+    "light" -> "Light",
+    "dark" -> "Dark",
+    "book-rust" -> "Book Rust",
+    "book-navy" -> "Book Navy",
+    "book-ayu" -> "Book Ayu",
+  )
+
+  /**
+    * The font families that the stylesheet names, as `family` parameters of the Google Fonts CSS
+    * API. The families of every theme are listed: a browser fetches a font only for a family and
+    * weight that rendered text uses, so a reader never pays for the fonts of another theme. Only
+    * the regular weight is served unless others are named; the bold weight of the font of code
+    * sets the keywords of a source page.
+    */
+  private val FontFamilies: List[String] = List(
+    "Fira+Code:wght@400;700",
+    "Inter",
+    "Noto+Sans",
+    "Open+Sans:wght@400;700",
+    "Oswald",
+    "Source+Code+Pro:wght@400;700",
+  )
+
+  /**
+    * The one stylesheet that serves the fonts of [[FontFamilies]].
+    */
+  private val FontStylesheet: String =
+    FontFamilies.map("family=" + _).mkString("https://fonts.googleapis.com/css2?", "&", "&display=swap")
+
+  /**
+    * The built-in types in the order the "Primitives" line of a trait page lists them: the order in
+    * which the language reference presents them, which puts `Int8` before `Int16`, where the
+    * alphabet puts it after `Int64`. A built-in type absent from the list follows the ones on it.
+    */
+  private val PrimitiveOrder: List[TypeConstructor] = List(
+    TypeConstructor.Unit,
+    TypeConstructor.Bool,
+    TypeConstructor.Char,
+    TypeConstructor.Float32,
+    TypeConstructor.Float64,
+    TypeConstructor.BigDecimal,
+    TypeConstructor.Int8,
+    TypeConstructor.Int16,
+    TypeConstructor.Int32,
+    TypeConstructor.Int64,
+    TypeConstructor.BigInt,
+    TypeConstructor.Str,
+    TypeConstructor.Regex,
+    TypeConstructor.Array,
+    TypeConstructor.Vector,
   )
 
   /**
@@ -244,7 +303,6 @@ object HtmlDocumentor {
       */
     def visitMod(moduleSym: Symbol.ModuleSym, parent: Option[Symbol.ModuleSym]): Module = {
       val mod = root.modules(moduleSym)
-      val uses = root.uses.get(moduleSym)
 
       var submodules: List[Symbol.ModuleSym] = Nil
       var traits: List[Trait] = Nil
@@ -272,7 +330,6 @@ object HtmlDocumentor {
         moduleSym,
         mod.doc,
         parent,
-        uses,
         submodules.map(visitMod(_, Some(moduleSym))),
         traits,
         effects,
@@ -340,15 +397,42 @@ object HtmlDocumentor {
     *   1. It is for the type directly, e.g. `Eq[Boxed]`.
     *   1. It is for the type applied to some number of arguments, e.g. `Eq[Chain[a]] with Eq[a]`.
     */
-  private def instancesOf(root: TypedAst.Root)(isType: TypeConstructor => Boolean): List[TypedAst.Instance] = {
-    @tailrec
-    def matches(tpe: Type): Boolean = tpe match {
-      case Type.Cst(tc, _) => isType(tc)
-      case Type.Apply(t, _, _) => matches(t)
-      case _ => false
-    }
+  private def instancesOf(root: TypedAst.Root)(isType: TypeConstructor => Boolean): List[TypedAst.Instance] =
+    root.instances.values.filter(i => typeHead(i.tpe).exists(isType)).toList
 
-    root.instances.values.filter(i => matches(i.tpe)).toList
+  /**
+    * Returns the type constructor at the head of `tpe`, if it has one, e.g. `List` for `List[a]`.
+    */
+  @tailrec
+  private def typeHead(tpe: Type): Option[TypeConstructor] = tpe match {
+    case Type.Cst(tc, _) => Some(tc)
+    case Type.Apply(t, _, _) => typeHead(t)
+    case _ => None
+  }
+
+  /**
+    * Returns `true` if `tpe` is headed by a built-in type, such as `Int32`, `Vector` or a tuple,
+    * which the documentation calls a primitive, and `false` if by an enum or a struct.
+    */
+  private def isPrimitiveType(tpe: Type): Boolean = typeHead(tpe).exists {
+    case _: TypeConstructor.Enum | _: TypeConstructor.Struct => false
+    case _ => true
+  }
+
+  /**
+    * Returns the arity of `tpe` if it is a tuple type, e.g. `2` for `(a, b)`.
+    */
+  private def tupleArity(tpe: Type): Option[Int] = typeHead(tpe).collect {
+    case TypeConstructor.Tuple(arity) => arity
+  }
+
+  /**
+    * Returns the position of the head of `tpe` on [[PrimitiveOrder]], or the length of that list
+    * if it is not on it, so that such a type sorts after the ones that are.
+    */
+  private def primitiveRank(tpe: Type): Int = typeHead(tpe) match {
+    case Some(tc) if PrimitiveOrder.contains(tc) => PrimitiveOrder.indexOf(tc)
+    case _ => PrimitiveOrder.length
   }
 
   /**
@@ -366,12 +450,11 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterContents(mod: Module, origin: Origin): Module = mod match {
-    case Module(sym, doc, parent, uses, submodules, traits, effects, enums, structs, typeAliases, defs) =>
+    case Module(sym, doc, parent, submodules, traits, effects, enums, structs, typeAliases, defs) =>
       Module(
         sym,
         doc,
         parent,
-        uses,
         submodules.map(m => filterContents(m, origin)),
         traits.filter(c => c.decl.mod.isPublic && isFrom(origin, c.decl.sym.loc)).map(c => filterTrait(c)),
         effects.filter(e => e.decl.mod.isPublic && isFrom(origin, e.decl.sym.loc)).map(e => filterEffect(e)),
@@ -485,7 +568,7 @@ object HtmlDocumentor {
       * Recursively walks the module tree removing empty modules.
       */
     def visitMod(mod: Module): Option[Module] = mod match {
-      case Module(sym, doc, parent, uses, submodules, traits, effects, enums, structs, typeAliases, defs) =>
+      case Module(sym, doc, parent, submodules, traits, effects, enums, structs, typeAliases, defs) =>
         val filteredSubMods = submodules.flatMap(visitMod)
 
         val isEmpty =
@@ -503,7 +586,6 @@ object HtmlDocumentor {
             sym,
             doc,
             parent,
-            uses,
             filteredSubMods,
             traits,
             effects,
@@ -527,7 +609,6 @@ object HtmlDocumentor {
         Nil,
         Nil,
         Nil,
-        Nil,
       ))
   }
 
@@ -535,7 +616,7 @@ object HtmlDocumentor {
     * Get the given module tree, but with all companion modules paired to their respective items.
     */
   private def pairModules(mod: Module): Module = mod match {
-    case Module(sym, doc, parent, uses, submodules, traits, effects, enums, structs, typeAliases, defs) =>
+    case Module(sym, doc, parent, submodules, traits, effects, enums, structs, typeAliases, defs) =>
 
       val visitedSubmodules = submodules.map(pairModules)
 
@@ -569,7 +650,6 @@ object HtmlDocumentor {
         sym,
         doc,
         parent,
-        uses,
         filteredSubmodules,
         pairedTraits,
         pairedEffects,
@@ -595,11 +675,11 @@ object HtmlDocumentor {
     val sortedDefs = mod.defs.sortBy(_.sym.name)
 
     sb.append(mkHead(mod.qualifiedName, mod.fileName))
-    sb.append("<body class='no-script'>")
+    sb.append("<body>")
 
     docHeader()
 
-    docSideBar(mod.parent) { () =>
+    docSideBar(mod.parent, mod.name) { () =>
       docSubModules(mod)
       docSideBarSection(
         "Traits",
@@ -665,7 +745,6 @@ object HtmlDocumentor {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedAssocs = trt.decl.assocs.sortBy(_.sym.name)
-    val sortedInstances = trt.instances.sortBy(i => FormatType.formatType(i.tpe))
     val sortedSigs = trt.signatures.sortBy(_.sym.name)
     val sortedTraitDefs = trt.defs.sortBy(_.sym.name)
 
@@ -678,11 +757,11 @@ object HtmlDocumentor {
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
     sb.append(mkHead(trt.qualifiedName, trt.fileName))
-    sb.append("<body class='no-script'>")
+    sb.append("<body>")
 
     docHeader()
 
-    docSideBar(Some(trt.parent)) { () =>
+    docSideBar(Some(trt.parent), trt.name) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Signatures",
@@ -737,11 +816,15 @@ object HtmlDocumentor {
     sb.append("<main id='main-content'>")
     docBreadcrumbs(Some(trt.parent), trt.name)
     sb.append(s"<h1>${esc(trt.name)}</h1>")
+    mod.foreach(m => modDoc(m.doc))
 
     sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(trt.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
+    if (trt.decl.mod.isSealed) {
+      sb.append("<span class='keyword'>sealed</span> ")
+    }
     sb.append("<span class='keyword'>trait</span> ")
     sb.append(s"<span class='name'>${esc(trt.name)}</span>")
     docTypeParams(List(trt.decl.tparam))
@@ -750,9 +833,8 @@ object HtmlDocumentor {
     docActions(None, trt.decl.loc)
     sb.append("</div>")
     docDoc(trt.decl.doc)
-    mod.foreach(m => modDoc(m.doc))
     docSubSection("Associated Types", sortedAssocs, docAssoc)
-    docCollapsableSubSection("Instances", sortedInstances, docInstance)
+    docInstanceTypes(trt.instances)
     sb.append("</div>")
 
     docSection("Signatures", sortedSigs, docSignature)
@@ -786,11 +868,11 @@ object HtmlDocumentor {
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
     sb.append(mkHead(eff.qualifiedName, eff.fileName))
-    sb.append("<body class='no-script'>")
+    sb.append("<body>")
 
     docHeader()
 
-    docSideBar(Some(eff.parent)) { () =>
+    docSideBar(Some(eff.parent), eff.name) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Operations",
@@ -838,6 +920,7 @@ object HtmlDocumentor {
     sb.append("<main id='main-content'>")
     docBreadcrumbs(Some(eff.parent), eff.name)
     sb.append(s"<h1>${esc(eff.name)}</h1>")
+    mod.foreach(m => modDoc(m.doc))
 
     sb.append(s"<div class='box'  id='main-box'>")
     docAnnotations(eff.decl.ann)
@@ -850,7 +933,6 @@ object HtmlDocumentor {
     docActions(None, eff.decl.loc)
     sb.append("</div>")
     docDoc(eff.decl.doc)
-    mod.foreach(m => modDoc(m.doc))
     docDefaultHandler(eff.defaultHandler)
     sb.append("</div>")
 
@@ -873,8 +955,6 @@ object HtmlDocumentor {
   private def documentEnum(enm: Enum)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
-    val sortedInstances = enm.instances.sortBy(_.trt.sym.name)
-
     val mod = enm.companionMod
     val sortedTraits = mod.map(_.traits).getOrElse(Nil).sortBy(_.name)
     val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.name)
@@ -884,11 +964,11 @@ object HtmlDocumentor {
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
     sb.append(mkHead(enm.qualifiedName, enm.fileName))
-    sb.append("<body class='no-script'>")
+    sb.append("<body>")
 
     docHeader()
 
-    docSideBar(Some(enm.parent)) { () =>
+    docSideBar(Some(enm.parent), enm.name) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Traits",
@@ -931,6 +1011,7 @@ object HtmlDocumentor {
     sb.append("<main id='main-content'>")
     docBreadcrumbs(Some(enm.parent), enm.name)
     sb.append(s"<h1>${esc(enm.name)}</h1>")
+    mod.foreach(m => modDoc(m.doc))
 
     sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(enm.decl.ann)
@@ -945,8 +1026,7 @@ object HtmlDocumentor {
     sb.append("</div>")
     docCases(enm.decl.cases.values.toList)
     docDoc(enm.decl.doc)
-    mod.foreach(m => modDoc(m.doc))
-    docCollapsableSubSection("Instances", sortedInstances, docInstance)
+    docInstanceTraits(enm.instances)
     sb.append("</div>")
 
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
@@ -966,8 +1046,6 @@ object HtmlDocumentor {
   private def documentStruct(struct: Struct)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
-    val sortedInstances = struct.instances.sortBy(_.trt.sym.name)
-
     val mod = struct.companionMod
     val sortedTraits = mod.map(_.traits).getOrElse(Nil).sortBy(_.name)
     val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.name)
@@ -977,11 +1055,11 @@ object HtmlDocumentor {
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
     sb.append(mkHead(struct.qualifiedName, struct.fileName))
-    sb.append("<body class='no-script'>")
+    sb.append("<body>")
 
     docHeader()
 
-    docSideBar(Some(struct.parent)) { () =>
+    docSideBar(Some(struct.parent), struct.name) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Traits",
@@ -1024,6 +1102,7 @@ object HtmlDocumentor {
     sb.append("<main id='main-content'>")
     docBreadcrumbs(Some(struct.parent), struct.name)
     sb.append(s"<h1>${esc(struct.name)}</h1>")
+    mod.foreach(m => modDoc(m.doc))
 
     sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(struct.decl.ann)
@@ -1037,8 +1116,7 @@ object HtmlDocumentor {
     sb.append("</div>")
     docFields(struct.decl.fields.values.toList)
     docDoc(struct.decl.doc)
-    mod.foreach(m => modDoc(m.doc))
-    docCollapsableSubSection("Instances", sortedInstances, docInstance)
+    docInstanceTraits(struct.instances)
     sb.append("</div>")
 
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
@@ -1059,7 +1137,7 @@ object HtmlDocumentor {
     implicit val sb: StringBuilder = new StringBuilder()
 
     sb.append(mkHead("Page Not Found", "404.html"))
-    sb.append("<body class='no-script'>")
+    sb.append("<body>")
 
     docHeader()
 
@@ -1086,7 +1164,7 @@ object HtmlDocumentor {
     implicit val sb: StringBuilder = new StringBuilder()
 
     sb.append(mkHead(name, fileName))
-    sb.append("<body class='no-script'>")
+    sb.append("<body>")
 
     docHeader()
 
@@ -1113,18 +1191,16 @@ object HtmlDocumentor {
        |<script>
        |(function () {
        |    try {
-       |        var stored = localStorage.getItem('flix-html-docs:use-dark-theme');
-       |        if (stored !== null) {
-       |            document.documentElement.classList.add(stored === 'true' ? 'dark' : 'light');
+       |        var theme = localStorage.getItem('flix-html-docs:theme');
+       |        if (theme !== null) {
+       |            document.documentElement.dataset.theme = theme;
        |        }
        |    } catch (e) {}
        |})();
        |</script>
-       |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>
-       |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
-       |<link href='https://fonts.googleapis.com/css?family=Noto+Sans&display=swap' rel='stylesheet'>
-       |<link href='https://fonts.googleapis.com/css?family=Inter&display=swap' rel='stylesheet'>
-       |<link href='https://fonts.googleapis.com/css?family=Open+Sans&display=swap' rel='stylesheet'>
+       |<!-- Without script the theme menu could not apply a choice, so it is not shown. -->
+       |<noscript><style>#theme-menu-button { display: none; }</style></noscript>
+       |<link href='$FontStylesheet' rel='stylesheet'>
        |<link href='styles.css' rel='stylesheet'>
        |<link href='favicon.png' rel='icon'>
        |<script type='module' src='./index.js'></script>
@@ -1152,10 +1228,22 @@ object HtmlDocumentor {
 
     sb.append("<div class='spacer' role='presentation'></div>")
 
-    sb.append("<button id='theme-toggle' class='toggle' aria-label='Toggle Theme'>")
-    docIcon("dark")
-    docIcon("light")
+    // The menu is a popover: the browser opens it, closes it on Escape or a click outside, and
+    // keeps it in the top layer. `index.js` applies and stores the choice, and moves the focus.
+    sb.append("<button id='theme-menu-button' class='toggle' popovertarget='theme-menu' aria-label='Choose theme'>")
+    docIcon("theme")
     sb.append("</button>")
+    sb.append("<div id='theme-menu' popover>")
+    sb.append("<ul role='menu' aria-label='Theme'>")
+    for ((value, name) <- Themes) {
+      // The stored theme, if any, is marked by `index.js`; until then the menu says System.
+      val checked = value == "system"
+      sb.append(s"<li role='none'><button role='menuitemradio' aria-checked='$checked' value='$value'>")
+      docIcon("check")
+      sb.append(s"$name</button></li>")
+    }
+    sb.append("</ul>")
+    sb.append("</div>")
 
     // A `<label>` wrapping the checkbox gives the toggle a proper accessible name and an
     // interactive area that matches its whole visual hit target (rather than a bare `<div>`).
@@ -1173,17 +1261,16 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSideBar(parent: Option[Symbol.ModuleSym])(docContents: () => Unit)(implicit sb: StringBuilder): Unit = {
+  private def docSideBar(parent: Option[Symbol.ModuleSym], name: String)(docContents: () => Unit)(implicit sb: StringBuilder): Unit = {
     sb.append("<nav aria-label='Sidebar navigation'>")
-    // Visually hidden: gives the section `h3` headings below a proper `h2` ancestor within the
-    // nav landmark's own heading structure, without changing how the sidebar looks.
-    sb.append("<h2 class='visually-hidden'>Sidebar navigation</h2>")
-    parent.map { p =>
-      sb.append(s"<a class='back' href='${escUrl(moduleFileName(p))}'>")
-      docIcon("back")
-      sb.append(moduleName(p))
-      sb.append("</a>")
+    // The name of the item heads the sidebar, as the `h2` that the section `h3`s below sit under
+    // in the outline of the nav landmark, with a link to the parent module beneath it.
+    sb.append("<div class='sidebar-head'>")
+    sb.append(s"<h2>${esc(name)}</h2>")
+    parent.foreach { p =>
+      sb.append(s"<a class='parent' href='${escUrl(moduleFileName(p))}'>in ${esc(moduleName(p))}</a>")
     }
+    sb.append("</div>")
     docContents()
     sb.append("</nav>")
   }
@@ -1337,30 +1424,6 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents a collapsable subsection, containing a `group` of items.
-    *
-    * The result will be appended to the given `StringBuilder`, `sb`.
-    *
-    * If `group` is empty, nothing will be generated.
-    *
-    * @param name   The name of the subsection, e.g. "Instances".
-    * @param group  The list of items in the section, in the order that they should appear.
-    * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
-    */
-  private def docCollapsableSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
-    if (group.isEmpty) {
-      return
-    }
-
-    sb.append(s"<details class='subsection'>")
-    sb.append(s"<summary><h2>${esc(name)}</h2></summary>")
-    for (e <- group) {
-      docElt(e)
-    }
-    sb.append("</details>")
-  }
-
-  /**
     * Documents the given `TypeAlias`, `ta`.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
@@ -1463,52 +1526,111 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the given `instance` of a trait.
-    *
-    * The result will be appended to the given `StringBuilder`, `sb`.
-    */
-  private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<div>")
-    docAnnotations(instance.ann)
-    sb.append("<div class='decl'>")
-    sb.append("<code>")
-    sb.append("<span class='keyword'>instance</span> ")
-    docTraitName(instance.trt.sym)
-    sb.append("[")
-    docType(instance.tpe)
-    sb.append("]")
-    docTraitConstraints(instance.tconstrs)
-    docEqualityConstraints(instance.econstrs)
-    sb.append("</code>")
-    docActions(None, instance.loc)
-    sb.append("</div>")
-    docAssocDefs(instance.assocs)
-    docDoc(instance.doc)
-    sb.append("</div>")
-  }
-
-  /**
-    * Documents the given list of `AssocTypeDef`s of an instance, e.g. `type Elm = Char`.
+    * Documents the given `instances` of a trait by their types, under the heading "Instances", in
+    * two groups: the "Primitives", i.e. the built-in types, see [[docPrimitiveInstances]], and the
+    * "Non-primitives", i.e. the enums and structs, each a link to its page, in alphabetical order.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
-    * If `assocs` is empty, nothing will be generated.
+    * A group with no types is left out. If `instances` is empty, nothing will be generated.
     */
-  private def docAssocDefs(assocs: List[TypedAst.AssocTypeDef])(implicit flix: Flix, sb: StringBuilder): Unit = {
-    if (assocs.isEmpty) {
+  private def docInstanceTypes(instances: List[TypedAst.Instance])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (instances.isEmpty) {
       return
     }
 
-    sb.append("<div class='assocs'>")
-    for (a <- assocs.sortBy(_.loc)) {
+    val (primitives, nonPrimitives) = instances.partition(i => isPrimitiveType(i.tpe))
+    sb.append("<section class='subsection instances'>")
+    sb.append("<h2>Instances</h2>")
+    sb.append("<dl>")
+    docPrimitiveInstances(primitives)
+    if (nonPrimitives.nonEmpty) {
+      sb.append("<dt>Non-primitives</dt>")
+      sb.append("<dd><code>")
+      docList(nonPrimitives.sortBy(i => FormatType.formatType(i.tpe)))(i => docInstanceType(i.tpe))
+      sb.append("</code></dd>")
+    }
+    sb.append("</dl>")
+    sb.append("</section>")
+  }
+
+  /**
+    * Documents the given `instances` of a trait for built-in types as the "Primitives" group of the
+    * instances of the trait: one comma-separated line, e.g. `Bool, Char, Int8, Int16, String,
+    * Vector[a] and tuples of 2 to 15 elements`.
+    *
+    * The types follow [[PrimitiveOrder]]. The tuple instances, one per arity, are summed up in
+    * words at the end, since fifteen of them, from `(a1, a2)` to `(a1, ..., a15)`, would swamp the
+    * line. They are listed as types only if their arities have a gap, which the words could not tell.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`, as a term and its description.
+    *
+    * If `instances` is empty, nothing will be generated.
+    */
+  private def docPrimitiveInstances(instances: List[TypedAst.Instance])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (instances.isEmpty) {
+      return
+    }
+
+    val (tuples, others) = instances.partition(i => tupleArity(i.tpe).isDefined)
+    val arities = tuples.flatMap(i => tupleArity(i.tpe)).sorted
+    val summarized = arities.length > 1 && arities == (arities.head to arities.last).toList
+    val listed = if (summarized) others else instances
+
+    sb.append("<dt>Primitives</dt>")
+    sb.append("<dd>")
+    if (listed.nonEmpty) {
       sb.append("<code>")
-      sb.append("<span class='keyword'>type</span> ")
-      sb.append(s"<span class='name'>${esc(a.symUse.sym.name)}</span>")
-      sb.append(" = ")
-      docTypeOrEffect(a.tpe)
+      docList(listed.sortBy(i => (primitiveRank(i.tpe), FormatType.formatType(i.tpe))))(i => docInstanceType(i.tpe))
       sb.append("</code>")
     }
-    sb.append("</div>")
+    if (summarized) {
+      val tuplesInWords = s"tuples of ${arities.head} to ${arities.last} elements"
+      sb.append(if (listed.isEmpty) tuplesInWords else s" and $tuplesInWords")
+    }
+    sb.append("</dd>")
+  }
+
+  /**
+    * Documents the given `instances` of a type by their traits, as one comma-separated line under
+    * the heading "Instances", e.g. `Eq, Order, ToString`. Each trait links to its page.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `instances` is empty, nothing will be generated.
+    */
+  private def docInstanceTraits(instances: List[TypedAst.Instance])(implicit sb: StringBuilder): Unit = {
+    if (instances.isEmpty) {
+      return
+    }
+
+    sb.append("<section class='subsection instances'>")
+    sb.append("<h2>Instances</h2>")
+    sb.append("<p><code>")
+    docList(instances.sortBy(_.trt.sym.name))(i => docTraitName(i.trt.sym))
+    sb.append("</code></p>")
+    sb.append("</section>")
+  }
+
+  /**
+    * Documents the type `tpe` of an instance. A type headed by an enum or a struct links to its
+    * page, with the qualified name as its title, since two types of different modules may share a
+    * name, e.g. `Chain.ViewLeft` and `Nec.ViewLeft`. Any other type is plain text, see [[docType]].
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docInstanceType(tpe: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    val page = typeHead(tpe).collect {
+      case TypeConstructor.Enum(sym, _) => (enumFileName(sym), s"enum ${enumQualifiedName(sym)}")
+      case TypeConstructor.Struct(sym, _) => (structFileName(sym), s"struct ${structQualifiedName(sym)}")
+    }
+    page match {
+      case Some((fileName, title)) =>
+        sb.append(s"<a class='type' href='${escUrl(fileName)}' title='${esc(title)}'>")
+        sb.append(esc(FormatType.formatType(tpe)))
+        sb.append("</a>")
+      case None => docType(tpe)
+    }
   }
 
   /**
@@ -1599,11 +1721,15 @@ object HtmlDocumentor {
   /**
     * Documents the given list of `Case`s of an enum.
     *
+    * Each case gets the id `case-<name>`, so it can be linked to, and its doc comment, if any,
+    * is rendered below it.
+    *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docCases(cases: List[TypedAst.Case])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<div class='cases'>")
     for (c <- cases.sortBy(_.loc)) {
+      sb.append(s"<div class='case' id='case-${esc(c.sym.name)}'>")
       sb.append("<code>")
       sb.append("<span class='keyword'>case</span> ")
       sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>")
@@ -1619,12 +1745,17 @@ object HtmlDocumentor {
       }
 
       sb.append("</code>")
+      docDoc(c.doc)
+      sb.append("</div>")
     }
     sb.append("</div>")
   }
 
   /**
     * Documents the given list of `StructField`s of a struct.
+    *
+    * Each field gets the id `field-<name>`, so it can be linked to, and its doc comment, if any,
+    * is rendered below it.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
@@ -1637,6 +1768,7 @@ object HtmlDocumentor {
 
     sb.append("<div class='fields'>")
     for (f <- fields.sortBy(_.loc)) {
+      sb.append(s"<div class='field' id='field-${esc(f.sym.name)}'>")
       sb.append("<code>")
       if (f.mod.isMutable) {
         sb.append("<span class='keyword'>mut</span> ")
@@ -1644,6 +1776,8 @@ object HtmlDocumentor {
       sb.append(s"<span>${esc(f.sym.name)}</span>: ")
       docType(f.tpe)
       sb.append("</code>")
+      docDoc(f.doc)
+      sb.append("</div>")
     }
     sb.append("</div>")
   }
@@ -2070,7 +2204,6 @@ object HtmlDocumentor {
   case class Module(sym: Symbol.ModuleSym,
                     doc: Doc,
                     parent: Option[Symbol.ModuleSym],
-                    uses: List[UseOrImport],
                     submodules: List[Module],
                     traits: List[Trait],
                     effects: List[Effect],

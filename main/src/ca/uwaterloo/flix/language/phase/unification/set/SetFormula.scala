@@ -234,7 +234,10 @@ object SetFormula {
   /**
     * Returns the complement of `f` (`!f`).
     *
-    * Complements are pushed to the bottom of the formula.
+    * Complements are pushed to the atoms (negation normal form), so that a variable under a
+    * complemented union or intersection is visible to the rewrite rules of set unification:
+    * `e ∩ !(x ∪ c) ~ empty` becomes `e ∩ !x ∩ !c ~ empty`, which the bound rule solves.
+    * Complements of symmetric differences are kept as they are.
     *
     * Example
     *   - `mkCompl(x1 ∩ (!x2 ∪ x3)) = !x1 ∪ (x2 ∩ !x3)`
@@ -246,10 +249,12 @@ object SetFormula {
     case v@Var(_) => Compl(v)
     case e@ElemSet(_) => Compl(e)
     case Compl(f1) => f1
-    case inter@Inter(_) =>
-      Compl(inter)
-    case union@Union(_) =>
-      Compl(union)
+    case Inter(l) =>
+      // De Morgan: !(f1 ∩ f2 ∩ ..) = !f1 ∪ !f2 ∪ ..
+      l.toList.map(mkCompl).reduceLeft(mkUnion2)
+    case Union(l) =>
+      // De Morgan: !(f1 ∪ f2 ∪ ..) = !f1 ∩ !f2 ∩ ..
+      l.toList.map(mkCompl).reduceLeft(mkInter)
     case xor@Xor(_) =>
       Compl(xor)
   }
@@ -312,5 +317,90 @@ object SetFormula {
   /** Returns the difference of `f1` and `f2` (`-`) with the formula `f1 ∩ !f2`. */
   def mkDiff2(f1: SetFormula, f2: SetFormula): SetFormula =
     mkInter(f1, mkCompl(f2))
+
+  /**
+    * Returns `f` simplified: nested unions and intersections are flattened, units and duplicated
+    * members are removed, a member together with its complement collapses the node to `empty` or
+    * `univ`, and the absorption laws `a ∩ (a ∪ b) = a` and `a ∪ (a ∩ b) = a` are applied.
+    * Complements are pushed to the atoms by [[mkCompl]].
+    *
+    * Members keep their order of first occurrence, so the result is a simplified form, not a
+    * canonical one: two formulas that denote the same set may still differ.
+    *
+    * The rewrite rules of set unification apply it to the ranges they bind, and
+    * [[SetSubstitution.apply]] rebuilds the unions and intersections it changes with
+    * [[mkInterAll]] and [[mkUnionAll]], so that repeated substitution does not accumulate nested,
+    * duplicated, or complementary members.
+    */
+  def simplify(f: SetFormula): SetFormula = f match {
+    case Univ | Empty | Cst(_) | Var(_) | ElemSet(_) => f
+    case Compl(g) => mkCompl(simplify(g))
+    case Inter(l) => mkInterAll(l.toList.map(simplify))
+    case Union(l) => mkUnionAll(l.toList.map(simplify))
+    case Xor(l) => mkXorAll(l.map(simplify))
+  }
+
+  /** Returns the complement of `m` if it is cheap to form, for the complementary-pair check. */
+  private def complOf(m: SetFormula): Option[SetFormula] = m match {
+    case Compl(g) => Some(g)
+    case Cst(_) | Var(_) | ElemSet(_) | Xor(_) => Some(Compl(m))
+    case _ => None
+  }
+
+  /** Returns the simplified intersection of the simplified formulas `ms0`. */
+  private[set] def mkInterAll(ms0: List[SetFormula]): SetFormula = {
+    val ms = ms0.flatMap {
+      case Inter(l) => l.toList
+      case Univ => Nil
+      case m => m :: Nil
+    }.distinct
+    if (ms.contains(Empty)) {
+      return Empty
+    }
+    val set = ms.toSet
+    // a ∩ !a = empty
+    if (ms.exists(m => complOf(m).exists(set.contains))) {
+      return Empty
+    }
+    // Absorption: a ∩ (a ∪ b) = a. A union member is dropped if one of its members is also a member
+    // of the intersection.
+    val kept = ms.filter {
+      case Union(l) => !l.exists(set.contains)
+      case _ => true
+    }
+    kept match {
+      case Nil => Univ
+      case one :: Nil => one
+      case x :: y :: tail => Inter(TwoList(x, y, tail))
+    }
+  }
+
+  /** Returns the simplified union of the simplified formulas `ms0`. */
+  private[set] def mkUnionAll(ms0: List[SetFormula]): SetFormula = {
+    val ms = ms0.flatMap {
+      case Union(l) => l.toList
+      case Empty => Nil
+      case m => m :: Nil
+    }.distinct
+    if (ms.contains(Univ)) {
+      return Univ
+    }
+    val set = ms.toSet
+    // a ∪ !a = univ
+    if (ms.exists(m => complOf(m).exists(set.contains))) {
+      return Univ
+    }
+    // Absorption: a ∪ (a ∩ b) = a. An intersection member is dropped if one of its members is also
+    // a member of the union.
+    val kept = ms.filter {
+      case Inter(l) => !l.exists(set.contains)
+      case _ => true
+    }
+    kept match {
+      case Nil => Empty
+      case one :: Nil => one
+      case x :: y :: tail => Union(TwoList(x, y, tail))
+    }
+  }
 
 }

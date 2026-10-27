@@ -16,6 +16,7 @@ import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{ChaosMonkey, Result}
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 /**
   * The constraint solver reduces a collection of constraints by iteratively applying reduction rules.
@@ -235,6 +236,10 @@ object ConstraintSolver2 {
         val t1 = visitType(tpe1)
         val t2 = visitType(tpe2)
         if ((t1 eq tpe1) && (t2 eq tpe2)) constr else TypeConstraint.Equality(t1, t2, prov)
+      case TypeConstraint.SubEff(eff1, eff2, prov) =>
+        val e1 = visitType(eff1)
+        val e2 = visitType(eff2)
+        if ((e1 eq eff1) && (e2 eq eff2)) constr else TypeConstraint.SubEff(e1, e2, prov)
       case TypeConstraint.Trait(sym, tpe, loc) =>
         val t = visitType(tpe)
         if (t eq tpe) constr else TypeConstraint.Trait(sym, t, loc)
@@ -332,6 +337,8 @@ object ConstraintSolver2 {
     *   - (reflU): eliminates trivial equalities: `τ ~ τ` becomes `∅`
     *   - eliminates constraints containing unrecoverable errors (see [[isEliminable]])
     *   - (redU): reduces the types in the constraint
+    *   - (trivU): eliminates subeffect constraints that hold syntactically without losing information about flexible variables (see [[isTrivialSubEff]]): `Pure ⊑ IO` becomes `∅`
+    *   - (pureU): turns a subeffect constraint with an empty upper bound into the equality it is: `φ ⊑ Pure` becomes `Pure ~ φ`
     *
     * The rules are applied in the listed order to each constraint:
     * applications are broken down exhaustively, and then the remaining
@@ -369,6 +376,29 @@ object ConstraintSolver2 {
             TypeConstraint.Equality(r1, r2, prov) :: cs1 ::: cs2
         }
     }
+
+    case TypeConstraint.SubEff(eff1, eff2, prov) =>
+      if (isEliminable(eff1) || isEliminable(eff2)) {
+        Nil
+      } else {
+        // (redU)
+        val (r1, cs1) = reduce(eff1)(scope, renv, progress, eqenv, flix)
+        val (r2, cs2) = reduce(eff2)(scope, renv, progress, eqenv, flix)
+        if (isTrivialSubEff(r1, r2)) {
+          // (trivU): the constraint holds syntactically and dropping it loses no information about flexible variables.
+          progress.markProgress()
+          cs1 ::: cs2
+        } else if (r2 == Type.Pure) {
+          // (pureU): `φ ⊑ Pure` holds exactly when `φ ~ Pure`.
+          progress.markProgress()
+          TypeConstraint.Equality(r2, r1, prov) :: cs1 ::: cs2
+        } else if ((r1 eq eff1) && (r2 eq eff2) && cs1.isEmpty && cs2.isEmpty) {
+          // Performance: Reuse this, if possible.
+          constr :: Nil
+        } else {
+          TypeConstraint.SubEff(r1, r2, prov) :: cs1 ::: cs2
+        }
+      }
 
     case TypeConstraint.Trait(sym, tpe, loc) =>
       if (isEliminable(tpe)) {
@@ -410,6 +440,28 @@ object ConstraintSolver2 {
 
     case TypeConstraint.EffConflicted(_) => constr :: Nil
   }
+
+  /**
+    * Returns `true` if `eff1 ⊑ eff2` holds syntactically, i.e. without consulting the effect solver,
+    * and can be dropped without losing information about flexible variables: the two are the same
+    * effect, `eff1` is `Pure` and `eff2` has no flexible variables, or `eff2` is `Univ` and `eff1`
+    * has no flexible variables.
+    *
+    * The idea is that a region must not learn information about its flexible variables from outside
+    * the region. If a constraint on a flexible variable were dropped, a nested region could be the
+    * only place that variable occurs, and the region would then have to decide it on its own.
+    *
+    * The check is sound but not complete: a subeffect constraint that holds, but not syntactically,
+    * is left to the effect solver. The check never concludes that a constraint fails.
+    */
+  private def isTrivialSubEff(eff1: Type, eff2: Type)(implicit scope: RegionScope, renv: RigidityEnv): Boolean =
+    (eff1 == eff2) || (eff1 == Type.Pure && hasNoFlexibleVars(eff2)) || (eff2 == Type.Univ && hasNoFlexibleVars(eff1))
+
+  /**
+    * Returns `true` if `eff` has no flexible variables.
+    */
+  private def hasNoFlexibleVars(eff: Type)(implicit scope: RegionScope, renv: RigidityEnv): Boolean =
+    eff.typeVars.forall(tvar => renv.isRigid(tvar.sym))
 
   /**
     * Purifies empty regions in the constraint set.
@@ -507,6 +559,7 @@ object ConstraintSolver2 {
   private def contextReduction(constr: TypeConstraint, progress: Progress)(implicit scope: RegionScope, renv0: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): List[TypeConstraint] = constr match {
     // Case 1: Non-trait constraint. Do nothing.
     case c: TypeConstraint.Equality => List(c)
+    case c: TypeConstraint.SubEff => List(c)
     case c: TypeConstraint.Conflicted => List(c)
     case c: TypeConstraint.EffConflicted => List(c)
 
@@ -604,36 +657,51 @@ object ConstraintSolver2 {
     */
   private def blockEffectUnification(constrs0: List[TypeConstraint], progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
 
-    // Separate out the effect unification stuff
-    val (eqConstrs, rest0) = constrs0.partitionMap {
-      case eq@TypeConstraint.Equality(tpe1, _, _) if tpe1.kind == Kind.Eff => Left(eq)
-      case other => Right(other)
+    // Separate out the effect unification stuff: the effect equalities, the subeffect
+    // constraints, and everything else.
+    val eqConstrs = mutable.ArrayBuffer.empty[TypeConstraint.Equality]
+    val subConstrs = mutable.ArrayBuffer.empty[TypeConstraint.SubEff]
+    val rest0 = mutable.ArrayBuffer.empty[TypeConstraint]
+    for (constr <- constrs0) {
+      constr match {
+        case eq@TypeConstraint.Equality(tpe1, _, _) if tpe1.kind == Kind.Eff => eqConstrs += eq
+        case sub: TypeConstraint.SubEff => subConstrs += sub
+        case other => rest0 += other
+      }
     }
+    val hasEffConstrs = eqConstrs.nonEmpty || subConstrs.nonEmpty
 
     // First solve all the top-level constraints together
-    val (leftovers1, subst1) = EffUnification3.unifyAll(eqConstrs, scope, renv) match {
+    val (leftovers1, subst1) = EffUnification3.unifyAll(eqConstrs.toList, subConstrs.toList, scope, renv) match {
       case Result.Ok(subst) =>
         // If we solved everything, then we can use the new substitution.
         // We only mark progress if there was something to solve.
-        if (eqConstrs.nonEmpty) {
+        if (hasEffConstrs) {
           progress.markProgress()
         }
         (Nil, subst)
       case Result.Err(unsolved) =>
-        // We try to compute user-friendly error message
-        // If unsuccessful we return original unsolved constraints
-        val errors = EffectProvenance.getErrors(constrs0)
-        val c = errors match {
-          case Some(effErrors) => effErrors
-          case None => unsolved
+        // A timeout means the constraints were too complex to solve, not that they conflict.
+        // We report it as such: effect provenance would explain the conflicts of all of `constrs0`,
+        // including the part that timed out, and so report conflicts that may not exist.
+        if (unsolved.exists(isTimeout)) {
+          (unsolved, Substitution.empty)
+        } else {
+          // We try to compute user-friendly error message
+          // If unsuccessful we return original unsolved constraints
+          val errors = EffectProvenance.getErrors(constrs0)
+          val c = errors match {
+            case Some(effErrors) => effErrors
+            case None => unsolved
+          }
+          (c, Substitution.empty)
         }
-        (c, Substitution.empty)
     }
 
     val tree0 = SubstitutionTree.shallow(subst1)
 
-    // Performance: If there were no equality constraints, reuse the original list.
-    val rest0a = if (eqConstrs.isEmpty) constrs0 else rest0
+    // Performance: If there were no effect constraints, reuse the original list.
+    val rest0a = if (hasEffConstrs) rest0.toList else constrs0
 
     // Apply the substitution to the remaining constraints
     val rest1 = ListOps.mapWithReuse(rest0a)(tree0.apply)
@@ -664,6 +732,14 @@ object ConstraintSolver2 {
     val constrs = leftovers1 ++ rest
 
     (constrs, tree)
+  }
+
+  /**
+    * Returns `true` if `constr` is a constraint that effect unification gave up on.
+    */
+  private def isTimeout(constr: TypeConstraint): Boolean = constr match {
+    case TypeConstraint.Conflicted(_, _, Provenance.Timeout(_, _)) => true
+    case _ => false
   }
 
   /**

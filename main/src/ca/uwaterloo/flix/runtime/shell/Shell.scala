@@ -264,7 +264,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
           // effects and hence, we do not know the final type signature of main until s has been typed.
           //
           // We cannot just accept the effString as our effect set because evaluating s may generate other effects.
-          // checked_ecast(()) is replaced with _f() in the `EntryPoint` phase. Specifically, in the function `mkShell`
+          // checked_ecast(()) is replaced with _f() in the `EntryPoint` phase. Specifically, in the function `rewriteShellEntryPoint`
           s"""def ${main.name}(): Unit \\ $effString =
              |def _f() = { println($s) };
              |checked_ecast(())

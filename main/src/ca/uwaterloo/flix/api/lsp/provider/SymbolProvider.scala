@@ -108,7 +108,7 @@ object SymbolProvider {
   }
 
   private def mkFieldWorkspaceSymbol(f: TypedAst.StructField): WorkspaceSymbol = f match {
-    case TypedAst.StructField(sym, _, _, loc) => WorkspaceSymbol(
+    case TypedAst.StructField(_, sym, _, _, loc) => WorkspaceSymbol(
       sym.name, SymbolKind.Field, Nil, None, Location.from(loc),
     )
   }
@@ -129,7 +129,7 @@ object SymbolProvider {
   }
 
   private def mkFieldDocumentSymbol(f: TypedAst.StructField): DocumentSymbol = f match {
-    case TypedAst.StructField(sym, _, _, loc) => DocumentSymbol(
+    case TypedAst.StructField(_, sym, _, _, loc) => DocumentSymbol(
       sym.name, None, SymbolKind.Field, Range.from(loc), Range.from(loc), Nil, Nil,
     )
   }
@@ -172,7 +172,7 @@ object SymbolProvider {
     * Returns an EnumMember DocumentSymbol from a Case node.
     */
   private def mkCaseDocumentSymbol(c: TypedAst.Case): DocumentSymbol = c match {
-    case TypedAst.Case(sym, _, _, loc) => DocumentSymbol(
+    case TypedAst.Case(_, sym, _, _, loc) => DocumentSymbol(
       sym.name, None, SymbolKind.EnumMember, Range.from(loc), Range.from(loc), Nil, Nil,
     )
   }
@@ -192,7 +192,7 @@ object SymbolProvider {
     * Returns an EnumMember SymbolInformation from a Case node.
     */
   private def mkCaseWorkspaecSymbol(c: TypedAst.Case): WorkspaceSymbol = c match {
-    case TypedAst.Case(sym, _, _, loc) => WorkspaceSymbol(
+    case TypedAst.Case(_, sym, _, _, loc) => WorkspaceSymbol(
       sym.name, SymbolKind.EnumMember, Nil, None, Location.from(loc))
   }
 
