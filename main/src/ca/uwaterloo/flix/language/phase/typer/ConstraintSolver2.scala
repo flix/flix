@@ -681,14 +681,21 @@ object ConstraintSolver2 {
         }
         (Nil, subst)
       case Result.Err(unsolved) =>
-        // We try to compute user-friendly error message
-        // If unsuccessful we return original unsolved constraints
-        val errors = EffectProvenance.getErrors(constrs0)
-        val c = errors match {
-          case Some(effErrors) => effErrors
-          case None => unsolved
+        // A timeout means the constraints were too complex to solve, not that they conflict.
+        // We report it as such, since an explanation of a conflict would be misleading.
+        val timeouts = unsolved.filter(isTimeout)
+        if (timeouts.nonEmpty) {
+          (timeouts, Substitution.empty)
+        } else {
+          // We try to compute user-friendly error message
+          // If unsuccessful we return original unsolved constraints
+          val errors = EffectProvenance.getErrors(constrs0)
+          val c = errors match {
+            case Some(effErrors) => effErrors
+            case None => unsolved
+          }
+          (c, Substitution.empty)
         }
-        (c, Substitution.empty)
     }
 
     val tree0 = SubstitutionTree.shallow(subst1)
@@ -725,6 +732,14 @@ object ConstraintSolver2 {
     val constrs = leftovers1 ++ rest
 
     (constrs, tree)
+  }
+
+  /**
+    * Returns `true` if `constr` is a constraint that effect unification gave up on.
+    */
+  private def isTimeout(constr: TypeConstraint): Boolean = constr match {
+    case TypeConstraint.Conflicted(_, _, Provenance.Timeout(_, _)) => true
+    case _ => false
   }
 
   /**
