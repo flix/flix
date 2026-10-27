@@ -10,11 +10,13 @@ package ca.uwaterloo.flix.language.phase.unification.set
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
-import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Compl, Cst, Empty, Inter, Union, Var}
+import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Compl, Cst, ElemSet, Empty, Inter, Union, Var}
 import ca.uwaterloo.flix.language.phase.unification.shared.{CofiniteIntSet, SveMode}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
 import ca.uwaterloo.flix.util.collection.TwoList
 import org.scalatest.funsuite.AnyFunSuite
+
+import scala.collection.immutable.SortedSet
 
 class TestSetUnification extends AnyFunSuite with TestUtils {
 
@@ -292,6 +294,23 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
     assertSolved(input)
   }
 
+  test("CoverAssignment.03") {
+    // (c1 ∪ c2) ~ (c1 ∪ x0 ∪ c2 ∪ (x1 ∩ c3)): the ground side is a union whose members all occur on the right
+    val input = List(
+      mkEq(Union(TwoList(Cst(1), Cst(2), List())), Union(TwoList(Cst(1), Var(0), List(Cst(2), Inter(TwoList(Var(1), Cst(3), List()))))))
+    )
+    assertSolved(input)
+  }
+
+  test("Fixpoint.RestrictionThenDistribution") {
+    // c4 ~ x1 ∪ x2 restricts x2 to a union; x2 ∩ c3 ~ empty then needs distribution and a bound in a second pass.
+    val input = List(
+      mkEq(Inter(TwoList(Var(2), Cst(3), List())), Empty),
+      mkEq(Cst(4), Union(TwoList(Var(1), Var(2), List())))
+    )
+    assertSolved(input)
+  }
+
   test("InterAssignment.01") {
     // c1 ~ x0 ∩ (c1 ∪ c2)
     val input = List(
@@ -313,6 +332,34 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
     val input = List(
       mkEq(Cst(1), Union(TwoList(Var(0), Var(1), List()))),
       mkEq(Cst(1), Var(0))
+    )
+    assertSolved(input)
+  }
+
+  test("BoundAssignment.Nested") {
+    // e1 ∩ ((!x0 ∩ !c2) ∩ !c2) ~ empty: the variable sits in a nested intersection
+    val input = List(
+      mkEq(Inter(TwoList(ElemSet(SortedSet(1)), Inter(TwoList(Inter(TwoList(Compl(Var(0)), Compl(Cst(2)), List())), Compl(Cst(2)), List())), List())), Empty)
+    )
+    assertSolved(input)
+  }
+
+  test("BoundAssignment.Complementary") {
+    // e1 ∩ !x0 ∩ !e1 ~ empty holds for every x0
+    val input = List(
+      mkEq(Inter(TwoList(ElemSet(SortedSet(1)), Compl(Var(0)), List(Compl(ElemSet(SortedSet(1)))))), Empty)
+    )
+    assertSolved(input)
+  }
+
+  test("BoundAssignment.MutualDependency") {
+    // Two inclusions whose bounds mention each other's variable, as the lambdas of a region produce.
+    val e = ElemSet(SortedSet(1))
+    val input = List(
+      mkEq(Inter(TwoList(e, Compl(Var(0)), List(Compl(Cst(2)), Compl(Var(1))))), Empty),
+      mkEq(Inter(TwoList(e, Compl(Var(1)), List(Compl(Cst(2)), Compl(Var(0))))), Empty),
+      mkEq(Inter(TwoList(e, Compl(Var(1)), List(Compl(Cst(2)), Compl(Var(0)), Compl(Var(3))))), Empty),
+      mkEq(Var(3), Union(TwoList(Var(0), Cst(2), List())))
     )
     assertSolved(input)
   }

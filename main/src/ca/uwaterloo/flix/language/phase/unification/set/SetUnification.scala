@@ -26,6 +26,9 @@ object SetUnification {
    */
   val MaxVars: Int = CompilerConstants.MaxEffUnificationVars
 
+  /** The maximum number of passes over the rule sequence (see [[solve]]). */
+  private val MaxIterations: Int = 32
+
   /**
     * Enable simple rewrite rules.
     */
@@ -81,6 +84,42 @@ object SetUnification {
     var eqs: List[Equation] = initialEquations
     /** The current substitution, which has already been applied to `eqs`. */
     var subst: SetSubstitution = SetSubstitution.empty
+
+    /**
+      * For each variable bound by the substitution built so far, the other variables that occur in
+      * its range. Used to refuse bindings that would make ranges depend on each other cyclically,
+      * since composing such bindings grows the substitution exponentially.
+      */
+    val deps: mutable.Map[Int, Set[Int]] = mutable.Map.empty
+
+    /** Returns `true` if `target` is reachable from `from` in the dependency graph. */
+    def reaches(from: Int, target: Int): Boolean = {
+      val seen = mutable.Set.empty[Int]
+      var work = List(from)
+      while (work.nonEmpty) {
+        val v = work.head
+        work = work.tail
+        if (v == target) return true
+        if (seen.add(v)) {
+          work = deps.getOrElse(v, Set.empty).toList ::: work
+        }
+      }
+      false
+    }
+
+    /** Returns `true` if binding `x -> f` would create a dependency cycle through another variable. */
+    def wouldCycle(x: Int, f: SetFormula): Boolean =
+      (f.varsOf - x).exists(v => reaches(v, x))
+
+    /** Records the binding `x -> f` in the dependency graph. */
+    def addBinding(x: Int, f: SetFormula): Unit = {
+      val vs = f.varsOf - x
+      val keepsX = f.varsOf.contains(x)
+      for ((u, ds) <- deps.toList if ds.contains(x)) {
+        deps(u) = ((if (keepsX) ds else ds - x) ++ vs) - u
+      }
+      deps(x) = (deps.getOrElse(x, Set.empty) ++ vs) - x
+    }
   }
 
   /**
@@ -96,6 +135,11 @@ object SetUnification {
     * [[Equation.Status.Timeout]]. The returned equations might not exist in `eqs` directly, but
     * will be derived from it.
     *
+    * The rewrite rules run as a sequence that is repeated until no rule makes progress (or
+    * [[MaxIterations]] is reached), since the substitution of one rule often enables another: a
+    * bound on a variable turns the equations it occurs in into further bounds, and a restriction
+    * made by [[unionAssignment]] makes [[interAssignment]] applicable.
+    *
     * The equations that remain after the rewrite rules are solved by SVE at the granularity
     * given by `mode` (see [[SveAlgorithm.sveAll]]).
     */
@@ -103,26 +147,44 @@ object SetUnification {
     val state = new State(l)
 
     if (EnableRewriteRules) {
-      runWithState(state, runRule(constantPropagation), Phase.ConstantPropagation)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, runRule(variablePropagation), Phase.VariablePropagation)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, runRule(variableAssignment), Phase.VariableAssignment)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, recursiveAssignment, Phase.RecursiveAssignment)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, runRule(constantPropagation), Phase.ConstantPropagation)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, runRule(coverAssignment), Phase.CoverAssignment)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, runRule(boundAssignment), Phase.BoundAssignment)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, reflexiveAndDuplicate, Phase.ReflexiveAndDuplicate)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, runRule(unionAssignment), Phase.UnionAssignment)
-      runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, runRule(interAssignment), Phase.InterAssignment)
-      runWithState(state, runRule(trivial), Phase.Trivial)
+      var progress = true
+      var iterations = 0
+      while (progress && iterations < MaxIterations) {
+        progress = false
+        iterations += 1
+
+        def step(f: List[Equation] => Option[(List[Equation], SetSubstitution)], phase: Phase): Unit = {
+          val before = state.eqs
+          runWithState(state, f, phase)
+          if (state.eqs ne before) progress = true
+        }
+
+        step(runRule(state, constantPropagation), Phase.ConstantPropagation)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, variablePropagation), Phase.VariablePropagation)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, variableAssignment), Phase.VariableAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(recursiveAssignment(state), Phase.RecursiveAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, constantPropagation), Phase.ConstantPropagation)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, coverAssignment), Phase.CoverAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, boundAssignment(state)), Phase.BoundAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(reflexiveAndDuplicate, Phase.ReflexiveAndDuplicate)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, unionAssignment(state)), Phase.UnionAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+        step(runRule(state, interAssignment), Phase.InterAssignment)
+        step(runRule(state, trivial), Phase.Trivial)
+
+        // Safety valve: stop if distribution has grown the system far beyond its input.
+        if (state.eqs.length > 4 * l.length + 64) {
+          progress = false
+        }
+      }
     }
 
     sveAll(state.eqs, mode) match {
@@ -207,7 +269,7 @@ object SetUnification {
   }
 
   /** Run a unification rule on an equation system in a fixpoint. */
-  private def runRule(rule: Equation => Option[(List[Equation], SetSubstitution)])(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
+  private def runRule(state: State, rule: Equation => Option[(List[Equation], SetSubstitution)])(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
     // Procedure:
     //   - Run the `rule` on all the (pending) equations in `iterationWorkList`, building
     //     `overallSubst` and producing `iterationOutput`.
@@ -239,6 +301,7 @@ object SetUnification {
 
             iterationOutput = outputEqs ++ iterationOutput
             overallSubst = outputSubst @@ overallSubst
+            for ((x, f) <- outputSubst.m) state.addBinding(x, f)
 
           case None =>
             // No progress, just add to the output.
@@ -388,7 +451,7 @@ object SetUnification {
       case Some(u) =>
         // The intersection of the members other than `u`. There is at least one, since `l` has two or more members.
         val h = members.filterNot(_ eq u).foldLeft(Univ: SetFormula)(mkInter)
-        val eqs = u.l.toList.map(g => Equation.mk(mkInter(g, h), Empty, loc))
+        val eqs = u.l.toList.map(g => Equation.mk(simplify(mkInter(g, h)), Empty, loc))
         Some((eqs, SetSubstitution.empty))
     }
   }
@@ -474,11 +537,11 @@ object SetUnification {
     *
     * This also applies to the symmetric equations.
     */
-  private def boundAssignment(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+  private def boundAssignment(state: State)(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
     val Equation(f1, f2, _, _) = eq
     (f1, f2) match {
-      case (Inter(l), Empty) => boundAssignmentOf(l)
-      case (Empty, Inter(l)) => boundAssignmentOf(l)
+      case (Inter(_), Empty) => boundAssignmentOf(state, f1)
+      case (Empty, Inter(_)) => boundAssignmentOf(state, f2)
       case _ => None
     }
   }
@@ -489,19 +552,31 @@ object SetUnification {
     *
     * Returns [[None]] if there is no such member.
     */
-  private def boundAssignmentOf(l: TwoList[SetFormula]): Option[(List[Equation], SetSubstitution)] = {
-    val members = l.toList
-    members.collectFirst {
-      // x ∩ g ~ empty, where g does not contain x.
-      case v: Var if !members.exists(m => !(m eq v) && m.contains(v)) =>
-        val g = members.filterNot(_ eq v).foldLeft(Univ: SetFormula)(mkInter)
-        (Nil, SetSubstitution.singleton(v.x, mkInter(v, mkCompl(g))))
+  private def boundAssignmentOf(state: State, f: SetFormula): Option[(List[Equation], SetSubstitution)] = simplify(f) match {
+    // The intersection is empty under every assignment (e.g. `e ∩ !x ∩ !e`), so the equation holds.
+    case Empty => Some((Nil, SetSubstitution.empty))
 
-      // ¬x ∩ g ~ empty, where g does not contain x.
-      case c@Compl(v: Var) if !members.exists(m => !(m eq c) && m.contains(v)) =>
-        val g = members.filterNot(_ eq c).foldLeft(Univ: SetFormula)(mkInter)
-        (Nil, SetSubstitution.singleton(v.x, mkUnion2(v, g)))
-    }
+    case Inter(l) =>
+      // The members are flat and distinct, so a variable nested in a member intersection is visible.
+      val members = l.toList
+      val candidates = members.iterator.flatMap {
+        // x ∩ g ~ empty, where g does not contain x.
+        case v: Var if !members.exists(m => !(m eq v) && m.contains(v)) =>
+          val g = members.filterNot(_ eq v).foldLeft(Univ: SetFormula)(mkInter)
+          Some((v.x, simplify(mkInter(v, mkCompl(g)))))
+
+        // ¬x ∩ g ~ empty, where g does not contain x.
+        case c@Compl(v: Var) if !members.exists(m => !(m eq c) && m.contains(v)) =>
+          val g = members.filterNot(_ eq c).foldLeft(Univ: SetFormula)(mkInter)
+          Some((v.x, simplify(mkUnion2(v, g))))
+
+        case _ => None
+      }
+      candidates.find { case (x, range) => !state.wouldCycle(x, range) }.map {
+        case (x, range) => (Nil, SetSubstitution.singleton(x, range))
+      }
+
+    case _ => None
   }
 
   /**
@@ -526,11 +601,11 @@ object SetUnification {
     *
     * This also applies to the symmetric equations.
     */
-  private def unionAssignment(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+  private def unionAssignment(state: State)(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
     val Equation(f1, f2, _, loc) = eq
     (f1, f2) match {
-      case (g, Union(l)) if g.isGround => unionAssignmentOf(g, flattenUnions(l.toList), loc)
-      case (Union(l), g) if g.isGround => unionAssignmentOf(g, flattenUnions(l.toList), loc)
+      case (g, Union(l)) if g.isGround => unionAssignmentOf(state, g, flattenUnions(l.toList), loc)
+      case (Union(l), g) if g.isGround => unionAssignmentOf(state, g, flattenUnions(l.toList), loc)
       case _ => None
     }
   }
@@ -541,10 +616,13 @@ object SetUnification {
     *
     * Returns [[None]] otherwise.
     */
-  private def unionAssignmentOf(g: SetFormula, members: List[SetFormula], loc: SourceLocation): Option[(List[Equation], SetSubstitution)] = {
+  private def unionAssignmentOf(state: State, g: SetFormula, members: List[SetFormula], loc: SourceLocation): Option[(List[Equation], SetSubstitution)] = {
     val xs = members.collect { case v: Var => v }.distinct
     val grounds = members.filterNot(_.isInstanceOf[Var])
     if (xs.isEmpty || !grounds.forall(_.isGround)) {
+      None
+    } else if (xs.init.exists(x => state.reaches(x.x, xs.last.x))) {
+      // The last variable's range mentions the other variables, which must not depend on it.
       None
     } else {
       val d = grounds.foldLeft(Empty: SetFormula)(mkUnion2)
@@ -553,11 +631,11 @@ object SetUnification {
 
       // x1 -> x1 ∩ g, .., xn-1 -> xn-1 ∩ g
       val restricted = init.foldLeft(IntMap.empty[SetFormula]) {
-        case (acc, x) => acc.updated(x.x, mkInter(x, g))
+        case (acc, x) => acc.updated(x.x, simplify(mkInter(x, g)))
       }
       // xn -> (xn ∩ g) ∪ (g ∩ ¬d ∩ ¬x1 ∩ .. ∩ ¬xn-1)
       val rest = init.foldLeft(mkDiff2(g, d))((acc, x) => mkInter(acc, mkCompl(x)))
-      val subst = SetSubstitution(restricted.updated(last.x, mkUnion2(mkInter(last, g), rest)))
+      val subst = SetSubstitution(restricted.updated(last.x, simplify(mkUnion2(mkInter(last, g), rest))))
 
       // d ⊆ g, i.e. d ∩ ¬g ~ empty
       val eqs = if (d == Empty || d == g) Nil else List(Equation.mk(mkDiff2(d, g), Empty, loc))
@@ -571,6 +649,7 @@ object SetUnification {
     * declared effect).
     *
     *   - `g ~ g ∪ f1 ∪ .. ∪ fn` where `g` is ground becomes `({f1 ∩ ¬g ~ empty, .., fn ∩ ¬g ~ empty}, [])`
+    *   - `g1 ∪ .. ∪ gk ~ g1 ∪ .. ∪ gk ∪ f1 ∪ .. ∪ fn` where the `gi` are ground becomes the same
     *
     * The equation holds exactly when every `fi ⊆ g`. The inclusions are emitted one per member, so
     * that [[boundAssignment]] can solve them in the same pass.
@@ -587,18 +666,23 @@ object SetUnification {
   }
 
   /**
-    * Returns the inclusions `fi ∩ ¬g ~ empty` for the members `fi` of `members` other than `g`,
-    * for the ground formula `g` and the members `members` of a union that contains `g`.
+    * Returns the inclusions `fi ∩ ¬g ~ empty` for the members `fi` of `members` that are not members
+    * of `g`, for the ground formula `g` and the members `members` of a union that contains `g`: the
+    * union contains `g` if `g` is a member, or if `g` is a union all of whose members are members.
     *
-    * Returns [[None]] if `g` is not a member.
+    * Returns [[None]] if the union does not contain `g`.
     */
   private def coverAssignmentOf(g: SetFormula, members: List[SetFormula], loc: SourceLocation): Option[(List[Equation], SetSubstitution)] = {
-    val (self, others) = members.partition(_ == g)
-    if (self.isEmpty) {
+    val gs = g match {
+      case Union(l) => flattenUnions(l.toList)
+      case _ => g :: Nil
+    }
+    if (!gs.forall(members.contains)) {
       None
     } else {
       val notG = mkCompl(g)
-      val eqs = others.map(f => Equation.mk(mkInter(f, notG), Empty, loc))
+      val others = members.filterNot(gs.contains)
+      val eqs = others.map(f => simplify(mkInter(f, notG))).filter(_ != Empty).map(Equation.mk(_, Empty, loc))
       Some((eqs, SetSubstitution.empty))
     }
   }
@@ -636,9 +720,9 @@ object SetUnification {
     xs match {
       case List(x: Var) if grounds.forall(_.isGround) =>
         val h = grounds.foldLeft(Univ: SetFormula)(mkInter)
-        val subst = SetSubstitution.singleton(x.x, mkUnion2(g, mkInter(x, mkCompl(h))))
+        val subst = SetSubstitution.singleton(x.x, simplify(mkUnion2(g, mkInter(x, mkCompl(h)))))
         // g ⊆ h, i.e. g ∩ ¬h ~ empty
-        val check = mkDiff2(g, h)
+        val check = simplify(mkDiff2(g, h))
         val eqs = if (check == Empty || g == h) Nil else List(Equation.mk(check, Empty, loc))
         Some((eqs, subst))
       case _ => None
@@ -668,7 +752,7 @@ object SetUnification {
     *
     * This also applies to the symmetric equations.
     */
-  private def recursiveAssignment(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
+  private def recursiveAssignment(state: State)(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
     var subst = SetSubstitution.empty
     // The variables that occur in the ranges of `subst`, including the bound variables themselves.
     var rangeVars = Set.empty[Int]
@@ -681,9 +765,10 @@ object SetUnification {
         case RecursiveAssignment.Trivial =>
           changed = true
 
-        case RecursiveAssignment.Bind(x, f) if !rangeVars.contains(x) =>
+        case RecursiveAssignment.Bind(x, f) if !rangeVars.contains(x) && !state.wouldCycle(x, f) =>
           // Since `x` occurs in no range of `subst`, the composition leaves the existing ranges unchanged.
           subst = SetSubstitution.singleton(x, f) @@ subst
+          state.addBinding(x, f)
           rangeVars = rangeVars ++ f.varsOf
           changed = true
 
@@ -733,7 +818,7 @@ object SetUnification {
     } else if (others.isEmpty) {
       RecursiveAssignment.Trivial
     } else {
-      RecursiveAssignment.Bind(v.x, mk(v, others.foldLeft(unit)(mk)))
+      RecursiveAssignment.Bind(v.x, simplify(mk(v, others.foldLeft(unit)(mk))))
     }
   }
 
@@ -777,7 +862,7 @@ object SetUnification {
     for (eq <- eqs) {
       val allVars = eq.f1.varsOf ++ eq.f2.varsOf
       if (allVars.size > MaxVars) {
-        return Result.Err(List(eq.toTimeout(s"Unification too complex: The equation contains ${allVars.size} variables which exceeds the limit of $MaxVars.")))
+        return Result.Err(List(eq.toTimeout(s"Unification too complex: The equation contains ${allVars.size} variables which exceeds the limit of $MaxVars")))
       }
     }
 
