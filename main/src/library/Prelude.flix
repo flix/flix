@@ -59,11 +59,6 @@ pub eff NonDet
 pub def identity(x: a): a = x
 
 ///
-/// The identity function, automatically casting to the required effect.
-///
-pub def eidentity(x: a): a \ ef = checked_ecast(x)
-
-///
 /// The constant function.
 ///
 pub def constant(x: a): b -> a \ ef = _ -> x
