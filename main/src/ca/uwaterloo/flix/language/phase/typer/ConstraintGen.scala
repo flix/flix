@@ -1482,7 +1482,6 @@ object ConstraintGen {
     case _ => false
   }
 
-  /** Returns a fresh variable with a synthetic location. */
   /**
     * Returns the effect of a lambda or local def whose body has the effect `eff`, according to `bound`.
     *
@@ -1498,6 +1497,7 @@ object ConstraintGen {
       evar
   }
 
+  /** Returns a fresh variable with a synthetic location. */
   private def freshVar(k: Kind, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Type.Var =
     Type.freshVar(k, loc.asSynthetic)
 }
