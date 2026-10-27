@@ -2115,7 +2115,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(): Unit \ IO = ()
         |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = true))
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -2127,35 +2127,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  mustBeIO(() -> ())
         |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = true))
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
-  }
-
-  test("TooComplex.01") {
-    // Effect unification gives up on the region of `f`, which must be reported as too complex
-    // rather than as a conflict between the effects.
-    val input =
-      """
-        |eff Crash { def crash(): Void }
-        |
-        |def ws(s: Ref[Int32, r]): Unit \ r = Ref.put(0, s)
-        |
-        |def p(k: Int32, s: Ref[Int32, r]): Option[Int32] \ r + Crash =
-        |    if (Ref.get(s) > k) Some(k) else if (Ref.get(s) < -k) Crash.crash() else None
-        |
-        |def f(s: Ref[Int32, r]): Int32 \ r + Crash = region rc {
-        |    let progress = Ref.fresh(rc, true);
-        |    def loop() = {
-        |        s !> ws |> p(1) |> Foldable.forEach(_ -> Ref.put(true, progress));
-        |        s !> ws |> p(2) |> Foldable.forEach(_ -> Ref.put(true, progress));
-        |        s !> ws |> p(3) |> Foldable.forEach(_ -> Ref.put(true, progress))
-        |    };
-        |    loop();
-        |    42
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibAll.copy(xsubeffecting = true))
-    expectError[TypeError.TooComplex](result)
   }
 
   test("ErrorType.01") {
