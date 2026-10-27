@@ -682,10 +682,10 @@ object ConstraintSolver2 {
         (Nil, subst)
       case Result.Err(unsolved) =>
         // A timeout means the constraints were too complex to solve, not that they conflict.
-        // We report it as such, since an explanation of a conflict would be misleading.
-        val timeouts = unsolved.filter(isTimeout)
-        if (timeouts.nonEmpty) {
-          (timeouts, Substitution.empty)
+        // We report it as such: effect provenance would explain the conflicts of all of `constrs0`,
+        // including the part that timed out, and so report conflicts that may not exist.
+        if (unsolved.exists(isTimeout)) {
+          (unsolved, Substitution.empty)
         } else {
           // We try to compute user-friendly error message
           // If unsuccessful we return original unsolved constraints
