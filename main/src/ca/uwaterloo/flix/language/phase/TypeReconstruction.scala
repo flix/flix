@@ -110,8 +110,7 @@ object TypeReconstruction {
 
     case InferredAst.Expr.ApplyDef(symUse, exps, targs, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      val tas = targs.map(visitType)
-      TypedAst.Expr.ApplyDef(symUse, es, tas, visitType(itpe), visitType(tpe), visitType(eff), ApplyPosition.NonTail, loc)
+      TypedAst.Expr.ApplyDef(symUse, es, targs.map(visitType), visitType(itpe), visitType(tpe), visitType(eff), ApplyPosition.NonTail, loc)
 
     case InferredAst.Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -123,9 +122,7 @@ object TypeReconstruction {
 
     case InferredAst.Expr.ApplySig(symUse, exps, targ, targs, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      val ta = visitType(targ)
-      val tas = targs.map(visitType)
-      TypedAst.Expr.ApplySig(symUse, es, ta, tas, visitType(itpe), visitType(tpe), visitType(eff), ApplyPosition.NonTail, loc)
+      TypedAst.Expr.ApplySig(symUse, es, visitType(targ), targs.map(visitType), visitType(itpe), visitType(tpe), visitType(eff), ApplyPosition.NonTail, loc)
 
     case InferredAst.Expr.Lambda(fparam, exp, tpe, loc) =>
       val p = visitFormalParam(fparam)
@@ -281,11 +278,9 @@ object TypeReconstruction {
       val e = visitExp(exp)
       TypedAst.Expr.CheckedCast(cast, e, visitType(tpe), visitType(eff), loc)
 
-    case InferredAst.Expr.UncheckedCast(exp, declaredType0, declaredEff0, tpe, eff, loc) =>
+    case InferredAst.Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val declaredType = declaredType0.map(visitType)
-      val declaredEff = declaredEff0.map(visitType)
-      TypedAst.Expr.UncheckedCast(e, declaredType, declaredEff, visitType(tpe), visitType(eff), loc)
+      TypedAst.Expr.UncheckedCast(e, declaredType.map(visitType), declaredEff.map(visitType), visitType(tpe), visitType(eff), loc)
 
     case InferredAst.Expr.Unsafe(exp, runEff, asEff, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -309,82 +304,70 @@ object TypeReconstruction {
       val e2 = visitExp(exp2)
       TypedAst.Expr.RunWith(e1, e2, visitType(tpe), visitType(eff), loc)
 
-    case InferredAst.Expr.InvokeConstructor(exps, jvar, tpe0, eff0, loc) =>
+    case InferredAst.Expr.InvokeConstructor(exps, jvar, tpe, eff, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
-      val tpe = visitType(tpe0)
-      val eff = visitType(eff0)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           val es = getArgumentsWithVarArgs(constructor, es0, loc)
-          TypedAst.Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
+          TypedAst.Expr.InvokeConstructor(constructor, es, visitType(tpe), visitType(eff), loc)
         case _ =>
-          TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
+          TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), visitType(tpe), visitType(eff))
       }
 
-    case InferredAst.Expr.InvokeSuperConstructor(exps, jvar, tpe0, eff0, loc) =>
+    case InferredAst.Expr.InvokeSuperConstructor(exps, jvar, tpe, eff, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
-      val tpe = visitType(tpe0)
-      val eff = visitType(eff0)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           val es = getArgumentsWithVarArgs(constructor, es0, loc)
-          TypedAst.Expr.InvokeSuperConstructor(constructor, es, tpe, eff, loc)
+          TypedAst.Expr.InvokeSuperConstructor(constructor, es, visitType(tpe), visitType(eff), loc)
         case _ =>
-          TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
+          TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), visitType(tpe), visitType(eff))
       }
 
-    case InferredAst.Expr.InvokeMethod(exp, exps, jvar, tpe, eff0, loc) =>
+    case InferredAst.Expr.InvokeMethod(exp, exps, jvar, tpe, eff, loc) =>
       val e = visitExp(exp)
       val es0 = exps.map(visitExp)
-      val returnTpe = visitType(tpe)
       val methodTpe = subst(jvar)
-      val eff = visitType(eff0)
       methodTpe.typeConstructor match {
         case Some(TypeConstructor.JvmMethod(method, _)) =>
           val es = getArgumentsWithVarArgs(method, es0, loc)
-          TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, loc)
+          TypedAst.Expr.InvokeMethod(method, e, es, visitType(tpe), visitType(eff), loc)
         case _ =>
-          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
+          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, visitType(eff))
       }
 
-    case InferredAst.Expr.InvokeSuperMethod(exps, jvar, tpe, eff0, loc) =>
-      val es0 = exps.map(visitExp)
-      val returnTpe = visitType(tpe)
-      val methodTpe = subst(jvar)
-      val eff = visitType(eff0)
-      methodTpe.typeConstructor match {
-        case Some(TypeConstructor.JvmMethod(method, _)) =>
-          val es = getArgumentsWithVarArgs(method, es0, loc)
-          TypedAst.Expr.InvokeSuperMethod(method, es, returnTpe, eff, loc)
-        case _ =>
-          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), returnTpe, eff)
-      }
-
-    case InferredAst.Expr.InvokeStaticMethod(exps, jvar, tpe, eff0, loc) =>
+    case InferredAst.Expr.InvokeSuperMethod(exps, jvar, tpe, eff, loc) =>
       val es0 = exps.map(visitExp)
       val methodTpe = subst(jvar)
-      val returnTpe = visitType(tpe)
-      val eff = visitType(eff0)
       methodTpe.typeConstructor match {
         case Some(TypeConstructor.JvmMethod(method, _)) =>
           val es = getArgumentsWithVarArgs(method, es0, loc)
-          TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
+          TypedAst.Expr.InvokeSuperMethod(method, es, visitType(tpe), visitType(eff), loc)
         case _ =>
-          TypedAst.Expr.Error(TypeError.UnresolvedStaticMethod(loc), methodTpe, eff)
+          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), visitType(tpe), visitType(eff))
       }
 
-    case InferredAst.Expr.GetField(exp, jvar, tpe, eff0, loc) =>
+    case InferredAst.Expr.InvokeStaticMethod(exps, jvar, tpe, eff, loc) =>
+      val es0 = exps.map(visitExp)
+      val methodTpe = subst(jvar)
+      methodTpe.typeConstructor match {
+        case Some(TypeConstructor.JvmMethod(method, _)) =>
+          val es = getArgumentsWithVarArgs(method, es0, loc)
+          TypedAst.Expr.InvokeStaticMethod(method, es, visitType(tpe), visitType(eff), loc)
+        case _ =>
+          TypedAst.Expr.Error(TypeError.UnresolvedStaticMethod(loc), methodTpe, visitType(eff))
+      }
+
+    case InferredAst.Expr.GetField(exp, jvar, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val fieldType = visitType(tpe)
       val jvarType = subst(jvar)
-      val eff = visitType(eff0)
       jvarType match {
         case Type.Cst(TypeConstructor.JvmField(field), fieldLoc) =>
-          TypedAst.Expr.GetField(field, e, fieldType, eff, fieldLoc)
+          TypedAst.Expr.GetField(field, e, visitType(tpe), visitType(eff), fieldLoc)
         case _ =>
-          TypedAst.Expr.Error(TypeError.UnresolvedField(loc), jvarType, eff)
+          TypedAst.Expr.Error(TypeError.UnresolvedField(loc), jvarType, visitType(eff))
       }
 
     case InferredAst.Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
@@ -773,9 +756,7 @@ object TypeReconstruction {
       Type.mkComplement(visitType(tpe), loc)
 
     case app@Type.Apply(tpe1, tpe2, loc) =>
-      val t1 = visitType(tpe1)
-      val t2 = visitType(tpe2)
-      app.renew(t1, t2, loc)
+      app.renew(visitType(tpe1), visitType(tpe2), loc)
 
     case _ => subst(tpe0)
   }
