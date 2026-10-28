@@ -10,7 +10,6 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.{Expr, ExtPattern, ExtTagPattern}
 import ca.uwaterloo.flix.language.ast.jvm.JavaField
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, RegionScope, VarText}
 import ca.uwaterloo.flix.language.ast.{InferredAst, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
@@ -36,7 +35,11 @@ object ConstraintGen {
     * Generates constraints for the given expression `exp0`, adding them to the type context `c`.
     *
     * Returns the expression annotated with its type and effect.
-    * The type and effect may include variables that must be resolved.
+    *
+    * The annotated types and effects, on the returned node and on every node below it, are generally
+    * not fully resolved: they may be, or may contain, type variables. That is the point of inference:
+    * this function only records the constraints on those variables in `c`, and it is the constraint
+    * solver that later determines what they stand for. The tree is then reconstructed with the solution.
     */
   def visitExp(exp0: KindedAst.Expr)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): InferredAst.Expr = {
     implicit val scope: RegionScope = c.getScope
@@ -81,103 +84,103 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.ApplyClo(e1, e2, resTpe, resEff, loc)
 
-      case Expr.ApplyDef(DefSymUse(sym, loc1), exps, targs, itvar, tvar, evar, loc2) =>
-        val defn = root.defs(sym)
+      case Expr.ApplyDef(symUse, exps, targs, itvar, tvar, evar, loc) =>
+        val defn = root.defs(symUse.sym)
 
         val tparams = defn.spec.tparams.map(_.sym)
         val subst = Substitution(tparams.zip(targs).toMap)
 
-        val tconstrs = defn.spec.tconstrs.map(subst.apply).map(_.copy(loc = loc2))
-        val econstrs = defn.spec.econstrs.map(subst.apply).map(_.copy(loc = loc2))
+        val tconstrs = defn.spec.tconstrs.map(subst.apply).map(_.copy(loc = loc))
+        val econstrs = defn.spec.econstrs.map(subst.apply).map(_.copy(loc = loc))
 
         // If no effect specified, we assume the function is pure
         val declaredEff = subst(defn.spec.eff.getOrElse(Type.Pure))
         val declaredResultType = generalizeVoid(subst(defn.spec.tpe))
         val declaredArgumentTypes = defn.spec.fparams.map(_.tpe).map(subst.apply)
-        val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc2)
+        val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc)
 
         val es = exps.map(visitExp)
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
 
-        c.unifyType(itvar, declaredType, loc2)
-        c.expectTypeArguments(sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
-        c.addClassConstraints(tconstrs, loc2)
-        c.addEqualityConstraints(econstrs, loc2)
-        c.unifyType(tvar, declaredResultType, loc2)
+        c.unifyType(itvar, declaredType, loc)
+        c.expectTypeArguments(symUse.sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
+        c.addClassConstraints(tconstrs, loc)
+        c.addEqualityConstraints(econstrs, loc)
+        c.unifyType(tvar, declaredResultType, loc)
         val eff = if (declaredEff == Type.Pure) {
           // A pure def is not the source of an effect.
-          Type.mkUnion(effs, loc2)
+          Type.mkUnion(effs, loc)
         } else {
           // Pseudo variable for source to flow into
-          val pvar = Type.freshVar(Kind.Eff, loc1)
-          c.unifySource(pvar, declaredEff, loc2)
-          Type.mkUnion(pvar :: effs, loc2)
+          val pvar = Type.freshVar(Kind.Eff, symUse.loc)
+          c.unifySource(pvar, declaredEff, loc)
+          Type.mkUnion(pvar :: effs, loc)
         }
-        c.unifyType(evar, eff, loc2)
+        c.unifyType(evar, eff, loc)
         val resTpe = tvar
         val resEff = evar
-        InferredAst.Expr.ApplyDef(DefSymUse(sym, loc1), es, targs, itvar, resTpe, resEff, loc2)
+        InferredAst.Expr.ApplyDef(symUse, es, targs, itvar, resTpe, resEff, loc)
 
-      case Expr.ApplyLocalDef(LocalDefSymUse(sym, loc1), exps, arrowTvar, tvar, evar, loc2) =>
+      case Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, evar, loc) =>
         val es = exps.map(visitExp)
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
-        val defEff = freshVar(Kind.Eff, loc1)
-        val actualDefTpe = Type.mkUncurriedArrowWithEffect(Nel.unsafeFrom(tpes), defEff, tvar, loc1)
-        c.unifyType(actualDefTpe, arrowTvar, loc1)
-        c.expectType(sym.tvar, actualDefTpe, loc1)
-        c.unifyType(evar, Type.mkUnion(defEff :: effs, loc2), loc2)
+        val defEff = freshVar(Kind.Eff, symUse.loc)
+        val actualDefTpe = Type.mkUncurriedArrowWithEffect(Nel.unsafeFrom(tpes), defEff, tvar, symUse.loc)
+        c.unifyType(actualDefTpe, arrowTvar, symUse.loc)
+        c.expectType(symUse.sym.tvar, actualDefTpe, symUse.loc)
+        c.unifyType(evar, Type.mkUnion(defEff :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
-        InferredAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, loc1), es, arrowTvar, resTpe, resEff, loc2)
+        InferredAst.Expr.ApplyLocalDef(symUse, es, arrowTvar, resTpe, resEff, loc)
 
-      case Expr.ApplyOp(OpSymUse(sym, loc1), exps, tvar, evar, loc2) =>
-        val op = lookupOp(sym, loc1)
-        val (tconstrs0, econstrs0, declaredType, _) = Scheme.instantiate(op.spec.sc, loc1.asSynthetic)
-        val tconstrs = tconstrs0.map(_.copy(loc = loc2))
-        val econstrs = econstrs0.map(_.copy(loc = loc2))
+      case Expr.ApplyOp(symUse, exps, tvar, evar, loc) =>
+        val op = lookupOp(symUse.sym, symUse.loc)
+        val (tconstrs0, econstrs0, declaredType, _) = Scheme.instantiate(op.spec.sc, symUse.loc.asSynthetic)
+        val tconstrs = tconstrs0.map(_.copy(loc = loc))
+        val econstrs = econstrs0.map(_.copy(loc = loc))
         val declaredEff = declaredType.arrowEffectType
         val declaredArgumentTypes = declaredType.arrowArgTypes
         val declaredResultType = generalizeVoid(declaredType.arrowResultType)
         val es = exps.map(visitExp)
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
-        c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
-        c.addClassConstraints(tconstrs, loc2)
-        c.addEqualityConstraints(econstrs, loc2)
-        c.unifyType(tvar, declaredResultType, loc2)
-        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
+        c.expectTypeArguments(symUse.sym, declaredArgumentTypes, tpes, exps.map(_.loc))
+        c.addClassConstraints(tconstrs, loc)
+        c.addEqualityConstraints(econstrs, loc)
+        c.unifyType(tvar, declaredResultType, loc)
+        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
-        InferredAst.Expr.ApplyOp(OpSymUse(sym, loc1), es, resTpe, resEff, loc2)
+        InferredAst.Expr.ApplyOp(symUse, es, resTpe, resEff, loc)
 
-      case Expr.ApplySig(SigSymUse(sym, loc1), exps, targ, targs, itvar, tvar, evar, loc2) =>
-        val trt = root.traits(sym.trt)
-        val sig = trt.sigs(sym)
+      case Expr.ApplySig(symUse, exps, targ, targs, itvar, tvar, evar, loc) =>
+        val trt = root.traits(symUse.sym.trt)
+        val sig = trt.sigs(symUse.sym)
 
         val mapping = (trt.tparam.sym -> targ) :: sig.spec.tparams.map(_.sym).zip(targs)
         val subst = Substitution(mapping.toMap)
-        val tconstrs = sig.spec.tconstrs.map(subst.apply).map(_.copy(loc = loc2))
-        val econstrs = sig.spec.econstrs.map(subst.apply).map(_.copy(loc = loc2))
+        val tconstrs = sig.spec.tconstrs.map(subst.apply).map(_.copy(loc = loc))
+        val econstrs = sig.spec.econstrs.map(subst.apply).map(_.copy(loc = loc))
 
         val declaredEff = subst(sig.spec.eff.getOrElse(Type.Pure))
         val declaredResultType = subst(sig.spec.tpe)
         val declaredArgumentTypes = sig.spec.fparams.map(_.tpe).map(subst.apply)
-        val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc1)
+        val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, symUse.loc)
 
         val es = exps.map(visitExp)
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
-        c.expectTypeArguments(sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
-        c.addClassConstraints(tconstrs, loc2)
-        c.addEqualityConstraints(econstrs, loc2)
-        c.unifyType(itvar, declaredType, loc2)
-        c.unifyType(tvar, declaredResultType, loc2)
-        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
+        c.expectTypeArguments(symUse.sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
+        c.addClassConstraints(tconstrs, loc)
+        c.addEqualityConstraints(econstrs, loc)
+        c.unifyType(itvar, declaredType, loc)
+        c.unifyType(tvar, declaredResultType, loc)
+        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
-        InferredAst.Expr.ApplySig(SigSymUse(sym, loc1), es, targ, targs, itvar, resTpe, resEff, loc2)
+        InferredAst.Expr.ApplySig(symUse, es, targ, targs, itvar, resTpe, resEff, loc)
 
       case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
@@ -462,7 +465,7 @@ object ConstraintGen {
         }
 
         val resTpe = e2.tpe
-        val resEff = Type.mkUnion(effs :+ e2.eff, loc)
+        val resEff = Type.mkUnion(e2.eff :: effs, loc)
         InferredAst.Expr.Stm(es, e2, resTpe, resEff, loc)
 
       case Expr.Discard(exp, loc) =>
@@ -750,11 +753,12 @@ object ConstraintGen {
           case (Some(region), Some(regionVar)) =>
             val e = visitExp(region)
             c.unifyType(Type.mkRegionToStar(regionVar, loc), e.tpe, region.loc)
-            c.unifyType(evar, Type.mkUnion(fieldEffs :+ e.eff :+ regionVar, loc), loc)
+            c.unifyType(evar, Type.mkUnion(e.eff :: regionVar :: fieldEffs, loc), loc)
             Some(e)
-          case (Some(region), None) =>
-            // The struct has no region, so the region expression is not type checked.
-            Some(visitExpUnchecked(region))
+          case (Some(_), None) =>
+            // Unreachable: every struct has a region parameter. The parser requires at least one type
+            // parameter, and the kinder adds a synthetic region parameter if the user left them out.
+            throw InternalCompilerException("Unexpected struct without a region parameter", loc)
           case (None, _) => None
         }
         val resTpe = tvar
@@ -1098,12 +1102,12 @@ object ConstraintGen {
         val ruleTypes = rs.map(_.exp.tpe)
         val ruleEffs = rs.map(r => Type.mkUnion(r.chan.eff, r.exp.eff, Type.Chan, Type.NonDet, r.exp.loc))
         val d = default.map(visitExp)
-        val (defaultType, eff2) = d match {
+        val (defaultType, defaultEff) = d match {
           case None => (freshVar(Kind.Star, loc), Type.Pure)
           case Some(e) => (e.tpe, e.eff)
         }
         c.unifyAllTypes(tvar :: defaultType :: ruleTypes, loc)
-        c.unifyType(evar, Type.mkUnion(eff2 :: ruleEffs, loc), loc)
+        c.unifyType(evar, Type.mkUnion(defaultEff :: ruleEffs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         InferredAst.Expr.SelectChannel(rs, d, resTpe, resEff, loc)
@@ -1168,7 +1172,23 @@ object ConstraintGen {
   /**
     * Returns the given expression `exp0` annotated with its type and effect, but discards its constraints.
     *
-    * This is used for expressions that are part of the tree, but that are not type checked.
+    * The expression is visited with a fresh `TypeContext` that is simply thrown away afterwards. None of
+    * the constraints generated for `exp0` or its sub-expressions ever reach the solver, so the returned
+    * node is *not type checked*: its types and effects are left as the unsolved variables that `visitExp`
+    * assigns, and a type error inside `exp0` goes unreported.
+    *
+    * DANGER: This function silently disables type checking for `exp0`. It must only be used for an
+    * expression that is type checked elsewhere, or that cannot be type checked because of an earlier
+    * error. Do not use it unless you know exactly why that holds for your expression.
+    *
+    * Current uses:
+    *   - The `select` and `where` clauses of a fixpoint query, in `visitFixpointQueryWithSelect`. The
+    *     desugarer copies them into the pseudo-constraint of the query expression, where they are type
+    *     checked.
+    *   - The scrutinee and the rule bodies of a restrictable choose whose pattern is a
+    *     `RestrictableChoosePattern.Error`, in `visitRestrictableChoose` and
+    *     `visitRestrictableChooseRuleUnchecked`. The expression is already an error, so it is given fresh
+    *     error types instead.
     */
   def visitExpUnchecked(exp0: KindedAst.Expr)(implicit root: KindedAst.Root, flix: Flix): InferredAst.Expr =
     visitExp(exp0)(new TypeContext, root, flix)
