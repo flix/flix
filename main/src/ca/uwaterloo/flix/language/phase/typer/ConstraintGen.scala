@@ -48,14 +48,18 @@ object ConstraintGen {
         val resTpe = sym.tvar
         InferredAst.Expr.Var(sym, resTpe, loc)
 
-      case Expr.Hole(sym, scp, tpe, eff, loc) =>
-        val resTpe = tpe
-        val resEff = eff
+      case Expr.Hole(sym, scp, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
+        val resTpe = tvar
+        val resEff = evar
         InferredAst.Expr.Hole(sym, scp, resTpe, resEff, loc)
 
-      case Expr.HoleWithExp(exp, scp, tvar, evar, loc) =>
+      case Expr.HoleWithExp(exp, scp, loc) =>
         // We ignore exp's type and allow the hole to have any type.
         // The effect of the hole may be any effect that includes the effect of exp.
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val e = visitExp(exp)
         c.subEff(e.eff, evar, loc)
         val resTpe = tvar
@@ -518,7 +522,7 @@ object ConstraintGen {
         val resEff = e2.eff
         InferredAst.Expr.LocalDef(ann, bnd, fps, e1, e2, resTpe, resEff, loc)
 
-      case Expr.Region(sym, regSym, exp, tvar, evar, loc) =>
+      case Expr.Region(sym, regSym, exp, loc) =>
         // We must visit exp INSIDE the region
         // (i.e. between `enter` and `exit`)
         // because we need to resolve local constraints
@@ -529,6 +533,8 @@ object ConstraintGen {
         // We must unify sym.tvar and the region var INSIDE the region
         // because we need to ensure that references to the region are
         // resolved BEFORE purifying the region as we exit.
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         c.enterRegion(regSym)
         c.unifyType(sym.tvar, Type.mkRegionToStar(Type.mkRegion(regSym, loc), loc), loc)
         val e = visitExp(exp)
@@ -865,8 +871,9 @@ object ConstraintGen {
         c.expectType(Type.mkVector(elmVar, loc), e.tpe, exp.loc)
         InferredAst.Expr.VectorLength(e, loc)
 
-      case Expr.Ascribe(exp, expectedTpe, expectedEff, tvar, loc) =>
+      case Expr.Ascribe(exp, expectedTpe, expectedEff, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
+        val tvar = freshVar(Kind.Star, loc)
         val e = visitExp(exp)
         expectedTpe.foreach { tpe => c.expectType(expected = tpe, actual = e.tpe, loc) }
         c.unifyType(e.tpe, tvar, loc)
@@ -879,8 +886,10 @@ object ConstraintGen {
         val e = visitExp(exp)
         InferredAst.Expr.InstanceOf(e, clazz, loc)
 
-      case Expr.CheckedCast(cast, exp, tvar, evar, loc) =>
+      case Expr.CheckedCast(cast, exp, loc) =>
         // A cast expression is sound; the type system ensures the declared type is correct.
+        val tvar = Type.freshVar(Kind.Star, loc)
+        val evar = Type.freshVar(Kind.Eff, loc)
         cast match {
           case CheckedCastType.TypeCast =>
             // We replace the type with a fresh variable to allow any type.
@@ -902,8 +911,9 @@ object ConstraintGen {
             InferredAst.Expr.CheckedCast(cast, e, resTpe, resEff, loc)
         }
 
-      case Expr.UncheckedCast(exp, declaredTpe, declaredEff, tvar, loc) =>
+      case Expr.UncheckedCast(exp, declaredTpe, declaredEff, loc) =>
         // An unchecked cast expression is unsound; the type system assumes the declared type and effect are correct.
+        val tvar = freshVar(Kind.Star, loc)
         val e = visitExp(exp)
         c.unifyType(tvar, declaredTpe.getOrElse(e.tpe), loc)
         val resTpe = tvar
@@ -929,14 +939,16 @@ object ConstraintGen {
         val resEff = Type.mkUnion(e.eff :: effs, loc)
         InferredAst.Expr.TryCatch(e, rs, resTpe, resEff, loc)
 
-      case KindedAst.Expr.Throw(exp, tvar, evar, loc) =>
+      case KindedAst.Expr.Throw(exp, loc) =>
+        val tvar = Type.freshVar(Kind.Star, loc)
+        val evar = Type.freshVar(Kind.Eff, loc)
         val e = visitExp(exp)
         c.unifyType(evar, Type.mkUnion(e.eff, Type.IO, loc), loc)
         val resultTpe = tvar
         val resultEff = evar
         InferredAst.Expr.Throw(e, resultTpe, resultEff, loc)
 
-      case Expr.Handler(symUse, rules, tvar, evar1, evar2, loc) =>
+      case Expr.Handler(symUse, rules, loc) =>
         //
         // β̄ fresh
         // ∀i. Γ, opix1: opit1[ᾱ ↦ β̄], .., ki: opit[ᾱ ↦ β̄] -> t \ k_ef ⊢ ei: t \ ei_ef
@@ -955,6 +967,9 @@ object ConstraintGen {
         //  ..
         // }
         //
+        val tvar = Type.freshVar(Kind.Star, loc)
+        val evar1 = Type.freshVar(Kind.Eff, loc)
+        val evar2 = Type.freshVar(Kind.Eff, loc)
         val effect = root.effects(symUse.sym)
         val effectArgs = effect.tparams.map(tparam => freshVar(tparam.sym.kind, loc))
         val effectSubst = Substitution(ListOps.zip(effect.tparams.map(_.sym), effectArgs).toMap)
@@ -973,7 +988,9 @@ object ConstraintGen {
         val resultTpe = Type.mkArrowWithEffect(Type.mkArrowWithEffect(Type.Unit, evar1, tvar, loc), evar2, tvar, loc)
         InferredAst.Expr.Handler(symUse, rs, tvar, evar1, evar2, resultTpe, loc)
 
-      case Expr.RunWith(exp1, exp2, tvar, evar, loc) =>
+      case Expr.RunWith(exp1, exp2, loc) =>
+        val tvar = Type.freshVar(Kind.Star, loc)
+        val evar = Type.freshVar(Kind.Eff, loc)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         val handlerArg = Type.mkArrowWithEffect(Type.Unit, e1.eff, e1.tpe, loc.asSynthetic)
@@ -982,10 +999,13 @@ object ConstraintGen {
         val resultEff = Type.mkUnion(evar, e2.eff, loc.asSynthetic)
         InferredAst.Expr.RunWith(e1, e2, resultTpe, resultEff, loc)
 
-      case Expr.InvokeConstructor(clazz, exps, jvar, tvar, evar, loc) =>
+      case Expr.InvokeConstructor(clazz, exps, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
         // --------------------------------------------------------
         // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
+        val jvar = freshVar(Kind.Jvm, loc)
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val baseEff = Type.JvmToEff(jvar, loc)
         val clazzTpe = JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
         val es = exps.map(visitExp)
@@ -998,10 +1018,13 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.InvokeConstructor(es, jvar, resTpe, resEff, loc)
 
-      case Expr.InvokeSuperConstructor(clazz, exps, jvar, tvar, evar, loc) =>
+      case Expr.InvokeSuperConstructor(clazz, exps, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
         // --------------------------------------------------------
         // Γ ⊢ super(e₁ ...) : k \ JvmToEff[ι]
+        val jvar = freshVar(Kind.Jvm, loc)
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val baseEff = Type.JvmToEff(jvar, loc)
         val clazzTpe = JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
         val es = exps.map(visitExp)
@@ -1014,10 +1037,13 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.InvokeSuperConstructor(es, jvar, resTpe, resEff, loc)
 
-      case Expr.InvokeMethod(exp, methodName, exps, jvar, tvar, evar, loc) =>
+      case Expr.InvokeMethod(exp, methodName, exps, loc) =>
         // Γ ⊢ e : τ    Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmMethod(τ, m, τᵢ ...)
         // ---------------------------------------------------------------
         // Γ ⊢ e.m(eᵢ ...) : JvmToType[ι] \ JvmToEff[ι]
+        val jvar = freshVar(Kind.Jvm, loc)
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val baseEff = Type.JvmToEff(jvar, loc)
         val e = visitExp(exp)
         val es = exps.map(visitExp)
@@ -1030,7 +1056,10 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.InvokeMethod(e, es, jvar, resTpe, resEff, loc)
 
-      case Expr.InvokeSuperMethod(clazz, methodName, exps, targs, jvar, tvar, evar, loc) =>
+      case Expr.InvokeSuperMethod(clazz, methodName, exps, targs, loc) =>
+        val jvar = freshVar(Kind.Jvm, loc)
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val baseEff = Type.JvmToEff(jvar, loc)
         val clazzTpe = if (targs.nonEmpty) Type.mkApply(JavaTypes.flixTypeOf(clazz, loc), targs, loc)
                        else JavaTypes.instantiateWithObjectArgs(clazz, loc)
@@ -1044,10 +1073,13 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.InvokeSuperMethod(es, jvar, resTpe, resEff, loc)
 
-      case Expr.InvokeStaticMethod(clazz, methodName, exps, jvar, tvar, evar, loc) =>
+      case Expr.InvokeStaticMethod(clazz, methodName, exps, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmStaticMethod(m, τᵢ ...)
         // ---------------------------------------------------------------
         // Γ ⊢ m(eᵢ ...) : JvmToType[ι] \ JvmToEff[ι]
+        val jvar = freshVar(Kind.Jvm, loc)
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val baseEff = Type.JvmToEff(jvar, loc)
         val es = exps.map(visitExp)
         val tpes = es.map(_.tpe)
@@ -1059,10 +1091,13 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.InvokeStaticMethod(es, jvar, resTpe, resEff, loc)
 
-      case Expr.GetField(exp, fieldName, jvar, tvar, evar, loc) =>
+      case Expr.GetField(exp, fieldName, loc) =>
         // Γ ⊢ e : τ    Γ ⊢ ι ~ JvmFieldMethod(τ, m)
         // ---------------------------------------------------------------
         // Γ ⊢ e.f : JvmToType[ι]
+        val jvar = freshVar(Kind.Jvm, loc)
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val e = visitExp(exp)
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmField(exp.loc, e.tpe, fieldName), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc) // unify field type
@@ -1082,7 +1117,8 @@ object ConstraintGen {
         val resEff = Type.mkUnion(e1.eff, e2.eff, Type.IO, loc)
         InferredAst.Expr.PutField(field, e1, e2, resTpe, resEff, loc)
 
-      case Expr.GetStaticField(field, tvar, loc) =>
+      case Expr.GetStaticField(field, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
         val isFinal = field.isFinal
         val fieldType = JavaTypes.instantiateWithObjectArgs(field.ref.descriptor, loc)
         val fieldReadEff = if (isFinal) Type.Pure else Type.IO
@@ -1098,7 +1134,8 @@ object ConstraintGen {
         val resEff = Type.mkUnion(e.eff, Type.IO, loc)
         InferredAst.Expr.PutStaticField(field, e, resTpe, resEff, loc)
 
-      case Expr.NewObject(sym, clazz, targs, constructors, methods, tvar, loc) =>
+      case Expr.NewObject(sym, clazz, targs, constructors, methods, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
         val cs = constructors.map(visitJvmConstructor)
         val resTpe = Type.mkApply(JavaTypes.flixTypeOf(clazz.desc, loc), targs, loc)
         c.unifyType(tvar, resTpe, loc)
@@ -1108,7 +1145,8 @@ object ConstraintGen {
         val resEff = Type.IO
         InferredAst.Expr.NewObject(sym, clazz, tvar, resEff, cs, ms, loc)
 
-      case Expr.NewChannel(exp, tvar, loc) =>
+      case Expr.NewChannel(exp, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
         val elmTpe = freshVar(Kind.Star, loc)
         val e = visitExp(exp)
         c.expectType(expected = Type.Int32, actual = e.tpe, exp.loc)
@@ -1117,7 +1155,9 @@ object ConstraintGen {
         val resEff = Type.mkUnion(e.eff, Type.Chan, loc)
         InferredAst.Expr.NewChannel(e, resTpe, resEff, loc)
 
-      case Expr.GetChannel(exp, tvar, evar, loc) =>
+      case Expr.GetChannel(exp, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val elmTpe = freshVar(Kind.Star, loc)
         val receiverTpe = Type.mkReceiver(elmTpe, loc)
         val e = visitExp(exp)
@@ -1128,7 +1168,8 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.GetChannel(e, resTpe, resEff, loc)
 
-      case Expr.PutChannel(exp1, exp2, evar, loc) =>
+      case Expr.PutChannel(exp1, exp2, loc) =>
+        val evar = freshVar(Kind.Eff, loc)
         val elmTpe = freshVar(Kind.Star, loc)
         val senderTpe = Type.mkSender(elmTpe, loc)
         val e1 = visitExp(exp1)
@@ -1140,7 +1181,9 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.PutChannel(e1, e2, resTpe, resEff, loc)
 
-      case Expr.SelectChannel(rules, default, tvar, evar, loc) =>
+      case Expr.SelectChannel(rules, default, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val rs = rules.map(visitSelectRule)
         val ruleTypes = rs.map(_.exp.tpe)
         val ruleEffs = rs.map(r => Type.mkUnion(r.chan.eff, r.exp.eff, Type.Chan, Type.NonDet, r.exp.loc))
@@ -1189,7 +1232,8 @@ object ConstraintGen {
         val resTpe = Type.mkLazy(e.tpe, loc)
         InferredAst.Expr.Lazy(e, resTpe, loc)
 
-      case Expr.Force(exp, tvar, loc) =>
+      case Expr.Force(exp, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
         val e = visitExp(exp)
         c.expectType(expected = Type.mkLazy(tvar, loc), actual = e.tpe, exp.loc)
         val resTpe = tvar
@@ -1204,8 +1248,10 @@ object ConstraintGen {
       case e: Expr.FixpointSolveWithProject => SchemaConstraintGen.visitFixpointSolveWithProject(e)
       case e: Expr.FixpointInjectInto => SchemaConstraintGen.visitFixpointInjectInto(e)
 
-      case Expr.Error(m, tvar, evar) =>
+      case Expr.Error(m) =>
         // The error expression has whatever type and effect it needs to have.
+        val tvar = Type.freshVar(Kind.Star, m.loc)
+        val evar = Type.freshVar(Kind.Eff, m.loc)
         val resTpe = tvar
         val resEff = evar
         InferredAst.Expr.Error(m, resTpe, resEff)
@@ -1244,10 +1290,12 @@ object ConstraintGen {
   def visitPattern(pat0: KindedAst.Pattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): InferredAst.Pattern = {
     implicit val scope: RegionScope = c.getScope
     pat0 match {
-      case KindedAst.Pattern.Wild(tvar, loc) =>
+      case KindedAst.Pattern.Wild(loc) =>
+        val tvar = freshVar(Kind.Star, loc)
         InferredAst.Pattern.Wild(tvar, loc)
 
-      case KindedAst.Pattern.Var(sym, tvar, loc) =>
+      case KindedAst.Pattern.Var(sym, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
         c.unifyType(sym.tvar, tvar, loc)
         val bnd = InferredAst.Binder(sym, tvar)
         InferredAst.Pattern.Var(bnd, tvar, loc)
@@ -1255,7 +1303,8 @@ object ConstraintGen {
       case KindedAst.Pattern.Cst(cst, loc) =>
         InferredAst.Pattern.Cst(cst, Type.constantType(cst), loc)
 
-      case KindedAst.Pattern.Tag(symUse, pats, tvar, loc) =>
+      case KindedAst.Pattern.Tag(symUse, pats, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
@@ -1277,7 +1326,8 @@ object ConstraintGen {
         val resTpe = Type.mkTuple(ps.map(_.tpe), loc)
         InferredAst.Pattern.Tuple(ps, resTpe, loc)
 
-      case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
+      case KindedAst.Pattern.Record(pats, pat, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
         val freshRowVar = freshVar(Kind.RecordRow, loc)
         val freshRecord = Type.mkRecord(freshRowVar, loc.asSynthetic)
 
@@ -1289,7 +1339,8 @@ object ConstraintGen {
         c.unifyType(resTpe, tvar, loc)
         InferredAst.Pattern.Record(ps, p, resTpe, loc)
 
-      case KindedAst.Pattern.Error(tvar, loc) =>
+      case KindedAst.Pattern.Error(loc) =>
+        val tvar = freshVar(Kind.Star, loc)
         InferredAst.Pattern.Error(tvar, loc)
 
     }
@@ -1319,7 +1370,8 @@ object ConstraintGen {
     * to build schema rows.
     */
   private def visitExtPattern(pat0: KindedAst.ExtPattern)(implicit c: TypeContext, scope: RegionScope, flix: Flix): (InferredAst.ExtPattern, Either[(Name.Pred, List[Type]), Type.Var]) = pat0 match {
-    case ExtPattern.Default(tvar, loc) =>
+    case ExtPattern.Default(loc) =>
+      val tvar = freshVar(Kind.SchemaRow, loc)
       (InferredAst.ExtPattern.Default(loc), Right(tvar))
 
     case ExtPattern.Tag(label, pats, loc) =>
@@ -1327,7 +1379,8 @@ object ConstraintGen {
       val ps = pats.map(visitExtTagPattern)
       (InferredAst.ExtPattern.Tag(label, ps, loc), Left((name, ps.map(_.tpe))))
 
-    case ExtPattern.Error(tvar, loc) =>
+    case ExtPattern.Error(loc) =>
+      val tvar = freshVar(Kind.SchemaRow, loc)
       (InferredAst.ExtPattern.Error(loc), Right(tvar))
   }
 
@@ -1336,11 +1389,13 @@ object ConstraintGen {
     *
     * Returns the pattern annotated with its type.
     */
-  private def visitExtTagPattern(pat0: KindedAst.ExtTagPattern)(implicit c: TypeContext): InferredAst.ExtTagPattern = pat0 match {
-    case ExtTagPattern.Wild(tvar, loc) =>
+  private def visitExtTagPattern(pat0: KindedAst.ExtTagPattern)(implicit c: TypeContext, scope: RegionScope, flix: Flix): InferredAst.ExtTagPattern = pat0 match {
+    case ExtTagPattern.Wild(loc) =>
+      val tvar = freshVar(Kind.Star, loc)
       InferredAst.ExtTagPattern.Wild(tvar, loc)
 
-    case ExtTagPattern.Var(sym, tvar, loc) =>
+    case ExtTagPattern.Var(sym, loc) =>
+      val tvar = freshVar(Kind.Star, loc)
       c.unifyType(sym.tvar, tvar, loc)
       val bnd = InferredAst.Binder(sym, tvar)
       InferredAst.ExtTagPattern.Var(bnd, tvar, loc)
@@ -1348,7 +1403,8 @@ object ConstraintGen {
     case ExtTagPattern.Unit(loc) =>
       InferredAst.ExtTagPattern.Unit(Type.Unit, loc)
 
-    case ExtTagPattern.Error(tvar, loc) =>
+    case ExtTagPattern.Error(loc) =>
+      val tvar = freshVar(Kind.Star, loc)
       InferredAst.ExtTagPattern.Error(tvar, loc)
   }
 
@@ -1357,9 +1413,10 @@ object ConstraintGen {
     *
     * Returns the record label pattern annotated with its type.
     */
-  private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): InferredAst.Pattern.Record.RecordLabelPattern = pat match {
-    case KindedAst.Pattern.Record.RecordLabelPattern(label, pat1, tvar, loc) =>
+  private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern)(implicit c: TypeContext, scope: RegionScope, root: KindedAst.Root, flix: Flix): InferredAst.Pattern.Record.RecordLabelPattern = pat match {
+    case KindedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc) =>
       // { Label = Pattern ... }
+      val tvar = freshVar(Kind.Star, loc)
       val p = visitPattern(pat1)
       c.unifyType(p.tpe, tvar, loc)
       InferredAst.Pattern.Record.RecordLabelPattern(label, p, tvar, loc)
@@ -1415,8 +1472,9 @@ object ConstraintGen {
     * @param continuationEffect the effect of the continuation
     * @param effectSubst        the shared instantiation of the effect's type parameters
     */
-  private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type, effectSubst: Substitution)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): InferredAst.HandlerRule = rule match {
-    case KindedAst.HandlerRule(symUse, actualFparams0, body, opTvar, loc) =>
+  private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type, effectSubst: Substitution)(implicit c: TypeContext, scope: RegionScope, root: KindedAst.Root, flix: Flix): InferredAst.HandlerRule = rule match {
+    case KindedAst.HandlerRule(symUse, actualFparams0, body, loc) =>
+      val opTvar = Type.freshVar(Kind.Star, body.loc)
       val effect = root.effects(symUse.sym.eff)
       val ops = effect.ops.map(op => op.sym -> op).toMap
       // The effect parameters have already been instantiated once for the enclosing handler.
