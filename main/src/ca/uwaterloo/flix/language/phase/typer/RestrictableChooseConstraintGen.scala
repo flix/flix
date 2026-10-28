@@ -38,8 +38,8 @@ object RestrictableChooseConstraintGen {
     */
   private def dom(rules: List[KindedAst.RestrictableChooseRule]): Set[Symbol.RestrictableCaseSym] = {
     rules.flatMap {
-      case KindedAst.RestrictableChooseRule(KindedAst.RestrictableChoosePattern.Tag(symUse, _, _, _), _) => List(symUse.sym)
-      case KindedAst.RestrictableChooseRule(KindedAst.RestrictableChoosePattern.Error(_, _), _) => List.empty
+      case KindedAst.RestrictableChooseRule(KindedAst.RestrictableChoosePattern.Tag(symUse, _, _), _) => List(symUse.sym)
+      case KindedAst.RestrictableChooseRule(KindedAst.RestrictableChoosePattern.Error(_), _) => List.empty
     }.toSet
   }
 
@@ -66,13 +66,14 @@ object RestrictableChooseConstraintGen {
     implicit val scope: RegionScope = c.getScope
 
     exp match {
-      case KindedAst.Expr.RestrictableChoose(false, exp0, rules0, tpe0, loc) =>
+      case KindedAst.Expr.RestrictableChoose(false, exp0, rules0, loc) =>
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
 
         // Get the enum symbols for the matched type
         rules0.headOption match {
           case None => throw InternalCompilerException("unexpected empty choose", loc)
           case Some(rule) => rule.pat match {
-            case RestrictableChoosePattern.Error(_, errLoc) =>
+            case RestrictableChoosePattern.Error(errLoc) =>
               // The pattern is an error, so the choose expression cannot be type checked. We return fresh
               // error variables to avoid spurious errors in the surrounding expression. We still visit the
               // scrutinee and the rules to complete the tree, but discard their constraints (hence "unchecked").
@@ -82,7 +83,7 @@ object RestrictableChooseConstraintGen {
               val resEff = Type.freshError(Kind.Eff, errLoc)
               InferredAst.Expr.RestrictableChoose(star = false, e, rs, resTpe, resEff, loc)
 
-            case RestrictableChoosePattern.Tag(symUse, _, _, _) => // If the pattern is Tag then we emit constraint rules
+            case RestrictableChoosePattern.Tag(symUse, _, _) => // If the pattern is Tag then we emit constraint rules
               val enumSym = symUse.sym.enumSym
               val enum0 = root.restrictableEnums(enumSym)
               val universe = enum0.cases.keys.toSet
@@ -110,22 +111,23 @@ object RestrictableChooseConstraintGen {
               val effs = es.map(_.eff)
 
               // τ_out
-              c.unifyAllTypes(tpe0 :: tpes, loc)
+              c.unifyAllTypes(tvar :: tpes, loc)
               val rs = ListOps.zip(ps, es).map { case (p, body) => InferredAst.RestrictableChooseRule(p, body) }
-              val resTpe = tpe0
+              val resTpe = tvar
               val resEff = Type.mkUnion(e.eff :: effs, loc)
               InferredAst.Expr.RestrictableChoose(star = false, e, rs, resTpe, resEff, loc)
 
           }
         }
 
-      case KindedAst.Expr.RestrictableChoose(true, exp0, rules0, tpe0, loc) =>
+      case KindedAst.Expr.RestrictableChoose(true, exp0, rules0, loc) =>
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
 
         // Get the enum symbols for the matched type
         rules0.headOption match {
           case None => throw InternalCompilerException("unexpected empty choose", loc)
           case Some(rule) => rule.pat match {
-            case RestrictableChoosePattern.Error(_, errLoc) =>
+            case RestrictableChoosePattern.Error(errLoc) =>
               // The pattern is an error, so the choose expression cannot be type checked. We return fresh
               // error variables to avoid spurious errors in the surrounding expression. We still visit the
               // scrutinee and the rules to complete the tree, but discard their constraints (hence "unchecked").
@@ -135,7 +137,7 @@ object RestrictableChooseConstraintGen {
               val resEff = Type.freshError(Kind.Eff, errLoc)
               InferredAst.Expr.RestrictableChoose(star = true, e, rs, resTpe, resEff, loc)
 
-            case RestrictableChoosePattern.Tag(symUse, _, _, _) => // If the pattern is Tag then we emit constraint rules
+            case RestrictableChoosePattern.Tag(symUse, _, _) => // If the pattern is Tag then we emit constraint rules
               val enumSym = symUse.sym.enumSym
               val enum0 = root.restrictableEnums(enumSym)
 
@@ -144,8 +146,8 @@ object RestrictableChooseConstraintGen {
               val (enumTypeOut, indexOutVar, targsOut) = instantiatedEnumType(enum0, loc.asSynthetic)
               val (bodyTypes, bodyIndexVars, bodyTargs) = rules0.map(_ => instantiatedEnumType(enum0, loc.asSynthetic)).unzip3
               val patternTagTypes = rules0.map(_.pat match {
-                case RestrictableChoosePattern.Tag(tagSymUse, _, _, tagLoc) => Type.Cst(TypeConstructor.CaseSet(SortedSet(tagSymUse.sym), enumSym), tagLoc.asSynthetic)
-                case RestrictableChoosePattern.Error(tvar, _) => tvar
+                case RestrictableChoosePattern.Tag(tagSymUse, _, tagLoc) => Type.Cst(TypeConstructor.CaseSet(SortedSet(tagSymUse.sym), enumSym), tagLoc.asSynthetic)
+                case RestrictableChoosePattern.Error(errLoc) => Type.freshVar(Kind.Star, errLoc.asSynthetic)
               })
 
               val domSet = dom(rules0)
@@ -190,7 +192,7 @@ object RestrictableChooseConstraintGen {
               unifySubset(set, indexOutVar, enumSym, loc)
 
               // τ_out
-              c.unifyType(enumTypeOut, tpe0, loc)
+              c.unifyType(enumTypeOut, tvar, loc)
               val rs = ListOps.zip(ps, es).map { case (p, body) => InferredAst.RestrictableChooseRule(p, body) }
               val resTpe = enumTypeOut
               val resEff = Type.mkUnion(e.eff :: effs, loc)
@@ -306,7 +308,8 @@ object RestrictableChooseConstraintGen {
   def visitOpenAs(exp0: KindedAst.Expr.OpenAs)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): InferredAst.Expr = {
     implicit val scope: RegionScope = c.getScope
     exp0 match {
-      case KindedAst.Expr.OpenAs(symUse@RestrictableEnumSymUse(sym, _), exp, tvar, loc) =>
+      case KindedAst.Expr.OpenAs(symUse@RestrictableEnumSymUse(sym, _), exp, loc) =>
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         val `enum` = root.restrictableEnums(sym)
 
         val (enumType, indexVar, targs) = instantiatedEnumType(`enum`, loc.asSynthetic)
@@ -374,7 +377,8 @@ object RestrictableChooseConstraintGen {
       * Local pattern visitor.
       */
     def visit(p: KindedAst.RestrictableChoosePattern): InferredAst.RestrictableChoosePattern = p match {
-      case KindedAst.RestrictableChoosePattern.Tag(symUse, pat, tvar, loc) =>
+      case KindedAst.RestrictableChoosePattern.Tag(symUse, pat, loc) =>
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         // Lookup the enum declaration.
         val decl = root.restrictableEnums(symUse.sym.enumSym)
 
@@ -398,7 +402,7 @@ object RestrictableChooseConstraintGen {
         val resTpe = tvar
         InferredAst.RestrictableChoosePattern.Tag(symUse, ps, resTpe, loc)
 
-      case KindedAst.RestrictableChoosePattern.Error(_, loc) =>
+      case KindedAst.RestrictableChoosePattern.Error(loc) =>
         InferredAst.RestrictableChoosePattern.Error(Type.freshError(Kind.Star, loc), loc)
     }
 
@@ -408,14 +412,17 @@ object RestrictableChooseConstraintGen {
   /**
     * Infers the type of the given restrictable choice pattern `pat0`.
     */
-  private def visitVarOrWild(pat: KindedAst.RestrictableChoosePattern.VarOrWild)(implicit c: TypeContext): InferredAst.RestrictableChoosePattern.VarOrWild = pat match {
-    case KindedAst.RestrictableChoosePattern.Wild(tvar, loc) =>
+  private def visitVarOrWild(pat: KindedAst.RestrictableChoosePattern.VarOrWild)(implicit c: TypeContext, scope: RegionScope, flix: Flix): InferredAst.RestrictableChoosePattern.VarOrWild = pat match {
+    case KindedAst.RestrictableChoosePattern.Wild(loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       InferredAst.RestrictableChoosePattern.Wild(tvar, loc)
-    case KindedAst.RestrictableChoosePattern.Var(sym, tvar, loc) =>
+    case KindedAst.RestrictableChoosePattern.Var(sym, loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       c.unifyType(sym.tvar, tvar, loc)
       val bnd = InferredAst.Binder(sym, tvar)
       InferredAst.RestrictableChoosePattern.Var(bnd, tvar, loc)
-    case KindedAst.RestrictableChoosePattern.Error(tvar, loc) =>
+    case KindedAst.RestrictableChoosePattern.Error(loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       InferredAst.RestrictableChoosePattern.Error(tvar, loc)
   }
 

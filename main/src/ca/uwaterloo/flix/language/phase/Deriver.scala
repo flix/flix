@@ -154,12 +154,12 @@ object Deriver {
 
       val matchRules = if (dataCases.isEmpty) {
         // All variants are nullary — wildcard returning true suffices.
-        val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Cst(Constant.Bool(true), loc), loc)
+        val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(loc), None, KindedAst.Expr.Cst(Constant.Bool(true), loc), loc)
         List(defaultRule)
       } else if (dataCases.size < allCases.size) {
         // Mixed: tag rules for data cases + wildcard default for nullary cases.
         val tagRules = dataCases.map(mkEqSplitMatchRule(_, param2, cases.size, loc, root))
-        val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Cst(Constant.Bool(true), loc), loc)
+        val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(loc), None, KindedAst.Expr.Cst(Constant.Bool(true), loc), loc)
         tagRules :+ defaultRule
       } else {
         // All variants have data — no optimization, same as before.
@@ -242,7 +242,7 @@ object Deriver {
         // The inner default is unreachable (ordinal guard guarantees same tag)
         // but required for multi-case enums to satisfy the exhaustiveness checker.
         val innerRules = if (numCases > 1) {
-          val innerDefault = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Cst(Constant.Bool(false), loc), loc)
+          val innerDefault = KindedAst.MatchRule(KindedAst.Pattern.Wild(loc), None, KindedAst.Expr.Cst(Constant.Bool(false), loc), loc)
           List(innerRule, innerDefault)
         } else {
           List(innerRule)
@@ -334,12 +334,12 @@ object Deriver {
 
       val matchRules = if (dataCases.isEmpty) {
         // All variants are nullary — wildcard returning EqualTo suffices.
-        val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Tag(CaseSymUse(comparisonEquals, loc), Nil, loc), loc)
+        val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(loc), None, KindedAst.Expr.Tag(CaseSymUse(comparisonEquals, loc), Nil, loc), loc)
         List(defaultRule)
       } else if (dataCases.size < allCases.size) {
         // Mixed: tag rules for data cases + wildcard default for nullary cases.
         val tagRules = dataCases.map(mkCompareSplitMatchRule(_, param2, cases.size, loc, root))
-        val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Tag(CaseSymUse(comparisonEquals, loc), Nil, loc), loc)
+        val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(loc), None, KindedAst.Expr.Tag(CaseSymUse(comparisonEquals, loc), Nil, loc), loc)
         tagRules :+ defaultRule
       } else {
         // All variants have data — no optimization, same as before.
@@ -431,7 +431,7 @@ object Deriver {
           List(
             KindedAst.MatchRule(
               KindedAst.Pattern.Tag(
-                CaseSymUse(comparisonEquals, loc), Nil, Type.freshVar(Kind.Star, loc), loc
+                CaseSymUse(comparisonEquals, loc), Nil, loc
               ),
               None, exp2, loc
             ),
@@ -631,7 +631,7 @@ object Deriver {
           val matchVarSym = Symbol.freshVarSym("z", BoundBy.Pattern, loc)
           KindedAst.Expr.Match(exp1, List(
             KindedAst.MatchRule(
-              KindedAst.Pattern.Tag(CaseSymUse(comparisonEquals, loc), Nil, Type.freshVar(Kind.Star, loc), loc),
+              KindedAst.Pattern.Tag(CaseSymUse(comparisonEquals, loc), Nil, loc),
               None, exp2, loc
             ),
             KindedAst.MatchRule(mkVarPattern(matchVarSym, loc), None, mkVarExpr(matchVarSym, loc), loc),
@@ -646,7 +646,7 @@ object Deriver {
         // but required for multi-case enums to satisfy the exhaustiveness checker.
         val innerRules = if (numCases > 1) {
           val innerDefault = KindedAst.MatchRule(
-            KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None,
+            KindedAst.Pattern.Wild(loc), None,
             KindedAst.Expr.Tag(CaseSymUse(equalToSym, loc), Nil, loc), loc
           )
           List(innerRule, innerDefault)
@@ -1028,13 +1028,13 @@ object Deriver {
   private def mkPattern(sym: Symbol.CaseSym, tpes: List[Type], varPrefix: String, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = {
     val varSyms = tpes.zipWithIndex.map { case (_, index) => Symbol.freshVarSym(s"$varPrefix$index", BoundBy.Pattern, loc) }
     val subPats = varSyms.map(varSym => mkVarPattern(varSym, loc))
-    (KindedAst.Pattern.Tag(CaseSymUse(sym, loc), subPats, Type.freshVar(Kind.Star, loc), loc), varSyms)
+    (KindedAst.Pattern.Tag(CaseSymUse(sym, loc), subPats, loc), varSyms)
   }
 
   /**
     * Creates a variable pattern using the given variable symbol.
     */
-  private def mkVarPattern(sym: Symbol.VarSym, loc: SourceLocation): KindedAst.Pattern = KindedAst.Pattern.Var(sym, sym.tvar, loc)
+  private def mkVarPattern(sym: Symbol.VarSym, loc: SourceLocation): KindedAst.Pattern = KindedAst.Pattern.Var(sym, loc)
 
   /**
     * Inserts `sep` between every two elements of `list`.
