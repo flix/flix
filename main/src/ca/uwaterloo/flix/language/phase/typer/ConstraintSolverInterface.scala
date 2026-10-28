@@ -17,8 +17,10 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 import ca.uwaterloo.flix.util.Build
+import ca.uwaterloo.flix.util.collection.ListOps
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 /**
   * Interface to [[ConstraintSolver2]].
@@ -86,16 +88,15 @@ object ConstraintSolverInterface {
       }
       val constrs0 = declaredTpeConstr :: declaredEffConstr :: infConstrs
 
-      // Apply the initial substitution to all the constraints
+      // The initial substitution tree maps the formal parameters to their types.
       val initialTree = SubstitutionTree.shallow(initialSubst)
-      val constrs = constrs0.map(initialTree.apply)
 
       ///////////////////////////////////////////////////////////////////
       //             This is where the stuff happens!                  //
       // We resolve the constraints under the environments we created. //
       ///////////////////////////////////////////////////////////////////
 
-      val (leftovers, subst) = ConstraintSolver2.solveAll(constrs, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
+      val (leftovers, subst) = solveWithSpeculations(constrs0, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
       leftovers match {
         case Nil =>
           // All constraints solved. Yay!
@@ -111,9 +112,8 @@ object ConstraintSolverInterface {
               // Otherwise we have special logic for the [[Debug]] effect: We solve a new constraint system where [[Debug]] is allowed by the effect signature.
               val declaredEffWithDebug = Type.mkUnion(eff.getOrElse(Type.Pure), Type.Debug, loc)
               val declaredEffConstrWithDebug = TypeConstraint.Equality(declaredEffWithDebug, infEff, Provenance.ExpectEffect(expected = declaredEffWithDebug, actual = infEff, loc))
-              val constrs0 = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
-              val constrsWithDebug = constrs0.map(initialTree.apply)
-              val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
+              val constrsWithDebug = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
+              val (leftovers2, subst2) = solveWithSpeculations(constrsWithDebug, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
 
               leftovers2 match {
                 case Nil =>
@@ -125,6 +125,107 @@ object ConstraintSolverInterface {
               }
           }
       }
+  }
+
+  /**
+    * Solves `constrs0` under the initial substitution tree `initialTree`, using the speculations among the
+    * constraints (see [[TypeConstraint.Speculative]]) as a shortcut.
+    *
+    * The speculations are removed from the constraints. Where a speculation equates two flexible variables,
+    * the two are identified by a substitution placed in the initial tree, and the remaining constraints are
+    * solved under it. If they have a solution it is returned: any solution of the constraints and the
+    * speculations is a solution of the constraints. Otherwise the constraints are solved again without the
+    * speculations, so that a speculation that does not hold costs a second solve but never changes the
+    * outcome, and the leftovers reported come from the plain system.
+    *
+    * The merged variables are bound in the returned tree, like every other variable of the system.
+    */
+  private def solveWithSpeculations(constrs0: List[TypeConstraint], initialTree: SubstitutionTree)(implicit scope: RegionScope, renv: RigidityEnv, tenv: TraitEnv, eenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
+    val (constrs, speculations) = removeSpeculations(constrs0)
+    val merge = mergeOf(speculations)
+    if (merge.isEmpty) {
+      return ConstraintSolver2.solveAll(constrs.map(initialTree.apply), initialTree)
+    }
+
+    val speculativeTree = SubstitutionTree.shallow(initialTree.root ++ merge)
+    val (leftovers, subst) = ConstraintSolver2.solveAll(constrs.map(speculativeTree.apply), speculativeTree)
+    leftovers match {
+      case Nil =>
+        // The speculations hold. The solution is a solution of the plain system.
+        (Nil, subst)
+      case _ :: _ =>
+        // At least one speculation does not hold, or the system has no solution. Solve the plain system.
+        ConstraintSolver2.solveAll(constrs.map(initialTree.apply), initialTree)
+    }
+  }
+
+  /**
+    * Returns `constrs` without its speculations, at any nesting depth, together with the speculations removed.
+    *
+    * Performance: Returns `constrs` itself if it contains no speculation.
+    */
+  private def removeSpeculations(constrs: List[TypeConstraint]): (List[TypeConstraint], List[TypeConstraint.Speculative]) = {
+    val speculations = mutable.ListBuffer.empty[TypeConstraint.Speculative]
+
+    def visit(constr: TypeConstraint): List[TypeConstraint] = constr match {
+      case speculation: TypeConstraint.Speculative =>
+        speculations += speculation
+        Nil
+      case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
+        val nested = ListOps.flatMapWithReuse(nested0)(visit)
+        if (nested eq nested0) constr :: Nil else TypeConstraint.Purification(sym, eff1, eff2, prov, nested) :: Nil
+      case _ => constr :: Nil
+    }
+
+    val rest = ListOps.flatMapWithReuse(constrs)(visit)
+    (rest, speculations.toList)
+  }
+
+  /**
+    * Returns the substitution that identifies the flexible variables equated by `speculations`.
+    *
+    * The variables of each connected group are mapped to one representative of the group. A speculation
+    * whose sides are not both flexible variables of the same kind and region scope contributes nothing.
+    */
+  private def mergeOf(speculations: List[TypeConstraint.Speculative])(implicit scope: RegionScope, renv: RigidityEnv): Substitution = {
+    if (speculations.isEmpty) {
+      return Substitution.empty
+    }
+
+    // Union-find over the variables. The representative of a group is the root of its tree.
+    val parent = mutable.HashMap.empty[Symbol.KindedTypeVarSym, Symbol.KindedTypeVarSym]
+
+    def find(x: Symbol.KindedTypeVarSym): Symbol.KindedTypeVarSym = parent.get(x) match {
+      case None => x
+      case Some(p) =>
+        val root = find(p)
+        // Path compression.
+        if (root != p) {
+          parent.update(x, root)
+        }
+        root
+    }
+
+    for (speculation <- speculations) {
+      speculation match {
+        case TypeConstraint.Speculative(Type.Var(sym1, _), Type.Var(sym2, _), _) if sym1.kind == sym2.kind && sym1.scope == sym2.scope && renv.isFlexible(sym1) && renv.isFlexible(sym2) =>
+          val root1 = find(sym1)
+          val root2 = find(sym2)
+          // The first side keeps its root, so that a variable speculated against many others represents them all.
+          if (root1 != root2) {
+            parent.update(root2, root1)
+          }
+        case _ => ()
+      }
+    }
+
+    // Bind every non-root variable to its root. The keys are copied first, since `find` updates the map.
+    val m = parent.keys.toList.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
+      case (acc, x) =>
+        val root = find(x)
+        acc + (x -> Type.Var(root, root.loc))
+    }
+    Substitution(m)
   }
 
   /**
@@ -277,6 +378,9 @@ object ConstraintSolverInterface {
       List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
     case TypeConstraint.EffConflicted(err) => List(err)
+
+    // A speculation is never a leftover (see [[TypeConstraint.Speculative]]).
+    case TypeConstraint.Speculative(_, _, _) => Nil
 
     case TypeConstraint.Trait(sym, tpe, loc) =>
       tpe.typeConstructor match {
