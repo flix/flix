@@ -194,7 +194,9 @@ object Typer {
     implicit val scope: RegionScope = RegionScope.Top
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
-    val (tpe, eff0) = ConstraintGen.visitExp(defn.exp)
+    val exp = ConstraintGen.visitExp(defn.exp)
+    val tpe = exp.tpe
+    val eff0 = exp.eff
     val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
 
@@ -241,8 +243,10 @@ object Typer {
     implicit val context: TypeContext = new TypeContext
     sig.exp match {
       case None => TypeReconstruction.visitSig(sig, SubstitutionTree.empty)
-      case Some(exp) =>
-        val (tpe, eff0) = ConstraintGen.visitExp(exp)
+      case Some(exp0) =>
+        val exp = ConstraintGen.visitExp(exp0)
+        val tpe = exp.tpe
+        val eff0 = exp.eff
         val renv = context.getRigidityEnv
         val constrs = context.getTypeConstraints
 
