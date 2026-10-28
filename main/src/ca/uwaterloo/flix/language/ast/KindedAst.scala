@@ -79,21 +79,21 @@ object KindedAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(symUse: DefSymUse, exps: List[Expr], targs: List[Type.Var], itvar: Type, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ApplyDef(symUse: DefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], arrowTvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class ApplySig(symUse: SigSymUse, exps: List[Expr], targ: Type.Var, targs: List[Type.Var], itvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ApplySig(symUse: SigSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Binary(sop: SemanticOp.BinaryOp, exp1: Expr, exp2: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class Binary(sop: SemanticOp.BinaryOp, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
@@ -113,39 +113,39 @@ object KindedAst {
 
     case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], loc: SourceLocation) extends Expr
 
-    case class Tag(symUse: CaseSymUse, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class Tag(symUse: CaseSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class RestrictableTag(symUse: RestrictableCaseSymUse, exps: List[Expr], isOpen: Boolean, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class RestrictableTag(symUse: RestrictableCaseSymUse, exps: List[Expr], isOpen: Boolean, loc: SourceLocation) extends Expr
 
-    case class ExtTag(label: Name.Label, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class ExtTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class RecordSelect(exp: Expr, label: Name.Label, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class RecordSelect(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 
-    case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class RecordRestrict(label: Name.Label, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class RecordRestrict(label: Name.Label, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayLit(exps: List[Expr], exp: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ArrayLit(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayNew(exp1: Expr, exp2: Expr, exp3: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ArrayNew(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayLoad(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ArrayLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayLength(exp: Expr, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ArrayLength(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(sym: Symbol.StructSym, fields: List[(StructFieldSymUse, Expr)], region: Option[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, fields: List[(StructFieldSymUse, Expr)], region: Option[Expr], loc: SourceLocation) extends Expr
 
-    case class StructGet(exp: Expr, symUse: StructFieldSymUse, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class StructGet(exp: Expr, symUse: StructFieldSymUse, loc: SourceLocation) extends Expr
 
-    case class StructPut(exp1: Expr, symUse: StructFieldSymUse, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class StructPut(exp1: Expr, symUse: StructFieldSymUse, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class VectorLit(exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class VectorLoad(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class VectorLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class VectorLength(exp: Expr, loc: SourceLocation) extends Expr
 

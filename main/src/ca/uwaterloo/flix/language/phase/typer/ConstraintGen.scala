@@ -72,7 +72,9 @@ object ConstraintGen {
         val resTpe = Type.constantType(cst)
         InferredAst.Expr.Cst(cst, resTpe, loc)
 
-      case Expr.ApplyClo(exp1, exp2, tvar, evar, loc) =>
+      case Expr.ApplyClo(exp1, exp2, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val lambdaBodyType = freshVar(Kind.Star, loc)
         val lambdaBodyEff = freshVar(Kind.Eff, loc)
         val e1 = visitExp(exp1)
@@ -84,10 +86,14 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.ApplyClo(e1, e2, resTpe, resEff, loc)
 
-      case Expr.ApplyDef(symUse, exps, targs, itvar, tvar, evar, loc) =>
+      case Expr.ApplyDef(symUse, exps, loc) =>
         val defn = root.defs(symUse.sym)
 
         val tparams = defn.spec.tparams.map(_.sym)
+        val targs = tparams.map(sym => Type.freshVar(sym.kind, sym.loc))
+        val itvar = freshVar(Kind.Star, symUse.loc)
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val subst = Substitution(tparams.zip(targs).toMap)
 
         val tconstrs = defn.spec.tconstrs.map(subst.apply).map(_.copy(loc = loc))
@@ -122,7 +128,10 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.ApplyDef(symUse, es, targs, itvar, resTpe, resEff, loc)
 
-      case Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, evar, loc) =>
+      case Expr.ApplyLocalDef(symUse, exps, loc) =>
+        val arrowTvar = freshVar(Kind.Star, loc)
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val es = exps.map(visitExp)
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
@@ -135,7 +144,9 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.ApplyLocalDef(symUse, es, arrowTvar, resTpe, resEff, loc)
 
-      case Expr.ApplyOp(symUse, exps, tvar, evar, loc) =>
+      case Expr.ApplyOp(symUse, exps, loc) =>
+        val tvar = Type.freshVar(Kind.Star, loc)
+        val evar = Type.freshVar(Kind.Eff, loc)
         val op = lookupOp(symUse.sym, symUse.loc)
         val (tconstrs0, econstrs0, declaredType, _) = Scheme.instantiate(op.spec.sc, symUse.loc.asSynthetic)
         val tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -155,9 +166,14 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.ApplyOp(symUse, es, resTpe, resEff, loc)
 
-      case Expr.ApplySig(symUse, exps, targ, targs, itvar, tvar, evar, loc) =>
+      case Expr.ApplySig(symUse, exps, loc) =>
         val trt = root.traits(symUse.sym.trt)
         val sig = trt.sigs(symUse.sym)
+        val targ = freshVar(trt.tparam.sym.kind, symUse.loc)
+        val targs = sig.spec.tparams.map(tparam => Type.freshVar(tparam.sym.kind, tparam.sym.loc))
+        val itvar = freshVar(Kind.Star, symUse.loc)
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
 
         val mapping = (trt.tparam.sym -> targ) :: sig.spec.tparams.map(_.sym).zip(targs)
         val subst = Substitution(mapping.toMap)
@@ -195,7 +211,9 @@ object ConstraintGen {
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, e.tpe, loc)
         InferredAst.Expr.Lambda(fp, e, resTpe, loc)
 
-      case KindedAst.Expr.Unary(sop, exp, tvar, loc) => sop match {
+      case KindedAst.Expr.Unary(sop, exp, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
+        sop match {
         case SemanticOp.BoolOp.Not =>
           val e = visitExp(exp)
           c.expectType(expected = Type.Bool, actual = e.tpe, exp.loc)
@@ -294,9 +312,11 @@ object ConstraintGen {
           val resEff = e.eff
           InferredAst.Expr.Unary(sop, e, resTpe, resEff, loc)
 
-      }
+        }
 
-      case KindedAst.Expr.Binary(sop, exp1, exp2, tvar, loc) => sop match {
+      case KindedAst.Expr.Binary(sop, exp1, exp2, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
+        sop match {
 
         case SemanticOp.BoolOp.And | SemanticOp.BoolOp.Or =>
           val e1 = visitExp(exp1)
@@ -439,7 +459,7 @@ object ConstraintGen {
           val resTpe = tvar
           val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
           InferredAst.Expr.Binary(sop, e1, e2, resTpe, resEff, loc)
-      }
+        }
 
       case Expr.IfThenElse(exp1, exp2, exp3, loc) =>
         val e1 = visitExp(exp1)
@@ -582,7 +602,8 @@ object ConstraintGen {
         val resEff = Type.mkUnion(e.eff :: ruleBodyEffs, loc)
         InferredAst.Expr.ExtMatch(e, rs, resTpe, resEff, loc)
 
-      case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
+      case KindedAst.Expr.Tag(symUse, exps, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
@@ -604,7 +625,8 @@ object ConstraintGen {
 
       case e: Expr.RestrictableTag => RestrictableChooseConstraintGen.visitApplyRestrictableTag(e)
 
-      case KindedAst.Expr.ExtTag(label, exps, tvar, loc) =>
+      case KindedAst.Expr.ExtTag(label, exps, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
         val pred = Name.Pred(label.name, label.loc)
         val es = exps.map(visitExp)
         val tpes = es.map(_.tpe)
@@ -624,12 +646,13 @@ object ConstraintGen {
         val resEff = Type.mkUnion(es.map(_.eff), loc)
         InferredAst.Expr.Tuple(es, resTpe, resEff, loc)
 
-      case Expr.RecordSelect(exp, label, tvar, loc) =>
+      case Expr.RecordSelect(exp, label, loc) =>
         //
         // r : { label = tpe | row }
         // -------------------------
         //       r.label : tpe
         //
+        val tvar = freshVar(Kind.Star, loc)
         val freshRowVar = freshVar(Kind.RecordRow, loc)
         val expectedRowType = Type.mkRecordRowExtend(label, tvar, freshRowVar, loc)
         val expectedRecordType = Type.mkRecord(expectedRowType, loc)
@@ -639,12 +662,13 @@ object ConstraintGen {
         val resEff = e.eff
         InferredAst.Expr.RecordSelect(e, label, resTpe, resEff, loc)
 
-      case Expr.RecordExtend(label, exp1, exp2, tvar, loc) =>
+      case Expr.RecordExtend(label, exp1, exp2, loc) =>
         //
         //       exp1 : tpe        exp2 : {| r }
         // ---------------------------------------------
         // { label = exp1 | exp2 } : { label  :: tpe | r }
         //
+        val tvar = freshVar(Kind.Star, loc)
         val freshRowVar = freshVar(Kind.RecordRow, loc)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
@@ -654,12 +678,13 @@ object ConstraintGen {
         val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
         InferredAst.Expr.RecordExtend(label, e1, e2, resTpe, resEff, loc)
 
-      case Expr.RecordRestrict(label, exp, tvar, loc) =>
+      case Expr.RecordRestrict(label, exp, loc) =>
         //
         //  exp : { label  :: t | r }
         // -------------------------
         // { -label | exp } : {| r }
         //
+        val tvar = freshVar(Kind.Star, loc)
         val freshLabelType = freshVar(Kind.Star, loc)
         val freshRowVar = freshVar(Kind.RecordRow, loc)
         val e = visitExp(exp)
@@ -669,7 +694,9 @@ object ConstraintGen {
         val resEff = e.eff
         InferredAst.Expr.RecordRestrict(label, e, resTpe, resEff, loc)
 
-      case Expr.ArrayLit(exps, exp, tvar, evar, loc) =>
+      case Expr.ArrayLit(exps, exp, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val regionVar = freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegionToStar(regionVar, loc)
         val es = exps.map(visitExp)
@@ -685,7 +712,9 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.ArrayLit(es, e, resTpe, resEff, loc)
 
-      case Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
+      case Expr.ArrayNew(exp1, exp2, exp3, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val regionVar = freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegionToStar(regionVar, loc)
         val e1 = visitExp(exp1)
@@ -699,7 +728,9 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.ArrayNew(e1, e2, e3, resTpe, resEff, loc)
 
-      case Expr.ArrayLoad(exp1, exp2, tvar, evar, loc) =>
+      case Expr.ArrayLoad(exp1, exp2, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val regionVar = freshVar(Kind.Eff, loc)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
@@ -710,7 +741,8 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.ArrayLoad(e1, e2, resTpe, resEff, loc)
 
-      case Expr.ArrayStore(exp1, exp2, exp3, evar, loc) =>
+      case Expr.ArrayStore(exp1, exp2, exp3, loc) =>
+        val evar = freshVar(Kind.Eff, loc)
         val elmVar = freshVar(Kind.Star, loc)
         val regionVar = freshVar(Kind.Eff, loc)
         val arrayType = Type.mkArray(elmVar, regionVar, loc)
@@ -724,7 +756,8 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.ArrayStore(e1, e2, e3, resEff, loc)
 
-      case Expr.ArrayLength(exp, evar, loc) =>
+      case Expr.ArrayLength(exp, loc) =>
+        val evar = freshVar(Kind.Eff, loc)
         val elmVar = freshVar(Kind.Star, loc)
         val regionVar = freshVar(Kind.Eff, loc)
         val e = visitExp(exp)
@@ -733,9 +766,11 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.ArrayLength(e, resEff, loc)
 
-      case Expr.StructNew(sym, fields, regionOpt, tvar, evar, loc) =>
+      case Expr.StructNew(sym, fields, regionOpt, loc) =>
         // This case needs to handle expressions like `new S { f = rhs } @ r` where `f` was not present in the struct declaration
         // Here, we check that `rhs` is itself valid by visiting it but make sure not to unify it with anything
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val (instantiatedFieldTpes, structTpe, regionVarOpt) = instantiateStruct(sym, root.structs)
         val fs = fields.map { case (k, v) => (k, visitExp(v)) }
         val fieldTpes = fs.map { case (_, e) => e.tpe }
@@ -765,7 +800,9 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.StructNew(sym, fs, r, resTpe, resEff, loc)
 
-      case Expr.StructGet(exp, symUse, tvar, evar, loc) =>
+      case Expr.StructGet(exp, symUse, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val (instantiatedFieldTpes, structTpe, regionVarOpt) = instantiateStruct(symUse.sym.structSym, root.structs)
         val e = visitExp(exp)
         c.expectType(structTpe, e.tpe, exp.loc)
@@ -781,7 +818,9 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.StructGet(e, symUse, resTpe, resEff, loc)
 
-      case Expr.StructPut(exp1, symUse, exp2, tvar, evar, loc) =>
+      case Expr.StructPut(exp1, symUse, exp2, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val (instantiatedFieldTpes, structTpe, regionVarOpt) = instantiateStruct(symUse.sym.structSym, root.structs)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
@@ -794,7 +833,9 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.StructPut(e1, symUse, e2, resTpe, resEff, loc)
 
-      case Expr.VectorLit(exps, tvar, evar, loc) =>
+      case Expr.VectorLit(exps, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val es = exps.map(visitExp)
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
@@ -806,7 +847,9 @@ object ConstraintGen {
         val resEff = evar
         InferredAst.Expr.VectorLit(es, resTpe, resEff, loc)
 
-      case Expr.VectorLoad(exp1, exp2, tvar, evar, loc) =>
+      case Expr.VectorLoad(exp1, exp2, loc) =>
+        val tvar = freshVar(Kind.Star, loc)
+        val evar = freshVar(Kind.Eff, loc)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         c.expectType(expected = Type.mkVector(tvar, loc), actual = e1.tpe, exp1.loc)
