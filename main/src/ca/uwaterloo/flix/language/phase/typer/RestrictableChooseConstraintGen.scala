@@ -72,7 +72,10 @@ object RestrictableChooseConstraintGen {
         rules0.headOption match {
           case None => throw InternalCompilerException("unexpected empty choose", loc)
           case Some(rule) => rule.pat match {
-            case RestrictableChoosePattern.Error(_, errLoc) => // If the pattern is an error we just return fresh error variables
+            case RestrictableChoosePattern.Error(_, errLoc) =>
+              // The pattern is an error, so the choose expression cannot be type checked. We return fresh
+              // error variables to avoid spurious errors in the surrounding expression. We still visit the
+              // scrutinee and the rules to complete the tree, but discard their constraints (hence "unchecked").
               val e = visitExpUnchecked(exp0)
               val rs = rules0.map(visitRestrictableChooseRuleUnchecked)
               val resTpe = Type.freshError(Kind.Star, errLoc)
@@ -122,7 +125,10 @@ object RestrictableChooseConstraintGen {
         rules0.headOption match {
           case None => throw InternalCompilerException("unexpected empty choose", loc)
           case Some(rule) => rule.pat match {
-            case RestrictableChoosePattern.Error(_, errLoc) => // If the pattern is an error we just return fresh error variables
+            case RestrictableChoosePattern.Error(_, errLoc) =>
+              // The pattern is an error, so the choose expression cannot be type checked. We return fresh
+              // error variables to avoid spurious errors in the surrounding expression. We still visit the
+              // scrutinee and the rules to complete the tree, but discard their constraints (hence "unchecked").
               val e = visitExpUnchecked(exp0)
               val rs = rules0.map(visitRestrictableChooseRuleUnchecked)
               val resTpe = Type.freshError(Kind.Star, errLoc)
@@ -198,7 +204,9 @@ object RestrictableChooseConstraintGen {
   /**
     * Returns the given rule annotated with its types, but discards its constraints.
     *
-    * This is used for the rules of a choose expression that is not type checked.
+    * This function must only be called in an error context. It is used by `visitRestrictableChoose` when
+    * the pattern of the first rule is a `RestrictableChoosePattern.Error`: the choose expression cannot be
+    * type checked, but we still need its rules to complete the tree.
     */
   private def visitRestrictableChooseRuleUnchecked(rule: KindedAst.RestrictableChooseRule)(implicit root: KindedAst.Root, flix: Flix): InferredAst.RestrictableChooseRule = rule match {
     case KindedAst.RestrictableChooseRule(pat, exp) =>

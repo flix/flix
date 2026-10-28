@@ -227,7 +227,9 @@ object SchemaConstraintGen {
   }
 
   /**
-    * Returns the given predicate parameter.
+    * Translates the given `KindedAst` predicate parameter into an `InferredAst` predicate parameter.
+    *
+    * The type of a predicate parameter is already known, so there are no constraints to generate.
     */
   private def visitPredicateParam(pparam0: KindedAst.PredicateParam): InferredAst.PredicateParam = pparam0 match {
     case KindedAst.PredicateParam(pred, tpe, loc) => InferredAst.PredicateParam(pred, tpe, loc)
@@ -294,7 +296,9 @@ object SchemaConstraintGen {
   /**
     * Returns the given body predicate annotated with its types, but discards its constraints.
     *
-    * This is used for predicates that are part of the tree, but that are not type checked.
+    * This function is only used by `visitFixpointQueryWithSelect` for the `from` predicates of a query.
+    * Those predicates are already type checked: the desugarer copies them into the pseudo-constraint that
+    * forms the query expression. Here we only need the annotated predicates to complete the tree.
     */
   private def visitBodyPredicateUnchecked(body0: KindedAst.Predicate.Body)(implicit root: KindedAst.Root, flix: Flix): InferredAst.Predicate.Body = {
     val (body, _) = visitBodyPredicate(body0)(new TypeContext, root, flix)
