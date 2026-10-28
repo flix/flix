@@ -79,47 +79,6 @@ object TypeReconstruction {
   }
 
   /**
-    * Applies the substitution to the given type `tpe0`.
-    *
-    * Simplifies the effect formulas of `tpe0` as they are rebuilt.
-    */
-  private def visitType(tpe0: Type)(implicit subst: SubstitutionTree): Type = tpe0 match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, loc) =>
-      Type.mkUnion(visitType(tpe1), visitType(tpe2), loc)
-
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, loc) =>
-      Type.mkIntersection(visitType(tpe1), visitType(tpe2), loc)
-
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), tpe1, _), tpe2, loc) =>
-      Type.mkDifference(visitType(tpe1), visitType(tpe2), loc)
-
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe, loc) =>
-      Type.mkComplement(visitType(tpe), loc)
-
-    case app@Type.Apply(tpe1, tpe2, loc) =>
-      val t1 = visitType(tpe1)
-      val t2 = visitType(tpe2)
-      app.renew(t1, t2, loc)
-
-    case _ => subst(tpe0)
-  }
-
-  /**
-    * Reconstructs types in the given binder.
-    */
-  private def visitBinder(bnd: InferredAst.Binder)(implicit subst: SubstitutionTree): TypedAst.Binder = bnd match {
-    case InferredAst.Binder(sym, tpe) => TypedAst.Binder(sym, visitType(tpe))
-  }
-
-  /**
-    * Reconstructs types in the given fparam.
-    */
-  private def visitFormalParam(fparam: InferredAst.FormalParam)(implicit subst: SubstitutionTree): TypedAst.FormalParam = fparam match {
-    case InferredAst.FormalParam(bnd, tpe, src, loc) =>
-      TypedAst.FormalParam(visitBinder(bnd), visitType(tpe), src, Decreasing.NonDecreasing, loc)
-  }
-
-  /**
     * Reconstructs types in the given expression.
     */
   private def visitExp(exp0: InferredAst.Expr)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.Expr = exp0 match {
@@ -793,5 +752,46 @@ object TypeReconstruction {
       val e = visitExp(exp)
       TypedAst.Predicate.Body.Guard(e, loc)
 
+  }
+
+  /**
+    * Applies the substitution to the given type `tpe0`.
+    *
+    * Simplifies the effect formulas of `tpe0` as they are rebuilt.
+    */
+  private def visitType(tpe0: Type)(implicit subst: SubstitutionTree): Type = tpe0 match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, loc) =>
+      Type.mkUnion(visitType(tpe1), visitType(tpe2), loc)
+
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, loc) =>
+      Type.mkIntersection(visitType(tpe1), visitType(tpe2), loc)
+
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), tpe1, _), tpe2, loc) =>
+      Type.mkDifference(visitType(tpe1), visitType(tpe2), loc)
+
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe, loc) =>
+      Type.mkComplement(visitType(tpe), loc)
+
+    case app@Type.Apply(tpe1, tpe2, loc) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      app.renew(t1, t2, loc)
+
+    case _ => subst(tpe0)
+  }
+
+  /**
+    * Reconstructs types in the given binder.
+    */
+  private def visitBinder(bnd: InferredAst.Binder)(implicit subst: SubstitutionTree): TypedAst.Binder = bnd match {
+    case InferredAst.Binder(sym, tpe) => TypedAst.Binder(sym, visitType(tpe))
+  }
+
+  /**
+    * Reconstructs types in the given fparam.
+    */
+  private def visitFormalParam(fparam: InferredAst.FormalParam)(implicit subst: SubstitutionTree): TypedAst.FormalParam = fparam match {
+    case InferredAst.FormalParam(bnd, tpe, src, loc) =>
+      TypedAst.FormalParam(visitBinder(bnd), visitType(tpe), src, Decreasing.NonDecreasing, loc)
   }
 }
