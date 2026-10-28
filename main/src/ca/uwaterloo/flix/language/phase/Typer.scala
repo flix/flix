@@ -206,7 +206,7 @@ object Typer {
     val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, econstrs0, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
     checkSpecAssocTypes(defn.spec, tconstrs0, traitEnv)
-    TypeReconstruction.visitDef(defn, subst)
+    TypeReconstruction.visitDef(defn, exp, subst)
   }
 
   /**
@@ -242,7 +242,7 @@ object Typer {
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
     sig.exp match {
-      case None => TypeReconstruction.visitSig(sig, SubstitutionTree.empty)
+      case None => TypeReconstruction.visitSig(sig, None, SubstitutionTree.empty)
       case Some(exp0) =>
         val exp = ConstraintGen.visitExp(exp0)
         val tpe = exp.tpe
@@ -253,7 +253,7 @@ object Typer {
         val infResult = InfResult(constrs, tpe, eff0, renv)
         val (subst, constraintErrors) = ConstraintSolverInterface.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
         constraintErrors.foreach(sctx.errors.add)
-        TypeReconstruction.visitSig(sig, subst)
+        TypeReconstruction.visitSig(sig, Some(exp), subst)
     }
   }
 
