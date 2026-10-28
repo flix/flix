@@ -142,7 +142,7 @@ object Visitor {
   }
 
   private def visitAssocTypeDef(tdefn: AssocTypeDef)(implicit a: Acceptor, c: Consumer): Unit = {
-    val AssocTypeDef(_, _, symUse, arg, _, loc) = tdefn
+    val AssocTypeDef(_, _, symUse, arg, tpe, loc) = tdefn
     if (!a.accept(loc)) {
       return
     }
@@ -151,6 +151,7 @@ object Visitor {
 
     visitAssocTypeSymUse(symUse)
     visitType(arg)
+    visitType(tpe)
   }
 
   private def visitAssocTypeSymUse(symUse: AssocTypeSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -472,8 +473,10 @@ object Visitor {
       case Expr.VectorLength(exp, _) =>
         visitExpr(exp)
 
-      case Expr.Ascribe(exp, _, _, _, _, _) =>
+      case Expr.Ascribe(exp, expectedType, expectedEff, _, _, _) =>
         visitExpr(exp)
+        expectedType.foreach(visitType)
+        expectedEff.foreach(visitType)
 
       case Expr.InstanceOf(exp, _, _) =>
         visitExpr(exp)
