@@ -223,6 +223,9 @@ object RestrictableChooseConstraintGen {
   def visitApplyRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit scope: RegionScope, c: TypeContext, root: KindedAst.Root, flix: Flix): InferredAst.Expr = {
     exp match {
       case KindedAst.Expr.RestrictableTag(symUse, exps, isOpen, loc) =>
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+        val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+
         // Lookup the enum declaration.
         val enumSym = symUse.sym.enumSym
         val decl = root.restrictableEnums(enumSym)
@@ -284,8 +287,10 @@ object RestrictableChooseConstraintGen {
         c.unifyType(tagType, constructorBase, loc)
         ListOps.zip(targs, targsOut).foreach { case (targ, targOut) => c.unifyType(targ, targOut, loc) }
         //        _ <- indexUnification // TODO ASSOC-TYPES here is where we did the index unification before
-        val resTpe = enumTypeOut
-        val resEff = Type.mkUnion(effs, loc)
+        c.unifyType(enumTypeOut, tvar, loc)
+        c.unifyType(Type.mkUnion(effs, loc), evar, loc)
+        val resTpe = tvar
+        val resEff = evar
         InferredAst.Expr.RestrictableTag(symUse, es, resTpe, resEff, loc)
     }
   }
@@ -388,8 +393,12 @@ object RestrictableChooseConstraintGen {
         //
         val ps = pat.map(visitVarOrWild)
         val tpes = ps.map(_.tpe)
-        // The enum type stays a variable: it changes the order in which the solver sees the constraints, and so which constraint a type error is blamed on.
-        ConstraintGen.unifyTagType(tagType, tpes, tvar, loc)
+        // A nullary tag is not a function, but the enum type itself.
+        val constructorBase = tpes match {
+          case Nil => tvar
+          case t :: ts => Type.mkPureUncurriedArrow(Nel(t, ts), tvar, loc)
+        }
+        c.unifyType(tagType, constructorBase, loc)
         val resTpe = tvar
         InferredAst.RestrictableChoosePattern.Tag(symUse, ps, resTpe, loc)
 
