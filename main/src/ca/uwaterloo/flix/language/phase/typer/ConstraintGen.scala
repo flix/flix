@@ -215,62 +215,53 @@ object ConstraintGen {
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, e.tpe, loc)
         InferredAst.Expr.Lambda(fp, e, resTpe, loc)
 
-      case KindedAst.Expr.Unary(sop, exp, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
-        sop match {
+      case KindedAst.Expr.Unary(sop, exp, loc) => sop match {
         case SemanticOp.BoolOp.Not =>
           val e = visitExp(exp)
           c.expectType(expected = Type.Bool, actual = e.tpe, exp.loc)
-          c.unifyType(Type.Bool, tvar, exp.loc)
-          val resTpe = tvar
+          val resTpe = Type.Bool
           val resEff = e.eff
           InferredAst.Expr.Unary(sop, e, resTpe, resEff, loc)
 
         case SemanticOp.Float32Op.Neg =>
           val e = visitExp(exp)
           c.expectType(expected = Type.Float32, actual = e.tpe, exp.loc)
-          c.unifyType(Type.Float32, tvar, exp.loc)
-          val resTpe = tvar
+          val resTpe = Type.Float32
           val resEff = e.eff
           InferredAst.Expr.Unary(sop, e, resTpe, resEff, loc)
 
         case SemanticOp.Float64Op.Neg =>
           val e = visitExp(exp)
           c.expectType(expected = Type.Float64, actual = e.tpe, exp.loc)
-          c.unifyType(Type.Float64, tvar, exp.loc)
-          val resTpe = tvar
+          val resTpe = Type.Float64
           val resEff = e.eff
           InferredAst.Expr.Unary(sop, e, resTpe, resEff, loc)
 
         case SemanticOp.Int8Op.Neg | SemanticOp.Int8Op.Not =>
           val e = visitExp(exp)
           c.expectType(expected = Type.Int8, actual = e.tpe, exp.loc)
-          c.unifyType(Type.Int8, tvar, exp.loc)
-          val resTpe = tvar
+          val resTpe = Type.Int8
           val resEff = e.eff
           InferredAst.Expr.Unary(sop, e, resTpe, resEff, loc)
 
         case SemanticOp.Int16Op.Neg | SemanticOp.Int16Op.Not =>
           val e = visitExp(exp)
           c.expectType(expected = Type.Int16, actual = e.tpe, exp.loc)
-          c.unifyType(Type.Int16, tvar, exp.loc)
-          val resTpe = tvar
+          val resTpe = Type.Int16
           val resEff = e.eff
           InferredAst.Expr.Unary(sop, e, resTpe, resEff, loc)
 
         case SemanticOp.Int32Op.Neg | SemanticOp.Int32Op.Not =>
           val e = visitExp(exp)
           c.expectType(expected = Type.Int32, actual = e.tpe, exp.loc)
-          c.unifyType(Type.Int32, tvar, exp.loc)
-          val resTpe = tvar
+          val resTpe = Type.Int32
           val resEff = e.eff
           InferredAst.Expr.Unary(sop, e, resTpe, resEff, loc)
 
         case SemanticOp.Int64Op.Neg | SemanticOp.Int64Op.Not =>
           val e = visitExp(exp)
           c.expectType(expected = Type.Int64, actual = e.tpe, exp.loc)
-          c.unifyType(Type.Int64, tvar, exp.loc)
-          val resTpe = tvar
+          val resTpe = Type.Int64
           val resEff = e.eff
           InferredAst.Expr.Unary(sop, e, resTpe, resEff, loc)
 
@@ -282,8 +273,7 @@ object ConstraintGen {
           c.expectType(expected = proxyEffType, actual = e.tpe, exp.loc)
           val puritySym = Symbol.mkEnumSym("Reflect.Purity")
           val purityType = Type.mkEnum(puritySym, Nil, exp.loc)
-          c.unifyType(purityType, tvar, exp.loc)
-          val resTpe = tvar
+          val resTpe = purityType
           val resEff = e.eff
           InferredAst.Expr.Unary(sop, e, resTpe, resEff, loc)
 
@@ -295,8 +285,7 @@ object ConstraintGen {
           c.expectType(expected = proxyType, actual = e.tpe, exp.loc)
           val jvmTypeSym = Symbol.mkEnumSym("Reflect.JvmType")
           val jvmTypeType = Type.mkEnum(jvmTypeSym, Nil, exp.loc)
-          c.unifyType(jvmTypeType, tvar, exp.loc)
-          val resTpe = tvar
+          val resTpe = jvmTypeType
           val resEff = e.eff
           InferredAst.Expr.Unary(sop, e, resTpe, resEff, loc)
 
@@ -304,31 +293,26 @@ object ConstraintGen {
           val e = visitExp(exp)
           val jvmValueSym = Symbol.mkEnumSym("Reflect.JvmValue")
           val jvmValueType = Type.mkEnum(jvmValueSym, Nil, exp.loc)
-          c.unifyType(jvmValueType, tvar, exp.loc)
-          val resTpe = tvar
+          val resTpe = jvmValueType
           val resEff = e.eff
           InferredAst.Expr.Unary(sop, e, resTpe, resEff, loc)
 
         case SemanticOp.ObjectOp.Ordinal =>
           val e = visitExp(exp)
-          c.unifyType(tvar, Type.Int32, exp.loc)
-          val resTpe = tvar
+          val resTpe = Type.Int32
           val resEff = e.eff
           InferredAst.Expr.Unary(sop, e, resTpe, resEff, loc)
 
-        }
+      }
 
-      case KindedAst.Expr.Binary(sop, exp1, exp2, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
-        sop match {
+      case KindedAst.Expr.Binary(sop, exp1, exp2, loc) => sop match {
 
         case SemanticOp.BoolOp.And | SemanticOp.BoolOp.Or =>
           val e1 = visitExp(exp1)
           val e2 = visitExp(exp2)
           c.expectType(expected = Type.Bool, actual = e1.tpe, exp1.loc)
           c.expectType(expected = Type.Bool, actual = e2.tpe, exp2.loc)
-          c.unifyType(tvar, Type.Bool, loc)
-          val resTpe = tvar
+          val resTpe = Type.Bool
           val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
           InferredAst.Expr.Binary(sop, e1, e2, resTpe, resEff, loc)
 
@@ -338,8 +322,7 @@ object ConstraintGen {
           val e2 = visitExp(exp2)
           c.expectType(expected = Type.Float32, actual = e1.tpe, exp1.loc)
           c.expectType(expected = Type.Float32, actual = e2.tpe, exp2.loc)
-          c.unifyType(tvar, Type.Float32, loc)
-          val resTpe = tvar
+          val resTpe = Type.Float32
           val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
           InferredAst.Expr.Binary(sop, e1, e2, resTpe, resEff, loc)
 
@@ -349,8 +332,7 @@ object ConstraintGen {
           val e2 = visitExp(exp2)
           c.expectType(expected = Type.Float64, actual = e1.tpe, exp1.loc)
           c.expectType(expected = Type.Float64, actual = e2.tpe, exp2.loc)
-          c.unifyType(tvar, Type.Float64, loc)
-          val resTpe = tvar
+          val resTpe = Type.Float64
           val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
           InferredAst.Expr.Binary(sop, e1, e2, resTpe, resEff, loc)
 
@@ -361,8 +343,7 @@ object ConstraintGen {
           val e2 = visitExp(exp2)
           c.expectType(expected = Type.Int8, actual = e1.tpe, exp1.loc)
           c.expectType(expected = Type.Int8, actual = e2.tpe, exp2.loc)
-          c.unifyType(tvar, Type.Int8, loc)
-          val resTpe = tvar
+          val resTpe = Type.Int8
           val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
           InferredAst.Expr.Binary(sop, e1, e2, resTpe, resEff, loc)
 
@@ -373,8 +354,7 @@ object ConstraintGen {
           val e2 = visitExp(exp2)
           c.expectType(expected = Type.Int16, actual = e1.tpe, exp1.loc)
           c.expectType(expected = Type.Int16, actual = e2.tpe, exp2.loc)
-          c.unifyType(tvar, Type.Int16, loc)
-          val resTpe = tvar
+          val resTpe = Type.Int16
           val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
           InferredAst.Expr.Binary(sop, e1, e2, resTpe, resEff, loc)
 
@@ -385,8 +365,7 @@ object ConstraintGen {
           val e2 = visitExp(exp2)
           c.expectType(expected = Type.Int32, actual = e1.tpe, exp1.loc)
           c.expectType(expected = Type.Int32, actual = e2.tpe, exp2.loc)
-          c.unifyType(tvar, Type.Int32, loc)
-          val resTpe = tvar
+          val resTpe = Type.Int32
           val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
           InferredAst.Expr.Binary(sop, e1, e2, resTpe, resEff, loc)
 
@@ -397,8 +376,7 @@ object ConstraintGen {
           val e2 = visitExp(exp2)
           c.expectType(expected = Type.Int64, actual = e1.tpe, exp1.loc)
           c.expectType(expected = Type.Int64, actual = e2.tpe, exp2.loc)
-          c.unifyType(tvar, Type.Int64, loc)
-          val resTpe = tvar
+          val resTpe = Type.Int64
           val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
           InferredAst.Expr.Binary(sop, e1, e2, resTpe, resEff, loc)
 
@@ -408,9 +386,8 @@ object ConstraintGen {
              | SemanticOp.Int64Op.Shl | SemanticOp.Int64Op.Shr =>
           val e1 = visitExp(exp1)
           val e2 = visitExp(exp2)
-          c.unifyType(tvar, e1.tpe, loc)
           c.expectType(expected = Type.Int32, actual = e2.tpe, exp2.loc)
-          val resTpe = tvar
+          val resTpe = e1.tpe
           val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
           InferredAst.Expr.Binary(sop, e1, e2, resTpe, resEff, loc)
 
@@ -425,8 +402,7 @@ object ConstraintGen {
           val e1 = visitExp(exp1)
           val e2 = visitExp(exp2)
           c.unifyType(e1.tpe, e2.tpe, loc)
-          c.unifyType(tvar, Type.Bool, loc)
-          val resTpe = tvar
+          val resTpe = Type.Bool
           val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
           InferredAst.Expr.Binary(sop, e1, e2, resTpe, resEff, loc)
 
@@ -440,8 +416,7 @@ object ConstraintGen {
           val e1 = visitExp(exp1)
           val e2 = visitExp(exp2)
           c.unifyType(e1.tpe, e2.tpe, loc)
-          c.unifyType(tvar, Type.Bool, loc)
-          val resTpe = tvar
+          val resTpe = Type.Bool
           val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
           InferredAst.Expr.Binary(sop, e1, e2, resTpe, resEff, loc)
 
@@ -450,8 +425,7 @@ object ConstraintGen {
           val e2 = visitExp(exp2)
           c.expectType(expected = Type.Str, actual = e1.tpe, exp1.loc)
           c.expectType(expected = Type.Str, actual = e2.tpe, exp2.loc)
-          c.unifyType(tvar, Type.Str, loc)
-          val resTpe = tvar
+          val resTpe = Type.Str
           val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
           InferredAst.Expr.Binary(sop, e1, e2, resTpe, resEff, loc)
 
@@ -459,11 +433,10 @@ object ConstraintGen {
           val e1 = visitExp(exp1)
           val e2 = visitExp(exp2)
           c.unifyType(e1.tpe, e2.tpe, loc)
-          c.unifyType(tvar, Type.Bool, loc)
-          val resTpe = tvar
+          val resTpe = Type.Bool
           val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
           InferredAst.Expr.Binary(sop, e1, e2, resTpe, resEff, loc)
-        }
+      }
 
       case Expr.IfThenElse(exp1, exp2, exp3, loc) =>
         val e1 = visitExp(exp1)
