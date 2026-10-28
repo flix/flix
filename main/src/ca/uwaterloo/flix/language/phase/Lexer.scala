@@ -525,7 +525,7 @@ object Lexer {
   /** Moves current position past an escaped name (e.g. `$run`). */
   private def acceptEscapedName()(implicit s: State): TokenKind = {
     // Don't include the $ sign in the name.
-    s.resetStart()
+    s.sc.advanceWhile(isNameChar)
     acceptName(isUpper = false)
   }
 

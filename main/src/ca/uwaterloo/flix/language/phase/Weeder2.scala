@@ -3367,7 +3367,15 @@ object Weeder2 {
   private def tokenToIdent(tree: Tree): Name.Ident = {
     tree.children.headOption match {
       case Some(token@Token(_, src, _, _, sp1, sp2)) =>
-        Name.Ident(token.text, SourceLocation(isReal = true, src, sp1, sp2))
+        val isNameLowercase = token.kind == TokenKind.NameLowercase
+        val isEscaped = src.data(token.startIndex) == '$'
+        val name = if (isNameLowercase && isEscaped) {
+          token.text.substring(1)
+        } else {
+          token.text
+        }
+
+        Name.Ident(name, SourceLocation(isReal = true, src, sp1, sp2))
       // If child is an ErrorTree, that means the parse already reported and error.
       // We can avoid double reporting by returning a success here.
       // Doing it this way is most resilient, but phases down the line might have trouble with this sort of thing.
