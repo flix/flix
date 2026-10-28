@@ -9,8 +9,7 @@ Zhegalkin solver, and its relation to it is this:
 > makes the correspondence exact.
 
 This document explains the four steps of the solver on a worked example, and then shows the step
-in the ring. The code lives in
-`main/src/ca/uwaterloo/flix/language/phase/unification/set/SetUnification2.scala`.
+in the ring.
 
 ## The Example
 
@@ -19,11 +18,11 @@ is a rigid effect variable from its signature. Named effects such as `IO` and `N
 sets, the rigid `ef` is a constant, and `x1` to `x4` are flexible variables.
 
 ```
-E1  x1 ~ x2                        a lambda's arrow effect x1 meets the callee's instantiated effect x2
-E2  x3 ~ x1 ∪ IO                   the block's effect: that call plus a println
-E3  (x3 ∪ x4) ∩ ¬(ef ∪ IO) ~ ∅     the body must fit the declared effect ef + IO
-E4  ef ∩ ¬x4 ~ ∅                   another part of the body calls the ef-effect parameter, so ef ⊆ x4
-E5  IO ∩ ¬x1 ~ ∅                   the lambda prints, so IO ⊆ x1
+E1  x1 ~ x2                       a lambda's arrow effect x1 meets the callee's instantiated effect x2
+E2  x3 ~ x1 ∪ IO                  the block's effect: that call plus a println
+E3  (x3 ∪ x4) ∩ ¬(ef ∪ IO) ~ ∅    the body must fit the declared effect ef + IO
+E4  ef ∩ ¬x4 ~ ∅                  another part of the body calls the ef-effect parameter, so ef ⊆ x4
+E5  IO ∩ ¬x1 ~ ∅                  the lambda prints, so IO ⊆ x1
 ```
 
 An equation with `∅` on the right is an inclusion: `s ∩ ¬t ~ ∅` says `s ⊆ t`.
@@ -142,10 +141,9 @@ loop in the first version of the solver.
 
 ### The split budget
 
-Distribution is the only step that creates constraints. Its budget is eight per input equation
-plus sixty-four (`SplitBudgetPerEquation` and `SplitBudgetBase`). A constraint with many union
-members multiplies, so past the budget the remaining union-bearing constraints are set aside whole
-for step 4, where unions cost nothing and variables cost everything.
+Distribution is the only step that creates constraints, so it is bounded by a budget. Past the
+budget, a constraint that would be split is set aside whole for step 4. See
+[What the split budget does](#what-the-split-budget-does).
 
 ## Step 4: SVE on What Remains
 
@@ -170,23 +168,6 @@ substitution from step 3. The variable count is checked against `SetUnification.
 Without symmetric differences the first three steps are complete on their own: a constraint with
 no union member has only atoms as members, so a variable member either has a free step or the
 constraint is ground.
-
-## How a Type Error Surfaces
-
-Suppose E4 had been `Net ∩ ¬x4 ~ ∅`, so that part of the body talks to the network. Then
-`x4 ↦ x4 ∪ Net`, and `Net` survives in C3 because nothing excludes it:
-
-```
-C3  (x2 ∪ x4 ∪ Net) ∩ ¬ef ∩ ¬IO       distribute into three parts
-    Net ∩ ¬ef ∩ ¬IO                    fold element sets: Net minus IO is Net, so  Net ∩ ¬ef
-                                       ground, not empty since ef is rigid:  conflict
-```
-
-Processing stops, the substitution is discarded, and E3 is reported unsolvable with the bindings
-found so far applied, which is the message that the body's effect does not fit `ef + IO`.
-
-The emptiness test is the one place the main path still uses Zhegalkin: it decides whether a
-ground formula over constants and element sets denotes `∅`.
 
 ## The Same Step in the Ring
 
@@ -265,18 +246,80 @@ syntax of the result. The two results are equal as set functions, one written wi
 other with xors. This is why the printed types do not depend on which solver ran: the type
 simplifier round-trips every effect through the polynomial anyway.
 
-### Where they meet in the code
-
-- The ground emptiness test converts a variable-free formula to a polynomial for its zero test.
-- Stuck and leftover constraints are converted for the full elimination, and their solution comes
-  back through `Zhegalkin.toSetFormula`, which is the only way an `Xor` node enters a range.
-- The type simplifier uses the same round trip for display.
-
 ## Complexity
 
-- Step 1 makes one pass over the equations per pass that binds a variable, so at most one pass
-  per variable.
-- Step 3 creates at most the budget many constraints by distribution, and every other step closes
-  or parks the constraint it takes up. The number of steps is bounded by the constraints created
-  plus one revisit of a stuck constraint per binding.
-- Step 4 is exponential in the variables of the equations it receives, guarded by `MaxVars`.
+Let `n` be the number of distinct input equations, after duplicates are removed, and `v` the
+number of variables they mention.
+
+- **Step 1** makes passes over the equations until a pass binds nothing. Every binding removes its
+  variable from the system, so there are at most `v + 1` passes of `n` substitutions each.
+- **Step 2** turns every remaining equation into at most two constraints, so step 3 starts with at
+  most `2n` constraints.
+- **Step 3** takes one constraint off the worklist at a time and does exactly one thing with it:
+  closes it (empty, ground and empty, or solved by a free step), splits it, parks it as stuck,
+  sets it aside whole, or reports a conflict and stops. Only a split adds constraints, and the
+  split budget caps how many, so step 3 sees at most `2n + B` constraints in total, where `B` is
+  the budget below. A free step closes the constraint it comes from, so step 3 binds at most
+  that many times. A stuck constraint goes back on the worklist when a variable it mentions is
+  bound, so in the worst case every stuck constraint is revisited once per binding: quadratic
+  in `2n + B`, which is itself linear in `n`. Each visit also pays for the bindings made since
+  the constraint was last seen, and for the emptiness test on a ground constraint, which goes
+  through a Zhegalkin polynomial and can be exponential in the rigid constants it mentions.
+- **Step 4** is exponential in the variables of the constraints it receives. Before it runs,
+  each constraint is checked against `SetUnification.MaxVars` (currently 11), and a constraint
+  with more variables is reported as too complex instead.
+
+Steps 1 to 3 are therefore polynomial, and all the exponential cost sits in step 4 and in the
+ground emptiness test. The split budget is what keeps step 3 polynomial: without it, a
+constraint with `k` unions of `m` members each distributes into `m^k` parts.
+
+### What the split budget does
+
+```scala
+private val SplitBudgetPerEquation: Int = 8
+private val SplitBudgetBase: Int = 64
+```
+
+The budget of one solve is `8n + 64`, so it grows with the size of the system and leaves room
+for a few splits even in a system of one equation. It counts constraints created by
+distribution: splitting a union of `k` members adds `k` to the count. The check comes before
+each split, so the last split may overshoot the budget by the width of one union.
+
+Once the budget is spent, distribution stops, but nothing else does. Free steps, ground tests and
+stuck constraints work as before. A constraint that would otherwise be split goes to step 4
+whole, where unions cost nothing and variables cost everything. The budget does not change the
+answer when step 4 can solve what is set aside. It only moves work from step 3 to step 4, and the
+cost is that the `MaxVars` limit may now reject a system that distribution would have solved.
+
+### How often the budget is hit
+
+The numbers below come from counting every call to `SetUnification2.solve` at `6d74b697d`,
+first while compiling the standard library (an empty program), then over the test suite. One
+suite, `TestNamer`, aborted under instrumentation and is missing from the test-suite numbers. It
+passes without the counters.
+
+| | Standard library | Test suite |
+|---|---:|---:|
+| Solves | 5,963 | 749,955 |
+| Distinct equations per solve (median / p99 / max) | 4 / 82 / 293 | 1 / 36 / 2,001 |
+| Solves with no split at all | 5,828 (97.7%) | 744,910 (99.3%) |
+| Solves with more than 64 splits | 0 | 12 |
+| Most of its budget used by one solve | 17% (17 splits) | 103% (2,267 splits) |
+| Solves that exhaust the budget | 0 | 3 |
+| Solves that reach step 4 | 0 | 3 |
+
+Distribution is rare: fewer than one solve in forty splits at all, and in the standard library
+the largest solve uses less than a fifth of its budget. No solve in either run ended with a stuck
+constraint, so step 4 was reached only through the budget.
+
+The budget ran out three times, all in the test suite:
+
+| Equations | Budget | Splits | Constraints set aside | Outcome |
+|---:|---:|---:|---:|---|
+| 274 | 2,256 | 2,267 | 39 | unsolved |
+| 64 | 576 | 591 | 11 | unsolved |
+| 64 | 576 | 577 | 8 | unsolved |
+
+All three end unsolved in step 4, either by SVE failing or by the `MaxVars` limit. Whether they
+would have been solved with a larger budget was not checked. On this code base the budget is a
+safety net against blow-up, not something ordinary programs run into.
