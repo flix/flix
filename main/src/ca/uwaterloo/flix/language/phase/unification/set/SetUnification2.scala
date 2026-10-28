@@ -34,6 +34,7 @@ import scala.collection.mutable
   *
   *   1. Alias and define: `x ~ y` and `x ~ f` with `x` not in `f` bind `x`. These run on the
   *      original equalities so that ranges stay small and a variable leaves the system in one step.
+  *      The equations are taken smallest first, independent of their order (see [[sortBySize]]).
   *
   *   2. Inclusions: every other equation `f1 ~ f2` becomes the constraints `f1 ∩ ¬f2 ~ ∅` and
   *      `¬f1 ∩ f2 ~ ∅`. Complements sit at the atoms (see [[SetFormula.mkCompl]]), so every
@@ -158,7 +159,7 @@ object SetUnification2 {
   def solve(l: List[Equation], mode: SveMode): (List[Equation], SetSubstitution) = {
     // Equations are compared without their locations, so that the same constraint from different
     // sites (e.g. the cases of a handler) counts as a duplicate.
-    val eqs = l.distinctBy(eq => (eq.f1, eq.f2))
+    val eqs = sortBySize(l.distinctBy(eq => (eq.f1, eq.f2)))
     val state = new State(SplitBudgetPerEquation * eqs.length + SplitBudgetBase)
 
     val rest = aliasAndDefine(eqs, state)
@@ -168,6 +169,20 @@ object SetUnification2 {
     processConstraints(state)
     sve(state, mode)
   }
+
+  /**
+    * Returns `eqs` sorted by size, smallest first, with ties broken by the structural hash of the
+    * equation, so that the order of `eqs` matters only among equations of equal size and hash.
+    *
+    * The order decides which of several definitions `x ~ f1`, `x ~ f2`, .. of a variable binds it
+    * in [[aliasAndDefine]]: the first binds `x`, and the others become inclusion constraints. With
+    * the smallest first, the binding copies the smallest formula into every occurrence of `x`,
+    * and the larger ones are solved as constraints. In the opposite order, a large range is copied
+    * everywhere and the small equations become constraints over it, whose free steps nest the
+    * previous ranges inside the next.
+    */
+  private def sortBySize(eqs: List[Equation]): List[Equation] =
+    eqs.map(eq => ((eq.f1.size + eq.f2.size, (eq.f1, eq.f2).hashCode), eq)).sortBy(_._1).map(_._2)
 
   /**
     * Solves the aliases `x ~ y` and definitions `x ~ f`, where `x` does not occur in `f`, among
