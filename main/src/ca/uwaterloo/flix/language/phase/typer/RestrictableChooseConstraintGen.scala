@@ -220,7 +220,9 @@ object RestrictableChooseConstraintGen {
     */
   def visitApplyRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit scope: RegionScope, c: TypeContext, root: KindedAst.Root, flix: Flix): InferredAst.Expr = {
     exp match {
-      case KindedAst.Expr.RestrictableTag(symUse, exps, isOpen, tvar, evar, loc) =>
+      case KindedAst.Expr.RestrictableTag(symUse, exps, isOpen, loc) =>
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+        val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
 
         // Lookup the enum declaration.
         val enumSym = symUse.sym.enumSym
