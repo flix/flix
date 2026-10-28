@@ -56,11 +56,14 @@ import scala.collection.mutable
   * [[State.update]]). The phases are component-local without an explicit partition, since a
   * binding of `x` only changes the constraints that mention `x`.
   *
-  * Complexity. Phase 1 makes one pass over the equations per pass that binds a variable, so at
-  * most one pass per variable. Phase 3 creates at most the budget many constraints by
-  * distribution, and every other step closes or parks the constraint it takes up, so the number of
-  * steps is bounded by the constraints created plus one revisit of a stuck constraint per binding.
-  * Phase 4 is exponential in the variables of the equations it receives, which are guarded by
+  * Complexity. Let `n` be the number of distinct equations and `v` the number of variables. Phase 1
+  * makes at most `v + 1` passes of `n` substitutions. Phase 2 creates at most `2n` constraints.
+  * Phase 3 sees at most `2n` plus the split budget many constraints, and every step closes, splits
+  * or parks the constraint it takes up. A free step closes a constraint, so there are at most that
+  * many bindings, and a stuck constraint is revisited at most once per binding: quadratic in the
+  * number of constraints, which is linear in `n`. The ground emptiness test goes through a
+  * Zhegalkin polynomial and can be exponential in the rigid constants it mentions. Phase 4 is
+  * exponential in the variables of the constraints it receives, each of which is checked against
   * [[SetUnification.MaxVars]].
   */
 object SetUnification2 {
