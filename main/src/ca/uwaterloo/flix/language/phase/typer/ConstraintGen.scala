@@ -811,12 +811,10 @@ object ConstraintGen {
 
       case Expr.Ascribe(exp, expectedTpe, expectedEff, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
-        val tvar = freshVar(Kind.Star, loc)
         val e = visitExp(exp)
         expectedTpe.foreach { tpe => c.expectType(expected = tpe, actual = e.tpe, loc) }
-        c.unifyType(e.tpe, tvar, loc)
         expectedEff.foreach { eff => c.expectType(expected = eff, actual = e.eff, loc) }
-        val resTpe = tvar
+        val resTpe = e.tpe
         val resEff = e.eff
         InferredAst.Expr.Ascribe(e, expectedTpe, expectedEff, resTpe, resEff, loc)
 
@@ -826,35 +824,30 @@ object ConstraintGen {
 
       case Expr.CheckedCast(cast, exp, loc) =>
         // A cast expression is sound; the type system ensures the declared type is correct.
-        val tvar = Type.freshVar(Kind.Star, loc)
-        val evar = Type.freshVar(Kind.Eff, loc)
         cast match {
           case CheckedCastType.TypeCast =>
             // We replace the type with a fresh variable to allow any type.
             // The validity of this cast is checked in the Safety phase.
             val e = visitExp(exp)
-            c.unifyType(evar, e.eff, loc)
-            val resTpe = tvar
-            val resEff = evar
+            val resTpe = Type.freshVar(Kind.Star, loc)
+            val resEff = e.eff
             InferredAst.Expr.CheckedCast(cast, e, resTpe, resEff, loc)
 
           case CheckedCastType.EffectCast =>
             // A checked effect cast is an explicit use of subeffecting: the effect of the cast may
             // be any effect that includes the effect of exp.
             val e = visitExp(exp)
-            c.unifyType(tvar, e.tpe, loc)
+            val evar = Type.freshVar(Kind.Eff, loc)
             c.subEff(e.eff, evar, loc)
-            val resTpe = tvar
+            val resTpe = e.tpe
             val resEff = evar
             InferredAst.Expr.CheckedCast(cast, e, resTpe, resEff, loc)
         }
 
       case Expr.UncheckedCast(exp, declaredTpe, declaredEff, loc) =>
         // An unchecked cast expression is unsound; the type system assumes the declared type and effect are correct.
-        val tvar = freshVar(Kind.Star, loc)
         val e = visitExp(exp)
-        c.unifyType(tvar, declaredTpe.getOrElse(e.tpe), loc)
-        val resTpe = tvar
+        val resTpe = declaredTpe.getOrElse(e.tpe)
         val resEff = declaredEff.getOrElse(e.eff)
         InferredAst.Expr.UncheckedCast(e, declaredTpe, declaredEff, resTpe, resEff, loc)
 
@@ -878,12 +871,9 @@ object ConstraintGen {
         InferredAst.Expr.TryCatch(e, rs, resTpe, resEff, loc)
 
       case KindedAst.Expr.Throw(exp, loc) =>
-        val tvar = Type.freshVar(Kind.Star, loc)
-        val evar = Type.freshVar(Kind.Eff, loc)
         val e = visitExp(exp)
-        c.unifyType(evar, Type.mkUnion(e.eff, Type.IO, loc), loc)
-        val resultTpe = tvar
-        val resultEff = evar
+        val resultTpe = Type.freshVar(Kind.Star, loc)
+        val resultEff = Type.mkUnion(e.eff, Type.IO, loc)
         InferredAst.Expr.Throw(e, resultTpe, resultEff, loc)
 
       case Expr.Handler(symUse, rules, loc) =>
@@ -942,7 +932,6 @@ object ConstraintGen {
         // --------------------------------------------------------
         // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
         val jvar = freshVar(Kind.Jvm, loc)
-        val tvar = freshVar(Kind.Star, loc)
         val evar = freshVar(Kind.Eff, loc)
         val baseEff = Type.JvmToEff(jvar, loc)
         val clazzTpe = JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
@@ -950,9 +939,8 @@ object ConstraintGen {
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
-        c.unifyType(tvar, clazzTpe, loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
-        val resTpe = tvar
+        val resTpe = clazzTpe
         val resEff = evar
         InferredAst.Expr.InvokeConstructor(es, jvar, resTpe, resEff, loc)
 
@@ -961,7 +949,6 @@ object ConstraintGen {
         // --------------------------------------------------------
         // Γ ⊢ super(e₁ ...) : k \ JvmToEff[ι]
         val jvar = freshVar(Kind.Jvm, loc)
-        val tvar = freshVar(Kind.Star, loc)
         val evar = freshVar(Kind.Eff, loc)
         val baseEff = Type.JvmToEff(jvar, loc)
         val clazzTpe = JavaTypes.instantiateWithFreshVars(clazz, scope, loc)
@@ -969,9 +956,8 @@ object ConstraintGen {
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
-        c.unifyType(tvar, clazzTpe, loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
-        val resTpe = tvar
+        val resTpe = clazzTpe
         val resEff = evar
         InferredAst.Expr.InvokeSuperConstructor(es, jvar, resTpe, resEff, loc)
 
@@ -1056,12 +1042,10 @@ object ConstraintGen {
         InferredAst.Expr.PutField(field, e1, e2, resTpe, resEff, loc)
 
       case Expr.GetStaticField(field, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
         val isFinal = field.isFinal
         val fieldType = JavaTypes.instantiateWithObjectArgs(field.ref.descriptor, loc)
         val fieldReadEff = if (isFinal) Type.Pure else Type.IO
-        c.unifyType(tvar, fieldType, loc)
-        val resTpe = tvar
+        val resTpe = fieldType
         val resEff = fieldReadEff
         InferredAst.Expr.GetStaticField(field, resTpe, resEff, loc)
 
@@ -1073,55 +1057,43 @@ object ConstraintGen {
         InferredAst.Expr.PutStaticField(field, e, resTpe, resEff, loc)
 
       case Expr.NewObject(sym, clazz, targs, constructors, methods, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
         val cs = constructors.map(visitJvmConstructor)
         val resTpe = Type.mkApply(JavaTypes.flixTypeOf(clazz.desc, loc), targs, loc)
-        c.unifyType(tvar, resTpe, loc)
 
         val ms = methods.map(visitJvmMethod)
 
         val resEff = Type.IO
-        InferredAst.Expr.NewObject(sym, clazz, tvar, resEff, cs, ms, loc)
+        InferredAst.Expr.NewObject(sym, clazz, resTpe, resEff, cs, ms, loc)
 
       case Expr.NewChannel(exp, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
         val elmTpe = freshVar(Kind.Star, loc)
         val e = visitExp(exp)
         c.expectType(expected = Type.Int32, actual = e.tpe, exp.loc)
-        c.unifyType(tvar, Type.mkTuple(List(Type.mkSender(elmTpe, loc), Type.mkReceiver(elmTpe, loc)), loc), loc)
-        val resTpe = tvar
+        val resTpe = Type.mkTuple(List(Type.mkSender(elmTpe, loc), Type.mkReceiver(elmTpe, loc)), loc)
         val resEff = Type.mkUnion(e.eff, Type.Chan, loc)
         InferredAst.Expr.NewChannel(e, resTpe, resEff, loc)
 
       case Expr.GetChannel(exp, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
-        val evar = freshVar(Kind.Eff, loc)
         val elmTpe = freshVar(Kind.Star, loc)
         val receiverTpe = Type.mkReceiver(elmTpe, loc)
         val e = visitExp(exp)
         c.expectType(expected = receiverTpe, actual = e.tpe, exp.loc)
-        c.unifyType(tvar, elmTpe, loc)
-        c.unifyType(evar, Type.mkUnion(e.eff, Type.Chan, Type.NonDet, loc), loc)
-        val resTpe = tvar
-        val resEff = evar
+        val resTpe = elmTpe
+        val resEff = Type.mkUnion(e.eff, Type.Chan, Type.NonDet, loc)
         InferredAst.Expr.GetChannel(e, resTpe, resEff, loc)
 
       case Expr.PutChannel(exp1, exp2, loc) =>
-        val evar = freshVar(Kind.Eff, loc)
         val elmTpe = freshVar(Kind.Star, loc)
         val senderTpe = Type.mkSender(elmTpe, loc)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         c.expectType(expected = senderTpe, actual = e1.tpe, exp1.loc)
         c.expectType(expected = elmTpe, actual = e2.tpe, exp2.loc)
-        c.unifyType(evar, Type.mkUnion(e1.eff, e2.eff, Type.Chan, loc), loc)
         val resTpe = Type.mkUnit(loc)
-        val resEff = evar
+        val resEff = Type.mkUnion(e1.eff, e2.eff, Type.Chan, loc)
         InferredAst.Expr.PutChannel(e1, e2, resTpe, resEff, loc)
 
       case Expr.SelectChannel(rules, default, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
-        val evar = freshVar(Kind.Eff, loc)
         val rs = rules.map(visitSelectRule)
         val ruleTypes = rs.map(_.exp.tpe)
         val ruleEffs = rs.map(r => Type.mkUnion(r.chan.eff, r.exp.eff, Type.Chan, Type.NonDet, r.exp.loc))
@@ -1130,10 +1102,9 @@ object ConstraintGen {
           case None => (freshVar(Kind.Star, loc), Type.Pure)
           case Some(e) => (e.tpe, e.eff)
         }
-        c.unifyAllTypes(tvar :: defaultType :: ruleTypes, loc)
-        c.unifyType(evar, Type.mkUnion(defaultEff :: ruleEffs, loc), loc)
-        val resTpe = tvar
-        val resEff = evar
+        c.unifyAllTypes(defaultType :: ruleTypes, loc)
+        val resTpe = defaultType
+        val resEff = Type.mkUnion(defaultEff :: ruleEffs, loc)
         InferredAst.Expr.SelectChannel(rs, d, resTpe, resEff, loc)
 
       case Expr.Spawn(exp1, exp2, loc) =>
@@ -1410,9 +1381,8 @@ object ConstraintGen {
     * @param continuationEffect the effect of the continuation
     * @param effectSubst        the shared instantiation of the effect's type parameters
     */
-  private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type, effectSubst: Substitution)(implicit c: TypeContext, scope: RegionScope, root: KindedAst.Root, flix: Flix): InferredAst.HandlerRule = rule match {
+  private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type, effectSubst: Substitution)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): InferredAst.HandlerRule = rule match {
     case KindedAst.HandlerRule(symUse, actualFparams0, body, loc) =>
-      val opTvar = Type.freshVar(Kind.Star, body.loc)
       val effect = root.effects(symUse.sym.eff)
       val ops = effect.ops.map(op => op.sym -> op).toMap
       // The effect parameters have already been instantiated once for the enclosing handler.
@@ -1430,10 +1400,6 @@ object ConstraintGen {
           unifyFormalParams(symUse.sym, expected = expectedParamTypes, actual = actualFparams)
           c.expectType(expected = expectedResumptionType, actual = resumptionFparam.tpe, resumptionFparam.loc)
           val e = visitExp(body)
-
-          // unify the operation return type with its tvar
-          c.unifyType(e.tpe, opTvar, body.loc)
-
           val fps = actualFparams0.map(visitFormalParam)
           InferredAst.HandlerRule(symUse, fps, e, loc)
       }
