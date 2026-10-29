@@ -67,8 +67,6 @@ object RestrictableChooseConstraintGen {
 
     exp match {
       case KindedAst.Expr.RestrictableChoose(false, exp0, rules0, loc) =>
-        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-
         // Get the enum symbols for the matched type
         rules0.headOption match {
           case None => throw InternalCompilerException("unexpected empty choose", loc)
@@ -111,9 +109,9 @@ object RestrictableChooseConstraintGen {
               val effs = es.map(_.eff)
 
               // τ_out
-              c.unifyAllTypes(tvar :: tpes, loc)
+              c.unifyAllTypes(tpes, loc)
               val rs = ListOps.zip(ps, es).map { case (p, body) => InferredAst.RestrictableChooseRule(p, body) }
-              val resTpe = tvar
+              val resTpe = tpes.head // We are guaranteed to have at least one rule.
               val resEff = Type.mkUnion(e.eff :: effs, loc)
               InferredAst.Expr.RestrictableChoose(star = false, e, rs, resTpe, resEff, loc)
 
@@ -121,8 +119,6 @@ object RestrictableChooseConstraintGen {
         }
 
       case KindedAst.Expr.RestrictableChoose(true, exp0, rules0, loc) =>
-        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-
         // Get the enum symbols for the matched type
         rules0.headOption match {
           case None => throw InternalCompilerException("unexpected empty choose", loc)
@@ -192,7 +188,6 @@ object RestrictableChooseConstraintGen {
               unifySubset(set, indexOutVar, enumSym, loc)
 
               // τ_out
-              c.unifyType(enumTypeOut, tvar, loc)
               val rs = ListOps.zip(ps, es).map { case (p, body) => InferredAst.RestrictableChooseRule(p, body) }
               val resTpe = enumTypeOut
               val resEff = Type.mkUnion(e.eff :: effs, loc)
@@ -309,7 +304,6 @@ object RestrictableChooseConstraintGen {
     implicit val scope: RegionScope = c.getScope
     exp0 match {
       case KindedAst.Expr.OpenAs(symUse@RestrictableEnumSymUse(sym, _), exp, loc) =>
-        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         val `enum` = root.restrictableEnums(sym)
 
         val (enumType, indexVar, targs) = instantiatedEnumType(`enum`, loc.asSynthetic)
@@ -331,9 +325,6 @@ object RestrictableChooseConstraintGen {
           openIndex :: targs,
           loc
         )
-
-        // unify the tvar
-        c.unifyType(tvar, resultType, loc)
 
         val resTpe = resultType
         InferredAst.Expr.OpenAs(symUse, e, resTpe, loc)

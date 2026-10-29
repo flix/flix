@@ -21,12 +21,10 @@ object SchemaConstraintGen {
     implicit val scope: RegionScope = c.getScope
     e match {
       case KindedAst.Expr.FixpointConstraintSet(cs0, loc) =>
-        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         val (cs, constraintTypes) = cs0.map(visitConstraint).unzip
         c.unifyAllTypes(constraintTypes, loc)
         val schemaRow = constraintTypes.headOption.getOrElse(Type.freshVar(Kind.SchemaRow, loc))
-        c.unifyType(tvar, Type.mkSchema(schemaRow, loc), loc)
-        val resTpe = tvar
+        val resTpe = Type.mkSchema(schemaRow, loc)
         InferredAst.Expr.FixpointConstraintSet(cs, resTpe, loc)
     }
   }
@@ -35,8 +33,6 @@ object SchemaConstraintGen {
     implicit val scope: RegionScope = c.getScope
     e match {
       case KindedAst.Expr.FixpointLambda(pparams, exp, loc) =>
-        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-
         def mkRowExtend(pparam: KindedAst.PredicateParam, restRow: Type): Type = pparam match {
           case KindedAst.PredicateParam(pred, paramTpe, _) => Type.mkSchemaRowExtend(pred, paramTpe, restRow, paramTpe.loc)
         }
@@ -48,9 +44,8 @@ object SchemaConstraintGen {
 
         val e1 = visitExp(exp)
         c.unifyType(e1.tpe, Type.mkSchema(expectedRowType, loc), loc)
-        c.unifyType(tvar, Type.mkSchema(resultRowType, loc), loc)
         val ps = pparams.map(visitPredicateParam)
-        val resTpe = tvar
+        val resTpe = Type.mkSchema(resultRowType, loc)
         val resEff = e1.eff
         InferredAst.Expr.FixpointLambda(ps, e1, resTpe, resEff, loc)
     }
@@ -75,10 +70,8 @@ object SchemaConstraintGen {
   }
 
   def visitFixpointQueryWithProvenance(e: KindedAst.Expr.FixpointQueryWithProvenance)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): InferredAst.Expr = {
-    implicit val scope: RegionScope = c.getScope
     e match {
       case KindedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, loc1) =>
-        val tvar = Type.freshVar(Kind.Star, loc1)
         val es = exps.map(visitExp)
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
@@ -87,7 +80,6 @@ object SchemaConstraintGen {
         c.unifyAllTypes(Type.mkSchema(withRow, loc1) :: Type.mkSchema(selectRow, loc1) :: tpes, loc1)
         val resTpe = Type.mkVector(Type.mkExtensible(resultRow, loc1), loc1)
         val resEff = Type.mkUnion(effs, loc1)
-        c.unifyType(tvar, resTpe, loc1)
         InferredAst.Expr.FixpointQueryWithProvenance(es, s, withh, resTpe, resEff, loc1)
     }
   }
@@ -104,7 +96,6 @@ object SchemaConstraintGen {
         //  --------------------------------------------------------------------
         //  FixpointQueryWithSelect(exps, queryExp, ...) : Vector[(α₁, α₂, ...)]
         //
-        val tvar = Type.freshVar(Kind.Star, loc)
         val predArity = selects.length
         val freshRelOrLat = Type.freshVar(Kind.mkArrowTo(predArity, Kind.Predicate), loc)
         val freshTermVars = List.range(0, predArity).map(_ => Type.freshVar(Kind.Star, loc))
@@ -117,12 +108,11 @@ object SchemaConstraintGen {
         val qe = visitExp(queryExp)
         c.unifyAllTypes(Type.mkSchema(freshRestSchemaVar, loc) :: tpes, loc)
         c.unifyType(qe.tpe, expectedSchemaType, loc)
-        c.unifyType(tvar, Type.mkVector(tuple, loc), loc)
         // The select, from, and where clauses are type checked as part of the query expression.
         val ss = selects.map(visitExpUnchecked)
         val f = from.map(visitBodyPredicateUnchecked)
         val w = where.map(visitExpUnchecked)
-        val resTpe = tvar
+        val resTpe = Type.mkVector(tuple, loc)
         val resEff = Type.mkUnion(qe.eff :: effs, loc)
         InferredAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, resTpe, resEff, loc)
     }
@@ -139,7 +129,6 @@ object SchemaConstraintGen {
         //  ---------------
         //  solve exp project P₁, P₂, ... : #{ P₁, P₂, ..., Pₖ | c }
         //
-        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         val es = exps.map(visitExp)
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
@@ -152,8 +141,7 @@ object SchemaConstraintGen {
             resultSchemaRow
           case None => freshSchemaRow
         }
-        c.unifyType(tvar, Type.mkSchema(resultSchemaRow, loc), loc)
-        val resTpe = tvar
+        val resTpe = Type.mkSchema(resultSchemaRow, loc)
         val resEff = Type.mkUnion(effs, loc)
         InferredAst.Expr.FixpointSolveWithProject(es, optPreds, mode, resTpe, resEff, loc)
 
