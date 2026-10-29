@@ -647,13 +647,11 @@ object ConstraintGen {
         // ---------------------------------------------
         // { label = exp1 | exp2 } : { label  :: tpe | r }
         //
-        val tvar = freshVar(Kind.Star, loc)
         val freshRowVar = freshVar(Kind.RecordRow, loc)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         c.unifyType(e2.tpe, Type.mkRecord(freshRowVar, loc), loc)
-        c.unifyType(tvar, Type.mkRecord(Type.mkRecordRowExtend(label, e1.tpe, freshRowVar, loc), loc), loc)
-        val resTpe = tvar
+        val resTpe = Type.mkRecord(Type.mkRecordRowExtend(label, e1.tpe, freshRowVar, loc), loc)
         val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
         InferredAst.Expr.RecordExtend(label, e1, e2, resTpe, resEff, loc)
 
@@ -663,19 +661,15 @@ object ConstraintGen {
         // -------------------------
         // { -label | exp } : {| r }
         //
-        val tvar = freshVar(Kind.Star, loc)
         val freshLabelType = freshVar(Kind.Star, loc)
         val freshRowVar = freshVar(Kind.RecordRow, loc)
         val e = visitExp(exp)
         c.unifyType(e.tpe, Type.mkRecord(Type.mkRecordRowExtend(label, freshLabelType, freshRowVar, loc), loc), loc)
-        c.unifyType(tvar, Type.mkRecord(freshRowVar, loc), loc)
-        val resTpe = tvar
+        val resTpe = Type.mkRecord(freshRowVar, loc)
         val resEff = e.eff
         InferredAst.Expr.RecordRestrict(label, e, resTpe, resEff, loc)
 
       case Expr.ArrayLit(exps, exp, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
-        val evar = freshVar(Kind.Eff, loc)
         val regionVar = freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegionToStar(regionVar, loc)
         val es = exps.map(visitExp)
@@ -685,15 +679,11 @@ object ConstraintGen {
         c.expectType(expected = regionType, actual = e.tpe, exp.loc)
         c.unifyAllTypes(tpes, loc)
         val elmTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
-        c.unifyType(tvar, Type.mkArray(elmTpe, regionVar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(Type.mkUnion(effs, loc), e.eff, regionVar, loc), loc)
-        val resTpe = tvar
-        val resEff = evar
+        val resTpe = Type.mkArray(elmTpe, regionVar, loc)
+        val resEff = Type.mkUnion(Type.mkUnion(effs, loc), e.eff, regionVar, loc)
         InferredAst.Expr.ArrayLit(es, e, resTpe, resEff, loc)
 
       case Expr.ArrayNew(exp1, exp2, exp3, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
-        val evar = freshVar(Kind.Eff, loc)
         val regionVar = freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegionToStar(regionVar, loc)
         val e1 = visitExp(exp1)
@@ -701,27 +691,22 @@ object ConstraintGen {
         val e3 = visitExp(exp3)
         c.expectType(expected = regionType, actual = e1.tpe, loc)
         c.expectType(expected = Type.Int32, actual = e3.tpe, exp3.loc)
-        c.unifyType(tvar, Type.mkArray(e2.tpe, regionVar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(e1.eff, e2.eff, e3.eff, regionVar, loc), loc)
-        val resTpe = tvar
-        val resEff = evar
+        val resTpe = Type.mkArray(e2.tpe, regionVar, loc)
+        val resEff = Type.mkUnion(e1.eff, e2.eff, e3.eff, regionVar, loc)
         InferredAst.Expr.ArrayNew(e1, e2, e3, resTpe, resEff, loc)
 
       case Expr.ArrayLoad(exp1, exp2, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
-        val evar = freshVar(Kind.Eff, loc)
+        val elmVar = freshVar(Kind.Star, loc)
         val regionVar = freshVar(Kind.Eff, loc)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        c.expectType(expected = Type.mkArray(tvar, regionVar, loc), actual = e1.tpe, exp1.loc)
+        c.expectType(expected = Type.mkArray(elmVar, regionVar, loc), actual = e1.tpe, exp1.loc)
         c.expectType(expected = Type.Int32, actual = e2.tpe, exp2.loc)
-        c.unifyType(evar, Type.mkUnion(regionVar, e1.eff, e2.eff, loc), loc)
-        val resTpe = tvar
-        val resEff = evar
+        val resTpe = elmVar
+        val resEff = Type.mkUnion(regionVar, e1.eff, e2.eff, loc)
         InferredAst.Expr.ArrayLoad(e1, e2, resTpe, resEff, loc)
 
       case Expr.ArrayStore(exp1, exp2, exp3, loc) =>
-        val evar = freshVar(Kind.Eff, loc)
         val elmVar = freshVar(Kind.Star, loc)
         val regionVar = freshVar(Kind.Eff, loc)
         val arrayType = Type.mkArray(elmVar, regionVar, loc)
@@ -731,30 +716,24 @@ object ConstraintGen {
         c.expectType(expected = arrayType, actual = e1.tpe, exp1.loc)
         c.expectType(expected = Type.Int32, actual = e2.tpe, exp2.loc)
         c.expectType(expected = elmVar, actual = e3.tpe, exp3.loc)
-        c.unifyType(evar, Type.mkUnion(regionVar, e1.eff, e2.eff, e3.eff, loc), loc)
-        val resEff = evar
+        val resEff = Type.mkUnion(regionVar, e1.eff, e2.eff, e3.eff, loc)
         InferredAst.Expr.ArrayStore(e1, e2, e3, resEff, loc)
 
       case Expr.ArrayLength(exp, loc) =>
-        val evar = freshVar(Kind.Eff, loc)
         val elmVar = freshVar(Kind.Star, loc)
         val regionVar = freshVar(Kind.Eff, loc)
         val e = visitExp(exp)
         c.expectType(Type.mkArray(elmVar, regionVar, loc), e.tpe, exp.loc)
-        c.unifyType(evar, e.eff, loc)
-        val resEff = evar
+        val resEff = e.eff
         InferredAst.Expr.ArrayLength(e, resEff, loc)
 
       case Expr.StructNew(sym, fields, regionOpt, loc) =>
         // This case needs to handle expressions like `new S { f = rhs } @ r` where `f` was not present in the struct declaration
         // Here, we check that `rhs` is itself valid by visiting it but make sure not to unify it with anything
-        val tvar = freshVar(Kind.Star, loc)
-        val evar = freshVar(Kind.Eff, loc)
         val (instantiatedFieldTpes, structTpe, regionVarOpt) = instantiateStruct(sym, root.structs)
         val fs = fields.map { case (k, v) => (k, visitExp(v)) }
         val fieldTpes = fs.map { case (_, e) => e.tpe }
         val fieldEffs = fs.map { case (_, e) => e.eff }
-        c.unifyType(tvar, structTpe, loc)
         for {
           ((fieldSymUse, expr), fieldTpe1) <- ListOps.zip(fields, fieldTpes)
         } {
@@ -763,79 +742,65 @@ object ConstraintGen {
             case Some((_, fieldTpe2)) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
           }
         }
-        val r = (regionOpt, regionVarOpt) match {
+        val (r, resEff) = (regionOpt, regionVarOpt) match {
           case (Some(region), Some(regionVar)) =>
             val e = visitExp(region)
             c.unifyType(Type.mkRegionToStar(regionVar, loc), e.tpe, region.loc)
-            c.unifyType(evar, Type.mkUnion(e.eff :: regionVar :: fieldEffs, loc), loc)
-            Some(e)
+            (Some(e), Type.mkUnion(e.eff :: regionVar :: fieldEffs, loc))
           case (Some(_), None) =>
             // Unreachable: every struct has a region parameter. The parser requires at least one type
             // parameter, and the kinder adds a synthetic region parameter if the user left them out.
             throw InternalCompilerException("Unexpected struct without a region parameter", loc)
-          case (None, _) => None
+          case (None, _) =>
+            // There is no region expression, so the effect is unconstrained.
+            (None, freshVar(Kind.Eff, loc))
         }
-        val resTpe = tvar
-        val resEff = evar
+        val resTpe = structTpe
         InferredAst.Expr.StructNew(sym, fs, r, resTpe, resEff, loc)
 
       case Expr.StructGet(exp, symUse, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
-        val evar = freshVar(Kind.Eff, loc)
         val (instantiatedFieldTpes, structTpe, regionVarOpt) = instantiateStruct(symUse.sym.structSym, root.structs)
         val e = visitExp(exp)
         c.expectType(structTpe, e.tpe, exp.loc)
         val (mutable, fieldTpe) = instantiatedFieldTpes(symUse.sym)
-        c.unifyType(fieldTpe, tvar, loc)
         // If the field is mutable, then it emits a region effect, otherwise not.
         val accessEffect = if (!mutable) Type.mkPure(loc) else regionVarOpt match {
           case Some(value) => value
           case None => throw InternalCompilerException(s"Unexpected missing region var in struct get near ${exp}", loc)
         }
-        c.unifyType(Type.mkUnion(e.eff, accessEffect, loc), evar, exp.loc)
-        val resTpe = tvar
-        val resEff = evar
+        val resTpe = fieldTpe
+        val resEff = Type.mkUnion(e.eff, accessEffect, loc)
         InferredAst.Expr.StructGet(e, symUse, resTpe, resEff, loc)
 
       case Expr.StructPut(exp1, symUse, exp2, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
-        val evar = freshVar(Kind.Eff, loc)
         val (instantiatedFieldTpes, structTpe, regionVarOpt) = instantiateStruct(symUse.sym.structSym, root.structs)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         c.expectType(structTpe, e1.tpe, exp1.loc)
         val (_, fieldTpe) = instantiatedFieldTpes(symUse.sym)
         c.expectType(fieldTpe, e2.tpe, exp2.loc)
-        c.unifyType(Type.mkUnit(loc), tvar, loc)
-        c.unifyType(Type.mkUnion(e1.eff, e2.eff, regionVarOpt.get, loc), evar, loc)
-        val resTpe = tvar
-        val resEff = evar
+        val resTpe = Type.mkUnit(loc)
+        val resEff = Type.mkUnion(e1.eff, e2.eff, regionVarOpt.get, loc)
         InferredAst.Expr.StructPut(e1, symUse, e2, resTpe, resEff, loc)
 
       case Expr.VectorLit(exps, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
-        val evar = freshVar(Kind.Eff, loc)
         val es = exps.map(visitExp)
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
         c.unifyAllTypes(tpes, loc)
         val tpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
-        c.unifyType(tvar, Type.mkVector(tpe, loc), loc)
-        c.unifyType(evar, Type.mkUnion(effs, loc), loc)
-        val resTpe = tvar
-        val resEff = evar
+        val resTpe = Type.mkVector(tpe, loc)
+        val resEff = Type.mkUnion(effs, loc)
         InferredAst.Expr.VectorLit(es, resTpe, resEff, loc)
 
       case Expr.VectorLoad(exp1, exp2, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
-        val evar = freshVar(Kind.Eff, loc)
+        val elmVar = freshVar(Kind.Star, loc)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        c.expectType(expected = Type.mkVector(tvar, loc), actual = e1.tpe, exp1.loc)
+        c.expectType(expected = Type.mkVector(elmVar, loc), actual = e1.tpe, exp1.loc)
         c.expectType(expected = Type.Int32, actual = e2.tpe, exp2.loc)
-        c.unifyType(evar, Type.mkUnion(e1.eff, e2.eff, loc), loc)
-        val resTpe = tvar
-        val resEff = evar
+        val resTpe = elmVar
+        val resEff = Type.mkUnion(e1.eff, e2.eff, loc)
         InferredAst.Expr.VectorLoad(e1, e2, resTpe, resEff, loc)
 
       case Expr.VectorLength(exp, loc) =>
