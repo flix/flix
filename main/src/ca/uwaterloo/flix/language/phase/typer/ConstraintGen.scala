@@ -730,7 +730,7 @@ object ConstraintGen {
       case Expr.StructNew(sym, fields, regionOpt, loc) =>
         // This case needs to handle expressions like `new S { f = rhs } @ r` where `f` was not present in the struct declaration
         // Here, we check that `rhs` is itself valid by visiting it but make sure not to unify it with anything
-        val (instantiatedFieldTpes, structTpe, regionVarOpt) = instantiateStruct(sym, root.structs)
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(sym, root.structs)
         val fs = fields.map { case (k, v) => (k, visitExp(v)) }
         val fieldTpes = fs.map { case (_, e) => e.tpe }
         val fieldEffs = fs.map { case (_, e) => e.eff }
@@ -742,16 +742,12 @@ object ConstraintGen {
             case Some((_, fieldTpe2)) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
           }
         }
-        val (r, resEff) = (regionOpt, regionVarOpt) match {
-          case (Some(region), Some(regionVar)) =>
+        val (r, resEff) = regionOpt match {
+          case Some(region) =>
             val e = visitExp(region)
             c.unifyType(Type.mkRegionToStar(regionVar, loc), e.tpe, region.loc)
             (Some(e), Type.mkUnion(e.eff :: regionVar :: fieldEffs, loc))
-          case (Some(_), None) =>
-            // Unreachable: every struct has a region parameter. The parser requires at least one type
-            // parameter, and the kinder adds a synthetic region parameter if the user left them out.
-            throw InternalCompilerException("Unexpected struct without a region parameter", loc)
-          case (None, _) =>
+          case None =>
             // There is no region expression, so the effect is unconstrained.
             (None, freshVar(Kind.Eff, loc))
         }
@@ -759,28 +755,25 @@ object ConstraintGen {
         InferredAst.Expr.StructNew(sym, fs, r, resTpe, resEff, loc)
 
       case Expr.StructGet(exp, symUse, loc) =>
-        val (instantiatedFieldTpes, structTpe, regionVarOpt) = instantiateStruct(symUse.sym.structSym, root.structs)
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(symUse.sym.structSym, root.structs)
         val e = visitExp(exp)
         c.expectType(structTpe, e.tpe, exp.loc)
         val (mutable, fieldTpe) = instantiatedFieldTpes(symUse.sym)
         // If the field is mutable, then it emits a region effect, otherwise not.
-        val accessEffect = if (!mutable) Type.mkPure(loc) else regionVarOpt match {
-          case Some(value) => value
-          case None => throw InternalCompilerException(s"Unexpected missing region var in struct get near ${exp}", loc)
-        }
+        val accessEffect = if (mutable) regionVar else Type.mkPure(loc)
         val resTpe = fieldTpe
         val resEff = Type.mkUnion(e.eff, accessEffect, loc)
         InferredAst.Expr.StructGet(e, symUse, resTpe, resEff, loc)
 
       case Expr.StructPut(exp1, symUse, exp2, loc) =>
-        val (instantiatedFieldTpes, structTpe, regionVarOpt) = instantiateStruct(symUse.sym.structSym, root.structs)
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(symUse.sym.structSym, root.structs)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         c.expectType(structTpe, e1.tpe, exp1.loc)
         val (_, fieldTpe) = instantiatedFieldTpes(symUse.sym)
         c.expectType(fieldTpe, e2.tpe, exp2.loc)
         val resTpe = Type.mkUnit(loc)
-        val resEff = Type.mkUnion(e1.eff, e2.eff, regionVarOpt.get, loc)
+        val resEff = Type.mkUnion(e1.eff, e2.eff, regionVar, loc)
         InferredAst.Expr.StructPut(e1, symUse, e2, resTpe, resEff, loc)
 
       case Expr.VectorLit(exps, loc) =>
@@ -1509,33 +1502,37 @@ object ConstraintGen {
   }
 
   /**
-    * Instantiates the scheme of the struct in corresponding to `sym` in `structs`
-    * Returns a map from field name to its instantiated type, the type of the instantiated struct, and the instantiated struct's optional region variable
+    * Instantiates the scheme of the struct corresponding to `sym` in `structs`.
     *
-    * For example, for the struct `struct S [v, r] { a: v, b: Int32 }` where `v` instantiates to `v'` and `r` instantiates to `r'`
-    * The first element of the return tuple would be a map with entries `a -> v'` and `b -> Int32`
-    * The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
-    * The third element of the return tuple would be `Some(r')`
+    * Returns a map from each field symbol to its mutability and instantiated type, the type of the
+    * instantiated struct, and the instantiated region variable of the struct.
     *
-    * For a immutable struct `struct S [v] { a: v, b: Int32 }` the third element would be `None`.
+    * For example, for the struct `struct S[v, r] { a: v, b: Int32 }` where `v` instantiates to `v'` and `r` instantiates to `r'`:
+    *   - The first element of the return tuple is a map with entries `a -> (false, v')` and `b -> (false, Int32)`.
+    *   - The second element of the return tuple is (locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`.
+    *   - The third element of the return tuple is `r'`.
+    *
+    * Every struct has a region parameter and it is always the last type parameter: the parser requires
+    * at least one type parameter, and the kinder adds a synthetic region parameter if the user left them out.
     */
-  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix): (Map[Symbol.StructFieldSym, (Boolean, Type)], Type, Option[Type.Var]) = {
+  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix): (Map[Symbol.StructFieldSym, (Boolean, Type)], Type, Type.Var) = {
     implicit val scope: RegionScope = c.getScope
     val struct = structs(sym)
-    if (struct.mod.isMutable) {
-      if (struct.tparams.last.sym.kind != Kind.Eff) {
-        throw InternalCompilerException(s"Unexpected kind ${struct.tparams.last.sym.kind} in struct. Expected `${Kind.Eff}`", struct.loc)
-      }
+    val regionTparam = struct.tparams.lastOption match {
+      case Some(tparam) => tparam
+      case None => throw InternalCompilerException(s"Unexpected struct '$sym' without a region parameter", struct.loc)
     }
-    val fields = struct.fields
+    if (regionTparam.sym.kind != Kind.Eff) {
+      throw InternalCompilerException(s"Unexpected kind ${regionTparam.sym.kind} of the region parameter of struct '$sym'. Expected `${Kind.Eff}`", struct.loc)
+    }
     val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
     val subst = Substitution(substMap)
-    val instantiatedFields = fields.map {
+    val instantiatedFields = struct.fields.map {
       case KindedAst.StructField(_, mod, fieldSym, fieldTpe, _) =>
         fieldSym -> (mod.isMutable, subst(fieldTpe))
     }
-    val regionOpt = struct.tparams.lastOption.map(region => substMap(region.sym))
-    (instantiatedFields.toMap, tpe, regionOpt)
+    val regionVar = substMap(regionTparam.sym)
+    (instantiatedFields.toMap, tpe, regionVar)
   }
 
   /**
