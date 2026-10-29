@@ -77,16 +77,14 @@ object ConstraintGen {
         InferredAst.Expr.Cst(cst, resTpe, loc)
 
       case Expr.ApplyClo(exp1, exp2, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
         val evar = freshVar(Kind.Eff, loc)
         val lambdaBodyType = freshVar(Kind.Star, loc)
         val lambdaBodyEff = freshVar(Kind.Eff, loc)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         c.expectType(Type.mkArrowWithEffect(e2.tpe, lambdaBodyEff, lambdaBodyType, loc), e1.tpe, loc)
-        c.unifyType(tvar, lambdaBodyType, loc)
         c.unifyType(evar, Type.mkUnion(lambdaBodyEff :: e1.eff :: e2.eff :: Nil, loc), loc)
-        val resTpe = tvar
+        val resTpe = lambdaBodyType
         val resEff = evar
         InferredAst.Expr.ApplyClo(e1, e2, resTpe, resEff, loc)
 
@@ -95,8 +93,6 @@ object ConstraintGen {
 
         val tparams = defn.spec.tparams.map(_.sym)
         val targs = tparams.map(sym => Type.freshVar(sym.kind, sym.loc))
-        val itvar = freshVar(Kind.Star, symUse.loc)
-        val tvar = freshVar(Kind.Star, loc)
         val evar = freshVar(Kind.Eff, loc)
         val subst = Substitution(tparams.zip(targs).toMap)
 
@@ -113,11 +109,10 @@ object ConstraintGen {
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
 
-        c.unifyType(itvar, declaredType, loc)
+        val itpe = mkResolvable(declaredType, loc)
         c.expectTypeArguments(symUse.sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
         c.addClassConstraints(tconstrs, loc)
         c.addEqualityConstraints(econstrs, loc)
-        c.unifyType(tvar, declaredResultType, loc)
         val eff = if (declaredEff == Type.Pure) {
           // A pure def is not the source of an effect.
           Type.mkUnion(effs, loc)
@@ -128,28 +123,25 @@ object ConstraintGen {
           Type.mkUnion(pvar :: effs, loc)
         }
         c.unifyType(evar, eff, loc)
-        val resTpe = tvar
+        val resTpe = mkResolvable(declaredResultType, loc)
         val resEff = evar
-        InferredAst.Expr.ApplyDef(symUse, es, targs, itvar, resTpe, resEff, loc)
+        InferredAst.Expr.ApplyDef(symUse, es, targs, itpe, resTpe, resEff, loc)
 
       case Expr.ApplyLocalDef(symUse, exps, loc) =>
-        val arrowTvar = freshVar(Kind.Star, loc)
-        val tvar = freshVar(Kind.Star, loc)
         val evar = freshVar(Kind.Eff, loc)
         val es = exps.map(visitExp)
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
+        val defTpe = freshVar(Kind.Star, loc)
         val defEff = freshVar(Kind.Eff, symUse.loc)
-        val actualDefTpe = Type.mkUncurriedArrowWithEffect(Nel.unsafeFrom(tpes), defEff, tvar, symUse.loc)
-        c.unifyType(actualDefTpe, arrowTvar, symUse.loc)
+        val actualDefTpe = Type.mkUncurriedArrowWithEffect(Nel.unsafeFrom(tpes), defEff, defTpe, symUse.loc)
         c.expectType(symUse.sym.tvar, actualDefTpe, symUse.loc)
         c.unifyType(evar, Type.mkUnion(defEff :: effs, loc), loc)
-        val resTpe = tvar
+        val resTpe = defTpe
         val resEff = evar
-        InferredAst.Expr.ApplyLocalDef(symUse, es, arrowTvar, resTpe, resEff, loc)
+        InferredAst.Expr.ApplyLocalDef(symUse, es, actualDefTpe, resTpe, resEff, loc)
 
       case Expr.ApplyOp(symUse, exps, loc) =>
-        val tvar = Type.freshVar(Kind.Star, loc)
         val evar = Type.freshVar(Kind.Eff, loc)
         val op = lookupOp(symUse.sym, symUse.loc)
         val (tconstrs0, econstrs0, declaredType, _) = Scheme.instantiate(op.spec.sc, symUse.loc.asSynthetic)
@@ -164,9 +156,8 @@ object ConstraintGen {
         c.expectTypeArguments(symUse.sym, declaredArgumentTypes, tpes, exps.map(_.loc))
         c.addClassConstraints(tconstrs, loc)
         c.addEqualityConstraints(econstrs, loc)
-        c.unifyType(tvar, declaredResultType, loc)
+        val resTpe = mkResolvable(declaredResultType, loc)
         c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
-        val resTpe = tvar
         val resEff = evar
         InferredAst.Expr.ApplyOp(symUse, es, resTpe, resEff, loc)
 
@@ -175,8 +166,6 @@ object ConstraintGen {
         val sig = trt.sigs(symUse.sym)
         val targ = freshVar(trt.tparam.sym.kind, symUse.loc)
         val targs = sig.spec.tparams.map(tparam => Type.freshVar(tparam.sym.kind, tparam.sym.loc))
-        val itvar = freshVar(Kind.Star, symUse.loc)
-        val tvar = freshVar(Kind.Star, loc)
         val evar = freshVar(Kind.Eff, loc)
 
         val mapping = (trt.tparam.sym -> targ) :: sig.spec.tparams.map(_.sym).zip(targs)
@@ -195,12 +184,11 @@ object ConstraintGen {
         c.expectTypeArguments(symUse.sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
         c.addClassConstraints(tconstrs, loc)
         c.addEqualityConstraints(econstrs, loc)
-        c.unifyType(itvar, declaredType, loc)
-        c.unifyType(tvar, declaredResultType, loc)
+        val itpe = mkResolvable(declaredType, loc)
+        val resTpe = mkResolvable(declaredResultType, loc)
         c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
-        val resTpe = tvar
         val resEff = evar
-        InferredAst.Expr.ApplySig(symUse, es, targ, targs, itvar, resTpe, resEff, loc)
+        InferredAst.Expr.ApplySig(symUse, es, targ, targs, itpe, resTpe, resEff, loc)
 
       case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
@@ -1579,4 +1567,39 @@ object ConstraintGen {
 
   private def freshVar(k: Kind, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Type.Var =
     Type.freshVar(k, loc.asSynthetic)
+
+  /**
+    * Returns the given type `tpe` if it requires neither reduction nor canonicalization.
+    *
+    * Otherwise returns a fresh type variable that is constrained to be equal to `tpe`.
+    */
+  private def mkResolvable(tpe: Type, loc: SourceLocation)(implicit c: TypeContext, scope: RegionScope, flix: Flix): Type = {
+    if (requiresReductionOrCanonicalization(tpe)) {
+      val tvar = freshVar(tpe.kind, loc)
+      c.unifyType(tvar, tpe, loc)
+      tvar
+    } else {
+      tpe
+    }
+  }
+
+  /**
+    * Returns `true` if the constraint solver must reduce or canonicalize the given type `tpe`.
+    *
+    * That is the case if `tpe` contains:
+    *
+    *   - an associated type or a Java type, which the constraint solver must reduce, or
+    *   - an application of a polymorphic effect, which the constraint solver must canonicalize.
+    */
+  private def requiresReductionOrCanonicalization(tpe: Type): Boolean = tpe match {
+    case Type.Var(_, _) => false
+    case Type.Cst(_, _) => false
+    case Type.Apply(Type.Cst(TypeConstructor.Effect(_, _), _), _, _) => true
+    case Type.Apply(tpe1, tpe2, _) => requiresReductionOrCanonicalization(tpe1) || requiresReductionOrCanonicalization(tpe2)
+    case Type.Alias(_, _, t, _) => requiresReductionOrCanonicalization(t)
+    case Type.AssocType(_, _, _, _) => true
+    case Type.JvmToType(_, _) => true
+    case Type.JvmToEff(_, _) => true
+    case Type.UnresolvedJvmType(_, _) => true
+  }
 }
