@@ -77,15 +77,13 @@ object ConstraintGen {
         InferredAst.Expr.Cst(cst, resTpe, loc)
 
       case Expr.ApplyClo(exp1, exp2, loc) =>
-        val evar = freshVar(Kind.Eff, loc)
         val lambdaBodyType = freshVar(Kind.Star, loc)
         val lambdaBodyEff = freshVar(Kind.Eff, loc)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         c.expectType(Type.mkArrowWithEffect(e2.tpe, lambdaBodyEff, lambdaBodyType, loc), e1.tpe, loc)
-        c.unifyType(evar, Type.mkUnion(lambdaBodyEff :: e1.eff :: e2.eff :: Nil, loc), loc)
         val resTpe = lambdaBodyType
-        val resEff = evar
+        val resEff = Type.mkUnion(lambdaBodyEff :: e1.eff :: e2.eff :: Nil, loc)
         InferredAst.Expr.ApplyClo(e1, e2, resTpe, resEff, loc)
 
       case Expr.ApplyDef(symUse, exps, loc) =>
@@ -93,7 +91,6 @@ object ConstraintGen {
 
         val tparams = defn.spec.tparams.map(_.sym)
         val targs = tparams.map(sym => Type.freshVar(sym.kind, sym.loc))
-        val evar = freshVar(Kind.Eff, loc)
         val subst = Substitution(tparams.zip(targs).toMap)
 
         val tconstrs = defn.spec.tconstrs.map(subst.apply).map(_.copy(loc = loc))
@@ -113,7 +110,7 @@ object ConstraintGen {
         c.expectTypeArguments(symUse.sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
         c.addClassConstraints(tconstrs, loc)
         c.addEqualityConstraints(econstrs, loc)
-        val eff = if (declaredEff == Type.Pure) {
+        val resEff = if (declaredEff == Type.Pure) {
           // A pure def is not the source of an effect.
           Type.mkUnion(effs, loc)
         } else {
@@ -122,13 +119,10 @@ object ConstraintGen {
           c.unifySource(pvar, declaredEff, loc)
           Type.mkUnion(pvar :: effs, loc)
         }
-        c.unifyType(evar, eff, loc)
         val resTpe = mkResolvable(declaredResultType, loc)
-        val resEff = evar
         InferredAst.Expr.ApplyDef(symUse, es, targs, itpe, resTpe, resEff, loc)
 
       case Expr.ApplyLocalDef(symUse, exps, loc) =>
-        val evar = freshVar(Kind.Eff, loc)
         val es = exps.map(visitExp)
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
@@ -136,13 +130,11 @@ object ConstraintGen {
         val defEff = freshVar(Kind.Eff, symUse.loc)
         val actualDefTpe = Type.mkUncurriedArrowWithEffect(Nel.unsafeFrom(tpes), defEff, defTpe, symUse.loc)
         c.expectType(symUse.sym.tvar, actualDefTpe, symUse.loc)
-        c.unifyType(evar, Type.mkUnion(defEff :: effs, loc), loc)
         val resTpe = defTpe
-        val resEff = evar
+        val resEff = Type.mkUnion(defEff :: effs, loc)
         InferredAst.Expr.ApplyLocalDef(symUse, es, actualDefTpe, resTpe, resEff, loc)
 
       case Expr.ApplyOp(symUse, exps, loc) =>
-        val evar = Type.freshVar(Kind.Eff, loc)
         val op = lookupOp(symUse.sym, symUse.loc)
         val (tconstrs0, econstrs0, declaredType, _) = Scheme.instantiate(op.spec.sc, symUse.loc.asSynthetic)
         val tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -157,8 +149,7 @@ object ConstraintGen {
         c.addClassConstraints(tconstrs, loc)
         c.addEqualityConstraints(econstrs, loc)
         val resTpe = mkResolvable(declaredResultType, loc)
-        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
-        val resEff = evar
+        val resEff = mkResolvableEff(declaredEff, effs, loc)
         InferredAst.Expr.ApplyOp(symUse, es, resTpe, resEff, loc)
 
       case Expr.ApplySig(symUse, exps, loc) =>
@@ -166,7 +157,6 @@ object ConstraintGen {
         val sig = trt.sigs(symUse.sym)
         val targ = freshVar(trt.tparam.sym.kind, symUse.loc)
         val targs = sig.spec.tparams.map(tparam => Type.freshVar(tparam.sym.kind, tparam.sym.loc))
-        val evar = freshVar(Kind.Eff, loc)
 
         val mapping = (trt.tparam.sym -> targ) :: sig.spec.tparams.map(_.sym).zip(targs)
         val subst = Substitution(mapping.toMap)
@@ -186,8 +176,7 @@ object ConstraintGen {
         c.addEqualityConstraints(econstrs, loc)
         val itpe = mkResolvable(declaredType, loc)
         val resTpe = mkResolvable(declaredResultType, loc)
-        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
-        val resEff = evar
+        val resEff = mkResolvableEff(declaredEff, effs, loc)
         InferredAst.Expr.ApplySig(symUse, es, targ, targs, itpe, resTpe, resEff, loc)
 
       case Expr.Lambda(fparam, exp, loc) =>
@@ -1576,6 +1565,24 @@ object ConstraintGen {
       tvar
     } else {
       tpe
+    }
+  }
+
+  /**
+    * Returns the union of the effect `eff` and the effects `effs` of the sub-expressions.
+    *
+    * If `eff` requires reduction or canonicalization then the union is instead the solution to a fresh effect variable.
+    *
+    * The effects `effs` require neither, by construction.
+    */
+  private def mkResolvableEff(eff: Type, effs: List[Type], loc: SourceLocation)(implicit c: TypeContext, scope: RegionScope, flix: Flix): Type = {
+    val union = Type.mkUnion(eff :: effs, loc)
+    if (requiresReductionOrCanonicalization(eff)) {
+      val evar = freshVar(Kind.Eff, loc)
+      c.unifyType(evar, union, loc)
+      evar
+    } else {
+      union
     }
   }
 
