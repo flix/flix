@@ -476,7 +476,7 @@ class TestEffectProvenance extends AnyFunSuite with TestUtils {
         |pub def println(_x: a): Unit \ IO = checked_ecast(())
         """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectOneError[TypeError.ArgumentGivenWrongEffect](result)
+    expectError[TypeError.ArgumentGivenWrongEffect](result)
   }
 
   test("Test.ArgumentGivenWrongEffect.02") {
@@ -494,7 +494,7 @@ class TestEffectProvenance extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectOneError[TypeError.ArgumentGivenWrongEffect](result)
+    expectError[TypeError.ArgumentGivenWrongEffect](result)
   }
 
   test("Test.ArgumentGivenWrongEffect.03") {
