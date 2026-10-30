@@ -1185,10 +1185,9 @@ object ConstraintGen {
         InferredAst.Pattern.Wild(tvar, loc)
 
       case KindedAst.Pattern.Var(sym, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
-        c.unifyType(sym.tvar, tvar, loc)
-        val bnd = InferredAst.Binder(sym, tvar)
-        InferredAst.Pattern.Var(bnd, tvar, loc)
+        val resTpe = sym.tvar
+        val bnd = InferredAst.Binder(sym, resTpe)
+        InferredAst.Pattern.Var(bnd, resTpe, loc)
 
       case KindedAst.Pattern.Cst(cst, loc) =>
         InferredAst.Pattern.Cst(cst, Type.constantType(cst), loc)
@@ -1217,7 +1216,6 @@ object ConstraintGen {
         InferredAst.Pattern.Tuple(ps, resTpe, loc)
 
       case KindedAst.Pattern.Record(pats, pat, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
         val freshRowVar = freshVar(Kind.RecordRow, loc)
         val freshRecord = Type.mkRecord(freshRowVar, loc.asSynthetic)
 
@@ -1226,7 +1224,6 @@ object ConstraintGen {
         val ps = pats.map(visitRecordLabelPattern)
         val patTpes = ps.map(p => (p.label, p.pat.tpe, p.loc))
         val resTpe = mkRecordType(patTpes, freshRowVar, loc)
-        c.unifyType(resTpe, tvar, loc)
         InferredAst.Pattern.Record(ps, p, resTpe, loc)
 
       case KindedAst.Pattern.Error(loc) =>
@@ -1279,16 +1276,15 @@ object ConstraintGen {
     *
     * Returns the pattern annotated with its type.
     */
-  private def visitExtTagPattern(pat0: KindedAst.ExtTagPattern)(implicit c: TypeContext, scope: RegionScope, flix: Flix): InferredAst.ExtTagPattern = pat0 match {
+  private def visitExtTagPattern(pat0: KindedAst.ExtTagPattern)(implicit scope: RegionScope, flix: Flix): InferredAst.ExtTagPattern = pat0 match {
     case ExtTagPattern.Wild(loc) =>
       val tvar = freshVar(Kind.Star, loc)
       InferredAst.ExtTagPattern.Wild(tvar, loc)
 
     case ExtTagPattern.Var(sym, loc) =>
-      val tvar = freshVar(Kind.Star, loc)
-      c.unifyType(sym.tvar, tvar, loc)
-      val bnd = InferredAst.Binder(sym, tvar)
-      InferredAst.ExtTagPattern.Var(bnd, tvar, loc)
+      val resTpe = sym.tvar
+      val bnd = InferredAst.Binder(sym, resTpe)
+      InferredAst.ExtTagPattern.Var(bnd, resTpe, loc)
 
     case ExtTagPattern.Unit(loc) =>
       InferredAst.ExtTagPattern.Unit(Type.Unit, loc)
@@ -1303,13 +1299,11 @@ object ConstraintGen {
     *
     * Returns the record label pattern annotated with its type.
     */
-  private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern)(implicit c: TypeContext, scope: RegionScope, root: KindedAst.Root, flix: Flix): InferredAst.Pattern.Record.RecordLabelPattern = pat match {
+  private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): InferredAst.Pattern.Record.RecordLabelPattern = pat match {
     case KindedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc) =>
       // { Label = Pattern ... }
-      val tvar = freshVar(Kind.Star, loc)
       val p = visitPattern(pat1)
-      c.unifyType(p.tpe, tvar, loc)
-      InferredAst.Pattern.Record.RecordLabelPattern(label, p, tvar, loc)
+      InferredAst.Pattern.Record.RecordLabelPattern(label, p, p.tpe, loc)
   }
 
   /**

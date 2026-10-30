@@ -240,16 +240,15 @@ object SchemaConstraintGen {
     head match {
       case KindedAst.Predicate.Head.Atom(pred, den, terms, loc) =>
         // Adds additional type constraints if the denotation is a lattice.
-        val tvar = Type.freshVar(Kind.Predicate, loc.asSynthetic)
         val restRow = Type.freshVar(Kind.SchemaRow, loc)
         val ts = terms.map(visitExp(_))
         val termTypes = ts.map(_.tpe)
         val termEffs = ts.map(_.eff)
         c.unifyType(Type.Pure, Type.mkUnion(termEffs, loc), loc)
-        c.unifyType(tvar, mkRelationOrLatticeType(den, termTypes, loc), loc)
+        val tpe = mkRelationOrLatticeType(den, termTypes, loc)
         addTermTraitConstraints(den, termTypes, terms.map(_.loc), root)
-        val resTpe = Type.mkSchemaRowExtend(pred, tvar, restRow, loc)
-        (InferredAst.Predicate.Head.Atom(pred, den, ts, tvar, loc), resTpe)
+        val resTpe = Type.mkSchemaRowExtend(pred, tpe, restRow, loc)
+        (InferredAst.Predicate.Head.Atom(pred, den, ts, tpe, loc), resTpe)
     }
   }
 
@@ -262,14 +261,13 @@ object SchemaConstraintGen {
     implicit val scope: RegionScope = c.getScope
     body0 match {
       case KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
-        val tvar = Type.freshVar(Kind.Predicate, loc.asSynthetic)
         val restRow = Type.freshVar(Kind.SchemaRow, loc)
         val ts = terms.map(visitPattern)
         val termTypes = ts.map(_.tpe)
-        c.unifyType(tvar, mkRelationOrLatticeType(den, termTypes, loc), loc)
+        val tpe = mkRelationOrLatticeType(den, termTypes, loc)
         addTermTraitConstraints(den, termTypes, terms.map(_.loc), root)
-        val resTpe = Type.mkSchemaRowExtend(pred, tvar, restRow, loc)
-        (InferredAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, tvar, loc), resTpe)
+        val resTpe = Type.mkSchemaRowExtend(pred, tpe, restRow, loc)
+        (InferredAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, tpe, loc), resTpe)
 
       case KindedAst.Predicate.Body.Functional(syms, exp, loc) =>
         val tupleType = Type.mkTuplish(syms.map(_.tvar), loc)

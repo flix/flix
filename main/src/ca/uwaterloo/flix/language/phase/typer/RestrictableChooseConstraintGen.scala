@@ -403,15 +403,14 @@ object RestrictableChooseConstraintGen {
   /**
     * Infers the type of the given restrictable choice pattern `pat0`.
     */
-  private def visitVarOrWild(pat: KindedAst.RestrictableChoosePattern.VarOrWild)(implicit c: TypeContext, scope: RegionScope, flix: Flix): InferredAst.RestrictableChoosePattern.VarOrWild = pat match {
+  private def visitVarOrWild(pat: KindedAst.RestrictableChoosePattern.VarOrWild)(implicit scope: RegionScope, flix: Flix): InferredAst.RestrictableChoosePattern.VarOrWild = pat match {
     case KindedAst.RestrictableChoosePattern.Wild(loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       InferredAst.RestrictableChoosePattern.Wild(tvar, loc)
     case KindedAst.RestrictableChoosePattern.Var(sym, loc) =>
-      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      c.unifyType(sym.tvar, tvar, loc)
-      val bnd = InferredAst.Binder(sym, tvar)
-      InferredAst.RestrictableChoosePattern.Var(bnd, tvar, loc)
+      val resTpe = sym.tvar
+      val bnd = InferredAst.Binder(sym, resTpe)
+      InferredAst.RestrictableChoosePattern.Var(bnd, resTpe, loc)
     case KindedAst.RestrictableChoosePattern.Error(loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       InferredAst.RestrictableChoosePattern.Error(tvar, loc)
