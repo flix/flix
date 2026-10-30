@@ -149,6 +149,10 @@ object ConstraintGen {
         c.addClassConstraints(tconstrs, loc)
         c.addEqualityConstraints(econstrs, loc)
         val resTpe = mkResolvable(declaredResultType, loc)
+        // The declared effect applies the effect of the operation to its type parameters, e.g. `Emit[t]`, so the solver
+        // must canonicalize it, which it does only through a constraint: written into the tree directly, `Emit[Int32]`
+        // is never checked against `Emit[String]`. The union is therefore put behind a fresh variable in that case, and
+        // likewise if the operation itself declares an associated effect, which the solver must reduce.
         val resEff = mkResolvableEff(declaredEff, effs, loc)
         InferredAst.Expr.ApplyOp(symUse, es, resTpe, resEff, loc)
 
@@ -176,6 +180,10 @@ object ConstraintGen {
         c.addEqualityConstraints(econstrs, loc)
         val itpe = mkResolvable(declaredType, loc)
         val resTpe = mkResolvable(declaredResultType, loc)
+        // The declared effect may contain an associated effect, e.g. `Collectable.Aef[t]`, which the solver must reduce,
+        // or apply a polymorphic effect, which it must canonicalize. Both happen only through a constraint: written into
+        // the tree directly, a region is purified before the associated effect inside it is reduced, and `Emit[Int32]`
+        // is never checked against `Emit[String]`. The union is therefore put behind a fresh variable in either case.
         val resEff = mkResolvableEff(declaredEff, effs, loc)
         InferredAst.Expr.ApplySig(symUse, es, targ, targs, itpe, resTpe, resEff, loc)
 
