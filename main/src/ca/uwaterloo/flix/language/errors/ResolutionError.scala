@@ -660,10 +660,6 @@ object ResolutionError {
          |A new struct expression must specify a region.
          |
          |${highlight(loc, "missing region", fmt)}
-         |
-         |${underline("Explanation:")} To create a struct, use:
-         |
-         |  new ${name.toString} @ region { field = value, ... }
          |""".stripMargin
     }
   }
