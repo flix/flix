@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.language.ast.KindedAst.RestrictableChoosePattern
 import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.RestrictableEnumSymUse
 import ca.uwaterloo.flix.language.ast.{InferredAst, Kind, KindedAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.typer.ConstraintGen.{visitExp, visitExpUnchecked}
+import ca.uwaterloo.flix.language.phase.typer.ConstraintGen.{unifyTagType, visitExp, visitExpUnchecked}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 
@@ -218,9 +218,6 @@ object RestrictableChooseConstraintGen {
   def visitApplyRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit scope: RegionScope, c: TypeContext, root: KindedAst.Root, flix: Flix): InferredAst.Expr = {
     exp match {
       case KindedAst.Expr.RestrictableTag(symUse, exps, isOpen, loc) =>
-        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-        val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-
         // Lookup the enum declaration.
         val enumSym = symUse.sym.enumSym
         val decl = root.restrictableEnums(enumSym)
@@ -282,10 +279,8 @@ object RestrictableChooseConstraintGen {
         c.unifyType(tagType, constructorBase, loc)
         ListOps.zip(targs, targsOut).foreach { case (targ, targOut) => c.unifyType(targ, targOut, loc) }
         //        _ <- indexUnification // TODO ASSOC-TYPES here is where we did the index unification before
-        c.unifyType(enumTypeOut, tvar, loc)
-        c.unifyType(Type.mkUnion(effs, loc), evar, loc)
-        val resTpe = tvar
-        val resEff = evar
+        val resTpe = enumTypeOut
+        val resEff = Type.mkUnion(effs, loc)
         InferredAst.Expr.RestrictableTag(symUse, es, resTpe, resEff, loc)
     }
   }
@@ -369,7 +364,6 @@ object RestrictableChooseConstraintGen {
       */
     def visit(p: KindedAst.RestrictableChoosePattern): InferredAst.RestrictableChoosePattern = p match {
       case KindedAst.RestrictableChoosePattern.Tag(symUse, pat, loc) =>
-        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         // Lookup the enum declaration.
         val decl = root.restrictableEnums(symUse.sym.enumSym)
 
@@ -384,13 +378,7 @@ object RestrictableChooseConstraintGen {
         //
         val ps = pat.map(visitVarOrWild)
         val tpes = ps.map(_.tpe)
-        // A nullary tag is not a function, but the enum type itself.
-        val constructorBase = tpes match {
-          case Nil => tvar
-          case t :: ts => Type.mkPureUncurriedArrow(Nel(t, ts), tvar, loc)
-        }
-        c.unifyType(tagType, constructorBase, loc)
-        val resTpe = tvar
+        val resTpe = unifyTagType(tagType, tpes, loc)
         InferredAst.RestrictableChoosePattern.Tag(symUse, ps, resTpe, loc)
 
       case KindedAst.RestrictableChoosePattern.Error(loc) =>
