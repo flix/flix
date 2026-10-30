@@ -643,6 +643,32 @@ object ResolutionError {
   }
 
   /**
+    * An error raised when a Flix struct is instantiated without a region.
+    *
+    * @param name the qualified name being instantiated.
+    * @param loc  the location where the error occurred.
+    */
+  case class NewStructWithoutRegion(name: Name.QName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E4311
+
+    def summary: String = s"'${name.toString}' is a struct. A new struct expression must specify a region."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> '${red(name.toString)}' is a struct, but no region is given.
+         |
+         |A new struct expression must specify a region.
+         |
+         |${highlight(loc, "missing region", fmt)}
+         |
+         |${underline("Explanation:")} To create a struct, use:
+         |
+         |  new ${name.toString} @ region { field = value, ... }
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error indicating that an effect operation is given too many arguments,
     * i.e. more arguments than the number of formal parameters it declares.
     *

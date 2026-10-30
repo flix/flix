@@ -1709,7 +1709,8 @@ object Resolver {
 
   /**
     * Resolves an ambiguous `new` expression where the body is object-shaped (JVM constructors/methods or empty).
-    * The name must refer to a Java class. If it resolves to a Flix struct instead, emits `NewStructWithObjectConstructors` or `NewStructWithObjectMethods`.
+    * The name must refer to a Java class. If it resolves to a Flix struct instead, emits `NewStructWithObjectConstructors`,
+    * `NewStructWithObjectMethods`, or, for an empty body, `NewStructWithoutRegion`.
     */
   private def resolveAmbiguousNewAsObject(qnameOpt: Option[Name.QName], tpe: NamedAst.Type, constructors: List[NamedAst.JvmConstructor], methods: List[NamedAst.JvmMethod], scp0: LocalScope, loc: SourceLocation)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
     val structOpt = qnameOpt.flatMap { qname =>
@@ -1720,14 +1721,16 @@ object Resolver {
     }
     structOpt match {
       case Some(_) =>
-        if (constructors.nonEmpty) sctx.errors.add(ResolutionError.NewStructWithObjectConstructors(qnameOpt.get, loc))
-        if (methods.nonEmpty) sctx.errors.add(ResolutionError.NewStructWithObjectMethods(qnameOpt.get, loc))
-
-        val primaryErr = if (constructors.nonEmpty)
-          ResolutionError.NewStructWithObjectConstructors(qnameOpt.get, loc)
-        else
-          ResolutionError.NewStructWithObjectMethods(qnameOpt.get, loc)
-        ResolvedAst.Expr.Error(primaryErr)
+        val qname = qnameOpt.get
+        val constructorErr = if (constructors.nonEmpty) Some(ResolutionError.NewStructWithObjectConstructors(qname, loc)) else None
+        val methodErr = if (methods.nonEmpty) Some(ResolutionError.NewStructWithObjectMethods(qname, loc)) else None
+        // An empty body, `new S { }`, has neither constructors nor methods, but a struct still requires a region.
+        val errors = (constructorErr.toList ++ methodErr.toList) match {
+          case Nil => List(ResolutionError.NewStructWithoutRegion(qname, loc))
+          case errs => errs
+        }
+        errors.foreach(sctx.errors.add)
+        ResolvedAst.Expr.Error(errors.head)
       case None =>
         val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
         val erased = UnkindedType.eraseAliases(t)
