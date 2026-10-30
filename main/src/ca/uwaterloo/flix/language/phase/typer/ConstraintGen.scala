@@ -570,7 +570,6 @@ object ConstraintGen {
         InferredAst.Expr.ExtMatch(e, rs, resTpe, resEff, loc)
 
       case KindedAst.Expr.Tag(symUse, exps, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
@@ -580,20 +579,13 @@ object ConstraintGen {
         val es = exps.map(visitExp)
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
-        // A nullary tag is not a function, but the enum type itself.
-        val constructorBase = tpes match {
-          case Nil => tvar
-          case t :: ts => Type.mkPureUncurriedArrow(Nel(t, ts), tvar, loc)
-        }
-        c.unifyType(tagType, constructorBase, loc)
-        val resTpe = tvar
+        val resTpe = unifyTagType(tagType, tpes, loc)
         val resEff = Type.mkUnion(effs, loc)
         InferredAst.Expr.Tag(symUse, es, resTpe, resEff, loc)
 
       case e: Expr.RestrictableTag => RestrictableChooseConstraintGen.visitApplyRestrictableTag(e)
 
       case KindedAst.Expr.ExtTag(label, exps, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
         val pred = Name.Pred(label.name, label.loc)
         val es = exps.map(visitExp)
         val tpes = es.map(_.tpe)
@@ -602,7 +594,6 @@ object ConstraintGen {
         val tpe = Type.mkRelation(tpes, loc)
         val row = Type.mkSchemaRowExtend(pred, tpe, rest, loc)
         val tagType = Type.mkExtensible(row, loc)
-        c.unifyType(tvar, tagType, loc)
         val resTpe = tagType
         val resEff = Type.mkUnion(effs, loc)
         InferredAst.Expr.ExtTag(label, es, resTpe, resEff, loc)
@@ -1193,7 +1184,6 @@ object ConstraintGen {
         InferredAst.Pattern.Cst(cst, Type.constantType(cst), loc)
 
       case KindedAst.Pattern.Tag(symUse, pats, loc) =>
-        val tvar = freshVar(Kind.Star, loc)
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
@@ -1202,13 +1192,8 @@ object ConstraintGen {
         // The tag type is a function from the type of variant to the type of the enum.
         val ps = pats.map(visitPattern)
         val tpes = ps.map(_.tpe)
-        // A nullary tag is not a function, but the enum type itself.
-        val constructorBase = tpes match {
-          case Nil => tvar
-          case t :: ts => Type.mkPureUncurriedArrow(Nel(t, ts), tvar, loc)
-        }
-        c.unifyType(tagType, constructorBase, loc)
-        InferredAst.Pattern.Tag(symUse, ps, tvar, loc)
+        val resTpe = unifyTagType(tagType, tpes, loc)
+        InferredAst.Pattern.Tag(symUse, ps, resTpe, loc)
 
       case KindedAst.Pattern.Tuple(elms, loc) =>
         val ps = elms.map(visitPattern)
@@ -1231,6 +1216,26 @@ object ConstraintGen {
         InferredAst.Pattern.Error(tvar, loc)
 
     }
+  }
+
+  /**
+    * Unifies the given instantiated tag type `tagType` with the types `tpes` of its terms and returns the type of the enum.
+    *
+    * The tag type is a function from the types of the terms to the type of the enum.
+    * A nullary tag is not a function, but the enum type itself.
+    */
+  def unifyTagType(tagType: Type, tpes: List[Type], loc: SourceLocation)(implicit c: TypeContext): Type = tpes match {
+    case Nil =>
+      tagType
+    case t :: ts =>
+      val enumTpe = tagType.typeConstructor match {
+        case Some(TypeConstructor.Arrow(_)) => tagType.arrowResultType
+        case _ =>
+          // The tag has no terms, but was given some. The constraint below reports the mismatch.
+          tagType
+      }
+      c.unifyType(tagType, Type.mkPureUncurriedArrow(Nel(t, ts), enumTpe, loc), loc)
+      enumTpe
   }
 
   /**

@@ -162,7 +162,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[MismatchedTypes](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("MismatchedArrowAndNonArrow.01") {
@@ -213,7 +213,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[MismatchedTypes](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestOverApplied.01") {
