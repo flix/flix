@@ -1077,8 +1077,6 @@ object Type {
   def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.Pure, _), _) => tpe2
     case (_, Type.Cst(TypeConstructor.Pure, _)) => tpe1
-    case (Type.Cst(TypeConstructor.Univ, _), _) => Type.Univ
-    case (_, Type.Cst(TypeConstructor.Univ, _)) => Type.Univ
     case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.Union, tpe1, loc), tpe2, loc)
   }
@@ -1102,6 +1100,7 @@ object Type {
     */
   def mkUnion(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.Pure
+    case x :: Nil => x
     case x :: xs => mkUnion(x, mkUnion(xs, loc), loc)
   }
 
@@ -1130,6 +1129,7 @@ object Type {
     */
   def mkIntersection(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.Univ
+    case x :: Nil => x
     case x :: xs => mkIntersection(x, mkIntersection(xs, loc), loc)
   }
 
@@ -1149,6 +1149,7 @@ object Type {
     */
   def mkSymmetricDiff(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.Pure
+    case x :: Nil => x
     case x :: xs => mkSymmetricDiff(x, mkSymmetricDiff(xs, loc), loc)
   }
 
