@@ -3346,6 +3346,44 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.NewStructWithObjectMethods](result)
   }
 
+  test("NewStructWithoutRegion.01") {
+    val input =
+      raw"""
+           |struct S[r] { }
+           |def foo(): Unit =
+           |    let _ = new S { };
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.NewStructWithoutRegion](result)
+  }
+
+  test("NewStructWithoutRegion.02") {
+    val input =
+      raw"""
+           |struct S[r] { f: Int32 }
+           |def foo(): Unit =
+           |    let _ = new S { };
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.NewStructWithoutRegion](result)
+  }
+
+  test("NewStructWithoutRegion.03") {
+    val input =
+      raw"""
+           |mod A {
+           |    pub struct S[r] { f: Int32 }
+           |}
+           |def foo(): Unit =
+           |    let _ = new A.S { };
+           |    ()
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.NewStructWithoutRegion](result)
+  }
+
   test("UndefinedNameWithObjectBody.01") {
     val input =
       raw"""
