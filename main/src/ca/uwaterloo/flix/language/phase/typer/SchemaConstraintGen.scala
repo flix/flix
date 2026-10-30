@@ -113,7 +113,7 @@ object SchemaConstraintGen {
         val f = from.map(visitBodyPredicateUnchecked)
         val w = where.map(visitExpUnchecked)
         val resTpe = Type.mkVector(tuple, loc)
-        val resEff = Type.mkUnion(qe.eff :: effs, loc)
+        val resEff = Type.mkUnion(qe.eff, effs, loc)
         InferredAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, resTpe, resEff, loc)
     }
   }

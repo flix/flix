@@ -1072,7 +1072,7 @@ object Type {
   }
 
   /**
-    * Returns the type `Union(tpe1, tpe2)`.
+    * Returns a (possibly simplified) union of the effects tpe1 and tpe2.
     */
   def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.Pure, _), _) => tpe2
@@ -1084,19 +1084,21 @@ object Type {
   }
 
   /**
-    * Returns the type `And(tpe1, And(tpe2, tpe3))`.
+    * Returns a (possibly simplified) union of the effects tpe1, tpe2, and tpe3.
     */
   def mkUnion(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Type =
     mkUnion(tpe1, mkUnion(tpe2, tpe3, loc), loc)
 
   /**
-    * Returns the type `And(tpe1, And(tpe2, And(tpe3, tpe4)))`.
+    * Returns a (possibly simplified) union of the effects tpe1, tpe2, tpe3, and tpe4.
     */
   def mkUnion(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation): Type =
     mkUnion(tpe1, mkUnion(tpe2, mkUnion(tpe3, tpe4, loc), loc), loc)
 
   /**
-    * Returns the type `And(tpe1, And(tpe2, ...))`.
+    * Returns a (possibly simplified) union of the effects tpes.
+    *
+    * Returns Pure if tpes is empty.
     */
   def mkUnion(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.Pure
@@ -1104,7 +1106,13 @@ object Type {
   }
 
   /**
-    * Returns the type `Or(tpe1, tpe2)`.
+    * Returns a (possibly simplified) union of the effect tpe1 and the effects tpes.
+    */
+  def mkUnion(tpe1: Type, tpes: List[Type], loc: SourceLocation): Type =
+    mkUnion(tpe1, mkUnion(tpes, loc), loc)
+
+  /**
+    * Returns a (possibly simplified) intersection of the effects tpe1 and tpe2.
     */
   def mkIntersection(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.Pure, _), _) => Type.Pure
@@ -1116,7 +1124,9 @@ object Type {
   }
 
   /**
-    * Returns the type `Or(tpe1, Or(tpe2, ...))`.
+    * Returns a (possibly simplified) intersection of the effects tpes.
+    *
+    * Returns Univ if tpes is empty.
     */
   def mkIntersection(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.Univ
@@ -1124,7 +1134,7 @@ object Type {
   }
 
   /**
-    * Returns the type `Xor(tpe1, tpe2)`.
+    * Returns a (possibly simplified) symmetric difference of the effects tpe1 and tpe2.
     */
   def mkSymmetricDiff(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.Pure, _), _) => tpe2
@@ -1133,7 +1143,9 @@ object Type {
   }
 
   /**
-    * Returns the type `Xor(tpe1, Xor(tpe2, ...))`.
+    * Returns a (possibly simplified) symmetric difference of the effects tpes.
+    *
+    * Returns Pure if tpes is empty.
     */
   def mkSymmetricDiff(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.Pure
