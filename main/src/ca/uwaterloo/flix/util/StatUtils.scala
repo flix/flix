@@ -44,14 +44,4 @@ object StatUtils {
     }
   }
 
-  /**
-    * Returns the standard deviation of `xs`.
-    */
-  def stdDev[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double = {
-    val mean = average(xs)
-    val deviations = xs.map(mean - numeric.toDouble(_))
-    val variance = average(deviations.map { x => x * x })
-    Math.sqrt(variance)
-  }
-
 }

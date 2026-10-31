@@ -98,7 +98,7 @@ object Main {
     )
 
     // Don't use progress bar if benchmarking.
-    if (cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkFrontend || cmdOpts.xbenchmarkThroughput) {
+    if (cmdOpts.xbenchmarkCodeSize) {
       options = options.copy(progress = false)
     }
 
@@ -130,30 +130,6 @@ object Main {
           // check if the --Xbenchmark-code-size flag was passed.
           if (cmdOpts.xbenchmarkCodeSize) {
             BenchmarkCompilerOld.benchmarkCodeSize(options)
-            exit(0)
-          }
-
-          // check if the --Xbenchmark-incremental flag was passed.
-          if (cmdOpts.xbenchmarkIncremental) {
-            BenchmarkCompilerOld.benchmarkIncremental(options)
-            exit(0)
-          }
-
-          // check if the --Xbenchmark-phases flag was passed.
-          if (cmdOpts.xbenchmarkPhases) {
-            BenchmarkCompilerOld.benchmarkPhases(options)
-            exit(0)
-          }
-
-          // check if the --Xbenchmark-frontend flag was passed.
-          if (cmdOpts.xbenchmarkFrontend) {
-            BenchmarkCompilerOld.benchmarkThroughput(options, frontend = true)
-            exit(0)
-          }
-
-          // check if the --Xbenchmark-throughput flag was passed.
-          if (cmdOpts.xbenchmarkThroughput) {
-            BenchmarkCompilerOld.benchmarkThroughput(options, frontend = false)
             exit(0)
           }
 
@@ -544,10 +520,6 @@ object Main {
     version: Boolean = false,
     assumeYes: Boolean = false,
     xbenchmarkCodeSize: Boolean = false,
-    xbenchmarkIncremental: Boolean = false,
-    xbenchmarkPhases: Boolean = false,
-    xbenchmarkFrontend: Boolean = false,
-    xbenchmarkThroughput: Boolean = false,
     xnodeprecated: Boolean = false,
     xlib: LibLevel = LibLevel.All,
     xprintphases: Boolean = false,
@@ -824,22 +796,6 @@ object Main {
       // Xbenchmark-code-size
       opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
         text("[experimental] benchmarks the size of the generated JVM files.")
-
-      // Xbenchmark-incremental
-      opt[Unit]("Xbenchmark-incremental").action((_, c) => c.copy(xbenchmarkIncremental = true)).
-        text("[experimental] benchmarks the performance of each compiler phase in incremental mode.")
-
-      // Xbenchmark-phases
-      opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
-        text("[experimental] benchmarks the performance of each compiler phase.")
-
-      // Xbenchmark-frontend
-      opt[Unit]("Xbenchmark-frontend").action((_, c) => c.copy(xbenchmarkFrontend = true)).
-        text("[experimental] benchmarks the performance of the frontend.")
-
-      // Xbenchmark-throughput
-      opt[Unit]("Xbenchmark-throughput").action((_, c) => c.copy(xbenchmarkThroughput = true)).
-        text("[experimental] benchmarks the performance of the entire compiler.")
 
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
