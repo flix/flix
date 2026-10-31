@@ -16,7 +16,6 @@ import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, StatUtils}
 import org.json4s.JValue
 import org.json4s.JsonDSL.*
-import org.json4s.native.JsonMethods
 
 import java.nio.file.Path
 
@@ -374,8 +373,7 @@ object CompilerPerf {
         ("lines" -> lines) ~
         ("iterations" -> N) ~
         ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
-    val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
-    writeFile("summary.json", s, o)
+    writeFile("summary.json", summaryJSON, o)
 
     //
     // Python Plot
