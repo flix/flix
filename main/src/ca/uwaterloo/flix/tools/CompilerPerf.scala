@@ -11,6 +11,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
+import ca.uwaterloo.flix.tools.perf.{Experiment, PerfMonitor, Run}
 import ca.uwaterloo.flix.util.StatUtils.{minimum, average, median}
 import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options}
@@ -197,14 +198,6 @@ object CompilerPerf {
       |""".stripMargin
 
   /**
-    * A single compilation: the number of source lines, the time spent in the frontend (`check`)
-    * and in the backend (`codeGen`), and the time of every phase.
-    *
-    * The backend time is zero when only the frontend is benchmarked (`--frontend`).
-    */
-  case class Run(lines: Int, frontendTime: Long, backendTime: Long, phases: List[(String, Long)])
-
-  /**
     * The merged results of a sequence of compilations (see [[aggregate]]).
     */
   case class Runs(lines: Int, frontendTimes: List[Long], backendTimes: List[Long], phases: List[(String, List[Long])]) {
@@ -216,22 +209,38 @@ object CompilerPerf {
     * Run compiler performance experiments.
     */
   def run(opts: Options): Unit = {
-    // Options
-    val o = opts.copy(progress = false)
+    // Options. The progress bar and the live profiler would fight the dashboard for the terminal.
+    val o = opts.copy(progress = false, compilerTop = false)
 
     // The number of iterations.
     val N = o.XPerfN.getOrElse(DefaultN)
 
-    // The experiments to run.
+    // The experiments to run, in order, each with the number of threads it uses.
     val mode = o.XPerfMode
     val runSeq = mode == XPerfMode.Sequential || mode == XPerfMode.All
     val runPar = mode == XPerfMode.Parallel || mode == XPerfMode.All
     val runParInc = mode == XPerfMode.All
+    val experiments = List(
+      Option.when(runSeq)(Experiment.SingleThreaded -> MinThreads),
+      Option.when(runPar)(Experiment.Parallel -> MaxThreads),
+      Option.when(runParInc)(Experiment.ParallelIncremental -> MaxThreads)
+    ).flatten
+
+    // The live dashboard, or a line per run when not attached to a console.
+    val monitor = PerfMonitor.create(N, experiments)
 
     // Run the experiments.
-    val baseline = aggregate(if (runSeq) perfBaseLine(N, o) else IndexedSeq.empty)
-    val baselineWithPar = aggregate(if (runPar) perfBaseLineWithPar(N, o) else IndexedSeq.empty)
-    val baselineWithParInc = aggregate(if (runParInc) perfBaseLineWithParInc(N, o) else IndexedSeq.empty)
+    val (baseline, baselineWithPar, baselineWithParInc) = try {
+      val a = aggregate(if (runSeq) perfNonIncremental(N, o, monitor, Experiment.SingleThreaded, MinThreads) else IndexedSeq.empty)
+      val b = aggregate(if (runPar) perfNonIncremental(N, o, monitor, Experiment.Parallel, MaxThreads) else IndexedSeq.empty)
+      val c = aggregate(if (runParInc) perfIncremental(N, o, monitor) else IndexedSeq.empty)
+      (a, b, c)
+    } catch {
+      case ex: Throwable =>
+        monitor.fail()
+        throw ex
+    }
+    monitor.stop()
 
     // The primary experiment, whose runs drive the summary, and the number of threads it used.
     val (primary, threads) = mode match {
@@ -241,9 +250,6 @@ object CompilerPerf {
 
     // Find the number of lines of source code.
     val lines = primary.lines.toLong
-
-    // Compute the total time in seconds.
-    val totalTime = (primary.totalTimes.sum / 1_000_000_000L).toInt
 
     // Whether only the frontend was benchmarked, in which case there is no backend and no overall throughput.
     val frontendOnly = o.XPerfFrontend
@@ -255,9 +261,6 @@ object CompilerPerf {
     val frontendStats = throughputStats(lines, primary.frontendTimes)
     val backendStats = if (frontendOnly) None else Some(throughputStats(lines, primary.backendTimes))
     val overallStats = if (frontendOnly) None else Some(throughputStats(lines, primary.totalTimes))
-
-    // The statistics shown on the console: the overall throughput, or the frontend throughput with `--frontend`.
-    val shown = overallStats.getOrElse(frontendStats)
 
     // Best observed throughput.
     val maxObservedThroughput = throughput(lines, minimum(baseline.totalTimes ::: baselineWithPar.totalTimes ::: baselineWithParInc.totalTimes))
@@ -384,49 +387,28 @@ object CompilerPerf {
     // Python Plot
     //
     FileOps.writeString(CompilerConstants.PerfDirectory.resolve("plots.py"), Python)
-
-    println("~~~~ Flix Compiler Performance ~~~~")
-    println()
-    println(f"Throughput (best): ${shown.max}%,6d lines/sec (with $threads threads.)")
-    println()
-    println(f"  min: ${shown.min}%,6d, max: ${shown.max}%,6d, avg: ${shown.avg}%,6d, median: ${shown.median}%,6d")
-    println()
-    println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
-
   }
 
   /**
-    * Runs Flix with one thread and non-incremental.
+    * Runs Flix non-incrementally with the given number of threads.
     */
-  private def perfBaseLine(N: Int, o: Options): IndexedSeq[Run] = {
+  private def perfNonIncremental(N: Int, o: Options, monitor: PerfMonitor, experiment: Experiment, threads: Int): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
-    (0 until N).map { _ =>
+    val runs = (0 until N).map { i =>
       val flix = new Flix()
-      flix.setOptions(o.copy(threads = MinThreads, incremental = false))
+      flix.setOptions(o.copy(threads = threads, incremental = false))
 
       addInputs(flix)
-      runSingle(flix)
+      runSingle(flix, monitor, experiment, i + 1)
     }
-  }
-
-  /**
-    * Runs Flix with n threads and non-incremental.
-    */
-  private def perfBaseLineWithPar(N: Int, o: Options): IndexedSeq[Run] = {
-    // Note: The Flix object is created _for every iteration._
-    (0 until N).map { _ =>
-      val flix = new Flix()
-      flix.setOptions(o.copy(threads = MaxThreads, incremental = false))
-
-      addInputs(flix)
-      runSingle(flix)
-    }
+    monitor.experimentFinished(experiment)
+    runs
   }
 
   /**
     * Runs Flix with n threads and incrementally.
     */
-  private def perfBaseLineWithParInc(N: Int, o: Options): IndexedSeq[Run] = {
+  private def perfIncremental(N: Int, o: Options, monitor: PerfMonitor): IndexedSeq[Run] = {
     // We create on single Flix object.
     val flix: Flix = new Flix()
     flix.setOptions(o.copy(threads = MaxThreads, incremental = true))
@@ -434,25 +416,30 @@ object CompilerPerf {
     // We add all inputs.
     addInputs(flix)
 
-    // We compile once.
-    runSingle(flix)
+    // We compile once. This warm-up run is not measured.
+    runSingle(flix, monitor, Experiment.ParallelIncremental, 0)
 
     // And then we perform N incremental compilations with no changes to the input.
-    (0 until N).map { _ =>
-      runSingle(flix)
+    val runs = (0 until N).map { i =>
+      runSingle(flix, monitor, Experiment.ParallelIncremental, i + 1)
     }
+    monitor.experimentFinished(Experiment.ParallelIncremental)
+    runs
   }
 
   /**
     * Runs Flix once.
     */
-  private def runSingle(flix: Flix): Run = {
+  private def runSingle(flix: Flix, monitor: PerfMonitor, experiment: Experiment, iteration: Int): Run = {
     // Clear caches.
     EffUnification3.Algebra.Cache.clearCaches()
+
+    monitor.runStarted(experiment, iteration)
 
     // Run the frontend.
     val (optRoot, errors) = flix.check()
     if (errors.nonEmpty) {
+      monitor.fail()
       println(CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot))
       System.exit(1)
     }
@@ -477,7 +464,9 @@ object CompilerPerf {
       case PhaseTime(phase, time) => phase -> time
     }
 
-    Run(lines, frontendTime, backendTime, phases.toList)
+    val run = Run(lines, frontendTime, backendTime, phases.toList)
+    monitor.runFinished(experiment, iteration, run)
+    run
   }
 
   /**
