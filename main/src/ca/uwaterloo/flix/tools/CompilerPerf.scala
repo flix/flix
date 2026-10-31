@@ -25,7 +25,7 @@ object CompilerPerf {
   /**
     * The default number of compilations.
     */
-  private val DefaultN: Int = 7
+  private val DefaultN: Int = 50
 
   /**
     * The number of threads to use for the single-thread experiment.
@@ -211,16 +211,28 @@ object CompilerPerf {
     // The number of iterations.
     val N = o.XPerfN.getOrElse(DefaultN)
 
+    // The experiments to run.
+    val mode = o.XPerfMode
+    val runSeq = mode == XPerfMode.Sequential || mode == XPerfMode.All
+    val runPar = mode == XPerfMode.Parallel || mode == XPerfMode.All
+    val runParInc = mode == XPerfMode.All
+
     // Run the experiments.
-    val baseline = aggregate(if (o.XPerfPar) IndexedSeq.empty else perfBaseLine(N, o))
-    val baselineWithPar = aggregate(perfBaseLineWithPar(N, o))
-    val baselineWithParInc = aggregate(if (o.XPerfPar) IndexedSeq.empty else perfBaseLineWithParInc(N, o))
+    val baseline = aggregate(if (runSeq) perfBaseLine(N, o) else IndexedSeq.empty)
+    val baselineWithPar = aggregate(if (runPar) perfBaseLineWithPar(N, o) else IndexedSeq.empty)
+    val baselineWithParInc = aggregate(if (runParInc) perfBaseLineWithParInc(N, o) else IndexedSeq.empty)
+
+    // The primary experiment, whose runs drive the summary, and the number of threads it used.
+    val (primary, threads) = mode match {
+      case XPerfMode.Sequential => (baseline, MinThreads)
+      case XPerfMode.Parallel | XPerfMode.All => (baselineWithPar, MaxThreads)
+    }
 
     // Find the number of lines of source code.
-    val lines = baselineWithPar.lines.toLong
+    val lines = primary.lines.toLong
 
     // Find the timings of each run.
-    val timings = baselineWithPar.times
+    val timings = primary.times
 
     // Compute the total time in seconds.
     val totalTime = (timings.sum / 1_000_000_000L).toInt
@@ -358,7 +370,7 @@ object CompilerPerf {
     //
     val summaryJSON =
       ("timestamp" -> timestamp) ~
-        ("threads" -> MaxThreads) ~
+        ("threads" -> threads) ~
         ("lines" -> lines) ~
         ("iterations" -> N) ~
         ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
@@ -372,7 +384,7 @@ object CompilerPerf {
 
     println("~~~~ Flix Compiler Performance ~~~~")
     println()
-    println(f"Throughput (best): $max%,6d lines/sec (with $MaxThreads threads.)")
+    println(f"Throughput (best): $max%,6d lines/sec (with $threads threads.)")
     println()
     println(f"  min: $min%,6d, max: $max%,6d, avg: $avg%,6d, median: $mdn%,6d")
     println()

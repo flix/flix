@@ -90,7 +90,7 @@ object Main {
       xnodeprecated = cmdOpts.xnodeprecated,
       xnewmono = cmdOpts.xnewmono,
       XPerfFrontend = cmdOpts.XPerfFrontend,
-      XPerfPar = cmdOpts.XPerfPar,
+      XPerfMode = xperfMode(cmdOpts),
       XPerfN = cmdOpts.XPerfN,
       xchaosMonkey = Options.Default.xchaosMonkey,
       xsve = cmdOpts.xsve,
@@ -529,6 +529,8 @@ object Main {
     XPerfN: Option[Int] = None,
     XPerfFrontend: Boolean = false,
     XPerfPar: Boolean = false,
+    XPerfSeq: Boolean = false,
+    XPerfAll: Boolean = false,
     files: Seq[File] = Seq()
   )
 
@@ -607,6 +609,14 @@ object Main {
     case Command.Upgrade(pkgs) => c.copy(command = Command.Upgrade(pkgs :+ pkg))
     case command => throw InternalCompilerException(s"Unexpected command: '$command'.", SourceLocation.Unknown)
   }
+
+  /**
+    * Returns the `Xperf` mode selected by the mutually exclusive `--par`, `--seq`, and `--all` flags.
+    */
+  private def xperfMode(cmdOpts: CmdOpts): XPerfMode =
+    if (cmdOpts.XPerfSeq) XPerfMode.Sequential
+    else if (cmdOpts.XPerfAll) XPerfMode.All
+    else XPerfMode.Parallel
 
   /**
     * Parse command line options.
@@ -740,11 +750,24 @@ object Main {
           .text("benchmark only frontend"),
         opt[Unit]("par")
           .action((_, c) => c.copy(XPerfPar = true))
-          .text("benchmark only parallel evaluation"),
+          .text("benchmark only parallel evaluation (default)"),
+        opt[Unit]("seq")
+          .action((_, c) => c.copy(XPerfSeq = true))
+          .text("benchmark only sequential (single-threaded) evaluation"),
+        opt[Unit]("all")
+          .action((_, c) => c.copy(XPerfAll = true))
+          .text("benchmark sequential, parallel, and incremental evaluation"),
         opt[Int]("n")
           .action((v, c) => c.copy(XPerfN = Some(v)))
           .text("number of compilations")
       ).hidden()
+
+      checkConfig(c =>
+        if (List(c.XPerfPar, c.XPerfSeq, c.XPerfAll).count(identity) > 1)
+          failure("Xperf: --par, --seq, and --all are mutually exclusive.")
+        else
+          success
+      )
 
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
 
