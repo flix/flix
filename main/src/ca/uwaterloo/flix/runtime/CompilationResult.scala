@@ -20,12 +20,10 @@ import java.lang.constant.ClassDesc
   *
   * @param root      the generated JVM classes together with the main and test entry points.
   * @param totalTime the total compilation time.
-  * @param codeSize  the number of bytes the compiler generated.
   * @param flix      the Flix instance that produced this result (provides the external JAR class loader and crash reporting).
   */
 class CompilationResult(val root: BytecodeAst.Root,
                         val totalTime: Long,
-                        val codeSize: Int,
                         val flix: Flix
                        ) {
 

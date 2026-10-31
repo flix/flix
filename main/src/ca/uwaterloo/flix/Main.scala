@@ -97,11 +97,6 @@ object Main {
       xverify = cmdOpts.xverify
     )
 
-    // Don't use progress bar if benchmarking.
-    if (cmdOpts.xbenchmarkCodeSize) {
-      options = options.copy(progress = false)
-    }
-
     // Don't use progress bar / --top TUI if not attached to a console.
     if (System.console() == null) {
       options = options.copy(progress = false, compilerTop = false)
@@ -124,12 +119,6 @@ object Main {
           if (cmdOpts.listen.nonEmpty) {
             featureNotSupportedInNativeImage()
             SocketServer.listen(cmdOpts.listen.get)
-            exit(0)
-          }
-
-          // check if the --Xbenchmark-code-size flag was passed.
-          if (cmdOpts.xbenchmarkCodeSize) {
-            BenchmarkCompilerOld.benchmarkCodeSize(options)
             exit(0)
           }
 
@@ -519,7 +508,6 @@ object Main {
     top: Boolean = false,
     version: Boolean = false,
     assumeYes: Boolean = false,
-    xbenchmarkCodeSize: Boolean = false,
     xnodeprecated: Boolean = false,
     xlib: LibLevel = LibLevel.All,
     xprintphases: Boolean = false,
@@ -815,10 +803,6 @@ object Main {
       // Experimental options:
       note("")
       note("The following options are experimental:")
-
-      // Xbenchmark-code-size
-      opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
-        text("[experimental] benchmarks the size of the generated JVM files.")
 
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
