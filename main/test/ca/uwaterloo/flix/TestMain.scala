@@ -250,12 +250,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.json)
   }
 
-  test("--Xbenchmark-code-size") {
-    val args = Array("--Xbenchmark-code-size", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xbenchmarkCodeSize)
-  }
-
   test("--Xlib nix") {
     val args = Array("--Xlib", "nix", "p.flix")
     val opts = Main.parseCmdOpts(args).get
