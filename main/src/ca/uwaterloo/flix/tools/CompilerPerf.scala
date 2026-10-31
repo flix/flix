@@ -13,7 +13,7 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.util.StatUtils.{minimum, average, median}
 import ca.uwaterloo.flix.util.collection.ListOps
-import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, StatUtils}
+import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options}
 import org.json4s.JValue
 import org.json4s.JsonDSL.*
 
@@ -258,15 +258,6 @@ object CompilerPerf {
     val timestamp = System.currentTimeMillis() / 1000
 
     //
-    // The combine function uses to merge data from different runs.
-    //
-    def combine[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double =
-      if (N <= 4)
-        numeric.toDouble(xs.last)
-      else
-        StatUtils.median(xs)
-
-    //
     // Speedup
     //
     val speedupPar =
@@ -277,7 +268,7 @@ object CompilerPerf {
         ("lines" -> lines) ~
         ("results" -> ListOps.zipTruncate(baseline.phases, baselineWithPar.phases).map {
           case ((phase, times1), (_, times2)) =>
-            ("phase" -> phase) ~ ("speedup" -> combine(ListOps.zip(times1, times2).map(p => p._1.toDouble / p._2.toDouble)))
+            ("phase" -> phase) ~ ("speedup" -> median(ListOps.zip(times1, times2).map(p => p._1.toDouble / p._2.toDouble)))
         })
     writeFile("speedupWithPar.json", speedupPar, o)
 
@@ -291,7 +282,7 @@ object CompilerPerf {
         ("lines" -> lines) ~
         ("results" -> ListOps.zipTruncate(baselineWithPar.phases, baselineWithParInc.phases).map {
           case ((phase, times1), (_, times2)) =>
-            ("phase" -> phase) ~ ("ratio" -> combine(ListOps.zip(times1, times2).map(p => Math.max(0.0, 1.toDouble - (p._2.toDouble / p._1.toDouble)))))
+            ("phase" -> phase) ~ ("ratio" -> median(ListOps.zip(times1, times2).map(p => Math.max(0.0, 1.toDouble - (p._2.toDouble / p._1.toDouble)))))
         })
     writeFile("incrementalism.json", incrementalism, o)
 
@@ -340,7 +331,7 @@ object CompilerPerf {
         ("incremental" -> false) ~
         ("lines" -> lines) ~
         ("results" -> baseline.phases.map {
-          case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
+          case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(median(times)))
         })
     writeFile("time.json", timeBaseline, o)
 
@@ -350,7 +341,7 @@ object CompilerPerf {
         ("incremental" -> false) ~
         ("lines" -> lines) ~
         ("results" -> baselineWithPar.phases.map {
-          case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
+          case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(median(times)))
         })
     writeFile("timeWithPar.json", timeWithPar, o)
 
@@ -360,7 +351,7 @@ object CompilerPerf {
         ("incremental" -> true) ~
         ("lines" -> lines) ~
         ("results" -> baselineWithParInc.phases.map {
-          case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
+          case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(median(times)))
         })
     writeFile("timeWithParInc.json", timeWithParInc, o)
 

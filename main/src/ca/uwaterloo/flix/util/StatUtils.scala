@@ -28,19 +28,19 @@ object StatUtils {
 
   /**
     * Returns the median of `xs`.
+    *
+    * For an odd number of elements this is the middle element of the sorted sequence.
+    * For an even number of elements it is the mean of the two middle elements.
     */
   def median[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double = {
     if (xs.isEmpty) throw new IllegalArgumentException("Empty list.")
-    if (xs.length == 1) return numeric.toDouble(xs.head)
 
     val l = xs.sorted
-    val n = xs.length
-    if (n % 2 == 0) {
-      val index = n / 2
-      numeric.toDouble(l(index))
+    val n = l.length
+    if (n % 2 == 1) {
+      numeric.toDouble(l(n / 2))
     } else {
-      val index = n / 2
-      (numeric.toDouble(l(index)) + numeric.toDouble(l(index + 1))) / 2
+      (numeric.toDouble(l(n / 2 - 1)) + numeric.toDouble(l(n / 2))) / 2
     }
   }
 
