@@ -364,6 +364,55 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
     assertSolved(input)
   }
 
+  test("EquationOrder.01") {
+    // A system from the Typer, in an order the chaos monkey can produce. Solving its definitions
+    // in this order, rather than smallest first, nests the ranges of x38 exponentially.
+    val input = List(
+      mkEq(Var(0), Var(39)),
+      mkEq(Var(24), Union(TwoList(ElemSet(SortedSet(42)), Var(23), List()))),
+      mkEq(Var(25), Union(TwoList(Var(24), ElemSet(SortedSet(42)), List()))),
+      mkEq(Var(32), ElemSet(SortedSet(42))),
+      mkEq(Var(17), Union(TwoList(Var(16), ElemSet(SortedSet(42)), List()))),
+      mkEq(Var(28), Var(38)),
+      mkEq(Var(2), Var(1)),
+      mkEq(Var(3), Union(TwoList(Var(4), Var(5), List(Inter(TwoList(Var(2), Compl(ElemSet(SortedSet(41))), List())))))),
+      mkEq(Var(16), Union(TwoList(ElemSet(SortedSet(42)), Var(15), List()))),
+      mkEq(Var(12), Union(TwoList(Var(35), Var(11), List()))),
+      mkEq(Var(22), Empty),
+      mkEq(Var(13), ElemSet(SortedSet(43))),
+      mkEq(Var(7), Empty),
+      mkEq(Var(39), Union(TwoList(Inter(TwoList(Cst(40), Compl(ElemSet(SortedSet(41))), List())), ElemSet(SortedSet(42)), List()))),
+      mkEq(Var(18), Var(19)),
+      mkEq(Var(8), Union(TwoList(Var(32), Var(7), List()))),
+      mkEq(Var(21), Empty),
+      mkEq(Var(38), Var(5)),
+      mkEq(Var(3), Var(36)),
+      mkEq(Var(3), Var(30)),
+      mkEq(Var(33), ElemSet(SortedSet(42))),
+      mkEq(Var(14), Empty),
+      mkEq(Var(31), Var(6)),
+      mkEq(Var(37), Union(TwoList(Inter(TwoList(Var(27), Compl(ElemSet(SortedSet(43))), List())), ElemSet(SortedSet(42)), List()))),
+      mkEq(Var(34), Empty),
+      mkEq(Var(14), Var(15)),
+      mkEq(Var(33), Var(9)),
+      mkEq(Var(34), Var(10)),
+      mkEq(Var(10), Var(11)),
+      mkEq(Var(3), Var(0)),
+      mkEq(Var(30), Var(4)),
+      mkEq(Var(29), Cst(40)),
+      mkEq(Var(27), Union(TwoList(Var(20), Var(21), List(Var(6), Var(8), Var(9), Var(12), Var(13), Var(17), Var(19), Union(TwoList(Var(25), Var(26), List())))))),
+      mkEq(Var(31), ElemSet(SortedSet(42))),
+      mkEq(Var(29), Var(1)),
+      mkEq(Var(20), Empty),
+      mkEq(Var(22), Var(23)),
+      mkEq(Var(18), Empty),
+      mkEq(Var(36), Var(26)),
+      mkEq(Var(35), ElemSet(SortedSet(43))),
+      mkEq(Var(37), Var(28))
+    )
+    assertSolved(input)
+  }
+
   test("ConstantPropagation.ComplVar") {
     // !x0 ~ empty
     val input = List(
