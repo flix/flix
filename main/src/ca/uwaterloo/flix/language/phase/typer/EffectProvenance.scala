@@ -676,7 +676,7 @@ object EffectProvenance {
     */
   private def toVertex(tpe: Type, constLoc: SourceLocation, vtpe: NodeType)(implicit scope: RegionScope, renv: RigidityEnv): List[Vertex] = {
 
-    def toVerticesFromType(tpe: Type, constLoc: SourceLocation, vtpe: NodeType)(implicit scope: RegionScope, renv: RigidityEnv): List[Vertex] = tpe match {
+    def toVerticesFromType(tpe: Type, constLoc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv): List[Vertex] = tpe match {
       case Type.Var(sym, loc) => renv.get(sym) match {
         case Rigidity.Flexible => List(VarVertex(sym))
         case Rigidity.Rigid => List(RigidVarVertex(sym, loc))
@@ -717,16 +717,16 @@ object EffectProvenance {
           *   Op
           */
         case (Type.Apply(Type.Cst(tc, _), v1@Type.Var(_, _), _), v2@Type.Var(_, _)) => tc match {
-          case TypeConstructor.Union => toVerticesFromType(v1, constLoc, vtpe) ::: toVerticesFromType(v2, constLoc, vtpe)
+          case TypeConstructor.Union => toVerticesFromType(v1, constLoc) ::: toVerticesFromType(v2, constLoc)
           case _ => List()
         }
         case (Type.Apply(Type.Cst(tc, _), cst@Type.Cst(_, _), _), v@Type.Var(_, _)) => tc match {
-          case TypeConstructor.Union => toVerticesFromType(cst, constLoc, vtpe) ::: toVerticesFromType(v, constLoc, vtpe)
+          case TypeConstructor.Union => toVerticesFromType(cst, constLoc) ::: toVerticesFromType(v, constLoc)
           case _ => List()
         }
 
         case (Type.Apply(Type.Cst(tc, _), x@Type.Cst(_, _), _), y@Type.Cst(_, _)) => tc match {
-          case TypeConstructor.Union => toVerticesFromType(x, constLoc, vtpe) ::: toVerticesFromType(y, constLoc, vtpe)
+          case TypeConstructor.Union => toVerticesFromType(x, constLoc) ::: toVerticesFromType(y, constLoc)
           case _ => List()
         }
 
@@ -744,13 +744,13 @@ object EffectProvenance {
           */
         case (Type.Apply(Type.Cst(tc, _), v@Type.Var(_, _), _), Type.Apply(_, _, _)) =>
           tc match {
-            case TypeConstructor.Union => toVerticesFromType(v, constLoc, vtpe) ::: toVerticesFromType(tpe2, constLoc, vtpe)
+            case TypeConstructor.Union => toVerticesFromType(v, constLoc) ::: toVerticesFromType(tpe2, constLoc)
             case _ => List()
           }
 
         case (Type.Apply(Type.Cst(tc, _), v@Type.Var(_, _), _), cst@Type.Cst(_, _)) =>
           tc match {
-            case TypeConstructor.Union =>  toVerticesFromType(v, constLoc, vtpe) ::: toVerticesFromType(cst, constLoc, vtpe)
+            case TypeConstructor.Union =>  toVerticesFromType(v, constLoc) ::: toVerticesFromType(cst, constLoc)
             case _ => List()
           }
 
@@ -768,25 +768,25 @@ object EffectProvenance {
           */
         case (Type.Apply(Type.Cst(tc, _), nested@Type.Apply(_, _, _), _), v@Type.Var(_, _)) =>
           tc match {
-            case TypeConstructor.Union => toVerticesFromType(v, constLoc, vtpe) ::: toVerticesFromType(nested, constLoc, vtpe)
+            case TypeConstructor.Union => toVerticesFromType(v, constLoc) ::: toVerticesFromType(nested, constLoc)
             case _ => List()
           }
 
         case (Type.Apply(Type.Cst(tc, _), nested@Type.Apply(_, _, _), _), cst@Type.Cst(_, _)) =>
           tc match {
-            case TypeConstructor.Union => toVerticesFromType(cst, constLoc, vtpe) ::: toVerticesFromType(nested, constLoc, vtpe)
+            case TypeConstructor.Union => toVerticesFromType(cst, constLoc) ::: toVerticesFromType(nested, constLoc)
             case _ => List()
           }
 
         case (Type.Apply(Type.Cst(tc, _), cst@Type.Cst(_, _), _), nested@Type.Apply(_, _, _)) =>
           tc match {
-            case TypeConstructor.Union => toVerticesFromType(cst, constLoc, vtpe) ::: toVerticesFromType(nested, constLoc, vtpe)
+            case TypeConstructor.Union => toVerticesFromType(cst, constLoc) ::: toVerticesFromType(nested, constLoc)
             case _ => List()
           }
 
         case (Type.Apply(Type.Cst(tc, _), nested1@Type.Apply(_, _, _), _), nested2@Type.Apply(_, _, _)) =>
           tc match {
-            case TypeConstructor.Union => toVerticesFromType(nested1, constLoc, vtpe) ::: toVerticesFromType(nested2, constLoc, vtpe)
+            case TypeConstructor.Union => toVerticesFromType(nested1, constLoc) ::: toVerticesFromType(nested2, constLoc)
             case _ => List()
           }
 
@@ -796,9 +796,9 @@ object EffectProvenance {
     }
 
     vtpe match {
-      case ArgNode => List(ArgVertex(toVerticesFromType(tpe, constLoc, vtpe), constLoc))
-      case SinkNode => List(SignatureVertex(toVerticesFromType(tpe, constLoc, vtpe), constLoc))
-      case IntermediateNode => toVerticesFromType(tpe, constLoc, vtpe)
+      case ArgNode => List(ArgVertex(toVerticesFromType(tpe, constLoc), constLoc))
+      case SinkNode => List(SignatureVertex(toVerticesFromType(tpe, constLoc), constLoc))
+      case IntermediateNode => toVerticesFromType(tpe, constLoc)
     }
   }
 }
