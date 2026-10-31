@@ -332,7 +332,6 @@ object ConstraintSolverInterface {
     case Provenance.ExpectArgument(expected, actual, _, _, _) => Some((expected, actual))
     case Provenance.Match(tpe1, tpe2, _) => Some((tpe1, tpe2))
     case Provenance.PolyEffEq(_, _, eff1, eff2, _) => Some((eff1, eff2))
-    case Provenance.Source(eff1, eff2, _) => Some((eff1, eff2))
     case Provenance.Label(_, _, _, inner) => enclosingTypes(inner)
     case Provenance.Predicate(_, _, _, inner) => enclosingTypes(inner)
     case Provenance.NonUnitStatement(_, _) => None
