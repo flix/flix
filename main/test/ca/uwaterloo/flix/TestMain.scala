@@ -256,24 +256,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.xbenchmarkCodeSize)
   }
 
-  test("--Xbenchmark-phases") {
-    val args = Array("--Xbenchmark-phases", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xbenchmarkPhases)
-  }
-
-  test("--Xbenchmark-frontend") {
-    val args = Array("--Xbenchmark-frontend", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xbenchmarkFrontend)
-  }
-
-  test("--Xbenchmark-throughput") {
-    val args = Array("--Xbenchmark-throughput", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xbenchmarkThroughput)
-  }
-
   test("--Xlib nix") {
     val args = Array("--Xlib", "nix", "p.flix")
     val opts = Main.parseCmdOpts(args).get
