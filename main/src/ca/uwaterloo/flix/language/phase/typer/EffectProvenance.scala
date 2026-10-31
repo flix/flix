@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.language.ast.shared.{EffSymOrRigidVar, RegionScope}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.ast.{Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.Vertex.{ArgVertex, CstVertex, IOVertex, PureExplicitVertex, PureImplicitVertex, RigidVarVertex, SignatureVertex, VarVertex, sameType, symbol}
-import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.NodeType.{ArgNode, IntermediateNode, SinkNode, SourceNode}
+import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.NodeType.{ArgNode, IntermediateNode, SinkNode}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.EffConflicted
 
 /**
@@ -82,6 +82,18 @@ object EffectProvenance {
       case (acc, (arg@ArgVertex(_, _), s)) => if (arg.lookup(vertex).isDefined) s else acc
       case (acc, (v, xs))                  => if (v == vertex) xs else acc
     }
+  }
+
+  /**
+    * Returns the location at which the effect of the vertex `v` enters the flow along an edge located at `loc`.
+    *
+    * An effect constant enters at its own location, which is the call, operation or cast that introduces it.
+    * Any other vertex, and a constant without a location, enters at the location of the edge.
+    */
+  private def originOf(v: Vertex, loc: SourceLocation): SourceLocation = v match {
+    case IOVertex(l) if l != SourceLocation.Unknown => l
+    case CstVertex(_, l) if l != SourceLocation.Unknown => l
+    case _ => loc
   }
 
   /**
@@ -199,8 +211,8 @@ object EffectProvenance {
     *
     * This trait allows to differentiate between two Vertices of the same type, differently, determined by the NodeType
     *
-    * For example an IO Vertex in a signature, e.g. f(): Unit \ IO
-    * is constructed differently than one that appears in a source node. e.g. println("42")
+    * For example the IO Vertex of a signature, e.g. f(): Unit \ IO, is wrapped in a `SignatureVertex`,
+    * while the IO Vertex of a call, e.g. println("42"), stands on its own.
     *
     * This trait is only used when constructing the graph
     */
@@ -212,8 +224,6 @@ object EffectProvenance {
     case object SinkNode extends NodeType
 
     case object IntermediateNode extends NodeType
-
-    case object SourceNode extends NodeType
   }
 
   /**
@@ -249,7 +259,7 @@ object EffectProvenance {
         case (acc, Edge(from, to, loc)) =>
           val v1 = lookupVertex(from, acc)
           val v2 = lookupVertex(to, acc)
-          val pointsTo = subLattice.lub(subLattice.lub(v1, v2), Set((from, loc)))
+          val pointsTo = subLattice.lub(subLattice.lub(v1, v2), Set((from, originOf(from, loc))))
           val e: Map[Vertex, Set[(Vertex, SourceLocation)]] = Map(to -> pointsTo)
           lattice.lub(acc, e)
       }
@@ -296,10 +306,9 @@ object EffectProvenance {
         case TypeConstraint.Provenance.ExpectEffect(effs, _, _) =>
           val l = if (effs.loc.isReal) effs.loc else prov.loc
           Some((SinkNode, IntermediateNode, l))
-        case TypeConstraint.Provenance.Source(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
         case TypeConstraint.Provenance.Match(_, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
         case TypeConstraint.Provenance.PolyEffEq(_, _, _, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
-        case TypeConstraint.Provenance.ExpectType(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
+        case TypeConstraint.Provenance.ExpectType(_, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
         case TypeConstraint.Provenance.ExpectArgument(arg, _, _, _, _) => Some((ArgNode, IntermediateNode, arg.loc))
         case _ => None
       }
@@ -647,8 +656,8 @@ object EffectProvenance {
     *   - `Type.Var`: rigid variables become `RigidVarVertex`, flexible ones become `VarVertex`.
     *   - `Type.Cst` with `Pure`: `PureExplicitVertex` (if the location is real) or
     *     `PureImplicitVertex` (synthetic location).
-    *   - `Type.Cst` with `Effect(IO)`: `IOVertex`, with location chosen based on node type.
-    *   - `Type.Cst` with a user-defined effect: `CstVertex`.
+    *   - `Type.Cst` with `Effect(IO)`: `IOVertex`, at the location of the constant.
+    *   - `Type.Cst` with a user-defined effect: `CstVertex`, at the location of the constant.
     *   - `Type.Apply` (union types): recursively decomposes both branches and concatenates
     *     their vertices. Only `TypeConstructor.Union` nodes are expanded; all other
     *     constructors yield an empty list.
@@ -656,7 +665,7 @@ object EffectProvenance {
     * The outer `vtpe` also governs how the resulting list is wrapped:
     *   - `ArgNode`  → wrapped in a single `ArgVertex`.
     *   - `SinkNode` → wrapped in a single `SignatureVertex`.
-    *   - `IntermediateNode` / `SourceNode` → returned as-is.
+    *   - `IntermediateNode` → returned as-is.
     *
     * Returns an empty list for types that have no effect representation (e.g., value types).
     *
@@ -675,15 +684,9 @@ object EffectProvenance {
       case Type.Cst(tc, loc) => tc match {
         case TypeConstructor.Pure => if (loc.isReal) List(PureExplicitVertex(loc)) else List(PureImplicitVertex(constLoc))
         case TypeConstructor.Effect(sym, _) => sym match {
-          case Symbol.IO => vtpe match {
-            case SinkNode | ArgNode | IntermediateNode => List(IOVertex(loc))
-            case SourceNode => List(IOVertex(constLoc))
-          }
+          case Symbol.IO => List(IOVertex(loc))
           case Symbol.Debug => Nil
-          case eff => vtpe match {
-            case SinkNode | SourceNode | ArgNode => List(CstVertex(eff, loc))
-            case IntermediateNode => List(CstVertex(eff, constLoc))
-          }
+          case eff => List(CstVertex(eff, loc))
         }
         case _ => List()
       }
@@ -796,7 +799,6 @@ object EffectProvenance {
       case ArgNode => List(ArgVertex(toVerticesFromType(tpe, constLoc, vtpe), constLoc))
       case SinkNode => List(SignatureVertex(toVerticesFromType(tpe, constLoc, vtpe), constLoc))
       case IntermediateNode => toVerticesFromType(tpe, constLoc, vtpe)
-      case SourceNode => toVerticesFromType(tpe, constLoc, vtpe)
     }
   }
 }
