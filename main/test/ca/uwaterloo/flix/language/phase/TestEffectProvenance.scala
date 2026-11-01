@@ -8,6 +8,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -569,5 +571,40 @@ class TestEffectProvenance extends AnyFunSuite with TestUtils {
         """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ArgumentGivenWrongEffect](result)
+  }
+
+  test("Test.ExplicitlyPureFunctionUsesIO.07") {
+    // The effect of a call to a def is reported at the call, not at the declaration of the def.
+    val input =
+      """
+        |def f(): Unit \ {} = println(42)
+        |pub eff IO
+        |pub def println(_x: a): Unit \ IO = checked_ecast(())
+        """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectOneError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+    expectErrorAt(result, "println(42)")
+  }
+
+  test("Test.ExplicitlyPureFunctionUsesEffect.05") {
+    // The effect of a call to an operation is reported at the call, not at the declaration of the effect.
+    val input =
+      """
+        |def foo(): Unit \ {} = Bar.buzz()
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+        """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectOneError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
+    expectErrorAt(result, "Bar.buzz()")
+  }
+
+  /**
+    * Asserts that the location of the single error in `result` covers exactly the source text `text`.
+    */
+  private def expectErrorAt(result: (Option[TypedAst.Root], List[CompilationMessage]), text: String): Unit = result match {
+    case (_, error :: Nil) => assert(error.loc.text.contains(text), s"expected the error at '$text' but found it at ${error.loc.format}")
+    case (_, errors) => fail(s"Expected exactly one error, but found ${errors.length}.")
   }
 }

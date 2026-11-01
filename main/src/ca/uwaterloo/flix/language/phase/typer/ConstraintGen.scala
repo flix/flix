@@ -114,10 +114,10 @@ object ConstraintGen {
           // A pure def is not the source of an effect.
           Type.mkUnion(effs, loc)
         } else {
-          // Pseudo variable for source to flow into
-          val pvar = Type.freshVar(Kind.Eff, symUse.loc)
-          c.unifySource(pvar, declaredEff, loc)
-          Type.mkUnion(pvar, effs, loc)
+          // The def is the source of its declared effect. The effect is relocated to the call, like the trait
+          // constraints above, so that effect provenance can point at the call where the effect enters the program.
+          // The union is put behind a fresh variable only if the solver must reduce or canonicalize the effect.
+          mkResolvableEff(relocate(declaredEff, loc), effs, loc)
         }
         val resTpe = mkResolvable(declaredResultType, loc)
         InferredAst.Expr.ApplyDef(symUse, es, targs, itpe, resTpe, resEff, loc)
@@ -153,7 +153,8 @@ object ConstraintGen {
         // must canonicalize it, which it does only through a constraint: written into the tree directly, `Emit[Int32]`
         // is never checked against `Emit[String]`. The union is therefore put behind a fresh variable in that case, and
         // likewise if the operation itself declares an associated effect, which the solver must reduce.
-        val resEff = mkResolvableEff(declaredEff, effs, loc)
+        // The declared effect is relocated to the call for effect provenance, see `ApplyDef`.
+        val resEff = mkResolvableEff(relocate(declaredEff, loc), effs, loc)
         InferredAst.Expr.ApplyOp(symUse, es, resTpe, resEff, loc)
 
       case Expr.ApplySig(symUse, exps, loc) =>
@@ -184,7 +185,8 @@ object ConstraintGen {
         // or apply a polymorphic effect, which it must canonicalize. Both happen only through a constraint: written into
         // the tree directly, a region is purified before the associated effect inside it is reduced, and `Emit[Int32]`
         // is never checked against `Emit[String]`. The union is therefore put behind a fresh variable in either case.
-        val resEff = mkResolvableEff(declaredEff, effs, loc)
+        // The declared effect is relocated to the call for effect provenance, see `ApplyDef`.
+        val resEff = mkResolvableEff(relocate(declaredEff, loc), effs, loc)
         InferredAst.Expr.ApplySig(symUse, es, targ, targs, itpe, resTpe, resEff, loc)
 
       case Expr.Lambda(fparam, exp, loc) =>
@@ -1592,6 +1594,19 @@ object ConstraintGen {
     } else {
       union
     }
+  }
+
+  /**
+    * Returns the effect `eff` with every type constant located at `loc`.
+    *
+    * The declared effect of a def, signature or operation is located at its declaration. A call moves it to the call, like its
+    * trait constraints, so that effect provenance can point at the call where the effect enters the program.
+    */
+  private def relocate(eff: Type, loc: SourceLocation): Type = eff match {
+    case Type.Cst(tc, _) => Type.Cst(tc, loc)
+    case Type.Apply(tpe1, tpe2, l) => Type.Apply(relocate(tpe1, loc), relocate(tpe2, loc), l)
+    case Type.Alias(symUse, args, tpe, l) => Type.Alias(symUse, args, relocate(tpe, loc), l)
+    case _ => eff
   }
 
   /**
