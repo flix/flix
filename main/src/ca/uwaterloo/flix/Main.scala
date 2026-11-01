@@ -90,17 +90,12 @@ object Main {
       xnodeprecated = cmdOpts.xnodeprecated,
       xnewmono = cmdOpts.xnewmono,
       XPerfFrontend = cmdOpts.XPerfFrontend,
-      XPerfPar = cmdOpts.XPerfPar,
+      XPerfMode = xperfMode(cmdOpts),
       XPerfN = cmdOpts.XPerfN,
       xchaosMonkey = Options.Default.xchaosMonkey,
       xsve = cmdOpts.xsve,
       xverify = cmdOpts.xverify
     )
-
-    // Don't use progress bar if benchmarking.
-    if (cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkFrontend || cmdOpts.xbenchmarkThroughput) {
-      options = options.copy(progress = false)
-    }
 
     // Don't use progress bar / --top TUI if not attached to a console.
     if (System.console() == null) {
@@ -124,36 +119,6 @@ object Main {
           if (cmdOpts.listen.nonEmpty) {
             featureNotSupportedInNativeImage()
             SocketServer.listen(cmdOpts.listen.get)
-            exit(0)
-          }
-
-          // check if the --Xbenchmark-code-size flag was passed.
-          if (cmdOpts.xbenchmarkCodeSize) {
-            BenchmarkCompilerOld.benchmarkCodeSize(options)
-            exit(0)
-          }
-
-          // check if the --Xbenchmark-incremental flag was passed.
-          if (cmdOpts.xbenchmarkIncremental) {
-            BenchmarkCompilerOld.benchmarkIncremental(options)
-            exit(0)
-          }
-
-          // check if the --Xbenchmark-phases flag was passed.
-          if (cmdOpts.xbenchmarkPhases) {
-            BenchmarkCompilerOld.benchmarkPhases(options)
-            exit(0)
-          }
-
-          // check if the --Xbenchmark-frontend flag was passed.
-          if (cmdOpts.xbenchmarkFrontend) {
-            BenchmarkCompilerOld.benchmarkThroughput(options, frontend = true)
-            exit(0)
-          }
-
-          // check if the --Xbenchmark-throughput flag was passed.
-          if (cmdOpts.xbenchmarkThroughput) {
-            BenchmarkCompilerOld.benchmarkThroughput(options, frontend = false)
             exit(0)
           }
 
@@ -543,11 +508,6 @@ object Main {
     top: Boolean = false,
     version: Boolean = false,
     assumeYes: Boolean = false,
-    xbenchmarkCodeSize: Boolean = false,
-    xbenchmarkIncremental: Boolean = false,
-    xbenchmarkPhases: Boolean = false,
-    xbenchmarkFrontend: Boolean = false,
-    xbenchmarkThroughput: Boolean = false,
     xnodeprecated: Boolean = false,
     xlib: LibLevel = LibLevel.All,
     xprintphases: Boolean = false,
@@ -557,6 +517,8 @@ object Main {
     XPerfN: Option[Int] = None,
     XPerfFrontend: Boolean = false,
     XPerfPar: Boolean = false,
+    XPerfSeq: Boolean = false,
+    XPerfAll: Boolean = false,
     files: Seq[File] = Seq()
   )
 
@@ -635,6 +597,14 @@ object Main {
     case Command.Upgrade(pkgs) => c.copy(command = Command.Upgrade(pkgs :+ pkg))
     case command => throw InternalCompilerException(s"Unexpected command: '$command'.", SourceLocation.Unknown)
   }
+
+  /**
+    * Returns the `Xperf` mode selected by the mutually exclusive `--par`, `--seq`, and `--all` flags.
+    */
+  private def xperfMode(cmdOpts: CmdOpts): XPerfMode =
+    if (cmdOpts.XPerfSeq) XPerfMode.Sequential
+    else if (cmdOpts.XPerfAll) XPerfMode.All
+    else XPerfMode.Parallel
 
   /**
     * Parse command line options.
@@ -768,11 +738,24 @@ object Main {
           .text("benchmark only frontend"),
         opt[Unit]("par")
           .action((_, c) => c.copy(XPerfPar = true))
-          .text("benchmark only parallel evaluation"),
+          .text("benchmark only parallel evaluation (default)"),
+        opt[Unit]("seq")
+          .action((_, c) => c.copy(XPerfSeq = true))
+          .text("benchmark only sequential (single-threaded) evaluation"),
+        opt[Unit]("all")
+          .action((_, c) => c.copy(XPerfAll = true))
+          .text("benchmark sequential, parallel, and incremental evaluation"),
         opt[Int]("n")
           .action((v, c) => c.copy(XPerfN = Some(v)))
           .text("number of compilations")
       ).hidden()
+
+      checkConfig(c =>
+        if (List(c.XPerfPar, c.XPerfSeq, c.XPerfAll).count(identity) > 1)
+          failure("Xperf: --par, --seq, and --all are mutually exclusive.")
+        else
+          success
+      )
 
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
 
@@ -820,26 +803,6 @@ object Main {
       // Experimental options:
       note("")
       note("The following options are experimental:")
-
-      // Xbenchmark-code-size
-      opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
-        text("[experimental] benchmarks the size of the generated JVM files.")
-
-      // Xbenchmark-incremental
-      opt[Unit]("Xbenchmark-incremental").action((_, c) => c.copy(xbenchmarkIncremental = true)).
-        text("[experimental] benchmarks the performance of each compiler phase in incremental mode.")
-
-      // Xbenchmark-phases
-      opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
-        text("[experimental] benchmarks the performance of each compiler phase.")
-
-      // Xbenchmark-frontend
-      opt[Unit]("Xbenchmark-frontend").action((_, c) => c.copy(xbenchmarkFrontend = true)).
-        text("[experimental] benchmarks the performance of the frontend.")
-
-      // Xbenchmark-throughput
-      opt[Unit]("Xbenchmark-throughput").action((_, c) => c.copy(xbenchmarkThroughput = true)).
-        text("[experimental] benchmarks the performance of the entire compiler.")
 
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
