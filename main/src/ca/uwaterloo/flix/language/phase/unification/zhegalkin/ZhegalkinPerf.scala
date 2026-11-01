@@ -184,20 +184,20 @@ object ZhegalkinPerf {
     SetUnification.EnableStats = false
 
     val mc = SetUnification.ElimPerRule.toMap
-    val a1 = mc(Phase.Trivial)
-    val b1 = mc(Phase.ConstantPropagation)
-    val c1 = mc(Phase.VariablePropagation)
-    val d1 = mc(Phase.VariableAssignment)
-    val e1 = mc(Phase.ReflexiveAndDuplicate)
-    val f1 = mc(Phase.SuccessiveVariableElimination)
+    val a1 = mc.getOrElse(Phase.Trivial, 0)
+    val b1 = mc.getOrElse(Phase.ConstantPropagation, 0)
+    val c1 = mc.getOrElse(Phase.VariablePropagation, 0)
+    val d1 = mc.getOrElse(Phase.VariableAssignment, 0)
+    val e1 = mc.getOrElse(Phase.ReflexiveAndDuplicate, 0)
+    val f1 = mc.getOrElse(Phase.SuccessiveVariableElimination, 0)
 
     val mv = SetUnification.VarElimPerRule.toMap
-    val a2 = mv(Phase.Trivial)
-    val b2 = mv(Phase.ConstantPropagation)
-    val c2 = mv(Phase.VariablePropagation)
-    val d2 = mv(Phase.VariableAssignment)
-    val e2 = mv(Phase.ReflexiveAndDuplicate)
-    val f2 = mv(Phase.SuccessiveVariableElimination)
+    val a2 = mv.getOrElse(Phase.Trivial, 0)
+    val b2 = mv.getOrElse(Phase.ConstantPropagation, 0)
+    val c2 = mv.getOrElse(Phase.VariablePropagation, 0)
+    val d2 = mv.getOrElse(Phase.VariableAssignment, 0)
+    val e2 = mv.getOrElse(Phase.ReflexiveAndDuplicate, 0)
+    val f2 = mv.getOrElse(Phase.SuccessiveVariableElimination, 0)
 
     println("-" * 80)
     println("  Trivial | ConstProp |  VarProp |  VarAssign |  ReflDupl |    SVE")
