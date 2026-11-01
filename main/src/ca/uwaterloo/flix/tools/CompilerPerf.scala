@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
-import ca.uwaterloo.flix.tools.perf.{Experiment, PerfMonitor, Run}
+import ca.uwaterloo.flix.tools.perf.{Experiment, PerfMonitor, PerfRenderer, Run}
 import ca.uwaterloo.flix.util.StatUtils.{minimum, average, median}
 import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options}
@@ -387,6 +387,9 @@ object CompilerPerf {
     // Python Plot
     //
     FileOps.writeString(CompilerConstants.PerfDirectory.resolve("plots.py"), Python)
+
+    // Tell the user where the results are. The line goes below the final frame.
+    println(PerfRenderer.renderResultsLine(CompilerConstants.PerfDirectory))
   }
 
   /**

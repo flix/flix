@@ -9,12 +9,15 @@ package ca.uwaterloo.flix.tools.perf
 import ca.uwaterloo.flix.tools.compilertop.Ansi
 import ca.uwaterloo.flix.tools.compilertop.Formatting.{lpad, rpad}
 
+import java.nio.file.Path
+
 /**
   * Renders a [[PerfState]] as text. A pure function of its inputs: no terminal IO, no clock.
   *
-  * Every line of a frame is padded to exactly `cols - 1` visible characters so that a frame
-  * drawn over a previous one leaves nothing behind, and no line reaches the last column, which
-  * would make some terminals wrap.
+  * A frame drawn in place on a terminal uses ANSI styles, and every line is padded to exactly
+  * `cols - 1` visible characters so that a frame drawn over a previous one leaves nothing behind,
+  * and no line reaches the last column, which would make some terminals wrap. A plain frame, for
+  * a log, has neither styles nor padding.
   */
 object PerfRenderer {
 
@@ -50,14 +53,16 @@ object PerfRenderer {
     *
     * @param state the snapshot to render.
     * @param cols  the terminal width in columns.
+    * @param ansi  whether to use ANSI styles and pad every line to the full width, as drawing in
+    *              place requires. Off for a plain frame in a log.
     */
-  def render(state: PerfState, cols: Int): String = {
+  def render(state: PerfState, cols: Int, ansi: Boolean): String = {
     // Lines are laid out for `cols` columns but padded one short so no line reaches the last column.
     val tier = cols.max(MinCols)
     val w = tier - 1
     val sb = new StringBuilder
     def line(f: Line => Unit): Unit = {
-      val l = new Line(w)
+      val l = new Line(w, ansi)
       f(l)
       sb.append(l.result).append('\n')
     }
@@ -83,6 +88,13 @@ object PerfRenderer {
     s"[${e.key}] $which   ${groupThousands(tp)} l/s   total ${groupThousands(nanosToMillis(run.time))} ms"
   }
 
+  /**
+    * Renders the line that names the directory the result files were written to. The label is
+    * aligned with the throughput label of the frame, which the line is printed below.
+    */
+  def renderResultsLine(dir: Path): String =
+    s" results     $dir  (JSON data and plots.py)"
+
   // -- Lines ------------------------------------------------------------------
 
   private def renderHeader(l: Line): Unit = {
@@ -100,7 +112,7 @@ object PerfRenderer {
       l.add(s" $count", Ansi.dim)
     } else {
       l.add(" ")
-      l.add("▶", Ansi.blue)
+      if (es.isDone) l.add("✓", Ansi.green) else l.add("▶", Ansi.blue)
       l.add(" ")
       l.add(label)
       l.add(s" $count  ")
@@ -221,9 +233,10 @@ object PerfRenderer {
 
   /**
     * Accumulates one line of output while tracking its visible width. Text past `width` is
-    * dropped, and [[result]] pads the line to exactly `width` visible characters.
+    * dropped. With `ansi` set, styles are applied and [[result]] pads the line to exactly `width`
+    * visible characters; otherwise the text is plain and unpadded.
     */
-  private final class Line(val width: Int) {
+  private final class Line(val width: Int, ansi: Boolean) {
     private val sb = new StringBuilder
     private var visible = 0
 
@@ -238,13 +251,13 @@ object PerfRenderer {
       val room = width - visible
       if (room <= 0 || plain.isEmpty) return
       val text = if (plain.length <= room) plain else plain.substring(0, room)
-      sb.append(style(text))
+      sb.append(if (ansi) style(text) else text)
       visible += text.length
     }
 
-    /** The line padded to `width` visible characters. */
+    /** The line, padded to `width` visible characters when `ansi` is set. */
     def result: String = {
-      if (visible < width) add(" " * (width - visible))
+      if (ansi && visible < width) add(" " * (width - visible))
       sb.toString
     }
   }

@@ -42,34 +42,59 @@ object PerfMonitor {
 
   /**
     * Creates a monitor: a live dashboard when attached to a console, otherwise a log that prints
-    * one line per completed run.
+    * one line per completed run and the final frame at the end.
     *
     * @param n           the number of measured runs per experiment.
     * @param experiments the experiments in execution order, each with its number of threads.
     */
   def create(n: Int, experiments: List[(Experiment, Int)]): PerfMonitor = {
-    if (System.console() == null) return new LogMonitor(n)
     val states = experiments.map { case (e, threads) => ExperimentState(e, threads, Vector.empty, None, None) }.toVector
-    new LiveMonitor(PerfState(n, states, measuring = false, System.nanoTime()))
+    val initial = PerfState(n, states, measuring = false, System.nanoTime())
+    if (System.console() == null) new LogMonitor(initial) else new LiveMonitor(initial)
   }
 
   /**
-    * Prints one plain line per completed run. Used when stdout is not a console.
-    *
-    * @param n the number of measured runs per experiment.
+    * Tracks the benchmark progress as a [[PerfState]] so that every monitor renders the same frame.
     */
-  private final class LogMonitor(n: Int) extends PerfMonitor {
+  private abstract class StateMonitor(initial: PerfState) extends PerfMonitor {
 
-    def runStarted(e: Experiment, iteration: Int): Unit = ()
+    /** The benchmark progress. Written by the benchmark thread, read by whichever thread renders. */
+    @volatile private var state: PerfState = initial
 
-    def runFinished(e: Experiment, iteration: Int, run: Run): Unit =
-      println(PerfRenderer.renderLogLine(e, iteration, n, run))
+    def runStarted(e: Experiment, iteration: Int): Unit =
+      state = state.withStarted(e, System.nanoTime()).copy(measuring = iteration >= 1)
 
-    def experimentFinished(e: Experiment): Unit = ()
+    def runFinished(e: Experiment, iteration: Int, run: Run): Unit = {
+      val s = if (iteration >= 1) state.withRun(e, run) else state
+      state = s.copy(measuring = false)
+    }
+
+    def experimentFinished(e: Experiment): Unit =
+      state = state.withEnded(e, System.nanoTime())
+
+    /** Takes a snapshot for rendering: the benchmark progress stamped with the current time. */
+    protected def snapshot(): PerfState = state.copy(nowNanos = System.nanoTime())
+
+  }
+
+  /**
+    * Prints one plain line per completed run and, when the benchmark completes, the final frame
+    * without styling. Used when stdout is not a console.
+    */
+  private final class LogMonitor(initial: PerfState) extends StateMonitor(initial) {
+
+    override def runFinished(e: Experiment, iteration: Int, run: Run): Unit = {
+      super.runFinished(e, iteration, run)
+      println(PerfRenderer.renderLogLine(e, iteration, initial.n, run))
+    }
 
     def fail(): Unit = ()
 
-    def stop(): Unit = ()
+    def stop(): Unit = {
+      println()
+      print(PerfRenderer.render(snapshot(), PerfRenderer.DefaultCols, ansi = false))
+      System.out.flush()
+    }
 
   }
 
@@ -80,13 +105,10 @@ object PerfMonitor {
     * over the previous frame and overwrites it line by line, so the terminal's scrollback is
     * untouched and the final frame stays on screen after [[stop]].
     */
-  private final class LiveMonitor(initial: PerfState) extends PerfMonitor {
+  private final class LiveMonitor(initial: PerfState) extends StateMonitor(initial) {
 
     /** The delay between frames. */
     private val FrameDelayMillis: Long = 100L
-
-    /** The benchmark progress. Written by the benchmark thread, read by the render thread. */
-    @volatile private var state: PerfState = initial
 
     /** Guards terminal writes and the fields below. */
     private val lock = new ReentrantLock()
@@ -114,17 +136,6 @@ object PerfMonitor {
     })
 
     animator.scheduleAtFixedRate(() => frame(), 0L, FrameDelayMillis, TimeUnit.MILLISECONDS)
-
-    def runStarted(e: Experiment, iteration: Int): Unit =
-      state = state.withStarted(e, System.nanoTime()).copy(measuring = iteration >= 1)
-
-    def runFinished(e: Experiment, iteration: Int, run: Run): Unit = {
-      val s = if (iteration >= 1) state.withRun(e, run) else state
-      state = s.copy(measuring = false)
-    }
-
-    def experimentFinished(e: Experiment): Unit =
-      state = state.withEnded(e, System.nanoTime())
 
     def fail(): Unit = shutdown(drawFinal = false)
 
@@ -162,16 +173,13 @@ object PerfMonitor {
       }
     }
 
-    /** Takes a snapshot for rendering: the benchmark progress stamped with the current time. */
-    private def snapshot(): PerfState = state.copy(nowNanos = System.nanoTime())
-
     /**
       * Draws the frame over the previous one.
       *
       * Locking: must only be called while holding `lock`.
       */
     private def draw(s: PerfState): Unit = {
-      val text = PerfRenderer.render(s, cols())
+      val text = PerfRenderer.render(s, cols(), ansi = true)
       val lines = text.count(_ == '\n')
       val sb = new StringBuilder
       sb.append(Ansi.BeginSync)
