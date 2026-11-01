@@ -196,9 +196,21 @@ object CompilerPerf {
       |
       |""".stripMargin
 
-  case class Run(lines: Int, time: Long, phases: List[(String, Long)])
+  /**
+    * A single compilation: the number of source lines, the time spent in the frontend (`check`)
+    * and in the backend (`codeGen`), and the time of every phase.
+    *
+    * The backend time is zero when only the frontend is benchmarked (`--frontend`).
+    */
+  case class Run(lines: Int, frontendTime: Long, backendTime: Long, phases: List[(String, Long)])
 
-  case class Runs(lines: Int, times: List[Long], phases: List[(String, List[Long])])
+  /**
+    * The merged results of a sequence of compilations (see [[aggregate]]).
+    */
+  case class Runs(lines: Int, frontendTimes: List[Long], backendTimes: List[Long], phases: List[(String, List[Long])]) {
+    /** The total compilation time of every run. */
+    def totalTimes: List[Long] = ListOps.zip(frontendTimes, backendTimes).map { case (f, b) => f + b }
+  }
 
   /**
     * Run compiler performance experiments.
@@ -230,29 +242,25 @@ object CompilerPerf {
     // Find the number of lines of source code.
     val lines = primary.lines.toLong
 
-    // Find the timings of each run.
-    val timings = primary.times
-
     // Compute the total time in seconds.
-    val totalTime = (timings.sum / 1_000_000_000L).toInt
+    val totalTime = (primary.totalTimes.sum / 1_000_000_000L).toInt
 
-    // Find the throughput of each run.
-    val throughputs = timings.map(throughput(lines, _))
+    // Whether only the frontend was benchmarked, in which case there is no backend and no overall throughput.
+    val frontendOnly = o.XPerfFrontend
 
-    // Compute the minimum throughput (per second).
-    val min = throughputs.min
+    // The frontend, backend, and overall throughput statistics.
+    //
+    // Note: The throughputs are not additive. A run's overall time is the sum of its frontend and
+    // backend times, so the overall throughput is always below both the frontend and the backend throughput.
+    val frontendStats = throughputStats(lines, primary.frontendTimes)
+    val backendStats = if (frontendOnly) None else Some(throughputStats(lines, primary.backendTimes))
+    val overallStats = if (frontendOnly) None else Some(throughputStats(lines, primary.totalTimes))
 
-    // Compute the maximum throughput (per second).
-    val max = throughputs.max
-
-    // Compute the average throughput (per second).
-    val avg = average(throughputs.map(_.toLong)).toInt
-
-    // Compute the median throughput (per second).
-    val mdn = median(throughputs.map(_.toLong)).toInt
+    // The statistics shown on the console: the overall throughput, or the frontend throughput with `--frontend`.
+    val shown = overallStats.getOrElse(frontendStats)
 
     // Best observed throughput.
-    val maxObservedThroughput = throughput(lines, minimum(baseline.times ::: baselineWithPar.times ::: baselineWithParInc.times))
+    val maxObservedThroughput = throughput(lines, minimum(baseline.totalTimes ::: baselineWithPar.totalTimes ::: baselineWithParInc.totalTimes))
 
     // Timestamp (in seconds) when the experiment was run.
     val timestamp = System.currentTimeMillis() / 1000
@@ -295,7 +303,7 @@ object CompilerPerf {
         ("incremental" -> false) ~
         ("lines" -> lines) ~
         ("plot" -> ("maxy" -> maxObservedThroughput)) ~
-        ("results" -> baseline.times.zipWithIndex.map({
+        ("results" -> baseline.totalTimes.zipWithIndex.map({
           case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
     writeFile("throughput.json", throughoutBaseLine, o)
@@ -306,7 +314,7 @@ object CompilerPerf {
         ("incremental" -> false) ~
         ("lines" -> lines) ~
         ("plot" -> ("maxy" -> maxObservedThroughput)) ~
-        ("results" -> baselineWithPar.times.zipWithIndex.map({
+        ("results" -> baselineWithPar.totalTimes.zipWithIndex.map({
           case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
     writeFile("throughputWithPar.json", throughputPar, o)
@@ -317,7 +325,7 @@ object CompilerPerf {
         ("incremental" -> true) ~
         ("lines" -> lines) ~
         ("plot" -> ("maxy" -> maxObservedThroughput)) ~
-        ("results" -> baselineWithParInc.times.zipWithIndex.map({
+        ("results" -> baselineWithParInc.totalTimes.zipWithIndex.map({
           case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
     writeFile("throughputWithParInc.json", throughputParInc, o)
@@ -358,12 +366,18 @@ object CompilerPerf {
     //
     // Summary
     //
+    // The `backend` and `overall` fields are omitted (rendered as `JNothing`) with `--frontend`.
+    val throughputJSON =
+      ("frontend" -> frontendStats.toJSON) ~
+        ("backend" -> backendStats.map(_.toJSON)) ~
+        ("overall" -> overallStats.map(_.toJSON))
+
     val summaryJSON =
       ("timestamp" -> timestamp) ~
         ("threads" -> threads) ~
         ("lines" -> lines) ~
         ("iterations" -> N) ~
-        ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
+        ("throughput" -> throughputJSON)
     writeFile("summary.json", summaryJSON, o)
 
     //
@@ -373,9 +387,9 @@ object CompilerPerf {
 
     println("~~~~ Flix Compiler Performance ~~~~")
     println()
-    println(f"Throughput (best): $max%,6d lines/sec (with $threads threads.)")
+    println(f"Throughput (best): ${shown.max}%,6d lines/sec (with $threads threads.)")
     println()
-    println(f"  min: $min%,6d, max: $max%,6d, avg: $avg%,6d, median: $mdn%,6d")
+    println(f"  min: ${shown.min}%,6d, max: ${shown.max}%,6d, avg: ${shown.avg}%,6d, median: ${shown.median}%,6d")
     println()
     println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
 
@@ -436,27 +450,34 @@ object CompilerPerf {
     // Clear caches.
     EffUnification3.Algebra.Cache.clearCaches()
 
-    val frontendOnly = flix.options.XPerfFrontend
-    val totalLines =
-      if (frontendOnly) {
-        val (optRoot, errors) = flix.check()
-        if (errors.nonEmpty) {
-          println(CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot))
-          System.exit(1)
-        }
-        optRoot.get.sources.foldLeft(0) {
-          case (acc, (_, sl)) => acc + sl.endLine
-        }
-      } else {
-        flix.compile().unsafeGet.getTotalLines
+    // Run the frontend.
+    val (optRoot, errors) = flix.check()
+    if (errors.nonEmpty) {
+      println(CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot))
+      System.exit(1)
+    }
+    val root: TypedAst.Root = optRoot.get
+
+    // `check` resets the phase timers, so the total time so far is the frontend time.
+    val frontendTime = flix.getTotalTime
+
+    // Run the backend, unless only the frontend is benchmarked.
+    val backendTime =
+      if (flix.options.XPerfFrontend) 0L
+      else {
+        flix.codeGen(root)
+        flix.getTotalTime - frontendTime
       }
+
+    val lines = root.sources.foldLeft(0) {
+      case (acc, (_, sl)) => acc + sl.endLine
+    }
 
     val phases = flix.phaseTimers.map {
       case PhaseTime(phase, time) => phase -> time
     }
-    val totalTime = flix.getTotalTime
 
-    Run(totalLines, totalTime, phases.toList)
+    Run(lines, frontendTime, backendTime, phases.toList)
   }
 
   /**
@@ -464,18 +485,34 @@ object CompilerPerf {
     */
   private def aggregate(l: IndexedSeq[Run]): Runs = {
     if (l.isEmpty) {
-      return Runs(0, Nil, Nil)
+      return Runs(0, Nil, Nil, Nil)
     }
 
     val lines = l.head.lines
-    val times = l.map(_.time).toList
+    val frontendTimes = l.map(_.frontendTime).toList
+    val backendTimes = l.map(_.backendTime).toList
     val phases = l.head.phases.map(_._1)
 
     val phaseMatrix = l.map(_.phases.map(_._2))
     val transposedMatrix = phaseMatrix.transpose.map(_.toList).toList
     val transposedWithPhases = ListOps.zip(phases, transposedMatrix)
 
-    Runs(lines, times, transposedWithPhases)
+    Runs(lines, frontendTimes, backendTimes, transposedWithPhases)
+  }
+
+  /**
+    * The throughput statistics (in lines per second) of a sequence of runs.
+    */
+  private case class ThroughputStats(min: Int, max: Int, avg: Int, median: Int) {
+    def toJSON: JValue = ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median)
+  }
+
+  /**
+    * Returns the throughput statistics of compiling `lines` lines in each of the given `times` (in nanoseconds).
+    */
+  private def throughputStats(lines: Long, times: List[Long]): ThroughputStats = {
+    val throughputs = times.map(throughput(lines, _))
+    ThroughputStats(throughputs.min, throughputs.max, average(throughputs.map(_.toLong)).toInt, median(throughputs.map(_.toLong)).toInt)
   }
 
   /**
