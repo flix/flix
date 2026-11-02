@@ -408,11 +408,6 @@ object CompilerPerf {
     println()
     println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
 
-    // Repeat the warning next to the numbers it affects.
-    if (!heapPinned) {
-      println()
-      println(HeapWarning)
-    }
   }
 
   /**
