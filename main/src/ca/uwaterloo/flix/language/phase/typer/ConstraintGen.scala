@@ -83,7 +83,7 @@ object ConstraintGen {
         val e2 = visitExp(exp2)
         c.expectType(Type.mkArrowWithEffect(e2.tpe, lambdaBodyEff, lambdaBodyType, loc), e1.tpe, loc)
         val resTpe = lambdaBodyType
-        val resEff = Type.mkUnion(lambdaBodyEff :: e1.eff :: e2.eff :: Nil, loc)
+        val resEff = Type.mkUnion(lambdaBodyEff, e1.eff, e2.eff, loc)
         InferredAst.Expr.ApplyClo(e1, e2, resTpe, resEff, loc)
 
       case Expr.ApplyDef(symUse, exps, loc) =>
@@ -117,7 +117,7 @@ object ConstraintGen {
           // Pseudo variable for source to flow into
           val pvar = Type.freshVar(Kind.Eff, symUse.loc)
           c.unifySource(pvar, declaredEff, loc)
-          Type.mkUnion(pvar :: effs, loc)
+          Type.mkUnion(pvar, effs, loc)
         }
         val resTpe = mkResolvable(declaredResultType, loc)
         InferredAst.Expr.ApplyDef(symUse, es, targs, itpe, resTpe, resEff, loc)
@@ -131,7 +131,7 @@ object ConstraintGen {
         val actualDefTpe = Type.mkUncurriedArrowWithEffect(Nel.unsafeFrom(tpes), defEff, defTpe, symUse.loc)
         c.expectType(symUse.sym.tvar, actualDefTpe, symUse.loc)
         val resTpe = defTpe
-        val resEff = Type.mkUnion(defEff :: effs, loc)
+        val resEff = Type.mkUnion(defEff, effs, loc)
         InferredAst.Expr.ApplyLocalDef(symUse, es, actualDefTpe, resTpe, resEff, loc)
 
       case Expr.ApplyOp(symUse, exps, loc) =>
@@ -447,7 +447,7 @@ object ConstraintGen {
         }
 
         val resTpe = e2.tpe
-        val resEff = Type.mkUnion(e2.eff :: effs, loc)
+        val resEff = Type.mkUnion(e2.eff, effs, loc)
         InferredAst.Expr.Stm(es, e2, resTpe, resEff, loc)
 
       case Expr.Discard(exp, loc) =>
@@ -512,7 +512,7 @@ object ConstraintGen {
         c.unifyAllTypes(e.tpe :: patTpes, loc)
         c.unifyAllTypes(tpes, loc)
         val resTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
-        val resEff = Type.mkUnion(e.eff :: effs, loc)
+        val resEff = Type.mkUnion(e.eff, effs, loc)
         InferredAst.Expr.Match(e, rs, resTpe, resEff, loc)
 
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
@@ -563,7 +563,7 @@ object ConstraintGen {
         c.unifyAllTypes(e.tpe :: expectedExtensibleType :: defaultPatternTvars, loc)
         c.unifyAllTypes(ruleBodyTypes, loc)
         val resTpe = ruleBodyTypes.head // Note: We are guaranteed to have one rule.
-        val resEff = Type.mkUnion(e.eff :: ruleBodyEffs, loc)
+        val resEff = Type.mkUnion(e.eff, ruleBodyEffs, loc)
         InferredAst.Expr.ExtMatch(e, rs, resTpe, resEff, loc)
 
       case KindedAst.Expr.Tag(symUse, exps, loc) =>
@@ -656,7 +656,7 @@ object ConstraintGen {
         c.unifyAllTypes(tpes, loc)
         val elmTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
         val resTpe = Type.mkArray(elmTpe, regionVar, loc)
-        val resEff = Type.mkUnion(Type.mkUnion(effs, loc), e.eff, regionVar, loc)
+        val resEff = Type.mkUnion(e.eff, regionVar :: effs, loc)
         InferredAst.Expr.ArrayLit(es, e, resTpe, resEff, loc)
 
       case Expr.ArrayNew(exp1, exp2, exp3, loc) =>
@@ -722,7 +722,7 @@ object ConstraintGen {
           case Some(region) =>
             val e = visitExp(region)
             c.unifyType(Type.mkRegionToStar(regionVar, loc), e.tpe, region.loc)
-            (Some(e), Type.mkUnion(e.eff :: regionVar :: fieldEffs, loc))
+            (Some(e), Type.mkUnion(e.eff, regionVar :: fieldEffs, loc))
           case None =>
             // There is no region expression, so the effect is unconstrained.
             (None, freshVar(Kind.Eff, loc))
@@ -836,7 +836,7 @@ object ConstraintGen {
         val ruleTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
         c.unifyType(e.tpe, ruleTpe, loc)
         val resTpe = e.tpe
-        val resEff = Type.mkUnion(e.eff :: effs, loc)
+        val resEff = Type.mkUnion(e.eff, effs, loc)
         InferredAst.Expr.TryCatch(e, rs, resTpe, resEff, loc)
 
       case KindedAst.Expr.Throw(exp, loc) =>
@@ -880,7 +880,7 @@ object ConstraintGen {
         val handledEffectConstructor = Type.Cst(TypeConstructor.Effect(symUse.sym, effectKind), symUse.qname.loc)
         val handledEffect = Type.mkApply(handledEffectConstructor, effectArgs, symUse.qname.loc)
         // Subtract the effect from the body effect and add the handler effects.
-        val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, symUse.qname.loc), Type.mkUnion(effs, loc), loc)
+        val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, symUse.qname.loc), effs, loc)
         c.unifyType(evar2, continuationEffect, loc)
         val resultTpe = Type.mkArrowWithEffect(Type.mkArrowWithEffect(Type.Unit, evar1, tvar, loc), evar2, tvar, loc)
         InferredAst.Expr.Handler(symUse, rs, tvar, evar1, evar2, resultTpe, loc)
@@ -908,7 +908,7 @@ object ConstraintGen {
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
-        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff, effs, loc), loc)
         val resTpe = clazzTpe
         val resEff = evar
         InferredAst.Expr.InvokeConstructor(es, jvar, resTpe, resEff, loc)
@@ -925,7 +925,7 @@ object ConstraintGen {
         val tpes = es.map(_.tpe)
         val effs = es.map(_.eff)
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
-        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff, effs, loc), loc)
         val resTpe = clazzTpe
         val resEff = evar
         InferredAst.Expr.InvokeSuperConstructor(es, jvar, resTpe, resEff, loc)
@@ -944,7 +944,7 @@ object ConstraintGen {
         val effs = es.map(_.eff)
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(e.tpe, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(baseEff :: e.eff :: effs, loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff, e.eff :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         InferredAst.Expr.InvokeMethod(e, es, jvar, resTpe, resEff, loc)
@@ -961,7 +961,7 @@ object ConstraintGen {
         val effs = es.map(_.eff)
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(clazzTpe, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff, effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         InferredAst.Expr.InvokeSuperMethod(es, jvar, resTpe, resEff, loc)
@@ -979,7 +979,7 @@ object ConstraintGen {
         val effs = es.map(_.eff)
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmStaticMethod(clazz, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff, effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         InferredAst.Expr.InvokeStaticMethod(es, jvar, resTpe, resEff, loc)
@@ -994,7 +994,7 @@ object ConstraintGen {
         val e = visitExp(exp)
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmField(exp.loc, e.tpe, fieldName), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc) // unify field type
-        c.unifyType(evar, Type.mkUnion(Type.IO :: e.eff :: Nil, loc), loc) // unify effects
+        c.unifyType(evar, Type.mkUnion(Type.IO, e.eff, loc), loc) // unify effects
         val resTpe = tvar
         val resEff = evar
         InferredAst.Expr.GetField(e, jvar, resTpe, resEff, loc)
@@ -1073,7 +1073,7 @@ object ConstraintGen {
         }
         c.unifyAllTypes(defaultType :: ruleTypes, loc)
         val resTpe = defaultType
-        val resEff = Type.mkUnion(defaultEff :: ruleEffs, loc)
+        val resEff = Type.mkUnion(defaultEff, ruleEffs, loc)
         InferredAst.Expr.SelectChannel(rs, d, resTpe, resEff, loc)
 
       case Expr.Spawn(exp1, exp2, loc) =>
@@ -1584,7 +1584,7 @@ object ConstraintGen {
     * The effects `effs` require neither, by construction.
     */
   private def mkResolvableEff(eff: Type, effs: List[Type], loc: SourceLocation)(implicit c: TypeContext, scope: RegionScope, flix: Flix): Type = {
-    val union = Type.mkUnion(eff :: effs, loc)
+    val union = Type.mkUnion(eff, effs, loc)
     if (requiresReductionOrCanonicalization(eff)) {
       val evar = freshVar(Kind.Eff, loc)
       c.unifyType(evar, union, loc)

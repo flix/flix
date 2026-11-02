@@ -17,6 +17,9 @@ object flix extends ScalaModule with NativeImageModule {
 
   def mainClass = Some("ca.uwaterloo.flix.Main")
 
+  // Pin the heap of every JVM forked for this module (e.g. `./mill flix.run`).
+  def forkArgs = Seq("-Xms8g", "-Xmx8g")
+
   def mvnDeps = Seq(
     mvn"org.java-websocket:Java-WebSocket:1.6.0",
     mvn"org.jline:jline:3.30.9",

@@ -112,7 +112,7 @@ object RestrictableChooseConstraintGen {
               c.unifyAllTypes(tpes, loc)
               val rs = ListOps.zip(ps, es).map { case (p, body) => InferredAst.RestrictableChooseRule(p, body) }
               val resTpe = tpes.head // We are guaranteed to have at least one rule.
-              val resEff = Type.mkUnion(e.eff :: effs, loc)
+              val resEff = Type.mkUnion(e.eff, effs, loc)
               InferredAst.Expr.RestrictableChoose(star = false, e, rs, resTpe, resEff, loc)
 
           }
@@ -190,7 +190,7 @@ object RestrictableChooseConstraintGen {
               // τ_out
               val rs = ListOps.zip(ps, es).map { case (p, body) => InferredAst.RestrictableChooseRule(p, body) }
               val resTpe = enumTypeOut
-              val resEff = Type.mkUnion(e.eff :: effs, loc)
+              val resEff = Type.mkUnion(e.eff, effs, loc)
               InferredAst.Expr.RestrictableChoose(star = true, e, rs, resTpe, resEff, loc)
 
           }

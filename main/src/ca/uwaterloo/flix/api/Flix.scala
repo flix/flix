@@ -662,8 +662,7 @@ class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil, mounts: M
 
     // Construct the compilation result. The generated classes are not loaded into the JVM;
     // that is the caller's responsibility (see [[ca.uwaterloo.flix.runtime.JvmLoader]]).
-    val totalSize = bytecodeAst.classes.values.map(_.bytecode.length).sum
-    val result = new CompilationResult(bytecodeAst, totalTime, totalSize, this)
+    val result = new CompilationResult(bytecodeAst, totalTime, this)
 
     // Shutdown the thread pool.
     shutdownThreadPool()
