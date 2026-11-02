@@ -14,9 +14,11 @@ import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.util.StatUtils.{minimum, average, median}
 import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options}
+import com.sun.management.{HotSpotDiagnosticMXBean, VMOption}
 import org.json4s.JValue
 import org.json4s.JsonDSL.*
 
+import java.lang.management.ManagementFactory
 import java.nio.file.Path
 
 object CompilerPerf {
@@ -35,6 +37,12 @@ object CompilerPerf {
     * The number of threads to use for the multi-threaded experiment.
     */
   private val MaxThreads: Int = Runtime.getRuntime.availableProcessors()
+
+  /**
+    * The warning printed when the heap is not pinned (see [[isHeapPinned]]).
+    */
+  private val HeapWarning: String =
+    "WARNING: The heap is not pinned. Run with `-Xms<size> -Xmx<size>` (e.g. `-Xms8g -Xmx8g`) for stable results."
 
   /**
     * The Python program used to generate graphs.
@@ -216,6 +224,13 @@ object CompilerPerf {
     * Run compiler performance experiments.
     */
   def run(opts: Options): Unit = {
+    // Warn before the experiments start, so that the run can be aborted, if the heap is not pinned.
+    val heapPinned = isHeapPinned
+    if (!heapPinned) {
+      println(HeapWarning)
+      println()
+    }
+
     // Options
     val o = opts.copy(progress = false)
 
@@ -396,6 +411,26 @@ object CompilerPerf {
   }
 
   /**
+    * Returns `true` if the heap is pinned, i.e. if both `-Xms` and `-Xmx` were given and are equal.
+    *
+    * Also returns `true` if this cannot be determined (e.g. on a non-HotSpot JVM or a runtime
+    * image without the `jdk.management` module), so that no warning is printed.
+    *
+    * The forced garbage collection before every run (see [[runSingle]]) shrinks an unpinned heap,
+    * which makes every run slower and no less noisy.
+    */
+  private def isHeapPinned: Boolean = try {
+    val bean = ManagementFactory.getPlatformMXBean(classOf[HotSpotDiagnosticMXBean])
+    val max = bean.getVMOption("MaxHeapSize")
+    val init = bean.getVMOption("InitialHeapSize")
+    val explicit = max.getOrigin == VMOption.Origin.VM_CREATION && init.getOrigin == VMOption.Origin.VM_CREATION
+    explicit && max.getValue == init.getValue
+  } catch {
+    case _: Exception => true
+    case _: LinkageError => true
+  }
+
+  /**
     * Runs Flix with one thread and non-incremental.
     */
   private def perfBaseLine(N: Int, o: Options): IndexedSeq[Run] = {
@@ -449,6 +484,11 @@ object CompilerPerf {
   private def runSingle(flix: Flix): Run = {
     // Clear caches.
     EffUnification3.Algebra.Cache.clearCaches()
+
+    // Collect the garbage of the previous run and let the JVM settle before timing starts. This keeps
+    // young collections out of the timed runs, but only with a pinned heap (see `isHeapPinned`).
+    System.gc()
+    Thread.sleep(50)
 
     // Run the frontend.
     val (optRoot, errors) = flix.check()
