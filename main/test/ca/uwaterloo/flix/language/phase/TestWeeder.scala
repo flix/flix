@@ -1643,6 +1643,34 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.NonUnaryAssocType](result)
   }
 
+  test("RedundantEscape.01") {
+    val input =
+      """
+        |def $run(): Int32 = 1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
+  test("RedundantEscape.02") {
+    val input =
+      """
+        |def foo($x: Int32): Int32 = $x
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.RedundantEscape](result)
+  }
+
+  test("RedundantEscape.03") {
+    val input =
+      """
+        |import java.lang.Object
+        |def foo(o: Object): String \ IO = o.$toString()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.RedundantEscape](result)
+  }
+
   test("UndefinedAnnotation.01") {
     val input =
       """@abc
