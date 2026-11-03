@@ -55,11 +55,13 @@ object EffectLock {
     * signature they no longer have, each with the spec it is declared with now.
     *
     * A locked declaration is compared against the public declaration of the same name in the
-    * package it is locked under, and against nothing else. One that the package no longer
-    * declares, or no longer declares publicly, is not compared, and that is not an error: it
-    * cannot be called, so it cannot do anything the lock did not allow. The count of what was
-    * compared is returned so that a check that matched nothing can be told from one that found
-    * nothing changed.
+    * package it is locked under, and against nothing else, whether it was locked as a def or as
+    * a sig: a def and a sig cannot share a name, so a locked def that the package now declares
+    * as a sig of that name is compared against the sig, and the reverse. One that the package
+    * no longer declares, or no longer declares publicly, is not compared, and that is not an
+    * error: it cannot be called, so it cannot do anything the lock did not allow. The count of
+    * what was compared is returned so that a check that matched nothing can be told from one
+    * that found nothing changed.
     *
     * A package that `lockfile` locks but that `targets` does not name is not checked, which is
     * how one package is checked without the drift of another standing in the way.
@@ -76,10 +78,11 @@ object EffectLock {
           case None => Declarations.Empty
           case Some(d) => d
         }
-        val (comparedDefs, changedDefs) = compare(locked.defs, decls.defs)
-        val (comparedSigs, changedSigs) = compare(locked.sigs, decls.sigs)
-        val changed = (changedDefs ::: changedSigs).map { case (sym, spec) => (id, sym, spec) }
-        (comparedDefs + comparedSigs, changed)
+        // The defs and the sigs are compared together, so that a name locked as one kind and
+        // declared as the other is compared rather than passed over. Neither side holds a name
+        // twice: a def and a sig cannot share a name, and the declarations are keyed by symbol.
+        val (compared, changed) = compare(locked.defs ++ locked.sigs, decls.defs ++ decls.sigs)
+        (compared, changed.map { case (sym, spec) => (id, sym, spec) })
     }
     CheckResult(results.map { case (compared, _) => compared }.sum, results.flatMap { case (_, changed) => changed })
   }
