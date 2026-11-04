@@ -131,6 +131,11 @@ object TypeReduction2 {
       }
 
     case unresolved@Type.UnresolvedJvmType(member, loc) =>
+      // If the lookup fails, the member's types may still have been reduced (e.g. an associated
+      // type was resolved), which calls `progress.markProgress()`. We must reflect that in the
+      // returned type: returning `unresolved` with the unreduced types would signal progress
+      // without changing the type, causing the constraint solver to loop forever (see issue #11213).
+      // Performance: Reuse `unresolved` if no type was changed.
       member match {
         case JvmMember.JvmConstructor(clazz, tpes) =>
           val (reducedTpes, css) = tpes.map(reduce(_)).unzip
@@ -139,16 +144,24 @@ object TypeReduction2 {
             case JavaResolution.Resolved(constructor) =>
               progress.markProgress()
               (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), cs)
-            case _ => (unresolved, cs)
+            case _ =>
+              if (sameTypes(reducedTpes, tpes))
+                (unresolved, cs)
+              else
+                (Type.UnresolvedJvmType(JvmMember.JvmConstructor(clazz, reducedTpes), loc), cs)
           }
 
-        case JvmMember.JvmField(_, tpe, name) =>
+        case JvmMember.JvmField(base, tpe, name) =>
           val (reducedTpe, cs) = reduce(tpe)
           lookupField(reducedTpe, name.name, loc) match {
             case JavaResolution.Resolved(field) =>
               progress.markProgress()
               (Type.Cst(TypeConstructor.JvmField(field), loc), cs)
-            case _ => (unresolved, cs)
+            case _ =>
+              if (reducedTpe eq tpe)
+                (unresolved, cs)
+              else
+                (Type.UnresolvedJvmType(JvmMember.JvmField(base, reducedTpe, name), loc), cs)
           }
 
         case JvmMember.JvmMethod(tpe, name, tpes) =>
@@ -162,7 +175,11 @@ object TypeReduction2 {
               val (tpe, cs0) = instantiateMethod(method, classTypeParameters, classTypeArgs, reducedTpes, scope, loc)
               progress.markProgress()
               (tpe, cs ::: cs0)
-            case _ => (unresolved, cs)
+            case _ =>
+              if ((reducedTpe eq tpe) && sameTypes(reducedTpes, tpes))
+                (unresolved, cs)
+              else
+                (Type.UnresolvedJvmType(JvmMember.JvmMethod(reducedTpe, name, reducedTpes), loc), cs)
           }
 
         case JvmMember.JvmStaticMethod(clazz, name, tpes) =>
@@ -174,10 +191,17 @@ object TypeReduction2 {
               val (tpe, cs0) = instantiateMethod(method, Nil, Nil, reducedTpes, scope, loc)
               progress.markProgress()
               (tpe, cs ::: cs0)
-            case _ => (unresolved, cs)
+            case _ =>
+              if (sameTypes(reducedTpes, tpes))
+                (unresolved, cs)
+              else
+                (Type.UnresolvedJvmType(JvmMember.JvmStaticMethod(clazz, name, reducedTpes), loc), cs)
           }
       }
   }
+
+  /** Returns `true` if `xs` and `ys` have the same length and are pairwise the same objects. */
+  private def sameTypes(xs: List[Type], ys: List[Type]): Boolean = xs.corresponds(ys)(_ eq _)
 
   /** Tries to find a constructor of `owner` that takes arguments of type `ts`. */
   private def lookupConstructor(owner: ClassDesc, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaResolution[JavaMethod] = {

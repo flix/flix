@@ -1483,6 +1483,34 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedNew](result)
   }
 
+  test("UndefinedNew.03") {
+    // Regression test. The receiver of `getFoo` is an error expression and the argument `x`
+    // has the associated type `Container.Elm[Vec[String]]`. Reducing the method call must
+    // terminate even though the method cannot be resolved.
+    val input =
+      raw"""
+           |trait Container[t] {
+           |    type Elm: Type
+           |    pub def forEach(f: Container.Elm[t] -> Unit \ ef, t: t): Unit \ ef
+           |}
+           |
+           |enum Vec[a](a)
+           |
+           |instance Container[Vec[a]] {
+           |    type Elm = a
+           |    pub def forEach(f: a -> Unit \ ef, v: Vec[a]): Unit \ ef =
+           |        let Vec.Vec(x) = v;
+           |        f(x)
+           |}
+           |
+           |def foo(v: Vec[String]): Unit \ IO =
+           |    let o = new NotImported();
+           |    Container.forEach(x -> { let _ = o.getFoo(x); () }, v)
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedNew](result)
+  }
+
   test("UndefinedJvmMethod.01") {
     val input =
       raw"""
@@ -1634,6 +1662,36 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |def foo(): String \ IO =
            |    'a'.toString()
            |pub eff IO
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("UndefinedJvmMethod.13") {
+    // Regression test. The argument `x` has the associated type `Container.Elm[Vec[String]]`,
+    // which is reduced to `String` when the method call is reduced. The reduction must terminate
+    // even though the method cannot be resolved.
+    val input =
+      raw"""
+           |import java.lang.String
+           |
+           |trait Container[t] {
+           |    type Elm: Type
+           |    pub def forEach(f: Container.Elm[t] -> Unit \ ef, t: t): Unit \ ef
+           |}
+           |
+           |enum Vec[a](a)
+           |
+           |instance Container[Vec[a]] {
+           |    type Elm = a
+           |    pub def forEach(f: a -> Unit \ ef, v: Vec[a]): Unit \ ef =
+           |        let Vec.Vec(x) = v;
+           |        f(x)
+           |}
+           |
+           |def foo(v: Vec[String]): Unit \ IO =
+           |    let o = new String();
+           |    Container.forEach(x -> { let _ = o.getFoo(x); () }, v)
        """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MethodNotFound](result)
