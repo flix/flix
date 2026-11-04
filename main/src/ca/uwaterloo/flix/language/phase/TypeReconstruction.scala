@@ -103,26 +103,7 @@ object TypeReconstruction {
     case InferredAst.Expr.Cst(cst, tpe, loc) =>
       TypedAst.Expr.Cst(cst, visitType(tpe), loc)
 
-    case InferredAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      TypedAst.Expr.ApplyClo(e1, e2, visitType(tpe), visitType(eff), ApplyPosition.NonTail, loc)
-
-    case InferredAst.Expr.ApplyDef(symUse, exps, targs, itpe, tpe, eff, loc) =>
-      val es = exps.map(visitExp)
-      TypedAst.Expr.ApplyDef(symUse, es, targs.map(visitType), visitType(itpe), visitType(tpe), visitType(eff), ApplyPosition.NonTail, loc)
-
-    case InferredAst.Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) =>
-      val es = exps.map(visitExp)
-      TypedAst.Expr.ApplyLocalDef(symUse, es, visitType(arrowTpe), visitType(tpe), visitType(eff), ApplyPosition.NonTail, loc)
-
-    case InferredAst.Expr.ApplyOp(symUse, exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp)
-      TypedAst.Expr.ApplyOp(symUse, es, visitType(tpe), visitType(eff), ApplyPosition.NonTail, loc)
-
-    case InferredAst.Expr.ApplySig(symUse, exps, targ, targs, itpe, tpe, eff, loc) =>
-      val es = exps.map(visitExp)
-      TypedAst.Expr.ApplySig(symUse, es, visitType(targ), targs.map(visitType), visitType(itpe), visitType(tpe), visitType(eff), ApplyPosition.NonTail, loc)
+    case e: InferredAst.Expr.ApplyExpr => visitApplyExpr(e)
 
     case InferredAst.Expr.Lambda(fparam, exp, tpe, loc) =>
       val p = visitFormalParam(fparam)
@@ -184,6 +165,82 @@ object TypeReconstruction {
       val rs = rules.map(visitExtMatchRule)
       TypedAst.Expr.ExtMatch(e, rs, visitType(tpe), visitType(eff), loc)
 
+    case e: InferredAst.Expr.DataExpr => visitDataExpr(e)
+
+    case InferredAst.Expr.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.Ascribe(e, expectedType, expectedEff, visitType(tpe), visitType(eff), loc)
+
+    case InferredAst.Expr.InstanceOf(exp, clazz, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.InstanceOf(e, clazz, loc)
+
+    case InferredAst.Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.CheckedCast(cast, e, visitType(tpe), visitType(eff), loc)
+
+    case InferredAst.Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.UncheckedCast(e, declaredType.map(visitType), declaredEff.map(visitType), visitType(tpe), visitType(eff), loc)
+
+    case InferredAst.Expr.Unsafe(exp, runEff, asEff, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.Unsafe(e, runEff, asEff, visitType(tpe), visitType(eff), loc)
+
+    case InferredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitCatchRule)
+      TypedAst.Expr.TryCatch(e, rs, visitType(tpe), visitType(eff), loc)
+
+    case InferredAst.Expr.Throw(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.Throw(e, visitType(tpe), visitType(eff), loc)
+
+    case InferredAst.Expr.Handler(symUse, rules, bodyType, bodyEff, handledEff, tpe, loc) =>
+      val rs = rules.map(visitHandlerRule)
+      TypedAst.Expr.Handler(symUse, rs, visitType(bodyType), visitType(bodyEff), visitType(handledEff), visitType(tpe), loc)
+
+    case InferredAst.Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      TypedAst.Expr.RunWith(e1, e2, visitType(tpe), visitType(eff), loc)
+
+    case e: InferredAst.Expr.JvmExpr => visitJvmExpr(e)
+
+    case e: InferredAst.Expr.ChannelExpr => visitChannelExpr(e)
+
+    case e: InferredAst.Expr.FixpointExpr => visitFixpointExpr(e)
+
+    case InferredAst.Expr.Error(m, tpe, eff) =>
+      TypedAst.Expr.Error(m, visitType(tpe), visitType(eff))
+  }
+
+  /** Reconstructs types in the application `exp0`. */
+  private def visitApplyExpr(exp0: InferredAst.Expr.ApplyExpr)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.Expr = exp0 match {
+    case InferredAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      TypedAst.Expr.ApplyClo(e1, e2, visitType(tpe), visitType(eff), ApplyPosition.NonTail, loc)
+
+    case InferredAst.Expr.ApplyDef(symUse, exps, targs, itpe, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      TypedAst.Expr.ApplyDef(symUse, es, targs.map(visitType), visitType(itpe), visitType(tpe), visitType(eff), ApplyPosition.NonTail, loc)
+
+    case InferredAst.Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      TypedAst.Expr.ApplyLocalDef(symUse, es, visitType(arrowTpe), visitType(tpe), visitType(eff), ApplyPosition.NonTail, loc)
+
+    case InferredAst.Expr.ApplyOp(symUse, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      TypedAst.Expr.ApplyOp(symUse, es, visitType(tpe), visitType(eff), ApplyPosition.NonTail, loc)
+
+    case InferredAst.Expr.ApplySig(symUse, exps, targ, targs, itpe, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      TypedAst.Expr.ApplySig(symUse, es, visitType(targ), targs.map(visitType), visitType(itpe), visitType(tpe), visitType(eff), ApplyPosition.NonTail, loc)
+  }
+
+  /** Reconstructs types in the data expression `exp0`: tags, tuples, records, arrays, structs, vectors and lazy values. */
+  private def visitDataExpr(exp0: InferredAst.Expr.DataExpr)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.Expr = exp0 match {
     case InferredAst.Expr.Tag(symUse, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       TypedAst.Expr.Tag(symUse, es, visitType(tpe), visitType(eff), loc)
@@ -229,15 +286,15 @@ object TypeReconstruction {
       val e2 = visitExp(exp2)
       TypedAst.Expr.ArrayLoad(e1, e2, visitType(tpe), visitType(eff), loc)
 
+    case InferredAst.Expr.ArrayLength(exp, eff, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.ArrayLength(e, visitType(eff), loc)
+
     case InferredAst.Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       TypedAst.Expr.ArrayStore(e1, e2, e3, visitType(eff), loc)
-
-    case InferredAst.Expr.ArrayLength(exp, eff, loc) =>
-      val e = visitExp(exp)
-      TypedAst.Expr.ArrayLength(e, visitType(eff), loc)
 
     case InferredAst.Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
       val r = region.map(visitExp)
@@ -266,44 +323,17 @@ object TypeReconstruction {
       val e = visitExp(exp)
       TypedAst.Expr.VectorLength(e, loc)
 
-    case InferredAst.Expr.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) =>
+    case InferredAst.Expr.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
-      TypedAst.Expr.Ascribe(e, expectedType, expectedEff, visitType(tpe), visitType(eff), loc)
+      TypedAst.Expr.Lazy(e, visitType(tpe), loc)
 
-    case InferredAst.Expr.InstanceOf(exp, clazz, loc) =>
+    case InferredAst.Expr.Force(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      TypedAst.Expr.InstanceOf(e, clazz, loc)
+      TypedAst.Expr.Force(e, visitType(tpe), visitType(eff), loc)
+  }
 
-    case InferredAst.Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      TypedAst.Expr.CheckedCast(cast, e, visitType(tpe), visitType(eff), loc)
-
-    case InferredAst.Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      TypedAst.Expr.UncheckedCast(e, declaredType.map(visitType), declaredEff.map(visitType), visitType(tpe), visitType(eff), loc)
-
-    case InferredAst.Expr.Unsafe(exp, runEff, asEff, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      TypedAst.Expr.Unsafe(e, runEff, asEff, visitType(tpe), visitType(eff), loc)
-
-    case InferredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val rs = rules.map(visitCatchRule)
-      TypedAst.Expr.TryCatch(e, rs, visitType(tpe), visitType(eff), loc)
-
-    case InferredAst.Expr.Throw(exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      TypedAst.Expr.Throw(e, visitType(tpe), visitType(eff), loc)
-
-    case InferredAst.Expr.Handler(symUse, rules, bodyType, bodyEff, handledEff, tpe, loc) =>
-      val rs = rules.map(visitHandlerRule)
-      TypedAst.Expr.Handler(symUse, rs, visitType(bodyType), visitType(bodyEff), visitType(handledEff), visitType(tpe), loc)
-
-    case InferredAst.Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      TypedAst.Expr.RunWith(e1, e2, visitType(tpe), visitType(eff), loc)
-
+  /** Reconstructs types in the Java interop expression `exp0`. */
+  private def visitJvmExpr(exp0: InferredAst.Expr.JvmExpr)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.Expr = exp0 match {
     case InferredAst.Expr.InvokeConstructor(exps, jvar, tpe, eff, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
@@ -386,7 +416,10 @@ object TypeReconstruction {
       val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
       TypedAst.Expr.NewObject(sym, clazz, visitType(tpe), visitType(eff), cs, ms, loc)
+  }
 
+  /** Reconstructs types in the channel or concurrency expression `exp0`. */
+  private def visitChannelExpr(exp0: InferredAst.Expr.ChannelExpr)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.Expr = exp0 match {
     case InferredAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       TypedAst.Expr.NewChannel(e, visitType(tpe), visitType(eff), loc)
@@ -414,15 +447,10 @@ object TypeReconstruction {
       val fs = frags.map(visitParYieldFragment)
       val e = visitExp(exp)
       TypedAst.Expr.ParYield(fs, e, visitType(tpe), visitType(eff), loc)
+  }
 
-    case InferredAst.Expr.Lazy(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      TypedAst.Expr.Lazy(e, visitType(tpe), loc)
-
-    case InferredAst.Expr.Force(exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      TypedAst.Expr.Force(e, visitType(tpe), visitType(eff), loc)
-
+  /** Reconstructs types in the Datalog expression `exp0`. */
+  private def visitFixpointExpr(exp0: InferredAst.Expr.FixpointExpr)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.Expr = exp0 match {
     case InferredAst.Expr.FixpointConstraintSet(cs0, tpe, loc) =>
       val cs = cs0.map(visitConstraint)
       TypedAst.Expr.FixpointConstraintSet(cs, visitType(tpe), loc)
@@ -457,9 +485,6 @@ object TypeReconstruction {
     case InferredAst.Expr.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       TypedAst.Expr.FixpointInjectInto(es, predsAndArities, visitType(tpe), visitType(eff), loc)
-
-    case InferredAst.Expr.Error(m, tpe, eff) =>
-      TypedAst.Expr.Error(m, visitType(tpe), visitType(eff))
   }
 
   /**
