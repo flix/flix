@@ -669,17 +669,51 @@ object Lowering {
     case TypedAst.JvmMethod(ann, ident, fparams, exp, _, eff, loc) =>
       val fs = fparams.map(lowerFormalParam)
       val e0 = lowerExp(exp)
-      // If this method overrides a Java method whose erased return type is a reference
-      // (e.g. `Object` for a generic interface method) but the Flix result is a primitive,
-      // box it so the value matches the erased JVM signature. This mirrors the boxing applied
-      // to generic Java method *calls* above (see `boxIfNecessary` in InvokeMethod), and the
-      // call site unboxes the result symmetrically.
+      // If this method overrides a Java method whose erased signature uses a reference type
+      // (e.g. `Object` for a generic interface method) where the Flix type is a primitive, box
+      // and unbox to match the erased JVM signature: a primitive parameter is received boxed and
+      // unboxed into the body, and a primitive result is boxed. This mirrors the boxing applied
+      // to generic Java method *calls* above (see `boxIfNecessary` in InvokeMethod), whose call
+      // sites box the arguments and unbox the result symmetrically.
       val overridden = overriddenJavaMethod(clazz, ident.name, fparams.tail.length, loc)
-      val e = overridden match {
-        case Some(m) => boxIfNecessary(e0, m.ref.descriptor.returnType())
-        case None => e0
+      val (ps, e) = overridden match {
+        case Some(m) =>
+          val (ps1, e1) = unboxParamsIfNecessary(fs.tail, m.ref.descriptor.parameterList().asScala.toList, e0)
+          (Nel(fs.head, ps1), boxIfNecessary(e1, m.ref.descriptor.returnType()))
+        case None => (fs, e0)
       }
-      MonoAst.JvmMethod(ann, ident, fs, e, e.tpe, eff, overridden.map(JMethod.of), loc)
+      MonoAst.JvmMethod(ann, ident, ps, e, e.tpe, eff, overridden.map(JMethod.of), loc)
+  }
+
+  /**
+    * Replaces each formal parameter in `fparams` whose Flix type is primitive but whose erased Java
+    * parameter type in `paramTypes` is a reference (e.g. `Bool` for the `Object` parameter of
+    * `Consumer[Bool].accept`) by a parameter of the wrapper class, and wraps `body` in a let that
+    * unboxes it into the original parameter symbol. The generated method then receives the boxed
+    * argument that the erased Java signature promises, and `body` sees the primitive it was typed with.
+    */
+  private def unboxParamsIfNecessary(fparams: List[MonoAst.FormalParam], paramTypes: List[ClassDesc], body: MonoAst.Expr)(implicit flix: Flix): (List[MonoAst.FormalParam], MonoAst.Expr) = {
+    val (ps, unboxings) = ListOps.zip(fparams, paramTypes).map {
+      case (fparam, paramType) if JavaBoxing.isPrimitive(fparam.tpe) && !paramType.isPrimitive =>
+        val loc = fparam.loc.asSynthetic
+        val boxedTpe = JavaBoxing.boxedType(fparam.tpe, loc)
+        val boxedSym = Symbol.freshVarSym(fparam.sym)
+        val boxedParam = MonoAst.FormalParam(boxedSym, boxedTpe, fparam.occur, loc)
+        val unboxed = MonoAst.Expr.ApplyAtomic(
+          AtomicOp.InvokeMethod(JavaBoxing.unboxMethod(fparam.tpe)),
+          List(MonoAst.Expr.Var(boxedSym, boxedTpe, loc)),
+          fparam.tpe,
+          Type.Pure,
+          loc
+        )
+        (boxedParam, Some((fparam, unboxed)))
+      case (fparam, _) => (fparam, None)
+    }.unzip
+    val e = unboxings.flatten.foldRight(body) {
+      case ((fparam, unboxed), acc) =>
+        MonoAst.Expr.Let(fparam.sym, unboxed, acc, acc.tpe, acc.eff, fparam.occur, fparam.loc.asSynthetic)
+    }
+    (ps, e)
   }
 
   /**
