@@ -337,10 +337,6 @@ object Terminator {
     * @param contexts the recursion contexts, innermost first.
     * @param exp0     the expression to check.
     * @param pos      the expression position (tail or non-tail).
-    *
-    * The cases are spread over `visitSelfCall`, `visitLocalDef`, `visitApplyExpr`, `visitDataExpr`, `visitJvmExpr`,
-    * `visitChannelExpr` and `visitFixpointExpr` so that each method stays below the JVM's 8,000-byte limit for JIT
-    * compilation (see #13638).
     */
   private def visitExp(contexts: List[RecursionContext], exp0: Expr, pos: ApplyPosition)(implicit lctx: LocalContext, sctx: SharedContext, root: Root): Expr = {
     findSelfRecursiveCall(contexts, exp0) match {
