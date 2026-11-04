@@ -17,13 +17,6 @@ sealed trait AtomicOp
 
 object AtomicOp {
 
-  /**
-    * An operation that constructs or inspects Flix runtime data: tags, tuples, records,
-    * extensible tags, arrays, vectors, structs, and lazy values.
-    *
-    * The grouping lets [[ca.uwaterloo.flix.language.phase.jvm.GenExpression]] compile these
-    * operations in a method of their own with an exhaustive match.
-    */
   sealed trait DataOp extends AtomicOp
 
   case class Closure(sym: Symbol.DefnSym) extends AtomicOp
