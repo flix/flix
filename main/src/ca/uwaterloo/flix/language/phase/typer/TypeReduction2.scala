@@ -145,7 +145,7 @@ object TypeReduction2 {
               progress.markProgress()
               (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), cs)
             case _ =>
-              if (sameTypes(reducedTpes, tpes))
+              if (reducedTpes.corresponds(tpes)(_ eq _))
                 (unresolved, cs)
               else
                 (Type.UnresolvedJvmType(JvmMember.JvmConstructor(clazz, reducedTpes), loc), cs)
@@ -176,7 +176,7 @@ object TypeReduction2 {
               progress.markProgress()
               (tpe, cs ::: cs0)
             case _ =>
-              if ((reducedTpe eq tpe) && sameTypes(reducedTpes, tpes))
+              if ((reducedTpe eq tpe) && reducedTpes.corresponds(tpes)(_ eq _))
                 (unresolved, cs)
               else
                 (Type.UnresolvedJvmType(JvmMember.JvmMethod(reducedTpe, name, reducedTpes), loc), cs)
@@ -192,16 +192,13 @@ object TypeReduction2 {
               progress.markProgress()
               (tpe, cs ::: cs0)
             case _ =>
-              if (sameTypes(reducedTpes, tpes))
+              if (reducedTpes.corresponds(tpes)(_ eq _))
                 (unresolved, cs)
               else
                 (Type.UnresolvedJvmType(JvmMember.JvmStaticMethod(clazz, name, reducedTpes), loc), cs)
           }
       }
   }
-
-  /** Returns `true` if `xs` and `ys` have the same length and are pairwise the same objects. */
-  private def sameTypes(xs: List[Type], ys: List[Type]): Boolean = xs.corresponds(ys)(_ eq _)
 
   /** Tries to find a constructor of `owner` that takes arguments of type `ts`. */
   private def lookupConstructor(owner: ClassDesc, ts: List[Type], loc: SourceLocation)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): JavaResolution[JavaMethod] = {
