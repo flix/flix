@@ -113,26 +113,7 @@ object Stratifier {
       val e = visitExp(exp)
       if (e eq exp) exp0 else Expr.Lambda(fparam, e, tpe, loc)
 
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, pos, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.ApplyClo(e1, e2, tpe, eff, pos, loc)
-
-    case Expr.ApplyDef(symUse, exps, targs, itpe, tpe, eff, pos, loc) =>
-      val es = ListOps.mapWithReuse(exps)(visitExp)
-      if (es eq exps) exp0 else Expr.ApplyDef(symUse, es, targs, itpe, tpe, eff, pos, loc)
-
-    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, pos, loc) =>
-      val es = ListOps.mapWithReuse(exps)(visitExp)
-      if (es eq exps) exp0 else Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, pos, loc)
-
-    case Expr.ApplyOp(sym, exps, tpe, eff, pos, loc) =>
-      val es = ListOps.mapWithReuse(exps)(visitExp)
-      if (es eq exps) exp0 else Expr.ApplyOp(sym, es, tpe, eff, pos, loc)
-
-    case Expr.ApplySig(symUse, exps, targ, targs, itpe, tpe, eff, pos, loc) =>
-      val es = ListOps.mapWithReuse(exps)(visitExp)
-      if (es eq exps) exp0 else Expr.ApplySig(symUse, es, targ, targs, itpe, tpe, eff, pos, loc)
+    case e: Expr.ApplyExpr => visitApplyExpr(e)
 
     case Expr.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -187,6 +168,82 @@ object Stratifier {
       val rs = rules.map(visitExtMatchRule)
       Expr.ExtMatch(e, rs, tpe, eff, loc)
 
+    case e: Expr.DataExpr => visitDataExpr(e)
+
+    case Expr.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      if (e eq exp) exp0 else Expr.Ascribe(e, expectedType, expectedEff, tpe, eff, loc)
+
+    case Expr.InstanceOf(exp, clazz, loc) =>
+      val e = visitExp(exp)
+      if (e eq exp) exp0 else Expr.InstanceOf(e, clazz, loc)
+
+    case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      if (e eq exp) exp0 else Expr.CheckedCast(cast, e, tpe, eff, loc)
+
+    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      if (e eq exp) exp0 else Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
+
+    case Expr.Unsafe(exp, runEff, asEff, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      if (e eq exp) exp0 else Expr.Unsafe(e, runEff, asEff, tpe, eff, loc)
+
+    case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitTryCatchRule)
+      Expr.TryCatch(e, rs, tpe, eff, loc)
+
+    case Expr.Throw(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      if (e eq exp) exp0 else Expr.Throw(e, tpe, eff, loc)
+
+    case Expr.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
+      val rs = rules.map(visitRunWithRule)
+      Expr.Handler(symUse, rs, bodyTpe, bodyEff, handledEff, tpe, loc)
+
+    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.RunWith(e1, e2, tpe, eff, loc)
+
+    case e: Expr.JvmExpr => visitJvmExpr(e)
+
+    case e: Expr.ChannelExpr => visitChannelExpr(e)
+
+    case e: Expr.FixpointExpr => visitFixpointExpr(e)
+
+    case Expr.Error(_, _, _) =>
+      exp0
+  }
+
+  /** Performs stratification of the application `exp0`. */
+  private def visitApplyExpr(exp0: Expr.ApplyExpr)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Expr = exp0 match {
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, pos, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.ApplyClo(e1, e2, tpe, eff, pos, loc)
+
+    case Expr.ApplyDef(symUse, exps, targs, itpe, tpe, eff, pos, loc) =>
+      val es = ListOps.mapWithReuse(exps)(visitExp)
+      if (es eq exps) exp0 else Expr.ApplyDef(symUse, es, targs, itpe, tpe, eff, pos, loc)
+
+    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, pos, loc) =>
+      val es = ListOps.mapWithReuse(exps)(visitExp)
+      if (es eq exps) exp0 else Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, pos, loc)
+
+    case Expr.ApplyOp(sym, exps, tpe, eff, pos, loc) =>
+      val es = ListOps.mapWithReuse(exps)(visitExp)
+      if (es eq exps) exp0 else Expr.ApplyOp(sym, es, tpe, eff, pos, loc)
+
+    case Expr.ApplySig(symUse, exps, targ, targs, itpe, tpe, eff, pos, loc) =>
+      val es = ListOps.mapWithReuse(exps)(visitExp)
+      if (es eq exps) exp0 else Expr.ApplySig(symUse, es, targ, targs, itpe, tpe, eff, pos, loc)
+  }
+
+  /** Performs stratification of the data expression `exp0`: tags, tuples, records, arrays, structs, vectors and lazy values. */
+  private def visitDataExpr(exp0: Expr.DataExpr)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Expr = exp0 match {
     case Expr.Tag(symUse, exps, tpe, eff, loc) =>
       val es = ListOps.mapWithReuse(exps)(visitExp)
       if (es eq exps) exp0 else Expr.Tag(symUse, es, tpe, eff, loc)
@@ -279,46 +336,10 @@ object Stratifier {
     case Expr.Force(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       if (e eq exp) exp0 else Expr.Force(e, tpe, eff, loc)
+  }
 
-    case Expr.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      if (e eq exp) exp0 else Expr.Ascribe(e, expectedType, expectedEff, tpe, eff, loc)
-
-    case Expr.InstanceOf(exp, clazz, loc) =>
-      val e = visitExp(exp)
-      if (e eq exp) exp0 else Expr.InstanceOf(e, clazz, loc)
-
-    case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      if (e eq exp) exp0 else Expr.CheckedCast(cast, e, tpe, eff, loc)
-
-    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      if (e eq exp) exp0 else Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
-
-    case Expr.Unsafe(exp, runEff, asEff, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      if (e eq exp) exp0 else Expr.Unsafe(e, runEff, asEff, tpe, eff, loc)
-
-
-    case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val rs = rules.map(visitTryCatchRule)
-      Expr.TryCatch(e, rs, tpe, eff, loc)
-
-    case Expr.Throw(exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      if (e eq exp) exp0 else Expr.Throw(e, tpe, eff, loc)
-
-    case Expr.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
-      val rs = rules.map(visitRunWithRule)
-      Expr.Handler(symUse, rs, bodyTpe, bodyEff, handledEff, tpe, loc)
-
-    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      if ((e1 eq exp1) && (e2 eq exp2)) exp0 else Expr.RunWith(e1, e2, tpe, eff, loc)
-
+  /** Performs stratification of the Java interop expression `exp0`. */
+  private def visitJvmExpr(exp0: Expr.JvmExpr)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Expr = exp0 match {
     case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       val es = ListOps.mapWithReuse(exps)(visitExp)
       if (es eq exps) exp0 else Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
@@ -360,7 +381,10 @@ object Stratifier {
       val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
       Expr.NewObject(sym, clazz, tpe, eff, cs, ms, loc)
+  }
 
+  /** Performs stratification of the channel or concurrency expression `exp0`. */
+  private def visitChannelExpr(exp0: Expr.ChannelExpr)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Expr = exp0 match {
     case Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       if (e eq exp) exp0 else Expr.NewChannel(e, tpe, eff, loc)
@@ -388,7 +412,10 @@ object Stratifier {
       val e = visitExp(exp)
       val fs = frags.map(visitParYieldFragment)
       Expr.ParYield(fs, e, tpe, eff, loc)
+  }
 
+  /** Performs stratification of the Datalog expression `exp0`. Constraint sets, lambdas, merges and solves are stratified here. */
+  private def visitFixpointExpr(exp0: Expr.FixpointExpr)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Expr = exp0 match {
     case Expr.FixpointConstraintSet(cs0, tpe, loc) =>
       // Compute the stratification.
       stratify(g, tpe, loc)
@@ -430,10 +457,6 @@ object Stratifier {
     case Expr.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
       val es = ListOps.mapWithReuse(exps)(visitExp)
       if (es eq exps) exp0 else Expr.FixpointInjectInto(es, predsAndArities, tpe, eff, loc)
-
-    case Expr.Error(_, _, _) =>
-      exp0
-
   }
 
   private def visitMatchRule(rule: MatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): MatchRule = rule match {
