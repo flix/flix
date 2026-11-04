@@ -548,16 +548,20 @@ private[monomorph2] object SpecializeAndLower {
           val thisRef = MonoAst.Expr.Var(thisParam.sym, thisParam.tpe, loc)
           implicit val lctx: LocalContext = LocalContext(Some(freshSym), Some(thisRef))
           val e0 = visitExp(mExp, env0 ++ env1, subst)
-          // If this overrides a Java method whose erased return type is a reference (e.g. `Object`
-          // for a generic interface method) but the Flix result is primitive, box it to match the
-          // erased signature. This mirrors the boxing applied to generic Java method calls (see
-          // `boxIfNecessary` in `mkJavaInvoke`), and the call site unboxes the result symmetrically.
+          // If this overrides a Java method whose erased signature uses a reference type (e.g.
+          // `Object` for a generic interface method) where the Flix type is primitive, box and
+          // unbox to match the erased signature: a primitive parameter is received boxed and
+          // unboxed into the body, and a primitive result is boxed. This mirrors the boxing
+          // applied to generic Java method calls (see `mkJavaInvoke`), whose call sites box the
+          // arguments and unbox the result symmetrically.
           val overridden = overriddenJavaMethod(clazz.desc, mIdent.name, fs.tail.length, mLoc)
-          val e = overridden match {
-            case Some(m) => boxIfNecessary(e0, m.ref.descriptor.returnType())
-            case None => e0
+          val (fparams, e) = overridden match {
+            case Some(m) =>
+              val (ps, e1) = unboxParamsIfNecessary(fs.tail, m.ref.descriptor.parameterList().asScala.toList, e0)
+              (Nel(thisParam, ps), boxIfNecessary(e1, m.ref.descriptor.returnType()))
+            case None => (fs, e0)
           }
-          MonoAst.JvmMethod(mAnn, mIdent, fs, e, e.tpe, subst(mEff), overridden.map(JMethod.of), mLoc)
+          MonoAst.JvmMethod(mAnn, mIdent, fparams, e, e.tpe, subst(mEff), overridden.map(JMethod.of), mLoc)
       }
       val t = visitType(tpe, subst)
       MonoAst.Expr.NewObject(freshSym, clazz, t, subst(eff), cs, ms, loc)
@@ -1117,6 +1121,37 @@ private[monomorph2] object SpecializeAndLower {
         arg.loc.asSynthetic
       )
     } else arg
+  }
+
+  /**
+    * Replaces each formal parameter in `fparams` whose Flix type is primitive but whose erased Java
+    * parameter type in `paramTypes` is a reference (e.g. `Bool` for the `Object` parameter of
+    * `Consumer[Bool].accept`) by a parameter of the wrapper class, and wraps `body` in a let that
+    * unboxes it into the original parameter symbol. The generated method then receives the boxed
+    * argument that the erased Java signature promises, and `body` sees the primitive it was typed with.
+    */
+  private def unboxParamsIfNecessary(fparams: List[MonoAst.FormalParam], paramTypes: List[ClassDesc], body: MonoAst.Expr)(implicit flix: Flix): (List[MonoAst.FormalParam], MonoAst.Expr) = {
+    val (ps, unboxings) = ListOps.zip(fparams, paramTypes).map {
+      case (fparam, paramType) if JavaBoxing.isPrimitive(fparam.tpe) && !paramType.isPrimitive =>
+        val loc = fparam.loc.asSynthetic
+        val boxedTpe = JavaBoxing.boxedType(fparam.tpe, loc)
+        val boxedSym = Symbol.freshVarSym(fparam.sym)
+        val boxedParam = MonoAst.FormalParam(boxedSym, boxedTpe, fparam.occur, loc)
+        val unboxed = MonoAst.Expr.ApplyAtomic(
+          AtomicOp.InvokeMethod(JavaBoxing.unboxMethod(fparam.tpe)),
+          List(MonoAst.Expr.Var(boxedSym, boxedTpe, loc)),
+          fparam.tpe,
+          Type.Pure,
+          loc
+        )
+        (boxedParam, Some((fparam, unboxed)))
+      case (fparam, _) => (fparam, None)
+    }.unzip
+    val e = unboxings.flatten.foldRight(body) {
+      case ((fparam, unboxed), acc) =>
+        MonoAst.Expr.Let(fparam.sym, unboxed, acc, acc.tpe, acc.eff, fparam.occur, fparam.loc.asSynthetic)
+    }
+    (ps, e)
   }
 
   /**
