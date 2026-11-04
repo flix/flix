@@ -712,6 +712,11 @@ object Redundancy {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp, env0, rc)
 
+    case Expr.Lazy(exp, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.Force(exp, _, _, _) => visitExp(exp, env0, rc)
+
     case Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
@@ -877,11 +882,6 @@ object Redundancy {
       val usedYield = visitExp(exp, env1, rc)
       val unusedVarSyms = findUnusedVarSyms(fvs, usedYield)
       (usedYield -- fvs) ++ unusedVarSyms ++ used
-
-    case Expr.Lazy(exp, _, _) =>
-      visitExp(exp, env0, rc)
-
-    case Expr.Force(exp, _, _, _) => visitExp(exp, env0, rc)
 
     case Expr.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Used.empty) {

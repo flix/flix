@@ -229,6 +229,12 @@ object Safety {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
+    case Expr.Lazy(exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.Force(exp, _, _, _) =>
+      visitExp(exp)
+
     case Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
@@ -343,12 +349,6 @@ object Safety {
 
     case Expr.ParYield(frags, exp, _, _, _) =>
       frags.foreach(fragment => visitExp(fragment.exp))
-      visitExp(exp)
-
-    case Expr.Lazy(exp, _, _) =>
-      visitExp(exp)
-
-    case Expr.Force(exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.FixpointConstraintSet(cs, _, _) =>

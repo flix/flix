@@ -224,6 +224,12 @@ object PredDeps {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
+    case Expr.Lazy(exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.Force(exp, _, _, _) =>
+      visitExp(exp)
+
     case Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
@@ -313,12 +319,6 @@ object PredDeps {
       frags.foreach {
         case ParYieldFragment(_, e, _) => visitExp(e)
       }
-
-    case Expr.Lazy(exp, _, _) =>
-      visitExp(exp)
-
-    case Expr.Force(exp, _, _, _) =>
-      visitExp(exp)
 
     case Expr.FixpointConstraintSet(cs, _, _) =>
       cs.foreach(visitConstraint)

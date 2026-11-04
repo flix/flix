@@ -473,6 +473,12 @@ object Visitor {
       case Expr.VectorLength(exp, _) =>
         visitExpr(exp)
 
+      case Expr.Lazy(exp, _, _) =>
+        visitExpr(exp)
+
+      case Expr.Force(exp, _, _, _) =>
+        visitExpr(exp)
+
       case Expr.Ascribe(exp, expectedType, expectedEff, _, _, _) =>
         visitExpr(exp)
         expectedType.foreach(visitType)
@@ -563,12 +569,6 @@ object Visitor {
       case Expr.ParYield(frags, exp, _, _, _) =>
         visitExpr(exp)
         frags.foreach(visitParYieldFrag)
-
-      case Expr.Lazy(exp, _, _) =>
-        visitExpr(exp)
-
-      case Expr.Force(exp, _, _, _) =>
-        visitExpr(exp)
 
       case Expr.FixpointConstraintSet(cs, _, _) =>
         cs.foreach(visitConstraint)

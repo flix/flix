@@ -407,6 +407,16 @@ private[monomorph2] object SpecializeAndLower {
       val e = visitExp(exp, env0, subst)
       MonoAst.Expr.ApplyAtomic(AtomicOp.VectorLength, List(e), Type.Int32, e.eff, loc)
 
+    case TypedAst.Expr.Lazy(exp, tpe, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(e), t, Type.Pure, loc)
+
+    case TypedAst.Expr.Force(exp, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Force, List(e), t, subst(eff), loc)
+
     case TypedAst.Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp, env0, subst)
 
@@ -613,16 +623,6 @@ private[monomorph2] object SpecializeAndLower {
       val e = visitExp(exp, curEnv, subst)
       val t = visitType(tpe, subst)
       SpecializeAndLower.mkParYield(fs, e, t, subst(eff), loc)
-
-    case TypedAst.Expr.Lazy(exp, tpe, loc) =>
-      val e = visitExp(exp, env0, subst)
-      val t = visitType(tpe, subst)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(e), t, Type.Pure, loc)
-
-    case TypedAst.Expr.Force(exp, tpe, eff, loc) =>
-      val e = visitExp(exp, env0, subst)
-      val t = visitType(tpe, subst)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.Force, List(e), t, subst(eff), loc)
 
     case TypedAst.Expr.FixpointConstraintSet(cs, _, loc) =>
       lowerConstraintSet(cs, loc, env0, subst)

@@ -70,6 +70,8 @@ object TypedAstPrinter {
     case Expr.VectorLit(exps, _, _, _) => DocAst.Expr.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, _, _, _) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, _) => DocAst.Expr.VectorLength(print(exp))
+    case Expr.Lazy(exp, _, _) => DocAst.Expr.Lazy(print(exp))
+    case Expr.Force(exp, _, _, _) => DocAst.Expr.Force(print(exp))
     case Expr.Ascribe(exp, _, _, tpe, _, _) => DocAst.Expr.AscriptionTpe(print(exp), TypePrinter.print(tpe))
     case Expr.InstanceOf(exp, clazz, _) => DocAst.Expr.InstanceOf(print(exp), clazz)
     case Expr.CheckedCast(_, _, _, _, _) => DocAst.Expr.Unknown
@@ -96,8 +98,6 @@ object TypedAstPrinter {
     case Expr.SelectChannel(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Spawn(exp1, exp2, _, _, _) => DocAst.Expr.Spawn(print(exp1), print(exp2))
     case Expr.ParYield(_, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.Lazy(exp, _, _) => DocAst.Expr.Lazy(print(exp))
-    case Expr.Force(exp, _, _, _) => DocAst.Expr.Force(print(exp))
     case Expr.FixpointConstraintSet(_, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointLambda(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointMerge(_, _, _, _, _) => DocAst.Expr.Unknown

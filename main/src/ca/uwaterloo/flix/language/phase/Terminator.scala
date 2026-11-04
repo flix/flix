@@ -659,6 +659,15 @@ object Terminator {
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
           if (e eq exp1) exp0 else Expr.VectorLength(e, loc)
 
+        case Expr.Lazy(exp1, tpe, loc) =>
+          val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
+          if (e eq exp1) exp0 else Expr.Lazy(e, tpe, loc)
+
+        case Expr.Force(exp1, tpe, eff, loc) =>
+          checkForbidden(contexts, loc)
+          val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
+          if (e eq exp1) exp0 else Expr.Force(e, tpe, eff, loc)
+
         case Expr.Ascribe(exp1, tpe, eff, purity, expectedEff, loc) =>
           val e = visitExp(contexts, exp1, pos)
           if (e eq exp1) exp0 else Expr.Ascribe(e, tpe, eff, purity, expectedEff, loc)
@@ -787,15 +796,6 @@ object Terminator {
           val fs = frags0.map(visitParYieldFrag(contexts, _))
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
           Expr.ParYield(fs, e, tpe, eff, loc)
-
-        case Expr.Lazy(exp1, tpe, loc) =>
-          val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          if (e eq exp1) exp0 else Expr.Lazy(e, tpe, loc)
-
-        case Expr.Force(exp1, tpe, eff, loc) =>
-          checkForbidden(contexts, loc)
-          val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          if (e eq exp1) exp0 else Expr.Force(e, tpe, eff, loc)
 
         case Expr.FixpointConstraintSet(_, _, _) => exp0
 
