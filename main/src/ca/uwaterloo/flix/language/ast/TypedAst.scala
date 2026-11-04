@@ -88,6 +88,23 @@ object TypedAst {
 
   object Expr {
 
+    /** An application of a closure, def, local def, effect operation or signature. Every case carries its position. */
+    sealed trait ApplyExpr extends Expr {
+      def pos: ApplyPosition
+    }
+
+    /** An expression that constructs or inspects Flix data: tags, tuples, records, arrays, structs, vectors and lazy values. */
+    sealed trait DataExpr extends Expr
+
+    /** A Java interop expression: constructor and method invocations, field access and anonymous classes. */
+    sealed trait JvmExpr extends Expr
+
+    /** A channel or concurrency expression. */
+    sealed trait ChannelExpr extends Expr
+
+    /** A Datalog expression: constraint sets, queries, merging and solving. */
+    sealed trait FixpointExpr extends Expr
+
     case class Cst(cst: Constant, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }
@@ -114,15 +131,15 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class ApplyClo(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, pos: ApplyPosition, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, pos: ApplyPosition, loc: SourceLocation) extends ApplyExpr
 
-    case class ApplyDef(symUse: DefSymUse, exps: List[Expr], targs: List[Type], itpe: Type, tpe: Type, eff: Type, pos: ApplyPosition, loc: SourceLocation) extends Expr
+    case class ApplyDef(symUse: DefSymUse, exps: List[Expr], targs: List[Type], itpe: Type, tpe: Type, eff: Type, pos: ApplyPosition, loc: SourceLocation) extends ApplyExpr
 
-    case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], arrowTpe: Type, tpe: Type, eff: Type, pos: ApplyPosition, loc: SourceLocation) extends Expr
+    case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], arrowTpe: Type, tpe: Type, eff: Type, pos: ApplyPosition, loc: SourceLocation) extends ApplyExpr
 
-    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tpe: Type, eff: Type, pos: ApplyPosition, loc: SourceLocation) extends Expr
+    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tpe: Type, eff: Type, pos: ApplyPosition, loc: SourceLocation) extends ApplyExpr
 
-    case class ApplySig(symUse: SigSymUse, exps: List[Expr], targ: Type, targs: List[Type], itpe: Type, tpe: Type, eff: Type, pos: ApplyPosition, loc: SourceLocation) extends Expr
+    case class ApplySig(symUse: SigSymUse, exps: List[Expr], targ: Type, targs: List[Type], itpe: Type, tpe: Type, eff: Type, pos: ApplyPosition, loc: SourceLocation) extends ApplyExpr
 
     case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -148,49 +165,55 @@ object TypedAst {
 
     case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Tag(symUse: CaseSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Tag(symUse: CaseSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
-    case class RestrictableTag(symUse: RestrictableCaseSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class RestrictableTag(symUse: RestrictableCaseSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
-    case class ExtTag(label: Name.Label, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ExtTag(label: Name.Label, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
-    case class Tuple(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Tuple(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
-    case class RecordSelect(exp: Expr, label: Name.Label, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class RecordSelect(exp: Expr, label: Name.Label, tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
-    case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
-    case class RecordRestrict(label: Name.Label, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class RecordRestrict(label: Name.Label, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
-    case class ArrayLit(exps: List[Expr], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ArrayLit(exps: List[Expr], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
-    case class ArrayNew(exp1: Expr, exp2: Expr, exp3: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ArrayNew(exp1: Expr, exp2: Expr, exp3: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
-    case class ArrayLoad(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ArrayLoad(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
-    case class ArrayLength(exp: Expr, eff: Type, loc: SourceLocation) extends Expr {
+    case class ArrayLength(exp: Expr, eff: Type, loc: SourceLocation) extends DataExpr {
       def tpe: Type = Type.Int32
     }
 
-    case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, eff: Type, loc: SourceLocation) extends Expr {
+    case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, eff: Type, loc: SourceLocation) extends DataExpr {
       def tpe: Type = Type.Unit
     }
 
-    case class StructNew(sym: Symbol.StructSym, fields: List[(StructFieldSymUse, Expr)], region: Option[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, fields: List[(StructFieldSymUse, Expr)], region: Option[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
-    case class StructGet(exp: Expr, symUse: StructFieldSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructGet(exp: Expr, symUse: StructFieldSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
-    case class StructPut(exp1: Expr, symUse: StructFieldSymUse, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructPut(exp1: Expr, symUse: StructFieldSymUse, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
-    case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
-    case class VectorLoad(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class VectorLoad(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
-    case class VectorLength(exp: Expr, loc: SourceLocation) extends Expr {
+    case class VectorLength(exp: Expr, loc: SourceLocation) extends DataExpr {
       def eff: Type = exp.eff
 
       def tpe: Type = Type.Int32
     }
+
+    case class Lazy(exp: Expr, tpe: Type, loc: SourceLocation) extends DataExpr {
+      def eff: Type = Type.Pure
+    }
+
+    case class Force(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
     case class Ascribe(exp: Expr, expectedType: Option[Type], expectedEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -217,59 +240,53 @@ object TypedAst {
 
     case class RunWith(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(constructor: JavaMethod, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class InvokeConstructor(constructor: JavaMethod, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends JvmExpr
 
-    case class InvokeSuperConstructor(constructor: JavaMethod, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class InvokeSuperConstructor(constructor: JavaMethod, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends JvmExpr
 
-    case class InvokeMethod(method: JavaMethod, exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class InvokeMethod(method: JavaMethod, exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends JvmExpr
 
-    case class InvokeSuperMethod(method: JavaMethod, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class InvokeSuperMethod(method: JavaMethod, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends JvmExpr
 
-    case class InvokeStaticMethod(method: JavaMethod, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class InvokeStaticMethod(method: JavaMethod, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends JvmExpr
 
-    case class GetField(field: JavaField, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class GetField(field: JavaField, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends JvmExpr
 
-    case class PutField(field: JavaField, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class PutField(field: JavaField, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends JvmExpr
 
-    case class GetStaticField(field: JavaField, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class GetStaticField(field: JavaField, tpe: Type, eff: Type, loc: SourceLocation) extends JvmExpr
 
-    case class PutStaticField(field: JavaField, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class PutStaticField(field: JavaField, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends JvmExpr
 
-    case class NewObject(sym: Symbol.AnonClassSym, clazz: JClass, tpe: Type, eff: Type, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(sym: Symbol.AnonClassSym, clazz: JClass, tpe: Type, eff: Type, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends JvmExpr
 
-    case class NewChannel(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class NewChannel(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends ChannelExpr
 
-    case class GetChannel(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class GetChannel(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends ChannelExpr
 
-    case class PutChannel(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class PutChannel(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends ChannelExpr
 
-    case class SelectChannel(rules: List[SelectChannelRule], default: Option[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class SelectChannel(rules: List[SelectChannelRule], default: Option[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends ChannelExpr
 
-    case class Spawn(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Spawn(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends ChannelExpr
 
-    case class ParYield(frags: List[ParYieldFragment], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ParYield(frags: List[ParYieldFragment], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends ChannelExpr
 
-    case class Lazy(exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
+    case class FixpointConstraintSet(cs: List[Constraint], tpe: Type, loc: SourceLocation) extends FixpointExpr {
       def eff: Type = Type.Pure
     }
 
-    case class Force(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointLambda(pparams: List[PredicateParam], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends FixpointExpr
 
-    case class FixpointConstraintSet(cs: List[Constraint], tpe: Type, loc: SourceLocation) extends Expr {
-      def eff: Type = Type.Pure
-    }
+    case class FixpointMerge(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends FixpointExpr
 
-    case class FixpointLambda(pparams: List[PredicateParam], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], tpe: Type, eff: Type, loc: SourceLocation) extends FixpointExpr
 
-    case class FixpointMerge(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointQueryWithSelect(exps: List[Expr], queryExp: Expr, selects: List[Expr], from: List[Predicate.Body], where: List[Expr], pred: Name.Pred, tpe: Type, eff: Type, loc: SourceLocation) extends FixpointExpr
 
-    case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointSolveWithProject(exps: List[Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, tpe: Type, eff: Type, loc: SourceLocation) extends FixpointExpr
 
-    case class FixpointQueryWithSelect(exps: List[Expr], queryExp: Expr, selects: List[Expr], from: List[Predicate.Body], where: List[Expr], pred: Name.Pred, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
-    case class FixpointSolveWithProject(exps: List[Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
-    case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], tpe: Type, eff: Type, loc: SourceLocation) extends FixpointExpr
 
     case class Error(m: CompilationMessage, tpe: Type, eff: Type) extends Expr {
       override def loc: SourceLocation = m.loc
