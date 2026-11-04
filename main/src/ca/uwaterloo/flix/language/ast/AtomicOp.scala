@@ -17,55 +17,68 @@ sealed trait AtomicOp
 
 object AtomicOp {
 
+  /**
+    * An operation that constructs or inspects Flix runtime data: tags, tuples, records,
+    * extensible tags, arrays, vectors, structs, and lazy values.
+    *
+    * The grouping lets [[ca.uwaterloo.flix.language.phase.jvm.GenExpression]] compile these
+    * operations in a method of their own with an exhaustive match.
+    */
+  sealed trait DataOp extends AtomicOp
+
   case class Closure(sym: Symbol.DefnSym) extends AtomicOp
 
   case class Unary(sop: SemanticOp.UnaryOp) extends AtomicOp
 
   case class Binary(sop: SemanticOp.BinaryOp) extends AtomicOp
 
-  case class Is(sym: Symbol.CaseSym) extends AtomicOp
+  case class Is(sym: Symbol.CaseSym) extends DataOp
 
-  case class Tag(sym: Symbol.CaseSym) extends AtomicOp
+  case class Tag(sym: Symbol.CaseSym) extends DataOp
 
-  case class Untag(sym: Symbol.CaseSym, idx: Int) extends AtomicOp
+  case class Untag(sym: Symbol.CaseSym, idx: Int) extends DataOp
 
-  case class Index(idx: Int) extends AtomicOp
+  case class Index(idx: Int) extends DataOp
 
-  case object Tuple extends AtomicOp
+  case object Tuple extends DataOp
 
-  case class RecordSelect(label: Name.Label) extends AtomicOp
+  case class RecordSelect(label: Name.Label) extends DataOp
 
-  case class RecordExtend(label: Name.Label) extends AtomicOp
+  case class RecordExtend(label: Name.Label) extends DataOp
 
-  case class RecordRestrict(label: Name.Label) extends AtomicOp
+  case class RecordRestrict(label: Name.Label) extends DataOp
 
-  case class ExtIs(label: Name.Label) extends AtomicOp
+  case class ExtIs(label: Name.Label) extends DataOp
 
-  case class ExtTag(label: Name.Label) extends AtomicOp
+  case class ExtTag(label: Name.Label) extends DataOp
 
-  case class ExtUntag(label: Name.Label, idx: Int) extends AtomicOp
+  case class ExtUntag(label: Name.Label, idx: Int) extends DataOp
 
-  case object ArrayLit extends AtomicOp
+  case object ArrayLit extends DataOp
 
-  case object ArrayNew extends AtomicOp
+  case object ArrayNew extends DataOp
 
-  case object ArrayLoad extends AtomicOp
+  case object ArrayLoad extends DataOp
 
-  case object ArrayStore extends AtomicOp
+  case object ArrayStore extends DataOp
 
-  case object ArrayLength extends AtomicOp
+  case object ArrayLength extends DataOp
 
-  case object VectorLit extends AtomicOp
+  case object VectorLit extends DataOp
 
-  case object VectorLoad extends AtomicOp
+  case object VectorLoad extends DataOp
 
-  case object VectorLength extends AtomicOp
+  case object VectorLength extends DataOp
 
-  case class StructNew(sym: Symbol.StructSym, mutability: Mutability, fields: List[Symbol.StructFieldSym]) extends AtomicOp
+  case class StructNew(sym: Symbol.StructSym, mutability: Mutability, fields: List[Symbol.StructFieldSym]) extends DataOp
 
-  case class StructGet(sym: Symbol.StructFieldSym) extends AtomicOp
+  case class StructGet(sym: Symbol.StructFieldSym) extends DataOp
 
-  case class StructPut(sym: Symbol.StructFieldSym) extends AtomicOp
+  case class StructPut(sym: Symbol.StructFieldSym) extends DataOp
+
+  case object Lazy extends DataOp
+
+  case object Force extends DataOp
 
   case class InstanceOf(clazz: ClassDesc) extends AtomicOp
 
@@ -96,10 +109,6 @@ object AtomicOp {
   case object Throw extends AtomicOp
 
   case object Spawn extends AtomicOp
-
-  case object Lazy extends AtomicOp
-
-  case object Force extends AtomicOp
 
   case class HoleError(sym: Symbol.HoleSym) extends AtomicOp
 
