@@ -198,4 +198,121 @@ object flix extends ScalaModule with NativeImageModule {
     val jar = assembly().path
     os.copy.over(jar, os.Path(targetDir) / "flix.jar")
   }
+
+  // ── Huge Methods ────────────────────────────────────────
+  //
+  // HotSpot never JIT-compiles a method whose bytecode exceeds HugeMethodLimit
+  // (8000 bytes), because -XX:+DontCompileHugeMethods is on by default. Such a
+  // method runs in the interpreter forever (no C1, no C2, no OSR), see
+  // https://github.com/flix/flix/issues/13638.
+  //
+  // Run: ./mill flix.hugeMethods                 (methods over 8000 bytes)
+  //      ./mill flix.hugeMethods --limit 4000    (custom limit)
+  //      ./mill flix.hugeMethods --fail          (fail if any method exceeds the limit; used by CI)
+
+  /** Run: ./mill flix.hugeMethods [--limit N] [--fail] */
+  def hugeMethods(limit: Int = 8000, fail: mainargs.Flag) = Task.Command {
+    val classes = compile().classes.path
+    val methods = os.walk(classes)
+      .filter(_.ext == "class")
+      .flatMap(p => ClassFile.methodCodeSizes(os.read.bytes(p)))
+    val huge = methods.filter(_.codeSize > limit).sortBy(m => (-m.codeSize, m.owner, m.name))
+
+    if (huge.isEmpty) {
+      println(s"No method exceeds $limit bytes of bytecode (${methods.size} methods scanned).")
+    } else {
+      println(s"${huge.size} of ${methods.size} methods exceed $limit bytes of bytecode:")
+      println()
+      println("  Bytes  Method")
+      for (m <- huge) println("%7d  %s.%s".format(m.codeSize, m.owner, m.name))
+    }
+    if (fail.value && huge.nonEmpty) Task.fail(s"${huge.size} method(s) exceed $limit bytes of bytecode")
+    huge.map(m => s"${m.owner}.${m.name}${m.descriptor} ${m.codeSize}")
+  }
+}
+
+/** A minimal class file reader that extracts the bytecode size of every method. */
+object ClassFile {
+
+  /** A method with a `Code` attribute. `codeSize` is its `code_length` in bytes. */
+  case class Method(owner: String, name: String, descriptor: String, codeSize: Int)
+
+  /**
+    * Returns every method with a `Code` attribute in the given class file.
+    *
+    * Follows the layout of JVMS chapter 4: constant pool, class header, fields, methods.
+    */
+  def methodCodeSizes(bytes: Array[Byte]): Seq[Method] = {
+    val in = new java.io.DataInputStream(new java.io.ByteArrayInputStream(bytes))
+    in.readInt()           // magic
+    in.readUnsignedShort() // minor_version
+    in.readUnsignedShort() // major_version
+
+    // Constant pool (JVMS 4.4). Indexed from 1; Long and Double occupy two slots.
+    val cpCount = in.readUnsignedShort()
+    val utf8 = new Array[String](cpCount)
+    val classNameIndex = new Array[Int](cpCount)
+    var i = 1
+    while (i < cpCount) {
+      in.readUnsignedByte() match {
+        case 1 => utf8(i) = in.readUTF()                         // Utf8
+        case 3 | 4 => in.readInt()                               // Integer, Float
+        case 5 | 6 => in.readLong(); i += 1                      // Long, Double
+        case 7 => classNameIndex(i) = in.readUnsignedShort()     // Class
+        case 8 | 16 | 19 | 20 => in.readUnsignedShort()          // String, MethodType, Module, Package
+        case 9 | 10 | 11 | 12 | 17 | 18 => in.readInt()          // Fieldref, Methodref, InterfaceMethodref, NameAndType, Dynamic, InvokeDynamic
+        case 15 => in.readUnsignedByte(); in.readUnsignedShort() // MethodHandle
+        case tag => throw new IllegalArgumentException(s"Unknown constant pool tag: $tag")
+      }
+      i += 1
+    }
+
+    in.readUnsignedShort() // access_flags
+    val owner = utf8(classNameIndex(in.readUnsignedShort())).replace('/', '.')
+    in.readUnsignedShort() // super_class
+    skip(in, 2 * in.readUnsignedShort()) // interfaces
+
+    // Fields (JVMS 4.5) are skipped.
+    val fieldCount = in.readUnsignedShort()
+    for (_ <- 0 until fieldCount) {
+      skip(in, 6) // access_flags, name_index, descriptor_index
+      val attributeCount = in.readUnsignedShort()
+      for (_ <- 0 until attributeCount) {
+        in.readUnsignedShort() // attribute_name_index
+        skip(in, in.readInt())
+      }
+    }
+
+    // Methods (JVMS 4.6).
+    val methods = scala.collection.mutable.ListBuffer.empty[Method]
+    val methodCount = in.readUnsignedShort()
+    for (_ <- 0 until methodCount) {
+      in.readUnsignedShort() // access_flags
+      val name = utf8(in.readUnsignedShort())
+      val descriptor = utf8(in.readUnsignedShort())
+      val attributeCount = in.readUnsignedShort()
+      for (_ <- 0 until attributeCount) {
+        val attributeName = utf8(in.readUnsignedShort())
+        val attributeLength = in.readInt()
+        if (attributeName == "Code") {
+          in.readUnsignedShort() // max_stack
+          in.readUnsignedShort() // max_locals
+          methods += Method(owner, name, descriptor, in.readInt()) // code_length
+          skip(in, attributeLength - 8)
+        } else {
+          skip(in, attributeLength)
+        }
+      }
+    }
+    methods.toList
+  }
+
+  private def skip(in: java.io.DataInputStream, n: Int): Unit = {
+    var remaining = n
+    while (remaining > 0) {
+      val skipped = in.skipBytes(remaining)
+      if (skipped <= 0) throw new java.io.EOFException()
+      remaining -= skipped
+    }
+  }
 }
