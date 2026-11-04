@@ -272,6 +272,14 @@ object Stratifier {
       val e = visitExp(exp)
       if (e eq exp) exp0 else Expr.VectorLength(e, loc)
 
+    case Expr.Lazy(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      if (e eq exp) exp0 else Expr.Lazy(e, tpe, loc)
+
+    case Expr.Force(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      if (e eq exp) exp0 else Expr.Force(e, tpe, eff, loc)
+
     case Expr.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) =>
       val e = visitExp(exp)
       if (e eq exp) exp0 else Expr.Ascribe(e, expectedType, expectedEff, tpe, eff, loc)
@@ -380,14 +388,6 @@ object Stratifier {
       val e = visitExp(exp)
       val fs = frags.map(visitParYieldFragment)
       Expr.ParYield(fs, e, tpe, eff, loc)
-
-    case Expr.Lazy(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      if (e eq exp) exp0 else Expr.Lazy(e, tpe, loc)
-
-    case Expr.Force(exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      if (e eq exp) exp0 else Expr.Force(e, tpe, eff, loc)
 
     case Expr.FixpointConstraintSet(cs0, tpe, loc) =>
       // Compute the stratification.

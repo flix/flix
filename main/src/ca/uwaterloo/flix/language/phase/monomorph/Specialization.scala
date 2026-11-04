@@ -776,6 +776,16 @@ object Specialization {
       val e = specializeExp(exp, env0, subst)
       Expr.VectorLength(e, loc)
 
+    case Expr.Lazy(exp, tpe, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Lazy(e, t, loc)
+
+    case Expr.Force(exp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Force(e, t, subst(eff), loc)
+
     case Expr.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       val eType = expectedType.map(subst.apply)
@@ -938,16 +948,6 @@ object Specialization {
       }
       val e = specializeExp(exp, curEnv, subst)
       Expr.ParYield(fs, e, subst(tpe), subst(eff), loc)
-
-    case Expr.Lazy(exp, tpe, loc) =>
-      val e = specializeExp(exp, env0, subst)
-      val t = subst(tpe)
-      Expr.Lazy(e, t, loc)
-
-    case Expr.Force(exp, tpe, eff, loc) =>
-      val e = specializeExp(exp, env0, subst)
-      val t = subst(tpe)
-      Expr.Force(e, t, subst(eff), loc)
 
     case Expr.FixpointConstraintSet(cs0, tpe, loc) =>
       val cs = cs0.map(specializeConstraint(_, env0, subst))

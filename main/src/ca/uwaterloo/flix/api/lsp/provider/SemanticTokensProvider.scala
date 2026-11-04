@@ -555,6 +555,10 @@ object SemanticTokensProvider {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
+    case Expr.Lazy(exp, _, _) => visitExp(exp)
+
+    case Expr.Force(exp, _, _, _) => visitExp(exp)
+
     case Expr.Ascribe(exp, expectedType, expectedEff, _, _, _) =>
       visitExp(exp) ++ expectedType.map(visitType).getOrElse(Iterator.empty) ++ expectedEff.map(visitType).getOrElse(Iterator.empty)
 
@@ -663,10 +667,6 @@ object SemanticTokensProvider {
         case (acc, ParYieldFragment(p, e, _)) =>
           acc ++ visitPat(p) ++ visitExp(e)
       }
-
-    case Expr.Lazy(exp, _, _) => visitExp(exp)
-
-    case Expr.Force(exp, _, _, _) => visitExp(exp)
 
     case Expr.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Iterator.empty[SemanticToken]) {

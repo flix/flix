@@ -201,6 +201,12 @@ object TreeShaker1 {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
+    case Expr.Lazy(exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.Force(exp, _, _, _) =>
+      visitExp(exp)
+
     case Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
@@ -279,12 +285,6 @@ object TreeShaker1 {
 
     case Expr.ParYield(frags, exp, _, _, _) =>
       Set(Reachable.ChannelUsed) ++ visitExps(frags.map(_.exp)) ++ visitExp(exp)
-
-    case Expr.Lazy(exp, _, _) =>
-      visitExp(exp)
-
-    case Expr.Force(exp, _, _, _) =>
-      visitExp(exp)
 
     case Expr.FixpointConstraintSet(cs, _, _) =>
       Set(Reachable.DatalogUsed) ++ cs.map(visitConstraint).fold(Set.empty)(_ ++ _)
