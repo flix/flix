@@ -403,35 +403,7 @@ object Redundancy {
       else
         innerUsed ++ shadowedVar - fparam.bnd.sym
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
-      val us1 = visitExp(exp1, env0, rc)
-      val us2 = visitExp(exp2, env0, rc)
-      us1 ++ us2
-
-    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _, _, _) =>
-      // Recursive calls do not count as uses.
-      if (!rc.defn.contains(sym)) {
-        sctx.defSyms.put(sym, ())
-      }
-      visitExps(exps, env0, rc)
-
-    case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _, _) =>
-      if (rc.vars.contains(sym)) {
-        visitExps(exps, env0, rc)
-      } else {
-        Used.of(sym) ++ visitExps(exps, env0, rc)
-      }
-
-    case Expr.ApplyOp(opUse, exps, _, _, _, _) =>
-      sctx.effSyms.put(opUse.sym.eff, ())
-      visitExps(exps, env0, rc)
-
-    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _, _) =>
-      // Recursive calls do not count as uses.
-      if (!rc.defn.contains(sym)) {
-        sctx.sigSyms.put(sym, ())
-      }
-      visitExps(exps, env0, rc)
+    case e: Expr.ApplyExpr => visitApplyExpr(e, env0, rc)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
@@ -640,6 +612,127 @@ object Redundancy {
 
       Used(Set.empty, duplicatePatterns.toSet ++ unreachableCases) ++ usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
+    case e: Expr.DataExpr => visitDataExpr(e, env0, rc)
+
+    case Expr.Ascribe(exp, _, _, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.InstanceOf(exp, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.CheckedCast(cast, exp, tpe, _, loc) =>
+      cast match {
+        case CheckedCastType.TypeCast =>
+          if (exp.tpe == tpe)
+            visitExp(exp, env0, rc) + RedundantCheckedTypeCast(exp.tpe, loc)
+          else
+            visitExp(exp, env0, rc)
+        case CheckedCastType.EffectCast =>
+          visitExp(exp, env0, rc)
+      }
+
+    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val usedExp = visitExp(exp, env0, rc)
+      val typeError = declaredType match {
+        case Some(_) if exp.tpe == tpe => Used.empty + RedundantUncheckedTypeCast(exp.tpe, loc)
+        case _ => Used.empty
+      }
+      val effError = declaredEff match {
+        case Some(_) if exp.eff == eff => Used.empty + RedundantUncheckedEffectCast(exp.eff, loc)
+        case _ => Used.empty
+      }
+      usedExp ++ typeError ++ effError
+
+    case Expr.Unsafe(exp, runEff, _, _, _, loc) =>
+      (runEff, exp.eff) match {
+        case (Type.Pure, _) => visitExp(exp, env0, rc) + UselessUnsafe(loc)
+        case (_, Type.Pure) => visitExp(exp, env0, rc) + RedundantUnsafe(runEff, loc)
+        case _ => visitExp(exp, env0, rc)
+      }
+
+    case Expr.TryCatch(exp, rules, _, _, _) =>
+      val usedExp = visitExp(exp, env0, rc)
+      val usedRules = rules.foldLeft(Used.empty) {
+        case (acc, CatchRule(bnd, _, body, _)) =>
+          val usedBody = visitExp(body, env0, rc)
+          if (deadVarSym(bnd.sym, usedBody))
+            acc ++ usedBody + UnusedVarSym(bnd.sym)
+          else
+            acc ++ usedBody
+      }
+      usedExp ++ usedRules
+
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.Handler(symUse, rules, _, _, _, _, _) =>
+      sctx.effSyms.put(symUse.sym, ())
+      rules.foldLeft(Used.empty) {
+        case (acc, HandlerRule(_, fparams, body, _)) =>
+          val syms = fparams.toList.map(_.bnd.sym)
+          val shadowedFparamVars = syms.map(s => shadowing(s.text, s.loc, env0))
+          val env1 = env0 ++ syms
+          val usedBody = visitExp(body, env1, rc)
+          ListOps.zip(syms, shadowedFparamVars).foldLeft(acc ++ usedBody) {
+            case (acc1, (s, shadow)) =>
+              if (deadVarSym(s, usedBody)) {
+                acc1 ++ shadow + UnusedVarSym(s)
+              } else {
+                acc1 ++ shadow
+              }
+          }
+      }
+
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
+      visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
+
+    case e: Expr.JvmExpr => visitJvmExpr(e, env0, rc)
+
+    case e: Expr.ChannelExpr => visitChannelExpr(e, env0, rc)
+
+    case e: Expr.FixpointExpr => visitFixpointExpr(e, env0, rc)
+
+    case Expr.Error(_, _, _) =>
+      lctx.errorLocs += e0.loc
+      Used.empty
+
+  }
+
+  /** Returns the symbols used in the application `e0` under the given environment `env0`. */
+  private def visitApplyExpr(e0: Expr.ApplyExpr, env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used = e0 match {
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
+      val us1 = visitExp(exp1, env0, rc)
+      val us2 = visitExp(exp2, env0, rc)
+      us1 ++ us2
+
+    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _, _, _) =>
+      // Recursive calls do not count as uses.
+      if (!rc.defn.contains(sym)) {
+        sctx.defSyms.put(sym, ())
+      }
+      visitExps(exps, env0, rc)
+
+    case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _, _) =>
+      if (rc.vars.contains(sym)) {
+        visitExps(exps, env0, rc)
+      } else {
+        Used.of(sym) ++ visitExps(exps, env0, rc)
+      }
+
+    case Expr.ApplyOp(opUse, exps, _, _, _, _) =>
+      sctx.effSyms.put(opUse.sym.eff, ())
+      visitExps(exps, env0, rc)
+
+    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _, _) =>
+      // Recursive calls do not count as uses.
+      if (!rc.defn.contains(sym)) {
+        sctx.sigSyms.put(sym, ())
+      }
+      visitExps(exps, env0, rc)
+  }
+
+  /** Returns the symbols used in the data expression `e0` under the given environment `env0`: tags, tuples, records, arrays, structs, vectors and lazy values. */
+  private def visitDataExpr(e0: Expr.DataExpr, env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used = e0 match {
     case Expr.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
       val us = visitExps(exps, env0, rc)
       sctx.enumSyms.put(sym.enumSym, ())
@@ -716,80 +809,10 @@ object Redundancy {
       visitExp(exp, env0, rc)
 
     case Expr.Force(exp, _, _, _) => visitExp(exp, env0, rc)
+  }
 
-    case Expr.Ascribe(exp, _, _, _, _, _) =>
-      visitExp(exp, env0, rc)
-
-    case Expr.InstanceOf(exp, _, _) =>
-      visitExp(exp, env0, rc)
-
-    case Expr.CheckedCast(cast, exp, tpe, _, loc) =>
-      cast match {
-        case CheckedCastType.TypeCast =>
-          if (exp.tpe == tpe)
-            visitExp(exp, env0, rc) + RedundantCheckedTypeCast(exp.tpe, loc)
-          else
-            visitExp(exp, env0, rc)
-        case CheckedCastType.EffectCast =>
-          visitExp(exp, env0, rc)
-      }
-
-    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
-      val usedExp = visitExp(exp, env0, rc)
-      val typeError = declaredType match {
-        case Some(_) if exp.tpe == tpe => Used.empty + RedundantUncheckedTypeCast(exp.tpe, loc)
-        case _ => Used.empty
-      }
-      val effError = declaredEff match {
-        case Some(_) if exp.eff == eff => Used.empty + RedundantUncheckedEffectCast(exp.eff, loc)
-        case _ => Used.empty
-      }
-      usedExp ++ typeError ++ effError
-
-    case Expr.Unsafe(exp, runEff, _, _, _, loc) =>
-      (runEff, exp.eff) match {
-        case (Type.Pure, _) => visitExp(exp, env0, rc) + UselessUnsafe(loc)
-        case (_, Type.Pure) => visitExp(exp, env0, rc) + RedundantUnsafe(runEff, loc)
-        case _ => visitExp(exp, env0, rc)
-      }
-
-
-    case Expr.TryCatch(exp, rules, _, _, _) =>
-      val usedExp = visitExp(exp, env0, rc)
-      val usedRules = rules.foldLeft(Used.empty) {
-        case (acc, CatchRule(bnd, _, body, _)) =>
-          val usedBody = visitExp(body, env0, rc)
-          if (deadVarSym(bnd.sym, usedBody))
-            acc ++ usedBody + UnusedVarSym(bnd.sym)
-          else
-            acc ++ usedBody
-      }
-      usedExp ++ usedRules
-
-    case Expr.Throw(exp, _, _, _) =>
-      visitExp(exp, env0, rc)
-
-    case Expr.Handler(symUse, rules, _, _, _, _, _) =>
-      sctx.effSyms.put(symUse.sym, ())
-      rules.foldLeft(Used.empty) {
-        case (acc, HandlerRule(_, fparams, body, _)) =>
-          val syms = fparams.toList.map(_.bnd.sym)
-          val shadowedFparamVars = syms.map(s => shadowing(s.text, s.loc, env0))
-          val env1 = env0 ++ syms
-          val usedBody = visitExp(body, env1, rc)
-          ListOps.zip(syms, shadowedFparamVars).foldLeft(acc ++ usedBody) {
-            case (acc1, (s, shadow)) =>
-              if (deadVarSym(s, usedBody)) {
-                acc1 ++ shadow + UnusedVarSym(s)
-              } else {
-                acc1 ++ shadow
-              }
-          }
-      }
-
-    case Expr.RunWith(exp1, exp2, _, _, _) =>
-      visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
-
+  /** Returns the symbols used in the Java interop expression `e0` under the given environment `env0`. */
+  private def visitJvmExpr(e0: Expr.JvmExpr, env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used = e0 match {
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args, env0, rc)
 
@@ -831,7 +854,10 @@ object Redundancy {
           acc ++ used ++ unusedFParams
       }
       usedConstructors ++ usedMethods
+  }
 
+  /** Returns the symbols used in the channel or concurrency expression `e0` under the given environment `env0`. */
+  private def visitChannelExpr(e0: Expr.ChannelExpr, env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used = e0 match {
     case Expr.NewChannel(exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
@@ -882,7 +908,10 @@ object Redundancy {
       val usedYield = visitExp(exp, env1, rc)
       val unusedVarSyms = findUnusedVarSyms(fvs, usedYield)
       (usedYield -- fvs) ++ unusedVarSyms ++ used
+  }
 
+  /** Returns the symbols used in the Datalog expression `e0` under the given environment `env0`. */
+  private def visitFixpointExpr(e0: Expr.FixpointExpr, env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used = e0 match {
     case Expr.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Used.empty) {
         case (used, con) => used ++ visitConstraint(con, env0, rc: RecursionContext)
@@ -916,11 +945,6 @@ object Redundancy {
 
     case Expr.FixpointInjectInto(exps, _, _, _, _) =>
       visitExps(exps, env0, rc)
-
-    case Expr.Error(_, _, _) =>
-      lctx.errorLocs += e0.loc
-      Used.empty
-
   }
 
   /**
