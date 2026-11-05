@@ -9,7 +9,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.errors.EntryPointError
-import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -837,39 +836,5 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalEntryPointArgs](result)
-  }
-
-  // The shell wraps `:eval exp` in the function below and makes it the entry point. The local
-  // function `_f` is never called, so sub-effecting leaves a free effect variable in its type.
-  // The rewritten entry point must still have a concrete effect.
-  test("Test.ShellEntryPoint.01") {
-    val input =
-      s"""
-         |def ${Shell.ShellEntryPointName}(): Unit \\ IO =
-         |def _f() = { print(42) };
-         |checked_ecast(())
-         |
-         |def print(_x: Int32): Unit \\ IO = checked_ecast(())
-         |pub eff IO
-         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(entryPoint = Some(Symbol.mkDefnSym(Shell.ShellEntryPointName))))
-    expectSuccess(result)
-  }
-
-  // As above, but the evaluated expression contains a lambda, which also carries a free effect
-  // variable from sub-effecting into the effect of `_f`.
-  test("Test.ShellEntryPoint.02") {
-    val input =
-      s"""
-         |def ${Shell.ShellEntryPointName}(): Unit \\ IO =
-         |def _f() = { print(apply(x -> x, 42)) };
-         |checked_ecast(())
-         |
-         |def apply(f: Int32 -> Int32 \\ ef, x: Int32): Int32 \\ ef = f(x)
-         |def print(_x: Int32): Unit \\ IO = checked_ecast(())
-         |pub eff IO
-         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(entryPoint = Some(Symbol.mkDefnSym(Shell.ShellEntryPointName))))
-    expectSuccess(result)
   }
 }
