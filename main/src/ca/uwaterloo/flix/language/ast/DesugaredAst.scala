@@ -67,6 +67,18 @@ object DesugaredAst {
 
   object Expr {
 
+    /** An expression that constructs or inspects Flix data: tags, tuples, records, arrays, structs, vectors and lazy values. */
+    sealed trait DataExpr extends Expr
+
+    /** A Java interop expression: constructor and method invocations and field access. */
+    sealed trait JvmExpr extends Expr
+
+    /** A channel or concurrency expression. */
+    sealed trait ChannelExpr extends Expr
+
+    /** A Datalog expression: constraint sets, queries, merging and solving. */
+    sealed trait FixpointExpr extends Expr
+
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends Expr
 
     case class Open(qname: Name.QName, loc: SourceLocation) extends Expr
@@ -107,35 +119,39 @@ object DesugaredAst {
 
     case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], loc: SourceLocation) extends Expr
 
-    case class ExtTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class ExtTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends DataExpr
 
-    case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
+    case class Tuple(exps: List[Expr], loc: SourceLocation) extends DataExpr
 
-    case class RecordSelect(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
+    case class RecordSelect(exp: Expr, label: Name.Label, loc: SourceLocation) extends DataExpr
 
-    case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, loc: SourceLocation) extends DataExpr
 
-    case class RecordRestrict(label: Name.Label, exp: Expr, loc: SourceLocation) extends Expr
+    case class RecordRestrict(label: Name.Label, exp: Expr, loc: SourceLocation) extends DataExpr
 
-    case class ArrayLit(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr
+    case class ArrayLit(exps: List[Expr], exp: Expr, loc: SourceLocation) extends DataExpr
 
-    case class ArrayNew(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
+    case class ArrayNew(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends DataExpr
 
-    case class ArrayLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class ArrayLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends DataExpr
 
-    case class ArrayLength(exp: Expr, loc: SourceLocation) extends Expr
+    case class ArrayLength(exp: Expr, loc: SourceLocation) extends DataExpr
 
-    case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
+    case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends DataExpr
 
-    case class StructGet(exp: Expr, name: Name.Label, loc: SourceLocation) extends Expr
+    case class StructGet(exp: Expr, name: Name.Label, loc: SourceLocation) extends DataExpr
 
-    case class StructPut(exp1: Expr, name: Name.Label, exp2: Expr, loc: SourceLocation) extends Expr
+    case class StructPut(exp1: Expr, name: Name.Label, exp2: Expr, loc: SourceLocation) extends DataExpr
 
-    case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
+    case class VectorLit(exps: List[Expr], loc: SourceLocation) extends DataExpr
 
-    case class VectorLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class VectorLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends DataExpr
 
-    case class VectorLength(exp: Expr, loc: SourceLocation) extends Expr
+    case class VectorLength(exp: Expr, loc: SourceLocation) extends DataExpr
+
+    case class Lazy(exp: Expr, loc: SourceLocation) extends DataExpr
+
+    case class Force(exp: Expr, loc: SourceLocation) extends DataExpr
 
     case class Ascribe(exp: Expr, expectedType: Option[Type], expectedEff: Option[Type], loc: SourceLocation) extends Expr
 
@@ -156,47 +172,43 @@ object DesugaredAst {
 
     case class RunWith(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeConstructor(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends JvmExpr
 
-    case class InvokeSuperConstructor(exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeSuperConstructor(exps: List[Expr], loc: SourceLocation) extends JvmExpr
 
-    case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends JvmExpr
 
-    case class InvokeSuperMethod(methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeSuperMethod(methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends JvmExpr
 
-    case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
+    case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends JvmExpr
 
     case class AmbiguousNew(tpe: Type, region: Option[Expr], fields: List[(Name.Label, Expr)], constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
-    case class NewChannel(exp: Expr, loc: SourceLocation) extends Expr
+    case class NewChannel(exp: Expr, loc: SourceLocation) extends ChannelExpr
 
-    case class GetChannel(exp: Expr, loc: SourceLocation) extends Expr
+    case class GetChannel(exp: Expr, loc: SourceLocation) extends ChannelExpr
 
-    case class PutChannel(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class PutChannel(exp1: Expr, exp2: Expr, loc: SourceLocation) extends ChannelExpr
 
-    case class SelectChannel(rules: List[SelectChannelRule], exp: Option[Expr], loc: SourceLocation) extends Expr
+    case class SelectChannel(rules: List[SelectChannelRule], exp: Option[Expr], loc: SourceLocation) extends ChannelExpr
 
-    case class Spawn(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class Spawn(exp1: Expr, exp2: Expr, loc: SourceLocation) extends ChannelExpr
 
-    case class ParYield(frags: List[ParYieldFragment], exp: Expr, loc: SourceLocation) extends Expr
+    case class ParYield(frags: List[ParYieldFragment], exp: Expr, loc: SourceLocation) extends ChannelExpr
 
-    case class Lazy(exp: Expr, loc: SourceLocation) extends Expr
+    case class FixpointConstraintSet(cs: List[Constraint], loc: SourceLocation) extends FixpointExpr
 
-    case class Force(exp: Expr, loc: SourceLocation) extends Expr
+    case class FixpointLambda(pparams: List[PredicateParam], exp: Expr, loc: SourceLocation) extends FixpointExpr
 
-    case class FixpointConstraintSet(cs: List[Constraint], loc: SourceLocation) extends Expr
+    case class FixpointMerge(exp1: Expr, exp2: Expr, loc: SourceLocation) extends FixpointExpr
 
-    case class FixpointLambda(pparams: List[PredicateParam], exp: Expr, loc: SourceLocation) extends Expr
+    case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], loc: SourceLocation) extends FixpointExpr
 
-    case class FixpointMerge(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class FixpointQueryWithSelect(exps: List[Expr], queryExp: Expr, selects: List[Expr], from: List[Predicate.Body], where: List[Expr], pred: Name.Pred, loc: SourceLocation) extends FixpointExpr
 
-    case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], loc: SourceLocation) extends Expr
+    case class FixpointSolveWithProject(exps: List[Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, loc: SourceLocation) extends FixpointExpr
 
-    case class FixpointQueryWithSelect(exps: List[Expr], queryExp: Expr, selects: List[Expr], from: List[Predicate.Body], where: List[Expr], pred: Name.Pred, loc: SourceLocation) extends Expr
-
-    case class FixpointSolveWithProject(exps: List[Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, loc: SourceLocation) extends Expr
-
-    case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], loc: SourceLocation) extends Expr
+    case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], loc: SourceLocation) extends FixpointExpr
 
     case class Error(m: CompilationMessage) extends Expr {
       override def loc: SourceLocation = m.loc
