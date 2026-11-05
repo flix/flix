@@ -219,27 +219,7 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.Lambda(p, e, t, loc)
 
-    case TypedAst.Expr.ApplyClo(exp1, exp2, tpe, eff, _, loc) =>
-      val e1 = lowerExp(exp1)
-      val e2 = lowerExp(exp2)
-      val t = lowerType(tpe)
-      MonoAst.Expr.ApplyClo(e1, e2, t, eff, loc)
-
-    case TypedAst.Expr.ApplyDef(sym, exps, _, itpe, tpe, eff, _, loc) =>
-      val es = exps.map(lowerExp)
-      val it = lowerType(itpe)
-      val t = lowerType(tpe)
-      MonoAst.Expr.ApplyDef(sym.sym, es, it, t, eff, loc)
-
-    case TypedAst.Expr.ApplyLocalDef(bnd, exps, _, tpe, eff, _, loc) =>
-      val es = exps.map(lowerExp)
-      val t = lowerType(tpe)
-      MonoAst.Expr.ApplyLocalDef(bnd.sym, es, t, eff, loc)
-
-    case TypedAst.Expr.ApplyOp(bnd, exps, tpe, eff, _, loc) =>
-      val es = exps.map(lowerExp)
-      val t = lowerType(tpe)
-      MonoAst.Expr.ApplyOp(bnd.sym, es, t, eff, loc)
+    case e: TypedAst.Expr.ApplyExpr => lowerApplyExpr(e)
 
     case TypedAst.Expr.Unary(sop, exp, tpe, eff, loc) => sop match {
       case _: SemanticOp.ReflectOp =>
@@ -313,6 +293,116 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.ExtMatch(e, rs, t, eff, loc)
 
+    case e: TypedAst.Expr.DataExpr => lowerDataExpr(e)
+
+    case TypedAst.Expr.Ascribe(exp, _, _, _, _, _) =>
+      lowerExp(exp)
+
+    case TypedAst.Expr.InstanceOf(exp, clazz, loc) =>
+      val e = lowerExp(exp)
+      if (JavaBoxing.isPrimitive(e.tpe)) {
+        // If it's a primitive type, evaluate the expression but return false
+        MonoAst.Expr.Stm(List(e), MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
+      } else {
+        // If it's a reference type, then do the instanceof check
+        MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.eff, loc)
+      }
+
+    case TypedAst.Expr.CheckedCast(_, exp, tpe, eff, loc) =>
+      // Note: We do *NOT* erase checked (i.e. safe) casts.
+      // In Java, `String` is a subtype of `Object`, but the Flix IR makes this upcast _explicit_.
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      mkCast(e, t, eff, loc)
+
+    case TypedAst.Expr.UncheckedCast(exp, _, _, tpe, eff, loc) =>
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      mkCast(e, t, eff, loc)
+
+    case TypedAst.Expr.Unsafe(exp, _, _, tpe, eff, loc) =>
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      mkCast(e, t, eff, loc)
+
+    case TypedAst.Expr.Throw(exp, tpe, eff, loc) =>
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Throw, List(e), t, eff, loc)
+
+    case TypedAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      val rs = rules.map(lowerCatchRule)
+      MonoAst.Expr.TryCatch(e, rs, t, eff, loc)
+
+    case TypedAst.Expr.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
+      // handler sym { rules }
+      // is lowered to
+      // handlerBody -> try handlerBody() with sym { rules }
+      val bodySym = Symbol.freshVarSym("handlerBody", BoundBy.FormalParam, loc.asSynthetic)(RegionScope.Top, flix)
+      val rs = rules.map(lowerHandlerRule)
+      val bt = lowerType(bodyTpe)
+      val t = lowerType(tpe)
+      val bodyThunkType = Type.mkArrowWithEffect(Type.Unit, bodyEff, bt, loc.asSynthetic)
+      val bodyVar = MonoAst.Expr.Var(bodySym, bodyThunkType, loc.asSynthetic)
+      val body = MonoAst.Expr.ApplyClo(bodyVar, MonoAst.Expr.Cst(Constant.Unit, Type.Unit, loc.asSynthetic), bt, bodyEff, loc.asSynthetic)
+      val RunWith = MonoAst.Expr.RunWith(body, symUse, rs, bt, handledEff, loc)
+      val param = MonoAst.FormalParam(bodySym, bodyThunkType, Occur.Unknown, loc.asSynthetic)
+      MonoAst.Expr.Lambda(param, RunWith, t, loc)
+
+    case TypedAst.Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      // run exp1 with exp2
+      // is lowered to
+      // exp2(_runWith -> exp1)
+      val e1 = lowerExp(exp1)
+      val unitParam = MonoAst.FormalParam(Symbol.freshVarSym("_runWith", BoundBy.FormalParam, loc.asSynthetic)(RegionScope.Top, flix), Type.Unit, Occur.Unknown, loc.asSynthetic)
+      val thunkType = Type.mkArrowWithEffect(Type.Unit, e1.eff, e1.tpe, loc.asSynthetic)
+      val thunk = MonoAst.Expr.Lambda(unitParam, e1, thunkType, loc.asSynthetic)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyClo(lowerExp(exp2), thunk, t, eff, loc)
+
+    case e: TypedAst.Expr.JvmExpr => lowerJvmExpr(e)
+
+    case e: TypedAst.Expr.ChannelExpr => lowerChannelExpr(e)
+
+    case e: TypedAst.Expr.FixpointExpr => lowerFixpointExpr(e)
+
+    case TypedAst.Expr.Error(m, _, _) =>
+      throw InternalCompilerException(s"Unexpected error expression near", m.loc)
+
+  }
+
+  /** Lowers the application `exp0`. */
+  private def lowerApplyExpr(exp0: TypedAst.Expr.ApplyExpr)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
+    case TypedAst.Expr.ApplyClo(exp1, exp2, tpe, eff, _, loc) =>
+      val e1 = lowerExp(exp1)
+      val e2 = lowerExp(exp2)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyClo(e1, e2, t, eff, loc)
+
+    case TypedAst.Expr.ApplyDef(sym, exps, _, itpe, tpe, eff, _, loc) =>
+      val es = exps.map(lowerExp)
+      val it = lowerType(itpe)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyDef(sym.sym, es, it, t, eff, loc)
+
+    case TypedAst.Expr.ApplyLocalDef(bnd, exps, _, tpe, eff, _, loc) =>
+      val es = exps.map(lowerExp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyLocalDef(bnd.sym, es, t, eff, loc)
+
+    case TypedAst.Expr.ApplyOp(bnd, exps, tpe, eff, _, loc) =>
+      val es = exps.map(lowerExp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyOp(bnd.sym, es, t, eff, loc)
+
+    case TypedAst.Expr.ApplySig(_, _, _, _, _, _, _, _, _) =>
+      throw InternalCompilerException(s"Unexpected ApplySig", exp0.loc)
+  }
+
+  /** Lowers the data expression `exp0`: tags, tuples, records, arrays, structs, vectors and lazy values. */
+  private def lowerDataExpr(exp0: TypedAst.Expr.DataExpr)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
     case TypedAst.Expr.Tag(symUse, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
@@ -427,75 +517,10 @@ object Lowering {
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.Force, List(e), t, eff, loc)
+  }
 
-    case TypedAst.Expr.Ascribe(exp, _, _, _, _, _) =>
-      lowerExp(exp)
-
-    case TypedAst.Expr.InstanceOf(exp, clazz, loc) =>
-      val e = lowerExp(exp)
-      if (JavaBoxing.isPrimitive(e.tpe)) {
-        // If it's a primitive type, evaluate the expression but return false
-        MonoAst.Expr.Stm(List(e), MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
-      } else {
-        // If it's a reference type, then do the instanceof check
-        MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.eff, loc)
-      }
-
-    case TypedAst.Expr.CheckedCast(_, exp, tpe, eff, loc) =>
-      // Note: We do *NOT* erase checked (i.e. safe) casts.
-      // In Java, `String` is a subtype of `Object`, but the Flix IR makes this upcast _explicit_.
-      val e = lowerExp(exp)
-      val t = lowerType(tpe)
-      mkCast(e, t, eff, loc)
-
-    case TypedAst.Expr.UncheckedCast(exp, _, _, tpe, eff, loc) =>
-      val e = lowerExp(exp)
-      val t = lowerType(tpe)
-      mkCast(e, t, eff, loc)
-
-    case TypedAst.Expr.Unsafe(exp, _, _, tpe, eff, loc) =>
-      val e = lowerExp(exp)
-      val t = lowerType(tpe)
-      mkCast(e, t, eff, loc)
-
-
-    case TypedAst.Expr.Throw(exp, tpe, eff, loc) =>
-      val e = lowerExp(exp)
-      val t = lowerType(tpe)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.Throw, List(e), t, eff, loc)
-
-    case TypedAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
-      val e = lowerExp(exp)
-      val t = lowerType(tpe)
-      val rs = rules.map(lowerCatchRule)
-      MonoAst.Expr.TryCatch(e, rs, t, eff, loc)
-
-    case TypedAst.Expr.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
-      // handler sym { rules }
-      // is lowered to
-      // handlerBody -> try handlerBody() with sym { rules }
-      val bodySym = Symbol.freshVarSym("handlerBody", BoundBy.FormalParam, loc.asSynthetic)(RegionScope.Top, flix)
-      val rs = rules.map(lowerHandlerRule)
-      val bt = lowerType(bodyTpe)
-      val t = lowerType(tpe)
-      val bodyThunkType = Type.mkArrowWithEffect(Type.Unit, bodyEff, bt, loc.asSynthetic)
-      val bodyVar = MonoAst.Expr.Var(bodySym, bodyThunkType, loc.asSynthetic)
-      val body = MonoAst.Expr.ApplyClo(bodyVar, MonoAst.Expr.Cst(Constant.Unit, Type.Unit, loc.asSynthetic), bt, bodyEff, loc.asSynthetic)
-      val RunWith = MonoAst.Expr.RunWith(body, symUse, rs, bt, handledEff, loc)
-      val param = MonoAst.FormalParam(bodySym, bodyThunkType, Occur.Unknown, loc.asSynthetic)
-      MonoAst.Expr.Lambda(param, RunWith, t, loc)
-
-    case TypedAst.Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
-      // run exp1 with exp2
-      // is lowered to
-      // exp2(_runWith -> exp1)
-      val e1 = lowerExp(exp1)
-      val unitParam = MonoAst.FormalParam(Symbol.freshVarSym("_runWith", BoundBy.FormalParam, loc.asSynthetic)(RegionScope.Top, flix), Type.Unit, Occur.Unknown, loc.asSynthetic)
-      val thunkType = Type.mkArrowWithEffect(Type.Unit, e1.eff, e1.tpe, loc.asSynthetic)
-      val thunk = MonoAst.Expr.Lambda(unitParam, e1, thunkType, loc.asSynthetic)
-      val t = lowerType(tpe)
-      MonoAst.Expr.ApplyClo(lowerExp(exp2), thunk, t, eff, loc)
-
+  /** Lowers the Java interop expression `exp0`. */
+  private def lowerJvmExpr(exp0: TypedAst.Expr.JvmExpr)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
     case TypedAst.Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
@@ -576,7 +601,10 @@ object Lowering {
       }
       val t = lowerType(tpe)
       MonoAst.Expr.NewObject(sym, clazz, t, eff, cs, ms, loc)
+  }
 
+  /** Lowers the channel or concurrency expression `exp0`. */
+  private def lowerChannelExpr(exp0: TypedAst.Expr.ChannelExpr)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
     case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
       lowerNewChannel(e, tpe, eff, loc)
@@ -615,7 +643,10 @@ object Lowering {
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       Lowering.mkParYield(fs, e, t, eff, loc)
+  }
 
+  /** Lowers the Datalog expression `exp0`. */
+  private def lowerFixpointExpr(exp0: TypedAst.Expr.FixpointExpr)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
     case TypedAst.Expr.FixpointConstraintSet(cs, _, loc) =>
       lowerConstraintSet(cs, loc)
 
@@ -643,13 +674,6 @@ object Lowering {
 
     case TypedAst.Expr.FixpointInjectInto(exps, predsAndArities, _, _, loc) =>
       lowerInjectInto(exps, predsAndArities, loc)
-
-    case TypedAst.Expr.ApplySig(_, _, _, _, _, _, _, _, _) =>
-      throw InternalCompilerException(s"Unexpected ApplySig", exp0.loc)
-
-    case TypedAst.Expr.Error(m, _, _) =>
-      throw InternalCompilerException(s"Unexpected error expression near", m.loc)
-
   }
 
   /**
