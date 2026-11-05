@@ -3495,28 +3495,31 @@ object Parser2 {
       lhs
     }
 
-    /** A precedence table for type operators, lower is higher precedence. */
-    private def TYPE_OP_PRECEDENCE: List[Array[TokenKind]] = List(
+    /**
+      * A precedence table for type operators, mapping each operator to its precedence level,
+      * where lower is higher precedence.
+      */
+    private val TYPE_OP_PRECEDENCE: Map[TokenKind, Int] = List(
       // Binary ops.
-      Array(TokenKind.ArrowThinRWhitespace),
-      Array(TokenKind.KeywordRvadd, TokenKind.KeywordRvsub),
-      Array(TokenKind.KeywordRvand),
-      Array(TokenKind.Plus, TokenKind.Minus),
-      Array(TokenKind.Ampersand),
-      Array(TokenKind.KeywordXor),
-      Array(TokenKind.KeywordOr),
-      Array(TokenKind.KeywordAnd),
+      List(TokenKind.ArrowThinRWhitespace),
+      List(TokenKind.KeywordRvadd, TokenKind.KeywordRvsub),
+      List(TokenKind.KeywordRvand),
+      List(TokenKind.Plus, TokenKind.Minus),
+      List(TokenKind.Ampersand),
+      List(TokenKind.KeywordXor),
+      List(TokenKind.KeywordOr),
+      List(TokenKind.KeywordAnd),
       // Unary ops.
-      Array(TokenKind.KeywordRvnot, TokenKind.Tilde, TokenKind.KeywordNot)
-    )
+      List(TokenKind.KeywordRvnot, TokenKind.Tilde, TokenKind.KeywordNot)
+    ).zipWithIndex.flatMap { case (ops, level) => ops.map(_ -> level) }.toMap
 
     private def rightBindsTighter(left: TokenKind, right: TokenKind): Boolean = {
-      val rt = TYPE_OP_PRECEDENCE.indexWhere(l => l.contains(right))
+      val rt = TYPE_OP_PRECEDENCE.getOrElse(right, -1)
       if (rt == -1) {
         return false
       }
 
-      val lt = TYPE_OP_PRECEDENCE.indexWhere(l => l.contains(left))
+      val lt = TYPE_OP_PRECEDENCE.getOrElse(left, -1)
       if (lt == -1) {
         assert(left == TokenKind.Eof)
         return true
