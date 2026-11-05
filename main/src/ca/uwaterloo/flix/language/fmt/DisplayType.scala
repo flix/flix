@@ -9,9 +9,10 @@ package ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
-import ca.uwaterloo.flix.language.ast.shared.{SymbolSet, VarText}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.util.InternalCompilerException
+
+import java.lang.constant.ClassDesc
 
 /**
   * A well-kinded type in an easily-printable format.
@@ -19,6 +20,14 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 sealed trait DisplayType
 
 object DisplayType {
+
+  /**
+    * An operator node: `not a`, `a and b`, `a -> b`, ...
+    *
+    * An operator is not atomic, so it is parenthesized when it stands as an operand of another
+    * operator or in an argument position. Every other node is atomic and never parenthesized.
+    */
+  sealed trait Operator extends DisplayType
 
   private class OverAppliedType(loc: SourceLocation) extends InternalCompilerException("Unexpected over-applied type.", loc)
 
@@ -178,17 +187,17 @@ object DisplayType {
   /**
     * Boolean negation.
     */
-  case class Not(tpe: DisplayType) extends DisplayType
+  case class Not(tpe: DisplayType) extends Operator
 
   /**
     * A chain of types connected by `and`.
     */
-  case class And(tpes: List[DisplayType]) extends DisplayType
+  case class And(tpes: List[DisplayType]) extends Operator
 
   /**
     * A chain of types connected by `or`.
     */
-  case class Or(tpes: List[DisplayType]) extends DisplayType
+  case class Or(tpes: List[DisplayType]) extends Operator
 
   ////////////////
   // Set Operators
@@ -197,7 +206,7 @@ object DisplayType {
   /**
     * Set complement.
     */
-  case class Complement(tpe: DisplayType) extends DisplayType
+  case class Complement(tpe: DisplayType) extends Operator
 
   /**
     * A chain of types in a set.
@@ -207,22 +216,22 @@ object DisplayType {
   /**
     * A chain of types connected by `&`.
     */
-  case class Plus(tpes: List[DisplayType]) extends DisplayType
+  case class Plus(tpes: List[DisplayType]) extends Operator
 
   /**
     * A chain of types connected by `&`.
     */
-  case class Intersection(tpes: List[DisplayType]) extends DisplayType
+  case class Intersection(tpes: List[DisplayType]) extends Operator
 
   /**
     * A chain of types connected by `⊕`.
     */
-  case class SymmetricDiff(tpes: List[DisplayType]) extends DisplayType
+  case class SymmetricDiff(tpes: List[DisplayType]) extends Operator
 
   /**
     * A chain of types connected by `-`.
     */
-  case class Difference(tpes: List[DisplayType]) extends DisplayType
+  case class Difference(tpes: List[DisplayType]) extends Operator
 
   /////////////
   // Predicates
@@ -249,23 +258,17 @@ object DisplayType {
   /**
     * A pure function.
     */
-  case class PureArrow(arg: DisplayType, ret: DisplayType) extends DisplayType
+  case class PureArrow(arg: DisplayType, ret: DisplayType) extends Operator
 
   /**
     * A function with a purity.
     */
-  case class PolyArrow(arg: DisplayType, eff: DisplayType, ret: DisplayType) extends DisplayType
+  case class PolyArrow(arg: DisplayType, eff: DisplayType, ret: DisplayType) extends Operator
 
   /**
     * A backend function (no effect).
     */
-  case class ArrowWithoutEffect(arg: DisplayType, ret: DisplayType) extends DisplayType
-
-  ///////
-  // Tags
-  ///////
-
-  case class TagConstructor(name: String) extends DisplayType
+  case class ArrowWithoutEffect(arg: DisplayType, ret: DisplayType) extends Operator
 
   ////////////
   // JVM Types
@@ -289,14 +292,53 @@ object DisplayType {
 
   case class JvmMethod(method: JavaMethod) extends DisplayType
 
+  ////////////////
+  // Declarations
+  ////////////////
+
+  /**
+    * An enum, by its symbol.
+    */
+  case class Enum(sym: Symbol.EnumSym) extends DisplayType
+
+  /**
+    * A struct, by its symbol.
+    */
+  case class Struct(sym: Symbol.StructSym) extends DisplayType
+
+  /**
+    * A restrictable enum, by its symbol.
+    */
+  case class RestrictableEnum(sym: Symbol.RestrictableEnumSym) extends DisplayType
+
+  /**
+    * A type alias, by its symbol.
+    */
+  case class Alias(sym: Symbol.TypeAliasSym) extends DisplayType
+
+  /**
+    * An associated type, by its symbol.
+    */
+  case class Assoc(sym: Symbol.AssocTypeSym) extends DisplayType
+
+  /**
+    * An effect, by its symbol.
+    */
+  case class Effect(sym: Symbol.EffSym) extends DisplayType
+
+  /**
+    * A case of a restrictable enum in a case set, by its symbol.
+    */
+  case class Case(sym: Symbol.RestrictableCaseSym) extends DisplayType
+
+  /**
+    * A Java class, by its descriptor.
+    */
+  case class Native(desc: ClassDesc) extends DisplayType
+
   //////////////////////
   // Miscellaneous Types
   //////////////////////
-
-  /**
-    * A simple named type (e.g., enum or type alias).
-    */
-  case class Name(name: String) extends DisplayType
 
   /**
     * A type applied to one or more types.
@@ -304,9 +346,9 @@ object DisplayType {
   case class Apply(tpe: DisplayType, tpes: List[DisplayType]) extends DisplayType
 
   /**
-    * A type variable.
+    * A type variable, by its symbol.
     */
-  case class Var(id: Int, kind: Kind, text: VarText) extends DisplayType
+  case class Var(sym: Symbol.KindedTypeVarSym) extends DisplayType
 
   /**
     * A tuple.
@@ -314,9 +356,9 @@ object DisplayType {
   case class Tuple(tpes: List[DisplayType]) extends DisplayType
 
   /**
-    * A region.
+    * A region, by its symbol.
     */
-  case class Region(name: String) extends DisplayType
+  case class Region(sym: Symbol.RegionSym) extends DisplayType
 
   /**
     * An error type.
@@ -357,15 +399,15 @@ object DisplayType {
   /**
     * Creates a simple type from the well-kinded type `t`.
     */
-  def fromWellKindedType(t0: Type, amb : SymbolSet = SymbolSet.empty): DisplayType = {
+  def fromWellKindedType(t0: Type): DisplayType = {
 
     def visit(t: Type): DisplayType = t.baseType match {
       case Type.Var(sym, _) =>
-        mkApply(Var(sym.id, sym.kind, sym.text), t.typeArguments.map(visit))
+        mkApply(Var(sym), t.typeArguments.map(visit))
       case Type.Alias(cst, args, _, _) =>
-        mkApply(Name(amb.qualify(cst.sym)), (args ++ t.typeArguments).map(visit))
+        mkApply(Alias(cst.sym), (args ++ t.typeArguments).map(visit))
       case Type.AssocType(cst, arg, _, _) =>
-        mkApply(Name(cst.sym.name), (arg :: t.typeArguments).map(visit))
+        mkApply(Assoc(cst.sym), (arg :: t.typeArguments).map(visit))
       case Type.JvmToType(tpe, _) =>
         mkApply(DisplayType.JvmToType(visit(tpe)), t.typeArguments.map(visit))
       case Type.JvmToEff(tpe, _) =>
@@ -507,11 +549,10 @@ object DisplayType {
         case TypeConstructor.Sender => mkApply(Sender, t.typeArguments.map(visit))
         case TypeConstructor.Receiver => mkApply(Receiver, t.typeArguments.map(visit))
         case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(visit))
-        case TypeConstructor.Enum(sym, _) =>
-          mkApply(Name(amb.qualify(sym)), t.typeArguments.map(visit))
-        case TypeConstructor.Struct(sym, _) => mkApply(Name(amb.qualify(sym)), t.typeArguments.map(visit))
-        case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(amb.qualify(sym)), t.typeArguments.map(visit))
-        case TypeConstructor.Native(desc, _) => mkApply(Name(ClassDescs.canonicalNameOf(desc)), t.typeArguments.map(visit))
+        case TypeConstructor.Enum(sym, _) => mkApply(Enum(sym), t.typeArguments.map(visit))
+        case TypeConstructor.Struct(sym, _) => mkApply(Struct(sym), t.typeArguments.map(visit))
+        case TypeConstructor.RestrictableEnum(sym, _) => mkApply(RestrictableEnum(sym), t.typeArguments.map(visit))
+        case TypeConstructor.Native(desc, _) => mkApply(Native(desc), t.typeArguments.map(visit))
         case TypeConstructor.JvmConstructor(constructor) => mkApply(JvmConstructor(constructor), t.typeArguments.map(visit))
         case TypeConstructor.JvmMethod(method, _) => mkApply(JvmMethod(method), t.typeArguments.map(visit))
         case TypeConstructor.JvmField(field) => mkApply(JvmField(field), t.typeArguments.map(visit))
@@ -620,7 +661,7 @@ object DisplayType {
           }
 
         case TypeConstructor.CaseSet(syms, _) =>
-          val names = syms.toList.map(sym => DisplayType.Name(sym.name))
+          val names = syms.toList.map(sym => DisplayType.Case(sym))
           val set = DisplayType.Union(names)
           mkApply(set, t.typeArguments.map(visit))
 
@@ -655,8 +696,8 @@ object DisplayType {
             case _ => throw new OverAppliedType(t.loc)
           }
 
-        case TypeConstructor.Effect(sym, _) => mkApply(DisplayType.Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.Region(sym) => mkApply(DisplayType.Region(sym.text), t.typeArguments.map(visit))
+        case TypeConstructor.Effect(sym, _) => mkApply(DisplayType.Effect(sym), t.typeArguments.map(visit))
+        case TypeConstructor.Region(sym) => mkApply(DisplayType.Region(sym), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(visit))
         case TypeConstructor.RegionWithoutRegion => mkApply(RegionWithoutRegion, t.typeArguments.map(visit))
 
