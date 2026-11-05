@@ -1046,52 +1046,7 @@ object Resolver {
       val rs = rules.map(resolveExtMatchRule(_, scp0))
       ResolvedAst.Expr.ExtMatch(e, rs, loc)
 
-    case NamedAst.Expr.ExtTag(label, exps, loc) =>
-      val es = exps.map(resolveExp(_, scp0))
-      ResolvedAst.Expr.ExtTag(label, es, loc)
-
-    case NamedAst.Expr.Tuple(elms, loc) =>
-      val es = elms.map(resolveExp(_, scp0))
-      ResolvedAst.Expr.Tuple(es, loc)
-
-    case NamedAst.Expr.RecordSelect(base, label, loc) =>
-      val b = resolveExp(base, scp0)
-      ResolvedAst.Expr.RecordSelect(b, label, loc)
-
-    case NamedAst.Expr.RecordExtend(label, exp1, exp2, loc) =>
-      val v = resolveExp(exp1, scp0)
-      val r = resolveExp(exp2, scp0)
-      ResolvedAst.Expr.RecordExtend(label, v, r, loc)
-
-    case NamedAst.Expr.RecordRestrict(label, exp, loc) =>
-      val r = resolveExp(exp, scp0)
-      ResolvedAst.Expr.RecordRestrict(label, r, loc)
-
-    case NamedAst.Expr.ArrayLit(exps, exp, loc) =>
-      val es = exps.map(resolveExp(_, scp0))
-      val e = resolveExp(exp, scp0)
-      ResolvedAst.Expr.ArrayLit(es, e, loc)
-
-    case NamedAst.Expr.ArrayNew(exp1, exp2, exp3, loc) =>
-      val e1 = resolveExp(exp1, scp0)
-      val e2 = resolveExp(exp2, scp0)
-      val e3 = resolveExp(exp3, scp0)
-      ResolvedAst.Expr.ArrayNew(e1, e2, e3, loc)
-
-    case NamedAst.Expr.ArrayLoad(exp1, exp2, loc) =>
-      val b = resolveExp(exp1, scp0)
-      val i = resolveExp(exp2, scp0)
-      ResolvedAst.Expr.ArrayLoad(b, i, loc)
-
-    case NamedAst.Expr.ArrayStore(exp1, exp2, exp3, loc) =>
-      val b = resolveExp(exp1, scp0)
-      val i = resolveExp(exp2, scp0)
-      val e = resolveExp(exp3, scp0)
-      ResolvedAst.Expr.ArrayStore(b, i, e, loc)
-
-    case NamedAst.Expr.ArrayLength(exp, loc) =>
-      val b = resolveExp(exp, scp0)
-      ResolvedAst.Expr.ArrayLength(b, loc)
+    case e: NamedAst.Expr.DataExpr => resolveDataExpr(e, scp0)
 
     case NamedAst.Expr.AmbiguousNew(tpe, region0, fields0, constructors, methods, loc) =>
       val qnameOpt = tpe match {
@@ -1103,47 +1058,6 @@ object Resolver {
         resolveAmbiguousNewAsStruct(qnameOpt, tpe, region0, fields0, scp0, loc)
       else
         resolveAmbiguousNewAsObject(qnameOpt, tpe, constructors, methods, scp0, loc)
-
-    case NamedAst.Expr.StructGet(exp, field0, loc) =>
-      lookupStructField(field0, scp0, ns0, root) match {
-        case Result.Ok(field) =>
-          val e = resolveExp(exp, scp0)
-          val symUse = StructFieldSymUse(field.sym, field0.loc)
-          ResolvedAst.Expr.StructGet(e, symUse, loc)
-        case Result.Err(error) =>
-          sctx.errors.add(error)
-          ResolvedAst.Expr.Error(error)
-      }
-
-    case NamedAst.Expr.StructPut(exp1, field0, exp2, loc) =>
-      lookupStructField(field0, scp0, ns0, root) match {
-        case Result.Ok(field) =>
-          val e1 = resolveExp(exp1, scp0)
-          val e2 = resolveExp(exp2, scp0)
-          val symUse = StructFieldSymUse(field.sym, field0.loc)
-          if (!field.mod.isMutable) {
-            val error = ResolutionError.ImmutableField(field.sym, field0.loc)
-            sctx.errors.add(error)
-          }
-          ResolvedAst.Expr.StructPut(e1, symUse, e2, loc)
-
-        case Result.Err(error) =>
-          sctx.errors.add(error)
-          ResolvedAst.Expr.Error(error)
-      }
-
-    case NamedAst.Expr.VectorLit(exps, loc) =>
-      val es = exps.map(resolveExp(_, scp0))
-      ResolvedAst.Expr.VectorLit(es, loc)
-
-    case NamedAst.Expr.VectorLoad(exp1, exp2, loc) =>
-      val e1 = resolveExp(exp1, scp0)
-      val e2 = resolveExp(exp2, scp0)
-      ResolvedAst.Expr.VectorLoad(e1, e2, loc)
-
-    case NamedAst.Expr.VectorLength(exp, loc) =>
-      val e = resolveExp(exp, scp0)
-      ResolvedAst.Expr.VectorLength(e, loc)
 
     case NamedAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
       val expectedTyp = expectedType.map(resolveType(_, Some(Kind.Star), Wildness.AllowWild, scp0, taenv, ns0, root))
@@ -1200,7 +1114,6 @@ object Resolver {
       val e = resolveExp(exp, scp0)
       ResolvedAst.Expr.Throw(e, loc)
 
-
     case NamedAst.Expr.Handler(qname, rules, loc) =>
       visitHandler(qname, rules, scp0) match {
         case Result.Ok((symUse, rs)) =>
@@ -1215,6 +1128,118 @@ object Resolver {
       val e2 = resolveExp(exp2, scp0)
       ResolvedAst.Expr.RunWith(e1, e2, loc)
 
+    case e: NamedAst.Expr.JvmExpr => resolveJvmExpr(e, scp0)
+
+    case e: NamedAst.Expr.ChannelExpr => resolveChannelExpr(e, scp0)
+
+    case e: NamedAst.Expr.FixpointExpr => resolveFixpointExpr(e, scp0)
+
+    case NamedAst.Expr.Error(m) =>
+      ResolvedAst.Expr.Error(m)
+
+  }
+
+  /** Performs name resolution on the data expression `exp0`: tags, tuples, records, arrays, structs, vectors and lazy values. */
+  private def resolveDataExpr(exp0: NamedAst.Expr.DataExpr, scp0: LocalScope)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = exp0 match {
+    case NamedAst.Expr.ExtTag(label, exps, loc) =>
+      val es = exps.map(resolveExp(_, scp0))
+      ResolvedAst.Expr.ExtTag(label, es, loc)
+
+    case NamedAst.Expr.Tuple(elms, loc) =>
+      val es = elms.map(resolveExp(_, scp0))
+      ResolvedAst.Expr.Tuple(es, loc)
+
+    case NamedAst.Expr.RecordSelect(base, label, loc) =>
+      val b = resolveExp(base, scp0)
+      ResolvedAst.Expr.RecordSelect(b, label, loc)
+
+    case NamedAst.Expr.RecordExtend(label, exp1, exp2, loc) =>
+      val v = resolveExp(exp1, scp0)
+      val r = resolveExp(exp2, scp0)
+      ResolvedAst.Expr.RecordExtend(label, v, r, loc)
+
+    case NamedAst.Expr.RecordRestrict(label, exp, loc) =>
+      val r = resolveExp(exp, scp0)
+      ResolvedAst.Expr.RecordRestrict(label, r, loc)
+
+    case NamedAst.Expr.ArrayLit(exps, exp, loc) =>
+      val es = exps.map(resolveExp(_, scp0))
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.ArrayLit(es, e, loc)
+
+    case NamedAst.Expr.ArrayNew(exp1, exp2, exp3, loc) =>
+      val e1 = resolveExp(exp1, scp0)
+      val e2 = resolveExp(exp2, scp0)
+      val e3 = resolveExp(exp3, scp0)
+      ResolvedAst.Expr.ArrayNew(e1, e2, e3, loc)
+
+    case NamedAst.Expr.ArrayLoad(exp1, exp2, loc) =>
+      val b = resolveExp(exp1, scp0)
+      val i = resolveExp(exp2, scp0)
+      ResolvedAst.Expr.ArrayLoad(b, i, loc)
+
+    case NamedAst.Expr.ArrayStore(exp1, exp2, exp3, loc) =>
+      val b = resolveExp(exp1, scp0)
+      val i = resolveExp(exp2, scp0)
+      val e = resolveExp(exp3, scp0)
+      ResolvedAst.Expr.ArrayStore(b, i, e, loc)
+
+    case NamedAst.Expr.ArrayLength(exp, loc) =>
+      val b = resolveExp(exp, scp0)
+      ResolvedAst.Expr.ArrayLength(b, loc)
+
+    case NamedAst.Expr.StructGet(exp, field0, loc) =>
+      lookupStructField(field0, scp0, ns0, root) match {
+        case Result.Ok(field) =>
+          val e = resolveExp(exp, scp0)
+          val symUse = StructFieldSymUse(field.sym, field0.loc)
+          ResolvedAst.Expr.StructGet(e, symUse, loc)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          ResolvedAst.Expr.Error(error)
+      }
+
+    case NamedAst.Expr.StructPut(exp1, field0, exp2, loc) =>
+      lookupStructField(field0, scp0, ns0, root) match {
+        case Result.Ok(field) =>
+          val e1 = resolveExp(exp1, scp0)
+          val e2 = resolveExp(exp2, scp0)
+          val symUse = StructFieldSymUse(field.sym, field0.loc)
+          if (!field.mod.isMutable) {
+            val error = ResolutionError.ImmutableField(field.sym, field0.loc)
+            sctx.errors.add(error)
+          }
+          ResolvedAst.Expr.StructPut(e1, symUse, e2, loc)
+
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          ResolvedAst.Expr.Error(error)
+      }
+
+    case NamedAst.Expr.VectorLit(exps, loc) =>
+      val es = exps.map(resolveExp(_, scp0))
+      ResolvedAst.Expr.VectorLit(es, loc)
+
+    case NamedAst.Expr.VectorLoad(exp1, exp2, loc) =>
+      val e1 = resolveExp(exp1, scp0)
+      val e2 = resolveExp(exp2, scp0)
+      ResolvedAst.Expr.VectorLoad(e1, e2, loc)
+
+    case NamedAst.Expr.VectorLength(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.VectorLength(e, loc)
+
+    case NamedAst.Expr.Lazy(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.Lazy(e, loc)
+
+    case NamedAst.Expr.Force(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.Force(e, loc)
+  }
+
+  /** Performs name resolution on the Java interop expression `exp0`. */
+  private def resolveJvmExpr(exp0: NamedAst.Expr.JvmExpr, scp0: LocalScope)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = exp0 match {
     case NamedAst.Expr.InvokeConstructor(className, exps, loc) =>
       val es = exps.map(resolveExp(_, scp0))
       scp0.get(className.name) match {
@@ -1256,7 +1281,10 @@ object Resolver {
     case NamedAst.Expr.GetField(exp, name, loc) =>
       val e = resolveExp(exp, scp0)
       ResolvedAst.Expr.GetField(e, name, loc)
+  }
 
+  /** Performs name resolution on the channel or concurrency expression `exp0`. */
+  private def resolveChannelExpr(exp0: NamedAst.Expr.ChannelExpr, scp0: LocalScope)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = exp0 match {
     case NamedAst.Expr.NewChannel(exp, loc) =>
       val e = resolveExp(exp, scp0)
       ResolvedAst.Expr.NewChannel(e, loc)
@@ -1304,15 +1332,10 @@ object Resolver {
 
       val e = resolveExp(exp, finalUscp)
       ResolvedAst.Expr.ParYield(fs, e, loc)
+  }
 
-    case NamedAst.Expr.Lazy(exp, loc) =>
-      val e = resolveExp(exp, scp0)
-      ResolvedAst.Expr.Lazy(e, loc)
-
-    case NamedAst.Expr.Force(exp, loc) =>
-      val e = resolveExp(exp, scp0)
-      ResolvedAst.Expr.Force(e, loc)
-
+  /** Performs name resolution on the Datalog expression `exp0`. */
+  private def resolveFixpointExpr(exp0: NamedAst.Expr.FixpointExpr, scp0: LocalScope)(implicit scope: RegionScope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = exp0 match {
     case NamedAst.Expr.FixpointConstraintSet(cs0, loc) =>
       val cs = cs0.map(resolveConstraint(_, scp0))
       ResolvedAst.Expr.FixpointConstraintSet(cs, loc)
@@ -1362,10 +1385,6 @@ object Resolver {
     case NamedAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
       val es = exps.map(resolveExp(_, scp0))
       ResolvedAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
-
-    case NamedAst.Expr.Error(m) =>
-      ResolvedAst.Expr.Error(m)
-
   }
 
   /**
