@@ -2133,9 +2133,6 @@ object Weeder2 {
       *   - `args = None` is an unapplied intrinsic (e.g. `%%LINE%%`)
       *   - `args = Some(Nil)` is an applied intrinsic with zero arguments (e.g. `%%EXAMPLE%%()`)
       *   - `args = Some(Cons(.., ..))` is an applied intrinsic with some arguments (e.g. `%%VECTOR_LENGTH%%(v)`)
-      *
-      * The intrinsic is dispatched on its arity first and on its name second, so that every
-      * helper is a flat match on a string and stays well below the JIT huge-method limit.
       */
     private def visitIntrinsic(tree: Tree, args: Option[List[Expr]], loc: SourceLocation)(implicit sctx: SharedContext): Expr = {
       expect(tree, TreeKind.Expr.Intrinsic)
