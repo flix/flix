@@ -341,6 +341,15 @@ object Dependencies {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
+    case Expr.Lazy(exp, tpe, _) =>
+      visitExp(exp)
+      visitType(tpe)
+
+    case Expr.Force(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.Ascribe(exp, _, _, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
@@ -472,15 +481,6 @@ object Dependencies {
 
     case Expr.ParYield(frags, exp, tpe, eff, _) =>
       frags.foreach(visitParYieldFragment)
-      visitExp(exp)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.Lazy(exp, tpe, _) =>
-      visitExp(exp)
-      visitType(tpe)
-
-    case Expr.Force(exp, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)

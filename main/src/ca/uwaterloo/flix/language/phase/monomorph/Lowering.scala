@@ -418,6 +418,16 @@ object Lowering {
       val e = lowerExp(exp)
       MonoAst.Expr.ApplyAtomic(AtomicOp.VectorLength, List(e), Type.Int32, e.eff, loc)
 
+    case TypedAst.Expr.Lazy(exp, tpe, loc) =>
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(e), t, Type.Pure, loc)
+
+    case TypedAst.Expr.Force(exp, tpe, eff, loc) =>
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Force, List(e), t, eff, loc)
+
     case TypedAst.Expr.Ascribe(exp, _, _, _, _, _) =>
       lowerExp(exp)
 
@@ -605,16 +615,6 @@ object Lowering {
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       Lowering.mkParYield(fs, e, t, eff, loc)
-
-    case TypedAst.Expr.Lazy(exp, tpe, loc) =>
-      val e = lowerExp(exp)
-      val t = lowerType(tpe)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(e), t, Type.Pure, loc)
-
-    case TypedAst.Expr.Force(exp, tpe, eff, loc) =>
-      val e = lowerExp(exp)
-      val t = lowerType(tpe)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.Force, List(e), t, eff, loc)
 
     case TypedAst.Expr.FixpointConstraintSet(cs, _, loc) =>
       lowerConstraintSet(cs, loc)
