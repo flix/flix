@@ -8,11 +8,11 @@
 package ca.uwaterloo.flix.tools.doc
 
 import ca.uwaterloo.flix.api.Version
+import ca.uwaterloo.flix.api.lsp.SemanticTokenType
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{Fmt, Pretty}
 import ca.uwaterloo.flix.util.LocalResource
-import ca.uwaterloo.flix.util.collection.Nel
 import org.commonmark.ext.gfm.tables.{TableCell, TablesExtension}
 import org.commonmark.node.Node
 import org.commonmark.parser.Parser
@@ -220,9 +220,15 @@ object HtmlDocumentor {
     * A symbol without documentation, e.g. a private declaration or one of another origin, resolves
     * to nothing, so that a printer writes its name as a colored token rather than a dead link.
     */
-  private class Links(documented: Set[Symbol]) {
+  private class Links(documented: Set[Symbol], self: Option[Symbol] = None) {
 
-    def link(sym: Symbol): Option[String] = if (!documented.contains(sym)) None else sym match {
+    /**
+      * Returns these links without one to `sym`: the declaration being documented does not link to
+      * itself.
+      */
+    def except(sym: Symbol): Links = new Links(documented, Some(sym))
+
+    def link(sym: Symbol): Option[String] = if (!documented.contains(sym) || self.contains(sym)) None else sym match {
       case s: Symbol.TraitSym => Some(escUrl(traitFileName(s)))
       case s: Symbol.EffSym => Some(escUrl(effectFileName(s)))
       case s: Symbol.EnumSym => Some(escUrl(enumFileName(s)))
@@ -899,9 +905,9 @@ object HtmlDocumentor {
     sb.append("<div class='decl'>")
     sb.append("<code>")
     if (trt.decl.mod.isSealed) {
-      sb.append("<span class='keyword'>sealed</span> ")
+      sb.append("<span class='kw'>sealed</span> ")
     }
-    sb.append("<span class='keyword'>trait</span> ")
+    sb.append("<span class='kw'>trait</span> ")
     sb.append(s"<span class='name'>${esc(trt.name)}</span>")
     docTypeParams(List(trt.decl.tparam))
     docTraitConstraints(trt.decl.superTraits)
@@ -1002,7 +1008,7 @@ object HtmlDocumentor {
     docAnnotations(eff.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
-    sb.append("<span class='keyword'>eff</span> ")
+    sb.append("<span class='kw'>eff</span> ")
     sb.append(s"<span class='name'>${esc(eff.name)}</span>")
     docTypeParams(eff.decl.tparams)
     sb.append("</code>")
@@ -1093,7 +1099,7 @@ object HtmlDocumentor {
     docAnnotations(enm.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
-    sb.append("<span class='keyword'>enum</span> ")
+    sb.append("<span class='kw'>enum</span> ")
     sb.append(s"<span class='name'>${esc(enm.name)}</span>")
     docTypeParams(enm.decl.tparams)
     docDerivations(enm.decl.derives)
@@ -1184,7 +1190,7 @@ object HtmlDocumentor {
     docAnnotations(struct.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
-    sb.append("<span class='keyword'>struct</span> ")
+    sb.append("<span class='kw'>struct</span> ")
     sb.append(s"<span class='name'>${esc(struct.name)}</span>")
     docTypeParams(struct.decl.tparams)
     sb.append("</code>")
@@ -1508,11 +1514,7 @@ object HtmlDocumentor {
     sb.append(s"<div class='box' id='ta-${esc(ta.sym.name)}'>")
     sb.append("<div class='decl'>")
     sb.append("<code>")
-    sb.append("<span class='keyword'>type alias</span> ")
-    sb.append(s"<span class='name'>${esc(ta.sym.name)}</span>")
-    docTypeParams(ta.tparams)
-    sb.append(" = ")
-    docType(ta.tpe)
+    docFmt(Pretty.typeAliasDecl(ta))(links.except(ta.sym), sb)
     sb.append("</code>")
     docActions(Some(s"ta-${ta.sym.name}"), ta.loc)
     sb.append("</div>")
@@ -1527,7 +1529,7 @@ object HtmlDocumentor {
     */
   private def docDef(defn: TypedAst.Def)(implicit links: Links, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='def-${esc(defn.sym.name)}'>")
-    docSpec(defn.sym.name, defn.spec, defn.loc, Some(s"def-${defn.sym.name}"))
+    docSpec(defn.sym, defn.spec, defn.loc, Some(s"def-${defn.sym.name}"))
     sb.append("</div>")
   }
 
@@ -1538,7 +1540,7 @@ object HtmlDocumentor {
     */
   private def docSignature(sig: TypedAst.Sig)(implicit links: Links, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='sig-${esc(sig.sym.name)}'>")
-    docSpec(sig.sym.name, sig.spec, sig.loc, Some(s"sig-${sig.sym.name}"))
+    docSpec(sig.sym, sig.spec, sig.loc, Some(s"sig-${sig.sym.name}"))
     sb.append("</div>")
   }
 
@@ -1549,28 +1551,20 @@ object HtmlDocumentor {
     */
   private def docOp(op: TypedAst.Op)(implicit links: Links, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='op-${esc(op.sym.name)}'>")
-    docSpec(op.sym.name, op.spec, op.loc, Some(s"op-${op.sym.name}"))
+    docSpec(op.sym, op.spec, op.loc, Some(s"op-${op.sym.name}"))
     sb.append("</div>")
   }
 
   /**
-    * Documents the given `Spec`, `spec`, with the given `name`.
-    * Shared by `Def` and `Sig`.
+    * Documents the given `Spec`, `spec`, of the def, sig or op `sym`.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSpec(name: String, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit links: Links, sb: StringBuilder): Unit = {
+  private def docSpec(sym: Symbol with QualifiedSym, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit links: Links, sb: StringBuilder): Unit = {
     docAnnotations(spec.ann)
     sb.append("<div class='decl'>")
     sb.append(s"<code>")
-    sb.append("<span class='keyword'>def</span> ")
-    sb.append(s"<span class='name'>${esc(name)}</span>")
-    docFormalParams(spec.fparams)
-    sb.append(": ")
-    docType(spec.retTpe)
-    docEffectType(spec.eff)
-    docTraitConstraints(spec.tconstrs)
-    docEqualityConstraints(spec.econstrs)
+    docFmt(Pretty.spec(sym, spec))(links.except(sym), sb)
     sb.append("</code>")
     docActions(linkId, loc)
     sb.append("</div>")
@@ -1586,7 +1580,7 @@ object HtmlDocumentor {
     sb.append("<div>")
     sb.append("<div class='decl'>")
     sb.append("<code>")
-    sb.append("<span class='keyword'>type</span> ")
+    sb.append("<span class='kw'>type</span> ")
     sb.append(s"<span class='name'>${esc(assoc.sym.name)}</span>")
     sb.append(": ")
     docKind(assoc.kind)
@@ -1689,22 +1683,22 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the type `tpe` of an instance. A type headed by an enum or a struct links to its
-    * page, with the qualified name as its title, since two types of different modules may share a
-    * name, e.g. `Chain.ViewLeft` and `Nec.ViewLeft`. Any other type is plain text, see [[docType]].
+    * Documents the type `tpe` of an instance, see [[docType]]. A type headed by an enum or a struct
+    * carries the qualified name as its title, since two types of different modules may share a
+    * name, e.g. `Chain.ViewLeft` and `Nec.ViewLeft`.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docInstanceType(tpe: Type)(implicit links: Links, sb: StringBuilder): Unit = {
-    val page = typeHead(tpe).collect {
-      case TypeConstructor.Enum(sym, _) => (enumFileName(sym), s"enum ${enumQualifiedName(sym)}")
-      case TypeConstructor.Struct(sym, _) => (structFileName(sym), s"struct ${structQualifiedName(sym)}")
+    val title = typeHead(tpe).collect {
+      case TypeConstructor.Enum(sym, _) => s"enum ${enumQualifiedName(sym)}"
+      case TypeConstructor.Struct(sym, _) => s"struct ${structQualifiedName(sym)}"
     }
-    page match {
-      case Some((fileName, title)) =>
-        sb.append(s"<a class='type' href='${escUrl(fileName)}' title='${esc(title)}'>")
-        sb.append(esc(Pretty.tpe(tpe).plain))
-        sb.append("</a>")
+    title match {
+      case Some(t) =>
+        sb.append(s"<span title='${esc(t)}'>")
+        docType(tpe)
+        sb.append("</span>")
       case None => docType(tpe)
     }
   }
@@ -1718,60 +1712,16 @@ object HtmlDocumentor {
     * If `tconsts` is empty, nothing will be generated.
     */
   private def docTraitConstraints(tconsts: List[TraitConstraint])(implicit links: Links, sb: StringBuilder): Unit = {
-    if (tconsts.isEmpty) {
-      return
-    }
-
-    sb.append("<span> <span class='keyword'>with</span> ")
-    docList(tconsts.sortBy(_.loc)) { t =>
-      docTraitName(t.symUse.sym)
-      sb.append("[")
-      docType(t.arg)
-      sb.append("]")
-    }
-    sb.append("</span>")
+    docFmt(Pretty.constraints(tconsts.sortBy(_.loc), Nil))
   }
 
   /**
     * Document the name of the given trait symbol, creating a link to the trait's documentation.
     */
   private def docTraitName(sym: Symbol.TraitSym)(implicit sb: StringBuilder): Unit = {
-    sb.append(s"<a class='tpe-constraint' href='${escUrl(traitFileName(sym))}' title='trait ${esc(traitName(sym))}'>")
+    sb.append(s"<a class='ty' href='${escUrl(traitFileName(sym))}' title='trait ${esc(traitName(sym))}'>")
     sb.append(esc(sym.name))
     sb.append("</a>")
-  }
-
-  /**
-    * Documents the given list of `EqualityConstraint`s, `econsts`.
-    * E.g. "where C.T[a] ~ String".
-    *
-    * The result will be appended to the given `StringBuilder`, `sb`.
-    *
-    * If `econsts` is empty, nothing will be generated.
-    */
-  private def docEqualityConstraints(econsts: List[TypedAst.EqualityConstraint])(implicit links: Links, sb: StringBuilder): Unit = {
-    if (econsts.isEmpty) {
-      return
-    }
-
-    sb.append("<span> <span class='keyword'>where</span> ")
-    docList(econsts.sortBy(_.loc)) { e =>
-      e.tpe1 match {
-        case Type.AssocType(cst, arg, _, _) =>
-          docTraitName(cst.sym.trt)
-          sb.append(".")
-          sb.append(esc(cst.sym.name))
-          sb.append("[")
-          docType(arg)
-          sb.append("] ~ ")
-          docType(e.tpe2)
-        case _ =>
-          docType(e.tpe1)
-          sb.append(" ~ ")
-          docType(e.tpe2)
-      }
-    }
-    sb.append("</span>")
   }
 
   /**
@@ -1787,7 +1737,7 @@ object HtmlDocumentor {
       return
     }
 
-    sb.append("<span> <span class='keyword'>with</span> ")
+    sb.append("<span> <span class='kw'>with</span> ")
     docList(derives.traits.sortBy(_.loc)) { t =>
       docTraitName(t.sym)
     }
@@ -1807,17 +1757,7 @@ object HtmlDocumentor {
     for (c <- cases.sortBy(_.loc)) {
       sb.append(s"<div class='case' id='case-${esc(c.sym.name)}'>")
       sb.append("<code>")
-      sb.append("<span class='keyword'>case</span> ")
-      sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>")
-
-      c.tpes match {
-        case Nil => // Nothing
-        case tpes =>
-          sb.append("(")
-          docList(tpes)(docType)
-          sb.append(")")
-      }
-
+      docFmt(Pretty.caseDecl(c))(links.except(c.sym), sb)
       sb.append("</code>")
       docDoc(c.doc)
       sb.append("</div>")
@@ -1844,11 +1784,7 @@ object HtmlDocumentor {
     for (f <- fields.sortBy(_.loc)) {
       sb.append(s"<div class='field' id='field-${esc(f.sym.name)}'>")
       sb.append("<code>")
-      if (f.mod.isMutable) {
-        sb.append("<span class='keyword'>mut</span> ")
-      }
-      sb.append(s"<span>${esc(f.sym.name)}</span>: ")
-      docType(f.tpe)
+      docFmt(Pretty.structField(f))(links.except(f.sym), sb)
       sb.append("</code>")
       docDoc(f.doc)
       sb.append("</div>")
@@ -1862,40 +1798,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docTypeParams(tparams: List[TypedAst.TypeParam])(implicit links: Links, sb: StringBuilder): Unit = {
-    if (tparams.isEmpty) {
-      return
-    }
-
-    sb.append("<span class='tparams'>[")
-    docList(tparams.sortBy(_.loc)) { p =>
-      sb.append("<span class='tparam'>")
-      sb.append(s"<span class='type'>${esc(p.name.name)}</span>")
-      sb.append(": ")
-      docKind(p.sym.kind)
-      sb.append("</span>")
-    }
-    sb.append("]</span>")
-  }
-
-  /**
-    * Document the given list of `FormalParam`s wrapped in `()`.
-    *
-    * The result will be appended to the given `StringBuilder`, `sb`.
-    */
-  private def docFormalParams(fparams: Nel[TypedAst.FormalParam])(implicit links: Links, sb: StringBuilder): Unit = {
-    sb.append("<span class='fparams'>(")
-    fparams match {
-      case Nel(TypedAst.FormalParam(_, Type.Cst(TypeConstructor.Unit, _), _, _, _), Nil) =>
-      // For a function declared with zero formal parameters,
-      // the compiler will introduce a single parameter of the unit type
-      case _ =>
-        docList(fparams.toList.sortBy(_.loc)) { p =>
-          sb.append(s"<span><span>${esc(p.bnd.sym.text)}</span>: ")
-          docType(p.tpe)
-          sb.append("</span>")
-        }
-    }
-    sb.append(")</span>")
+    docFmt(Pretty.tparams(tparams.sortBy(_.loc)))
   }
 
   /**
@@ -2083,7 +1986,16 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docFmt(f: Fmt)(implicit links: Links, sb: StringBuilder): Unit = {
-    sb.append(f.html(links.link, HtmlHighlighter.cssClass))
+    sb.append(f.html(links.link, docClass))
+  }
+
+  /**
+    * Returns the CSS class of a token of the type `tpe` in a signature, if it has one: that of the
+    * source highlighter, except that the case of an enum is set in italics as its declaration.
+    */
+  private def docClass(tpe: SemanticTokenType): Option[String] = tpe match {
+    case SemanticTokenType.EnumMember => Some("case-tag")
+    case _ => HtmlHighlighter.cssClass(tpe)
   }
 
   /**
@@ -2116,10 +2028,8 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docKind(kind: Kind)(implicit sb: StringBuilder): Unit = {
-    sb.append("<span class='kind'>")
-    sb.append(esc(kind.toString))
-    sb.append("</span>")
+  private def docKind(kind: Kind)(implicit links: Links, sb: StringBuilder): Unit = {
+    docFmt(Pretty.kind(kind))
   }
 
   /**

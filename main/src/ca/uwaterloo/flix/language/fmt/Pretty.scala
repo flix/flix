@@ -281,6 +281,46 @@ object Pretty {
       parens(sep(", ", params))
   }
 
+  ////////////////////
+  // Declaration heads
+  ////////////////////
+
+  /**
+    * Returns the given type parameters `ps` as a tree, in brackets, e.g. `[a: Type, ef: Eff]`, or
+    * [[Fmt.Empty]] if there are none.
+    */
+  def tparams(ps: List[TypedAst.TypeParam])(implicit o: FormatOptions): Fmt =
+    if (ps.isEmpty) Fmt.Empty
+    else text("[") ++ sep(", ", ps.map(typeParam)) ++ text("]")
+
+  /**
+    * Returns the given case `c` of an enum as a tree, e.g. `case Some(a)`.
+    */
+  def caseDecl(c: TypedAst.Case)(implicit o: FormatOptions): Fmt = {
+    val args = if (c.tpes.isEmpty) Fmt.Empty else parens(sep(", ", c.tpes.map(t => tpe(t))))
+    kw("case") ++ text(" ") ++ Ref(c.sym, SemanticTokenType.EnumMember, c.sym.name) ++ args
+  }
+
+  /**
+    * Returns the given field `f` of a struct as a tree, e.g. `mut x: Int32`.
+    */
+  def structField(f: TypedAst.StructField)(implicit o: FormatOptions): Fmt = {
+    val mod = if (f.mod.isMutable) kw("mut") ++ text(" ") else Fmt.Empty
+    mod ++ Ref(f.sym, SemanticTokenType.Property, f.sym.name) ++ text(": ") ++ tpe(f.tpe)
+  }
+
+  /**
+    * Returns the given type alias `ta` as a tree, e.g. `type alias Pair[a, b] = (a, b)`.
+    */
+  def typeAliasDecl(ta: TypedAst.TypeAlias)(implicit o: FormatOptions): Fmt =
+    kw("type") ++ text(" ") ++ kw("alias") ++ text(" ") ++ Ref(ta.sym, SemanticTokenType.Type, ta.sym.name) ++ tparams(ta.tparams) ++ text(" = ") ++ tpe(ta.tpe)
+
+  /**
+    * Returns the given type parameter `p` as a tree, with its kind, e.g. `a: Type`.
+    */
+  private def typeParam(p: TypedAst.TypeParam)(implicit o: FormatOptions): Fmt =
+    typeVar(p.sym) ++ text(": ") ++ kind(p.sym.kind)
+
   /////////////////////
   // Kinds and constants
   /////////////////////
