@@ -12,7 +12,7 @@ import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.{FormatTraitConstraint, FormatType}
+import ca.uwaterloo.flix.language.fmt.Pretty
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -116,7 +116,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant cast.", fmt)}
          |
-         |The expression already has the type '${cyan(FormatType.formatType(tpe))}'.
+         |The expression already has the type '${cyan(Pretty.tpe(tpe).plain)}'.
          |""".stripMargin
     }
   }
@@ -157,11 +157,11 @@ object RedundancyError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Redundant trait constraint '${red(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}'.
+      s""">> Redundant trait constraint '${red(Pretty.traitConstraint(redundantTconstr).plain)}'.
          |
          |${highlight(loc, "redundant trait constraint.", fmt)}
          |
-         |The constraint is implied by '${cyan(FormatTraitConstraint.formatTraitConstraint(entailingTconstr))}'.
+         |The constraint is implied by '${cyan(Pretty.traitConstraint(entailingTconstr).plain)}'.
          |
          |${underline("Explanation:")} A trait constraint is redundant if it is implied by another
          |constraint. For example, if we have:
@@ -190,7 +190,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant cast.", fmt)}
          |
-         |The expression already has the '${cyan(FormatType.formatType(eff))}' effect.
+         |The expression already has the '${cyan(Pretty.tpe(eff).plain)}' effect.
          |""".stripMargin
     }
   }
@@ -212,7 +212,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant cast.", fmt)}
          |
-         |The expression already has the type '${cyan(FormatType.formatType(tpe))}'.
+         |The expression already has the type '${cyan(Pretty.tpe(tpe).plain)}'.
          |""".stripMargin
     }
   }
@@ -234,7 +234,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant unsafe block.", fmt)}
          |
-         |${underline("Explanation:")} The block unsafely removes the '${cyan(FormatType.formatType(eff))}' effect,
+         |${underline("Explanation:")} The block unsafely removes the '${cyan(Pretty.tpe(eff).plain)}' effect,
          |but the body expression is pure.
          |""".stripMargin
     }

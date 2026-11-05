@@ -10,7 +10,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.FormatType
+import ca.uwaterloo.flix.language.fmt.Pretty
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -87,17 +87,17 @@ object EntryPointError {
   case class IllegalEntryPointEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E0958
 
-    def summary: String = s"Unhandled effect: '${FormatType.formatType(eff)}'."
+    def summary: String = s"Unhandled effect: '${Pretty.tpe(eff).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unhandled effect: '${red(FormatType.formatType(eff))}'.
+      s""">> Unhandled effect: '${red(Pretty.tpe(eff).plain)}'.
          |
          |${highlight(loc, "unhandled effect", fmt)}
          |
          |${underline("Explanation:")} Entry point functions (main and tests) can only
          |use primitive effects (like IO) or effects with default handlers. The effect
-         |'${magenta(FormatType.formatType(eff))}' has no default handler.
+         |'${magenta(Pretty.tpe(eff).plain)}' has no default handler.
          |
          |To fix this, either:
          |
@@ -116,11 +116,11 @@ object EntryPointError {
   case class IllegalEntryPointReturnType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1403
 
-    def summary: String = s"Unexpected return type for entry point: '${FormatType.formatType(tpe)}'."
+    def summary: String = s"Unexpected return type for entry point: '${Pretty.tpe(tpe).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected return type '${red(FormatType.formatType(tpe))}' for entry point function.
+      s""">> Unexpected return type '${red(Pretty.tpe(tpe).plain)}' for entry point function.
          |
          |${highlight(loc, "the return type must be Unit", fmt)}
          |

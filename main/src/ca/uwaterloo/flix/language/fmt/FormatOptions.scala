@@ -20,7 +20,19 @@ case class FormatOptions(varNames: FormatOptions.VarName, qualify: SymbolSet = S
 object FormatOptions {
 
   /**
-    * The format options to use for internal
+    * The options of everything a user reads: hovers, completions, documentation and messages.
+    *
+    * Variables are written by their source names, and nothing is qualified. The implicit is found
+    * without an import, so a call with no options in scope gets these.
+    */
+  implicit val Default: FormatOptions = FormatOptions(
+    varNames = VarName.NameBased
+  )
+
+  /**
+    * The options of `Type.toString`, `Scheme.toString` and debugging.
+    *
+    * Variables are written by their ids, so two variables of one name are told apart.
     */
   val Internal: FormatOptions = FormatOptions(
     varNames = VarName.IdBased

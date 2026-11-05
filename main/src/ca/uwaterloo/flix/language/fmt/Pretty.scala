@@ -7,12 +7,14 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
-import ca.uwaterloo.flix.language.ast.shared.{QualifiedSym, RegionScope, VarText}
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.fmt.Fmt.{Ref, ef, kw, op, parens, prop, sep, text, tparam, ty}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, EqualityConstraint, QualifiedSym, RegionScope, TraitConstraint, VarText}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.fmt.Fmt.{Ref, Token, ef, kw, parens, prop, sep, text, tparam, ty}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.TypeSimplifier
 import ca.uwaterloo.flix.language.phase.unification.Substitution
+import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.Nel
 
 /**
   * The printer: builds a [[Fmt]] tree from the typed AST.
@@ -22,9 +24,14 @@ import ca.uwaterloo.flix.language.phase.unification.Substitution
   * to the tree puts a node where a string would be: `Int32` is a type token, `List` is a reference
   * to its enum, and ` -> ` is an operator token with spacing around it.
   *
-  * Every entry point takes the [[FormatOptions]] implicitly.
+  * Every entry point takes the [[FormatOptions]] implicitly; [[FormatOptions.Default]] is found
+  * without an import.
   */
 object Pretty {
+
+  /////////////////////
+  // Types and effects
+  /////////////////////
 
   /**
     * Returns the given well-kinded type `t` as a tree.
@@ -54,7 +61,7 @@ object Pretty {
     */
   def effSuffix(t: Type)(implicit o: FormatOptions): Fmt = DisplayType.fromWellKindedType(t) match {
     case DisplayType.Pure => Fmt.Empty
-    case d => text(" ") ++ op("\\") ++ text(" ") ++ visit(d, effPos = true)
+    case d => text(" ") ++ Fmt.op("\\") ++ text(" ") ++ visit(d, effPos = true)
   }
 
   /**
@@ -175,6 +182,151 @@ object Pretty {
     case TypeConstructor.Error(_, _) => ty("Error")
   }
 
+  /////////////////////////
+  // Schemes and constraints
+  /////////////////////////
+
+  /**
+    * Returns the given scheme `sc` as a tree, e.g. `∀(a, b). a -> b with Order[a] where T[a] ~ b`.
+    */
+  def scheme(sc: Scheme)(implicit o: FormatOptions): Fmt = {
+    val quantifiers =
+      if (sc.quantifiers.isEmpty) Fmt.Empty
+      else text("∀(") ++ sep(", ", sc.quantifiers.map(typeVar)) ++ text("). ")
+    quantifiers ++ tpe(sc.base) ++ constraints(sc.tconstrs, sc.econstrs)
+  }
+
+  /**
+    * Returns the given trait constraint `tc` as a tree, e.g. `Order[a]`.
+    */
+  def traitConstraint(tc: TraitConstraint)(implicit o: FormatOptions): Fmt = tc match {
+    case TraitConstraint(head, arg, _) =>
+      Ref(head.sym, SemanticTokenType.Interface, qualify(head.sym)) ++ text("[") ++ tpe(arg) ++ text("]")
+  }
+
+  /**
+    * Returns the given equality constraint `ec` as a tree, e.g. `Collection.Elm[a] ~ Int32`.
+    */
+  def equalityConstraint(ec: EqualityConstraint)(implicit o: FormatOptions): Fmt = ec match {
+    case EqualityConstraint(symUse, tpe1, tpe2, _) =>
+      assocType(symUse.sym) ++ text("[") ++ tpe(tpe1) ++ text("] ") ++ Fmt.op("~") ++ text(" ") ++ tpe(tpe2)
+  }
+
+  /**
+    * Returns the given trait constraints `tcs` and equality constraints `ecs` as a tree, each list
+    * after its keyword, e.g. ` with Order[a] where Collection.Elm[a] ~ Int32`, or [[Fmt.Empty]] if
+    * both are empty.
+    */
+  def constraints(tcs: List[TraitConstraint], ecs: List[EqualityConstraint])(implicit o: FormatOptions): Fmt = {
+    val tcPart =
+      if (tcs.isEmpty) Fmt.Empty
+      else text(" ") ++ kw("with") ++ text(" ") ++ sep(", ", tcs.map(traitConstraint))
+    val ecPart =
+      if (ecs.isEmpty) Fmt.Empty
+      else text(" ") ++ kw("where") ++ text(" ") ++ sep(", ", ecs.map(equalityConstraint))
+    tcPart ++ ecPart
+  }
+
+  /////////////
+  // Signatures
+  /////////////
+
+  /**
+    * Returns the signature of the def, sig or op `sym` with the given `spec` as a tree, e.g.
+    * `def sort(l: List[a]): List[a] with Order[a]`.
+    *
+    * The constraints are taken from the declared scheme: `Spec` holds the equality constraints as
+    * `TypedAst.EqualityConstraint`, which does not name the associated type, so there is not enough
+    * in one to write it out.
+    */
+  def spec(sym: QualifiedSym, spec: TypedAst.Spec)(implicit o: FormatOptions): Fmt = {
+    val name = sym match {
+      case s: Symbol.DefnSym => Ref(s, SemanticTokenType.Function, s.name)
+      case s: Symbol.SigSym => Ref(s, SemanticTokenType.Method, s.name)
+      case s: Symbol.OpSym => Ref(s, SemanticTokenType.Function, s.name)
+      case s => throw InternalCompilerException(s"Unexpected symbol of a spec: '$s'.", SourceLocation.Unknown)
+    }
+    val sc = spec.declaredScheme
+    kw("def") ++ text(" ") ++ name ++ fparams(spec.fparams) ++ text(": ") ++ typeAndEff(spec.retTpe, spec.eff) ++ constraints(sc.tconstrs, sc.econstrs)
+  }
+
+  /**
+    * Returns the signature of the given def `d` as a tree.
+    */
+  def defn(d: TypedAst.Def)(implicit o: FormatOptions): Fmt = spec(d.sym, d.spec)
+
+  /**
+    * Returns the signature of the given sig `s` as a tree.
+    */
+  def sig(s: TypedAst.Sig)(implicit o: FormatOptions): Fmt = spec(s.sym, s.spec)
+
+  /**
+    * Returns the signature of the given op `o` as a tree.
+    */
+  def op(decl: TypedAst.Op)(implicit o: FormatOptions): Fmt = spec(decl.sym, decl.spec)
+
+  /**
+    * Returns the given formal parameters `ps` as a tree, in parentheses, e.g. `(x: Int32, y: a)`.
+    *
+    * A function declared with no parameters gets a single parameter of the unit type, which is
+    * written as it was declared: `()`.
+    */
+  def fparams(ps: Nel[TypedAst.FormalParam])(implicit o: FormatOptions): Fmt = ps match {
+    case Nel(fparam, Nil) if fparam.tpe == Type.Unit => text("()")
+    case _ =>
+      val params = ps.toList.map {
+        case TypedAst.FormalParam(bnd, t, _, _, _) =>
+          Token(SemanticTokenType.Parameter, bnd.sym.text) ++ text(": ") ++ tpe(t)
+      }
+      parens(sep(", ", params))
+  }
+
+  /////////////////////
+  // Kinds and constants
+  /////////////////////
+
+  /**
+    * Returns the given kind `k` as a tree, e.g. `Type -> Eff`.
+    */
+  def kind(k: Kind): Fmt = k match {
+    case Kind.Wild => text("???")
+    case Kind.WildCaseSet => ty("CaseSet") ++ text("[???]")
+    case Kind.Star => ty("Type")
+    case Kind.Eff => ty("Eff")
+    case Kind.Bool => ty("Bool")
+    case Kind.RecordRow => ty("RecordRow")
+    case Kind.SchemaRow => ty("SchemaRow")
+    case Kind.Predicate => ty("Predicate")
+    case Kind.Jvm => ty("Jvm")
+    case Kind.CaseSet(sym) => ty("CaseSet") ++ text("[") ++ Ref(sym, SemanticTokenType.Enum, sym.name) ++ text("]")
+    // parenthesize the left because `->` is right-associative
+    case Kind.Arrow(k1: Kind.Arrow, k2) => parens(kind(k1)) ++ text(" ") ++ Fmt.op("->") ++ text(" ") ++ kind(k2)
+    case Kind.Arrow(k1, k2) => kind(k1) ++ text(" ") ++ Fmt.op("->") ++ text(" ") ++ kind(k2)
+    case Kind.Error => ty("Error")
+  }
+
+  /**
+    * Returns the given constant `c` as a tree, written as a literal, e.g. `42i32`.
+    */
+  def constant(c: Constant): Fmt = c match {
+    case Constant.Unit => ty("()")
+    case Constant.Null => ty("null")
+    case Constant.Bool(lit) => ty(lit.toString)
+    case Constant.Char(lit) => Token(SemanticTokenType.String, "'" + lit.toString + "'")
+    case Constant.Float32(lit) => Token(SemanticTokenType.Number, s"${lit}f32")
+    case Constant.Float64(lit) => Token(SemanticTokenType.Number, s"${lit}f64")
+    case Constant.BigDecimal(lit) => Token(SemanticTokenType.Number, s"${lit}ff")
+    case Constant.Int8(lit) => Token(SemanticTokenType.Number, s"${lit}i8")
+    case Constant.Int16(lit) => Token(SemanticTokenType.Number, s"${lit}i16")
+    case Constant.Int32(lit) => Token(SemanticTokenType.Number, s"${lit}i32")
+    case Constant.Int64(lit) => Token(SemanticTokenType.Number, s"${lit}i64")
+    case Constant.BigInt(lit) => Token(SemanticTokenType.Number, s"${lit}ii")
+    case Constant.Str(lit) => Token(SemanticTokenType.String, "\"" + lit + "\"")
+    case Constant.Regex(lit) => Token(SemanticTokenType.Regexp, "regex\"" + lit.pattern() + "\"")
+    case Constant.RecordEmpty => ty("{}")
+    case Constant.Static => ty("Static")
+  }
+
   /**
     * Renames all flexible variables in the given `tpe` to fresh consecutively numbered variables.
     *
@@ -230,7 +382,9 @@ object Pretty {
     case DisplayType.False => ty("false")
     case DisplayType.True => ty("true")
     case DisplayType.Pure => if (effPos) ef("{}") else ef("Pure")
-    case DisplayType.Univ => ef("Univ")
+    // In effect position, the universal effect is written as a user writes it, `IO`, unless the
+    // options are the internal ones, where it is what the solver sees.
+    case DisplayType.Univ => if (effPos && o.varNames == FormatOptions.VarName.NameBased) ef("IO") else ef("Univ")
     case DisplayType.Region(sym) => tparam(sym.text)
     case DisplayType.RegionToStar => ty("Region")
     case DisplayType.RegionWithoutRegion => ty("RegionWithoutRegion")
@@ -263,12 +417,12 @@ object Pretty {
     case DisplayType.Not(tpe) => kw("not") ++ text(" ") ++ delimit(tpe, effPos)
     case DisplayType.And(tpes) => sep(text(" ") ++ kw("and") ++ text(" "), tpes.map(delimit(_, effPos)))
     case DisplayType.Or(tpes) => sep(text(" ") ++ kw("or") ++ text(" "), tpes.map(delimit(_, effPos)))
-    case DisplayType.Complement(tpe) => op("~") ++ delimit(tpe, effPos)
+    case DisplayType.Complement(tpe) => Fmt.op("~") ++ delimit(tpe, effPos)
     case DisplayType.Union(tpes) => text("{") ++ sep(", ", tpes.map(visit(_, effPos))) ++ text("}")
-    case DisplayType.Plus(tpes) => sep(text(" ") ++ op("+") ++ text(" "), tpes.map(delimit(_, effPos)))
-    case DisplayType.Intersection(tpes) => sep(text(" ") ++ op("&") ++ text(" "), tpes.map(delimit(_, effPos)))
-    case DisplayType.SymmetricDiff(tpes) => sep(text(" ") ++ op("⊕") ++ text(" "), tpes.map(delimit(_, effPos)))
-    case DisplayType.Difference(tpes) => sep(text(" ") ++ op("-") ++ text(" "), tpes.map(delimit(_, effPos)))
+    case DisplayType.Plus(tpes) => sep(text(" ") ++ Fmt.op("+") ++ text(" "), tpes.map(delimit(_, effPos)))
+    case DisplayType.Intersection(tpes) => sep(text(" ") ++ Fmt.op("&") ++ text(" "), tpes.map(delimit(_, effPos)))
+    case DisplayType.SymmetricDiff(tpes) => sep(text(" ") ++ Fmt.op("⊕") ++ text(" "), tpes.map(delimit(_, effPos)))
+    case DisplayType.Difference(tpes) => sep(text(" ") ++ Fmt.op("-") ++ text(" "), tpes.map(delimit(_, effPos)))
     case DisplayType.RelationConstructor => ty("Relation")
     case DisplayType.Relation(tpes) =>
       ty("Relation") ++ parens(sep(", ", tpes.map(visit(_, effPos = false))))
@@ -276,16 +430,16 @@ object Pretty {
     case DisplayType.Lattice(tpes, lat) =>
       ty("Lattice") ++ parens(sep(", ", tpes.map(visit(_, effPos = false))) ++ text("; ") ++ visit(lat, effPos = false))
     case DisplayType.PureArrow(arg, ret) =>
-      delimitFunctionArg(arg) ++ text(" ") ++ op("->") ++ text(" ") ++ delimit(ret, effPos = false)
+      delimitFunctionArg(arg) ++ text(" ") ++ Fmt.op("->") ++ text(" ") ++ delimit(ret, effPos = false)
     case DisplayType.PolyArrow(arg, eff, ret) =>
-      delimitFunctionArg(arg) ++ text(" ") ++ op("->") ++ text(" ") ++ delimit(ret, effPos = false) ++ text(" ") ++ op("\\") ++ text(" ") ++ visit(eff, effPos = true)
+      delimitFunctionArg(arg) ++ text(" ") ++ Fmt.op("->") ++ text(" ") ++ delimit(ret, effPos = false) ++ text(" ") ++ Fmt.op("\\") ++ text(" ") ++ visit(eff, effPos = true)
     case DisplayType.ArrowWithoutEffect(arg, ret) =>
-      delimitFunctionArg(arg) ++ text(" ") ++ op("-->") ++ text(" ") ++ delimit(ret, effPos = false)
+      delimitFunctionArg(arg) ++ text(" ") ++ Fmt.op("-->") ++ text(" ") ++ delimit(ret, effPos = false)
     case DisplayType.Enum(sym) => Ref(sym, SemanticTokenType.Enum, qualify(sym))
     case DisplayType.Struct(sym) => Ref(sym, SemanticTokenType.Struct, qualify(sym))
     case DisplayType.RestrictableEnum(sym) => Ref(sym, SemanticTokenType.Enum, qualify(sym))
     case DisplayType.Alias(sym) => Ref(sym, SemanticTokenType.Type, qualify(sym))
-    case DisplayType.Assoc(sym) => Ref(sym, SemanticTokenType.Type, sym.name)
+    case DisplayType.Assoc(sym) => assocType(sym)
     case DisplayType.Effect(sym) => Ref(sym, SemanticTokenType.Effect, qualify(sym))
     case DisplayType.Native(desc) => ty(ClassDescs.canonicalNameOf(desc))
     case DisplayType.Case(sym) => Ref(sym, SemanticTokenType.EnumMember, sym.name)
@@ -380,6 +534,13 @@ object Pretty {
       }
     }
   }
+
+  /**
+    * Returns the given associated type `sym` as a tree, with its trait, as in source:
+    * `Collection.Elm`.
+    */
+  private def assocType(sym: Symbol.AssocTypeSym)(implicit o: FormatOptions): Fmt =
+    Ref(sym, SemanticTokenType.Type, qualify(sym.trt) + "." + sym.name)
 
   /**
     * Returns the name of the given symbol `sym`, qualified by its namespace if the options say so.

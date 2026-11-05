@@ -13,7 +13,7 @@ import ca.uwaterloo.flix.api.lsp.{Consumer, Range, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.{Name, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.fmt.FormatType
+import ca.uwaterloo.flix.language.fmt.Pretty
 
 object PredicateCompleter {
 
@@ -39,7 +39,7 @@ object PredicateCompleter {
 
     predsWithTypeAndLoc.map {
       case (predName, tpe) =>
-      Completion.PredicateCompletion(predName.name, range, Priority.Lower(0), arityOf(tpe), FormatType.formatType(tpe))
+      Completion.PredicateCompletion(predName.name, range, Priority.Lower(0), arityOf(tpe), Pretty.tpe(tpe).plain)
     }
   }
 

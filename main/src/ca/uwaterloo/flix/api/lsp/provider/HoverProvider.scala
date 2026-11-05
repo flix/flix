@@ -13,8 +13,8 @@ import ca.uwaterloo.flix.api.lsp.{Hover, MarkupContent, MarkupKind, Position, Ra
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, OpSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.fmt.*
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.fmt.{FormatDoc, Pretty}
 import ca.uwaterloo.flix.language.phase.unification.SetFormula
 
 object HoverProvider {
@@ -44,7 +44,7 @@ object HoverProvider {
     val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(tpe)(root)
     val markup =
       s"""```flix
-         |${FormatType.formatType(tpe, minimizeEffs = true)}$lowerAndUpperBounds
+         |${Pretty.tpe(tpe, simplify = true).plain}$lowerAndUpperBounds
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -55,7 +55,7 @@ object HoverProvider {
   private def hoverTypeAndEff(tpe: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): Option[Hover] = {
     val markup =
       s"""```flix
-         |${formatTypAndEff(tpe, eff)}
+         |${Pretty.typeAndEff(tpe, eff, simplify = true).plain}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -67,7 +67,7 @@ object HoverProvider {
     val defDecl = root.defs(sym)
     val markup =
       s"""```flix
-         |${FormatSignature.asMarkDown(defDecl)}
+         |${Pretty.defn(defDecl).plain}
          |```
          |
          |${FormatDoc.asMarkDown(defDecl.spec.doc)}
@@ -81,7 +81,7 @@ object HoverProvider {
     val sigDecl = root.sigs(sym)
     val markup =
       s"""```flix
-         |${FormatSignature.asMarkDown(sigDecl)}
+         |${Pretty.sig(sigDecl).plain}
          |```
          |
          |${FormatDoc.asMarkDown(sigDecl.spec.doc)}
@@ -95,7 +95,7 @@ object HoverProvider {
     val opDecl = root.effects(sym.eff).ops.find(_.sym == sym).get // guaranteed to be present
     val markup =
       s"""```flix
-         |${FormatSignature.asMarkDown(opDecl)}
+         |${Pretty.op(opDecl).plain}
          |```
          |
          |${FormatDoc.asMarkDown(opDecl.spec.doc)}
@@ -105,22 +105,10 @@ object HoverProvider {
     Some(Hover(contents, range))
   }
 
-  private def formatTypAndEff(tpe0: Type, eff0: Type)(implicit flix: Flix): String = {
-    // TODO deduplicate with CompletionProvider
-    val t = FormatType.formatType(tpe0, minimizeEffs = true)
-
-    val p = eff0 match {
-      case Type.Cst(TypeConstructor.Pure, _) => ""
-      case eff => raw" \ " + FormatType.formatType(eff, minimizeEffs = true)
-    }
-
-    s"$t$p"
-  }
-
   private def hoverKind(k: Kind, loc: SourceLocation): Option[Hover] = {
     val markup =
       s"""```flix
-         |${FormatKind.formatKind(k)}
+         |${Pretty.kind(k).plain}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)

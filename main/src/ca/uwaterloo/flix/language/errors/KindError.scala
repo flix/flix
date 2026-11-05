@@ -10,7 +10,7 @@ import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.VarText
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
+import ca.uwaterloo.flix.language.fmt.Pretty
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
@@ -142,16 +142,16 @@ object KindError {
   case class MismatchedKinds(k1: Kind, k2: Kind, loc: SourceLocation) extends KindError {
     def code: ErrorCode = ErrorCode.E3407
 
-    override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}'."
+    override def summary: String = s"Mismatched kinds: '${Pretty.kind(k1).plain}' and '${Pretty.kind(k2).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched kinds: '${red(formatKind(k1))}' and '${red(formatKind(k2))}'.
+      s""">> Mismatched kinds: '${red(Pretty.kind(k1).plain)}' and '${red(Pretty.kind(k2).plain)}'.
          |
          |${highlight(loc, "mismatched kind usage", fmt)}
          |
-         |First kind:  ${cyan(formatKind(k1))}
-         |Second kind: ${magenta(formatKind(k2))}
+         |First kind:  ${cyan(Pretty.kind(k1).plain)}
+         |Second kind: ${magenta(Pretty.kind(k2).plain)}
          |
          |${underline("Explanation:")} A type variable must have a consistent kind throughout
          |its scope. For example:
@@ -173,16 +173,16 @@ object KindError {
   case class UnexpectedKind(expectedKind: Kind, actualKind: Kind, loc: SourceLocation) extends KindError {
     def code: ErrorCode = ErrorCode.E3512
 
-    override def summary: String = s"Unexpected kind: expected '${formatKind(expectedKind)}', found '${formatKind(actualKind)}'."
+    override def summary: String = s"Unexpected kind: expected '${Pretty.kind(expectedKind).plain}', found '${Pretty.kind(actualKind).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected kind: expected '${cyan(formatKind(expectedKind))}', found '${red(formatKind(actualKind))}'.
+      s""">> Unexpected kind: expected '${cyan(Pretty.kind(expectedKind).plain)}', found '${red(Pretty.kind(actualKind).plain)}'.
          |
          |${highlight(loc, "has unexpected kind", fmt)}
          |
-         |Expected: ${cyan(formatKind(expectedKind))}
-         |Actual:   ${red(formatKind(actualKind))}
+         |Expected: ${cyan(Pretty.kind(expectedKind).plain)}
+         |Actual:   ${red(Pretty.kind(actualKind).plain)}
          |""".stripMargin
     }
   }

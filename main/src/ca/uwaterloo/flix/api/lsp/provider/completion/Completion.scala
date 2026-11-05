@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.api.lsp.{Command, CompletionItem, CompletionItemKind, C
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, QualifiedSym}
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
+import ca.uwaterloo.flix.language.fmt.Pretty
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.util.collection.Nel
 
@@ -266,13 +266,13 @@ object Completion {
     override def toString: String = s"MagicDefCompletion(${decl.sym}, $priority, $range)"
 
     override def toCompletionItem(implicit flix: Flix): CompletionItem = {
-      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)), None)
+      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(decl.spec)), None)
       CompletionItem(
         label = label,
         labelDetails = Some(labelDetails),
         sortText = Priority.toSortText(priority, decl.sym.toString),
         textEdit = TextEdit(range, snippet),
-        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        detail = Some(Pretty.scheme(decl.spec.declaredScheme).plain),
         documentation = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Snippet
@@ -386,7 +386,7 @@ object Completion {
       val description = if (!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
-      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)), description)
+      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(decl.spec)), description)
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
       CompletionItem(
         label = label,
@@ -394,7 +394,7 @@ object Completion {
         sortText = Priority.toSortText(priority, qualifiedName),
         filterText = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
         textEdit = TextEdit(range, snippet),
-        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        detail = Some(Pretty.scheme(decl.spec.declaredScheme).plain),
         documentation = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Function,
@@ -676,14 +676,14 @@ object Completion {
       val description = if (!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
-      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)), description)
+      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(decl.spec)), description)
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
       CompletionItem(
         label = name,
         labelDetails = Some(labelDetails),
         sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(range, snippet),
-        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        detail = Some(Pretty.scheme(decl.spec.declaredScheme).plain),
         documentation = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Function,
@@ -705,13 +705,13 @@ object Completion {
       val name = op.sym.name
       val snippet = CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)
       val description = Some(name)
-      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(op.spec)(flix)), description)
+      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(op.spec)), description)
       CompletionItem(
         label = name,
         labelDetails = Some(labelDetails),
         sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(range, snippet),
-        detail = Some(FormatScheme.formatScheme(op.spec.declaredScheme)(flix)),
+        detail = Some(Pretty.scheme(op.spec.declaredScheme).plain),
         documentation = Some(op.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Function,
@@ -751,7 +751,7 @@ object Completion {
         labelDetails = Some(labelDetails),
         sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(range, snippet),
-        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        detail = Some(Pretty.scheme(decl.spec.declaredScheme).plain),
         documentation = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Function,
@@ -872,7 +872,7 @@ object Completion {
         label = field,
         sortText = Priority.toSortText(priority, field),
         textEdit = TextEdit(Range.from(symLoc), field),
-        detail = Some(FormatType.formatType(tpe)(flix)),
+        detail = Some(Pretty.tpe(tpe).plain),
         kind = CompletionItemKind.Property,
       )
     }
@@ -952,7 +952,7 @@ object Completion {
       val params = args.mkString(", ")
       val snippet = s"$name($params)"
       val labelDetails = CompletionItemLabelDetails(
-        Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)),
+        Some(CompletionUtils.getLabelForSpec(decl.spec)),
         None)
       CompletionItem(
         label = name,
@@ -960,7 +960,7 @@ object Completion {
         filterText = Some(s"${sym.text}?$name"),
         sortText = Priority.toSortText(priority, ""),
         textEdit = TextEdit(Range.from(loc), snippet),
-        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+        detail = Some(Pretty.scheme(decl.spec.declaredScheme).plain),
         documentation = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Function)

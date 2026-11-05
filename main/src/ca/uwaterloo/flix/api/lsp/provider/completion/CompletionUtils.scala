@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Decl
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.fmt.FormatType
+import ca.uwaterloo.flix.language.fmt.{Fmt, Pretty}
 import ca.uwaterloo.flix.util.collection.Nel
 
 import scala.annotation.tailrec
@@ -22,24 +22,8 @@ object CompletionUtils {
 
   private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams.head.tpe)
 
-  def getLabelForSpec(spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
-    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
-      val args = if (isUnitFunction(fparams.toList))
-        Nil
-      else
-        fparams.map {
-          fparam => s"${fparam.bnd.sym.text}: ${FormatType.formatType(fparam.tpe)}"
-        }
-
-      val retTpe = FormatType.formatType(retTpe0)
-
-      val eff = eff0 match {
-        case Type.Cst(TypeConstructor.Pure, _) => ""
-        case p => raw" \ " + FormatType.formatType(p)
-      }
-
-      s"(${args.mkString(", ")}): $retTpe$eff"
-  }
+  def getLabelForSpec(spec: TypedAst.Spec): String =
+    (Pretty.fparams(spec.fparams) ++ Fmt.text(": ") ++ Pretty.typeAndEff(spec.retTpe, spec.eff)).plain
 
   /**
     * Generate a snippet which represents calling a function.
@@ -186,7 +170,7 @@ object CompletionUtils {
   def formatTypes(tpes: List[Type])(implicit flix: Flix): String =
     tpes match {
       case Nil => ""
-      case _ => tpes.map(FormatType.formatType(_)).mkString("(", ", ", ")")
+      case _ => tpes.map(t => Pretty.tpe(t).plain).mkString("(", ", ", ")")
     }
 
   /**
@@ -210,7 +194,7 @@ object CompletionUtils {
     tpes match {
       case Nil => ""
       case _ => tpes.zipWithIndex.map {
-        case (tpe, idx) => "$" + s"{${idx + 1}:?${FormatType.formatType(tpe)}}"
+        case (tpe, idx) => "$" + s"{${idx + 1}:?${Pretty.tpe(tpe).plain}}"
       }.mkString("(", ", ", ")")
     }
 
@@ -299,7 +283,7 @@ object CompletionUtils {
     */
   private def fmtType(tpe: Type, holes: Map[Symbol, String])(implicit flix: Flix): String = {
     val replaced = holes.foldLeft(tpe) { case (t, (sym, hole)) => replaceText(sym, t, hole) }
-    FormatType.formatType(replaced)
+    Pretty.tpe(replaced).plain
   }
 
   /**

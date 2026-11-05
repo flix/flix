@@ -11,8 +11,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.{FormatEqualityConstraint, FormatScheme, FormatTraitConstraint}
-import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.fmt.Pretty
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
@@ -36,11 +34,11 @@ object InstanceError {
   case class ComplexInstance(tpe: Type, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E1952
 
-    def summary: String = s"Complex type '${formatType(tpe)}' in instance declaration for trait '${sym.name}'."
+    def summary: String = s"Complex type '${Pretty.tpe(tpe).plain}' in instance declaration for trait '${sym.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Complex type '${red(formatType(tpe))}' in instance declaration for trait '${magenta(sym.name)}'.
+      s""">> Complex type '${red(Pretty.tpe(tpe).plain)}' in instance declaration for trait '${magenta(sym.name)}'.
          |
          |${highlight(loc, "expected a type constructor applied to distinct type variables", fmt)}
          |
@@ -72,11 +70,11 @@ object InstanceError {
   case class DuplicateTypeVar(tvar: Type.Var, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2063
 
-    def summary: String = s"Duplicate type variable '${formatType(tvar)}' in instance declaration for trait '${sym.name}'."
+    def summary: String = s"Duplicate type variable '${Pretty.tpe(tvar).plain}' in instance declaration for trait '${sym.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Duplicate type variable '${red(formatType(tvar))}' in instance declaration for trait '${magenta(sym.name)}'.
+      s""">> Duplicate type variable '${red(Pretty.tpe(tvar).plain)}' in instance declaration for trait '${magenta(sym.name)}'.
          |
          |${highlight(loc, "duplicate occurrence", fmt)}
          |
@@ -204,8 +202,8 @@ object InstanceError {
          |
          |${highlight(loc, "signature mismatch", fmt)}
          |
-         |Expected: ${cyan(FormatScheme.formatScheme(expected))}
-         |Actual:   ${red(FormatScheme.formatScheme(actual))}
+         |Expected: ${cyan(Pretty.scheme(expected).plain)}
+         |Actual:   ${red(Pretty.scheme(actual).plain)}
          |
          |${underline("Explanation:")} The implementation must match the signature declared in the trait.
          |""".stripMargin
@@ -222,11 +220,11 @@ object InstanceError {
   case class MissingEqualityConstraint(econstr: EqualityConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2629
 
-    def summary: String = s"Missing equality constraint '${FormatEqualityConstraint.formatEqualityConstraint(econstr)}' required by super trait '${superTrait.name}'."
+    def summary: String = s"Missing equality constraint '${Pretty.equalityConstraint(econstr).plain}' required by super trait '${superTrait.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing equality constraint '${red(FormatEqualityConstraint.formatEqualityConstraint(econstr))}' required by super trait '${magenta(superTrait.name)}'.
+      s""">> Missing equality constraint '${red(Pretty.equalityConstraint(econstr).plain)}' required by super trait '${magenta(superTrait.name)}'.
          |
          |${highlight(loc, "missing constraint", fmt)}
          |
@@ -279,11 +277,11 @@ object InstanceError {
   case class MissingSuperTraitInstance(tpe: Type, subTrait: Symbol.TraitSym, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2843
 
-    def summary: String = s"Missing instance of super trait '${superTrait.name}' for type '${formatType(tpe)}'."
+    def summary: String = s"Missing instance of super trait '${superTrait.name}' for type '${Pretty.tpe(tpe).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing instance of super trait '${red(superTrait.name)}' for type '${magenta(formatType(tpe))}'.
+      s""">> Missing instance of super trait '${red(superTrait.name)}' for type '${magenta(Pretty.tpe(tpe).plain)}'.
          |
          |${highlight(loc, "missing super trait instance", fmt)}
          |
@@ -312,11 +310,11 @@ object InstanceError {
   case class MissingTraitConstraint(tconstr: TraitConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2956
 
-    def summary: String = s"Missing trait constraint '${FormatTraitConstraint.formatTraitConstraint(tconstr)}' required by super trait '${superTrait.name}'."
+    def summary: String = s"Missing trait constraint '${Pretty.traitConstraint(tconstr).plain}' required by super trait '${superTrait.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing trait constraint '${red(FormatTraitConstraint.formatTraitConstraint(tconstr))}' required by super trait '${magenta(superTrait.name)}'.
+      s""">> Missing trait constraint '${red(Pretty.traitConstraint(tconstr).plain)}' required by super trait '${magenta(superTrait.name)}'.
          |
          |${highlight(loc, "missing constraint", fmt)}
          |
@@ -345,11 +343,11 @@ object InstanceError {
   case class OrphanInstance(sym: Symbol.TraitSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3067
 
-    def summary: String = s"Orphan instance of '${sym.name}' for type '${formatType(tpe)}'."
+    def summary: String = s"Orphan instance of '${sym.name}' for type '${Pretty.tpe(tpe).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Orphan instance of '${magenta(sym.name)}' for type '${red(formatType(tpe))}'.
+      s""">> Orphan instance of '${magenta(sym.name)}' for type '${red(Pretty.tpe(tpe).plain)}'.
          |
          |${highlight(loc, "orphan instance", fmt)}
          |

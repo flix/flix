@@ -10,7 +10,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.FormatType.formatType
+import ca.uwaterloo.flix.language.fmt.Pretty
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -28,7 +28,7 @@ object DefaultHandlerError {
     * For example: `pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E[t]) + IO`.
     */
   private def expectedSignature(handlerSym: Symbol.DefnSym, handledEff: Type)(implicit flix: Flix): String =
-    s"pub def ${handlerSym.name}(f: Unit -> a \\ ef): a \\ (ef - ${formatType(handledEff)}) + IO"
+    s"pub def ${handlerSym.name}(f: Unit -> a \\ ef): a \\ (ef - ${Pretty.tpe(handledEff).plain}) + IO"
 
   /**
     * An error raised to indicate that there are multiple default handlers for the same effect.
@@ -121,15 +121,15 @@ object DefaultHandlerError {
   case class IllegalEffect(handlerSym: Symbol.DefnSym, handledEff: Type, expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix) extends DefaultHandlerError {
     def code: ErrorCode = ErrorCode.E0864
 
-    def summary: String = s"Illegal default handler effect: expected '${formatType(expected)}', found '${formatType(actual)}'."
+    def summary: String = s"Illegal default handler effect: expected '${Pretty.tpe(expected).plain}', found '${Pretty.tpe(actual).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Illegal default handler effect: expected '${cyan(formatType(expected))}', found '${red(formatType(actual))}'.
+      s""">> Illegal default handler effect: expected '${cyan(Pretty.tpe(expected).plain)}', found '${red(Pretty.tpe(actual).plain)}'.
          |
          |${highlight(loc, "illegal effect", fmt)}
          |
-         |${underline("Explanation:")} A default handler must remove the handled effect '${formatType(handledEff)}'
+         |${underline("Explanation:")} A default handler must remove the handled effect '${Pretty.tpe(handledEff).plain}'
          |from the effect 'ef' of its thunk argument, and it may only introduce the 'IO' effect.
          |Expected signature:
          |
@@ -149,15 +149,15 @@ object DefaultHandlerError {
   case class IllegalEffectArguments(handlerSym: Symbol.DefnSym, handledEff: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix) extends DefaultHandlerError {
     def code: ErrorCode = ErrorCode.E0863
 
-    def summary: String = s"Illegal default handler effect: expected '${formatType(handledEff)}', found '${formatType(actual)}'."
+    def summary: String = s"Illegal default handler effect: expected '${Pretty.tpe(handledEff).plain}', found '${Pretty.tpe(actual).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Illegal default handler effect: expected '${cyan(formatType(handledEff))}', found '${red(formatType(actual))}'.
+      s""">> Illegal default handler effect: expected '${cyan(Pretty.tpe(handledEff).plain)}', found '${red(Pretty.tpe(actual).plain)}'.
          |
          |${highlight(loc, "illegal type arguments", fmt)}
          |
-         |${underline("Explanation:")} A default handler must handle '${formatType(handledEff)}' for all type arguments.
+         |${underline("Explanation:")} A default handler must handle '${Pretty.tpe(handledEff).plain}' for all type arguments.
          |Hence the handled effect must be applied to distinct type variables that do not occur
          |elsewhere in the signature. Expected signature:
          |
@@ -177,11 +177,11 @@ object DefaultHandlerError {
   case class IllegalParameterType(handlerSym: Symbol.DefnSym, handledEff: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix) extends DefaultHandlerError {
     def code: ErrorCode = ErrorCode.E0839
 
-    def summary: String = s"Illegal default handler parameter: expected 'Unit -> a \\ ef', found '${formatType(actual)}'."
+    def summary: String = s"Illegal default handler parameter: expected 'Unit -> a \\ ef', found '${Pretty.tpe(actual).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Illegal default handler parameter: expected '${cyan("Unit -> a \\ ef")}', found '${red(formatType(actual))}'.
+      s""">> Illegal default handler parameter: expected '${cyan("Unit -> a \\ ef")}', found '${red(Pretty.tpe(actual).plain)}'.
          |
          |${highlight(loc, "illegal parameter type", fmt)}
          |
@@ -206,11 +206,11 @@ object DefaultHandlerError {
   case class IllegalReturnType(handlerSym: Symbol.DefnSym, handledEff: Type, expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix) extends DefaultHandlerError {
     def code: ErrorCode = ErrorCode.E0851
 
-    def summary: String = s"Illegal default handler return type: expected '${formatType(expected)}', found '${formatType(actual)}'."
+    def summary: String = s"Illegal default handler return type: expected '${Pretty.tpe(expected).plain}', found '${Pretty.tpe(actual).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Illegal default handler return type: expected '${cyan(formatType(expected))}', found '${red(formatType(actual))}'.
+      s""">> Illegal default handler return type: expected '${cyan(Pretty.tpe(expected).plain)}', found '${red(Pretty.tpe(actual).plain)}'.
          |
          |${highlight(loc, "illegal return type", fmt)}
          |
@@ -233,17 +233,17 @@ object DefaultHandlerError {
   case class MissingHandledEffect(handlerSym: Symbol.DefnSym, handledEff: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix) extends DefaultHandlerError {
     def code: ErrorCode = ErrorCode.E0852
 
-    def summary: String = s"Illegal default handler: '${handlerSym.name}' does not handle '${formatType(handledEff)}'."
+    def summary: String = s"Illegal default handler: '${handlerSym.name}' does not handle '${Pretty.tpe(handledEff).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Illegal default handler: '${red(handlerSym.name)}' does not handle '${magenta(formatType(handledEff))}'.
+      s""">> Illegal default handler: '${red(handlerSym.name)}' does not handle '${magenta(Pretty.tpe(handledEff).plain)}'.
          |
-         |${highlight(loc, s"does not remove '${formatType(handledEff)}'", fmt)}
+         |${highlight(loc, s"does not remove '${Pretty.tpe(handledEff).plain}'", fmt)}
          |
          |${underline("Explanation:")} The effect of a default handler must remove the handled effect
-         |'${formatType(handledEff)}' from the effect 'ef' of its thunk argument, but '${formatType(handledEff)}'
-         |does not occur in the declared effect '${formatType(actual)}'. Expected signature:
+         |'${Pretty.tpe(handledEff).plain}' from the effect 'ef' of its thunk argument, but '${Pretty.tpe(handledEff).plain}'
+         |does not occur in the declared effect '${Pretty.tpe(actual).plain}'. Expected signature:
          |
          |  ${expectedSignature(handlerSym, handledEff)}
          |""".stripMargin

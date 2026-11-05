@@ -75,7 +75,8 @@ class TestFormatSignature extends AnyFunSuite with TestUtils {
   }
 
   test("formatSpec.08") {
-    // An equality constraint is written after the trait constraints.
+    // An equality constraint is written after the trait constraints, and names the associated type
+    // with its trait, as in source.
     val input =
       """
         |pub trait Collection[a] {
@@ -85,7 +86,7 @@ class TestFormatSignature extends AnyFunSuite with TestUtils {
         |pub def f(x: a): Int32 with Collection[a] where Collection.Elm[a] ~ Int32 = Collection.head(x)
         |""".stripMargin
     assert(declarationOf("f", input) ==
-      "def f(x: a): Int32 with Collection[a] where Elm[a] ~ Int32")
+      "def f(x: a): Int32 with Collection[a] where Collection.Elm[a] ~ Int32")
   }
 
   /**
@@ -95,7 +96,7 @@ class TestFormatSignature extends AnyFunSuite with TestUtils {
     val (root, errors) = check(input, TestOptions)
     expectSuccess((root, errors))
     val defn = root.get.defs.collectFirst { case (sym, defn) if sym.text == name => defn }.get
-    FormatSignature.formatSpecWithOptions(name, defn.spec, fmt)
+    Pretty.defn(defn)(fmt).plain
   }
 
 }
