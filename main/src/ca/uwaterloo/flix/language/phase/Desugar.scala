@@ -565,6 +565,88 @@ object Desugar {
     case WeededAst.Expr.LetMatch(pat, tpe, exp1, exp2, loc) =>
       desugarLetMatch(pat, tpe, exp1, exp2, loc)
 
+    case e: WeededAst.Expr.DataExpr => visitDataExpr(e)
+
+    case WeededAst.Expr.AmbiguousNew(tpe, region0, fields0, constructors, methods, loc) =>
+      val t = visitType(tpe)
+      val region = region0.map(visitExp)
+      val fields = fields0.map(field => (field._1, visitExp(field._2)))
+      val cs = constructors.map(visitJvmConstructor)
+      val ms = methods.map(visitJvmMethod)
+      Expr.AmbiguousNew(t, region, fields, cs, ms, loc)
+
+    case WeededAst.Expr.FCons(exp1, exp2, loc) =>
+      desugarFCons(exp1, exp2, loc)
+
+    case WeededAst.Expr.ListLit(exps, loc) =>
+      desugarListLit(exps, loc)
+
+    case WeededAst.Expr.SetLit(exps, loc) =>
+      desugarSetLit(exps, loc)
+
+    case WeededAst.Expr.MapLit(exps, loc) =>
+      desugarMapLit(exps, loc)
+
+    case WeededAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
+      val e = visitExp(exp)
+      val ts = expectedType.map(visitType)
+      val effs = expectedEff.map(visitType)
+      Expr.Ascribe(e, ts, effs, loc)
+
+    case WeededAst.Expr.InstanceOf(exp, className, loc) =>
+      val e = visitExp(exp)
+      Expr.InstanceOf(e, className, loc)
+
+    case WeededAst.Expr.CheckedCast(cast, exp, loc) =>
+      val e = visitExp(exp)
+      Expr.CheckedCast(cast, e, loc)
+
+    case WeededAst.Expr.UncheckedCast(exp, declaredType, declaredEff, loc) =>
+      val e = visitExp(exp)
+      val t = declaredType.map(visitType)
+      val eff = declaredEff.map(visitType)
+      Expr.UncheckedCast(e, t, eff, loc)
+
+    case WeededAst.Expr.Unsafe(exp, eff0, asEff0, loc) =>
+      val e = visitExp(exp)
+      val eff = visitType(eff0)
+      val asEff = asEff0.map(visitType)
+      Expr.Unsafe(e, eff, asEff, loc)
+
+    case WeededAst.Expr.TryCatch(exp, rules, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitCatchRule)
+      Expr.TryCatch(e, rs, loc)
+
+    case WeededAst.Expr.Throw(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.Throw(e, loc)
+
+    case WeededAst.Expr.Handler(eff, rules, loc) =>
+      val rs = rules.map(visitHandlerRule)
+      Expr.Handler(eff, rs, loc)
+
+    case WeededAst.Expr.RunWith(exp, exps, loc) =>
+      val e = visitExp(exp)
+      exps.foldLeft(e) {
+        case (acc, e2) => Expr.RunWith(acc, visitExp(e2), loc)
+      }
+
+    case e: WeededAst.Expr.JvmExpr => visitJvmExpr(e)
+
+    case WeededAst.Expr.Static(loc) =>
+      DesugaredAst.Expr.Cst(Constant.Static, loc)
+
+    case e: WeededAst.Expr.ChannelExpr => visitChannelExpr(e)
+
+    case e: WeededAst.Expr.FixpointExpr => visitFixpointExpr(e)
+
+    case WeededAst.Expr.Error(m) =>
+      DesugaredAst.Expr.Error(m)
+  }
+
+  /** Desugars the data expression `exp0`: tags, tuples, records, arrays, structs, vectors and lazy values. */
+  private def visitDataExpr(exp0: WeededAst.Expr.DataExpr)(implicit flix: Flix): DesugaredAst.Expr = exp0 match {
     case WeededAst.Expr.ExtTag(label, exps, loc) =>
       val es = visitExps(exps)
       Expr.ExtTag(label, es, loc)
@@ -611,14 +693,6 @@ object Desugar {
       val e3 = visitExp(exp3)
       Expr.ArrayStore(e1, e2, e3, loc)
 
-    case WeededAst.Expr.AmbiguousNew(tpe, region0, fields0, constructors, methods, loc) =>
-      val t = visitType(tpe)
-      val region = region0.map(visitExp)
-      val fields = fields0.map(field => (field._1, visitExp(field._2)))
-      val cs = constructors.map(visitJvmConstructor)
-      val ms = methods.map(visitJvmMethod)
-      Expr.AmbiguousNew(t, region, fields, cs, ms, loc)
-
     case WeededAst.Expr.StructGet(e, name, loc) =>
       Expr.StructGet(visitExp(e), name, loc)
 
@@ -638,64 +712,17 @@ object Desugar {
       val e = visitExp(exp)
       Expr.VectorLength(e, loc)
 
-    case WeededAst.Expr.FCons(exp1, exp2, loc) =>
-      desugarFCons(exp1, exp2, loc)
-
-    case WeededAst.Expr.ListLit(exps, loc) =>
-      desugarListLit(exps, loc)
-
-    case WeededAst.Expr.SetLit(exps, loc) =>
-      desugarSetLit(exps, loc)
-
-    case WeededAst.Expr.MapLit(exps, loc) =>
-      desugarMapLit(exps, loc)
-
-    case WeededAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
+    case WeededAst.Expr.Lazy(exp, loc) =>
       val e = visitExp(exp)
-      val ts = expectedType.map(visitType)
-      val effs = expectedEff.map(visitType)
-      Expr.Ascribe(e, ts, effs, loc)
+      Expr.Lazy(e, loc)
 
-    case WeededAst.Expr.InstanceOf(exp, className, loc) =>
+    case WeededAst.Expr.Force(exp, loc) =>
       val e = visitExp(exp)
-      Expr.InstanceOf(e, className, loc)
+      Expr.Force(e, loc)
+  }
 
-    case WeededAst.Expr.CheckedCast(cast, exp, loc) =>
-      val e = visitExp(exp)
-      Expr.CheckedCast(cast, e, loc)
-
-    case WeededAst.Expr.UncheckedCast(exp, declaredType, declaredEff, loc) =>
-      val e = visitExp(exp)
-      val t = declaredType.map(visitType)
-      val eff = declaredEff.map(visitType)
-      Expr.UncheckedCast(e, t, eff, loc)
-
-    case WeededAst.Expr.Unsafe(exp, eff0, asEff0, loc) =>
-      val e = visitExp(exp)
-      val eff = visitType(eff0)
-      val asEff = asEff0.map(visitType)
-      Expr.Unsafe(e, eff, asEff, loc)
-
-
-    case WeededAst.Expr.TryCatch(exp, rules, loc) =>
-      val e = visitExp(exp)
-      val rs = rules.map(visitCatchRule)
-      Expr.TryCatch(e, rs, loc)
-
-    case WeededAst.Expr.Throw(exp, loc) =>
-      val e = visitExp(exp)
-      Expr.Throw(e, loc)
-
-    case WeededAst.Expr.Handler(eff, rules, loc) =>
-      val rs = rules.map(visitHandlerRule)
-      Expr.Handler(eff, rs, loc)
-
-    case WeededAst.Expr.RunWith(exp, exps, loc) =>
-      val e = visitExp(exp)
-      exps.foldLeft(e) {
-        case (acc, e2) => Expr.RunWith(acc, visitExp(e2), loc)
-      }
-
+  /** Desugars the Java interop expression `exp0`. */
+  private def visitJvmExpr(exp0: WeededAst.Expr.JvmExpr)(implicit flix: Flix): DesugaredAst.Expr = exp0 match {
     case WeededAst.Expr.InvokeConstructor(className, exps, loc) =>
       val es = visitExps(exps)
       Expr.InvokeConstructor(className, es, loc)
@@ -716,10 +743,10 @@ object Desugar {
     case WeededAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp)
       Expr.GetField(e, name, loc)
+  }
 
-    case WeededAst.Expr.Static(loc) =>
-      DesugaredAst.Expr.Cst(Constant.Static, loc)
-
+  /** Desugars the channel or concurrency expression `exp0`. */
+  private def visitChannelExpr(exp0: WeededAst.Expr.ChannelExpr)(implicit flix: Flix): DesugaredAst.Expr = exp0 match {
     case WeededAst.Expr.NewChannel(exp, loc) =>
       val e = visitExp(exp)
       Expr.NewChannel(e, loc)
@@ -747,15 +774,10 @@ object Desugar {
       val fs = frags.map(visitParYieldFragment)
       val e = visitExp(exp)
       Expr.ParYield(fs, e, loc)
+  }
 
-    case WeededAst.Expr.Lazy(exp, loc) =>
-      val e = visitExp(exp)
-      Expr.Lazy(e, loc)
-
-    case WeededAst.Expr.Force(exp, loc) =>
-      val e = visitExp(exp)
-      Expr.Force(e, loc)
-
+  /** Desugars the Datalog expression `exp0`. */
+  private def visitFixpointExpr(exp0: WeededAst.Expr.FixpointExpr)(implicit flix: Flix): DesugaredAst.Expr = exp0 match {
     case WeededAst.Expr.FixpointConstraintSet(cs, loc) =>
       val cs1 = cs.map(visitConstraint)
       Expr.FixpointConstraintSet(cs1, loc)
@@ -785,9 +807,6 @@ object Desugar {
 
     case WeededAst.Expr.FixpointQueryWithSelect(exps, selects, from, where, loc) =>
       desugarFixpointQueryWithSelect(exps, selects, from, where ,loc)
-
-    case WeededAst.Expr.Error(m) =>
-      DesugaredAst.Expr.Error(m)
   }
 
   /**
