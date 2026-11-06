@@ -786,9 +786,9 @@ object Parser2 {
   private def nameUnqualified(kinds: Set[TokenKind])(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
     val mark = open()
 
-    // Check if we are at a keyword that is not an accepted name kind (e.g. `Static` in a type) and emit nice error if so.
+    // Check if we are at a keyword and emit nice error if so.
     val current = nth(0)
-    if (current.isKeyword && !kinds.contains(current)) {
+    if (current.isKeyword) {
       // If the keyword can start a declaration it's best to leave it be.
       if (!current.isFirstInDecl) {
         advance()
@@ -820,9 +820,9 @@ object Parser2 {
   private def nameAllowQualified(kinds: Set[TokenKind], allowTrailingDot: Boolean = false, tail: Set[TokenKind] = NAME_LOWERCASE)(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
     val mark = open()
 
-    // Check if we are at a keyword that is not an accepted name kind (e.g. `Static` in a type) and emit nice error if so.
+    // Check if we are at a keyword and emit nice error if so.
     val current = nth(0)
-    if (current.isKeyword && !kinds.contains(current)) {
+    if (current.isKeyword) {
       // If the keyword can start a declaration it's best to leave it be.
       if (!current.isFirstInDecl) {
         advance()

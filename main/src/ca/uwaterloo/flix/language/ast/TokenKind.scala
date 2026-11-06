@@ -815,7 +815,7 @@ object TokenKind {
 
   case object KeywordStaticLowercase extends TokenKind(Flags.Keyword)
 
-  case object KeywordStaticUppercase extends TokenKind(Flags.Keyword)
+  case object KeywordStaticUppercase extends TokenKind
 
   case object KeywordStruct extends TokenKind(Flags.Keyword)
 
