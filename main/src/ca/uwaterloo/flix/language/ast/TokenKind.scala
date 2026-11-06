@@ -763,7 +763,7 @@ object TokenKind {
 
   case object KeywordMod extends TokenKind(Flags.Keyword)
 
-  case object KeywordMut extends TokenKind
+  case object KeywordMut extends TokenKind(Flags.Keyword)
 
   case object KeywordNew extends TokenKind(Flags.Keyword)
 
@@ -789,7 +789,7 @@ object TokenKind {
 
   case object KeywordQuery extends TokenKind(Flags.Keyword)
 
-  case object KeywordRedef extends TokenKind
+  case object KeywordRedef extends TokenKind(Flags.Keyword)
 
   case object KeywordRegion extends TokenKind(Flags.Keyword)
 
@@ -815,7 +815,7 @@ object TokenKind {
 
   case object KeywordStaticLowercase extends TokenKind(Flags.Keyword)
 
-  case object KeywordStaticUppercase extends TokenKind
+  case object KeywordStaticUppercase extends TokenKind(Flags.Keyword)
 
   case object KeywordStruct extends TokenKind(Flags.Keyword)
 
