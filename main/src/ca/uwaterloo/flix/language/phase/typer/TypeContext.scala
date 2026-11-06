@@ -222,20 +222,6 @@ class TypeContext {
   }
 
   /**
-    * Generates a constraint representing a source effect.
-    *
-    * For an effect variable effVar and source effect sourceEff, generates:
-    *
-    * {{{
-    *   effVar ~ sourceEff
-    * }}}
-    */
-  def unifySource(effVar: Type.Var, sourceEff: Type, loc: SourceLocation): Unit = {
-    val constr = TypeConstraint.Equality(effVar, sourceEff, Provenance.Source(effVar, sourceEff, loc))
-    currentScopeConstraints.add(constr)
-  }
-
-  /**
     * Adds the given trait constraints to the context.
     *
     * Each constraint is reported at the given `loc`, regardless of the location stored on the
