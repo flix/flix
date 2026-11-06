@@ -659,6 +659,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
     // The enclosing module may use the dotted form; the nested public module is still rejected.
     val input =
       """
+        |mod A {}
         |mod A.B {
         |    pub mod C {
         |        pub def f(): Int32 = 1
@@ -1010,6 +1011,47 @@ class TestNamer extends AnyFunSuite with TestUtils {
     val flix = new Flix().setOptions(Options.TestWithLibNix)
     flix.addSource(Path.of("A/B/C.flix"), "pub mod A.B.C { pub def f(): Int32 = 1 }", sctx)
     expectOneError[NameError.OrphanModule](flix.check())
+  }
+
+  test("OrphanModule.03") {
+    // A private module at depth two whose parent is never declared.
+    val input =
+      """
+        |mod A.B {
+        |    pub def f(): Int32 = 1
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectOneError[NameError.OrphanModule](result)
+  }
+
+  test("OrphanModule.04") {
+    // `A` is declared but `A.B` is not, so `A.B.C` is an orphan.
+    val input =
+      """
+        |mod A {
+        |    pub def f(): Int32 = 1
+        |}
+        |mod A.B.C {
+        |    pub def g(): Int32 = 2
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectOneError[NameError.OrphanModule](result)
+  }
+
+  test("OrphanModule.05") {
+    // A qualified module nested inside another module needs its parent as well.
+    val input =
+      """
+        |mod A {
+        |    mod B.C {
+        |        pub def f(): Int32 = 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectOneError[NameError.OrphanModule](result)
   }
 
 }
