@@ -184,17 +184,10 @@ sealed abstract class TokenKind(private val flags: Int = 0) {
   }
 
   /** Returns `true` if this token is a line or block comment. */
-  def isCommentNonDoc: Boolean = this match {
-    case TokenKind.CommentBlock => true
-    case TokenKind.CommentLine => true
-    case _ => false
-  }
+  def isCommentNonDoc: Boolean = (flags & TokenKind.Flags.CommentNonDoc) != 0
 
   /** Returns `true` if this token is a doc comment. */
-  def isCommentDoc: Boolean = this match {
-    case TokenKind.CommentDoc => true
-    case _ => false
-  }
+  def isCommentDoc: Boolean = (flags & TokenKind.Flags.CommentDoc) != 0
 
   /** Returns `true` if this token is a doc, line or block comment. */
   def isComment: Boolean = this.isCommentDoc || this.isCommentNonDoc
@@ -203,12 +196,7 @@ sealed abstract class TokenKind(private val flags: Int = 0) {
   def isKeyword: Boolean = (flags & TokenKind.Flags.Keyword) != 0
 
   /** Returns `true` if this token is a modifier (e.g. `pub`). */
-  def isModifier: Boolean = this match {
-    case TokenKind.KeywordMut => true
-    case TokenKind.KeywordPub => true
-    case TokenKind.KeywordSealed => true
-    case _ => false
-  }
+  def isModifier: Boolean = (flags & TokenKind.Flags.Modifier) != 0
 
   /** Returns `true` if this token is an operator (e.g. `+`). */
   def isOperator: Boolean = this match {
@@ -597,6 +585,9 @@ object TokenKind {
     */
   private object Flags {
     final val Keyword = 1 << 0
+    final val Modifier = 1 << 1
+    final val CommentDoc = 1 << 2
+    final val CommentNonDoc = 1 << 3
   }
 
   case object Ampersand extends TokenKind
@@ -657,11 +648,11 @@ object TokenKind {
 
   case object Comma extends TokenKind
 
-  case object CommentBlock extends TokenKind
+  case object CommentBlock extends TokenKind(Flags.CommentNonDoc)
 
-  case object CommentDoc extends TokenKind
+  case object CommentDoc extends TokenKind(Flags.CommentDoc)
 
-  case object CommentLine extends TokenKind
+  case object CommentLine extends TokenKind(Flags.CommentNonDoc)
 
   case object CurlyL extends TokenKind
 
@@ -763,7 +754,7 @@ object TokenKind {
 
   case object KeywordMod extends TokenKind(Flags.Keyword)
 
-  case object KeywordMut extends TokenKind(Flags.Keyword)
+  case object KeywordMut extends TokenKind(Flags.Keyword | Flags.Modifier)
 
   case object KeywordNew extends TokenKind(Flags.Keyword)
 
@@ -785,7 +776,7 @@ object TokenKind {
 
   case object KeywordProject extends TokenKind(Flags.Keyword)
 
-  case object KeywordPub extends TokenKind(Flags.Keyword)
+  case object KeywordPub extends TokenKind(Flags.Keyword | Flags.Modifier)
 
   case object KeywordQuery extends TokenKind(Flags.Keyword)
 
@@ -805,7 +796,7 @@ object TokenKind {
 
   case object KeywordRvsub extends TokenKind(Flags.Keyword)
 
-  case object KeywordSealed extends TokenKind(Flags.Keyword)
+  case object KeywordSealed extends TokenKind(Flags.Keyword | Flags.Modifier)
 
   case object KeywordSelect extends TokenKind(Flags.Keyword)
 
