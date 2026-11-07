@@ -8,7 +8,12 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.errors.LexerError
 
-sealed trait TokenKind {
+/**
+  * The kind of a [[Token]].
+  *
+  * @param flags a bit set of the predicates that hold for this kind, see [[TokenKind.Flags]].
+  */
+sealed abstract class TokenKind(private val flags: Int = 0) {
   /**
     * A string representation of the [[TokenKind]] suitable for printing.
     * For instance TokenKind.Ampersand.display gives "'&'".
@@ -179,108 +184,19 @@ sealed trait TokenKind {
   }
 
   /** Returns `true` if this token is a line or block comment. */
-  def isCommentNonDoc: Boolean = this match {
-    case TokenKind.CommentBlock => true
-    case TokenKind.CommentLine => true
-    case _ => false
-  }
+  def isCommentNonDoc: Boolean = (flags & TokenKind.Flags.CommentNonDoc) != 0
 
   /** Returns `true` if this token is a doc comment. */
-  def isCommentDoc: Boolean = this match {
-    case TokenKind.CommentDoc => true
-    case _ => false
-  }
+  def isCommentDoc: Boolean = (flags & TokenKind.Flags.CommentDoc) != 0
 
   /** Returns `true` if this token is a doc, line or block comment. */
   def isComment: Boolean = this.isCommentDoc || this.isCommentNonDoc
 
   /** Returns `true` if this token is a keyword. */
-  def isKeyword: Boolean = this match {
-    case TokenKind.KeywordAlias => true
-    case TokenKind.KeywordAnd => true
-    case TokenKind.KeywordAs => true
-    case TokenKind.KeywordCase => true
-    case TokenKind.KeywordCatch => true
-    case TokenKind.KeywordCheckedCast => true
-    case TokenKind.KeywordCheckedECast => true
-    case TokenKind.KeywordChoose => true
-    case TokenKind.KeywordChooseStar => true
-    case TokenKind.KeywordDef => true
-    case TokenKind.KeywordDiscard => true
-    case TokenKind.KeywordEMatch => true
-    case TokenKind.KeywordEff => true
-    case TokenKind.KeywordElse => true
-    case TokenKind.KeywordEnum => true
-    case TokenKind.KeywordFalse => true
-    case TokenKind.KeywordFix => true
-    case TokenKind.KeywordForA => true
-    case TokenKind.KeywordForM => true
-    case TokenKind.KeywordForall => true
-    case TokenKind.KeywordForce => true
-    case TokenKind.KeywordForeach => true
-    case TokenKind.KeywordFrom => true
-    case TokenKind.KeywordHandler => true
-    case TokenKind.KeywordIf => true
-    case TokenKind.KeywordImport => true
-    case TokenKind.KeywordInject => true
-    case TokenKind.KeywordInstance => true
-    case TokenKind.KeywordInstanceOf => true
-    case TokenKind.KeywordInto => true
-    case TokenKind.KeywordLazy => true
-    case TokenKind.KeywordLet => true
-    case TokenKind.KeywordMatch => true
-    case TokenKind.KeywordMod => true
-    case TokenKind.KeywordNew => true
-    case TokenKind.KeywordNot => true
-    case TokenKind.KeywordNull => true
-    case TokenKind.KeywordOpenVariant => true
-    case TokenKind.KeywordOpenVariantAs => true
-    case TokenKind.KeywordOr => true
-    case TokenKind.KeywordPQuery => true
-    case TokenKind.KeywordPSolve => true
-    case TokenKind.KeywordPar => true
-    case TokenKind.KeywordProject => true
-    case TokenKind.KeywordPub => true
-    case TokenKind.KeywordQuery => true
-    case TokenKind.KeywordRegion => true
-    case TokenKind.KeywordRestrictable => true
-    case TokenKind.KeywordRun => true
-    case TokenKind.KeywordRvadd => true
-    case TokenKind.KeywordRvand => true
-    case TokenKind.KeywordRvnot => true
-    case TokenKind.KeywordRvsub => true
-    case TokenKind.KeywordSealed => true
-    case TokenKind.KeywordSelect => true
-    case TokenKind.KeywordSolve => true
-    case TokenKind.KeywordSpawn => true
-    case TokenKind.KeywordStaticLowercase => true
-    case TokenKind.KeywordStruct => true
-    case TokenKind.KeywordSuper => true
-    case TokenKind.KeywordThrow => true
-    case TokenKind.KeywordTrait => true
-    case TokenKind.KeywordTrue => true
-    case TokenKind.KeywordTry => true
-    case TokenKind.KeywordType => true
-    case TokenKind.KeywordUncheckedCast => true
-    case TokenKind.KeywordUniv => true
-    case TokenKind.KeywordUnsafe => true
-    case TokenKind.KeywordUse => true
-    case TokenKind.KeywordWhere => true
-    case TokenKind.KeywordWith => true
-
-    case TokenKind.KeywordXor => true
-    case TokenKind.KeywordXvar => true
-    case TokenKind.KeywordYield => true
-    case _ => false
-  }
+  def isKeyword: Boolean = (flags & TokenKind.Flags.Keyword) != 0
 
   /** Returns `true` if this token is a modifier (e.g. `pub`). */
-  def isModifier: Boolean = this match {
-    case TokenKind.KeywordMut => true
-    case TokenKind.KeywordPub => true
-    case TokenKind.KeywordSealed => true
-    case _ => false
-  }
+  def isModifier: Boolean = (flags & TokenKind.Flags.Modifier) != 0
 
   /** Returns `true` if this token is an operator (e.g. `+`). */
   def isOperator: Boolean = this match {
@@ -662,6 +578,18 @@ sealed trait TokenKind {
   */
 object TokenKind {
 
+  /**
+    * Bit flags carried by every token kind, one bit per predicate.
+    *
+    * The constants must stay `final val` without a type annotation so Scala folds them to literals.
+    */
+  private object Flags {
+    final val Keyword = 1 << 0
+    final val Modifier = 1 << 1
+    final val CommentDoc = 1 << 2
+    final val CommentNonDoc = 1 << 3
+  }
+
   case object Ampersand extends TokenKind
 
   case object AngleL extends TokenKind
@@ -720,11 +648,11 @@ object TokenKind {
 
   case object Comma extends TokenKind
 
-  case object CommentBlock extends TokenKind
+  case object CommentBlock extends TokenKind(Flags.CommentNonDoc)
 
-  case object CommentDoc extends TokenKind
+  case object CommentDoc extends TokenKind(Flags.CommentDoc)
 
-  case object CommentLine extends TokenKind
+  case object CommentLine extends TokenKind(Flags.CommentNonDoc)
 
   case object CurlyL extends TokenKind
 
@@ -758,160 +686,160 @@ object TokenKind {
 
   case object HoleVariable extends TokenKind
 
-  case object KeywordAlias extends TokenKind
+  case object KeywordAlias extends TokenKind(Flags.Keyword)
 
-  case object KeywordAnd extends TokenKind
+  case object KeywordAnd extends TokenKind(Flags.Keyword)
 
-  case object KeywordAs extends TokenKind
+  case object KeywordAs extends TokenKind(Flags.Keyword)
 
-  case object KeywordCase extends TokenKind
+  case object KeywordCase extends TokenKind(Flags.Keyword)
 
-  case object KeywordCatch extends TokenKind
+  case object KeywordCatch extends TokenKind(Flags.Keyword)
 
-  case object KeywordCheckedCast extends TokenKind
+  case object KeywordCheckedCast extends TokenKind(Flags.Keyword)
 
-  case object KeywordCheckedECast extends TokenKind
+  case object KeywordCheckedECast extends TokenKind(Flags.Keyword)
 
-  case object KeywordChoose extends TokenKind
+  case object KeywordChoose extends TokenKind(Flags.Keyword)
 
-  case object KeywordChooseStar extends TokenKind
+  case object KeywordChooseStar extends TokenKind(Flags.Keyword)
 
-  case object KeywordDef extends TokenKind
+  case object KeywordDef extends TokenKind(Flags.Keyword)
 
-  case object KeywordDiscard extends TokenKind
+  case object KeywordDiscard extends TokenKind(Flags.Keyword)
 
-  case object KeywordEMatch extends TokenKind
+  case object KeywordEMatch extends TokenKind(Flags.Keyword)
 
-  case object KeywordEff extends TokenKind
+  case object KeywordEff extends TokenKind(Flags.Keyword)
 
-  case object KeywordElse extends TokenKind
+  case object KeywordElse extends TokenKind(Flags.Keyword)
 
-  case object KeywordEnum extends TokenKind
+  case object KeywordEnum extends TokenKind(Flags.Keyword)
 
-  case object KeywordFalse extends TokenKind
+  case object KeywordFalse extends TokenKind(Flags.Keyword)
 
-  case object KeywordFix extends TokenKind
+  case object KeywordFix extends TokenKind(Flags.Keyword)
 
-  case object KeywordForA extends TokenKind
+  case object KeywordForA extends TokenKind(Flags.Keyword)
 
-  case object KeywordForM extends TokenKind
+  case object KeywordForM extends TokenKind(Flags.Keyword)
 
-  case object KeywordForall extends TokenKind
+  case object KeywordForall extends TokenKind(Flags.Keyword)
 
-  case object KeywordForce extends TokenKind
+  case object KeywordForce extends TokenKind(Flags.Keyword)
 
-  case object KeywordForeach extends TokenKind
+  case object KeywordForeach extends TokenKind(Flags.Keyword)
 
-  case object KeywordFrom extends TokenKind
+  case object KeywordFrom extends TokenKind(Flags.Keyword)
 
-  case object KeywordHandler extends TokenKind
+  case object KeywordHandler extends TokenKind(Flags.Keyword)
 
-  case object KeywordIf extends TokenKind
+  case object KeywordIf extends TokenKind(Flags.Keyword)
 
-  case object KeywordImport extends TokenKind
+  case object KeywordImport extends TokenKind(Flags.Keyword)
 
-  case object KeywordInject extends TokenKind
+  case object KeywordInject extends TokenKind(Flags.Keyword)
 
-  case object KeywordInstance extends TokenKind
+  case object KeywordInstance extends TokenKind(Flags.Keyword)
 
-  case object KeywordInstanceOf extends TokenKind
+  case object KeywordInstanceOf extends TokenKind(Flags.Keyword)
 
-  case object KeywordInto extends TokenKind
+  case object KeywordInto extends TokenKind(Flags.Keyword)
 
-  case object KeywordLazy extends TokenKind
+  case object KeywordLazy extends TokenKind(Flags.Keyword)
 
-  case object KeywordLet extends TokenKind
+  case object KeywordLet extends TokenKind(Flags.Keyword)
 
-  case object KeywordMatch extends TokenKind
+  case object KeywordMatch extends TokenKind(Flags.Keyword)
 
-  case object KeywordMod extends TokenKind
+  case object KeywordMod extends TokenKind(Flags.Keyword)
 
-  case object KeywordMut extends TokenKind
+  case object KeywordMut extends TokenKind(Flags.Keyword | Flags.Modifier)
 
-  case object KeywordNew extends TokenKind
+  case object KeywordNew extends TokenKind(Flags.Keyword)
 
-  case object KeywordNot extends TokenKind
+  case object KeywordNot extends TokenKind(Flags.Keyword)
 
-  case object KeywordNull extends TokenKind
+  case object KeywordNull extends TokenKind(Flags.Keyword)
 
-  case object KeywordOpenVariant extends TokenKind
+  case object KeywordOpenVariant extends TokenKind(Flags.Keyword)
 
-  case object KeywordOpenVariantAs extends TokenKind
+  case object KeywordOpenVariantAs extends TokenKind(Flags.Keyword)
 
-  case object KeywordOr extends TokenKind
+  case object KeywordOr extends TokenKind(Flags.Keyword)
 
-  case object KeywordPQuery extends TokenKind
+  case object KeywordPQuery extends TokenKind(Flags.Keyword)
 
-  case object KeywordPSolve extends TokenKind
+  case object KeywordPSolve extends TokenKind(Flags.Keyword)
 
-  case object KeywordPar extends TokenKind
+  case object KeywordPar extends TokenKind(Flags.Keyword)
 
-  case object KeywordProject extends TokenKind
+  case object KeywordProject extends TokenKind(Flags.Keyword)
 
-  case object KeywordPub extends TokenKind
+  case object KeywordPub extends TokenKind(Flags.Keyword | Flags.Modifier)
 
-  case object KeywordQuery extends TokenKind
+  case object KeywordQuery extends TokenKind(Flags.Keyword)
 
-  case object KeywordRedef extends TokenKind
+  case object KeywordRedef extends TokenKind(Flags.Keyword)
 
-  case object KeywordRegion extends TokenKind
+  case object KeywordRegion extends TokenKind(Flags.Keyword)
 
-  case object KeywordRestrictable extends TokenKind
+  case object KeywordRestrictable extends TokenKind(Flags.Keyword)
 
-  case object KeywordRun extends TokenKind
+  case object KeywordRun extends TokenKind(Flags.Keyword)
 
-  case object KeywordRvadd extends TokenKind
+  case object KeywordRvadd extends TokenKind(Flags.Keyword)
 
-  case object KeywordRvand extends TokenKind
+  case object KeywordRvand extends TokenKind(Flags.Keyword)
 
-  case object KeywordRvnot extends TokenKind
+  case object KeywordRvnot extends TokenKind(Flags.Keyword)
 
-  case object KeywordRvsub extends TokenKind
+  case object KeywordRvsub extends TokenKind(Flags.Keyword)
 
-  case object KeywordSealed extends TokenKind
+  case object KeywordSealed extends TokenKind(Flags.Keyword | Flags.Modifier)
 
-  case object KeywordSelect extends TokenKind
+  case object KeywordSelect extends TokenKind(Flags.Keyword)
 
-  case object KeywordSolve extends TokenKind
+  case object KeywordSolve extends TokenKind(Flags.Keyword)
 
-  case object KeywordSpawn extends TokenKind
+  case object KeywordSpawn extends TokenKind(Flags.Keyword)
 
-  case object KeywordStaticLowercase extends TokenKind
+  case object KeywordStaticLowercase extends TokenKind(Flags.Keyword)
 
   case object KeywordStaticUppercase extends TokenKind
 
-  case object KeywordStruct extends TokenKind
+  case object KeywordStruct extends TokenKind(Flags.Keyword)
 
-  case object KeywordSuper extends TokenKind
+  case object KeywordSuper extends TokenKind(Flags.Keyword)
 
-  case object KeywordThrow extends TokenKind
+  case object KeywordThrow extends TokenKind(Flags.Keyword)
 
-  case object KeywordTrait extends TokenKind
+  case object KeywordTrait extends TokenKind(Flags.Keyword)
 
-  case object KeywordTrue extends TokenKind
+  case object KeywordTrue extends TokenKind(Flags.Keyword)
 
-  case object KeywordTry extends TokenKind
+  case object KeywordTry extends TokenKind(Flags.Keyword)
 
-  case object KeywordType extends TokenKind
+  case object KeywordType extends TokenKind(Flags.Keyword)
 
-  case object KeywordUncheckedCast extends TokenKind
+  case object KeywordUncheckedCast extends TokenKind(Flags.Keyword)
 
-  case object KeywordUniv extends TokenKind
+  case object KeywordUniv extends TokenKind(Flags.Keyword)
 
-  case object KeywordUnsafe extends TokenKind
+  case object KeywordUnsafe extends TokenKind(Flags.Keyword)
 
-  case object KeywordUse extends TokenKind
+  case object KeywordUse extends TokenKind(Flags.Keyword)
 
-  case object KeywordWhere extends TokenKind
+  case object KeywordWhere extends TokenKind(Flags.Keyword)
 
-  case object KeywordWith extends TokenKind
+  case object KeywordWith extends TokenKind(Flags.Keyword)
 
 
-  case object KeywordXor extends TokenKind
+  case object KeywordXor extends TokenKind(Flags.Keyword)
 
-  case object KeywordXvar extends TokenKind
+  case object KeywordXvar extends TokenKind(Flags.Keyword)
 
-  case object KeywordYield extends TokenKind
+  case object KeywordYield extends TokenKind(Flags.Keyword)
 
   case object ListHash extends TokenKind
 
