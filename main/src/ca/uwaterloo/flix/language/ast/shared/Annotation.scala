@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 /**
   * A common super type for AST nodes that represent annotations.
   */
-trait Annotation {
+sealed trait Annotation {
   def loc: SourceLocation
 }
 
@@ -119,6 +119,18 @@ object Annotation {
     */
   case class LazyWhenPure(loc: SourceLocation) extends Annotation {
     override def toString: String = "@LazyWhenPure"
+  }
+
+  /**
+    * An AST node that represents a `@NoSubEff` annotation.
+    *
+    * A function marked with `@NoSubEff` is type checked without sub-effecting: the lambdas and local
+    * defs in its body have exactly the effect of their body rather than an upper bound on it.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class NoSubEff(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@NoSubEff"
   }
 
   /**

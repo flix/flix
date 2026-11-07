@@ -383,6 +383,20 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalAnnotation](result)
   }
 
+  test("IllegalAnnotation.LocalDef.03") {
+    // @NoSubEff on local def should be illegal
+    val input =
+      """
+        |def f(): Int32 = {
+        |    @NoSubEff
+        |    def g(i) = if (i <= 0) 0 else g(i - 1);
+        |    g(10)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalAnnotation](result)
+  }
+
   test("IllegalEnum.01") {
     val input =
       """
