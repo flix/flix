@@ -82,10 +82,10 @@ object Resolver {
 
     // The module-level uses, keyed by module. These are also resolved (and any errors reported)
     // by `visitDecl` when the modules themselves are resolved, so we do not report errors here.
-    val uses = root.uses.map {
+    val uses = ParOps.parMap(root.uses) {
       case (ns, uses0) =>
         new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone) -> uses0.flatMap(visitUseOrImport(_, ns, root).toOption)
-    }
+    }.toMap
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     val (taenv, taOrder) = resolveTypeAliases(defaultUses, root)
