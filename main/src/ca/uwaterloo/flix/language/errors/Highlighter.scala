@@ -42,7 +42,7 @@ object Highlighter {
       case Some(r) =>
         val (allTokens, _) = Lexer.lex(source)
         val semanticTokens = SemanticTokensProvider.getSemanticTokens(source.sourceName)(r)
-        Coloring.Highlighted(allTokens.to(ArraySeq), semanticTokens.to(ArraySeq))
+        Coloring.Highlighted(allTokens.tokens.to(ArraySeq), semanticTokens.to(ArraySeq))
     }
 
     if (loc.startLine == loc.endLine)

@@ -235,7 +235,7 @@ object Lexer {
       // Lex each stale source file in parallel.
       val (results, errors) = ParOps.parMapWithPriority(stale.keys, sortBy) {
         src =>
-          val (tokens, errors) = lexSource(src)
+          val (tokens, errors) = lex(src)
           (src -> tokens, errors)
       }.unzip
 
@@ -244,14 +244,8 @@ object Lexer {
       (all, errors.flatten.toList)
     }
 
-  /** Lexes a single source (file) into an array of tokens. */
-  def lex(src: Source): (Array[Token], List[LexerError]) = {
-    val (tokens, errors) = lexSource(src)
-    (tokens.tokens, errors)
-  }
-
   /** Lexes a single source (file) into its tokens and its semantic tokens. */
-  private def lexSource(src: Source): (SourceTokens, List[LexerError]) = {
+  def lex(src: Source): (SourceTokens, List[LexerError]) = {
     implicit val s: State = new State(src)
     while (!eof()) {
       s.sc.advanceWhile(_.isWhitespace)

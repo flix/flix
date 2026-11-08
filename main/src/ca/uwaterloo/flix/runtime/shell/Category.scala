@@ -40,7 +40,7 @@ object Category {
     // Tokenize the input and check if the first token looks like the start of a declaration or an expression.
     val (tokens, errors) = Lexer.lex(source)
     if (errors.isEmpty) {
-      val start = tokens(0).kind
+      val start = tokens.tokens(0).kind
       (start.isFirstInDecl, start.isFirstInExp) match {
         case (true, _) => Category.Decl
         case (_, true) => Category.Expr
