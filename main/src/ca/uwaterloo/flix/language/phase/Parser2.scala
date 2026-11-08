@@ -58,6 +58,39 @@ object Parser2 {
     val FuelReset: Int = CompilerConstants.MaxParserFuel
   }
 
+  private class State(val tokens: Array[Token], val src: Source) {
+    /** The visible tokens, i.e. the tokens the grammar sees (see [[VisibleTokens]]). */
+    val visible: VisibleTokens = new VisibleTokens(tokens)
+
+    /** The current token being considered by the parser, as an index into [[visible]]. */
+    var position: Int = 0
+
+    /**
+      * The parser avoids endless loops via a fuel abstraction. When a look-up is made with [[nth]]
+      * one unit of fuel is lost. If fuel reaches zero by this, that is a compiler error, since the
+      * parser is stuck. Whenever progress is made with [[advance]] fuel is reset to its original
+      * amount.
+      */
+    var fuel: Int = State.FuelReset
+
+    /**
+      * The Parsing events emitted during parsing. Note that this is a flat collection that later
+      * gets turned into a [[SyntaxTree.Tree]] by [[buildTree]].
+      */
+    val events: ArrayBuffer[Event] = ArrayBuffer.empty
+
+    /**
+      * Errors reside both within the produced `Tree` but are also kept here. This is done to avoid
+      * crawling the tree for errors. Note that there is data-duplication, but not in the happy
+      * case. An alternative could be to collect errors as part of [[buildTree]] and return them in
+      * a list there.
+      */
+    val errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
+
+    /** True when the parser is currently inside a block expression (`{ ... }`). */
+    var inBlock: Boolean = false
+  }
+
   /**
     * The tokens the grammar sees: every token in `tokens` that is not a comment, including the
     * final [[TokenKind.Eof]], in order. The grammar never sees a comment. Instead [[buildTree]] puts
@@ -100,39 +133,6 @@ object Parser2 {
 
     /** Returns the kind of the visible token at `pos`. */
     def kind(pos: Int): TokenKind = kinds(pos)
-  }
-
-  private class State(val tokens: Array[Token], val src: Source) {
-    /** The visible tokens, i.e. the tokens the grammar sees (see [[VisibleTokens]]). */
-    val visible: VisibleTokens = new VisibleTokens(tokens)
-
-    /** The current token being considered by the parser, as an index into [[visible]]. */
-    var position: Int = 0
-
-    /**
-      * The parser avoids endless loops via a fuel abstraction. When a look-up is made with [[nth]]
-      * one unit of fuel is lost. If fuel reaches zero by this, that is a compiler error, since the
-      * parser is stuck. Whenever progress is made with [[advance]] fuel is reset to its original
-      * amount.
-      */
-    var fuel: Int = State.FuelReset
-
-    /**
-      * The Parsing events emitted during parsing. Note that this is a flat collection that later
-      * gets turned into a [[SyntaxTree.Tree]] by [[buildTree]].
-      */
-    val events: ArrayBuffer[Event] = ArrayBuffer.empty
-
-    /**
-      * Errors reside both within the produced `Tree` but are also kept here. This is done to avoid
-      * crawling the tree for errors. Note that there is data-duplication, but not in the happy
-      * case. An alternative could be to collect errors as part of [[buildTree]] and return them in
-      * a list there.
-      */
-    val errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
-
-    /** True when the parser is currently inside a block expression (`{ ... }`). */
-    var inBlock: Boolean = false
   }
 
   /**
