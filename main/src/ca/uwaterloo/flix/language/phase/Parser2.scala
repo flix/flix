@@ -39,18 +39,58 @@ import scala.collection.mutable.ArrayBuffer
   */
 object Parser2 {
 
-  /** An event emitted by the parser while traversing a list of [[Token]]s. */
-  private sealed trait Event
-
+  /**
+    * The events emitted by the parser while traversing a list of [[Token]]s.
+    *
+    * An event is stored as a plain reference in [[Events]], not as an object of its own: an Open
+    * event is the [[TreeKind]] of the group it opens, and the other two events are the singletons
+    * [[Event.Close]] and [[Event.Advance]]. Hence emitting an event allocates nothing.
+    */
   private object Event {
-    /** Opens a grouping of tokens with the [[TreeKind]] kind. */
-    case class Open(kind: TreeKind) extends Event
-
-    /** Closed the most recently opened group. */
-    case object Close extends Event
+    /** Closes the most recently opened group. */
+    object Close
 
     /** Advances one token adding it to the currently open group. */
-    case object Advance extends Event
+    object Advance
+  }
+
+  /**
+    * The events emitted so far, in order (see [[Event]]).
+    *
+    * The parser emits about four events per visible token (one Advance, and an Open and a Close
+    * for each of roughly 1.6 nodes per token), so the buffer is sized for five up front and rarely
+    * has to grow.
+    */
+  private final class Events(numVisible: Int) {
+    private var items: Array[AnyRef] = new Array(5 * numVisible + 16)
+
+    /** The number of events emitted so far. */
+    var length: Int = 0
+
+    /** Returns the event at `index`. */
+    def apply(index: Int): AnyRef = items(index)
+
+    /** Replaces the event at `index` by `event`. */
+    def update(index: Int, event: AnyRef): Unit = items(index) = event
+
+    /** Appends `event`. */
+    def append(event: AnyRef): Unit = {
+      if (length == items.length) {
+        items = Array.copyOf(items, 2 * length)
+      }
+      items(length) = event
+      length += 1
+    }
+
+    /** Inserts `event` at `index`, moving the events from `index` onwards up by one. */
+    def insert(index: Int, event: AnyRef): Unit = {
+      if (length == items.length) {
+        items = Array.copyOf(items, 2 * length)
+      }
+      System.arraycopy(items, index, items, index + 1, length - index)
+      items(index) = event
+      length += 1
+    }
   }
 
   private object State {
@@ -91,7 +131,7 @@ object Parser2 {
       * The Parsing events emitted during parsing. Note that this is a flat collection that later
       * gets turned into a [[SyntaxTree.Tree]] by [[buildTree]].
       */
-    val events: ArrayBuffer[Event] = ArrayBuffer.empty
+    val events: Events = new Events(visible.length)
 
     /**
       * Errors reside both within the produced `Tree` but are also kept here. This is done to avoid
@@ -120,12 +160,12 @@ object Parser2 {
     * with [[openBefore]] which takes a [[Mark.Closed]] and inserts an Open event before it.
     * Whenever possible grammar rules return a [[Mark.Closed]] so another rule may wrap it.
     */
-  private sealed trait Mark
-
   private object Mark {
-    case class Opened(index: Int) extends Mark
+    /** Marks an Open event whose group is still open. A value class, so a mark allocates nothing. */
+    case class Opened(index: Int) extends AnyVal
 
-    case class Closed(index: Int) extends Mark
+    /** Marks the Open event of a closed group. A value class, so a mark allocates nothing. */
+    case class Closed(index: Int) extends AnyVal
   }
 
   def run(tokens0: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): (SyntaxTree.Root, List[CompilationMessage]) = flix.phase("Parser2") {
@@ -304,10 +344,7 @@ object Parser2 {
     // the work-stack holds exactly the root's children.
     val events = s.events
     val numEvents = events.length - 1
-    assert(events(numEvents) match {
-      case Event.Close => true
-      case _ => false
-    })
+    assert(events(numEvents) eq Event.Close)
 
     // The number of visible tokens advanced so far.
     var advanced = 0
@@ -398,36 +435,35 @@ object Parser2 {
 
     var i = 0
     while (i < numEvents) {
-      events(i) match {
-        case Event.Open(kind) =>
-          nodes.push(work.size, kind, visibleToken(advanced), advanced)
-
-        case Event.Close =>
-          val top = nodes.depth - 1
-          val start = nodes.start(top)
-          val kind = nodes.kind(top)
-          val openToken = nodes.openToken(top)
-          val numChildren = work.size - start
-          val loc = if (numChildren == 0)
-            // If the subtree has no children, give it a zero length position just after the last
-            // token.
-            mkSourceLocation(lastAdvance.end, lastAdvance.end)
-          else
-            // Otherwise the source location can span from the first to the last token in the
-            // subtree.
-            mkSourceLocation(openToken.start, lastAdvance.end)
-          // Pop this node's children (the suffix of the work-stack) into a right-sized array.
-          val children = work.pop(numChildren)
-          nodes.pop()
-          work.push(SyntaxTree.Tree(kind, children, loc))
-
-        case Event.Advance =>
-          placeComments()
-          val token = visibleToken(advanced)
-          lastAdvance = token
-          work.push(token)
-          nextUnplaced += 1
-          advanced += 1
+      val event = events(i)
+      if (event eq Event.Advance) {
+        placeComments()
+        val token = visibleToken(advanced)
+        lastAdvance = token
+        work.push(token)
+        nextUnplaced += 1
+        advanced += 1
+      } else if (event eq Event.Close) {
+        val top = nodes.depth - 1
+        val start = nodes.start(top)
+        val kind = nodes.kind(top)
+        val openToken = nodes.openToken(top)
+        val numChildren = work.size - start
+        val loc = if (numChildren == 0)
+          // If the subtree has no children, give it a zero length position just after the last
+          // token.
+          mkSourceLocation(lastAdvance.end, lastAdvance.end)
+        else
+          // Otherwise the source location can span from the first to the last token in the
+          // subtree.
+          mkSourceLocation(openToken.start, lastAdvance.end)
+        // Pop this node's children (the suffix of the work-stack) into a right-sized array.
+        val children = work.pop(numChildren)
+        nodes.pop()
+        work.push(SyntaxTree.Tree(kind, children, loc))
+      } else {
+        // Every other event is the kind of the group it opens (see [[Event]]).
+        nodes.push(work.size, event.asInstanceOf[TreeKind], visibleToken(advanced), advanced)
       }
       i += 1
     }
@@ -497,13 +533,13 @@ object Parser2 {
     */
   private def open()(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(s.events.length)
-    s.events.append(Event.Open(TreeKind.UnclosedMark))
+    s.events.append(TreeKind.UnclosedMark)
     mark
   }
 
   /** Closes a group and marks it with `kind`. */
   private def close(mark: Mark.Opened, kind: TreeKind)(implicit s: State): Mark.Closed = {
-    s.events(mark.index) = Event.Open(kind)
+    s.events(mark.index) = kind
     s.events.append(Event.Close)
     Mark.Closed(mark.index)
   }
@@ -521,7 +557,7 @@ object Parser2 {
     */
   private def openBefore(before: Mark.Closed)(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(before.index)
-    s.events.insert(before.index, Event.Open(TreeKind.UnclosedMark))
+    s.events.insert(before.index, TreeKind.UnclosedMark)
     mark
   }
 
