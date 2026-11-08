@@ -35,6 +35,9 @@ object Lexer {
     8
   }
 
+  /** A tokens per semantic token estimation used for the initial size of the semantic token array buffer. */
+  private val TokensPerSemanticToken: Int = 4
+
   /** Keywords - tokens consumed as long as no name-like char follows. */
   private val Keywords: PrefixTree.Node[TokenKind] = {
     // N.B.: `advanceIfInTree` takes the longest match, regardless of the ordering here.
@@ -209,13 +212,19 @@ object Lexer {
       new mutable.ArrayBuffer(initialSize = src.data.length / CharsPerToken)
     }
 
+    /** The subsequence of `tokens` that is semantic (see [[TokenKind.isSemantic]]), collected as the tokens are produced. */
+    val semanticTokens: mutable.ArrayBuffer[Token] = {
+      // The needed size is guessed based on the tokens per semantic token estimate.
+      new mutable.ArrayBuffer(initialSize = src.data.length / CharsPerToken / TokensPerSemanticToken)
+    }
+
     /** The list of errors in the `tokens` array. */
     val errors: mutable.ArrayBuffer[LexerError] = new mutable.ArrayBuffer[LexerError]()
 
   }
 
   /** Run the lexer on multiple `Source`s in parallel. */
-  def run(root: ReadAst.Root, oldTokens: Map[Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): (Map[Source, Array[Token]], List[LexerError]) =
+  def run(root: ReadAst.Root, oldTokens: Map[Source, SourceTokens], changeSet: ChangeSet)(implicit flix: Flix): (Map[Source, SourceTokens], List[LexerError]) =
     flix.phase("Lexer") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldTokens)
@@ -235,8 +244,8 @@ object Lexer {
       (all, errors.flatten.toList)
     }
 
-  /** Lexes a single source (file) into an array of tokens. */
-  def lex(src: Source): (Array[Token], List[LexerError]) = {
+  /** Lexes a single source (file) into its tokens and its semantic tokens. */
+  def lex(src: Source): (SourceTokens, List[LexerError]) = {
     implicit val s: State = new State(src)
     while (!eof()) {
       s.sc.advanceWhile(_.isWhitespace)
@@ -251,7 +260,7 @@ object Lexer {
     s.resetStart()
     addToken(TokenKind.Eof)
 
-    (s.tokens.toArray, s.errors.toList)
+    (SourceTokens(s.tokens.toArray, s.semanticTokens.toArray), s.errors.toList)
   }
 
   /** Checks if the current position has landed on end-of-file. */
@@ -264,7 +273,11 @@ object Lexer {
     */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
     val (b, e) = getRangeFromStart()
-    s.tokens.append(Token(kind, s.src, s.startOffset, s.sc.getIndex, b, e))
+    val token = Token(kind, s.src, s.startOffset, s.sc.getIndex, b, e)
+    s.tokens.append(token)
+    if (kind.isSemantic) {
+      s.semanticTokens.append(token)
+    }
     s.resetStart()
   }
 

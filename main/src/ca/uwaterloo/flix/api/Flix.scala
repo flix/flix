@@ -104,7 +104,7 @@ class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil, mounts: M
   /**
     * A cache of ASTs for incremental compilation.
     */
-  private var cachedLexerTokens: Map[Source, Array[Token]] = Map.empty
+  private var cachedLexerTokens: Map[Source, SourceTokens] = Map.empty
   private var cachedParserCst: SyntaxTree.Root = SyntaxTree.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
   private var cachedDesugarAst: DesugaredAst.Root = DesugaredAst.empty

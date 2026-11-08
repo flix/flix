@@ -27,9 +27,9 @@ object AstPrinter {
 
   implicit object DebugUnit extends DebugNoOp[Unit]
 
-  implicit object DebugTokens extends Debug[Map[Source, Array[Token]]] {
-    override def emit(phase: String, root: Map[Source, Array[Token]])(implicit flix: Flix): Unit =
-      printDocProgram(phase, TokenPrinter.print(root))
+  implicit object DebugTokens extends Debug[Map[Source, SourceTokens]] {
+    override def emit(phase: String, root: Map[Source, SourceTokens])(implicit flix: Flix): Unit =
+      printDocProgram(phase, TokenPrinter.print(root.map { case (src, tokens) => src -> tokens.tokens }))
   }
 
   implicit object DebugSyntaxTree extends Debug[SyntaxTree.Root] {
