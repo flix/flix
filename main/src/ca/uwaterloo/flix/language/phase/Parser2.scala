@@ -56,6 +56,19 @@ object Parser2 {
   private object State {
     /** The reset value of [[State.fuel]]. */
     val FuelReset: Int = CompilerConstants.MaxParserFuel
+
+    /** Returns the number of tokens in `tokens` that are not comments. */
+    def countVisible(tokens: Array[Token]): Int = {
+      var n = 0
+      var i = 0
+      while (i < tokens.length) {
+        if (!tokens(i).kind.isComment) {
+          n += 1
+        }
+        i += 1
+      }
+      n
+    }
   }
 
   private class State(val tokens: Array[Token], val src: Source) {
@@ -64,16 +77,23 @@ object Parser2 {
       * including the final [[TokenKind.Eof]]. The grammar never sees a comment. Instead
       * [[buildTree]] puts the comments back into the syntax tree.
       */
-    val visible: Array[Int] = {
-      val buf = new ArrayBuffer[Int](tokens.length)
+    val visible: Array[Int] = new Array(State.countVisible(tokens))
+
+    /** The kinds of the visible tokens: `visibleKinds(i)` is the kind of `tokens(visible(i))`. */
+    val visibleKinds: Array[TokenKind] = new Array(visible.length)
+
+    locally {
+      var n = 0
       var i = 0
       while (i < tokens.length) {
-        if (!tokens(i).kind.isComment) {
-          buf.append(i)
+        val kind = tokens(i).kind
+        if (!kind.isComment) {
+          visible(n) = i
+          visibleKinds(n) = kind
+          n += 1
         }
         i += 1
       }
-      buf.toArray
     }
 
     /** The current token being considered by the parser, as an index into [[visible]]. */
@@ -577,7 +597,7 @@ object Parser2 {
       TokenKind.Eof
     } else {
       s.fuel -= 1
-      visibleToken(s.position + lookahead).kind
+      s.visibleKinds(s.position + lookahead)
     }
   }
 
