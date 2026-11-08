@@ -56,45 +56,49 @@ object Parser2 {
   private object State {
     /** The reset value of [[State.fuel]]. */
     val FuelReset: Int = CompilerConstants.MaxParserFuel
+  }
 
-    /** Returns the number of tokens in `tokens` that are not comments. */
-    def numberOfVisible(tokens: Array[Token]): Int = {
+  /**
+    * The tokens the grammar sees: every token in `tokens` that is not a comment, including the
+    * final [[TokenKind.Eof]], in order. The grammar never sees a comment. Instead [[buildTree]] puts
+    * the comments back into the syntax tree.
+    *
+    * The constructor collects them in one pass over `tokens`. Both arrays have room for every token
+    * and only their first `length` entries are in use.
+    */
+  private final class VisibleTokens(tokens: Array[Token]) {
+    /** The index into `tokens` of every visible token. */
+    private val indices: Array[Int] = new Array(tokens.length)
+
+    /** The kind of every visible token: `kinds(pos)` is the kind of `tokens(indices(pos))`. */
+    private val kinds: Array[TokenKind] = new Array(tokens.length)
+
+    /** The number of visible tokens. */
+    val length: Int = {
       var n = 0
       var i = 0
       while (i < tokens.length) {
-        if (!tokens(i).kind.isComment) {
+        val kind = tokens(i).kind
+        if (!kind.isComment) {
+          indices(n) = i
+          kinds(n) = kind
           n += 1
         }
         i += 1
       }
       n
     }
+
+    /** Returns the index into the tokens of the visible token at `pos`. */
+    def index(pos: Int): Int = indices(pos)
+
+    /** Returns the kind of the visible token at `pos`. */
+    def kind(pos: Int): TokenKind = kinds(pos)
   }
 
   private class State(val tokens: Array[Token], val src: Source) {
-    /**
-      * The indices into `tokens` of the tokens the grammar sees: every token that is not a comment,
-      * including the final [[TokenKind.Eof]]. The grammar never sees a comment. Instead
-      * [[buildTree]] puts the comments back into the syntax tree.
-      */
-    val visible: Array[Int] = new Array(State.numberOfVisible(tokens))
-
-    /** The kinds of the visible tokens: `visibleKinds(i)` is the kind of `tokens(visible(i))`. */
-    val visibleKinds: Array[TokenKind] = new Array(visible.length)
-
-    locally {
-      var n = 0
-      var i = 0
-      while (i < tokens.length) {
-        val kind = tokens(i).kind
-        if (!kind.isComment) {
-          visible(n) = i
-          visibleKinds(n) = kind
-          n += 1
-        }
-        i += 1
-      }
-    }
+    /** The visible tokens, i.e. the tokens the grammar sees (see [[VisibleTokens]]). */
+    val visible: VisibleTokens = new VisibleTokens(tokens)
 
     /** The current token being considered by the parser, as an index into [[visible]]. */
     var position: Int = 0
@@ -374,7 +378,7 @@ object Parser2 {
 
     /** Places the comments between the last advanced token and the next visible token. */
     def placeComments(): Unit = {
-      val end = s.visible(advanced)
+      val end = s.visible.index(advanced)
       if (nextUnplaced >= end) {
         return
       }
@@ -465,7 +469,7 @@ object Parser2 {
   }
 
   /** Returns the visible token at `pos`, an index into [[State.visible]]. */
-  private def visibleToken(pos: Int)(implicit s: State): Token = s.tokens(s.visible(pos))
+  private def visibleToken(pos: Int)(implicit s: State): Token = s.tokens(s.visible.index(pos))
 
   /**
     * Reports the doc comments in `comments`, a run of comments that documents nothing, as one
@@ -597,7 +601,7 @@ object Parser2 {
       TokenKind.Eof
     } else {
       s.fuel -= 1
-      s.visibleKinds(s.position + lookahead)
+      s.visible.kind(s.position + lookahead)
     }
   }
 
