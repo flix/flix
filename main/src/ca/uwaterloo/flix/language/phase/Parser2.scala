@@ -74,7 +74,13 @@ object Parser2 {
     private val kinds: Array[TokenKind] = new Array(tokens.length)
 
     /** The number of visible tokens. */
-    val length: Int = {
+    val length: Int = init()
+
+    /**
+      * Fills `indices` and `kinds` with the index and the kind of every visible token in `tokens`,
+      * in order, and returns how many there are. Called once, by the constructor.
+      */
+    private def init(): Int = {
       var n = 0
       var i = 0
       while (i < tokens.length) {
