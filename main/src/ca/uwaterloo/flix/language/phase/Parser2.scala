@@ -58,7 +58,7 @@ object Parser2 {
     val FuelReset: Int = CompilerConstants.MaxParserFuel
 
     /** Returns the number of tokens in `tokens` that are not comments. */
-    def countVisible(tokens: Array[Token]): Int = {
+    def numberOfVisible(tokens: Array[Token]): Int = {
       var n = 0
       var i = 0
       while (i < tokens.length) {
@@ -77,7 +77,7 @@ object Parser2 {
       * including the final [[TokenKind.Eof]]. The grammar never sees a comment. Instead
       * [[buildTree]] puts the comments back into the syntax tree.
       */
-    val visible: Array[Int] = new Array(State.countVisible(tokens))
+    val visible: Array[Int] = new Array(State.numberOfVisible(tokens))
 
     /** The kinds of the visible tokens: `visibleKinds(i)` is the kind of `tokens(visible(i))`. */
     val visibleKinds: Array[TokenKind] = new Array(visible.length)
