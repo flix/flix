@@ -2131,6 +2131,48 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectSuccess(result)
   }
 
+  test("Subeffecting.NoSubEff.Lambda.01") {
+    // Without sub-effecting a pure lambda cannot be passed where an IO function is required.
+    val input =
+      """
+        |def mustBeIO(f: Unit -> Unit \ IO): Unit \ IO = f()
+        |@NoSubEff
+        |def f(): Unit \ IO =
+        |  mustBeIO(() -> ())
+        |pub eff IO
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("Subeffecting.NoSubEff.LocalDef.01") {
+    // Without sub-effecting a pure local def cannot be passed where an IO function is required.
+    val input =
+      """
+        |def mustBeIO(f: Int32 -> Int32 \ IO): Int32 \ IO = f(1)
+        |@NoSubEff
+        |def f(): Int32 \ IO = {
+        |  def id(x) = x;
+        |  mustBeIO(id)
+        |}
+        |pub eff IO
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("Subeffecting.NoSubEff.CheckedCast.01") {
+    // A checked effect cast is explicit sub-effecting and is not disabled by the annotation.
+    val input =
+      """
+        |@NoSubEff
+        |def f(): Unit \ IO = checked_ecast(())
+        |pub eff IO
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
   test("ErrorType.01") {
     // There should be no type error because Abc does not resolve.
     val input =

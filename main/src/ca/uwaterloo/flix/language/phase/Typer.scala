@@ -193,7 +193,7 @@ object Typer {
   private def visitDef(defn: KindedAst.Def, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
     implicit val scope: RegionScope = RegionScope.Top
     implicit val r: KindedAst.Root = root
-    implicit val context: TypeContext = new TypeContext
+    implicit val context: TypeContext = new TypeContext(subEffecting = !defn.spec.ann.isNoSubEff)
     val exp = ConstraintGen.visitExp(defn.exp)
     val tpe = exp.tpe
     val eff0 = exp.eff
@@ -240,7 +240,7 @@ object Typer {
   private def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): TypedAst.Sig = {
     implicit val scope: RegionScope = RegionScope.Top
     implicit val r: KindedAst.Root = root
-    implicit val context: TypeContext = new TypeContext
+    implicit val context: TypeContext = new TypeContext(subEffecting = !sig.spec.ann.isNoSubEff)
     sig.exp match {
       case None => TypeReconstruction.visitSig(sig, None, SubstitutionTree.empty)
       case Some(exp0) =>

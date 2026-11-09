@@ -73,6 +73,11 @@ case class Annotations(annotations: List[Annotation]) {
   def isLoweringTargetChannel: Boolean = annotations exists (_.isInstanceOf[Annotation.LoweringTargetChannel])
 
   /**
+    * Returns `true` if `this` sequence contains the `@NoSubEff` annotation.
+    */
+  def isNoSubEff: Boolean = annotations exists (_.isInstanceOf[Annotation.NoSubEff])
+
+  /**
     * Returns `true` if `this` sequence contains the `@Parallel` annotation.
     */
   def isParallel: Boolean = annotations exists (_.isInstanceOf[Annotation.Parallel])
