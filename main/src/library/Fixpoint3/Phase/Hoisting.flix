@@ -97,16 +97,16 @@ pub mod Fixpoint3.Phase.Hoisting {
                 ||> MutMap.foldLeftWithKey(
                     acc -> load -> listOfPairs -> (acc, listOfPairs)
                         ||> List.foldLeft(
-                            innerAcc -> match (val, ty) -> {
+                            innerAcc -> match (value, ty) -> {
                                 // `load` must have been registered by `unifyEqualitiesStmt`.
                                 let rep = getOrCrash(MutDisjointSets.find(load, equalitySets));
                                 match Map.get(rep, innerAcc) {
                                     case Some(RamTerm.Lit(v, _)) => {
-                                        if (v != val) { MutSet.add(fst(rep), impossible) }
+                                        if (v != value) { MutSet.add(fst(rep), impossible) }
                                     };
                                     innerAcc
                                     case Some(_) => bug!("In Fixpoint.Phase.Hoisting.hoistProgram: termMap contains non-literals before hoistStmt!")
-                                    case None => Map.insert(rep, RamTerm.Lit(val, ty), innerAcc)
+                                    case None => Map.insert(rep, RamTerm.Lit(value, ty), innerAcc)
                                 }
                             }
                         )
@@ -682,10 +682,10 @@ pub mod Fixpoint3.Phase.Hoisting {
             MutDisjointSets.makeSet((rv1, i1), equalitySets);
             MutDisjointSets.makeSet((rv2, i2), equalitySets);
             MutDisjointSets.union((rv1, i1), (rv2, i2), equalitySets)
-        case BoolExp.Eq(RamTerm.RowLoad(rv, i, _, _), RamTerm.Lit(val, ty)) =>
-            MutMap.putWith(_ -> list -> (val, ty) :: list, (rv, i), (val, ty) :: Nil, constEqualities)
-        case BoolExp.Eq(RamTerm.Lit(val, ty), RamTerm.RowLoad(rv, i, _, _)) =>
-            MutMap.putWith(_ -> list -> (val, ty) :: list, (rv, i), (val, ty) :: Nil, constEqualities)
+        case BoolExp.Eq(RamTerm.RowLoad(rv, i, _, _), RamTerm.Lit(value, ty)) =>
+            MutMap.putWith(_ -> list -> (value, ty) :: list, (rv, i), (value, ty) :: Nil, constEqualities)
+        case BoolExp.Eq(RamTerm.Lit(value, ty), RamTerm.RowLoad(rv, i, _, _)) =>
+            MutMap.putWith(_ -> list -> (value, ty) :: list, (rv, i), (value, ty) :: Nil, constEqualities)
         case _ => ()
     }
 

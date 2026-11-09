@@ -13,38 +13,38 @@ mod Test.Exp.Jvm.InvokeMethod.Simple {
 
     @Test
     def testBigIntegerCompareTo01(): Unit \ Assert =
-        let val = 500ii;
-        assertEq(expected = 1, val.compareTo(-80ii))
+        let value = 500ii;
+        assertEq(expected = 1, value.compareTo(-80ii))
 
     @Test
     def testBigIntegerAnd01(): Unit \ Assert =
-        let val = 150ii;
-        assertEq(expected = 148ii, val.$and(-100ii))
+        let value = 150ii;
+        assertEq(expected = 148ii, value.$and(-100ii))
 
     @Test
     def testBigIntegerMod01(): Unit \ Assert + IO =
-        let val = 123488ii;
-        assertEq(expected = 1ii, val.$mod(23ii))
+        let value = 123488ii;
+        assertEq(expected = 1ii, value.$mod(23ii))
 
     @Test
     def testBigIntegerModPow01(): Unit \ Assert + IO =
-        let val = 123488ii;
-        assertEq(expected = 8247ii, val.modPow(10ii, 32023ii))
+        let value = 123488ii;
+        assertEq(expected = 8247ii, value.modPow(10ii, 32023ii))
 
     @Test
     def testBigIntegerSubtract01(): Unit \ Assert =
-        let val = 500ii;
-        assertEq(expected = 200ii, val.subtract(300ii))
+        let value = 500ii;
+        assertEq(expected = 200ii, value.subtract(300ii))
 
     @Test
     def testBigIntegerDivide01(): Unit \ Assert =
-        let val = 100ii;
-        assertEq(expected = 20ii, val.divide(5ii))
+        let value = 100ii;
+        assertEq(expected = 20ii, value.divide(5ii))
 
     @Test
     def testBigIntegerGcd01(): Unit \ Assert + IO =
-        let val = 12ii;
-        assertEq(expected = 4ii, val.gcd(8ii))
+        let value = 12ii;
+        assertEq(expected = 4ii, value.gcd(8ii))
 
     @Test
     def testBigIntegerAbs01(): Unit \ Assert + IO =
@@ -58,8 +58,8 @@ mod Test.Exp.Jvm.InvokeMethod.Simple {
 
     @Test
     def testBigDecimalMax01(): Unit \ Assert + IO =
-        let val = 9999.999999999ff;
-        assertEq(expected = 9999.999999999ff, val.max(9999.99999999ff))
+        let value = 9999.999999999ff;
+        assertEq(expected = 9999.999999999ff, value.max(9999.99999999ff))
 
     @Test
     def testBigDecimalMultiply01(): Unit \ Assert =
@@ -67,18 +67,18 @@ mod Test.Exp.Jvm.InvokeMethod.Simple {
 
     @Test
     def testBigDecimalPow01(): Unit \ Assert =
-        let val = 9834.003001ff;
-        assertEq(expected = 9352362803567718.561955395843171390012001ff, val.pow(4))
+        let value = 9834.003001ff;
+        assertEq(expected = 9352362803567718.561955395843171390012001ff, value.pow(4))
 
     @Test
     def testBigDecimalRemainder01(): Unit \ Assert + IO =
-        let val = 9012111.9834ff;
-        assertEq(expected = 327.9234ff, val.remainder(429.01ff))
+        let value = 9012111.9834ff;
+        assertEq(expected = 327.9234ff, value.remainder(429.01ff))
 
     @Test
     def testBigDecimalSubtract01(): Unit \ Assert =
-        let val = 100.50ff;
-        assertEq(expected = 50.25ff, val.subtract(50.25ff))
+        let value = 100.50ff;
+        assertEq(expected = 50.25ff, value.subtract(50.25ff))
 
     @Test
     def testBigDecimalAbs01(): Unit \ Assert =
@@ -90,8 +90,8 @@ mod Test.Exp.Jvm.InvokeMethod.Simple {
 
     @Test
     def testBigDecimalScale01(): Unit \ Assert =
-        let val = 123.456ff;
-        assertEq(expected = 3, val.scale())
+        let value = 123.456ff;
+        assertEq(expected = 3, value.scale())
 
     // Other Methods
 

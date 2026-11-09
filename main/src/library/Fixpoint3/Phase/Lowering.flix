@@ -308,12 +308,12 @@ pub mod Fixpoint3.Phase.Lowering {
                         case Ram.BoolExp.Eq(Ram.RamTerm.RowLoad(rv2, i2, _, _), Ram.RamTerm.RowLoad(rv1, i1, _, _)) if rv == rv1 =>
                             addWriteTo(rv2, i2, rv1, i1, idToIndex, writeTo);
                             None
-                        case Ram.BoolExp.Eq(Ram.RamTerm.RowLoad(rv1, i, _, _), Ram.RamTerm.Lit(val, ty)) if rv == rv1 =>
-                            let unboxed = Boxing.unboxWith(val, ty, boxing);
+                        case Ram.BoolExp.Eq(Ram.RamTerm.RowLoad(rv1, i, _, _), Ram.RamTerm.Lit(value, ty)) if rv == rv1 =>
+                            let unboxed = Boxing.unboxWith(value, ty, boxing);
                             addConstWriteTo(unboxed, rv, i, idToIndex, writeTo, rc);
                             None
-                        case Ram.BoolExp.Eq(Ram.RamTerm.Lit(val, ty), Ram.RamTerm.RowLoad(rv1, i, _, _)) if rv == rv1 =>
-                            let unboxed = Boxing.unboxWith(val, ty, boxing);
+                        case Ram.BoolExp.Eq(Ram.RamTerm.Lit(value, ty), Ram.RamTerm.RowLoad(rv1, i, _, _)) if rv == rv1 =>
+                            let unboxed = Boxing.unboxWith(value, ty, boxing);
                             addConstWriteTo(unboxed, rv, i, idToIndex, writeTo, rc);
                             None
                         case _ => Some(x)
@@ -373,7 +373,7 @@ pub mod Fixpoint3.Phase.Lowering {
         let lowerT = lowerTerm(idToIndex, boxingInfo, meetWithMap);
         let boxing = boxingInfo;
         match term {
-            case Ram.RamTerm.Lit(val, ty) => ExecutableRam.RamTerm.Lit(Boxing.unboxWith(val, ty, boxing), val)
+            case Ram.RamTerm.Lit(value, ty) => ExecutableRam.RamTerm.Lit(Boxing.unboxWith(value, ty, boxing), value)
             case Ram.RamTerm.ProvMax(vec) =>
                 vec
                     |> Vector.map(match (rv, i) -> (UniqueInts.createIndex(rv, idToIndex), i))

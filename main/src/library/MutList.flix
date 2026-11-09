@@ -336,8 +336,8 @@ pub mod MutList {
             if (i >= v->length)
                 None
             else {
-                let val = Array.get(i, v->values);
-                if (f(val)) Some(val) else loop(i + 1)
+                let elem = Array.get(i, v->values);
+                if (f(elem)) Some(elem) else loop(i + 1)
             }
         };
         loop(0)
@@ -353,8 +353,8 @@ pub mod MutList {
             if (i < 0)
                 None
             else {
-                let val = Array.get(i, v->values);
-                if (f(val)) Some(val) else loop(i - 1)
+                let elem = Array.get(i, v->values);
+                if (f(elem)) Some(elem) else loop(i - 1)
             }
         };
         loop(v->length - 1)

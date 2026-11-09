@@ -25,37 +25,37 @@ mod Test.Exp.Jvm.InvokeMethod.Chaining {
 
     @Test
     def testInvokeMethod_05(): Unit \ Assert + IO =
-        let val = 123488ii;
-        assertEq(expected = 4493ii, val.modPow(10ii, 32023ii).modInverse(4831ii))
+        let value = 123488ii;
+        assertEq(expected = 4493ii, value.modPow(10ii, 32023ii).modInverse(4831ii))
 
     @Test
     def testInvokeMethod_06(): Unit \ Assert =
-        let val = 94832ii;
-        assertEq(expected = -1043152ii, val.multiply(11ii).negate())
+        let value = 94832ii;
+        assertEq(expected = -1043152ii, value.multiply(11ii).negate())
 
     @Test
     def testInvokeMethod_07(): Unit \ Assert + IO =
-        let val = 324521ii;
-        assertEq(expected = 4ii, val.shiftLeft(2).max(1284ii).modPow(1ii, 10ii))
+        let value = 324521ii;
+        assertEq(expected = 4ii, value.shiftLeft(2).max(1284ii).modPow(1ii, 10ii))
 
     @Test
     def testInvokeMethod_08(): Unit \ Assert + IO =
-        let val = 9999.999999999ff;
-        assertEq(expected = 12.4938ff, val.max(9999.99999999ff).min(12.4938ff))
+        let value = 9999.999999999ff;
+        assertEq(expected = 12.4938ff, value.max(9999.99999999ff).min(12.4938ff))
 
     @Test
     def testInvokeMethod_09(): Unit \ Assert =
-        let val = -932983.1113ff;
-        assertEq(expected = 978987.5755350917ff, val.multiply(1.049309ff).negate())
+        let value = -932983.1113ff;
+        assertEq(expected = 978987.5755350917ff, value.multiply(1.049309ff).negate())
 
     @Test
     def testInvokeMethod_10(): Unit \ Assert =
-        let val = 833.1ff;
-        assertEq(expected = 232047597200769719005766.94527841ff, val.pow(4).pow(2).pow(1))
+        let value = 833.1ff;
+        assertEq(expected = 232047597200769719005766.94527841ff, value.pow(4).pow(2).pow(1))
 
     @Test
     def testInvokeMethod_11(): Unit \ Assert + IO =
-        let val = 9012111.9834ff;
-        assertEq(expected = 327.9234ff, val.remainder(429.01ff).max(32ff))
+        let value = 9012111.9834ff;
+        assertEq(expected = 327.9234ff, value.remainder(429.01ff).max(32ff))
 
 }
