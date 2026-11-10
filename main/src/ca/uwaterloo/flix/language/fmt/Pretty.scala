@@ -43,8 +43,7 @@ object Pretty {
   }
 
   /**
-    * Returns the given effect `t` as a tree, as it is written in effect position: the pure effect
-    * prints as `{}`.
+    * Returns the given effect `t` as a tree, as it is written in effect position.
     */
   def eff(t: Type)(implicit o: FormatOptions): Fmt =
     visit(DisplayType.fromWellKindedType(t), effPos = true)
