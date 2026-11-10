@@ -257,6 +257,7 @@ object Weeder2 {
           case TreeKind.Decl.Struct => visitStructDecl(t)
           case TreeKind.Decl.TypeAlias => visitTypeAliasDecl(t)
           case TreeKind.Decl.Effect => visitEffectDecl(t)
+          case TreeKind.Decl.Val => visitValDecl(t)
           case k => throw InternalCompilerException(s"unexpected declaration kind '$k'", t.loc)
         }
       }
@@ -341,6 +342,17 @@ object Weeder2 {
       val tconstrs = Types.pickConstraints(tree)
       val constrs = pickEqualityConstraints(tree)
       Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
+    }
+
+    private def visitValDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Val = {
+      expect(tree, TreeKind.Decl.Val)
+      val doc = pickDocumentation(tree)
+      val ann = pickAnnotations(tree)
+      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
+      val ident = pickNameIdent(tree)
+      val tpe = Types.pickType(tree)
+      val exp = Exprs.pickExpr(tree)
+      Declaration.Val(doc, ann, mod, ident, tpe, exp, tree.loc)
     }
 
     private def visitRedefinitionDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Declaration.Redef = {

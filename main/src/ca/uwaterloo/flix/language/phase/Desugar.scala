@@ -13,7 +13,7 @@ import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
 import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import ca.uwaterloo.flix.util.collection.Nel
 
 import scala.annotation.tailrec
@@ -68,6 +68,7 @@ object Desugar {
     case d: WeededAst.Declaration.Struct => visitStruct(d)
     case d: WeededAst.Declaration.TypeAlias => visitTypeAlias(d)
     case d: WeededAst.Declaration.Effect => visitEffect(d)
+    case v: WeededAst.Declaration.Val => throw InternalCompilerException("val declarations are not yet supported past the weeder", v.loc)
   }
 
   /**
