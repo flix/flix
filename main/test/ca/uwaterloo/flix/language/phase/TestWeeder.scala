@@ -9,7 +9,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{InternalCompilerException, Options}
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestWeeder extends AnyFunSuite with TestUtils {
@@ -2144,6 +2144,16 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalConstantPattern](result)
+  }
+
+  test("Val.01") {
+    // A syntactically valid `val` field is expected to parse and weed successfully, but Namer,
+    // Resolver, Kinder, and Typer do not support `val` declarations yet. Desugar deliberately
+    // throws an InternalCompilerException as a backstop until that support lands in later PRs.
+    val input = "val myField: Int32 = 1"
+    assertThrows[InternalCompilerException] {
+      check(input, Options.TestWithLibNix)
+    }
   }
 
 }
