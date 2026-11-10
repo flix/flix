@@ -29,8 +29,6 @@ object DisplayType {
     */
   sealed trait Operator extends DisplayType
 
-  private class OverAppliedType(loc: SourceLocation) extends InternalCompilerException("Unexpected over-applied type.", loc)
-
   ///////
   // Hole
   ///////
@@ -474,8 +472,8 @@ object DisplayType {
             case tpe :: Nil => RecordRowExtend(RecordLabelType(label.name, tpe) :: Nil, Hole)
             // Case 3: Fully applied. Dispatch to proper record handler.
             case _ :: _ :: Nil => fromRecordRow(t)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(label.loc)
+            // Case 4: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
         case TypeConstructor.Record =>
@@ -489,8 +487,8 @@ object DisplayType {
               case RecordRowExtend(labels, rest) => RecordExtend(labels, rest)
               case nonRecord => RecordConstructor(nonRecord)
             }
-            // Case 3: Too many args. Error.
-            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // Case 3: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ => overApplied(t, 1)
           }
 
         case TypeConstructor.Extensible =>
@@ -504,8 +502,8 @@ object DisplayType {
               case SchemaRowExtend(fields, rest) => ExtensibleExtend(fields, rest)
               case nonSchema => ExtensibleUnknown(nonSchema)
             }
-            // Case 3: Too many args. Error.
-            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // Case 3: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ => overApplied(t, 1)
           }
 
         case TypeConstructor.SchemaRowEmpty => SchemaRow(Nil)
@@ -524,8 +522,8 @@ object DisplayType {
             case _ :: Nil => SchemaRowExtend(NonPredFieldType(pred.name, args.head) :: Nil, Hole)
             // Case 5: Fully applied. Dispatch to proper schema handler.
             case _ :: _ :: Nil => fromSchemaRow(t)
-            // Case 6: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(pred.loc)
+            // Case 6: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
         case TypeConstructor.Schema =>
@@ -539,8 +537,8 @@ object DisplayType {
               case SchemaRowExtend(fields, rest) => SchemaExtend(fields, rest)
               case nonSchema => SchemaConstructor(nonSchema)
             }
-            // Case 3: Too many args. Error.
-            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // Case 3: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ => overApplied(t, 1)
           }
 
         case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(visit))
@@ -582,8 +580,8 @@ object DisplayType {
             case args :: Nil => And(args :+ Hole)
             // Case 3: Multiple args. Concatenate them: tpe1 and tpe2 and tpe3 and tpe4
             case args1 :: args2 :: Nil => And(args1 ++ args2)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // Case 4: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
         case TypeConstructor.Or =>
@@ -595,17 +593,22 @@ object DisplayType {
             case args :: Nil => Or(args :+ Hole)
             // Case 3: Multiple args. Concatenate them: tpe1 or tpe2 or tpe3 or tpe4
             case args1 :: args2 :: Nil => Or(args1 ++ args2)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // Case 4: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
-        case TypeConstructor.Not => DisplayType.Not(visit(t.typeArguments.head))
+        case TypeConstructor.Not =>
+          t.typeArguments.map(visit) match {
+            case Nil => DisplayType.Not(Hole)
+            case arg :: Nil => DisplayType.Not(arg)
+            case _ :: _ :: _ => overApplied(t, 1)
+          }
 
         case TypeConstructor.Complement =>
           t.typeArguments.map(visit) match {
             case Nil => Complement(Hole)
             case arg :: Nil => Complement(arg)
-            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            case _ :: _ :: _ => overApplied(t, 1)
           }
 
         case TypeConstructor.Union =>
@@ -617,8 +620,8 @@ object DisplayType {
             case args :: Nil => Plus(args :+ Hole)
             // Case 3: Multiple args. Concatenate them: tpe1 + tpe2 + tpe3 + tpe4
             case args1 :: args2 :: Nil => Plus(args1 ++ args2)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // Case 4: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
         case TypeConstructor.Intersection =>
@@ -630,8 +633,8 @@ object DisplayType {
             case args :: Nil => Intersection(args :+ Hole)
             // Case 3: Multiple args. Concatenate them: tpe1 & tpe2 & tpe3 & tpe4
             case args1 :: args2 :: Nil => Intersection(args1 ++ args2)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // Case 4: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
         case TypeConstructor.Difference =>
@@ -644,8 +647,8 @@ object DisplayType {
             case arg :: Nil => Difference(splitDifference(arg) :+ Hole)
             // Case 3: Multiple args. Concatenate the left differences: tpe1 - tpe2 - tpe3 - tpe4
             case arg1 :: arg2 :: Nil => Difference(splitDifference(arg1) :+ arg2)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // Case 4: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
         case TypeConstructor.SymmetricDiff =>
@@ -656,8 +659,8 @@ object DisplayType {
             case arg :: Nil => SymmetricDiff(arg :+ Hole)
             // Case 3: Multiple args. Concatenate them: tpe1 ⊕ tpe2
             case arg1 :: arg2 :: Nil => SymmetricDiff(arg1 ++ arg2)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // Case 4: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
         case TypeConstructor.CaseSet(syms, _) =>
@@ -669,7 +672,7 @@ object DisplayType {
           t.typeArguments.map(visit) match {
             case Nil => Complement(Hole)
             case arg :: Nil => Complement(arg)
-            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            case _ :: _ :: _ => overApplied(t, 1)
           }
 
         case TypeConstructor.CaseIntersection(_) =>
@@ -677,7 +680,7 @@ object DisplayType {
             case Nil => Intersection(Hole :: Hole :: Nil)
             case arg :: Nil => Intersection(arg :: Hole :: Nil)
             case arg1 :: arg2 :: Nil => Intersection(arg1 :: arg2 :: Nil)
-            case _ => throw new OverAppliedType(t.loc)
+            case _ => overApplied(t, 2)
           }
 
         case TypeConstructor.CaseUnion(_) =>
@@ -685,7 +688,7 @@ object DisplayType {
             case Nil => Plus(Hole :: Hole :: Nil)
             case arg :: Nil => Plus(arg :: Hole :: Nil)
             case arg1 :: arg2 :: Nil => Plus(arg1 :: arg2 :: Nil)
-            case _ => throw new OverAppliedType(t.loc)
+            case _ => overApplied(t, 2)
           }
 
         case TypeConstructor.CaseSymmetricDiff(_) =>
@@ -693,7 +696,7 @@ object DisplayType {
             case Nil => SymmetricDiff(Hole :: Hole :: Nil)
             case arg :: Nil => SymmetricDiff(arg :: Hole :: Nil)
             case arg1 :: arg2 :: Nil => SymmetricDiff(arg1 :: arg2 :: Nil)
-            case _ => throw new OverAppliedType(t.loc)
+            case _ => overApplied(t, 2)
           }
 
         case TypeConstructor.Effect(sym, _) => mkApply(DisplayType.Effect(sym), t.typeArguments.map(visit))
@@ -704,6 +707,18 @@ object DisplayType {
         case TypeConstructor.Error(_, _) => DisplayType.Error
       }
       case Type.Apply(_, _, loc) => throw InternalCompilerException("unexpected Type.Apply", loc)
+    }
+
+    /**
+      * Returns the view of the type `t`, which has more arguments than the `n` its constructor takes:
+      * the view of `t` with its first `n` arguments, applied to the rest.
+      *
+      * A well-kinded type is never over-applied, but an ill-kinded one is shown as it stands, e.g.
+      * `{ x = Int32 }[String]`, so that an error message can print it.
+      */
+    def overApplied(t: Type, n: Int): DisplayType = {
+      val (args, rest) = t.typeArguments.splitAt(n)
+      mkApply(visit(Type.mkApply(t.baseType, args, t.loc)), rest.map(visit))
     }
 
     visit(t0)

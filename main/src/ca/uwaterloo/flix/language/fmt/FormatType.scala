@@ -268,7 +268,7 @@ object FormatType {
       case DisplayType.Effect(sym) => sym.name
       case DisplayType.Native(desc) => ClassDescs.canonicalNameOf(desc)
       case DisplayType.Apply(tpe, tpes) =>
-        val string = visit(tpe, Mode.Type)
+        val string = delimit(tpe, Mode.Type)
         val strings = tpes.map(visit(_, Mode.Type))
         string + strings.mkString("[", ", ", "]")
       case DisplayType.Var(sym) =>
