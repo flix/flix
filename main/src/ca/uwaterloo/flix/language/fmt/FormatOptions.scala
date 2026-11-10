@@ -23,8 +23,11 @@ object FormatOptions {
     * The format options to use for everything a user reads, e.g. hovers and error messages.
     *
     * Variables are formatted by their names.
+    *
+    * The implicit is found without an import, so a call to [[Pretty]] with no options in scope
+    * gets these.
     */
-  val Default: FormatOptions = FormatOptions(
+  implicit val Default: FormatOptions = FormatOptions(
     varNames = VarName.NameBased
   )
 
