@@ -131,98 +131,11 @@ object FormatType {
     }
 
     /**
-      * Returns `true` iff the given `tpe` is innately delimited,
-      * meaning that it never needs parenthesization.
+      * Delimits the given `tpe`, parenthesizing it if it is an operator.
       */
-    def isDelimited(tpe: DisplayType): Boolean = tpe match {
-      // non-delimited types
-      case DisplayType.Not(_) => false
-      case DisplayType.And(_) => false
-      case DisplayType.Or(_) => false
-      case DisplayType.Complement(_) => false
-      case DisplayType.Intersection(_) => false
-      case DisplayType.SymmetricDiff(_) => false
-      case DisplayType.Difference(_) => false
-      case DisplayType.Plus(_) => false
-      case DisplayType.PureArrow(_, _) => false
-      case DisplayType.PolyArrow(_, _, _) => false
-      case DisplayType.ArrowWithoutEffect(_, _) => false
-
-      // delimited types
-      case DisplayType.Hole => true
-      case DisplayType.Void => true
-      case DisplayType.AnyType => true
-      case DisplayType.Unit => true
-      case DisplayType.Null => true
-      case DisplayType.Bool => true
-      case DisplayType.Char => true
-      case DisplayType.Float32 => true
-      case DisplayType.Float64 => true
-      case DisplayType.BigDecimal => true
-      case DisplayType.Int8 => true
-      case DisplayType.Int16 => true
-      case DisplayType.Int32 => true
-      case DisplayType.Int64 => true
-      case DisplayType.BigInt => true
-      case DisplayType.Str => true
-      case DisplayType.Regex => true
-      case DisplayType.Array => true
-      case DisplayType.ArrayWithoutRegion => true
-      case DisplayType.Vector => true
-      case DisplayType.Sender => true
-      case DisplayType.Receiver => true
-      case DisplayType.Lazy => true
-      case DisplayType.True => true
-      case DisplayType.False => true
-      case DisplayType.Pure => true
-      case DisplayType.Univ => true
-      case DisplayType.Region(_) => true
-      case DisplayType.RegionToStar => true
-      case DisplayType.RegionWithoutRegion => true
-      case DisplayType.RecordConstructor(_) => true
-      case DisplayType.Record(_) => true
-      case DisplayType.RecordExtend(_, _) => true
-      case DisplayType.RecordRow(_) => true
-      case DisplayType.RecordRowExtend(_, _) => true
-      case DisplayType.SchemaConstructor(_) => true
-      case DisplayType.Schema(_) => true
-      case DisplayType.SchemaExtend(_, _) => true
-      case DisplayType.SchemaRow(_) => true
-      case DisplayType.SchemaRowExtend(_, _) => true
-      case DisplayType.ExtensibleUnknown(_) => true
-      case DisplayType.Extensible(_) => true
-      case DisplayType.ExtensibleExtend(_, _) => true
-      case DisplayType.RelationConstructor => true
-      case DisplayType.Relation(_) => true
-      case DisplayType.LatticeConstructor => true
-      case DisplayType.Lattice(_, _) => true
-      case DisplayType.TagConstructor(_) => true
-      case DisplayType.Name(_) => true
-      case DisplayType.Apply(_, _) => true
-      case DisplayType.Var(_, _, _) => true
-      case DisplayType.Tuple(_) => true
-      case DisplayType.JvmToType(_) => true
-      case DisplayType.JvmToEff(_) => true
-      case DisplayType.JvmUnresolvedConstructor(_, _) => true
-      case DisplayType.JvmUnresolvedField(_, _) => true
-      case DisplayType.JvmUnresolvedMethod(_, _, _) => true
-      case DisplayType.JvmUnresolvedStaticMethod(_, _, _) => true
-      case DisplayType.JvmConstructor(_) => true
-      case DisplayType.JvmField(_) => true
-      case DisplayType.JvmMethod(_) => true
-      case DisplayType.Union(_) => true
-      case DisplayType.Error => true
-    }
-
-    /**
-      * Delimits the given `tpe`, parenthesizing it if needed.
-      */
-    def delimit(tpe: DisplayType, mode: Mode): String = {
-      if (isDelimited(tpe)) {
-        visit(tpe, mode)
-      } else {
-        parenthesize(visit(tpe, mode))
-      }
+    def delimit(tpe: DisplayType, mode: Mode): String = tpe match {
+      case _: DisplayType.Operator => parenthesize(visit(tpe, mode))
+      case _ => visit(tpe, mode)
     }
 
     /**
@@ -345,7 +258,6 @@ object FormatType {
         val argString = delimitFunctionArg(arg)
         val retString = delimit(ret, Mode.Type)
         s"$argString --> $retString"
-      case DisplayType.TagConstructor(name) => name
       case DisplayType.Name(name) => name
       case DisplayType.Apply(tpe, tpes) =>
         val string = visit(tpe, Mode.Type)
