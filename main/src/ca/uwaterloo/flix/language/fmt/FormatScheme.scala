@@ -60,7 +60,7 @@ object FormatScheme {
     * `∀(a, b).a -> Int -> b`
     */
   def formatSchemeWithoutConstraints(sc: Scheme)(implicit flix: Flix): String = {
-    formatSchemeWithoutConstraintsWithOptions(sc, flix.getFormatOptions)
+    formatSchemeWithoutConstraintsWithOptions(sc, FormatOptions.Default)
   }
 
   /**
