@@ -20,6 +20,14 @@ sealed trait DisplayType
 
 object DisplayType {
 
+  /**
+    * An operator node: `not a`, `a and b`, `a -> b`, ...
+    *
+    * An operator is not atomic, so it is parenthesized when it stands as an operand of another
+    * operator or in an argument position. Every other node is atomic and never parenthesized.
+    */
+  sealed trait Operator extends DisplayType
+
   private class OverAppliedType(loc: SourceLocation) extends InternalCompilerException("Unexpected over-applied type.", loc)
 
   ///////
@@ -178,17 +186,17 @@ object DisplayType {
   /**
     * Boolean negation.
     */
-  case class Not(tpe: DisplayType) extends DisplayType
+  case class Not(tpe: DisplayType) extends Operator
 
   /**
     * A chain of types connected by `and`.
     */
-  case class And(tpes: List[DisplayType]) extends DisplayType
+  case class And(tpes: List[DisplayType]) extends Operator
 
   /**
     * A chain of types connected by `or`.
     */
-  case class Or(tpes: List[DisplayType]) extends DisplayType
+  case class Or(tpes: List[DisplayType]) extends Operator
 
   ////////////////
   // Set Operators
@@ -197,7 +205,7 @@ object DisplayType {
   /**
     * Set complement.
     */
-  case class Complement(tpe: DisplayType) extends DisplayType
+  case class Complement(tpe: DisplayType) extends Operator
 
   /**
     * A chain of types in a set.
@@ -207,22 +215,22 @@ object DisplayType {
   /**
     * A chain of types connected by `&`.
     */
-  case class Plus(tpes: List[DisplayType]) extends DisplayType
+  case class Plus(tpes: List[DisplayType]) extends Operator
 
   /**
     * A chain of types connected by `&`.
     */
-  case class Intersection(tpes: List[DisplayType]) extends DisplayType
+  case class Intersection(tpes: List[DisplayType]) extends Operator
 
   /**
     * A chain of types connected by `⊕`.
     */
-  case class SymmetricDiff(tpes: List[DisplayType]) extends DisplayType
+  case class SymmetricDiff(tpes: List[DisplayType]) extends Operator
 
   /**
     * A chain of types connected by `-`.
     */
-  case class Difference(tpes: List[DisplayType]) extends DisplayType
+  case class Difference(tpes: List[DisplayType]) extends Operator
 
   /////////////
   // Predicates
@@ -249,23 +257,17 @@ object DisplayType {
   /**
     * A pure function.
     */
-  case class PureArrow(arg: DisplayType, ret: DisplayType) extends DisplayType
+  case class PureArrow(arg: DisplayType, ret: DisplayType) extends Operator
 
   /**
     * A function with a purity.
     */
-  case class PolyArrow(arg: DisplayType, eff: DisplayType, ret: DisplayType) extends DisplayType
+  case class PolyArrow(arg: DisplayType, eff: DisplayType, ret: DisplayType) extends Operator
 
   /**
     * A backend function (no effect).
     */
-  case class ArrowWithoutEffect(arg: DisplayType, ret: DisplayType) extends DisplayType
-
-  ///////
-  // Tags
-  ///////
-
-  case class TagConstructor(name: String) extends DisplayType
+  case class ArrowWithoutEffect(arg: DisplayType, ret: DisplayType) extends Operator
 
   ////////////
   // JVM Types
