@@ -69,7 +69,7 @@ object CodeGen {
     val tupleClasses = getTupleTypesOf(allTypes).map(elms => JvmClass(GenTuple.desc(elms), GenTuple.genByteCode(elms))).toList
     val structClasses = root.structs.values.map(TypeDescs.structFields).toSet[List[ClassDesc]].toList.map(elms => JvmClass(GenStruct.desc(elms), GenStruct.genByteCode(elms)))
 
-    val recordInterfaces = List(JvmClass(GenRecord.Desc, GenRecord.genByteCode()))
+    val recordAbstractClass = List(JvmClass(GenRecord.Desc, GenRecord.genByteCode()))
     val recordEmptyClasses = List(JvmClass(GenRecordEmpty.Desc, GenRecordEmpty.genByteCode()))
     val recordExtendClasses = getRecordExtendsOf(allTypes).map(value => JvmClass(GenRecordExtend.desc(value), GenRecordExtend.genByteCode(value))).toList
 
@@ -122,7 +122,7 @@ object CodeGen {
       extensibleTagClasses,
       tupleClasses,
       structClasses,
-      recordInterfaces,
+      recordAbstractClass,
       recordEmptyClasses,
       recordExtendClasses,
       lazyClasses,
