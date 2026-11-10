@@ -262,10 +262,10 @@ object FormatType {
       case DisplayType.Enum(sym) => fmt.qualify.qualify(sym)
       case DisplayType.Struct(sym) => fmt.qualify.qualify(sym)
       case DisplayType.RestrictableEnum(sym) => fmt.qualify.qualify(sym)
+      case DisplayType.Case(sym) => sym.name
       case DisplayType.Alias(sym) => fmt.qualify.qualify(sym)
       case DisplayType.Assoc(sym) => sym.name
       case DisplayType.Effect(sym) => sym.name
-      case DisplayType.Case(sym) => sym.name
       case DisplayType.Native(desc) => ClassDescs.canonicalNameOf(desc)
       case DisplayType.Apply(tpe, tpes) =>
         val string = visit(tpe, Mode.Type)

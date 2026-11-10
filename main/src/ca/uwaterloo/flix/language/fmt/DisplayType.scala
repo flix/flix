@@ -312,6 +312,11 @@ object DisplayType {
   case class RestrictableEnum(sym: Symbol.RestrictableEnumSym) extends DisplayType
 
   /**
+    * A case of a restrictable enum in a case set, by its symbol.
+    */
+  case class Case(sym: Symbol.RestrictableCaseSym) extends DisplayType
+
+  /**
     * A type alias, by its symbol.
     */
   case class Alias(sym: Symbol.TypeAliasSym) extends DisplayType
@@ -325,11 +330,6 @@ object DisplayType {
     * An effect, by its symbol.
     */
   case class Effect(sym: Symbol.EffSym) extends DisplayType
-
-  /**
-    * A case of a restrictable enum in a case set, by its symbol.
-    */
-  case class Case(sym: Symbol.RestrictableCaseSym) extends DisplayType
 
   /**
     * A Java class, by its descriptor.
