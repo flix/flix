@@ -1142,6 +1142,7 @@ object Parser2 {
         case TokenKind.KeywordStruct => structDecl(mark)
         case TokenKind.KeywordType => typeAliasDecl(mark)
         case TokenKind.KeywordEff => effectDecl(mark)
+        case TokenKind.KeywordVal => valDecl(mark)
         case at =>
           val loc = currentSourceLocation()
           val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), sctx, loc = loc)
@@ -1321,6 +1322,21 @@ object Parser2 {
 
       val treeKind = if (declKind == TokenKind.KeywordRedef) TreeKind.Decl.Redef else TreeKind.Decl.Def
       close(mark, treeKind)
+    }
+
+    private def valDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
+      assert(at(TokenKind.KeywordVal))
+      expect(TokenKind.KeywordVal)
+      nameUnqualified(NAME_FIELD)
+      expect(TokenKind.Colon)
+      Type.ttype()
+      if (eat(TokenKind.Equal)) {
+        Expr.statement()
+      } else {
+        expect(TokenKind.Equal) // Produce an error for missing '='.
+      }
+      close(mark, TreeKind.Decl.Val)
     }
 
     private def enumerationDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {

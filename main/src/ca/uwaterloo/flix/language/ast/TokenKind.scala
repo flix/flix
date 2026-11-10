@@ -244,6 +244,7 @@ sealed abstract class TokenKind(private val flags: Int = 0) {
     case TokenKind.KeywordStruct => true
     case TokenKind.KeywordTrait => true
     case TokenKind.KeywordType => true
+    case TokenKind.KeywordVal => true
     case _ => false
   })
 

@@ -244,7 +244,8 @@ object Weeder2 {
         TreeKind.Decl.RestrictableEnum,
         TreeKind.Decl.Struct,
         TreeKind.Decl.TypeAlias,
-        TreeKind.Decl.Effect
+        TreeKind.Decl.Effect,
+        TreeKind.Decl.Val
       ).map { t =>
         t.kind match {
           case TreeKind.Decl.Module => visitModuleDecl(t)
