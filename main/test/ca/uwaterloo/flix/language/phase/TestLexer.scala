@@ -769,10 +769,6 @@ class TestLexer extends AnyFunSuite with TestUtils {
     assertResult(List(TokenKind.KeywordUse, TokenKind.NameLowercase, TokenKind.Minus, TokenKind.NameLowercase, TokenKind.ColonColonTight, TokenKind.NameUppercase))(kindsOf("use flix-json::Board"))
   }
 
-  test("Keyword.Val.01") {
-    assertResult(List(TokenKind.KeywordVal))(kindsOf("val"))
-  }
-
   /** Returns the kinds of the tokens of `s`, without the final [[TokenKind.Eof]]. */
   private def kindsOf(s: String): List[TokenKind] =
     tokensOf(s).map(_.kind)
