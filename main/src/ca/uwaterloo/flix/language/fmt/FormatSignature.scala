@@ -38,7 +38,7 @@ object FormatSignature {
     * Returns a markdown string for the given `name` and `spec`.
     */
   private def formatSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = {
-    formatSpecWithOptions(name, spec, flix.getFormatOptions)
+    formatSpecWithOptions(name, spec, FormatOptions.Default)
   }
 
   /**

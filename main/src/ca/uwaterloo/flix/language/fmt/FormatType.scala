@@ -30,7 +30,7 @@ object FormatType {
     } else {
       renamed
     }
-    formatTypeWithOptions(minimized, flix.getFormatOptions, amb = amb)
+    formatTypeWithOptions(minimized, FormatOptions.Default, amb = amb)
   }
 
   /**
@@ -79,7 +79,7 @@ object FormatType {
     * Transforms the given type view into a string.
     */
   def formatDisplayType(tpe: DisplayType)(implicit flix: Flix): String =
-    formatDisplayTypeWithOptions(tpe, flix.getFormatOptions)
+    formatDisplayTypeWithOptions(tpe, FormatOptions.Default)
 
   /**
     * Transforms the given type view into a string, using the given format options.

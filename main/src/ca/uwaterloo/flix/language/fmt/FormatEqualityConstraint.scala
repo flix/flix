@@ -15,7 +15,7 @@ object FormatEqualityConstraint {
     * Formats the given `econstr` as `Assoc[Arg] ~ Type`.
     */
   def formatEqualityConstraint(econstr: EqualityConstraint)(implicit flix: Flix): String = {
-    formatEqualityConstraintWithOptions(econstr, flix.getFormatOptions)
+    formatEqualityConstraintWithOptions(econstr, FormatOptions.Default)
   }
 
   /**

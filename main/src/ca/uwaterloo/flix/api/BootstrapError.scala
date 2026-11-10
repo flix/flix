@@ -229,7 +229,7 @@ object BootstrapError {
         val formattedPkg = s"  ${f.bold(id.toString)}:"
         val formattedChanges = changes.sortBy { case (_, sym, _) => EffectLock.nameOf(sym) }.map {
           case (_, sym, spec) =>
-            val declaration = FormatSignature.formatSpecWithOptions(sym.name, spec, FormatOptions(FormatOptions.VarName.NameBased))
+            val declaration = FormatSignature.formatSpecWithOptions(sym.name, spec, FormatOptions.Default)
             s"    ${f.bold(EffectLock.nameOf(sym))}${System.lineSeparator()}      ${f.red(declaration)}"
         }.mkString(System.lineSeparator())
         s"$formattedPkg${System.lineSeparator()}$formattedChanges"

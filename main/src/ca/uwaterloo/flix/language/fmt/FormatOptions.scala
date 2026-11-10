@@ -16,6 +16,15 @@ case class FormatOptions(varNames: FormatOptions.VarName)
 object FormatOptions {
 
   /**
+    * The format options to use for everything a user reads, e.g. hovers and error messages.
+    *
+    * Variables are formatted by their names.
+    */
+  val Default: FormatOptions = FormatOptions(
+    varNames = VarName.NameBased
+  )
+
+  /**
     * The format options to use for internal
     */
   val Internal: FormatOptions = FormatOptions(

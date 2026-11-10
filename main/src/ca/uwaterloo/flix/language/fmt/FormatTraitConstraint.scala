@@ -15,7 +15,7 @@ object FormatTraitConstraint {
     * Formats the given `tconstr` as `Class[Param]`.
     */
   def formatTraitConstraint(tconstr: TraitConstraint)(implicit flix: Flix): String = {
-    formatTraitConstraintWithOptions(tconstr, flix.getFormatOptions)
+    formatTraitConstraintWithOptions(tconstr, FormatOptions.Default)
   }
 
   /**
