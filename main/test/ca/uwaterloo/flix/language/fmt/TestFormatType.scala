@@ -477,4 +477,67 @@ class TestFormatType extends AnyFunSuite with TestUtils {
 
     assert(actual == expected)
   }
+
+  test("FormatPartialType.Boolean.External.08") {
+    val tpe = Type.Not
+
+    val expected = "not ?"
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+
+    assert(actual == expected)
+  }
+
+  test("FormatOverAppliedType.Record.External.01") {
+    val row = Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, Type.RecordRowEmpty, loc)
+    val tpe = Type.mkApply(Type.mkRecord(row, loc), List(Type.Str), loc)
+
+    val expected = "{ x = Int32 }[String]"
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+
+    assert(actual == expected)
+  }
+
+  test("FormatOverAppliedType.RecordRow.External.01") {
+    val row = Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, Type.RecordRowEmpty, loc)
+    val tpe = Type.mkApply(row, List(Type.Str, Type.Bool), loc)
+
+    val expected = "( x = Int32 )[String, Bool]"
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+
+    assert(actual == expected)
+  }
+
+  test("FormatOverAppliedType.Boolean.External.01") {
+    val a = Type.Var(new Symbol.KindedTypeVarSym(1, VarText.SourceText("a"), Kind.Bool, scope, loc), loc)
+    val b = Type.Var(new Symbol.KindedTypeVarSym(2, VarText.SourceText("b"), Kind.Bool, scope, loc), loc)
+    val c = Type.Var(new Symbol.KindedTypeVarSym(3, VarText.SourceText("c"), Kind.Bool, scope, loc), loc)
+    val tpe = Type.mkApply(Type.And, List(a, b, c), loc)
+
+    val expected = "(a and b)[c]"
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+
+    assert(actual == expected)
+  }
+
+  test("FormatOverAppliedType.Boolean.External.02") {
+    val a = Type.Var(new Symbol.KindedTypeVarSym(1, VarText.SourceText("a"), Kind.Bool, scope, loc), loc)
+    val b = Type.Var(new Symbol.KindedTypeVarSym(2, VarText.SourceText("b"), Kind.Bool, scope, loc), loc)
+    val tpe = Type.mkApply(Type.Not, List(a, b), loc)
+
+    val expected = "(not a)[b]"
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+
+    assert(actual == expected)
+  }
+
+  test("FormatOverAppliedType.Boolean.External.03") {
+    val a = Type.Var(new Symbol.KindedTypeVarSym(1, VarText.SourceText("a"), Kind.Eff, scope, loc), loc)
+    val b = Type.Var(new Symbol.KindedTypeVarSym(2, VarText.SourceText("b"), Kind.Eff, scope, loc), loc)
+    val tpe = Type.mkApply(Type.Complement, List(a, b), loc)
+
+    val expected = "(~a)[b]"
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+
+    assert(actual == expected)
+  }
 }
