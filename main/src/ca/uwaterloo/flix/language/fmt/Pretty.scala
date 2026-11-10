@@ -66,12 +66,6 @@ object Pretty {
   }
 
   /**
-    * Returns the given effect `t` as a tree, as it is written in effect position.
-    */
-  def eff(t: Type)(implicit o: FormatOptions): Fmt =
-    visit(DisplayType.fromWellKindedType(t), effPos = true)
-
-  /**
     * Returns `tpe \ eff` for the given type `tpe` and effect `eff`, or just `tpe` if `eff` is pure.
     *
     * Simplifies the effect formulas of both if `simplify` is set.
@@ -80,7 +74,7 @@ object Pretty {
     val simplifiedEff = if (simplify) TypeSimplifier.simplify(eff) else eff
     val effFmt = DisplayType.fromWellKindedType(simplifiedEff) match {
       case DisplayType.Pure => Fmt.Empty
-      case d => text(" ") ++ op("\\") ++ text(" ") ++ visit(d, effPos = true)
+      case d => text(" ") ++ op("\\") ++ text(" ") ++ visit(d)
     }
     Pretty.tpe(tpe, simplify = simplify) ++ effFmt
   }
@@ -122,14 +116,12 @@ object Pretty {
   /**
     * Returns the given type view `d` as a tree.
     */
-  def displayType(d: DisplayType)(implicit o: FormatOptions): Fmt = visit(d, effPos = false)
+  def displayType(d: DisplayType)(implicit o: FormatOptions): Fmt = visit(d)
 
   /**
     * Returns the given type view `d` as a tree.
-    *
-    * `effPos` is set in effect position, where the pure effect prints as `{}` rather than `Pure`.
     */
-  private def visit(d: DisplayType, effPos: Boolean)(implicit o: FormatOptions): Fmt = d match {
+  private def visit(d: DisplayType)(implicit o: FormatOptions): Fmt = d match {
     case DisplayType.Hole => text("?")
     case DisplayType.Void => ty("Void")
     case DisplayType.AnyType => ty("AnyType")
@@ -155,7 +147,7 @@ object Pretty {
     case DisplayType.Lazy => ty("Lazy")
     case DisplayType.False => ty("false")
     case DisplayType.True => ty("true")
-    case DisplayType.Pure => if (effPos) ef("{}") else ef("Pure")
+    case DisplayType.Pure => ef("{}")
     case DisplayType.Univ => ef("Univ")
     case DisplayType.Region(sym) => tparam(sym.text)
     case DisplayType.RegionToStar => ty("Region")
@@ -163,50 +155,50 @@ object Pretty {
     case DisplayType.Record(labels) =>
       text("{ ") ++ sep(", ", labels.map(label)) ++ text(" }")
     case DisplayType.RecordExtend(labels, rest) =>
-      text("{ ") ++ sep(", ", labels.map(label)) ++ text(" | ") ++ visit(rest, effPos) ++ text(" }")
+      text("{ ") ++ sep(", ", labels.map(label)) ++ text(" | ") ++ visit(rest) ++ text(" }")
     case DisplayType.RecordRow(labels) =>
       text("( ") ++ sep(", ", labels.map(label)) ++ text(" )")
     case DisplayType.RecordRowExtend(labels, rest) =>
-      text("( ") ++ sep(", ", labels.map(label)) ++ text(" | ") ++ visit(rest, effPos = false) ++ text(" )")
+      text("( ") ++ sep(", ", labels.map(label)) ++ text(" | ") ++ visit(rest) ++ text(" )")
     case DisplayType.RecordConstructor(arg) =>
-      text("{ ") ++ visit(arg, effPos = false) ++ text(" }")
+      text("{ ") ++ visit(arg) ++ text(" }")
     case DisplayType.Schema(fields) =>
       text("#{ ") ++ sep(", ", fields.map(field)) ++ text(" }")
     case DisplayType.SchemaExtend(fields, rest) =>
-      text("#{ ") ++ sep(", ", fields.map(field)) ++ text(" | ") ++ visit(rest, effPos = false) ++ text(" }")
+      text("#{ ") ++ sep(", ", fields.map(field)) ++ text(" | ") ++ visit(rest) ++ text(" }")
     case DisplayType.SchemaRow(fields) =>
       text("#( ") ++ sep(", ", fields.map(field)) ++ text(" )")
     case DisplayType.SchemaRowExtend(fields, rest) =>
-      text("#( ") ++ sep(", ", fields.map(field)) ++ text(" | ") ++ visit(rest, effPos = false) ++ text(" )")
+      text("#( ") ++ sep(", ", fields.map(field)) ++ text(" | ") ++ visit(rest) ++ text(" )")
     case DisplayType.SchemaConstructor(arg) =>
-      text("#{ ") ++ visit(arg, effPos = false) ++ text(" }")
+      text("#{ ") ++ visit(arg) ++ text(" }")
     case DisplayType.Extensible(fields) =>
       text("#| ") ++ sep(", ", fields.map(field)) ++ text(" |#")
     case DisplayType.ExtensibleExtend(fields, rest) =>
-      text("#| ") ++ sep(", ", fields.map(field)) ++ text(" | ") ++ visit(rest, effPos = false) ++ text(" |#")
+      text("#| ") ++ sep(", ", fields.map(field)) ++ text(" | ") ++ visit(rest) ++ text(" |#")
     case DisplayType.ExtensibleUnknown(arg) =>
-      text("#| ") ++ visit(arg, effPos = false) ++ text(" |#")
-    case DisplayType.Not(tpe) => kw("not") ++ text(" ") ++ delimit(tpe, effPos)
-    case DisplayType.And(tpes) => sep(text(" ") ++ kw("and") ++ text(" "), tpes.map(delimit(_, effPos)))
-    case DisplayType.Or(tpes) => sep(text(" ") ++ kw("or") ++ text(" "), tpes.map(delimit(_, effPos)))
-    case DisplayType.Complement(tpe) => op("~") ++ delimit(tpe, effPos)
-    case DisplayType.Union(tpes) => text("{") ++ sep(", ", tpes.map(visit(_, effPos))) ++ text("}")
-    case DisplayType.Plus(tpes) => sep(text(" ") ++ op("+") ++ text(" "), tpes.map(delimit(_, effPos)))
-    case DisplayType.Intersection(tpes) => sep(text(" ") ++ op("&") ++ text(" "), tpes.map(delimit(_, effPos)))
-    case DisplayType.SymmetricDiff(tpes) => sep(text(" ") ++ op("⊕") ++ text(" "), tpes.map(delimit(_, effPos)))
-    case DisplayType.Difference(tpes) => sep(text(" ") ++ op("-") ++ text(" "), tpes.map(delimit(_, effPos)))
+      text("#| ") ++ visit(arg) ++ text(" |#")
+    case DisplayType.Not(tpe) => kw("not") ++ text(" ") ++ delimit(tpe)
+    case DisplayType.And(tpes) => sep(text(" ") ++ kw("and") ++ text(" "), tpes.map(delimit))
+    case DisplayType.Or(tpes) => sep(text(" ") ++ kw("or") ++ text(" "), tpes.map(delimit))
+    case DisplayType.Complement(tpe) => op("~") ++ delimit(tpe)
+    case DisplayType.Union(tpes) => text("{") ++ sep(", ", tpes.map(visit)) ++ text("}")
+    case DisplayType.Plus(tpes) => sep(text(" ") ++ op("+") ++ text(" "), tpes.map(delimit))
+    case DisplayType.Intersection(tpes) => sep(text(" ") ++ op("&") ++ text(" "), tpes.map(delimit))
+    case DisplayType.SymmetricDiff(tpes) => sep(text(" ") ++ op("⊕") ++ text(" "), tpes.map(delimit))
+    case DisplayType.Difference(tpes) => sep(text(" ") ++ op("-") ++ text(" "), tpes.map(delimit))
     case DisplayType.RelationConstructor => ty("Relation")
     case DisplayType.Relation(tpes) =>
-      ty("Relation") ++ parens(sep(", ", tpes.map(visit(_, effPos = false))))
+      ty("Relation") ++ parens(sep(", ", tpes.map(visit)))
     case DisplayType.LatticeConstructor => ty("Lattice")
     case DisplayType.Lattice(tpes, lat) =>
-      ty("Lattice") ++ parens(sep(", ", tpes.map(visit(_, effPos = false))) ++ text("; ") ++ visit(lat, effPos = false))
+      ty("Lattice") ++ parens(sep(", ", tpes.map(visit)) ++ text("; ") ++ visit(lat))
     case DisplayType.PureArrow(arg, ret) =>
-      delimitFunctionArg(arg) ++ text(" ") ++ op("->") ++ text(" ") ++ delimit(ret, effPos = false)
+      delimitFunctionArg(arg) ++ text(" ") ++ op("->") ++ text(" ") ++ delimit(ret)
     case DisplayType.PolyArrow(arg, eff, ret) =>
-      delimitFunctionArg(arg) ++ text(" ") ++ op("->") ++ text(" ") ++ delimit(ret, effPos = false) ++ text(" ") ++ op("\\") ++ text(" ") ++ visit(eff, effPos = true)
+      delimitFunctionArg(arg) ++ text(" ") ++ op("->") ++ text(" ") ++ delimit(ret) ++ text(" ") ++ op("\\") ++ text(" ") ++ visit(eff)
     case DisplayType.ArrowWithoutEffect(arg, ret) =>
-      delimitFunctionArg(arg) ++ text(" ") ++ op("-->") ++ text(" ") ++ delimit(ret, effPos = false)
+      delimitFunctionArg(arg) ++ text(" ") ++ op("-->") ++ text(" ") ++ delimit(ret)
     case DisplayType.Enum(sym) => SymUse(sym, SemanticTokenType.Enum, qualify(sym))
     case DisplayType.Struct(sym) => SymUse(sym, SemanticTokenType.Struct, qualify(sym))
     case DisplayType.RestrictableEnum(sym) => SymUse(sym, SemanticTokenType.Enum, qualify(sym))
@@ -216,22 +208,22 @@ object Pretty {
     case DisplayType.Effect(sym) => SymUse(sym, SemanticTokenType.Effect, sym.name)
     case DisplayType.Native(desc) => ty(ClassDescs.canonicalNameOf(desc))
     case DisplayType.Apply(tpe, tpes) =>
-      delimit(tpe, effPos = false) ++ text("[") ++ sep(", ", tpes.map(visit(_, effPos = false))) ++ text("]")
+      delimit(tpe) ++ text("[") ++ sep(", ", tpes.map(visit)) ++ text("]")
     case DisplayType.Var(sym) => typeVar(sym)
     case DisplayType.Tuple(elms) =>
-      parens(sep(", ", elms.map(visit(_, effPos = false))))
+      parens(sep(", ", elms.map(visit)))
     case DisplayType.JvmToType(tpe) =>
-      ty("JvmToType") ++ parens(visit(tpe, effPos = false))
+      ty("JvmToType") ++ parens(visit(tpe))
     case DisplayType.JvmToEff(tpe) =>
-      ty("JvmToEff") ++ parens(visit(tpe, effPos = false))
+      ty("JvmToEff") ++ parens(visit(tpe))
     case DisplayType.JvmUnresolvedConstructor(name, tpes) =>
-      ty("JvmUnresolvedConstructor") ++ parens(ty(name) ++ text(", ") ++ sep(", ", tpes.map(visit(_, effPos = false))))
+      ty("JvmUnresolvedConstructor") ++ parens(ty(name) ++ text(", ") ++ sep(", ", tpes.map(visit)))
     case DisplayType.JvmUnresolvedField(tpe, name) =>
-      ty("JvmUnresolvedField") ++ parens(visit(tpe, effPos = false) ++ text(", ") ++ text(name))
+      ty("JvmUnresolvedField") ++ parens(visit(tpe) ++ text(", ") ++ text(name))
     case DisplayType.JvmUnresolvedMethod(tpe, name, tpes) =>
-      ty("JvmUnresolvedMethod") ++ parens(visit(tpe, effPos = false) ++ text(", ") ++ text(name) ++ text(", ") ++ sep(", ", tpes.map(visit(_, effPos = false))))
+      ty("JvmUnresolvedMethod") ++ parens(visit(tpe) ++ text(", ") ++ text(name) ++ text(", ") ++ sep(", ", tpes.map(visit)))
     case DisplayType.JvmUnresolvedStaticMethod(clazz, name, tpes) =>
-      ty("JvmUnresolvedStaticMethod") ++ parens(ty(clazz) ++ text(", ") ++ text(name) ++ text(", ") ++ sep(", ", tpes.map(visit(_, effPos = false))))
+      ty("JvmUnresolvedStaticMethod") ++ parens(ty(clazz) ++ text(", ") ++ text(name) ++ text(", ") ++ sep(", ", tpes.map(visit)))
     case DisplayType.JvmConstructor(constructor) =>
       ty("JvmConstructor") ++ parens(text(constructor.toString))
     case DisplayType.JvmField(fld) =>
@@ -245,7 +237,7 @@ object Pretty {
     * Returns the given record `labelType` pair as a tree, e.g. `x = Int32`.
     */
   private def label(labelType: DisplayType.RecordLabelType)(implicit o: FormatOptions): Fmt = labelType match {
-    case DisplayType.RecordLabelType(name, tpe) => prop(name) ++ text(" = ") ++ visit(tpe, effPos = false)
+    case DisplayType.RecordLabelType(name, tpe) => prop(name) ++ text(" = ") ++ visit(tpe)
   }
 
   /**
@@ -253,11 +245,11 @@ object Pretty {
     */
   private def field(fieldType: DisplayType.PredicateFieldType)(implicit o: FormatOptions): Fmt = fieldType match {
     case DisplayType.RelationFieldType(name, tpes) =>
-      prop(name) ++ parens(sep(", ", tpes.map(visit(_, effPos = false))))
+      prop(name) ++ parens(sep(", ", tpes.map(visit)))
     case DisplayType.LatticeFieldType(name, tpes, lat) =>
-      prop(name) ++ parens(sep(", ", tpes.map(visit(_, effPos = false))) ++ text("; ") ++ visit(lat, effPos = false))
+      prop(name) ++ parens(sep(", ", tpes.map(visit)) ++ text("; ") ++ visit(lat))
     case DisplayType.NonPredFieldType(name, tpe) =>
-      prop(name) ++ parens(text("<") ++ visit(tpe, effPos = false) ++ text(">"))
+      prop(name) ++ parens(text("<") ++ visit(tpe) ++ text(">"))
   }
 
   /**
@@ -265,8 +257,8 @@ object Pretty {
     * extra set of parentheses, so that `((a, b)) -> c` is told from `(a, b) -> c`.
     */
   private def delimitFunctionArg(arg: DisplayType)(implicit o: FormatOptions): Fmt = arg match {
-    case tuple: DisplayType.Tuple => parens(visit(tuple, effPos = false))
-    case d => delimit(d, effPos = false)
+    case tuple: DisplayType.Tuple => parens(visit(tuple))
+    case d => delimit(d)
   }
 
   /**
@@ -278,9 +270,9 @@ object Pretty {
     * Returns the given type view `d` as a tree, parenthesized if it is an operator, so that it can
     * stand as an operand or in an argument position.
     */
-  private def delimit(d: DisplayType, effPos: Boolean)(implicit o: FormatOptions): Fmt = d match {
-    case _: DisplayType.Operator => parens(visit(d, effPos))
-    case _ => visit(d, effPos)
+  private def delimit(d: DisplayType)(implicit o: FormatOptions): Fmt = d match {
+    case _: DisplayType.Operator => parens(visit(d))
+    case _ => visit(d)
   }
 
 }
