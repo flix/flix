@@ -9,6 +9,7 @@ package ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.{RegionScope, SymbolSet, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.TypeSimplifier
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
@@ -30,7 +31,7 @@ object FormatType {
     } else {
       renamed
     }
-    formatTypeWithOptions(minimized, FormatOptions.Default, amb = amb)
+    formatTypeWithOptions(minimized, FormatOptions.Default.copy(qualify = amb))
   }
 
   /**
@@ -59,9 +60,9 @@ object FormatType {
   /**
     * Transforms the given well-kinded type into a string, using the given format options.
     */
-  def formatTypeWithOptions(tpe: Type, fmt: FormatOptions, amb: SymbolSet = SymbolSet.empty): String = {
+  def formatTypeWithOptions(tpe: Type, fmt: FormatOptions): String = {
     try {
-      format(DisplayType.fromWellKindedType(tpe, amb = amb))(fmt)
+      format(DisplayType.fromWellKindedType(tpe))(fmt)
     } catch {
       case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
     }
@@ -172,7 +173,7 @@ object FormatType {
         case Mode.Purity => "{}"
       }
       case DisplayType.Univ => "Univ"
-      case DisplayType.Region(name) => name
+      case DisplayType.Region(sym) => sym.text
       case DisplayType.RegionToStar => "Region"
       case DisplayType.RegionWithoutRegion => "RegionWithoutRegion"
       case DisplayType.Record(labels) =>
@@ -258,13 +259,21 @@ object FormatType {
         val argString = delimitFunctionArg(arg)
         val retString = delimit(ret, Mode.Type)
         s"$argString --> $retString"
-      case DisplayType.Name(name) => name
+      case DisplayType.Enum(sym) => fmt.qualify.qualify(sym)
+      case DisplayType.Struct(sym) => fmt.qualify.qualify(sym)
+      case DisplayType.RestrictableEnum(sym) => fmt.qualify.qualify(sym)
+      case DisplayType.Case(sym) => sym.name
+      case DisplayType.Alias(sym) => fmt.qualify.qualify(sym)
+      case DisplayType.Assoc(sym) => sym.name
+      case DisplayType.Effect(sym) => sym.name
+      case DisplayType.Native(desc) => ClassDescs.canonicalNameOf(desc)
       case DisplayType.Apply(tpe, tpes) =>
         val string = visit(tpe, Mode.Type)
         val strings = tpes.map(visit(_, Mode.Type))
         string + strings.mkString("[", ", ", "]")
-      case DisplayType.Var(id, kind, text) =>
-        val string: String = kind match {
+      case DisplayType.Var(sym) =>
+        val id = sym.id
+        val string: String = sym.kind match {
           case Kind.Wild => "_" + id.toString
           case Kind.WildCaseSet => "_c" + id.toString
           case Kind.Star => "t" + id
@@ -280,7 +289,7 @@ object FormatType {
         }
         fmt.varNames match {
           case FormatOptions.VarName.IdBased => string
-          case FormatOptions.VarName.NameBased => text match {
+          case FormatOptions.VarName.NameBased => sym.text match {
             case VarText.Absent => string
             case VarText.SourceText(s) => s
           }

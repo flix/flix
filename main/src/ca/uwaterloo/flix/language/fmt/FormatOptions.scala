@@ -6,12 +6,16 @@
  */
 package ca.uwaterloo.flix.language.fmt
 
+import ca.uwaterloo.flix.language.ast.shared.SymbolSet
+
 /**
   * Options for formatting types.
   *
   * @param varNames the formatting style of variable names
+  * @param qualify  the symbols that are written with their namespace, e.g. `A.B.Name`; every other
+  *                 symbol is written by its name alone
   */
-case class FormatOptions(varNames: FormatOptions.VarName)
+case class FormatOptions(varNames: FormatOptions.VarName, qualify: SymbolSet = SymbolSet.empty)
 
 object FormatOptions {
 
