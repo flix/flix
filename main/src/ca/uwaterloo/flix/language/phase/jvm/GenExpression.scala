@@ -777,6 +777,7 @@ object GenExpression {
       val recordValue = TypeDescs.toErasedClassDesc(tpe)
 
       compileExpr(exp)
+      // The label must be loaded from the constant pool (`ldc`): `lookupField` compares labels by reference.
       pushString(field.name)
       INVOKEINTERFACE(GenRecord.LookupFieldMethod)
       // Now that the specific RecordExtend object is found, we cast it to its exact class and extract the value.
@@ -791,6 +792,7 @@ object GenExpression {
       DUP()
       INVOKESPECIAL(GenRecordExtend.Constructor(recordValue))
       DUP()
+      // The label must be loaded from the constant pool (`ldc`): `lookupField` and `restrictField` compare the stored label by reference.
       pushString(field.name)
       PUTFIELD(GenRecordExtend.LabelField(recordValue))
       DUP()
@@ -804,6 +806,7 @@ object GenExpression {
       val List(exp) = exps
 
       compileExpr(exp)
+      // The label must be loaded from the constant pool (`ldc`): `restrictField` compares labels by reference.
       pushString(field.name)
       INVOKEINTERFACE(GenRecord.RestrictFieldMethod)
 
