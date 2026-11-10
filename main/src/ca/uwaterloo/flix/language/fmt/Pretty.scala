@@ -51,7 +51,7 @@ object Pretty {
   /**
     * Returns ` \ ef` for the given effect `t`, or [[Fmt.Empty]] if it is pure.
     */
-  def effSuffix(t: Type)(implicit o: FormatOptions): Fmt = DisplayType.fromWellKindedType(t) match {
+  private def effSuffix(t: Type)(implicit o: FormatOptions): Fmt = DisplayType.fromWellKindedType(t) match {
     case DisplayType.Pure => Fmt.Empty
     case d => text(" ") ++ op("\\") ++ text(" ") ++ visit(d, effPos = true)
   }
