@@ -777,9 +777,11 @@ object GenExpression {
       val recordValue = TypeDescs.toErasedClassDesc(tpe)
 
       compileExpr(exp)
+      // The record must be cast: where two branches meet, the stack map frame only knows it as an `Object`.
+      CHECKCAST(GenRecord.Desc)
       // The label must be loaded from the constant pool (`ldc`): `lookupField` compares labels by reference.
       pushString(field.name)
-      INVOKEINTERFACE(GenRecord.LookupFieldMethod)
+      INVOKESTATIC(GenRecord.LookupFieldMethod)
       // Now that the specific RecordExtend object is found, we cast it to its exact class and extract the value.
       CHECKCAST(GenRecordExtend.desc(recordValue))
       GETFIELD(GenRecordExtend.ValueField(recordValue))
@@ -794,21 +796,25 @@ object GenExpression {
       DUP()
       // The label must be loaded from the constant pool (`ldc`): `lookupField` and `restrictField` compare the stored label by reference.
       pushString(field.name)
-      PUTFIELD(GenRecordExtend.LabelField(recordValue))
+      PUTFIELD(GenRecord.LabelField)
       DUP()
       compileExpr(exp1)
       PUTFIELD(GenRecordExtend.ValueField(recordValue))
       DUP()
       compileExpr(exp2)
-      PUTFIELD(GenRecordExtend.RestField(recordValue))
+      // The record must be cast: where two branches meet, the stack map frame only knows it as an `Object`.
+      CHECKCAST(GenRecord.Desc)
+      PUTFIELD(GenRecord.RestField)
 
     case AtomicOp.RecordRestrict(field) =>
       val List(exp) = exps
 
       compileExpr(exp)
+      // The record must be cast: where two branches meet, the stack map frame only knows it as an `Object`.
+      CHECKCAST(GenRecord.Desc)
       // The label must be loaded from the constant pool (`ldc`): `restrictField` compares labels by reference.
       pushString(field.name)
-      INVOKEINTERFACE(GenRecord.RestrictFieldMethod)
+      INVOKEVIRTUAL(GenRecord.RestrictFieldMethod)
 
     case AtomicOp.ExtIs(sym) =>
       val List(exp) = exps
