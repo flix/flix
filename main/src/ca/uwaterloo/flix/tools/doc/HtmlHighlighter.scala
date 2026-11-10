@@ -225,8 +225,8 @@ object HtmlHighlighter {
   /**
     * Returns the CSS class of a token of the type `tpe`, if it has one.
     *
-    * The classes are defined in `highlight.css`. They are specific to the highlighter, i.e. no
-    * other part of the documentation uses them, and they are short, since a page has one per token.
+    * The classes are defined in `styles.css`, which every page loads. They are short, since a
+    * source page has one per token.
     *
     * A type without a class is displayed as plain text.
     */
