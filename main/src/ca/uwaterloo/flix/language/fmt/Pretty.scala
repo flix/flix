@@ -43,40 +43,6 @@ object Pretty {
   }
 
   /**
-    * Returns the given effect `t` as a tree, as it is written in effect position.
-    */
-  def eff(t: Type)(implicit o: FormatOptions): Fmt =
-    visit(DisplayType.fromWellKindedType(t), effPos = true)
-
-  /**
-    * Returns ` \ ef` for the given effect `t`, or [[Fmt.Empty]] if it is pure.
-    */
-  private def effSuffix(t: Type)(implicit o: FormatOptions): Fmt = DisplayType.fromWellKindedType(t) match {
-    case DisplayType.Pure => Fmt.Empty
-    case d => text(" ") ++ op("\\") ++ text(" ") ++ visit(d, effPos = true)
-  }
-
-  /**
-    * Returns `t \ e` for the given type `t` and effect `e`, or just `t` if `e` is pure.
-    *
-    * Simplifies the effect formulas of both if `simplify` is set.
-    */
-  def typeAndEff(t: Type, e: Type, simplify: Boolean = false)(implicit o: FormatOptions): Fmt = {
-    val e1 = if (simplify) TypeSimplifier.simplify(e) else e
-    tpe(t, simplify = simplify) ++ effSuffix(e1)
-  }
-
-  /**
-    * Returns the given type variable `sym` as a tree.
-    */
-  def typeVar(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): Fmt = tparam(varName(sym))
-
-  /**
-    * Returns the given type view `d` as a tree.
-    */
-  def displayType(d: DisplayType)(implicit o: FormatOptions): Fmt = visit(d, effPos = false)
-
-  /**
     * Renames all flexible variables in the given `tpe` to fresh consecutively numbered variables.
     *
     * NOTE: This function should *ONLY* be used for pretty printing.
@@ -98,6 +64,65 @@ object Pretty {
     // Apply the substitution to the type.
     s(tpe)
   }
+
+  /**
+    * Returns the given effect `t` as a tree, as it is written in effect position.
+    */
+  def eff(t: Type)(implicit o: FormatOptions): Fmt =
+    visit(DisplayType.fromWellKindedType(t), effPos = true)
+
+  /**
+    * Returns `tpe \ eff` for the given type `tpe` and effect `eff`, or just `tpe` if `eff` is pure.
+    *
+    * Simplifies the effect formulas of both if `simplify` is set.
+    */
+  def typeAndEff(tpe: Type, eff: Type, simplify: Boolean = false)(implicit o: FormatOptions): Fmt = {
+    val simplifiedEff = if (simplify) TypeSimplifier.simplify(eff) else eff
+    val effFmt = DisplayType.fromWellKindedType(simplifiedEff) match {
+      case DisplayType.Pure => Fmt.Empty
+      case d => text(" ") ++ op("\\") ++ text(" ") ++ visit(d, effPos = true)
+    }
+    Pretty.tpe(tpe, simplify = simplify) ++ effFmt
+  }
+
+  /**
+    * Returns the given type variable `sym` as a tree.
+    */
+  def typeVar(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): Fmt = tparam(varName(sym))
+
+  /**
+    * Returns the name of the given type variable `sym`: its source text under
+    * [[FormatOptions.VarName.NameBased]] when it has one, and otherwise its id with a prefix for its
+    * kind, e.g. `t12`, `e3`, `r7`.
+    */
+  private def varName(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): String = {
+    val idBased: String = sym.kind match {
+      case Kind.Wild => "_" + sym.id.toString
+      case Kind.WildCaseSet => "_c" + sym.id.toString
+      case Kind.Star => "t" + sym.id
+      case Kind.Eff => "e" + sym.id
+      case Kind.Bool => "b" + sym.id
+      case Kind.RecordRow => "r" + sym.id
+      case Kind.SchemaRow => "s" + sym.id
+      case Kind.Predicate => "'" + sym.id.toString
+      case Kind.Jvm => "j" + sym.id.toString
+      case Kind.CaseSet(_) => "c" + sym.id.toString
+      case Kind.Arrow(_, _) => "'" + sym.id.toString
+      case Kind.Error => "err" + sym.id.toString
+    }
+    o.varNames match {
+      case FormatOptions.VarName.IdBased => idBased
+      case FormatOptions.VarName.NameBased => sym.text match {
+        case VarText.Absent => idBased
+        case VarText.SourceText(s) => s
+      }
+    }
+  }
+
+  /**
+    * Returns the given type view `d` as a tree.
+    */
+  def displayType(d: DisplayType)(implicit o: FormatOptions): Fmt = visit(d, effPos = false)
 
   /**
     * Returns the given type view `d` as a tree.
@@ -236,15 +261,6 @@ object Pretty {
   }
 
   /**
-    * Returns the given type view `d` as a tree, parenthesized if it is an operator, so that it can
-    * stand as an operand or in an argument position.
-    */
-  private def delimit(d: DisplayType, effPos: Boolean)(implicit o: FormatOptions): Fmt = d match {
-    case _: DisplayType.Operator => parens(visit(d, effPos))
-    case _ => visit(d, effPos)
-  }
-
-  /**
     * Returns the given type view `arg` as a tree, delimited as a function argument: a tuple gets an
     * extra set of parentheses, so that `((a, b)) -> c` is told from `(a, b) -> c`.
     */
@@ -254,37 +270,17 @@ object Pretty {
   }
 
   /**
-    * Returns the name of the given type variable `sym`: its source text under
-    * [[FormatOptions.VarName.NameBased]] when it has one, and otherwise its id with a prefix for its
-    * kind, e.g. `t12`, `e3`, `r7`.
-    */
-  private def varName(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): String = {
-    val idBased: String = sym.kind match {
-      case Kind.Wild => "_" + sym.id.toString
-      case Kind.WildCaseSet => "_c" + sym.id.toString
-      case Kind.Star => "t" + sym.id
-      case Kind.Eff => "e" + sym.id
-      case Kind.Bool => "b" + sym.id
-      case Kind.RecordRow => "r" + sym.id
-      case Kind.SchemaRow => "s" + sym.id
-      case Kind.Predicate => "'" + sym.id.toString
-      case Kind.Jvm => "j" + sym.id.toString
-      case Kind.CaseSet(_) => "c" + sym.id.toString
-      case Kind.Arrow(_, _) => "'" + sym.id.toString
-      case Kind.Error => "err" + sym.id.toString
-    }
-    o.varNames match {
-      case FormatOptions.VarName.IdBased => idBased
-      case FormatOptions.VarName.NameBased => sym.text match {
-        case VarText.Absent => idBased
-        case VarText.SourceText(s) => s
-      }
-    }
-  }
-
-  /**
     * Returns the name of the given symbol `sym`, qualified by its namespace if the options say so.
     */
   private def qualify(sym: QualifiedSym)(implicit o: FormatOptions): String = o.qualify.qualify(sym)
+
+  /**
+    * Returns the given type view `d` as a tree, parenthesized if it is an operator, so that it can
+    * stand as an operand or in an argument position.
+    */
+  private def delimit(d: DisplayType, effPos: Boolean)(implicit o: FormatOptions): Fmt = d match {
+    case _: DisplayType.Operator => parens(visit(d, effPos))
+    case _ => visit(d, effPos)
+  }
 
 }
