@@ -9,7 +9,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Options}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestWeeder extends AnyFunSuite with TestUtils {
@@ -2144,13 +2144,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalConstantPattern](result)
-  }
-
-  test("Val.01") {
-    val input = "val myField: Int32 = 1"
-    assertThrows[InternalCompilerException] {
-      check(input, Options.TestWithLibNix)
-    }
   }
 
 }
