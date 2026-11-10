@@ -379,7 +379,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
   test("FormatPartialType.Boolean.External.04") {
     val tpe = Type.Apply(Type.Union, Type.Pure, loc)
 
-    val expected = "Pure + ?"
+    val expected = "{} + ?"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
@@ -397,7 +397,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
   test("FormatPartialType.Boolean.External.07") {
     val tpe = Type.Apply(Type.Intersection, Type.Pure, loc)
 
-    val expected = "Pure & ?"
+    val expected = "{} & ?"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)

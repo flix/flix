@@ -24,7 +24,7 @@ object FormatOptions {
     *
     * Variables are formatted by their names.
     */
-  val Default: FormatOptions = FormatOptions(
+  implicit val Default: FormatOptions = FormatOptions(
     varNames = VarName.NameBased
   )
 
