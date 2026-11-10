@@ -28,9 +28,9 @@ trait Emitter[A] {
   def token(kind: SemanticTokenType, s: String): A
 
   /**
-    * A name that stands for a declaration, see [[Fmt.Ref]].
+    * A use of a symbol, i.e. a name that stands for a declaration, see [[Fmt.SymUse]].
     */
-  def ref(sym: Symbol, kind: SemanticTokenType, s: String): A
+  def symUse(sym: Symbol, kind: SemanticTokenType, s: String): A
 
   /**
     * The parts of a [[Fmt.Concat]], already emitted, in order.
@@ -48,7 +48,7 @@ object PlainEmitter extends Emitter[String] {
 
   def token(kind: SemanticTokenType, s: String): String = s
 
-  def ref(sym: Symbol, kind: SemanticTokenType, s: String): String = s
+  def symUse(sym: Symbol, kind: SemanticTokenType, s: String): String = s
 
   def concat(parts: List[String]): String = parts.mkString
 
@@ -63,7 +63,7 @@ object TokenEmitter extends Emitter[List[(SemanticTokenType, String)]] {
 
   def token(kind: SemanticTokenType, s: String): List[(SemanticTokenType, String)] = List((kind, s))
 
-  def ref(sym: Symbol, kind: SemanticTokenType, s: String): List[(SemanticTokenType, String)] = List((kind, s))
+  def symUse(sym: Symbol, kind: SemanticTokenType, s: String): List[(SemanticTokenType, String)] = List((kind, s))
 
   def concat(parts: List[List[(SemanticTokenType, String)]]): List[(SemanticTokenType, String)] = parts.flatten
 

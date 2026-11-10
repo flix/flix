@@ -16,8 +16,8 @@ import ca.uwaterloo.flix.language.ast.Symbol
   * tokens, without the printer knowing which. The tree is immutable and cheap, so one signature
   * can be rendered in more than one way without being printed twice.
   *
-  * Every name that stands for a declaration keeps its [[Symbol]] in a [[Fmt.Ref]], and every other
-  * colored atom carries the [[SemanticTokenType]] the LSP assigns to the same syntax in a
+  * Every name that stands for a declaration keeps its [[Symbol]] in a [[Fmt.SymUse]], and every
+  * other colored atom carries the [[SemanticTokenType]] the LSP assigns to the same syntax in a
   * [[Fmt.Token]]. Punctuation is [[Fmt.Text]] and is never styled.
   */
 sealed trait Fmt {
@@ -53,10 +53,10 @@ object Fmt {
   case class Token(kind: SemanticTokenType, s: String) extends Fmt
 
   /**
-    * A name that stands for a declaration and can be linked. `s` is the text as printed, qualified
-    * or not.
+    * A use of a symbol: a name that stands for a declaration and can be linked. `s` is the text as
+    * printed, qualified or not.
     */
-  case class Ref(sym: Symbol, kind: SemanticTokenType, s: String) extends Fmt
+  case class SymUse(sym: Symbol, kind: SemanticTokenType, s: String) extends Fmt
 
   /**
     * Its parts, in order.
@@ -124,7 +124,7 @@ object Fmt {
   def render[A](f: Fmt, e: Emitter[A]): A = f match {
     case Text(s) => e.text(s)
     case Token(kind, s) => e.token(kind, s)
-    case Ref(sym, kind, s) => e.ref(sym, kind, s)
+    case SymUse(sym, kind, s) => e.symUse(sym, kind, s)
     case Concat(parts) => e.concat(parts.map(render(_, e)))
   }
 
