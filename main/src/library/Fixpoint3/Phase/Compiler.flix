@@ -610,8 +610,8 @@ pub mod Fixpoint3.Phase.Compiler {
     /// Compile the RamTerm `t` to either a Leq or NotBot depending on whether the atom was `Pi(;x)`, `Pi(;_)`, or `P(;1)`.
     ///
     def compileBoolForLatticeenal(t: RamTerm, leq: Boxed -> Boxed -> Bool, bot: Boxed, rv: RowVar, relSym: RelSym): BoolExp = match t {
-        case RamTerm.Lit(val, _) =>
-            BoolExp.Leq(val, rv, relSym)
+        case RamTerm.Lit(value, _) =>
+            BoolExp.Leq(value, rv, relSym)
         case _ => BoolExp.NotBot(t, leq, bot)
     }
 

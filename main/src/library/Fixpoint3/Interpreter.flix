@@ -175,9 +175,9 @@ pub mod Fixpoint3.Interpreter {
         case RamProgram.Program(stmt, _, predState, (_, indexPos), (arities, constWrites), typeInfo) =>
             let minEnv = arities |> Vector.map(x -> Array.repeat(rc, x, Int64.minValue()));
             let maxEnv = arities |> Vector.map(x -> Array.repeat(rc, x, Int64.maxValue()));
-            foreach ((id1, id2, val) <- constWrites) {
-                Array.put(val, id2, Vector.get(id1, minEnv));
-                Array.put(val, id2, Vector.get(id1, maxEnv))
+            foreach ((id1, id2, value) <- constWrites) {
+                Array.put(value, id2, Vector.get(id1, minEnv));
+                Array.put(value, id2, Vector.get(id1, maxEnv))
             };
             let tupleEnv = Array.repeat(rc, Vector.length(arities), Vector#{});
             let latEnv = arities |> Vector.length |> Array.empty(rc);
@@ -211,7 +211,7 @@ pub mod Fixpoint3.Interpreter {
                 |> BPlusTree.forEach(
                     vec -> latticeElem -> {
                         let boxedVec = vec
-                            |> Vector.mapWithIndex(i -> val -> boxWith(val, Vector.get(i, curBoxingInfo), boxing));
+                            |> Vector.mapWithIndex(i -> value -> boxWith(value, Vector.get(i, curBoxingInfo), boxing));
                         BPlusTree.put(boxedVec, latticeElem, innerMap)
                     }
                 );
