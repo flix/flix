@@ -850,14 +850,8 @@ code.annotations {
 code .annotation {
     color: var(--annotation-color);
 }
-code .keyword {
-    color: var(--keyword-color);
-}
 code .name {
     color: var(--name-color);
-}
-code .type {
-    color: var(--type-color);
 }
 
 /* BEGIN TOKENS */
