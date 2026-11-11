@@ -12,7 +12,7 @@ import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.{FormatTraitConstraint, FormatType}
+import ca.uwaterloo.flix.language.fmt.{FormatType, Pretty}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -157,11 +157,11 @@ object RedundancyError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Redundant trait constraint '${red(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}'.
+      s""">> Redundant trait constraint '${red(Pretty.traitConstraint(redundantTconstr).plain)}'.
          |
          |${highlight(loc, "redundant trait constraint.", fmt)}
          |
-         |The constraint is implied by '${cyan(FormatTraitConstraint.formatTraitConstraint(entailingTconstr))}'.
+         |The constraint is implied by '${cyan(Pretty.traitConstraint(entailingTconstr).plain)}'.
          |
          |${underline("Explanation:")} A trait constraint is redundant if it is implied by another
          |constraint. For example, if we have:

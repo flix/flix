@@ -7,15 +7,15 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
-import ca.uwaterloo.flix.language.ast.shared.{Constant, QualifiedSym, RegionScope, VarText}
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, EqualityConstraint, QualifiedSym, RegionScope, TraitConstraint, VarText}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.Fmt.{SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.TypeSimplifier
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 /**
-  * The printer: builds a [[Fmt]] tree from a type, a kind or a constant.
+  * The printer: builds a [[Fmt]] tree from a type, a scheme, a constraint, a kind or a constant.
   *
   * A type is normalized by [[DisplayType]] first, which curries arrows, collects record and schema
   * rows, flattens operator chains and fills partial applications with holes. The walk from the view
@@ -117,6 +117,49 @@ object Pretty {
     * Returns the given type view `d` as a tree.
     */
   def displayType(d: DisplayType)(implicit o: FormatOptions): Fmt = visit(d)
+
+  /**
+    * Returns the given scheme `sc` as a tree, e.g. `∀(a, b). a -> b with Order[a] where Elm[a] ~ b`.
+    */
+  def scheme(sc: Scheme)(implicit o: FormatOptions): Fmt = {
+    val quantifiers =
+      if (sc.quantifiers.isEmpty) Fmt.Empty
+      else text("∀(") ++ sep(", ", sc.quantifiers.map(typeVar)) ++ text("). ")
+    quantifiers ++ tpe(sc.base) ++ constraints(sc.tconstrs, sc.econstrs)
+  }
+
+  /**
+    * Returns the given trait constraint `tc` as a tree, e.g. `Order[a]`.
+    *
+    * The trait is written with its namespace.
+    */
+  def traitConstraint(tc: TraitConstraint)(implicit o: FormatOptions): Fmt = tc match {
+    case TraitConstraint(head, arg, _) =>
+      SymUse(head.sym, SemanticTokenType.Interface, head.sym.toString) ++ text("[") ++ tpe(arg) ++ text("]")
+  }
+
+  /**
+    * Returns the given equality constraint `ec` as a tree, e.g. `Elm[a] ~ Int32`.
+    */
+  def equalityConstraint(ec: EqualityConstraint)(implicit o: FormatOptions): Fmt = ec match {
+    case EqualityConstraint(symUse, tpe1, tpe2, _) =>
+      SymUse(symUse.sym, SemanticTokenType.Type, symUse.sym.name) ++ text("[") ++ tpe(tpe1) ++ text("] ") ++ op("~") ++ text(" ") ++ tpe(tpe2)
+  }
+
+  /**
+    * Returns the given trait constraints `tcs` and equality constraints `ecs` as a tree, each list
+    * after its keyword, e.g. ` with Order[a] where Elm[a] ~ Int32`, or [[Fmt.Empty]] if both are
+    * empty.
+    */
+  def constraints(tcs: List[TraitConstraint], ecs: List[EqualityConstraint])(implicit o: FormatOptions): Fmt = {
+    val tcPart =
+      if (tcs.isEmpty) Fmt.Empty
+      else text(" ") ++ kw("with") ++ text(" ") ++ sep(", ", tcs.map(traitConstraint))
+    val ecPart =
+      if (ecs.isEmpty) Fmt.Empty
+      else text(" ") ++ kw("where") ++ text(" ") ++ sep(", ", ecs.map(equalityConstraint))
+    tcPart ++ ecPart
+  }
 
   /**
     * Returns the given kind `k` as a tree, e.g. `Type -> Eff`.

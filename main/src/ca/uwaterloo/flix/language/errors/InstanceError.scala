@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.{FormatEqualityConstraint, FormatScheme, FormatTraitConstraint}
+import ca.uwaterloo.flix.language.fmt.Pretty
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.fmt.FormatTypeConstructor.formatTypeConstructor
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
@@ -204,8 +204,8 @@ object InstanceError {
          |
          |${highlight(loc, "signature mismatch", fmt)}
          |
-         |Expected: ${cyan(FormatScheme.formatScheme(expected))}
-         |Actual:   ${red(FormatScheme.formatScheme(actual))}
+         |Expected: ${cyan(Pretty.scheme(expected).plain)}
+         |Actual:   ${red(Pretty.scheme(actual).plain)}
          |
          |${underline("Explanation:")} The implementation must match the signature declared in the trait.
          |""".stripMargin
@@ -222,11 +222,11 @@ object InstanceError {
   case class MissingEqualityConstraint(econstr: EqualityConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2629
 
-    def summary: String = s"Missing equality constraint '${FormatEqualityConstraint.formatEqualityConstraint(econstr)}' required by super trait '${superTrait.name}'."
+    def summary: String = s"Missing equality constraint '${Pretty.equalityConstraint(econstr).plain}' required by super trait '${superTrait.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing equality constraint '${red(FormatEqualityConstraint.formatEqualityConstraint(econstr))}' required by super trait '${magenta(superTrait.name)}'.
+      s""">> Missing equality constraint '${red(Pretty.equalityConstraint(econstr).plain)}' required by super trait '${magenta(superTrait.name)}'.
          |
          |${highlight(loc, "missing constraint", fmt)}
          |
@@ -312,11 +312,11 @@ object InstanceError {
   case class MissingTraitConstraint(tconstr: TraitConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2956
 
-    def summary: String = s"Missing trait constraint '${FormatTraitConstraint.formatTraitConstraint(tconstr)}' required by super trait '${superTrait.name}'."
+    def summary: String = s"Missing trait constraint '${Pretty.traitConstraint(tconstr).plain}' required by super trait '${superTrait.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing trait constraint '${red(FormatTraitConstraint.formatTraitConstraint(tconstr))}' required by super trait '${magenta(superTrait.name)}'.
+      s""">> Missing trait constraint '${red(Pretty.traitConstraint(tconstr).plain)}' required by super trait '${magenta(superTrait.name)}'.
          |
          |${highlight(loc, "missing constraint", fmt)}
          |
