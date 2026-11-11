@@ -75,7 +75,8 @@ class TestFormatSignature extends AnyFunSuite with TestUtils {
   }
 
   test("formatSpec.08") {
-    // An equality constraint is written after the trait constraints.
+    // An equality constraint is written after the trait constraints, and its associated type is
+    // written with its trait.
     val input =
       """
         |pub trait Collection[a] {
@@ -85,7 +86,7 @@ class TestFormatSignature extends AnyFunSuite with TestUtils {
         |pub def f(x: a): Int32 with Collection[a] where Collection.Elm[a] ~ Int32 = Collection.head(x)
         |""".stripMargin
     assert(declarationOf("f", input) ==
-      "def f(x: a): Int32 with Collection[a] where Elm[a] ~ Int32")
+      "def f(x: a): Int32 with Collection[a] where Collection.Elm[a] ~ Int32")
   }
 
   test("formatSpec.09") {
@@ -95,6 +96,33 @@ class TestFormatSignature extends AnyFunSuite with TestUtils {
 
   test("formatSpec.10") {
     assert(declarationOf("f", "pub def f(): Unit \\ IO = ???") == "def f(): Unit \\ IO")
+  }
+
+  test("formatSpec.11") {
+    // An associated type in a type is written with its trait.
+    val input =
+      """
+        |pub trait Collection[a] {
+        |    type Elm: Type
+        |    pub def head(x: a): Collection.Elm[a]
+        |}
+        |pub def f(x: a): Collection.Elm[a] with Collection[a] = Collection.head(x)
+        |""".stripMargin
+    assert(declarationOf("f", input) == "def f(x: a): Collection.Elm[a] with Collection[a]")
+  }
+
+  test("formatSpec.12") {
+    // The trait of a constraint is written by its name alone, without the module it is declared in.
+    val input =
+      """
+        |mod Shop {
+        |    pub trait Sellable[a] {
+        |        pub def price(x: a): Int32
+        |    }
+        |}
+        |pub def f(x: a): Int32 with Shop.Sellable[a] = Shop.Sellable.price(x)
+        |""".stripMargin
+    assert(declarationOf("f", input) == "def f(x: a): Int32 with Sellable[a]")
   }
 
   /**
