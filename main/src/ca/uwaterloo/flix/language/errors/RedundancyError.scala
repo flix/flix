@@ -12,7 +12,7 @@ import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.{FormatType, Pretty}
+import ca.uwaterloo.flix.language.fmt.Pretty
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -116,7 +116,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant cast.", fmt)}
          |
-         |The expression already has the type '${cyan(FormatType.formatType(tpe))}'.
+         |The expression already has the type '${cyan(Pretty.tpe(tpe).plain)}'.
          |""".stripMargin
     }
   }
@@ -190,7 +190,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant cast.", fmt)}
          |
-         |The expression already has the '${cyan(FormatType.formatType(eff))}' effect.
+         |The expression already has the '${cyan(Pretty.tpe(eff).plain)}' effect.
          |""".stripMargin
     }
   }
@@ -212,7 +212,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant cast.", fmt)}
          |
-         |The expression already has the type '${cyan(FormatType.formatType(tpe))}'.
+         |The expression already has the type '${cyan(Pretty.tpe(tpe).plain)}'.
          |""".stripMargin
     }
   }
@@ -234,7 +234,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant unsafe block.", fmt)}
          |
-         |${underline("Explanation:")} The block unsafely removes the '${cyan(FormatType.formatType(eff))}' effect,
+         |${underline("Explanation:")} The block unsafely removes the '${cyan(Pretty.tpe(eff).plain)}' effect,
          |but the body expression is pure.
          |""".stripMargin
     }

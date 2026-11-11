@@ -7,7 +7,7 @@ import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.FormatType
+import ca.uwaterloo.flix.language.fmt.Pretty
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.util.Formatter
 
@@ -78,8 +78,8 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(FormatType.formatType(from))}
-         |To  : ${red(FormatType.formatType(to))}
+         |From: ${red(Pretty.tpe(from).plain)}
+         |To  : ${red(Pretty.tpe(to).plain)}
          |
          |${underline("Explanation:")} A checked cast between Java types requires a subtype
          |relationship. Neither type is a subtype of the other.
@@ -105,7 +105,7 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(FormatType.formatType(from))}
+         |From: ${red(Pretty.tpe(from).plain)}
          |To  : ${red(JavaTypes.formatType(to))}
          |
          |${underline("Explanation:")} A checked cast can only be used between Java types.
@@ -131,8 +131,8 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(FormatType.formatType(from))}
-         |To  : ${red(FormatType.formatType(to))}
+         |From: ${red(Pretty.tpe(from).plain)}
+         |To  : ${red(Pretty.tpe(to).plain)}
          |
          |${underline("Explanation:")} A checked cast requires the source type to be known
          |at compile time.
@@ -159,7 +159,7 @@ object SafetyError {
          |${highlight(loc, "impossible cast", fmt)}
          |
          |From: ${red(JavaTypes.formatType(from))}
-         |To  : ${red(FormatType.formatType(to))}
+         |To  : ${red(Pretty.tpe(to).plain)}
          |
          |${underline("Explanation:")} A checked cast can only be used between Java types.
          |""".stripMargin
@@ -184,8 +184,8 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(FormatType.formatType(from))}
-         |To  : ${red(FormatType.formatType(to))}
+         |From: ${red(Pretty.tpe(from).plain)}
+         |To  : ${red(Pretty.tpe(to).plain)}
          |
          |${underline("Explanation:")} A checked cast requires the target type to be known
          |at compile time.
@@ -202,11 +202,11 @@ object SafetyError {
   case class IllegalMethodEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4243
 
-    def summary: String = s"Unexpected method effect: '${FormatType.formatType(eff)}'."
+    def summary: String = s"Unexpected method effect: '${Pretty.tpe(eff).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected method effect: '${red(FormatType.formatType(eff))}'.
+      s""">> Unexpected method effect: '${red(Pretty.tpe(eff).plain)}'.
          |
          |${highlight(loc, "unexpected effect", fmt)}
          |
@@ -248,11 +248,11 @@ object SafetyError {
   case class IllegalThrowType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4465
 
-    def summary: String = s"Unexpected throw type: '${FormatType.formatType(tpe)}' is not a subclass of Throwable."
+    def summary: String = s"Unexpected throw type: '${Pretty.tpe(tpe).plain}' is not a subclass of Throwable."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected throw type: '${red(FormatType.formatType(tpe))}' is not a subclass of Throwable.
+      s""">> Unexpected throw type: '${red(Pretty.tpe(tpe).plain)}' is not a subclass of Throwable.
          |
          |${highlight(loc, "unexpected type", fmt)}
          |
@@ -394,8 +394,8 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(FormatType.formatType(from))}
-         |To  : ${red(FormatType.formatType(to))}
+         |From: ${red(Pretty.tpe(from).plain)}
+         |To  : ${red(Pretty.tpe(to).plain)}
          |
          |${underline("Explanation:")} An unchecked cast between these types will never succeed.
          |""".stripMargin
