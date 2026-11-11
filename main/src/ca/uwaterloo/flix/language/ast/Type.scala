@@ -10,7 +10,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
-import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, Pretty}
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -255,8 +255,17 @@ sealed trait Type {
 
   /**
     * Returns a human readable string representation of `this` type.
+    *
+    * A debugger or an internal error may print a type that is half-built, so a type that cannot be
+    * printed gives a marker rather than an exception.
     */
-  override def toString: String = FormatType.formatTypeWithOptions(this, FormatOptions.Internal)
+  override def toString: String = {
+    try {
+      Pretty.tpe(this)(FormatOptions.Internal).plain
+    } catch {
+      case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
+    }
+  }
 }
 
 object Type {
