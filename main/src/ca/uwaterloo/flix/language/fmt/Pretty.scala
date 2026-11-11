@@ -192,7 +192,7 @@ object Pretty {
     * A function declared with no parameters gets a single parameter of the unit type, which is
     * written as it was declared: `()`.
     */
-  private def fparams(fparams0: Nel[TypedAst.FormalParam])(implicit o: FormatOptions): Fmt = fparams0 match {
+  def fparams(fparams0: Nel[TypedAst.FormalParam])(implicit o: FormatOptions): Fmt = fparams0 match {
     case Nel(fparam, Nil) if fparam.tpe == Type.Unit => text("()")
     case _ =>
       val params = fparams0.toList.map {
