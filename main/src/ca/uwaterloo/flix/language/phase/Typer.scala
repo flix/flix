@@ -101,6 +101,7 @@ object Typer {
 
         case sym: Symbol.ModuleSym => new Symbol.ModuleSym(sym.ns.init, ModuleKind.Standalone)
 
+        case sym: Symbol.ValSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)

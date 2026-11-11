@@ -403,4 +403,35 @@ object NameError {
          |""".stripMargin
     }
   }
+
+  /**
+    * An error raised to indicate that a field's declared type has a free type variable.
+    *
+    * A `val` field must be monomorphic: unlike a `def`, it has no type parameters that
+    * could bind such a variable.
+    *
+    * @param name the name of the field.
+    * @param tvar the name of the offending type variable.
+    * @param loc  the location of the offending type variable.
+    */
+  case class IllegalPolymorphicField(name: String, tvar: String, loc: SourceLocation) extends NameError {
+    def code: ErrorCode = ErrorCode.E5991
+
+    def summary: String = s"Polymorphic field: '$name' cannot have a free type variable '$tvar'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Polymorphic field: '${red(name)}' cannot have a free type variable '${red(tvar)}'.
+         |
+         |${highlight(loc, "free type variable", fmt)}
+         |
+         |${underline("Explanation:")} A field must have a monomorphic type. Unlike a function,
+         |a field has no type parameters, so a type variable in its declared type cannot be bound.
+         |
+         |${underline("Possible fixes:")}
+         |  - Replace the type variable with a concrete type.
+         |  - Turn the field into a function (a 'def') if it should be polymorphic.
+         |""".stripMargin
+    }
+  }
 }

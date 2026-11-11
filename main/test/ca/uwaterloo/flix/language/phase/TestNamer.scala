@@ -8,7 +8,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.shared.{Origin, SourceName}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, DesugaredAst, ReadAst, SyntaxTree, WeededAst}
+import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.errors.{NameError, ResolutionError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -16,6 +20,33 @@ import org.scalatest.funsuite.AnyFunSuite
 import java.nio.file.Path
 
 class TestNamer extends AnyFunSuite with TestUtils {
+
+  /**
+    * Runs the given input through the compiler frontend up to (and including) the Namer,
+    * stopping short of the Resolver.
+    *
+    * This is needed for tests that produce a `val` declaration: unlike earlier phases,
+    * Namer errors do not halt the pipeline, and the Resolver does not yet support `val`
+    * declarations (it hits a deliberate `InternalCompilerException` stub). Going through
+    * the full `check` pipeline would therefore crash instead of surfacing the Namer error.
+    */
+  private def checkNamer(input: String): List[CompilationMessage] = {
+    implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibNix.copy(threads = 1))
+    val source = Source.fromString(SourceName.PathName(CompilerConstants.VirtualTestFile), Origin.User, sctx, input)
+    val readRoot = ReadAst.Root(Map(source -> ()))
+
+    val (afterLexer, lexerErrors) = ca.uwaterloo.flix.language.phase.Lexer.run(readRoot, Map.empty, ChangeSet.Everything)
+    val (afterParser, parserErrors) = ca.uwaterloo.flix.language.phase.Parser2.run(afterLexer, SyntaxTree.empty, ChangeSet.Everything)
+    val (weederResult, weederErrors) = ca.uwaterloo.flix.language.phase.Weeder2.run(readRoot, flix.options.entryPoint, afterParser, WeededAst.empty, ChangeSet.Everything)
+
+    weederResult match {
+      case None => lexerErrors ::: parserErrors ::: weederErrors
+      case Some(afterWeeder) =>
+        val afterDesugar = ca.uwaterloo.flix.language.phase.Desugar.run(afterWeeder, DesugaredAst.empty, ChangeSet.Everything)
+        val (_, nameErrors) = ca.uwaterloo.flix.language.phase.Namer.run(afterDesugar)
+        lexerErrors ::: parserErrors ::: weederErrors ::: nameErrors
+    }
+  }
 
   test("DuplicateLowerName.01") {
     val input =
@@ -1003,6 +1034,15 @@ class TestNamer extends AnyFunSuite with TestUtils {
     val flix = new Flix().setOptions(Options.TestWithLibNix)
     flix.addSource(Path.of("A/B.flix"), "pub mod A.B { pub def f(): Int32 = 1 }", sctx)
     expectOneError[NameError.OrphanModule](flix.check())
+  }
+
+  test("IllegalPolymorphicField.01") {
+    val input =
+      """
+        |val myField: a = ???
+        |""".stripMargin
+    val errors = checkNamer(input)
+    expectError[NameError.IllegalPolymorphicField]((None, errors))
   }
 
   test("OrphanModule.02") {

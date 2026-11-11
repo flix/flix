@@ -184,6 +184,13 @@ object Symbol {
   }
 
   /**
+    * Returns the val (field) symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkValSym(ns: NName, ident: Ident): ValSym = {
+    new ValSym(None, ns.parts, ident.name, ident.loc)
+  }
+
+  /**
     * Returns the enum symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkEnumSym(ns: NName, ident: Ident): EnumSym = {
@@ -455,6 +462,38 @@ object Symbol {
       */
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: DefnSym => this.id == that.id && this.namespace == that.namespace && this.text == that.text
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = 5 * id.hashCode() + 7 * namespace.hashCode() + 11 * text.hashCode()
+
+    /**
+      * Human readable representation.
+      */
+    override val toString: String = if (namespace.isEmpty) name else Name.nsToString(namespace) + "." + name
+  }
+
+  /**
+    * Val (Field) Symbol.
+    */
+  final class ValSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Locatable with Symbol with QualifiedSym {
+
+    /**
+      * Returns the name of `this` symbol.
+      */
+    def name: String = id match {
+      case None => text
+      case Some(i) => text + Flix.Delimiter + i
+    }
+
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: ValSym => this.id == that.id && this.namespace == that.namespace && this.text == that.text
       case _ => false
     }
 
