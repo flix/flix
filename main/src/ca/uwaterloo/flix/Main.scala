@@ -283,7 +283,7 @@ object Main {
             if (errors.isEmpty) {
               val root = optRoot.get
               val origin = docOrigin(cmdOpts)
-              HtmlDocumentor.run(root, origin, Bootstrap.getDocumentationDirectory(cwd))(flix)
+              HtmlDocumentor.run(root, origin, Bootstrap.getDocumentationDirectory(cwd))
               checkMissingDocs(root, origin)
               exit(0)
             } else exitWithErrors(flix, errors, optRoot)
