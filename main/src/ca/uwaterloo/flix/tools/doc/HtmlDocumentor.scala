@@ -7,6 +7,7 @@
 
 package ca.uwaterloo.flix.tools.doc
 
+import ca.uwaterloo.flix.api.lsp.SemanticTokenType
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
@@ -217,9 +218,15 @@ object HtmlDocumentor {
     * A symbol without documentation, e.g. a private declaration or one of another origin, resolves
     * to nothing, so that its name is written as a colored token rather than as a dead link.
     */
-  private class Links(documented: Set[Symbol]) {
+  private class Links(documented: Set[Symbol], self: Option[Symbol] = None) {
 
-    def link(sym: Symbol): Option[String] = if (!documented.contains(sym)) None else sym match {
+    /**
+      * Returns these links without one to `sym`: the declaration being documented does not link to
+      * itself.
+      */
+    def except(sym: Symbol): Links = new Links(documented, Some(sym))
+
+    def link(sym: Symbol): Option[String] = if (!documented.contains(sym) || self.contains(sym)) None else sym match {
       case s: Symbol.TraitSym => Some(escUrl(traitFileName(s)))
       case s: Symbol.EffSym => Some(escUrl(effectFileName(s)))
       case s: Symbol.EnumSym => Some(escUrl(enumFileName(s)))
@@ -1508,11 +1515,7 @@ object HtmlDocumentor {
     sb.append(s"<div class='box' id='ta-${esc(ta.sym.name)}'>")
     sb.append("<div class='decl'>")
     sb.append("<code>")
-    sb.append("<span class='keyword'>type alias</span> ")
-    sb.append(s"<span class='name'>${esc(ta.sym.name)}</span>")
-    docTypeParams(ta.tparams)
-    sb.append(" = ")
-    docType(ta.tpe)
+    docFmt(Pretty.typeAliasDecl(ta))(links.except(ta.sym), sb)
     sb.append("</code>")
     docActions(Some(s"ta-${ta.sym.name}"), ta.loc)
     sb.append("</div>")
@@ -1808,17 +1811,7 @@ object HtmlDocumentor {
     for (c <- cases.sortBy(_.loc)) {
       sb.append(s"<div class='case' id='case-${esc(c.sym.name)}'>")
       sb.append("<code>")
-      sb.append("<span class='keyword'>case</span> ")
-      sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>")
-
-      c.tpes match {
-        case Nil => // Nothing
-        case tpes =>
-          sb.append("(")
-          docList(tpes)(docType)
-          sb.append(")")
-      }
-
+      docFmt(Pretty.caseDecl(c))(links.except(c.sym), sb)
       sb.append("</code>")
       docDoc(c.doc)
       sb.append("</div>")
@@ -1845,11 +1838,7 @@ object HtmlDocumentor {
     for (f <- fields.sortBy(_.loc)) {
       sb.append(s"<div class='field' id='field-${esc(f.sym.name)}'>")
       sb.append("<code>")
-      if (f.mod.isMutable) {
-        sb.append("<span class='keyword'>mut</span> ")
-      }
-      sb.append(s"<span>${esc(f.sym.name)}</span>: ")
-      docType(f.tpe)
+      docFmt(Pretty.structField(f))(links.except(f.sym), sb)
       sb.append("</code>")
       docDoc(f.doc)
       sb.append("</div>")
@@ -1862,20 +1851,8 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docTypeParams(tparams: List[TypedAst.TypeParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
-    if (tparams.isEmpty) {
-      return
-    }
-
-    sb.append("<span class='tparams'>[")
-    docList(tparams.sortBy(_.loc)) { p =>
-      sb.append("<span class='tparam'>")
-      sb.append(s"<span class='type'>${esc(p.name.name)}</span>")
-      sb.append(": ")
-      docKind(p.sym.kind)
-      sb.append("</span>")
-    }
-    sb.append("]</span>")
+  private def docTypeParams(tparams: List[TypedAst.TypeParam])(implicit flix: Flix, links: Links, sb: StringBuilder): Unit = {
+    docFmt(Pretty.tparams(tparams.sortBy(_.loc)))
   }
 
   /**
@@ -2088,12 +2065,21 @@ object HtmlDocumentor {
 
   /**
     * Documents the given printed syntax `f`: a link per declaration that has a page or an anchor,
-    * see [[Links]], and a class per token, see [[HtmlHighlighter.cssClass]].
+    * see [[Links]], and a class per token, see [[docClass]].
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docFmt(f: Fmt)(implicit links: Links, sb: StringBuilder): Unit = {
-    sb.append(f.html(links.link, HtmlHighlighter.cssClass))
+    sb.append(f.html(links.link, docClass))
+  }
+
+  /**
+    * Returns the CSS class of a token of the type `tpe`, if it has one: that of the source
+    * highlighter, except that the case of an enum is set in italics.
+    */
+  private def docClass(tpe: SemanticTokenType): Option[String] = tpe match {
+    case SemanticTokenType.EnumMember => Some("case-tag")
+    case _ => HtmlHighlighter.cssClass(tpe)
   }
 
   /**
@@ -2101,10 +2087,8 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docKind(kind: Kind)(implicit sb: StringBuilder): Unit = {
-    sb.append("<span class='kind'>")
-    sb.append(esc(kind.toString))
-    sb.append("</span>")
+  private def docKind(kind: Kind)(implicit links: Links, sb: StringBuilder): Unit = {
+    docFmt(Pretty.kind(kind))
   }
 
   /**
