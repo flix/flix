@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.api.lsp.{Command, CompletionItem, CompletionItemKind, C
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, QualifiedSym}
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
+import ca.uwaterloo.flix.language.fmt.{FormatType, Pretty}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.util.collection.Nel
 
@@ -272,7 +272,7 @@ object Completion {
         labelDetails = Some(labelDetails),
         sortText = Priority.toSortText(priority, decl.sym.toString),
         textEdit = TextEdit(range, snippet),
-        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        detail = Some(Pretty.scheme(decl.spec.declaredScheme).plain),
         documentation = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Snippet
@@ -394,7 +394,7 @@ object Completion {
         sortText = Priority.toSortText(priority, qualifiedName),
         filterText = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
         textEdit = TextEdit(range, snippet),
-        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        detail = Some(Pretty.scheme(decl.spec.declaredScheme).plain),
         documentation = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Function,
@@ -683,7 +683,7 @@ object Completion {
         labelDetails = Some(labelDetails),
         sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(range, snippet),
-        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        detail = Some(Pretty.scheme(decl.spec.declaredScheme).plain),
         documentation = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Function,
@@ -711,7 +711,7 @@ object Completion {
         labelDetails = Some(labelDetails),
         sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(range, snippet),
-        detail = Some(FormatScheme.formatScheme(op.spec.declaredScheme)(flix)),
+        detail = Some(Pretty.scheme(op.spec.declaredScheme).plain),
         documentation = Some(op.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Function,
@@ -751,7 +751,7 @@ object Completion {
         labelDetails = Some(labelDetails),
         sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(range, snippet),
-        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        detail = Some(Pretty.scheme(decl.spec.declaredScheme).plain),
         documentation = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Function,
@@ -960,7 +960,7 @@ object Completion {
         filterText = Some(s"${sym.text}?$name"),
         sortText = Priority.toSortText(priority, ""),
         textEdit = TextEdit(Range.from(loc), snippet),
-        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+        detail = Some(Pretty.scheme(decl.spec.declaredScheme).plain),
         documentation = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Function)

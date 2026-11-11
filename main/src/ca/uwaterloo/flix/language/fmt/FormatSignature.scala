@@ -7,7 +7,6 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.Nel
 
@@ -55,7 +54,7 @@ object FormatSignature {
     // constraints as `TypedAst.EqualityConstraint`, which does not name the associated type, so
     // there is not enough in one to write it out.
     val sc = spec.declaredScheme
-    s"def $name($params): $result${formatConstraints(sc.tconstrs, sc.econstrs, fmt)}"
+    s"def $name($params): $result${Pretty.constraints(sc.tconstrs, sc.econstrs)(fmt).plain}"
   }
 
   /**
@@ -79,25 +78,5 @@ object FormatSignature {
   private def formatResultTypeAndEff(tpe: Type, eff: Type, fmt: FormatOptions): String = eff match {
     case Type.Cst(TypeConstructor.Pure, _) => FormatType.formatTypeWithOptions(tpe, fmt)
     case otherEff => s"${FormatType.formatTypeWithOptions(tpe, fmt)} \\ ${FormatType.formatTypeWithOptions(otherEff, fmt)}"
-  }
-
-  /**
-    * Returns a formatted string of the trait and equality constraints, or the empty string if
-    * there are none of either.
-    */
-  private def formatConstraints(tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], fmt: FormatOptions): String = {
-    val tconstrPart =
-      if (tconstrs.isEmpty)
-        ""
-      else
-        " with " + tconstrs.map(FormatTraitConstraint.formatTraitConstraintWithOptions(_, fmt)).mkString(", ")
-
-    val econstrPart =
-      if (econstrs.isEmpty)
-        ""
-      else
-        " where " + econstrs.map(FormatEqualityConstraint.formatEqualityConstraintWithOptions(_, fmt)).mkString(", ")
-
-    tconstrPart + econstrPart
   }
 }
