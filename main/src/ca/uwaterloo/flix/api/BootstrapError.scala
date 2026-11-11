@@ -9,7 +9,7 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectLockError}
 import ca.uwaterloo.flix.language.ast.shared.{PackageId, QualifiedSym}
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatSignature}
+import ca.uwaterloo.flix.language.fmt.Pretty
 import ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.tools.pkg.{LockError, ManifestError, PackageError, SemVer}
 import ca.uwaterloo.flix.util.Formatter
@@ -229,7 +229,7 @@ object BootstrapError {
         val formattedPkg = s"  ${f.bold(id.toString)}:"
         val formattedChanges = changes.sortBy { case (_, sym, _) => EffectLock.nameOf(sym) }.map {
           case (_, sym, spec) =>
-            val declaration = FormatSignature.formatSpecWithOptions(sym.name, spec, FormatOptions.Default)
+            val declaration = Pretty.spec(sym, spec).plain
             s"    ${f.bold(EffectLock.nameOf(sym))}${System.lineSeparator()}      ${f.red(declaration)}"
         }.mkString(System.lineSeparator())
         s"$formattedPkg${System.lineSeparator()}$formattedChanges"
