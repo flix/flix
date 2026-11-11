@@ -8,7 +8,7 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
 import ca.uwaterloo.flix.language.ast.shared.{Constant, EqualityConstraint, QualifiedSym, RegionScope, TraitConstraint, VarText}
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.Fmt.{SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.TypeSimplifier
@@ -16,8 +16,8 @@ import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.Nel
 
 /**
-  * The printer: builds a [[Fmt]] tree from a type, a scheme, a constraint, a signature, the head of
-  * a declaration, a kind or a constant.
+  * The printer: builds a [[Fmt]] tree from a type, a type constructor, a scheme, a constraint, a
+  * signature, the head of a declaration, a kind or a constant.
   *
   * A type is normalized by [[DisplayType]] first, which curries arrows, collects record and schema
   * rows, flattens operator chains and fills partial applications with holes. The walk from the view
@@ -119,6 +119,104 @@ object Pretty {
     * Returns the given type view `d` as a tree.
     */
   def displayType(d: DisplayType)(implicit o: FormatOptions): Fmt = visit(d)
+
+  /**
+    * Returns the given type constructor `tc` as a tree, written by its name alone, e.g. `Arrow2`.
+    *
+    * A constructor that stands for a declaration is a use of its symbol.
+    */
+  def tycon(tc: TypeConstructor): Fmt = tc match {
+    // Primitives
+    case TypeConstructor.Void => ty("Void")
+    case TypeConstructor.AnyType => ty("AnyType")
+    case TypeConstructor.Unit => ty("Unit")
+    case TypeConstructor.Null => ty("Null")
+    case TypeConstructor.Bool => ty("Bool")
+    case TypeConstructor.Char => ty("Char")
+    case TypeConstructor.Float32 => ty("Float32")
+    case TypeConstructor.Float64 => ty("Float64")
+    case TypeConstructor.BigDecimal => ty("BigDecimal")
+    case TypeConstructor.Int8 => ty("Int8")
+    case TypeConstructor.Int16 => ty("Int16")
+    case TypeConstructor.Int32 => ty("Int32")
+    case TypeConstructor.Int64 => ty("Int64")
+    case TypeConstructor.BigInt => ty("BigInt")
+    case TypeConstructor.Str => ty("String")
+    case TypeConstructor.Regex => ty("Regex")
+
+    // Arrows
+    case TypeConstructor.Arrow(arity) => ty(s"Arrow$arity")
+    case TypeConstructor.ArrowWithoutEffect(arity) => ty(s"Arrow$arity")
+
+    // Records
+    case TypeConstructor.RecordRowEmpty => ty("RecordRowEmpty")
+    case TypeConstructor.RecordRowExtend(label) => ty("RecordRowExtend") ++ parens(prop(label.name))
+    case TypeConstructor.Record => ty("Record")
+
+    // Schemas
+    case TypeConstructor.Extensible => ty("Extensible")
+    case TypeConstructor.SchemaRowEmpty => ty("SchemaRowEmpty")
+    case TypeConstructor.SchemaRowExtend(pred) => ty("SchemaRowExtend") ++ parens(prop(pred.name))
+    case TypeConstructor.Schema => ty("Schema")
+
+    // Collections
+    case TypeConstructor.Array => ty("Array")
+    case TypeConstructor.ArrayWithoutRegion => ty("Array")
+    case TypeConstructor.Vector => ty("Vector")
+    case TypeConstructor.Sender => ty("Sender")
+    case TypeConstructor.Receiver => ty("Receiver")
+    case TypeConstructor.Lazy => ty("Lazy")
+
+    // User-defined types
+    case TypeConstructor.Enum(sym, _) => SymUse(sym, SemanticTokenType.Enum, sym.name)
+    case TypeConstructor.Struct(sym, _) => SymUse(sym, SemanticTokenType.Struct, sym.name)
+    case TypeConstructor.RestrictableEnum(sym, _) => SymUse(sym, SemanticTokenType.Enum, sym.name)
+
+    // JVM types
+    case TypeConstructor.Native(desc, _) => ty(ClassDescs.binaryNameOf(desc))
+    case TypeConstructor.JvmConstructor(constructor) => ty("Constructor") ++ parens(ty(ClassDescs.binaryNameOf(constructor.ref.owner)))
+    case TypeConstructor.JvmMethod(method, _) => ty("Method") ++ parens(text(method.ref.name))
+    case TypeConstructor.JvmField(field) => ty("Field") ++ parens(text(field.ref.name))
+
+    // Tuples and relations
+    case TypeConstructor.Tuple(arity) => ty(s"Tuple$arity")
+    case TypeConstructor.Relation(arity) => ty(s"Relation$arity")
+    case TypeConstructor.Lattice(arity) => ty(s"Lattice$arity")
+
+    // Effects
+    case TypeConstructor.Pure => ef("Pure")
+    case TypeConstructor.Univ => ef("Univ")
+    case TypeConstructor.Effect(sym, _) => SymUse(sym, SemanticTokenType.Effect, sym.name)
+
+    // Boolean formulas
+    case TypeConstructor.True => ty("True")
+    case TypeConstructor.False => ty("False")
+    case TypeConstructor.And => ty("And")
+    case TypeConstructor.Or => ty("Or")
+    case TypeConstructor.Not => ty("Not")
+
+    // Set operations
+    case TypeConstructor.Complement => ty("Complement")
+    case TypeConstructor.Union => ty("Union")
+    case TypeConstructor.Intersection => ty("Intersection")
+    case TypeConstructor.Difference => ty("Difference")
+    case TypeConstructor.SymmetricDiff => ty("SymmetricDiff")
+
+    // Case set operations
+    case TypeConstructor.CaseSet(syms, _) => ty("CaseSet") ++ parens(sep(", ", syms.toList.map(sym => SymUse(sym, SemanticTokenType.EnumMember, sym.name))))
+    case TypeConstructor.CaseComplement(_) => ty("CaseComplement")
+    case TypeConstructor.CaseIntersection(_) => ty("CaseIntersection")
+    case TypeConstructor.CaseUnion(_) => ty("CaseUnion")
+    case TypeConstructor.CaseSymmetricDiff(_) => ty("CaseSymmetricDiff")
+
+    // Regions
+    case TypeConstructor.Region(sym) => ty("Region") ++ parens(tparam(sym.text))
+    case TypeConstructor.RegionToStar => ty("RegionToStar")
+    case TypeConstructor.RegionWithoutRegion => ty("Region")
+
+    // Error
+    case TypeConstructor.Error(_, _) => ty("Error")
+  }
 
   /**
     * Returns the given scheme `sc` as a tree, e.g.
