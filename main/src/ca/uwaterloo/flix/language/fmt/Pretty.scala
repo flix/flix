@@ -16,8 +16,8 @@ import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.Nel
 
 /**
-  * The printer: builds a [[Fmt]] tree from a type, a scheme, a constraint, a signature, a kind or a
-  * constant.
+  * The printer: builds a [[Fmt]] tree from a type, a scheme, a constraint, a signature, the head of
+  * a declaration, a kind or a constant.
   *
   * A type is normalized by [[DisplayType]] first, which curries arrows, collects record and schema
   * rows, flattens operator chains and fills partial applications with holes. The walk from the view
@@ -200,6 +200,47 @@ object Pretty {
       }
       parens(sep(", ", params))
   }
+
+  /**
+    * Returns the given type parameters `tparams0` as a tree, in brackets and each with its kind,
+    * e.g. `[a: Type, ef: Eff]`, or [[Fmt.Empty]] if there are none.
+    */
+  def tparams(tparams0: List[TypedAst.TypeParam])(implicit o: FormatOptions): Fmt = tparams0 match {
+    case Nil => Fmt.Empty
+    case _ =>
+      val params = tparams0.map {
+        case TypedAst.TypeParam(_, sym, _) => typeVar(sym) ++ text(": ") ++ kind(sym.kind)
+      }
+      text("[") ++ sep(", ", params) ++ text("]")
+  }
+
+  /**
+    * Returns the given case `caze` of an enum as a tree, written as it is declared, e.g.
+    * `case Some(a)`.
+    */
+  def caseDecl(caze: TypedAst.Case)(implicit o: FormatOptions): Fmt = {
+    val args = caze.tpes match {
+      case Nil => Fmt.Empty
+      case tpes => parens(sep(", ", tpes.map(t => tpe(t))))
+    }
+    kw("case") ++ text(" ") ++ SymUse(caze.sym, SemanticTokenType.EnumMember, caze.sym.name) ++ args
+  }
+
+  /**
+    * Returns the given field `field` of a struct as a tree, written as it is declared, e.g.
+    * `mut x: Int32`.
+    */
+  def structField(field: TypedAst.StructField)(implicit o: FormatOptions): Fmt = {
+    val mod = if (field.mod.isMutable) kw("mut") ++ text(" ") else Fmt.Empty
+    mod ++ SymUse(field.sym, SemanticTokenType.Property, field.sym.name) ++ text(": ") ++ tpe(field.tpe)
+  }
+
+  /**
+    * Returns the given type alias `alias` as a tree, written as it is declared, e.g.
+    * `type alias Pair[a, b] = (a, b)`.
+    */
+  def typeAliasDecl(alias: TypedAst.TypeAlias)(implicit o: FormatOptions): Fmt =
+    kw("type") ++ text(" ") ++ kw("alias") ++ text(" ") ++ SymUse(alias.sym, SemanticTokenType.Type, alias.sym.name) ++ tparams(alias.tparams) ++ text(" = ") ++ tpe(alias.tpe)
 
   /**
     * Returns the given kind `k` as a tree, e.g. `Type -> Eff`.

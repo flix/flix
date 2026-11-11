@@ -34,7 +34,6 @@
     --keyword-color: light-dark(#030303, #fcfcfc);
     --name-color: light-dark(#b12250, #ff6696);
     --type-color: light-dark(#3061c4, #6699ff);
-    --kind-color: light-dark(#6b6b6b, #999999);
     --effect-color: light-dark(#d4671e, #ff944d);
     --doc-code-color: light-dark(#d63384, #ff66b3);
     --show-hide-color: light-dark(#0d6efd, #68a4fd);
@@ -88,7 +87,6 @@
     --keyword-color: #262625;
     --name-color: #8f2f1a;
     --type-color: #1f6a91;
-    --kind-color: #625f52;
     --effect-color: #8a5606;
     --doc-code-color: #5a574c;
     --show-hide-color: #1f6a91;
@@ -125,7 +123,6 @@
     --keyword-color: #dcdded;
     --name-color: #e6b673;
     --type-color: #6cb4e4;
-    --kind-color: #8a8ea8;
     --effect-color: #d19af0;
     --doc-code-color: #c5c8c6;
     --show-hide-color: #6cb4e4;
@@ -162,7 +159,6 @@
     --keyword-color: #ff7733;
     --name-color: #ffb454;
     --type-color: #36a3d9;
-    --kind-color: #868794;
     --effect-color: #d2a6ff;
     --doc-code-color: #ffb454;
     --show-hide-color: #0096cf;
@@ -862,9 +858,6 @@ code .name {
 }
 code .type {
     color: var(--type-color);
-}
-code .kind {
-    color: var(--kind-color);
 }
 
 /* BEGIN TOKENS */
