@@ -88,6 +88,15 @@ class TestFormatSignature extends AnyFunSuite with TestUtils {
       "def f(x: a): Int32 with Collection[a] where Elm[a] ~ Int32")
   }
 
+  test("formatSpec.09") {
+    // The universe is written `Univ`. `IO` is an effect of its own.
+    assert(declarationOf("f", "pub def f(): Unit \\ Univ = ???") == "def f(): Unit \\ Univ")
+  }
+
+  test("formatSpec.10") {
+    assert(declarationOf("f", "pub def f(): Unit \\ IO = ???") == "def f(): Unit \\ IO")
+  }
+
   /**
     * Returns the declaration of the def named `name` in `input`, which must compile.
     */
