@@ -140,7 +140,9 @@ object HtmlDocumentor {
     * The declarations link to their source on the pages that [[HtmlHighlighter]] generates.
     */
   def run(root: TypedAst.Root, origin: Origin, outputDir: Path)(implicit flix: Flix): Unit = {
-    visitMod(documentedModules(root, origin), outputDir)
+    val mod = documentedModules(root, origin)
+    implicit val links: Links = new Links(documentedSymbols(mod))
+    visitMod(mod, outputDir)
 
     HtmlHighlighter.run(root, origin, outputDir)(documentPage)
 
@@ -161,9 +163,83 @@ object HtmlDocumentor {
   }
 
   /**
+    * Returns the symbols of every item that the given module tree `mod` documents: the traits,
+    * effects, enums and structs, which have a page each, and the defs, signatures, operations,
+    * type aliases, associated types, cases and fields, which have an anchor on one.
+    */
+  private def documentedSymbols(mod: Module): Set[Symbol] = {
+    val syms = Set.newBuilder[Symbol]
+
+    def addMod(m: Module): Unit = {
+      m.submodules.foreach(addMod)
+      m.traits.foreach(addTrait)
+      m.effects.foreach(addEffect)
+      m.enums.foreach(addEnum)
+      m.structs.foreach(addStruct)
+      syms ++= m.typeAliases.map(_.sym)
+      syms ++= m.defs.map(_.sym)
+    }
+
+    def addTrait(t: Trait): Unit = {
+      syms += t.decl.sym
+      syms ++= t.decl.assocs.map(_.sym)
+      syms ++= t.signatures.map(_.sym)
+      syms ++= t.defs.map(_.sym)
+      t.companionMod.foreach(addMod)
+    }
+
+    def addEffect(e: Effect): Unit = {
+      syms += e.decl.sym
+      syms ++= e.decl.ops.map(_.sym)
+      e.companionMod.foreach(addMod)
+    }
+
+    def addEnum(e: Enum): Unit = {
+      syms += e.decl.sym
+      syms ++= e.decl.cases.keys
+      e.companionMod.foreach(addMod)
+    }
+
+    def addStruct(s: Struct): Unit = {
+      syms += s.decl.sym
+      syms ++= s.decl.fields.keys
+      s.companionMod.foreach(addMod)
+    }
+
+    addMod(mod)
+    syms.result()
+  }
+
+  /**
+    * The resolver from a symbol to the URL of its documentation, given the symbols that are
+    * `documented`, see [[documentedSymbols]].
+    *
+    * A symbol without documentation, e.g. a private declaration or one of another origin, resolves
+    * to nothing, so that its name is written as plain text rather than as a dead link.
+    */
+  private class Links(documented: Set[Symbol]) {
+
+    def link(sym: Symbol): Option[String] = if (!documented.contains(sym)) None else sym match {
+      case s: Symbol.TraitSym => Some(escUrl(traitFileName(s)))
+      case s: Symbol.EffSym => Some(escUrl(effectFileName(s)))
+      case s: Symbol.EnumSym => Some(escUrl(enumFileName(s)))
+      case s: Symbol.StructSym => Some(escUrl(structFileName(s)))
+      case s: Symbol.DefnSym => Some(s"${escUrl(moduleFileName(Symbol.mkModuleSym(s.namespace)))}#def-${escUrl(s.name)}")
+      case s: Symbol.SigSym => Some(s"${escUrl(traitFileName(s.trt))}#sig-${escUrl(s.name)}")
+      case s: Symbol.OpSym => Some(s"${escUrl(effectFileName(s.eff))}#op-${escUrl(s.name)}")
+      case s: Symbol.TypeAliasSym => Some(s"${escUrl(moduleFileName(Symbol.mkModuleSym(s.namespace)))}#ta-${escUrl(s.name)}")
+      case s: Symbol.AssocTypeSym => Some(escUrl(traitFileName(s.trt)))
+      case s: Symbol.CaseSym => Some(s"${escUrl(enumFileName(s.enumSym))}#case-${escUrl(s.name)}")
+      case s: Symbol.StructFieldSym => Some(s"${escUrl(structFileName(s.structSym))}#field-${escUrl(s.name)}")
+      case _ => None
+    }
+
+  }
+
+  /**
     * Documents the given `Module`, `mod`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix): Unit = {
+  private def visitMod(mod: Module, outputDir: Path)(implicit flix: Flix, links: Links): Unit = {
     writeDocFile(mod.fileName, documentModule(mod), outputDir)
     visitContents(mod, outputDir)
   }
@@ -171,7 +247,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Trait`, `trt`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix): Unit = {
+  private def visitTrait(trt: Trait, outputDir: Path)(implicit flix: Flix, links: Links): Unit = {
     writeDocFile(trt.fileName, documentTrait(trt), outputDir)
     trt.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -179,7 +255,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Effect`, `eff`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix): Unit = {
+  private def visitEffect(eff: Effect, outputDir: Path)(implicit flix: Flix, links: Links): Unit = {
     writeDocFile(eff.fileName, documentEffect(eff), outputDir)
     eff.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -187,7 +263,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Enum`, `enm`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix): Unit = {
+  private def visitEnum(enm: Enum, outputDir: Path)(implicit flix: Flix, links: Links): Unit = {
     writeDocFile(enm.fileName, documentEnum(enm), outputDir)
     enm.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -195,7 +271,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Struct`, `struct`, and all of its contained items, writing the resulting HTML to disk.
     */
-  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix): Unit = {
+  private def visitStruct(struct: Struct, outputDir: Path)(implicit flix: Flix, links: Links): Unit = {
     writeDocFile(struct.fileName, documentStruct(struct), outputDir)
     struct.companionMod.foreach(visitContents(_, outputDir))
   }
@@ -207,7 +283,7 @@ object HtmlDocumentor {
     * The items of a companion module are documented on the page of the item it belongs to,
     * so a companion module gets no page of its own.
     */
-  private def visitContents(mod: Module, outputDir: Path)(implicit flix: Flix): Unit = {
+  private def visitContents(mod: Module, outputDir: Path)(implicit flix: Flix, links: Links): Unit = {
     mod.submodules.foreach(visitMod(_, outputDir))
     mod.traits.foreach(visitTrait(_, outputDir))
     mod.effects.foreach(visitEffect(_, outputDir))
@@ -741,7 +817,7 @@ object HtmlDocumentor {
   /**
     * Documents the given `Trait`, `trt`, returning a string of HTML.
     */
-  private def documentTrait(trt: Trait)(implicit flix: Flix): String = {
+  private def documentTrait(trt: Trait)(implicit flix: Flix, links: Links): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedAssocs = trt.decl.assocs.sortBy(_.sym.name)
@@ -1534,7 +1610,7 @@ object HtmlDocumentor {
     *
     * A group with no types is left out. If `instances` is empty, nothing will be generated.
     */
-  private def docInstanceTypes(instances: List[TypedAst.Instance])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docInstanceTypes(instances: List[TypedAst.Instance])(implicit flix: Flix, links: Links, sb: StringBuilder): Unit = {
     if (instances.isEmpty) {
       return
     }
@@ -1567,7 +1643,7 @@ object HtmlDocumentor {
     *
     * If `instances` is empty, nothing will be generated.
     */
-  private def docPrimitiveInstances(instances: List[TypedAst.Instance])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docPrimitiveInstances(instances: List[TypedAst.Instance])(implicit flix: Flix, links: Links, sb: StringBuilder): Unit = {
     if (instances.isEmpty) {
       return
     }
@@ -1615,18 +1691,20 @@ object HtmlDocumentor {
   /**
     * Documents the type `tpe` of an instance. A type headed by an enum or a struct links to its
     * page, with the qualified name as its title, since two types of different modules may share a
-    * name, e.g. `Chain.ViewLeft` and `Nec.ViewLeft`. Any other type is plain text, see [[docType]].
+    * name, e.g. `Chain.ViewLeft` and `Nec.ViewLeft`. Any other type is plain text, see [[docType]],
+    * and so is a type whose enum or struct has no page, e.g. a private one.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docInstanceType(tpe: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    val page = typeHead(tpe).collect {
-      case TypeConstructor.Enum(sym, _) => (enumFileName(sym), s"enum ${enumQualifiedName(sym)}")
-      case TypeConstructor.Struct(sym, _) => (structFileName(sym), s"struct ${structQualifiedName(sym)}")
+  private def docInstanceType(tpe: Type)(implicit flix: Flix, links: Links, sb: StringBuilder): Unit = {
+    val page = typeHead(tpe) match {
+      case Some(TypeConstructor.Enum(sym, _)) => links.link(sym).map(url => (url, s"enum ${enumQualifiedName(sym)}"))
+      case Some(TypeConstructor.Struct(sym, _)) => links.link(sym).map(url => (url, s"struct ${structQualifiedName(sym)}"))
+      case _ => None
     }
     page match {
-      case Some((fileName, title)) =>
-        sb.append(s"<a class='type' href='${escUrl(fileName)}' title='${esc(title)}'>")
+      case Some((url, title)) =>
+        sb.append(s"<a class='type' href='$url' title='${esc(title)}'>")
         sb.append(esc(FormatType.formatType(tpe)))
         sb.append("</a>")
       case None => docType(tpe)
