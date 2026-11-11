@@ -13,7 +13,7 @@ import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
 import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.Nel
 
 import scala.annotation.tailrec
@@ -63,7 +63,7 @@ object Desugar {
     case d: WeededAst.Declaration.Instance => visitInstance(d)
     case d: WeededAst.Declaration.Def => visitDef(d)
     case d: WeededAst.Declaration.Redef => visitRedef(d)
-    case v: WeededAst.Declaration.Val => throw InternalCompilerException("val declarations are not yet supported past the weeder", v.loc)
+    case d: WeededAst.Declaration.Val => visitVal(d)
     case d: WeededAst.Declaration.Enum => visitEnum(d)
     case d: WeededAst.Declaration.RestrictableEnum => visitRestrictableEnum(d)
     case d: WeededAst.Declaration.Struct => visitStruct(d)
@@ -127,6 +127,16 @@ object Desugar {
       val tconstrs = tconstrs0.map(visitTraitConstraint)
       val econstrs = econstrs0.map(visitEqualityConstraint)
       DesugaredAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, econstrs, loc)
+  }
+
+  /**
+    * Desugars the given [[WeededAst.Declaration.Val]] `val0`.
+    */
+  private def visitVal(val0: WeededAst.Declaration.Val)(implicit flix: Flix): DesugaredAst.Declaration.Val = val0 match {
+    case WeededAst.Declaration.Val(doc, ann, mod, ident, tpe0, exp0, loc) =>
+      val tpe = visitType(tpe0)
+      val exp = visitExp(exp0)
+      DesugaredAst.Declaration.Val(doc, ann, mod, ident, tpe, exp, loc)
   }
 
   /**

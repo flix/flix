@@ -188,6 +188,7 @@ object Namer {
     case decl: DesugaredAst.Declaration.Trait => visitTrait(decl, ns0)
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
+    case decl: DesugaredAst.Declaration.Val => throw InternalCompilerException("val declarations are not yet supported past desugaring", decl.loc)
     case decl: DesugaredAst.Declaration.Enum => visitEnum(decl, ns0)
     case decl: DesugaredAst.Declaration.Struct => visitStruct(decl, ns0)
     case decl: DesugaredAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
