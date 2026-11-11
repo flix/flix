@@ -1138,11 +1138,11 @@ object Parser2 {
         case TokenKind.KeywordTrait => traitDecl(mark)
         case TokenKind.KeywordInstance => instanceDecl(mark)
         case TokenKind.KeywordDef => definitionDecl(mark)
+        case TokenKind.KeywordVal => valDecl(mark)
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumerationDecl(mark)
         case TokenKind.KeywordStruct => structDecl(mark)
         case TokenKind.KeywordType => typeAliasDecl(mark)
         case TokenKind.KeywordEff => effectDecl(mark)
-        case TokenKind.KeywordVal => valDecl(mark)
         case at =>
           val loc = currentSourceLocation()
           val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), sctx, loc = loc)
