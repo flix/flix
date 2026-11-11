@@ -10,7 +10,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.FormatConstant
+import ca.uwaterloo.flix.language.fmt.Pretty
 import ca.uwaterloo.flix.language.phase.PatMatch2.WitnessPattern
 import ca.uwaterloo.flix.util.Formatter
 
@@ -107,7 +107,7 @@ object PatMatchError {
   private def formatPattern(wp: WitnessPattern): String = wp match {
     case WitnessPattern.Wildcard => "_"
 
-    case WitnessPattern.Literal(cst) => FormatConstant.formatConstant(cst)
+    case WitnessPattern.Literal(cst) => Pretty.constant(cst).plain
 
     case WitnessPattern.Tag(sym, Nil) => sym.name
 

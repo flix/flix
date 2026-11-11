@@ -7,22 +7,22 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
-import ca.uwaterloo.flix.language.ast.shared.{QualifiedSym, RegionScope, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, QualifiedSym, RegionScope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Symbol, Type}
-import ca.uwaterloo.flix.language.fmt.Fmt.{SymUse, ef, kw, op, parens, prop, sep, text, tparam, ty}
+import ca.uwaterloo.flix.language.fmt.Fmt.{SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.TypeSimplifier
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 /**
-  * The printer: builds a [[Fmt]] tree from a type.
+  * The printer: builds a [[Fmt]] tree from a type, a kind or a constant.
   *
   * A type is normalized by [[DisplayType]] first, which curries arrows, collects record and schema
   * rows, flattens operator chains and fills partial applications with holes. The walk from the view
   * to the tree puts a node where a string would be: `Int32` is a type token, `List` is a use of the
   * symbol of its enum, and ` -> ` is an operator token with spacing around it.
   *
-  * Every entry point takes the [[FormatOptions]] implicitly.
+  * Every entry point that prints a type takes the [[FormatOptions]] implicitly.
   */
 object Pretty {
 
@@ -117,6 +117,51 @@ object Pretty {
     * Returns the given type view `d` as a tree.
     */
   def displayType(d: DisplayType)(implicit o: FormatOptions): Fmt = visit(d)
+
+  /**
+    * Returns the given kind `k` as a tree, e.g. `Type -> Eff`.
+    */
+  def kind(k: Kind): Fmt = k match {
+    case Kind.Wild => text("???")
+    case Kind.WildCaseSet => ty("CaseSet") ++ text("[???]")
+    case Kind.Star => ty("Type")
+    case Kind.Eff => ty("Eff")
+    case Kind.Bool => ty("Bool")
+    case Kind.RecordRow => ty("RecordRow")
+    case Kind.SchemaRow => ty("SchemaRow")
+    case Kind.Predicate => ty("Predicate")
+    case Kind.Jvm => ty("Jvm")
+    case Kind.CaseSet(sym) => ty("CaseSet") ++ text("[") ++ SymUse(sym, SemanticTokenType.Enum, sym.name) ++ text("]")
+    // parenthesize the left because `->` is right-associative
+    case Kind.Arrow(k1: Kind.Arrow, k2) => parens(kind(k1)) ++ text(" ") ++ op("->") ++ text(" ") ++ kind(k2)
+    case Kind.Arrow(k1, k2) => kind(k1) ++ text(" ") ++ op("->") ++ text(" ") ++ kind(k2)
+    case Kind.Error => ty("Error")
+  }
+
+  /**
+    * Returns the given constant `c` as a tree, written as a literal, e.g. `42i32`.
+    *
+    * A literal has the token type the LSP gives it in source, which for `()`, `null`, the Booleans,
+    * `{}` and `Static` is the type token.
+    */
+  def constant(c: Constant): Fmt = c match {
+    case Constant.Unit => ty("()")
+    case Constant.Null => ty("null")
+    case Constant.Bool(lit) => ty(lit.toString)
+    case Constant.Char(lit) => Token(SemanticTokenType.String, "'" + lit.toString + "'")
+    case Constant.Float32(lit) => Token(SemanticTokenType.Number, s"${lit}f32")
+    case Constant.Float64(lit) => Token(SemanticTokenType.Number, s"${lit}f64")
+    case Constant.BigDecimal(lit) => Token(SemanticTokenType.Number, s"${lit}ff")
+    case Constant.Int8(lit) => Token(SemanticTokenType.Number, s"${lit}i8")
+    case Constant.Int16(lit) => Token(SemanticTokenType.Number, s"${lit}i16")
+    case Constant.Int32(lit) => Token(SemanticTokenType.Number, s"${lit}i32")
+    case Constant.Int64(lit) => Token(SemanticTokenType.Number, s"${lit}i64")
+    case Constant.BigInt(lit) => Token(SemanticTokenType.Number, s"${lit}ii")
+    case Constant.Str(lit) => Token(SemanticTokenType.String, "\"" + lit + "\"")
+    case Constant.Regex(lit) => Token(SemanticTokenType.Regexp, "regex\"" + lit.pattern() + "\"")
+    case Constant.RecordEmpty => ty("{}")
+    case Constant.Static => ty("Static")
+  }
 
   /**
     * Returns the given type view `d` as a tree.

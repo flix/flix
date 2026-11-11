@@ -120,7 +120,7 @@ object HoverProvider {
   private def hoverKind(k: Kind, loc: SourceLocation): Option[Hover] = {
     val markup =
       s"""```flix
-         |${FormatKind.formatKind(k)}
+         |${Pretty.kind(k).plain}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
