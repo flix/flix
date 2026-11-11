@@ -240,24 +240,24 @@ object Weeder2 {
         TreeKind.Decl.Trait,
         TreeKind.Decl.Instance,
         TreeKind.Decl.Def,
+        TreeKind.Decl.Val,
         TreeKind.Decl.Enum,
         TreeKind.Decl.RestrictableEnum,
         TreeKind.Decl.Struct,
         TreeKind.Decl.TypeAlias,
-        TreeKind.Decl.Effect,
-        TreeKind.Decl.Val
+        TreeKind.Decl.Effect
       ).map { t =>
         t.kind match {
           case TreeKind.Decl.Module => visitModuleDecl(t)
           case TreeKind.Decl.Trait => visitTraitDecl(t)
           case TreeKind.Decl.Instance => visitInstanceDecl(t)
           case TreeKind.Decl.Def => visitDefinitionDecl(t)
+          case TreeKind.Decl.Val => visitValDecl(t)
           case TreeKind.Decl.Enum => visitEnumDecl(t)
           case TreeKind.Decl.RestrictableEnum => visitRestrictableEnumDecl(t)
           case TreeKind.Decl.Struct => visitStructDecl(t)
           case TreeKind.Decl.TypeAlias => visitTypeAliasDecl(t)
           case TreeKind.Decl.Effect => visitEffectDecl(t)
-          case TreeKind.Decl.Val => visitValDecl(t)
           case k => throw InternalCompilerException(s"unexpected declaration kind '$k'", t.loc)
         }
       }
@@ -344,17 +344,6 @@ object Weeder2 {
       Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
     }
 
-    private def visitValDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Val = {
-      expect(tree, TreeKind.Decl.Val)
-      val doc = pickDocumentation(tree)
-      val ann = pickAnnotations(tree)
-      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
-      val ident = pickNameIdent(tree)
-      val tpe = Types.pickType(tree)
-      val exp = Exprs.pickExpr(tree)
-      Declaration.Val(doc, ann, mod, ident, tpe, exp, tree.loc)
-    }
-
     private def visitRedefinitionDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Declaration.Redef = {
       expect(tree, TreeKind.Decl.Redef)
       val allowedModifiers: Set[TokenKind] = if (flix.options.xnodeprecated) Set.empty else Set(TokenKind.KeywordPub)
@@ -370,6 +359,17 @@ object Weeder2 {
       val tconstrs = Types.pickConstraints(tree)
       val constrs = pickEqualityConstraints(tree)
       Declaration.Redef(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
+    }
+
+    private def visitValDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Val = {
+      expect(tree, TreeKind.Decl.Val)
+      val doc = pickDocumentation(tree)
+      val ann = pickAnnotations(tree)
+      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
+      val ident = pickNameIdent(tree)
+      val tpe = Types.pickType(tree)
+      val exp = Exprs.pickExpr(tree)
+      Declaration.Val(doc, ann, mod, ident, tpe, exp, tree.loc)
     }
 
     private def visitEnumDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Enum = {

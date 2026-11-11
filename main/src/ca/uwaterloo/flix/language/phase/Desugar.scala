@@ -63,12 +63,12 @@ object Desugar {
     case d: WeededAst.Declaration.Instance => visitInstance(d)
     case d: WeededAst.Declaration.Def => visitDef(d)
     case d: WeededAst.Declaration.Redef => visitRedef(d)
+    case v: WeededAst.Declaration.Val => throw InternalCompilerException("val declarations are not yet supported past the weeder", v.loc)
     case d: WeededAst.Declaration.Enum => visitEnum(d)
     case d: WeededAst.Declaration.RestrictableEnum => visitRestrictableEnum(d)
     case d: WeededAst.Declaration.Struct => visitStruct(d)
     case d: WeededAst.Declaration.TypeAlias => visitTypeAlias(d)
     case d: WeededAst.Declaration.Effect => visitEffect(d)
-    case v: WeededAst.Declaration.Val => throw InternalCompilerException("val declarations are not yet supported past the weeder", v.loc)
   }
 
   /**
