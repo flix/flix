@@ -843,9 +843,10 @@ td.align-right, th.align-right {
 code {
     font-family: var(--code-font);
 }
+/* A link inside code, to the page of a declaration, is told from plain text by its underline. */
 code a {
     color: inherit;
-    text-decoration: inherit;
+    text-decoration: underline;
 }
 code.annotations {
     display: block;
@@ -864,14 +865,6 @@ code .type {
 }
 code .kind {
     color: var(--kind-color);
-}
-code .effect {
-    color: var(--effect-color);
-}
-/* A link inside code, to the page of a trait or a type, is told from plain text by its underline. */
-code .tpe-constraint,
-code a.type {
-    text-decoration: underline;
 }
 
 /* BEGIN TOKENS */

@@ -12,9 +12,10 @@ import ca.uwaterloo.flix.language.ast.Symbol
 /**
   * Printed Flix syntax, annotated for an [[Emitter]].
   *
-  * A printer builds the tree once. An emitter then renders it as plain text or as a list of
-  * tokens, without the printer knowing which. The tree is immutable and cheap, so one signature
-  * can be rendered in more than one way without being printed twice.
+  * A printer builds the tree once. An emitter then renders it as plain text, as HTML with a link
+  * per declaration and a class per token, or as a list of tokens, without the printer knowing
+  * which. The tree is immutable and cheap, so one signature can be rendered in more than one way
+  * without being printed twice.
   *
   * Every name that stands for a declaration keeps its [[Symbol]] in a [[Fmt.SymUse]], and every
   * other colored atom carries the [[SemanticTokenType]] the LSP assigns to the same syntax in a
@@ -31,6 +32,16 @@ sealed trait Fmt {
     * Renders this tree as plain text.
     */
   def plain: String = Fmt.render(this, PlainEmitter)
+
+  /**
+    * Renders this tree as HTML.
+    *
+    * A [[Fmt.SymUse]] whose symbol `link` resolves becomes an anchor to that URL; every other
+    * colored atom becomes a span with the class `cssClass` gives its kind, or plain text if it
+    * gives none. The text is escaped.
+    */
+  def html(link: Symbol => Option[String], cssClass: SemanticTokenType => Option[String]): String =
+    Fmt.render(this, new HtmlEmitter(link, cssClass))
 
   /**
     * Returns the colored atoms of this tree in order, without the punctuation between them.
