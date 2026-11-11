@@ -8,14 +8,16 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
 import ca.uwaterloo.flix.language.ast.shared.{Constant, EqualityConstraint, QualifiedSym, RegionScope, TraitConstraint, VarText}
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.Fmt.{SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.TypeSimplifier
 import ca.uwaterloo.flix.language.phase.unification.Substitution
+import ca.uwaterloo.flix.util.collection.Nel
 
 /**
-  * The printer: builds a [[Fmt]] tree from a type, a scheme, a constraint, a kind or a constant.
+  * The printer: builds a [[Fmt]] tree from a type, a scheme, a constraint, a signature, a kind or a
+  * constant.
   *
   * A type is normalized by [[DisplayType]] first, which curries arrows, collects record and schema
   * rows, flattens operator chains and fills partial applications with holes. The walk from the view
@@ -159,6 +161,45 @@ object Pretty {
       if (ecs.isEmpty) Fmt.Empty
       else text(" ") ++ kw("where") ++ text(" ") ++ sep(", ", ecs.map(equalityConstraint))
     tcPart ++ ecPart
+  }
+
+  /**
+    * Returns the signature of the def, sig or op `sym` with the given `spec` as a tree, written as
+    * the declaration would be, e.g. `def sort(l: List[a]): List[a] with Order[a]`.
+    *
+    * The name is a use of `sym`. A symbol of any other kind is written as a function name that
+    * stands for no declaration.
+    *
+    * The constraints are taken from the declared scheme: `Spec` holds the equality constraints as
+    * `TypedAst.EqualityConstraint`, which does not name the associated type, so there is not enough
+    * in one to write it out.
+    */
+  def spec(sym: QualifiedSym, spec: TypedAst.Spec)(implicit o: FormatOptions): Fmt = {
+    val name = sym match {
+      case s: Symbol.DefnSym => SymUse(s, SemanticTokenType.Function, s.name)
+      case s: Symbol.SigSym => SymUse(s, SemanticTokenType.Method, s.name)
+      case s: Symbol.OpSym => SymUse(s, SemanticTokenType.Function, s.name)
+      case s => Token(SemanticTokenType.Function, s.name)
+    }
+    val sc = spec.declaredScheme
+    kw("def") ++ text(" ") ++ name ++ fparams(spec.fparams) ++ text(": ") ++ typeAndEff(spec.retTpe, spec.eff) ++ constraints(sc.tconstrs, sc.econstrs)
+  }
+
+  /**
+    * Returns the given formal parameters `fparams0` as a tree, in parentheses, e.g.
+    * `(x: Int32, y: a)`.
+    *
+    * A function declared with no parameters gets a single parameter of the unit type, which is
+    * written as it was declared: `()`.
+    */
+  private def fparams(fparams0: Nel[TypedAst.FormalParam])(implicit o: FormatOptions): Fmt = fparams0 match {
+    case Nel(fparam, Nil) if fparam.tpe == Type.Unit => text("()")
+    case _ =>
+      val params = fparams0.toList.map {
+        case TypedAst.FormalParam(bnd, tpe, _, _, _) =>
+          Token(SemanticTokenType.Parameter, bnd.sym.text) ++ text(": ") ++ Pretty.tpe(tpe)
+      }
+      parens(sep(", ", params))
   }
 
   /**

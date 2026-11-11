@@ -67,7 +67,7 @@ object HoverProvider {
     val defDecl = root.defs(sym)
     val markup =
       s"""```flix
-         |${FormatSignature.asMarkDown(defDecl)}
+         |${Pretty.spec(defDecl.sym, defDecl.spec).plain}
          |```
          |
          |${FormatDoc.asMarkDown(defDecl.spec.doc)}
@@ -81,7 +81,7 @@ object HoverProvider {
     val sigDecl = root.sigs(sym)
     val markup =
       s"""```flix
-         |${FormatSignature.asMarkDown(sigDecl)}
+         |${Pretty.spec(sigDecl.sym, sigDecl.spec).plain}
          |```
          |
          |${FormatDoc.asMarkDown(sigDecl.spec.doc)}
@@ -95,7 +95,7 @@ object HoverProvider {
     val opDecl = root.effects(sym.eff).ops.find(_.sym == sym).get // guaranteed to be present
     val markup =
       s"""```flix
-         |${FormatSignature.asMarkDown(opDecl)}
+         |${Pretty.spec(opDecl.sym, opDecl.spec).plain}
          |```
          |
          |${FormatDoc.asMarkDown(opDecl.spec.doc)}

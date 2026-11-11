@@ -104,7 +104,7 @@ class TestFormatSignature extends AnyFunSuite with TestUtils {
     val (root, errors) = check(input, TestOptions)
     expectSuccess((root, errors))
     val defn = root.get.defs.collectFirst { case (sym, defn) if sym.text == name => defn }.get
-    FormatSignature.formatSpecWithOptions(name, defn.spec, fmt)
+    Pretty.spec(defn.sym, defn.spec)(fmt).plain
   }
 
 }
