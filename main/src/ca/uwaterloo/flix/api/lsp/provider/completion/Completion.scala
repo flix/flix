@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.api.lsp.{Command, CompletionItem, CompletionItemKind, C
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, QualifiedSym}
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.language.fmt.{FormatType, Pretty}
+import ca.uwaterloo.flix.language.fmt.Pretty
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.util.collection.Nel
 
@@ -872,7 +872,7 @@ object Completion {
         label = field,
         sortText = Priority.toSortText(priority, field),
         textEdit = TextEdit(Range.from(symLoc), field),
-        detail = Some(FormatType.formatType(tpe)(flix)),
+        detail = Some(Pretty.tpe(tpe).plain),
         kind = CompletionItemKind.Property,
       )
     }

@@ -9,13 +9,13 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.fmt.FormatType
+import ca.uwaterloo.flix.language.fmt.Pretty
 import org.json4s.JValue
 import org.json4s.JsonDSL.*
 
 object ParameterInformation {
   def from(param: TypedAst.FormalParam)(implicit flix: Flix): ParameterInformation = {
-    val label = s"${param.bnd.sym.text}: ${FormatType.formatType(param.tpe)}"
+    val label = s"${param.bnd.sym.text}: ${Pretty.tpe(param.tpe).plain}"
     ParameterInformation(label, None)
   }
 }
