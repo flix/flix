@@ -13,7 +13,6 @@ import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type, Typ
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.Pretty
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
-import ca.uwaterloo.flix.language.fmt.FormatTypeConstructor.formatTypeConstructor
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -382,11 +381,11 @@ object InstanceError {
   case class OverlappingInstances(sym: Symbol.TraitSym, tc: TypeConstructor, loc1: SourceLocation, loc2: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3178
 
-    def summary: String = s"Overlapping instances of '${sym.name}' for type '${formatTypeConstructor(tc)}'."
+    def summary: String = s"Overlapping instances of '${sym.name}' for type '${Pretty.tycon(tc).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Overlapping instances of '${magenta(sym.name)}' for type '${red(formatTypeConstructor(tc))}'.
+      s""">> Overlapping instances of '${magenta(sym.name)}' for type '${red(Pretty.tycon(tc).plain)}'.
          |
          |${highlight(loc1, "first instance", fmt)}
          |
