@@ -121,7 +121,8 @@ object Pretty {
   def displayType(d: DisplayType)(implicit o: FormatOptions): Fmt = visit(d)
 
   /**
-    * Returns the given scheme `sc` as a tree, e.g. `∀(a, b). a -> b with Order[a] where Elm[a] ~ b`.
+    * Returns the given scheme `sc` as a tree, e.g.
+    * `∀(a, b). a -> b with Order[a] where Collection.Elm[a] ~ b`.
     */
   def scheme(sc: Scheme)(implicit o: FormatOptions): Fmt = {
     val quantifiers =
@@ -132,26 +133,24 @@ object Pretty {
 
   /**
     * Returns the given trait constraint `tc` as a tree, e.g. `Order[a]`.
-    *
-    * The trait is written with its namespace.
     */
   def traitConstraint(tc: TraitConstraint)(implicit o: FormatOptions): Fmt = tc match {
     case TraitConstraint(head, arg, _) =>
-      SymUse(head.sym, SemanticTokenType.Interface, head.sym.toString) ++ text("[") ++ tpe(arg) ++ text("]")
+      SymUse(head.sym, SemanticTokenType.Interface, qualify(head.sym)) ++ text("[") ++ tpe(arg) ++ text("]")
   }
 
   /**
-    * Returns the given equality constraint `ec` as a tree, e.g. `Elm[a] ~ Int32`.
+    * Returns the given equality constraint `ec` as a tree, e.g. `Collection.Elm[a] ~ Int32`.
     */
   def equalityConstraint(ec: EqualityConstraint)(implicit o: FormatOptions): Fmt = ec match {
     case EqualityConstraint(symUse, tpe1, tpe2, _) =>
-      SymUse(symUse.sym, SemanticTokenType.Type, symUse.sym.name) ++ text("[") ++ tpe(tpe1) ++ text("] ") ++ op("~") ++ text(" ") ++ tpe(tpe2)
+      assocType(symUse.sym) ++ text("[") ++ tpe(tpe1) ++ text("] ") ++ op("~") ++ text(" ") ++ tpe(tpe2)
   }
 
   /**
     * Returns the given trait constraints `tcs` and equality constraints `ecs` as a tree, each list
-    * after its keyword, e.g. ` with Order[a] where Elm[a] ~ Int32`, or [[Fmt.Empty]] if both are
-    * empty.
+    * after its keyword, e.g. ` with Order[a] where Collection.Elm[a] ~ Int32`, or [[Fmt.Empty]] if
+    * both are empty.
     */
   def constraints(tcs: List[TraitConstraint], ecs: List[EqualityConstraint])(implicit o: FormatOptions): Fmt = {
     val tcPart =
@@ -333,7 +332,7 @@ object Pretty {
     case DisplayType.RestrictableEnum(sym) => SymUse(sym, SemanticTokenType.Enum, qualify(sym))
     case DisplayType.Case(sym) => SymUse(sym, SemanticTokenType.EnumMember, sym.name)
     case DisplayType.Alias(sym) => SymUse(sym, SemanticTokenType.Type, qualify(sym))
-    case DisplayType.Assoc(sym) => SymUse(sym, SemanticTokenType.Type, sym.name)
+    case DisplayType.Assoc(sym) => assocType(sym)
     case DisplayType.Effect(sym) => SymUse(sym, SemanticTokenType.Effect, sym.name)
     case DisplayType.Native(desc) => ty(ClassDescs.canonicalNameOf(desc))
     case DisplayType.Apply(tpe, tpes) =>
@@ -389,6 +388,13 @@ object Pretty {
     case tuple: DisplayType.Tuple => parens(visit(tuple))
     case d => delimit(d)
   }
+
+  /**
+    * Returns the given associated type `sym` as a tree, written with its trait as in source, e.g.
+    * `Collection.Elm`.
+    */
+  private def assocType(sym: Symbol.AssocTypeSym)(implicit o: FormatOptions): Fmt =
+    SymUse(sym, SemanticTokenType.Type, qualify(sym.trt) + "." + sym.name)
 
   /**
     * Returns the name of the given symbol `sym`, qualified by its namespace if the options say so.
