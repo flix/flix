@@ -34,6 +34,62 @@ object ConstraintSolverInterface {
   }
 
   /**
+    * Resolves constraints in the given val using the given inference result.
+    *
+    * A val has no type parameters, so unlike a [[KindedAst.Def]]'s scheme there is nothing to
+    * generalize over: every type variable that inference introduces inside the body must be
+    * pinned down by the declared (monomorphic) type of the val. The declared type itself can
+    * never mention a free type variable -- there are no type parameters to bind one against, and
+    * the Namer already rejects that case (see `NameError.IllegalPolymorphicVal`). Hence it
+    * suffices to equate the declared type and the declared (implicitly pure) effect with the
+    * inferred ones, exactly as is done for a def's declared return type and effect.
+    */
+  def visitVal(v: KindedAst.Val, infResult: InfResult, tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = v match {
+    case KindedAst.Val(_, _, _, _, tpe, _, loc) =>
+
+      val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
+
+      val renv = infRenv
+
+      // A val has no syntax for an effect annotation, so it is implicitly pure (like a def with no effect annotation).
+      val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
+      val tpos = moveRight(tpe.loc.end)
+      val loc1 = SourceLocation(true, tpe.loc.source, tpe.loc.end, tpos)
+      val declaredEffConstr = TypeConstraint.Equality(Type.Pure, infEff, Provenance.ExpectEffect(expected = Type.Pure, actual = infEff, loc1))
+
+      val constrs = declaredTpeConstr :: declaredEffConstr :: infConstrs
+
+      val (leftovers, subst) = ConstraintSolver2.solveAll(constrs, SubstitutionTree.empty)(RegionScope.Top, renv, tenv0, eqEnv0, flix)
+      leftovers match {
+        case Nil =>
+          // All constraints solved. Yay!
+          (subst, Nil)
+        case _ =>
+          // We have one or more type errors. We check whether we are in development or production mode.
+          flix.options.build match {
+            case Build.Production =>
+              // We are in production mode, so we have to return immediately with the *original* type error(s).
+              (subst, mkTypeErrors(leftovers, subst, renv, root))
+
+            case Build.Development =>
+              // Otherwise we have special logic for the [[Debug]] effect: We solve a new constraint system where [[Debug]] is allowed.
+              val declaredEffConstrWithDebug = TypeConstraint.Equality(Type.Debug, infEff, Provenance.ExpectEffect(expected = Type.Debug, actual = infEff, loc1))
+              val constrsWithDebug = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
+              val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, SubstitutionTree.empty)(RegionScope.Top, renv, tenv0, eqEnv0, flix)
+
+              leftovers2 match {
+                case Nil =>
+                  // Success -- We can type check with [[Debug]].
+                  (subst2, Nil)
+                case _ =>
+                  // Failure -- We report the *original* type error(s). We report the original errors to avoid spurious occurrences of the [[Debug]] effect.
+                  (subst, mkTypeErrors(leftovers, subst, renv, root))
+              }
+          }
+      }
+  }
+
+  /**
     * Resolves constraints in the given signature using the given inference result.
     */
   def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = sig match {

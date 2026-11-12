@@ -36,6 +36,7 @@ object Typer {
     val traits = visitTraits(root, traitEnv, eqEnv, oldRoot, changeSet)
     val instances = visitInstances(root, traitEnv, eqEnv)
     val defs = visitDefs(root, oldRoot, changeSet, traitEnv, eqEnv)
+    val vals = visitVals(root, traitEnv, eqEnv)
     val enums = visitEnums(root)
     val structs = visitStructs(root)
     val restrictableEnums = visitRestrictableEnums(root)
@@ -45,7 +46,7 @@ object Typer {
     val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
     val modules = collectModules(root)
     val (defaultHandlers, defaultHandlerErrors) = DefaultHandlers.visitDefaultHandlers(root)(eqEnv, flix)
-    val result = TypedAst.Root(modules, traits, instances, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, Set.empty, defaultHandlers, root.sources, traitEnv, eqEnv, precedenceGraph, DependencyGraph.empty, root.tokens)
+    val result = TypedAst.Root(modules, traits, instances, sigs, defs, vals, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, Set.empty, defaultHandlers, root.sources, traitEnv, eqEnv, precedenceGraph, DependencyGraph.empty, root.tokens)
 
     (result, sctx.errors.asScala.toList ++ defaultHandlerErrors)
 
@@ -60,16 +61,17 @@ object Typer {
     * empty defaults.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, TypedAst.Mod] = root match {
-    case KindedAst.Root(modules, traits, _, defs, _, enums, structs, _, effects, typeAliases, _, _, _, _) =>
+    case KindedAst.Root(modules, traits, _, defs, vals, enums, structs, _, effects, typeAliases, _, _, _, _) =>
       val sigs = traits.values.flatMap { trt => trt.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
-      val syms0 = traits.keys ++ defs.keys ++ enums.keys ++ structs.keys ++ effects.keys ++ typeAliases.keys ++ sigs ++ ops
+      val syms0 = traits.keys ++ defs.keys ++ vals.keys ++ enums.keys ++ structs.keys ++ effects.keys ++ typeAliases.keys ++ sigs ++ ops
 
       // collect namespaces from prefixes of other symbols
       // TODO this should be done in resolver once the duplicate namespace issue is managed
       val namespaces = syms0.collect {
         case sym: Symbol.DefnSym => sym.namespace
+        case sym: Symbol.ValSym => sym.namespace
         case sym: Symbol.EnumSym => sym.namespace
         case sym: Symbol.StructSym => sym.namespace
         case sym: Symbol.StructFieldSym => sym.namespace
@@ -87,6 +89,7 @@ object Typer {
 
       val groups = syms.groupBy {
         case sym: Symbol.DefnSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+        case sym: Symbol.ValSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
         case sym: Symbol.EnumSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
         case sym: Symbol.StructSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
         case sym: Symbol.StructFieldSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
@@ -101,7 +104,6 @@ object Typer {
 
         case sym: Symbol.ModuleSym => new Symbol.ModuleSym(sym.ns.init, ModuleKind.Standalone)
 
-        case sym: Symbol.ValSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
@@ -207,6 +209,36 @@ object Typer {
     constraintErrors.foreach(sctx.errors.add)
     checkSpecAssocTypes(defn.spec, tconstrs0, traitEnv)
     TypeReconstruction.visitDef(defn, exp, subst)
+  }
+
+  /**
+    * Reconstructs types in the given vals.
+    */
+  private def visitVals(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.ValSym, TypedAst.Val] = {
+    ParOps.parMapValues(root.vals)(visitVal(_, root, traitEnv, eqEnv))
+  }
+
+  /**
+    * Reconstructs types in the given val.
+    *
+    * A val has no type parameters: its body is type-checked against its declared (monomorphic)
+    * type, the same way a def's body is checked against its declared return type, but with
+    * nothing left to generalize into a scheme afterwards.
+    */
+  private def visitVal(v: KindedAst.Val, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): TypedAst.Val = {
+    implicit val scope: RegionScope = RegionScope.Top
+    implicit val r: KindedAst.Root = root
+    implicit val context: TypeContext = new TypeContext
+    val exp = ConstraintGen.visitExp(v.exp)
+    val infTpe = exp.tpe
+    val infEff = exp.eff
+    val infRenv = context.getRigidityEnv
+    val infTconstrs = context.getTypeConstraints
+
+    val infResult = InfResult(infTconstrs, infTpe, infEff, infRenv)
+    val (subst, constraintErrors) = ConstraintSolverInterface.visitVal(v, infResult, traitEnv, eqEnv, root)
+    constraintErrors.foreach(sctx.errors.add)
+    TypeReconstruction.visitVal(v, exp, subst)
   }
 
   /**

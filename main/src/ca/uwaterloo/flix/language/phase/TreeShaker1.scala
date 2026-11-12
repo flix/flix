@@ -84,6 +84,9 @@ object TreeShaker1 {
     case Expr.Var(_, _, _) =>
       Set.empty
 
+    case Expr.Val(_, _, _) =>
+      Set.empty
+
     case Expr.Hole(_, _, _, _, _) =>
       Set.empty
 
