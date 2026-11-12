@@ -14,7 +14,7 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
 import ca.uwaterloo.flix.language.phase.unification.shared.CofiniteIntSet
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinAlgebra
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra}
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, Result}
 
 object EffUnification3 {
@@ -336,5 +336,40 @@ object EffUnification3 {
 
     case SetFormula.Xor(other) =>
       Type.mkSymmetricDiff(other.map(fromSetFormula(_, loc)), loc)
+  }
+
+  /**
+    * Simplifies the given effect `tpe` by conversion to - and back from - a Zhegalkin polynomial.
+    *
+    * WARNING:
+    * - The type `tpe` *MUST* have kind `Eff`.
+    * - The type `tpe` *MUST* be well-kinded. Do not use this function for ill-kinded effects!
+    * - Every saturated occurrence of the same polymorphic effect constructor *MUST* have
+    *   identical type arguments. For example, `F[a] + F[a]` is permitted, whereas
+    *   `F[Int32] + F[String]` must have been rejected before calling this function.
+    *
+    * The type `tpe` may contain `Type.Error`.
+    */
+  def simplify(tpe: Type): Type = try {
+    // Check if type is too complex to simplify via Zhegalkin polynomials.
+    if (tpe.typeVars.size > SetUnification.MaxVars) {
+      // The type is too complex, we return it unchanged.
+      return tpe
+    }
+
+    // We can use an arbitrary scope and renv because we don't do any unification.
+    implicit val scope: RegionScope = RegionScope.Top
+    implicit val renv: RigidityEnv = RigidityEnv.empty
+    implicit val bimap: AtomBimap = AtomBimap.fromType(tpe)
+
+    val f0 = toSetFormula(tpe)
+    val z = Zhegalkin.toZhegalkin(f0)(Algebra, CofiniteIntSet.LatticeOps)
+    val f1 = Zhegalkin.toSetFormula(z)
+
+    fromSetFormula(f1, tpe.loc)
+  } catch {
+    case _: InvalidType =>
+      // The type is invalid. We cannot simplify it.
+      tpe
   }
 }

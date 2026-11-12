@@ -43,6 +43,18 @@ private object AtomBimap {
   }
 
   /**
+    * Returns an [[AtomBimap]] numbering the [[EffAtom]]s of `tpe` using [[EffAtom.collectAtoms]].
+    * The map also records the type arguments of each polymorphic effect constructor so that the
+    * effect applications can be reconstructed after simplification.
+    */
+  def fromType(tpe: Type)(implicit scope: RegionScope, renv: RigidityEnv): AtomBimap = {
+    val buf = mutable.HashSet.empty[EffAtom]
+    val effectArgs = mutable.Map.empty[Symbol.EffSym, Nel[Type]]
+    EffAtom.collectAtoms(tpe, buf, effectArgs)
+    fromAtoms(buf, effectArgs.toMap)
+  }
+
+  /**
     * Returns an [[AtomBimap]] numbering `atoms` from `0` to `n - 1` in sorted order.
     * `effectArgs` maps each polymorphic effect constructor to its non-empty type argument list.
     */
