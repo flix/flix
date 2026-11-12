@@ -13,7 +13,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.{CompletionUtils, ExprConte
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.fmt.{Fmt, Pretty}
+import ca.uwaterloo.flix.language.fmt.{Pretty, RichText}
 
 object LspUtil {
   /**
@@ -45,7 +45,7 @@ object LspUtil {
     * formatted in a readable way.
     */
   def getLabelForSpec(spec: TypedAst.Spec): String =
-    (Pretty.fparams(spec.fparams) ++ Fmt.text(": ") ++ Pretty.typeAndEff(spec.retTpe, spec.eff)).plain
+    (Pretty.fparams(spec.fparams) ++ RichText.text(": ") ++ Pretty.typeAndEff(spec.retTpe, spec.eff)).plain
 
   /**
     * Generates a user-friendly snippet for the given spec.

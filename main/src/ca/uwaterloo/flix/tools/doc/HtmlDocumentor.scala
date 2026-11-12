@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.api.lsp.SemanticTokenType
 import ca.uwaterloo.flix.api.Version
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.fmt.{Fmt, Pretty}
+import ca.uwaterloo.flix.language.fmt.{Pretty, RichText}
 import ca.uwaterloo.flix.util.LocalResource
 import org.commonmark.ext.gfm.tables.{TableCell, TablesExtension}
 import org.commonmark.node.Node
@@ -1524,7 +1524,7 @@ object HtmlDocumentor {
     sb.append(s"<div class='box' id='ta-${esc(ta.sym.name)}'>")
     sb.append("<div class='decl'>")
     sb.append("<code>")
-    docFmt(Pretty.typeAliasDecl(ta))
+    docRichText(Pretty.typeAliasDecl(ta))
     sb.append("</code>")
     docActions(Some(s"ta-${ta.sym.name}"), ta.loc)
     sb.append("</div>")
@@ -1576,7 +1576,7 @@ object HtmlDocumentor {
     sb.append("<div class='decl'>")
     sb.append(s"<code>")
     sb.append("<span class='head'>")
-    docFmt(Pretty.specHead(sym, spec))
+    docRichText(Pretty.specHead(sym, spec))
     sb.append("</span>")
     docClause("with", Pretty.withClause(sc.tconstrs))
     docClause("where", Pretty.whereClause(sc.econstrs))
@@ -1596,9 +1596,9 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docClause(cls: String, clause: Option[Fmt])(implicit links: Links, sb: StringBuilder): Unit = clause.foreach { c =>
+  private def docClause(cls: String, clause: Option[RichText])(implicit links: Links, sb: StringBuilder): Unit = clause.foreach { c =>
     sb.append(s" <span class='clause $cls'>")
-    docFmt(c)
+    docRichText(c)
     sb.append("</span>")
   }
 
@@ -1789,7 +1789,7 @@ object HtmlDocumentor {
     for (c <- cases.sortBy(_.loc)) {
       sb.append(s"<div class='case' id='case-${esc(c.sym.name)}'>")
       sb.append("<code>")
-      docFmt(Pretty.caseDecl(c))
+      docRichText(Pretty.caseDecl(c))
       sb.append("</code>")
       docDoc(c.doc)
       sb.append("</div>")
@@ -1816,7 +1816,7 @@ object HtmlDocumentor {
     for (f <- fields.sortBy(_.loc)) {
       sb.append(s"<div class='field' id='field-${esc(f.sym.name)}'>")
       sb.append("<code>")
-      docFmt(Pretty.structField(f))
+      docRichText(Pretty.structField(f))
       sb.append("</code>")
       docDoc(f.doc)
       sb.append("</div>")
@@ -1830,7 +1830,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docTypeParams(tparams: List[TypedAst.TypeParam])(implicit links: Links, sb: StringBuilder): Unit = {
-    docFmt(Pretty.tparams(tparams.sortBy(_.loc)))
+    docRichText(Pretty.tparams(tparams.sortBy(_.loc)))
   }
 
   /**
@@ -2017,7 +2017,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docType(tpe: Type)(implicit links: Links, sb: StringBuilder): Unit = {
-    docFmt(Pretty.tpe(tpe))
+    docRichText(Pretty.tpe(tpe))
   }
 
   /**
@@ -2026,7 +2026,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docFmt(f: Fmt)(implicit links: Links, sb: StringBuilder): Unit = {
+  private def docRichText(f: RichText)(implicit links: Links, sb: StringBuilder): Unit = {
     sb.append(f.html(links.link, docClass))
   }
 
@@ -2045,7 +2045,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docKind(kind: Kind)(implicit links: Links, sb: StringBuilder): Unit = {
-    docFmt(Pretty.kind(kind))
+    docRichText(Pretty.kind(kind))
   }
 
   /**
