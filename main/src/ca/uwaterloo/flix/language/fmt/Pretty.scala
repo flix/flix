@@ -9,13 +9,13 @@ package ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
 import ca.uwaterloo.flix.language.ast.shared.{Constant, EqualityConstraint, QualifiedSym, RegionScope, TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.fmt.Fmt.{SymDecl, SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
+import ca.uwaterloo.flix.language.fmt.RichText.{SymDecl, SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.Nel
 
 /**
-  * The printer: builds a [[Fmt]] tree from a type, a type constructor, a scheme, a constraint, a
+  * The printer: builds a [[RichText]] tree from a type, a type constructor, a scheme, a constraint, a
   * signature, the head of a declaration, a kind or a constant.
   *
   * A type is normalized by [[DisplayType]] first, which curries arrows, collects record and schema
@@ -34,7 +34,7 @@ object Pretty {
     * Alpha-renames the flexible variables of `t` if the rigidity environment `renv` is present,
     * which is a pass over the type that runs before the view is built.
     */
-  def tpe(t: Type, renv: Option[RigidityEnv] = None)(implicit o: FormatOptions): Fmt = {
+  def tpe(t: Type, renv: Option[RigidityEnv] = None)(implicit o: FormatOptions): RichText = {
     val renamed = renv match {
       case None => t
       case Some(env) => alphaRename(t, env)
@@ -68,18 +68,18 @@ object Pretty {
   /**
     * Returns `tpe \ eff` for the given type `tpe` and effect `eff`, or just `tpe` if `eff` is pure.
     */
-  def typeAndEff(tpe: Type, eff: Type)(implicit o: FormatOptions): Fmt = {
-    val effFmt = DisplayType.fromWellKindedType(eff) match {
-      case DisplayType.Pure => Fmt.Empty
+  def typeAndEff(tpe: Type, eff: Type)(implicit o: FormatOptions): RichText = {
+    val effText = DisplayType.fromWellKindedType(eff) match {
+      case DisplayType.Pure => RichText.Empty
       case d => text(" ") ++ op("\\") ++ text(" ") ++ visit(d)
     }
-    Pretty.tpe(tpe) ++ effFmt
+    Pretty.tpe(tpe) ++ effText
   }
 
   /**
     * Returns the given type variable `sym` as a tree.
     */
-  def typeVar(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): Fmt = tparam(varName(sym))
+  def typeVar(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): RichText = tparam(varName(sym))
 
   /**
     * Returns the name of the given type variable `sym`: its source text under
@@ -113,14 +113,14 @@ object Pretty {
   /**
     * Returns the given type view `d` as a tree.
     */
-  def displayType(d: DisplayType)(implicit o: FormatOptions): Fmt = visit(d)
+  def displayType(d: DisplayType)(implicit o: FormatOptions): RichText = visit(d)
 
   /**
     * Returns the given type constructor `tc` as a tree, written by its name alone, e.g. `Arrow2`.
     *
     * A constructor that stands for a declaration is a use of its symbol.
     */
-  def tycon(tc: TypeConstructor): Fmt = tc match {
+  def tycon(tc: TypeConstructor): RichText = tc match {
     // Primitives
     case TypeConstructor.Void => ty("Void")
     case TypeConstructor.AnyType => ty("AnyType")
@@ -217,9 +217,9 @@ object Pretty {
     * Returns the given scheme `sc` as a tree, e.g.
     * `∀(a, b). a -> b with Order[a] where Collection.Elm[a] ~ b`.
     */
-  def scheme(sc: Scheme)(implicit o: FormatOptions): Fmt = {
+  def scheme(sc: Scheme)(implicit o: FormatOptions): RichText = {
     val quantifiers =
-      if (sc.quantifiers.isEmpty) Fmt.Empty
+      if (sc.quantifiers.isEmpty) RichText.Empty
       else text("∀(") ++ sep(", ", sc.quantifiers.map(typeVar)) ++ text("). ")
     quantifiers ++ tpe(sc.base) ++ constraints(sc.tconstrs, sc.econstrs)
   }
@@ -227,7 +227,7 @@ object Pretty {
   /**
     * Returns the given trait constraint `tc` as a tree, e.g. `Order[a]`.
     */
-  def traitConstraint(tc: TraitConstraint)(implicit o: FormatOptions): Fmt = tc match {
+  def traitConstraint(tc: TraitConstraint)(implicit o: FormatOptions): RichText = tc match {
     case TraitConstraint(head, arg, _) =>
       SymUse(head.sym, SemanticTokenType.Interface, qualify(head.sym)) ++ text("[") ++ tpe(arg) ++ text("]")
   }
@@ -235,19 +235,19 @@ object Pretty {
   /**
     * Returns the given equality constraint `ec` as a tree, e.g. `Collection.Elm[a] ~ Int32`.
     */
-  def equalityConstraint(ec: EqualityConstraint)(implicit o: FormatOptions): Fmt = ec match {
+  def equalityConstraint(ec: EqualityConstraint)(implicit o: FormatOptions): RichText = ec match {
     case EqualityConstraint(symUse, tpe1, tpe2, _) =>
       assocType(symUse.sym) ++ text("[") ++ tpe(tpe1) ++ text("] ") ++ op("~") ++ text(" ") ++ tpe(tpe2)
   }
 
   /**
     * Returns the given trait constraints `tcs` and equality constraints `ecs` as a tree, each list
-    * after its keyword, e.g. ` with Order[a] where Collection.Elm[a] ~ Int32`, or [[Fmt.Empty]] if
+    * after its keyword, e.g. ` with Order[a] where Collection.Elm[a] ~ Int32`, or [[RichText.Empty]] if
     * both are empty.
     */
-  def constraints(tcs: List[TraitConstraint], ecs: List[EqualityConstraint])(implicit o: FormatOptions): Fmt = {
+  def constraints(tcs: List[TraitConstraint], ecs: List[EqualityConstraint])(implicit o: FormatOptions): RichText = {
     val clauses = withClause(tcs).toList ::: whereClause(ecs).toList
-    Fmt.Concat(clauses.map(clause => text(" ") ++ clause))
+    RichText.Concat(clauses.map(clause => text(" ") ++ clause))
   }
 
   /**
@@ -258,7 +258,7 @@ object Pretty {
     * the equality constraints as `TypedAst.EqualityConstraint`, which does not name the associated
     * type, so there is not enough in one to write it out.
     */
-  def spec(sym: QualifiedSym, spec: TypedAst.Spec)(implicit o: FormatOptions): Fmt = {
+  def spec(sym: QualifiedSym, spec: TypedAst.Spec)(implicit o: FormatOptions): RichText = {
     val sc = spec.declaredScheme
     specHead(sym, spec) ++ constraints(sc.tconstrs, sc.econstrs)
   }
@@ -270,7 +270,7 @@ object Pretty {
     * The name is the declaration of `sym`. A symbol of any other kind is written as a function
     * name that stands for no declaration.
     */
-  def specHead(sym: QualifiedSym, spec: TypedAst.Spec)(implicit o: FormatOptions): Fmt = {
+  def specHead(sym: QualifiedSym, spec: TypedAst.Spec)(implicit o: FormatOptions): RichText = {
     val name = sym match {
       case s: Symbol.DefnSym => SymDecl(s, SemanticTokenType.Function, s.name)
       case s: Symbol.SigSym => SymDecl(s, SemanticTokenType.Method, s.name)
@@ -286,7 +286,7 @@ object Pretty {
     *
     * The clause starts at its keyword: the space before it is not part of it.
     */
-  def withClause(tcs: List[TraitConstraint])(implicit o: FormatOptions): Option[Fmt] = tcs match {
+  def withClause(tcs: List[TraitConstraint])(implicit o: FormatOptions): Option[RichText] = tcs match {
     case Nil => None
     case _ => Some(kw("with") ++ text(" ") ++ sep(", ", tcs.map(traitConstraint)))
   }
@@ -297,7 +297,7 @@ object Pretty {
     *
     * The clause starts at its keyword: the space before it is not part of it.
     */
-  def whereClause(ecs: List[EqualityConstraint])(implicit o: FormatOptions): Option[Fmt] = ecs match {
+  def whereClause(ecs: List[EqualityConstraint])(implicit o: FormatOptions): Option[RichText] = ecs match {
     case Nil => None
     case _ => Some(kw("where") ++ text(" ") ++ sep(", ", ecs.map(equalityConstraint)))
   }
@@ -309,7 +309,7 @@ object Pretty {
     * A function declared with no parameters gets a single parameter of the unit type, which is
     * written as it was declared: `()`.
     */
-  def fparams(fparams0: Nel[TypedAst.FormalParam])(implicit o: FormatOptions): Fmt = fparams0 match {
+  def fparams(fparams0: Nel[TypedAst.FormalParam])(implicit o: FormatOptions): RichText = fparams0 match {
     case Nel(fparam, Nil) if fparam.tpe == Type.Unit => text("()")
     case _ =>
       val params = fparams0.toList.map {
@@ -321,10 +321,10 @@ object Pretty {
 
   /**
     * Returns the given type parameters `tparams0` as a tree, in brackets and each with its kind,
-    * e.g. `[a: Type, ef: Eff]`, or [[Fmt.Empty]] if there are none.
+    * e.g. `[a: Type, ef: Eff]`, or [[RichText.Empty]] if there are none.
     */
-  def tparams(tparams0: List[TypedAst.TypeParam])(implicit o: FormatOptions): Fmt = tparams0 match {
-    case Nil => Fmt.Empty
+  def tparams(tparams0: List[TypedAst.TypeParam])(implicit o: FormatOptions): RichText = tparams0 match {
+    case Nil => RichText.Empty
     case _ =>
       val params = tparams0.map {
         case TypedAst.TypeParam(_, sym, _) => typeVar(sym) ++ text(": ") ++ kind(sym.kind)
@@ -336,9 +336,9 @@ object Pretty {
     * Returns the given case `caze` of an enum as a tree, written as it is declared, e.g.
     * `case Some(a)`.
     */
-  def caseDecl(caze: TypedAst.Case)(implicit o: FormatOptions): Fmt = {
+  def caseDecl(caze: TypedAst.Case)(implicit o: FormatOptions): RichText = {
     val args = caze.tpes match {
-      case Nil => Fmt.Empty
+      case Nil => RichText.Empty
       case tpes => parens(sep(", ", tpes.map(t => tpe(t))))
     }
     kw("case") ++ text(" ") ++ SymDecl(caze.sym, SemanticTokenType.EnumMember, caze.sym.name) ++ args
@@ -348,8 +348,8 @@ object Pretty {
     * Returns the given field `field` of a struct as a tree, written as it is declared, e.g.
     * `mut x: Int32`.
     */
-  def structField(field: TypedAst.StructField)(implicit o: FormatOptions): Fmt = {
-    val mod = if (field.mod.isMutable) kw("mut") ++ text(" ") else Fmt.Empty
+  def structField(field: TypedAst.StructField)(implicit o: FormatOptions): RichText = {
+    val mod = if (field.mod.isMutable) kw("mut") ++ text(" ") else RichText.Empty
     mod ++ SymDecl(field.sym, SemanticTokenType.Property, field.sym.name) ++ text(": ") ++ tpe(field.tpe)
   }
 
@@ -357,13 +357,13 @@ object Pretty {
     * Returns the given type alias `alias` as a tree, written as it is declared, e.g.
     * `type alias Pair[a, b] = (a, b)`.
     */
-  def typeAliasDecl(alias: TypedAst.TypeAlias)(implicit o: FormatOptions): Fmt =
+  def typeAliasDecl(alias: TypedAst.TypeAlias)(implicit o: FormatOptions): RichText =
     kw("type") ++ text(" ") ++ kw("alias") ++ text(" ") ++ SymDecl(alias.sym, SemanticTokenType.Type, alias.sym.name) ++ tparams(alias.tparams) ++ text(" = ") ++ tpe(alias.tpe)
 
   /**
     * Returns the given kind `k` as a tree, e.g. `Type -> Eff`.
     */
-  def kind(k: Kind): Fmt = k match {
+  def kind(k: Kind): RichText = k match {
     case Kind.Wild => text("???")
     case Kind.WildCaseSet => ty("CaseSet") ++ text("[???]")
     case Kind.Star => ty("Type")
@@ -386,7 +386,7 @@ object Pretty {
     * A literal has the token type the LSP gives it in source, which for `()`, `null`, the Booleans,
     * `{}` and `Static` is the type token.
     */
-  def constant(c: Constant): Fmt = c match {
+  def constant(c: Constant): RichText = c match {
     case Constant.Unit => ty("()")
     case Constant.Null => ty("null")
     case Constant.Bool(lit) => ty(lit.toString)
@@ -408,7 +408,7 @@ object Pretty {
   /**
     * Returns the given type view `d` as a tree.
     */
-  private def visit(d: DisplayType)(implicit o: FormatOptions): Fmt = d match {
+  private def visit(d: DisplayType)(implicit o: FormatOptions): RichText = d match {
     case DisplayType.Hole => text("?")
     case DisplayType.Void => ty("Void")
     case DisplayType.AnyType => ty("AnyType")
@@ -523,14 +523,14 @@ object Pretty {
   /**
     * Returns the given record `labelType` pair as a tree, e.g. `x = Int32`.
     */
-  private def label(labelType: DisplayType.RecordLabelType)(implicit o: FormatOptions): Fmt = labelType match {
+  private def label(labelType: DisplayType.RecordLabelType)(implicit o: FormatOptions): RichText = labelType match {
     case DisplayType.RecordLabelType(name, tpe) => prop(name) ++ text(" = ") ++ visit(tpe)
   }
 
   /**
     * Returns the given schema `fieldType` pair as a tree, e.g. `P(Int32, String)`.
     */
-  private def field(fieldType: DisplayType.PredicateFieldType)(implicit o: FormatOptions): Fmt = fieldType match {
+  private def field(fieldType: DisplayType.PredicateFieldType)(implicit o: FormatOptions): RichText = fieldType match {
     case DisplayType.RelationFieldType(name, tpes) =>
       prop(name) ++ parens(sep(", ", tpes.map(visit)))
     case DisplayType.LatticeFieldType(name, tpes, lat) =>
@@ -543,7 +543,7 @@ object Pretty {
     * Returns the given type view `arg` as a tree, delimited as a function argument: a tuple gets an
     * extra set of parentheses, so that `((a, b)) -> c` is told from `(a, b) -> c`.
     */
-  private def delimitFunctionArg(arg: DisplayType)(implicit o: FormatOptions): Fmt = arg match {
+  private def delimitFunctionArg(arg: DisplayType)(implicit o: FormatOptions): RichText = arg match {
     case tuple: DisplayType.Tuple => parens(visit(tuple))
     case d => delimit(d)
   }
@@ -552,7 +552,7 @@ object Pretty {
     * Returns the given associated type `sym` as a tree, written with its trait as in source, e.g.
     * `Collection.Elm`.
     */
-  private def assocType(sym: Symbol.AssocTypeSym)(implicit o: FormatOptions): Fmt =
+  private def assocType(sym: Symbol.AssocTypeSym)(implicit o: FormatOptions): RichText =
     SymUse(sym, SemanticTokenType.Type, qualify(sym.trt) + "." + sym.name)
 
   /**
@@ -564,7 +564,7 @@ object Pretty {
     * Returns the given type view `d` as a tree, parenthesized if it is an operator, so that it can
     * stand as an operand or in an argument position.
     */
-  private def delimit(d: DisplayType)(implicit o: FormatOptions): Fmt = d match {
+  private def delimit(d: DisplayType)(implicit o: FormatOptions): RichText = d match {
     case _: DisplayType.Operator => parens(visit(d))
     case _ => visit(d)
   }

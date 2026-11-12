@@ -14,7 +14,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EffSymOrRigidVar, SymbolSet}
-import ca.uwaterloo.flix.language.fmt.{Fmt, FormatOptions, Pretty}
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, Pretty, RichText}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
@@ -1042,8 +1042,8 @@ object TypeError {
   /**
     * Returns the types `tpes` as a comma-separated list.
     */
-  private def formatTypes(tpes: List[Type], renv: Option[RigidityEnv] = None): Fmt = {
-    Fmt.sep(", ", tpes.map(tpe => Pretty.tpe(tpe, renv)))
+  private def formatTypes(tpes: List[Type], renv: Option[RigidityEnv] = None): RichText = {
+    RichText.sep(", ", tpes.map(tpe => Pretty.tpe(tpe, renv)))
   }
 
   /**

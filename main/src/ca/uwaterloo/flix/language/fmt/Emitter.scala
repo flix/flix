@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.Formatter
 
 /**
-  * A fold over [[Fmt]]: one method per constructor. `A` is what the emitter builds: a string, a
+  * A fold over [[RichText]]: one method per constructor. `A` is what the emitter builds: a string, a
   * token list, ...
   *
   * A printer never knows which emitter runs, and an emitter never knows what it prints.
@@ -19,29 +19,29 @@ import ca.uwaterloo.flix.util.Formatter
 trait Emitter[A] {
 
   /**
-    * Punctuation or spacing, see [[Fmt.Text]].
+    * Punctuation or spacing, see [[RichText.Text]].
     */
   def text(s: String): A
 
   /**
-    * A colored atom that stands for no declaration, see [[Fmt.Token]].
+    * A colored atom that stands for no declaration, see [[RichText.Token]].
     */
   def token(kind: SemanticTokenType, s: String): A
 
   /**
     * The declaration of a symbol, i.e. the name of a declaration where it is declared, see
-    * [[Fmt.SymDecl]].
+    * [[RichText.SymDecl]].
     */
   def symDecl(sym: Symbol, kind: SemanticTokenType, s: String): A
 
   /**
     * A use of a symbol, i.e. a name that stands for a declaration made elsewhere, see
-    * [[Fmt.SymUse]].
+    * [[RichText.SymUse]].
     */
   def symUse(sym: Symbol, kind: SemanticTokenType, s: String): A
 
   /**
-    * The parts of a [[Fmt.Concat]], already emitted, in order.
+    * The parts of a [[RichText.Concat]], already emitted, in order.
     */
   def concat(parts: List[A]): A
 
