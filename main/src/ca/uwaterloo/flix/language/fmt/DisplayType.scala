@@ -410,29 +410,31 @@ object DisplayType {
         mkApply(DisplayType.JvmToType(visit(tpe)), t.typeArguments.map(visit))
       case Type.JvmToEff(tpe, _) =>
         mkApply(DisplayType.JvmToEff(visit(tpe)), t.typeArguments.map(visit))
-      case Type.UnresolvedJvmType(member, _) => member match {
-        case JvmMember.JvmConstructor(clazz, tpes) => DisplayType.JvmUnresolvedConstructor(ClassDescs.simpleNameOf(clazz), tpes.map(visit))
-        case JvmMember.JvmMethod(tpe, name, tpes) => DisplayType.JvmUnresolvedMethod(visit(tpe), name.name, tpes.map(visit))
-        case JvmMember.JvmField(_, tpe, name) => DisplayType.JvmUnresolvedField(visit(tpe), name.name)
-        case JvmMember.JvmStaticMethod(clazz, name, tpes) => DisplayType.JvmUnresolvedStaticMethod(ClassDescs.simpleNameOf(clazz), name.name, tpes.map(visit))
-      }
+      case Type.UnresolvedJvmType(member, _) =>
+        val base = member match {
+          case JvmMember.JvmConstructor(clazz, tpes) => DisplayType.JvmUnresolvedConstructor(ClassDescs.simpleNameOf(clazz), tpes.map(visit))
+          case JvmMember.JvmMethod(tpe, name, tpes) => DisplayType.JvmUnresolvedMethod(visit(tpe), name.name, tpes.map(visit))
+          case JvmMember.JvmField(_, tpe, name) => DisplayType.JvmUnresolvedField(visit(tpe), name.name)
+          case JvmMember.JvmStaticMethod(clazz, name, tpes) => DisplayType.JvmUnresolvedStaticMethod(ClassDescs.simpleNameOf(clazz), name.name, tpes.map(visit))
+        }
+        mkApply(base, t.typeArguments.map(visit))
       case Type.Cst(tc, _) => tc match {
-        case TypeConstructor.Void => Void
-        case TypeConstructor.AnyType => AnyType
-        case TypeConstructor.Unit => Unit
-        case TypeConstructor.Null => Null
-        case TypeConstructor.Bool => Bool
-        case TypeConstructor.Char => Char
-        case TypeConstructor.Float32 => Float32
-        case TypeConstructor.Float64 => Float64
-        case TypeConstructor.BigDecimal => BigDecimal
-        case TypeConstructor.Int8 => Int8
-        case TypeConstructor.Int16 => Int16
-        case TypeConstructor.Int32 => Int32
-        case TypeConstructor.Int64 => Int64
-        case TypeConstructor.BigInt => BigInt
-        case TypeConstructor.Str => Str
-        case TypeConstructor.Regex => Regex
+        case TypeConstructor.Void => mkApply(Void, t.typeArguments.map(visit))
+        case TypeConstructor.AnyType => mkApply(AnyType, t.typeArguments.map(visit))
+        case TypeConstructor.Unit => mkApply(Unit, t.typeArguments.map(visit))
+        case TypeConstructor.Null => mkApply(Null, t.typeArguments.map(visit))
+        case TypeConstructor.Bool => mkApply(Bool, t.typeArguments.map(visit))
+        case TypeConstructor.Char => mkApply(Char, t.typeArguments.map(visit))
+        case TypeConstructor.Float32 => mkApply(Float32, t.typeArguments.map(visit))
+        case TypeConstructor.Float64 => mkApply(Float64, t.typeArguments.map(visit))
+        case TypeConstructor.BigDecimal => mkApply(BigDecimal, t.typeArguments.map(visit))
+        case TypeConstructor.Int8 => mkApply(Int8, t.typeArguments.map(visit))
+        case TypeConstructor.Int16 => mkApply(Int16, t.typeArguments.map(visit))
+        case TypeConstructor.Int32 => mkApply(Int32, t.typeArguments.map(visit))
+        case TypeConstructor.Int64 => mkApply(Int64, t.typeArguments.map(visit))
+        case TypeConstructor.BigInt => mkApply(BigInt, t.typeArguments.map(visit))
+        case TypeConstructor.Str => mkApply(Str, t.typeArguments.map(visit))
+        case TypeConstructor.Regex => mkApply(Regex, t.typeArguments.map(visit))
 
         case TypeConstructor.Arrow(arity) =>
           val args = t.typeArguments.map(visit)
@@ -443,12 +445,15 @@ object DisplayType {
               // NB: safe to subtract 2 since arity is always at least 2
               List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow.apply)
 
-            // Case 2: Pure function.
+            // Case 2: Too many args. Apply the type to the rest.
+            case _ :: tpes if tpes.lengthIs > arity => overApplied(t, arity + 1)
+
+            // Case 3: Pure function.
             case eff :: tpes if eff == Pure =>
               // NB: safe to reduce because arity is always at least 2
               tpes.padTo(arity, Hole).reduceRight(PureArrow.apply)
 
-            // Case 3: Impure function.
+            // Case 4: Impure function.
             case eff :: tpes =>
               // NB: safe to take last 2 because arity is always at least 2
               val allTpes = tpes.padTo(arity, Hole)
@@ -458,10 +463,14 @@ object DisplayType {
           }
 
         case TypeConstructor.ArrowWithoutEffect(arity) =>
-          val args = t.typeArguments.map(visit)
-          args.padTo(arity, Hole).reduceRight(ArrowWithoutEffect.apply)
+          t.typeArguments.map(visit) match {
+            // Case 1: Too many args. Apply the type to the rest.
+            case args if args.lengthIs > arity => overApplied(t, arity)
+            // Case 2: Fill the missing args with holes.
+            case args => args.padTo(arity, Hole).reduceRight(ArrowWithoutEffect.apply)
+          }
 
-        case TypeConstructor.RecordRowEmpty => RecordRow(Nil)
+        case TypeConstructor.RecordRowEmpty => mkApply(RecordRow(Nil), t.typeArguments.map(visit))
 
         case TypeConstructor.RecordRowExtend(label) =>
           val args = t.typeArguments.map(visit)
@@ -506,7 +515,7 @@ object DisplayType {
             case _ :: _ :: _ => overApplied(t, 1)
           }
 
-        case TypeConstructor.SchemaRowEmpty => SchemaRow(Nil)
+        case TypeConstructor.SchemaRowEmpty => mkApply(SchemaRow(Nil), t.typeArguments.map(visit))
 
         case TypeConstructor.SchemaRowExtend(pred) =>
           // erase aliases over the Schema/Relation
@@ -555,21 +564,35 @@ object DisplayType {
         case TypeConstructor.JvmMethod(method, _) => mkApply(JvmMethod(method), t.typeArguments.map(visit))
         case TypeConstructor.JvmField(field) => mkApply(JvmField(field), t.typeArguments.map(visit))
         case TypeConstructor.Tuple(l) =>
-          val tpes = t.typeArguments.map(visit).padTo(l, Hole)
-          Tuple(tpes)
+          t.typeArguments.map(visit) match {
+            // Case 1: Too many args. Apply the type to the rest.
+            case tpes if tpes.lengthIs > l => overApplied(t, l)
+            // Case 2: Fill the missing args with holes.
+            case tpes => Tuple(tpes.padTo(l, Hole))
+          }
         case TypeConstructor.Relation(l) =>
-          val tpes = t.typeArguments.map(visit).padTo(l, Hole)
-          Relation(tpes)
+          t.typeArguments.map(visit) match {
+            // Case 1: Too many args. Apply the type to the rest.
+            case tpes if tpes.lengthIs > l => overApplied(t, l)
+            // Case 2: Fill the missing args with holes.
+            case tpes => Relation(tpes.padTo(l, Hole))
+          }
         case TypeConstructor.Lattice(l) =>
-          val tpesAndLat = t.typeArguments.map(visit).padTo(l, Hole)
-          val tpes = tpesAndLat.init
-          val lat = tpesAndLat.last
-          Lattice(tpes, lat)
-        case TypeConstructor.Pure => Pure
-        case TypeConstructor.Univ => Univ
+          t.typeArguments.map(visit) match {
+            // Case 1: Too many args. Apply the type to the rest.
+            case tpes if tpes.lengthIs > l => overApplied(t, l)
+            // Case 2: A lattice of no types has no lattice type to show.
+            case _ if l == 0 => LatticeConstructor
+            // Case 3: Fill the missing args with holes.
+            case tpes =>
+              val tpesAndLat = tpes.padTo(l, Hole)
+              Lattice(tpesAndLat.init, tpesAndLat.last)
+          }
+        case TypeConstructor.Pure => mkApply(Pure, t.typeArguments.map(visit))
+        case TypeConstructor.Univ => mkApply(Univ, t.typeArguments.map(visit))
 
-        case TypeConstructor.True => True
-        case TypeConstructor.False => False
+        case TypeConstructor.True => mkApply(True, t.typeArguments.map(visit))
+        case TypeConstructor.False => mkApply(False, t.typeArguments.map(visit))
 
         case TypeConstructor.And =>
           // collapse into a chain of ands
@@ -704,6 +727,7 @@ object DisplayType {
         case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(visit))
         case TypeConstructor.RegionWithoutRegion => mkApply(RegionWithoutRegion, t.typeArguments.map(visit))
 
+        // NB: An error type can have any kind, so its arguments say nothing and are not shown.
         case TypeConstructor.Error(_, _) => DisplayType.Error
       }
       case Type.Apply(_, _, loc) => throw InternalCompilerException("unexpected Type.Apply", loc)
