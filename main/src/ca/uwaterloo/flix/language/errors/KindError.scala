@@ -146,12 +146,12 @@ object KindError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched kinds: '${red(Pretty.kind(k1).plain)}' and '${red(Pretty.kind(k2).plain)}'.
+      s""">> Mismatched kinds: '${Pretty.kind(k1).ansi(fmt)}' and '${Pretty.kind(k2).ansi(fmt)}'.
          |
          |${highlight(loc, "mismatched kind usage", fmt)}
          |
-         |First kind:  ${cyan(Pretty.kind(k1).plain)}
-         |Second kind: ${magenta(Pretty.kind(k2).plain)}
+         |First kind:  ${Pretty.kind(k1).ansi(fmt)}
+         |Second kind: ${Pretty.kind(k2).ansi(fmt)}
          |
          |${underline("Explanation:")} A type variable must have a consistent kind throughout
          |its scope. For example:
@@ -177,12 +177,12 @@ object KindError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected kind: expected '${cyan(Pretty.kind(expectedKind).plain)}', found '${red(Pretty.kind(actualKind).plain)}'.
+      s""">> Unexpected kind: expected '${Pretty.kind(expectedKind).ansi(fmt)}', found '${Pretty.kind(actualKind).ansi(fmt)}'.
          |
          |${highlight(loc, "has unexpected kind", fmt)}
          |
-         |Expected: ${cyan(Pretty.kind(expectedKind).plain)}
-         |Actual:   ${red(Pretty.kind(actualKind).plain)}
+         |Expected: ${Pretty.kind(expectedKind).ansi(fmt)}
+         |Actual:   ${Pretty.kind(actualKind).ansi(fmt)}
          |""".stripMargin
     }
   }

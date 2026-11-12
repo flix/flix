@@ -32,7 +32,7 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
        |
        |The type of the expression is:
        |
-       |  ${cyan(Pretty.tpe(tpe).plain)}
+       |  ${Pretty.tpe(tpe).ansi(fmt)}
        |
        |The following predicate symbols are on the cycle:
        |

@@ -37,7 +37,7 @@ object InstanceError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Complex type '${red(Pretty.tpe(tpe).plain)}' in instance declaration for trait '${magenta(sym.name)}'.
+      s""">> Complex type '${Pretty.tpe(tpe).ansi(fmt)}' in instance declaration for trait '${magenta(sym.name)}'.
          |
          |${highlight(loc, "expected a type constructor applied to distinct type variables", fmt)}
          |
@@ -73,7 +73,7 @@ object InstanceError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Duplicate type variable '${red(Pretty.tpe(tvar).plain)}' in instance declaration for trait '${magenta(sym.name)}'.
+      s""">> Duplicate type variable '${Pretty.tpe(tvar).ansi(fmt)}' in instance declaration for trait '${magenta(sym.name)}'.
          |
          |${highlight(loc, "duplicate occurrence", fmt)}
          |
@@ -201,8 +201,8 @@ object InstanceError {
          |
          |${highlight(loc, "signature mismatch", fmt)}
          |
-         |Expected: ${cyan(Pretty.scheme(expected).plain)}
-         |Actual:   ${red(Pretty.scheme(actual).plain)}
+         |Expected: ${Pretty.scheme(expected).ansi(fmt)}
+         |Actual:   ${Pretty.scheme(actual).ansi(fmt)}
          |
          |${underline("Explanation:")} The implementation must match the signature declared in the trait.
          |""".stripMargin
@@ -223,7 +223,7 @@ object InstanceError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing equality constraint '${red(Pretty.equalityConstraint(econstr).plain)}' required by super trait '${magenta(superTrait.name)}'.
+      s""">> Missing equality constraint '${Pretty.equalityConstraint(econstr).ansi(fmt)}' required by super trait '${magenta(superTrait.name)}'.
          |
          |${highlight(loc, "missing constraint", fmt)}
          |
@@ -280,7 +280,7 @@ object InstanceError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing instance of super trait '${red(superTrait.name)}' for type '${magenta(Pretty.tpe(tpe).plain)}'.
+      s""">> Missing instance of super trait '${red(superTrait.name)}' for type '${Pretty.tpe(tpe).ansi(fmt)}'.
          |
          |${highlight(loc, "missing super trait instance", fmt)}
          |
@@ -313,7 +313,7 @@ object InstanceError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing trait constraint '${red(Pretty.traitConstraint(tconstr).plain)}' required by super trait '${magenta(superTrait.name)}'.
+      s""">> Missing trait constraint '${Pretty.traitConstraint(tconstr).ansi(fmt)}' required by super trait '${magenta(superTrait.name)}'.
          |
          |${highlight(loc, "missing constraint", fmt)}
          |
@@ -346,7 +346,7 @@ object InstanceError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Orphan instance of '${magenta(sym.name)}' for type '${red(Pretty.tpe(tpe).plain)}'.
+      s""">> Orphan instance of '${magenta(sym.name)}' for type '${Pretty.tpe(tpe).ansi(fmt)}'.
          |
          |${highlight(loc, "orphan instance", fmt)}
          |
@@ -383,7 +383,7 @@ object InstanceError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Overlapping instances of '${magenta(sym.name)}' for type '${red(Pretty.tycon(tc).plain)}'.
+      s""">> Overlapping instances of '${magenta(sym.name)}' for type '${Pretty.tycon(tc).ansi(fmt)}'.
          |
          |${highlight(loc1, "first instance", fmt)}
          |

@@ -115,7 +115,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant cast.", fmt)}
          |
-         |The expression already has the type '${cyan(Pretty.tpe(tpe).plain)}'.
+         |The expression already has the type '${Pretty.tpe(tpe).ansi(fmt)}'.
          |""".stripMargin
     }
   }
@@ -156,11 +156,11 @@ object RedundancyError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Redundant trait constraint '${red(Pretty.traitConstraint(redundantTconstr).plain)}'.
+      s""">> Redundant trait constraint '${Pretty.traitConstraint(redundantTconstr).ansi(fmt)}'.
          |
          |${highlight(loc, "redundant trait constraint.", fmt)}
          |
-         |The constraint is implied by '${cyan(Pretty.traitConstraint(entailingTconstr).plain)}'.
+         |The constraint is implied by '${Pretty.traitConstraint(entailingTconstr).ansi(fmt)}'.
          |
          |${underline("Explanation:")} A trait constraint is redundant if it is implied by another
          |constraint. For example, if we have:
@@ -189,7 +189,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant cast.", fmt)}
          |
-         |The expression already has the '${cyan(Pretty.tpe(eff).plain)}' effect.
+         |The expression already has the '${Pretty.tpe(eff).ansi(fmt)}' effect.
          |""".stripMargin
     }
   }
@@ -211,7 +211,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant cast.", fmt)}
          |
-         |The expression already has the type '${cyan(Pretty.tpe(tpe).plain)}'.
+         |The expression already has the type '${Pretty.tpe(tpe).ansi(fmt)}'.
          |""".stripMargin
     }
   }
@@ -233,7 +233,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant unsafe block.", fmt)}
          |
-         |${underline("Explanation:")} The block unsafely removes the '${cyan(Pretty.tpe(eff).plain)}' effect,
+         |${underline("Explanation:")} The block unsafely removes the '${Pretty.tpe(eff).ansi(fmt)}' effect,
          |but the body expression is pure.
          |""".stripMargin
     }
