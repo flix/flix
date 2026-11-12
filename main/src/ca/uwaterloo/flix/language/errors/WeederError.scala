@@ -406,7 +406,7 @@ object WeederError {
          |For example:
          |
          |    Readable.Elm[t] ~ Int8
-         |    Foldable.Aef[t] ~ Pure
+         |    Foldable.Aef[t] ~ {}
          |
          |""".stripMargin
     }

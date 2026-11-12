@@ -548,8 +548,8 @@ object RedundancyError {
          |
          |${highlight(loc, "useless unsafe block.", fmt)}
          |
-         |${underline("Explanation:")} An unsafe block that runs the 'Pure' effect is useless
-         |since 'Pure' means no effects.
+         |${underline("Explanation:")} An unsafe block that runs the '{}' effect is useless
+         |since '{}' means no effects.
          |""".stripMargin
     }
   }

@@ -184,7 +184,7 @@ object Pretty {
     case TypeConstructor.Lattice(arity) => ty(s"Lattice$arity")
 
     // Effects
-    case TypeConstructor.Pure => ef("Pure")
+    case TypeConstructor.Pure => ef("{}")
     case TypeConstructor.Univ => ef("Univ")
     case TypeConstructor.Effect(sym, _) => SymUse(sym, SemanticTokenType.Effect, sym.name)
 

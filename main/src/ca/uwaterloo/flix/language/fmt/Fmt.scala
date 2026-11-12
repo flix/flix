@@ -100,7 +100,7 @@ object Fmt {
   def ty(s: String): Fmt = Token(SemanticTokenType.Type, s)
 
   /**
-    * Returns the given built-in effect, e.g. `Pure`, `{}`, `Univ`.
+    * Returns the given built-in effect, e.g. `{}`, `Univ`.
     */
   def ef(s: String): Fmt = Token(SemanticTokenType.Effect, s)
 

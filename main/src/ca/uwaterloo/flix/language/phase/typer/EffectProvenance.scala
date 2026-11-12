@@ -170,7 +170,6 @@ object EffectProvenance {
     case class VarVertex(sym: Symbol.KindedTypeVarSym) extends Vertex
 
     def symbol(v: Vertex): Option[EffSymOrRigidVar] = v match {
-      case PureExplicitVertex(_) | PureImplicitVertex(_) => Some(Eff(Symbol.mkEffSym("Pure")))
       case CstVertex(sym, _) => Some(Eff(sym))
       case IOVertex(_) => Some(Eff(Symbol.IO))
       case RigidVarVertex(sym, _) => Some(RigidVar(sym))
@@ -430,7 +429,7 @@ object EffectProvenance {
       val prov = ys.sortBy(_._2).lastOption.map(_._2)
 
       val errOpt = (v: (Vertex, SourceLocation)) => v match {
-        case (PureImplicitVertex(_), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(Eff(Symbol.mkEffSym("Pure"))), prov.getOrElse(provLoc), aLoc, provLoc)))
+        case (PureImplicitVertex(_), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), Nil, prov.getOrElse(provLoc), aLoc, provLoc)))
         case (IOVertex(loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(Eff(Symbol.IO)), prov.getOrElse(provLoc), aLoc, loc)))
         case (CstVertex(sym, loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(Eff(sym)), prov.getOrElse(provLoc), aLoc, loc)))
         case (RigidVarVertex(sym, loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(RigidVar(sym)), loc, aLoc, provLoc)))
@@ -517,11 +516,7 @@ object EffectProvenance {
     * @return `Some(error)` if both vertices are recognized concrete effects, `None` otherwise
     */
   private def mkEffectfulErrorBySink(sink: Vertex, source: Vertex, provLoc: SourceLocation): Option[EffConflicted] = {
-    ((source, symbol(source)) match {
-      case (PureExplicitVertex(_) | PureImplicitVertex(_), _) => None
-      case (_, Some(sym)) => Some(sym)
-      case (_, None) => None
-    }).flatMap(sourceSym => sink match {
+    symbol(source).flatMap(sourceSym => sink match {
       case CstVertex(sym2, loc2) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym2)), sourceSym, loc2, provLoc)))
       case IOVertex(loc2) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(Symbol.IO)), sourceSym, loc2, provLoc)))
       case RigidVarVertex(sym, loc2) =>  Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(RigidVar(sym)), sourceSym, loc2, provLoc)))
