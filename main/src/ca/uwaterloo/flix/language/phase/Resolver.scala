@@ -128,7 +128,7 @@ object Resolver {
     case trt: ResolvedAst.Declaration.Trait => SymbolTable.empty.addTrait(trt)
     case inst: ResolvedAst.Declaration.Instance => SymbolTable.empty.addInstance(inst)
     case defn: ResolvedAst.Declaration.Def => SymbolTable.empty.addDef(defn)
-    case v: ResolvedAst.Declaration.Val => SymbolTable.empty.addVal(v)
+    case vald: ResolvedAst.Declaration.Val => SymbolTable.empty.addVal(vald)
     case enum0: ResolvedAst.Declaration.Enum => SymbolTable.empty.addEnum(enum0)
     case struct: ResolvedAst.Declaration.Struct => SymbolTable.empty.addStruct(struct)
     case enum0: ResolvedAst.Declaration.RestrictableEnum => SymbolTable.empty.addRestrictableEnum(enum0)
@@ -387,8 +387,8 @@ object Resolver {
       resolveInstance(inst, scp0, ns0)
     case defn@NamedAst.Declaration.Def(_, _, _, _) =>
       Some(resolveDef(defn, None, scp0)(ns0, taenv, sctx, root, flix))
-    case v@NamedAst.Declaration.Val(_, _, _, _, _, _, _) =>
-      Some(resolveVal(v, scp0)(ns0, taenv, sctx, root, flix))
+    case vald@NamedAst.Declaration.Val(_, _, _, _, _, _, _) =>
+      Some(resolveVal(vald, scp0)(ns0, taenv, sctx, root, flix))
     case enum0@NamedAst.Declaration.Enum(_, _, _, _, _, _, _, _) =>
       Some(resolveEnum(enum0, scp0, taenv, ns0, root))
     case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _) =>
