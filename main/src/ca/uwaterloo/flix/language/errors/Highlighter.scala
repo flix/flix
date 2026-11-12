@@ -9,6 +9,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.lsp.provider.SemanticTokensProvider
 import ca.uwaterloo.flix.api.lsp.{SemanticToken, SemanticTokenType}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Token, TokenKind, TypedAst}
+import ca.uwaterloo.flix.language.fmt.AnsiEmitter
 import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Formatter
 
@@ -125,6 +126,7 @@ object Highlighter {
     val endOffset = lineOffset(source, endLine)
 
     val tokenMap = buildSemanticTokenIndex(semanticTokens, startLine, endLine)
+    val emitter = new AnsiEmitter(fmt)
 
     val sb = new StringBuilder
     var i = startOffset
@@ -149,7 +151,7 @@ object Highlighter {
         val text = token.text
         val key = (tokenLine, token.start.colOneIndexed.toInt)
         tokenMap.get(key) match {
-          case Some(tpe) => sb.append(colorize(text, tpe, fmt))
+          case Some(tpe) => sb.append(emitter.token(tpe, text))
           case None => sb.append(text)
         }
         i = token.endIndex
@@ -225,46 +227,10 @@ object Highlighter {
   }
 
   /**
-    * Returns the text wrapped in ANSI escape codes for the given semantic token type.
-    */
-  private def colorize(s: String, tpe: SemanticTokenType, fmt: Formatter): String =
-    tokenColor(tpe) match {
-      case None => s
-      case Some((r, g, b)) => fmt.fgColor(r, g, b, s)
-    }
-
-  /**
     * Returns the string `s` left-padded with spaces to the given `width`.
     */
   private def padLeft(width: Int, s: String): String =
     String.format("%" + width + "s", s)
-
-  /**
-    * Returns the RGB color for the given semantic token type, if any.
-    *
-    * Uses Flixify Dark theme colors: https://github.com/flix/flixify-dark/blob/master/themes/flixify-dark.json
-    */
-  private def tokenColor(tpe: SemanticTokenType): Option[(Int, Int, Int)] = tpe match {
-    case SemanticTokenType.Keyword => Some((250, 62, 131))
-    case SemanticTokenType.Modifier => Some((250, 62, 131))
-    case SemanticTokenType.Comment => Some((140, 140, 140))
-    case SemanticTokenType.String => Some((255, 238, 153))
-    case SemanticTokenType.Number => Some((255, 140, 245))
-    case SemanticTokenType.Regexp => Some((255, 238, 153))
-    case SemanticTokenType.Function => Some((172, 227, 64))
-    case SemanticTokenType.Method => Some((172, 227, 64))
-    case SemanticTokenType.Type => Some((102, 217, 239))
-    case SemanticTokenType.Enum => Some((102, 217, 239))
-    case SemanticTokenType.Interface => Some((102, 217, 239))
-    case SemanticTokenType.Effect => Some((255, 140, 0))
-    case SemanticTokenType.Class => Some((248, 248, 242))
-    case SemanticTokenType.Variable => Some((200, 200, 194))
-    case SemanticTokenType.Parameter => Some((200, 200, 194))
-    case SemanticTokenType.Property => Some((200, 200, 194))
-    case SemanticTokenType.TypeParameter => Some((248, 248, 242))
-    case SemanticTokenType.EnumMember => Some((248, 248, 242))
-    case _ => None
-  }
 
   /**
     * Represents whether syntax highlighting should be applied.

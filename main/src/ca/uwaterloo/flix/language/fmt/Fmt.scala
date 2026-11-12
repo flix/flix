@@ -8,13 +8,14 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * Printed Flix syntax, annotated for an [[Emitter]].
   *
-  * A printer builds the tree once. An emitter then renders it as plain text, as HTML with a link
-  * per declaration and a class per token, or as a list of tokens, without the printer knowing
-  * which. The tree is immutable and cheap, so one signature can be rendered in more than one way
+  * A printer builds the tree once. An emitter then renders it as plain text, as text colored for a
+  * terminal, as HTML with a link per declaration and a class per token, or as a list of tokens,
+  * without the printer knowing which. The tree is immutable and cheap, so one signature can be rendered in more than one way
   * without being printed twice.
   *
   * Every name that stands for a declaration keeps its [[Symbol]]: in a [[Fmt.SymDecl]] where the
@@ -33,6 +34,12 @@ sealed trait Fmt {
     * Renders this tree as plain text.
     */
   def plain: String = Fmt.render(this, PlainEmitter)
+
+  /**
+    * Renders this tree as text for a terminal: every colored atom in the color of its kind, as
+    * `fmt` writes it.
+    */
+  def ansi(fmt: Formatter): String = Fmt.render(this, new AnsiEmitter(fmt))
 
   /**
     * Renders this tree as HTML.

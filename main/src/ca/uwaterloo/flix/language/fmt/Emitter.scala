@@ -8,6 +8,7 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A fold over [[Fmt]]: one method per constructor. `A` is what the emitter builds: a string, a
@@ -60,6 +61,59 @@ object PlainEmitter extends Emitter[String] {
   def symUse(sym: Symbol, kind: SemanticTokenType, s: String): String = s
 
   def concat(parts: List[String]): String = parts.mkString
+
+}
+
+/**
+  * ANSI: every colored atom is written in the color of its kind, for a terminal.
+  *
+  * `fmt` writes the color, so a formatter without color support gives plain text. The colors are
+  * those of the source code that an error message shows, so a type reads the same in both.
+  */
+class AnsiEmitter(fmt: Formatter) extends Emitter[String] {
+
+  def text(s: String): String = s
+
+  def token(kind: SemanticTokenType, s: String): String = AnsiEmitter.colorOf(kind) match {
+    case Some((r, g, b)) => fmt.fgColor(r, g, b, s)
+    case None => s
+  }
+
+  def symUse(sym: Symbol, kind: SemanticTokenType, s: String): String = token(kind, s)
+
+  def concat(parts: List[String]): String = parts.mkString
+
+}
+
+object AnsiEmitter {
+
+  /**
+    * Returns the RGB color of the given kind of token, if any.
+    *
+    * Uses Flixify Dark theme colors: https://github.com/flix/flixify-dark/blob/master/themes/flixify-dark.json
+    */
+  private def colorOf(kind: SemanticTokenType): Option[(Int, Int, Int)] = kind match {
+    case SemanticTokenType.Keyword => Some((250, 62, 131))
+    case SemanticTokenType.Modifier => Some((250, 62, 131))
+    case SemanticTokenType.Comment => Some((140, 140, 140))
+    case SemanticTokenType.String => Some((255, 238, 153))
+    case SemanticTokenType.Number => Some((255, 140, 245))
+    case SemanticTokenType.Regexp => Some((255, 238, 153))
+    case SemanticTokenType.Function => Some((172, 227, 64))
+    case SemanticTokenType.Method => Some((172, 227, 64))
+    case SemanticTokenType.Type => Some((102, 217, 239))
+    case SemanticTokenType.Enum => Some((102, 217, 239))
+    case SemanticTokenType.Struct => Some((102, 217, 239))
+    case SemanticTokenType.Interface => Some((102, 217, 239))
+    case SemanticTokenType.Effect => Some((255, 140, 0))
+    case SemanticTokenType.Class => Some((248, 248, 242))
+    case SemanticTokenType.Variable => Some((200, 200, 194))
+    case SemanticTokenType.Parameter => Some((200, 200, 194))
+    case SemanticTokenType.Property => Some((200, 200, 194))
+    case SemanticTokenType.TypeParameter => Some((248, 248, 242))
+    case SemanticTokenType.EnumMember => Some((248, 248, 242))
+    case _ => None
+  }
 
 }
 
