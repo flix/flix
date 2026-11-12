@@ -7,11 +7,10 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
-import ca.uwaterloo.flix.language.ast.shared.{Constant, EqualityConstraint, QualifiedSym, RegionScope, TraitConstraint, VarText}
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, EqualityConstraint, QualifiedSym, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{Kind, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.RichText.{SymDecl, SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
-import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.Nel
 
 /**
@@ -31,39 +30,11 @@ object Pretty {
   /**
     * Returns the given well-kinded type `t` as a tree.
     *
-    * Alpha-renames the flexible variables of `t` if the rigidity environment `renv` is present,
-    * which is a pass over the type that runs before the view is built.
+    * The type variables of `t` are written by the names of the options. Types that are shown
+    * together, e.g. in one error message, get one naming from [[FormatOptions.forTypes]].
     */
-  def tpe(t: Type, renv: Option[RigidityEnv] = None)(implicit o: FormatOptions): RichText = {
-    val renamed = renv match {
-      case None => t
-      case Some(env) => alphaRename(t, env)
-    }
-    displayType(DisplayType.fromWellKindedType(renamed))
-  }
-
-  /**
-    * Renames all flexible variables in the given `tpe` to fresh consecutively numbered variables.
-    *
-    * NOTE: This function should *ONLY* be used for pretty printing.
-    */
-  private def alphaRename(tpe: Type, renv: RigidityEnv): Type = {
-    // Compute the free type variables.
-    val freeVars = tpe.typeVars.toList.sortBy(_.sym.id)
-
-    // Compute the flexible variables (i.e. the free variables that are not rigid).
-    val flexibleVars = renv.getFlexibleVarsOf(freeVars)(RegionScope.Top) // TODO LEVELS ideally we should have a proper scope here
-
-    // Compute a substitution that maps the first flexible variable to id 1 and so forth.
-    val m = flexibleVars.zipWithIndex.map {
-      case (Type.Var(sym, loc), index) =>
-        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.scope, loc), loc): Type)
-    }
-    val s = Substitution(m.toMap)
-
-    // Apply the substitution to the type.
-    s(tpe)
-  }
+  def tpe(t: Type)(implicit o: FormatOptions): RichText =
+    displayType(DisplayType.fromWellKindedType(t))
 
   /**
     * Returns `tpe \ eff` for the given type `tpe` and effect `eff`, or just `tpe` if `eff` is pure.
@@ -77,38 +48,9 @@ object Pretty {
   }
 
   /**
-    * Returns the given type variable `sym` as a tree.
+    * Returns the given type variable `sym` as a tree, written by its name in the options.
     */
-  def typeVar(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): RichText = tparam(varName(sym))
-
-  /**
-    * Returns the name of the given type variable `sym`: its source text under
-    * [[FormatOptions.VarName.NameBased]] when it has one, and otherwise its id with a prefix for its
-    * kind, e.g. `t12`, `e3`, `r7`.
-    */
-  private def varName(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): String = {
-    val idBased: String = sym.kind match {
-      case Kind.Wild => "_" + sym.id.toString
-      case Kind.WildCaseSet => "_c" + sym.id.toString
-      case Kind.Star => "t" + sym.id
-      case Kind.Eff => "e" + sym.id
-      case Kind.Bool => "b" + sym.id
-      case Kind.RecordRow => "r" + sym.id
-      case Kind.SchemaRow => "s" + sym.id
-      case Kind.Predicate => "'" + sym.id.toString
-      case Kind.Jvm => "j" + sym.id.toString
-      case Kind.CaseSet(_) => "c" + sym.id.toString
-      case Kind.Arrow(_, _) => "'" + sym.id.toString
-      case Kind.Error => "err" + sym.id.toString
-    }
-    o.varNames match {
-      case FormatOptions.VarName.IdBased => idBased
-      case FormatOptions.VarName.NameBased => sym.text match {
-        case VarText.Absent => idBased
-        case VarText.SourceText(s) => s
-      }
-    }
-  }
+  def typeVar(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): RichText = tparam(o.varNames.nameOf(sym))
 
   /**
     * Returns the given type view `d` as a tree.
