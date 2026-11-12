@@ -394,7 +394,15 @@ class TestFormatTypeApplication extends AnyFunSuite {
   // Named constructors                                                      //
   /////////////////////////////////////////////////////////////////////////////
 
-  private val color: Symbol.RestrictableEnumSym = Symbol.mkRestrictableEnumSym(Name.RootNS, Name.Ident("Color", loc), List(Name.Ident("Red", loc), Name.Ident("Green", loc)))
+  /**
+    * A restrictable enum `Color` with the cases `Red` and `Green`.
+    *
+    * It is in a namespace of its own, and must be. Arrow kinds are cached for the lifetime of the
+    * JVM, and a restrictable enum symbol is equal to every symbol of the same name, whatever its
+    * cases. A `Color` in the root namespace would therefore take the place of the `Color` of a
+    * program that a later suite compiles, and that program would be checked against these cases.
+    */
+  private val color: Symbol.RestrictableEnumSym = Symbol.mkRestrictableEnumSym(Name.mkUnlocatedNName(List("TestFormatTypeApplication")), Name.Ident("Color", loc), List(Name.Ident("Red", loc), Name.Ident("Green", loc)))
 
   check(TypeConstructor.Sender)(
     0 -> "Sender",
