@@ -687,6 +687,23 @@ main > section > h2 {
 .decl > code > .clause {
     display: inline-block;
 }
+/* A signature that takes more than one line has a hanging indent: a clause that starts a line is
+   indented to the name, which follows `def `, and a line that continues the head is indented twice
+   as far. A clause does not inherit the negative indent of the first line. A narrow screen has no
+   indent: there it would take a quarter of the line. */
+@media (min-width: 801px) {
+    .decl > code:has(> .head) {
+        padding-left: 4ch;
+        text-indent: -4ch;
+    }
+    .decl > code > .head {
+        padding-left: 8ch;
+        text-indent: -8ch;
+    }
+    .decl > code > .clause {
+        text-indent: 0;
+    }
+}
 .decl > * {
     height: fit-content;
 }
