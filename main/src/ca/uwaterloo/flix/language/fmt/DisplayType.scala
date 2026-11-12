@@ -642,7 +642,7 @@ object DisplayType {
             // Case 2: One arg. Take the left and put a hole at the end: tpe1 + tpe2 + ?
             case args :: Nil => Plus(args :+ Hole)
             // Case 3: Multiple args. Concatenate them: tpe1 + tpe2 + tpe3 + tpe4
-            case args1 :: args2 :: Nil => Plus(args1 ++ args2)
+            case args1 :: args2 :: Nil => mkPlus(args1 ++ args2)
             // Case 4: Too many args. Apply the type to the rest.
             case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
@@ -754,6 +754,28 @@ object DisplayType {
   private def mkApply(base: DisplayType, args: List[DisplayType]): DisplayType = args match {
     case Nil => base
     case _ :: _ => Apply(base, args)
+  }
+
+  /**
+    * Returns the union of the given `tpes`, simplified: a pure member and a repeated member are
+    * dropped, and the rest keep their order. A union with the universe as a member is the universe.
+    *
+    * Only the union is simplified. A member that is an intersection, a difference or a complement
+    * is kept as it is.
+    */
+  private def mkPlus(tpes: List[DisplayType]): DisplayType = {
+    if (tpes.contains(Hole)) {
+      // A hole stands for a missing argument, so two holes are not the same member.
+      Plus(tpes)
+    } else if (tpes.contains(Univ)) {
+      Univ
+    } else {
+      tpes.filterNot(_ == Pure).distinct match {
+        case Nil => Pure
+        case tpe :: Nil => tpe
+        case members => Plus(members)
+      }
+    }
   }
 
   /**

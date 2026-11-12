@@ -11,7 +11,6 @@ import ca.uwaterloo.flix.language.ast.shared.{Constant, EqualityConstraint, Qual
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.Fmt.{SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
-import ca.uwaterloo.flix.language.phase.TypeSimplifier
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.Nel
 
@@ -20,9 +19,9 @@ import ca.uwaterloo.flix.util.collection.Nel
   * signature, the head of a declaration, a kind or a constant.
   *
   * A type is normalized by [[DisplayType]] first, which curries arrows, collects record and schema
-  * rows, flattens operator chains and fills partial applications with holes. The walk from the view
-  * to the tree puts a node where a string would be: `Int32` is a type token, `List` is a use of the
-  * symbol of its enum, and ` -> ` is an operator token with spacing around it.
+  * rows, flattens operator chains, simplifies unions and fills partial applications with holes. The
+  * walk from the view to the tree puts a node where a string would be: `Int32` is a type token,
+  * `List` is a use of the symbol of its enum, and ` -> ` is an operator token with spacing around it.
   *
   * Every entry point that prints a type takes the [[FormatOptions]] implicitly.
   */
@@ -31,17 +30,15 @@ object Pretty {
   /**
     * Returns the given well-kinded type `t` as a tree.
     *
-    * Alpha-renames the flexible variables of `t` if the rigidity environment `renv` is present, and
-    * simplifies its effect formulas if `simplify` is set. Both are passes over the type that run
-    * before the view is built.
+    * Alpha-renames the flexible variables of `t` if the rigidity environment `renv` is present,
+    * which is a pass over the type that runs before the view is built.
     */
-  def tpe(t: Type, renv: Option[RigidityEnv] = None, simplify: Boolean = false)(implicit o: FormatOptions): Fmt = {
+  def tpe(t: Type, renv: Option[RigidityEnv] = None)(implicit o: FormatOptions): Fmt = {
     val renamed = renv match {
       case None => t
       case Some(env) => alphaRename(t, env)
     }
-    val simplified = if (simplify) TypeSimplifier.simplify(renamed) else renamed
-    displayType(DisplayType.fromWellKindedType(simplified))
+    displayType(DisplayType.fromWellKindedType(renamed))
   }
 
   /**
@@ -69,16 +66,13 @@ object Pretty {
 
   /**
     * Returns `tpe \ eff` for the given type `tpe` and effect `eff`, or just `tpe` if `eff` is pure.
-    *
-    * Simplifies the effect formulas of both if `simplify` is set.
     */
-  def typeAndEff(tpe: Type, eff: Type, simplify: Boolean = false)(implicit o: FormatOptions): Fmt = {
-    val simplifiedEff = if (simplify) TypeSimplifier.simplify(eff) else eff
-    val effFmt = DisplayType.fromWellKindedType(simplifiedEff) match {
+  def typeAndEff(tpe: Type, eff: Type)(implicit o: FormatOptions): Fmt = {
+    val effFmt = DisplayType.fromWellKindedType(eff) match {
       case DisplayType.Pure => Fmt.Empty
       case d => text(" ") ++ op("\\") ++ text(" ") ++ visit(d)
     }
-    Pretty.tpe(tpe, simplify = simplify) ++ effFmt
+    Pretty.tpe(tpe) ++ effFmt
   }
 
   /**

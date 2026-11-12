@@ -10,7 +10,7 @@ package ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TypeAliasSymUse
 import ca.uwaterloo.flix.language.ast.shared.{RegionScope, VarText}
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.collection.Nel
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -396,4 +396,135 @@ class TestFormatType extends AnyFunSuite with TestUtils {
 
     assert(actual == expected)
   }
+
+  test("FormatType.Union.External.01") {
+    // A repeated effect is printed once.
+    val tpe = union(effA, effB, effA)
+
+    val expected = "A + B"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Union.External.02") {
+    // The members are printed in the order they are given.
+    val tpe = union(effC, effVar(1, "ef"), effB, effA)
+
+    val expected = "C + ef + B + A"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Union.External.03") {
+    // A repeated variable is printed once.
+    val tpe = union(effVar(2, "ef2"), effVar(1, "ef1"), effVar(2, "ef2"))
+
+    val expected = "ef2 + ef1"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Union.External.04") {
+    // A pure member is not printed.
+    val tpe = union(Type.Pure, effA, Type.Pure)
+
+    val expected = "A"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Union.External.05") {
+    // A union of nothing but pure members is pure, so the arrow is printed without an effect.
+    val tpe = Type.mkArrowWithEffect(Type.Unit, union(Type.Pure, Type.Pure), Type.Unit, loc)
+
+    val expected = "Unit -> Unit"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Union.External.06") {
+    // A union inside a type is simplified too.
+    val tpe = Type.mkArrowWithEffect(Type.Unit, union(effB, effA, effB), Type.Unit, loc)
+
+    val expected = raw"Unit -> Unit \ B + A"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Union.External.07") {
+    // A union with the universe is the universe.
+    val tpe = union(effVar(1, "ef"), Type.Univ)
+
+    val expected = "Univ"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Union.External.08") {
+    // An intersection is kept as it is.
+    val ef = effVar(1, "ef")
+    val tpe = union(effB, Type.mkIntersection(effA, ef, loc), ef)
+
+    val expected = "B + (A & ef) + ef"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Union.External.09") {
+    // A difference is kept as it is, but the unions inside it are simplified.
+    val tpe = Type.mkDifference(union(effB, effA, effB), effA, loc)
+
+    val expected = "(B + A) - A"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Union.External.10") {
+    // An alias keeps its name and is printed once.
+    val sym = Symbol.mkTypeAliasSym(Name.RootNS, Name.Ident("AB", loc))
+    val alias = Type.Alias(TypeAliasSymUse(sym, loc), Nil, union(effA, effB), loc)
+    val tpe = union(effC, alias, alias)
+
+    val expected = "C + AB"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Union.External.11") {
+    // An effect applied to a type is printed once.
+    val sym = Symbol.mkEffSym(Name.RootNS, Name.Ident("St", loc))
+    val st = Type.Apply(Type.Cst(TypeConstructor.Effect(sym, Kind.Star ->: Kind.Eff), loc), Type.Int32, loc)
+    val tpe = union(st, effA, st)
+
+    val expected = "St[Int32] + A"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  private val effA: Type = mkEff("A")
+  private val effB: Type = mkEff("B")
+  private val effC: Type = mkEff("C")
+
+  /** Returns the effect with the given `name`. */
+  private def mkEff(name: String): Type =
+    Type.Cst(TypeConstructor.Effect(Symbol.mkEffSym(Name.RootNS, Name.Ident(name, loc)), Kind.Eff), loc)
+
+  /** Returns the effect variable with the given `id` and `name`. */
+  private def effVar(id: Int, name: String): Type =
+    Type.Var(new Symbol.KindedTypeVarSym(id, VarText.SourceText(name), Kind.Eff, scope, loc), loc)
+
+  /** Returns the union of the given `tpes`, built without the smart constructors. */
+  private def union(tpes: Type*): Type =
+    tpes.reduceRight((tpe1, tpe2) => Type.Apply(Type.Apply(Type.Union, tpe1, loc), tpe2, loc))
 }
