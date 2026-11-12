@@ -841,7 +841,7 @@ object Resolver {
         case ResolvedQName.Op(op) => visitOp(op, loc)
         case ResolvedQName.LocalDef(sym, fparams) => visitLocalDef(sym, fparams.length, loc)
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
-        case ResolvedQName.Val(v) => ResolvedAst.Expr.Val(ValSymUse(v.sym, loc), loc)
+        case ResolvedQName.Val(vald) => ResolvedAst.Expr.Val(ValSymUse(vald.sym, loc), loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = false, loc)
         case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
@@ -855,7 +855,7 @@ object Resolver {
         case ResolvedQName.Op(op) => visitOp(op, loc)
         case ResolvedQName.LocalDef(sym, fparams) => visitLocalDef(sym, fparams.length, loc)
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
-        case ResolvedQName.Val(v) => ResolvedAst.Expr.Val(ValSymUse(v.sym, loc), loc)
+        case ResolvedQName.Val(vald) => ResolvedAst.Expr.Val(ValSymUse(vald.sym, loc), loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = true, loc)
         case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
@@ -2347,10 +2347,10 @@ object Resolver {
       // TODO NS-REFACTOR check accessibility
       case Resolution.Declaration(caze: NamedAst.Declaration.RestrictableCase) :: Nil =>
         ResolvedQName.RestrictableTag(caze)
+      case Resolution.Declaration(vald: NamedAst.Declaration.Val) :: _ =>
+        checkPathAccessibility(vald.sym.namespace, ns0, qname.loc)
+        ResolvedQName.Val(vald)
       // TODO NS-REFACTOR check accessibility
-      case Resolution.Declaration(v: NamedAst.Declaration.Val) :: _ =>
-        checkPathAccessibility(v.sym.namespace, ns0, qname.loc)
-        ResolvedQName.Val(v)
       case Resolution.LocalDef(_, sym, fparams) :: _ => ResolvedQName.LocalDef(sym, fparams)
       case Resolution.Var(sym) :: _ => ResolvedQName.Var(sym)
       case _ =>
@@ -3848,7 +3848,7 @@ object Resolver {
 
     case class RestrictableTag(caze: NamedAst.Declaration.RestrictableCase) extends ResolvedQName
 
-    case class Val(v: NamedAst.Declaration.Val) extends ResolvedQName
+    case class Val(vald: NamedAst.Declaration.Val) extends ResolvedQName
 
     case class Error(e: ResolutionError.UndefinedName) extends ResolvedQName
   }

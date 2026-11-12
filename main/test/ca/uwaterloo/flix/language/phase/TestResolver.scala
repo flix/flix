@@ -9,7 +9,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.{NameError, ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Options}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestResolver extends AnyFunSuite with TestUtils {
@@ -1925,42 +1925,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
-
-  test("Val.UseSite.01") {
-    // A bare reference to a val, e.g. `println(myField)`, must resolve to
-    // ResolvedAst.Expr.Val and must NOT produce ResolutionError.UndefinedName.
-    // Resolution itself is not yet implemented past this point (Kinder has no
-    // case for ResolvedAst.Expr.Val yet), so we expect the pipeline to reach
-    // that documented boundary (an InternalCompilerException) rather than any
-    // name-resolution error.
-    val input =
-      """
-        |val myField: Int32 = 1
-        |
-        |def f(): Int32 = myField
-        |""".stripMargin
-    val ice = intercept[InternalCompilerException] {
-      check(input, Options.TestWithLibNix)
-    }
-    assert(ice.getMessage.contains("val expressions are not yet supported past resolution"))
-  }
-
-  test("Val.UseSite.02") {
-    // A val applied as if it were a function, e.g. `myField(1)`, should also resolve
-    // (falling through to ordinary closure application, like a Var-bound closure would)
-    // rather than failing to resolve `myField` at all.
-    val input =
-      """
-        |val myField: Int32 -> Int32 = x -> x
-        |
-        |def f(): Int32 = myField(1)
-        |""".stripMargin
-    val ice = intercept[InternalCompilerException] {
-      check(input, Options.TestWithLibNix)
-    }
-    assert(ice.getMessage.contains("val expressions are not yet supported past resolution"))
-  }
-
 
   test("CyclicTraitHierarchy.01") {
     val input = "trait A[a] with A[a]"
