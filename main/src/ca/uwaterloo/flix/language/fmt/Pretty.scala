@@ -19,10 +19,10 @@ import ca.uwaterloo.flix.util.collection.Nel
   * signature, the head of a declaration, a kind or a constant.
   *
   * A type is normalized by [[DisplayType]] first, which curries arrows, collects record and schema
-  * rows, flattens operator chains, simplifies unions, writes an intersection with a complement as a
-  * difference and fills partial applications with holes. The walk from the view to the tree puts a
-  * node where a string would be: `Int32` is a type token, `List` is a use of the symbol of its
-  * enum, and ` -> ` is an operator token with spacing around it.
+  * rows, flattens operator chains, simplifies unions and differences, writes an intersection with a
+  * complement as a difference and fills partial applications with holes. The walk from the view to
+  * the tree puts a node where a string would be: `Int32` is a type token, `List` is a use of the
+  * symbol of its enum, and ` -> ` is an operator token with spacing around it.
   *
   * Every entry point that prints a type takes the [[FormatOptions]] implicitly.
   */
