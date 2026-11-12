@@ -30,6 +30,18 @@ object TypeReconstruction {
   }
 
   /**
+    * Reconstructs types in the given val with the inferred body `exp0`.
+    *
+    * The declared type is kept as-is (like a def's declared return type): it is already fully
+    * resolved, since a val has no type parameters to generalize.
+    */
+  def visitVal(v: KindedAst.Val, exp0: InferredAst.Expr, subst: SubstitutionTree)(implicit flix: Flix): TypedAst.Val = v match {
+    case KindedAst.Val(sym, doc, ann, mod, tpe, _, loc) =>
+      val exp = visitExp(exp0)(subst, flix)
+      TypedAst.Val(doc, ann, mod, sym, tpe, exp, loc)
+  }
+
+  /**
     * Reconstructs types in the given sig with the inferred body `exp0`, if any.
     */
   def visitSig(sig: KindedAst.Sig, exp0: Option[InferredAst.Expr], subst: SubstitutionTree)(implicit flix: Flix): TypedAst.Sig = sig match {
@@ -84,6 +96,9 @@ object TypeReconstruction {
   private def visitExp(exp0: InferredAst.Expr)(implicit subst: SubstitutionTree, flix: Flix): TypedAst.Expr = exp0 match {
     case InferredAst.Expr.Var(sym, tpe, loc) =>
       TypedAst.Expr.Var(sym, visitType(tpe), loc)
+
+    case InferredAst.Expr.Val(symUse, tpe, loc) =>
+      TypedAst.Expr.Val(symUse, visitType(tpe), loc)
 
     case InferredAst.Expr.Hole(sym, scp, tpe, eff, loc) =>
       TypedAst.Expr.Hole(sym, scp, visitType(tpe), visitType(eff), loc)

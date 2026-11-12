@@ -364,6 +364,8 @@ object Redundancy {
       case (true, true) => Used.empty + HiddenVarSym(sym, loc)
     }
 
+    case Expr.Val(_, _, _) => Used.empty
+
     case Expr.Hole(sym, _, _, _, _) =>
       lctx.holeSyms += sym
       Used.empty

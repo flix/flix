@@ -3725,4 +3725,38 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MismatchedTypes](result)
   }
 
+  test("TypeError.UnexpectedType.Val.01") {
+    val input =
+      """
+        |val x: Int32 = true
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UnexpectedType](result)
+  }
+
+  test("Test.Val.01") {
+    val input =
+      """
+        |val x: Int32 = 1
+        |
+        |def f(): Int32 = x
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
+  test("Test.Val.02") {
+    val input =
+      """
+        |val x: List[Int32] = Nil
+        |
+        |enum List[t] {
+        |    case Nil,
+        |    case Cons(t, List[t])
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
 }

@@ -56,6 +56,10 @@ object InferredAst {
       def eff: Type = Type.Pure
     }
 
+    case class Val(symUse: ValSymUse, tpe: Type, loc: SourceLocation) extends Expr {
+      def eff: Type = Type.Pure
+    }
+
     case class Hole(sym: Symbol.HoleSym, scp: LocalScope, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class HoleWithExp(exp: Expr, scp: LocalScope, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
