@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Decl
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.fmt.{Fmt, Pretty}
+import ca.uwaterloo.flix.language.fmt.Pretty
 import ca.uwaterloo.flix.util.collection.Nel
 
 import scala.annotation.tailrec
@@ -21,9 +21,6 @@ object CompletionUtils {
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
 
   private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams.head.tpe)
-
-  def getLabelForSpec(spec: TypedAst.Spec): String =
-    (Pretty.fparams(spec.fparams) ++ Fmt.text(": ") ++ Pretty.typeAndEff(spec.retTpe, spec.eff)).plain
 
   /**
     * Generate a snippet which represents calling a function.

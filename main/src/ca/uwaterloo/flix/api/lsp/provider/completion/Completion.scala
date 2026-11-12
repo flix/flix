@@ -266,7 +266,7 @@ object Completion {
     override def toString: String = s"MagicDefCompletion(${decl.sym}, $priority, $range)"
 
     override def toCompletionItem(implicit flix: Flix): CompletionItem = {
-      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(decl.spec)), None)
+      val labelDetails = CompletionItemLabelDetails(Some(LspUtil.getLabelForSpec(decl.spec)), None)
       CompletionItem(
         label = label,
         labelDetails = Some(labelDetails),
@@ -386,7 +386,7 @@ object Completion {
       val description = if (!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
-      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(decl.spec)), description)
+      val labelDetails = CompletionItemLabelDetails(Some(LspUtil.getLabelForSpec(decl.spec)), description)
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
       CompletionItem(
         label = label,
@@ -676,7 +676,7 @@ object Completion {
       val description = if (!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
-      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(decl.spec)), description)
+      val labelDetails = CompletionItemLabelDetails(Some(LspUtil.getLabelForSpec(decl.spec)), description)
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
       CompletionItem(
         label = name,
@@ -705,7 +705,7 @@ object Completion {
       val name = op.sym.name
       val snippet = CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)
       val description = Some(name)
-      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(op.spec)), description)
+      val labelDetails = CompletionItemLabelDetails(Some(LspUtil.getLabelForSpec(op.spec)), description)
       CompletionItem(
         label = name,
         labelDetails = Some(labelDetails),
@@ -952,7 +952,7 @@ object Completion {
       val params = args.mkString(", ")
       val snippet = s"$name($params)"
       val labelDetails = CompletionItemLabelDetails(
-        Some(CompletionUtils.getLabelForSpec(decl.spec)),
+        Some(LspUtil.getLabelForSpec(decl.spec)),
         None)
       CompletionItem(
         label = name,
