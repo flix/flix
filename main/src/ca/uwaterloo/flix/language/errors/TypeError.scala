@@ -14,7 +14,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EffSymOrRigidVar, SymbolSet}
-import ca.uwaterloo.flix.language.fmt.{FormatOptions, Pretty}
+import ca.uwaterloo.flix.language.fmt.{Fmt, FormatOptions, Pretty}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
@@ -93,11 +93,11 @@ object TypeError {
   case class ConstructorNotFound(clazz: ClassDesc, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E6025
 
-    def summary: String = s"Constructor not found: '${ClassDescs.binaryNameOf(clazz)}' with arguments (${formatTypes(tpes, Some(renv))})."
+    def summary: String = s"Constructor not found: '${ClassDescs.binaryNameOf(clazz)}' with arguments (${formatTypes(tpes, Some(renv)).plain})."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Constructor not found: '${red(ClassDescs.binaryNameOf(clazz))}' with arguments (${cyan(formatTypes(tpes, Some(renv)))}).
+      s""">> Constructor not found: '${red(ClassDescs.binaryNameOf(clazz))}' with arguments (${formatTypes(tpes, Some(renv)).ansi(fmt)}).
          |
          |${highlight(loc, "cannot find constructor", fmt)}
          |
@@ -224,15 +224,15 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Extra label '${red(label.name)}' of type '${cyan(Pretty.tpe(labelType, Some(renv)).plain)}'.
+      s""">> Extra label '${red(label.name)}' of type '${Pretty.tpe(labelType, Some(renv)).ansi(fmt)}'.
          |
          |${highlight(loc, "extra label.", fmt)}
          |
          |The record type:
          |
-         |  ${cyan(Pretty.tpe(recordType, Some(renv)).plain)}
+         |  ${Pretty.tpe(recordType, Some(renv)).ansi(fmt)}
          |
-         |contains the extra label '${red(label.name)}' of type '${cyan(Pretty.tpe(labelType, Some(renv)).plain)}'.
+         |contains the extra label '${red(label.name)}' of type '${Pretty.tpe(labelType, Some(renv)).ansi(fmt)}'.
          |""".stripMargin
     }
   }
@@ -258,7 +258,7 @@ object TypeError {
            |Available fields:
            |${availableFields.map(f => s"  - ${formatField(f)}").mkString("\n")}
            |""".stripMargin
-      s""">> Field not found: '${red(fieldName.name)}' on type '${magenta(Pretty.tpe(tpe).plain)}'.
+      s""">> Field not found: '${red(fieldName.name)}' on type '${Pretty.tpe(tpe).ansi(fmt)}'.
          |
          |${highlight(loc, "cannot find field", fmt)}
          |$available""".stripMargin
@@ -360,7 +360,7 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Method not found: '${red(methodName.name)}' on type '${magenta(Pretty.tpe(tpe).plain)}' with arguments (${cyan(formatTypes(tpes))}).
+      s""">> Method not found: '${red(methodName.name)}' on type '${Pretty.tpe(tpe).ansi(fmt)}' with arguments (${formatTypes(tpes).ansi(fmt)}).
          |
          |${highlight(loc, "cannot find method", fmt)}
          |
@@ -388,12 +388,12 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unable to unify the effect formulas: '${red(Pretty.tpe(baseType1, Some(renv)).plain)}' and '${red(Pretty.tpe(baseType2, Some(renv)).plain)}'.
+      s""">> Unable to unify the effect formulas: '${Pretty.tpe(baseType1, Some(renv)).ansi(fmt)}' and '${Pretty.tpe(baseType2, Some(renv)).ansi(fmt)}'.
          |
          |${highlight(loc, "mismatched effect formulas.", fmt)}
          |
-         |Type One: ${cyan(Pretty.tpe(fullType1, Some(renv)).plain)}
-         |Type Two: ${magenta(Pretty.tpe(fullType2, Some(renv)).plain)}
+         |Type One: ${Pretty.tpe(fullType1, Some(renv)).ansi(fmt)}
+         |Type Two: ${Pretty.tpe(fullType2, Some(renv)).ansi(fmt)}
          |""".stripMargin
     }
   }
@@ -418,14 +418,14 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched types for label '${cyan(label.name)}': '${red(Pretty.tpe(tpe1, Some(renv)).plain)}' and '${red(Pretty.tpe(tpe2, Some(renv)).plain)}'.
+      s""">> Mismatched types for label '${cyan(label.name)}': '${Pretty.tpe(tpe1, Some(renv)).ansi(fmt)}' and '${Pretty.tpe(tpe2, Some(renv)).ansi(fmt)}'.
          |
-         |${highlight(loc1, s"'${Pretty.tpe(tpe1, Some(renv)).plain}' comes from here.", fmt)}
+         |${highlight(loc1, s"'${Pretty.tpe(tpe1, Some(renv)).ansi(fmt)}' comes from here.", fmt)}
          |
-         |${highlight(loc2, s"'${Pretty.tpe(tpe2, Some(renv)).plain}' comes from here.", fmt)}
+         |${highlight(loc2, s"'${Pretty.tpe(tpe2, Some(renv)).ansi(fmt)}' comes from here.", fmt)}
          |
-         |Type One: ${cyan(Pretty.tpe(fullType1, Some(renv)).plain)}
-         |Type Two: ${magenta(Pretty.tpe(fullType2, Some(renv)).plain)}
+         |Type One: ${Pretty.tpe(fullType1, Some(renv)).ansi(fmt)}
+         |Type Two: ${Pretty.tpe(fullType2, Some(renv)).ansi(fmt)}
          |""".stripMargin
     }
   }
@@ -506,14 +506,14 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched types for predicate '${cyan(pred.name)}': '${red(Pretty.tpe(tpe1, Some(renv)).plain)}' and '${red(Pretty.tpe(tpe2, Some(renv)).plain)}'.
+      s""">> Mismatched types for predicate '${cyan(pred.name)}': '${Pretty.tpe(tpe1, Some(renv)).ansi(fmt)}' and '${Pretty.tpe(tpe2, Some(renv)).ansi(fmt)}'.
          |
-         |${highlight(loc1, s"'${Pretty.tpe(tpe1, Some(renv)).plain}' comes from here.", fmt)}
+         |${highlight(loc1, s"'${Pretty.tpe(tpe1, Some(renv)).ansi(fmt)}' comes from here.", fmt)}
          |
-         |${highlight(loc2, s"'${Pretty.tpe(tpe2, Some(renv)).plain}' comes from here.", fmt)}
+         |${highlight(loc2, s"'${Pretty.tpe(tpe2, Some(renv)).ansi(fmt)}' comes from here.", fmt)}
          |
-         |Type One: ${cyan(Pretty.tpe(fullType1, Some(renv)).plain)}
-         |Type Two: ${magenta(Pretty.tpe(fullType2, Some(renv)).plain)}
+         |Type One: ${Pretty.tpe(fullType1, Some(renv)).ansi(fmt)}
+         |Type Two: ${Pretty.tpe(fullType2, Some(renv)).ansi(fmt)}
          |""".stripMargin
     }
   }
@@ -539,12 +539,12 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unable to unify the types: '${red(Pretty.tpe(baseType1, Some(renv)).plain)}' and '${red(Pretty.tpe(baseType2, Some(renv)).plain)}'.
+      s""">> Unable to unify the types: '${Pretty.tpe(baseType1, Some(renv)).ansi(fmt)}' and '${Pretty.tpe(baseType2, Some(renv)).ansi(fmt)}'.
          |
          |${highlight(loc, "mismatched types.", fmt)}
          |
-         |Type One: ${cyan(Pretty.tpe(fullType1, Some(renv)).plain)}
-         |Type Two: ${magenta(Pretty.tpe(fullType2, Some(renv)).plain)}
+         |Type One: ${Pretty.tpe(fullType1, Some(renv)).ansi(fmt)}
+         |Type Two: ${Pretty.tpe(fullType2, Some(renv)).ansi(fmt)}
          |""".stripMargin
     }
   }
@@ -575,14 +575,14 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched type arguments for effect '${magenta(sym.toString)}': '${red(Pretty.tpe(tpe1, Some(renv)).plain)}' and '${red(Pretty.tpe(tpe2, Some(renv)).plain)}'.
+      s""">> Mismatched type arguments for effect '${magenta(sym.toString)}': '${Pretty.tpe(tpe1, Some(renv)).ansi(fmt)}' and '${Pretty.tpe(tpe2, Some(renv)).ansi(fmt)}'.
          |
          |${highlight(loc, "mismatched effect type argument.", fmt)}
          |
          |The effect '${magenta(sym.toString)}' is used with different types for its ${Grammar.ordinal(ith)} type parameter '${cyan(tparam.name)}'.
          |
-         |Effect One: ${cyan(Pretty.tpe(eff1, Some(renv)).plain)}
-         |Effect Two: ${magenta(Pretty.tpe(eff2, Some(renv)).plain)}
+         |Effect One: ${Pretty.tpe(eff1, Some(renv)).ansi(fmt)}
+         |Effect Two: ${Pretty.tpe(eff2, Some(renv)).ansi(fmt)}
          |""".stripMargin
     }
   }
@@ -611,12 +611,12 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unable to unify the ${magenta("function")} type '${red(Pretty.tpe(arrowType, Some(renv)).plain)}' with the non-function type '${red(Pretty.tpe(nonArrowType, Some(renv)).plain)}'.
+      s""">> Unable to unify the ${magenta("function")} type '${Pretty.tpe(arrowType, Some(renv)).ansi(fmt)}' with the non-function type '${Pretty.tpe(nonArrowType, Some(renv)).ansi(fmt)}'.
          |
          |${highlight(loc, "mismatched types.", fmt)}
          |
-         |Type One: ${cyan(Pretty.tpe(fullType1, Some(renv)).plain)}
-         |Type Two: ${magenta(Pretty.tpe(fullType2, Some(renv)).plain)}
+         |Type One: ${Pretty.tpe(fullType1, Some(renv)).ansi(fmt)}
+         |Type Two: ${Pretty.tpe(fullType2, Some(renv)).ansi(fmt)}
          |
          |${underline("Explanation:")} A ${magenta("function")} type can never be equal to a non-function type, regardless of effects.
          |""".stripMargin
@@ -638,14 +638,14 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing instance: '${cyan(trt.name)}' for type '${red(Pretty.tpe(tpe, Some(renv)).plain)}'.
+      s""">> Missing instance: '${cyan(trt.name)}' for type '${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}'.
          |
          |${highlight(loc, "missing instance", fmt)}
          |
-         |${underline("Explanation:")} The type '${Pretty.tpe(tpe, Some(renv)).plain}' does not have an
+         |${underline("Explanation:")} The type '${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}' does not have an
          |instance of the '${trt.name}' trait. To fix this, either:
          |
-         |  (a) Define an instance of '${trt.name}' for '${Pretty.tpe(tpe, Some(renv)).plain}', or
+         |  (a) Define an instance of '${trt.name}' for '${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}', or
          |  (b) Use 'with' to derive an instance, if the trait supports derivation.
          |""".stripMargin
     }
@@ -666,7 +666,7 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing instance: '${cyan(trt.name)}' for ${magenta("function")} type '${red(Pretty.tpe(tpe, Some(renv)).plain)}'.
+      s""">> Missing instance: '${cyan(trt.name)}' for ${magenta("function")} type '${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}'.
          |
          |${highlight(loc, "missing instance", fmt)}
          |
@@ -689,15 +689,15 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Equality is not defined on ${red(Pretty.tpe(tpe, Some(renv)).plain)}. Define or derive an instance of Eq.
+      s""">> Equality is not defined on ${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}. Define or derive an instance of Eq.
          |
          |${highlight(loc, s"missing Eq instance", fmt)}
          |
          |${underline("Explanation:")}
-         |To define equality on '${Pretty.tpe(tpe, Some(renv)).plain}', either:
+         |To define equality on '${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}', either:
          |
-         |  (a) define an instance of Eq for '${Pretty.tpe(tpe, Some(renv)).plain}', or
-         |  (b) use 'with' to derive an instance of Eq for '${Pretty.tpe(tpe, Some(renv)).plain}', for example:.
+         |  (a) define an instance of Eq for '${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}', or
+         |  (b) use 'with' to derive an instance of Eq for '${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}', for example:.
          |
          |  enum Color with Eq {
          |    case Red, Green, Blue
@@ -720,15 +720,15 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Order is not defined on ${red(Pretty.tpe(tpe, Some(renv)).plain)}. Define or derive an instance of Order.
+      s""">> Order is not defined on ${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}. Define or derive an instance of Order.
          |
          |${highlight(loc, s"missing Order instance", fmt)}
          |
          |${underline("Explanation:")}
-         |To define an order on '${Pretty.tpe(tpe, Some(renv)).plain}', either:
+         |To define an order on '${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}', either:
          |
-         |  (a) define an instance of Order for '${Pretty.tpe(tpe, Some(renv)).plain}', or
-         |  (b) use 'with' to derive an instance of Order for '${Pretty.tpe(tpe, Some(renv)).plain}', for example:.
+         |  (a) define an instance of Order for '${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}', or
+         |  (b) use 'with' to derive an instance of Order for '${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}', for example:.
          |
          |  enum Color with Eq, Order {
          |    case Red, Green, Blue
@@ -753,15 +753,15 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> ToString is not defined on ${red(Pretty.tpe(tpe, Some(renv)).plain)}. Define or derive an instance of ToString.
+      s""">> ToString is not defined on ${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}. Define or derive an instance of ToString.
          |
          |${highlight(loc, s"missing ToString instance", fmt)}
          |
          |${underline("Explanation:")}
-         |To define a string representation of '${Pretty.tpe(tpe, Some(renv)).plain}', either:
+         |To define a string representation of '${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}', either:
          |
-         |  (a) define an instance of ToString for '${Pretty.tpe(tpe, Some(renv)).plain}', or
-         |  (b) use 'with' to derive an instance of ToString for '${Pretty.tpe(tpe, Some(renv)).plain}', for example:.
+         |  (a) define an instance of ToString for '${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}', or
+         |  (b) use 'with' to derive an instance of ToString for '${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}', for example:.
          |
          |  enum Color with ToString {
          |    case Red, Green, Blue
@@ -785,7 +785,7 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing trait constraint: '${magenta(trt.toString)}' for type '${red(Pretty.tpe(tpe, Some(renv)).plain)}'.
+      s""">> Missing trait constraint: '${magenta(trt.toString)}' for type '${Pretty.tpe(tpe, Some(renv)).ansi(fmt)}'.
          |
          |${highlight(loc, "missing trait constraint", fmt)}
          |""".stripMargin
@@ -806,7 +806,7 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Non-unit statement: has type '${red(Pretty.tpe(tpe).plain)}'.
+      s""">> Non-unit statement: has type '${Pretty.tpe(tpe).ansi(fmt)}'.
          |
          |${highlight(loc, "non-unit type", fmt)}
          |
@@ -839,7 +839,7 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Static method not found: '${red(methodName.name)}' in class '${magenta(ClassDescs.binaryNameOf(clazz))}' with arguments (${cyan(formatTypes(tpes, Some(renv)))}).
+      s""">> Static method not found: '${red(methodName.name)}' in class '${magenta(ClassDescs.binaryNameOf(clazz))}' with arguments (${formatTypes(tpes, Some(renv)).ansi(fmt)}).
          |
          |${highlight(loc, "cannot find static method", fmt)}
          |
@@ -887,15 +887,15 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing label: '${red(label.name)}' of type '${cyan(Pretty.tpe(labelType, Some(renv)).plain)}'.
+      s""">> Missing label: '${red(label.name)}' of type '${Pretty.tpe(labelType, Some(renv)).ansi(fmt)}'.
          |
          |${highlight(loc, "missing label", fmt)}
          |
          |The record type:
          |
-         |  ${cyan(Pretty.tpe(recordType, Some(renv)).plain)}
+         |  ${Pretty.tpe(recordType, Some(renv)).ansi(fmt)}
          |
-         |does not contain the label '${red(label.name)}' of type ${cyan(Pretty.tpe(labelType, Some(renv)).plain)}.
+         |does not contain the label '${red(label.name)}' of type ${Pretty.tpe(labelType, Some(renv)).ansi(fmt)}.
          |""".stripMargin
     }
   }
@@ -916,14 +916,14 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected argument: expected '${cyan(Pretty.tpe(expected, Some(renv)).plain)}', got '${red(Pretty.tpe(actual, Some(renv)).plain)}'.
+      s""">> Unexpected argument: expected '${Pretty.tpe(expected, Some(renv)).ansi(fmt)}', got '${Pretty.tpe(actual, Some(renv)).ansi(fmt)}'.
          |
          |${highlight(loc, "unexpected argument type", fmt)}
          |
-         |The function '${magenta(sym.toString)}' expects its ${Grammar.ordinal(ith)} argument to be of type '${cyan(Pretty.tpe(expected, Some(renv)).plain)}'.
+         |The function '${magenta(sym.toString)}' expects its ${Grammar.ordinal(ith)} argument to be of type '${Pretty.tpe(expected, Some(renv)).ansi(fmt)}'.
          |
-         |Expected: ${cyan(Pretty.tpe(expected, Some(renv)).plain)}
-         |  Actual: ${red(Pretty.tpe(actual, Some(renv)).plain)}
+         |Expected: ${Pretty.tpe(expected, Some(renv)).ansi(fmt)}
+         |  Actual: ${Pretty.tpe(actual, Some(renv)).ansi(fmt)}
          |""".stripMargin
     }
   }
@@ -947,7 +947,7 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected type: expected '${cyan(Pretty.tpe(expected, Some(renv)).plain)}', found '${red(Pretty.tpe(inferred, Some(renv)).plain)}'.
+      s""">> Unexpected type: expected '${Pretty.tpe(expected, Some(renv)).ansi(fmt)}', found '${Pretty.tpe(inferred, Some(renv)).ansi(fmt)}'.
          |
          |${highlight(loc, "unexpected type", fmt)}
          |""".stripMargin
@@ -1040,10 +1040,10 @@ object TypeError {
   }
 
   /**
-    * Returns the types `tpes` formatted as a comma-separated list.
+    * Returns the types `tpes` as a comma-separated list.
     */
-  private def formatTypes(tpes: List[Type], renv: Option[RigidityEnv] = None): String = {
-    tpes.map(tpe => Pretty.tpe(tpe, renv).plain).mkString(", ")
+  private def formatTypes(tpes: List[Type], renv: Option[RigidityEnv] = None): Fmt = {
+    Fmt.sep(", ", tpes.map(tpe => Pretty.tpe(tpe, renv)))
   }
 
   /**

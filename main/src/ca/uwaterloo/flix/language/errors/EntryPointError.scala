@@ -90,13 +90,13 @@ object EntryPointError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unhandled effect: '${red(Pretty.tpe(eff).plain)}'.
+      s""">> Unhandled effect: '${Pretty.tpe(eff).ansi(fmt)}'.
          |
          |${highlight(loc, "unhandled effect", fmt)}
          |
          |${underline("Explanation:")} Entry point functions (main and tests) can only
          |use primitive effects (like IO) or effects with default handlers. The effect
-         |'${magenta(Pretty.tpe(eff).plain)}' has no default handler.
+         |'${Pretty.tpe(eff).ansi(fmt)}' has no default handler.
          |
          |To fix this, either:
          |
@@ -119,7 +119,7 @@ object EntryPointError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected return type '${red(Pretty.tpe(tpe).plain)}' for entry point function.
+      s""">> Unexpected return type '${Pretty.tpe(tpe).ansi(fmt)}' for entry point function.
          |
          |${highlight(loc, "the return type must be Unit", fmt)}
          |

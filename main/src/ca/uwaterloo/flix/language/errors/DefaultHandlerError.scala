@@ -124,11 +124,11 @@ object DefaultHandlerError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Illegal default handler effect: expected '${cyan(Pretty.tpe(expected).plain)}', found '${red(Pretty.tpe(actual).plain)}'.
+      s""">> Illegal default handler effect: expected '${Pretty.tpe(expected).ansi(fmt)}', found '${Pretty.tpe(actual).ansi(fmt)}'.
          |
          |${highlight(loc, "illegal effect", fmt)}
          |
-         |${underline("Explanation:")} A default handler must remove the handled effect '${Pretty.tpe(handledEff).plain}'
+         |${underline("Explanation:")} A default handler must remove the handled effect '${Pretty.tpe(handledEff).ansi(fmt)}'
          |from the effect 'ef' of its thunk argument, and it may only introduce the 'IO' effect.
          |Expected signature:
          |
@@ -152,11 +152,11 @@ object DefaultHandlerError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Illegal default handler effect: expected '${cyan(Pretty.tpe(handledEff).plain)}', found '${red(Pretty.tpe(actual).plain)}'.
+      s""">> Illegal default handler effect: expected '${Pretty.tpe(handledEff).ansi(fmt)}', found '${Pretty.tpe(actual).ansi(fmt)}'.
          |
          |${highlight(loc, "illegal type arguments", fmt)}
          |
-         |${underline("Explanation:")} A default handler must handle '${Pretty.tpe(handledEff).plain}' for all type arguments.
+         |${underline("Explanation:")} A default handler must handle '${Pretty.tpe(handledEff).ansi(fmt)}' for all type arguments.
          |Hence the handled effect must be applied to distinct type variables that do not occur
          |elsewhere in the signature. Expected signature:
          |
@@ -180,7 +180,7 @@ object DefaultHandlerError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Illegal default handler parameter: expected '${cyan("Unit -> a \\ ef")}', found '${red(Pretty.tpe(actual).plain)}'.
+      s""">> Illegal default handler parameter: expected '${cyan("Unit -> a \\ ef")}', found '${Pretty.tpe(actual).ansi(fmt)}'.
          |
          |${highlight(loc, "illegal parameter type", fmt)}
          |
@@ -209,7 +209,7 @@ object DefaultHandlerError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Illegal default handler return type: expected '${cyan(Pretty.tpe(expected).plain)}', found '${red(Pretty.tpe(actual).plain)}'.
+      s""">> Illegal default handler return type: expected '${Pretty.tpe(expected).ansi(fmt)}', found '${Pretty.tpe(actual).ansi(fmt)}'.
          |
          |${highlight(loc, "illegal return type", fmt)}
          |
@@ -236,13 +236,13 @@ object DefaultHandlerError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Illegal default handler: '${red(handlerSym.name)}' does not handle '${magenta(Pretty.tpe(handledEff).plain)}'.
+      s""">> Illegal default handler: '${red(handlerSym.name)}' does not handle '${Pretty.tpe(handledEff).ansi(fmt)}'.
          |
-         |${highlight(loc, s"does not remove '${Pretty.tpe(handledEff).plain}'", fmt)}
+         |${highlight(loc, s"does not remove '${Pretty.tpe(handledEff).ansi(fmt)}'", fmt)}
          |
          |${underline("Explanation:")} The effect of a default handler must remove the handled effect
-         |'${Pretty.tpe(handledEff).plain}' from the effect 'ef' of its thunk argument, but '${Pretty.tpe(handledEff).plain}'
-         |does not occur in the declared effect '${Pretty.tpe(actual).plain}'. Expected signature:
+         |'${Pretty.tpe(handledEff).ansi(fmt)}' from the effect 'ef' of its thunk argument, but '${Pretty.tpe(handledEff).ansi(fmt)}'
+         |does not occur in the declared effect '${Pretty.tpe(actual).ansi(fmt)}'. Expected signature:
          |
          |  ${expectedSignature(handlerSym, handledEff)}
          |""".stripMargin

@@ -77,8 +77,8 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(Pretty.tpe(from).plain)}
-         |To  : ${red(Pretty.tpe(to).plain)}
+         |From: ${Pretty.tpe(from).ansi(fmt)}
+         |To  : ${Pretty.tpe(to).ansi(fmt)}
          |
          |${underline("Explanation:")} A checked cast between Java types requires a subtype
          |relationship. Neither type is a subtype of the other.
@@ -104,7 +104,7 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(Pretty.tpe(from).plain)}
+         |From: ${Pretty.tpe(from).ansi(fmt)}
          |To  : ${red(JavaTypes.formatType(to))}
          |
          |${underline("Explanation:")} A checked cast can only be used between Java types.
@@ -130,8 +130,8 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(Pretty.tpe(from).plain)}
-         |To  : ${red(Pretty.tpe(to).plain)}
+         |From: ${Pretty.tpe(from).ansi(fmt)}
+         |To  : ${Pretty.tpe(to).ansi(fmt)}
          |
          |${underline("Explanation:")} A checked cast requires the source type to be known
          |at compile time.
@@ -158,7 +158,7 @@ object SafetyError {
          |${highlight(loc, "impossible cast", fmt)}
          |
          |From: ${red(JavaTypes.formatType(from))}
-         |To  : ${red(Pretty.tpe(to).plain)}
+         |To  : ${Pretty.tpe(to).ansi(fmt)}
          |
          |${underline("Explanation:")} A checked cast can only be used between Java types.
          |""".stripMargin
@@ -183,8 +183,8 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(Pretty.tpe(from).plain)}
-         |To  : ${red(Pretty.tpe(to).plain)}
+         |From: ${Pretty.tpe(from).ansi(fmt)}
+         |To  : ${Pretty.tpe(to).ansi(fmt)}
          |
          |${underline("Explanation:")} A checked cast requires the target type to be known
          |at compile time.
@@ -205,7 +205,7 @@ object SafetyError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected method effect: '${red(Pretty.tpe(eff).plain)}'.
+      s""">> Unexpected method effect: '${Pretty.tpe(eff).ansi(fmt)}'.
          |
          |${highlight(loc, "unexpected effect", fmt)}
          |
@@ -251,7 +251,7 @@ object SafetyError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected throw type: '${red(Pretty.tpe(tpe).plain)}' is not a subclass of Throwable.
+      s""">> Unexpected throw type: '${Pretty.tpe(tpe).ansi(fmt)}' is not a subclass of Throwable.
          |
          |${highlight(loc, "unexpected type", fmt)}
          |
@@ -393,8 +393,8 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(Pretty.tpe(from).plain)}
-         |To  : ${red(Pretty.tpe(to).plain)}
+         |From: ${Pretty.tpe(from).ansi(fmt)}
+         |To  : ${Pretty.tpe(to).ansi(fmt)}
          |
          |${underline("Explanation:")} An unchecked cast between these types will never succeed.
          |""".stripMargin
