@@ -1671,6 +1671,15 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedEffect](result)
   }
 
+  test("KindError.UnexpectedEffect.Val.01") {
+    val input =
+      """
+        |val x: { } = 1
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectError[KindError.UnexpectedEffect](result)
+  }
+
   test("KindError.UnexpectedEffect.TypeAlias.01") {
     val input =
       """
