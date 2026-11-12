@@ -1276,6 +1276,27 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that an effect annotation was given on a `val` field declaration.
+    *
+    * @param loc the location of the effect annotation.
+    */
+  case class UnsupportedEffectOnVal(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E4217
+
+    def summary: String = "Effects are not yet supported on fields."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Effects are not yet supported on fields.
+         |
+         |${src(loc, "unsupported effect")}
+         |
+         |${underline("Explanation:")} A 'val' field declaration must be pure. Remove the effect annotation.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate an unsupported restrictable choice rule pattern.
     *
     * @param star whether the choose is of the star kind.

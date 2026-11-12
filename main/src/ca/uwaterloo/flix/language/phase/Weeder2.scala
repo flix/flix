@@ -368,8 +368,10 @@ object Weeder2 {
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       val ident = pickNameIdent(tree)
       val tpe = Types.pickType(tree)
+      val eff = Types.tryPickEffect(tree)
+      eff.foreach(e => sctx.errors.add(WeederError.UnsupportedEffectOnVal(e.loc)))
       val exp = Exprs.pickExpr(tree)
-      Declaration.Val(doc, ann, mod, ident, tpe, exp, tree.loc)
+      Declaration.Val(doc, ann, mod, ident, tpe, eff, exp, tree.loc)
     }
 
     private def visitEnumDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Enum = {
