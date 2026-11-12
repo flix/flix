@@ -115,6 +115,8 @@ object HtmlDocumentor {
     * The built-in types in the order the "Primitives" line of a trait page lists them: the order in
     * which the language reference presents them, which puts `Int8` before `Int16`, where the
     * alphabet puts it after `Int64`. A built-in type absent from the list follows the ones on it.
+    *
+    * These are also the built-in types that a module can be the module of, see [[builtinTypeOf]].
     */
   private val PrimitiveOrder: List[TypeConstructor] = List(
     TypeConstructor.Unit,
@@ -402,9 +404,15 @@ object HtmlDocumentor {
         case _ => // No op
       }
 
+      val instances = builtinTypeOf(moduleSym) match {
+        case None => Nil
+        case Some(tc) => instancesOf(root)(_ == tc)
+      }
+
       Module(
         moduleSym,
         mod.doc,
+        instances,
         parent,
         submodules.map(visitMod(_, Some(moduleSym))),
         traits,
@@ -463,6 +471,18 @@ object HtmlDocumentor {
       case _ => false
     }
     Struct(root.structs(sym), instances, parent, None)
+  }
+
+  /**
+    * Returns the built-in type that the module `sym` is the module of, if it is the module of one.
+    *
+    * A built-in type has no declaration, and so no companion module, but the functions of e.g.
+    * `Int32` are in a module of the root that is named after it. Such a module is found by its
+    * name: that of a type on [[PrimitiveOrder]], as it is printed, e.g. `String`.
+    */
+  private def builtinTypeOf(sym: Symbol.ModuleSym): Option[TypeConstructor] = sym.ns match {
+    case name :: Nil => PrimitiveOrder.find(tc => Pretty.tycon(tc).plain == name)
+    case _ => None
   }
 
   /**
@@ -526,10 +546,11 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterContents(mod: Module, origin: Origin): Module = mod match {
-    case Module(sym, doc, parent, submodules, traits, effects, enums, structs, typeAliases, defs) =>
+    case Module(sym, doc, instances, parent, submodules, traits, effects, enums, structs, typeAliases, defs) =>
       Module(
         sym,
         doc,
+        instances,
         parent,
         submodules.map(m => filterContents(m, origin)),
         traits.filter(c => c.decl.mod.isPublic && isFrom(origin, c.decl.sym.loc)).map(c => filterTrait(c)),
@@ -644,7 +665,7 @@ object HtmlDocumentor {
       * Recursively walks the module tree removing empty modules.
       */
     def visitMod(mod: Module): Option[Module] = mod match {
-      case Module(sym, doc, parent, submodules, traits, effects, enums, structs, typeAliases, defs) =>
+      case Module(sym, doc, instances, parent, submodules, traits, effects, enums, structs, typeAliases, defs) =>
         val filteredSubMods = submodules.flatMap(visitMod)
 
         val isEmpty =
@@ -661,6 +682,7 @@ object HtmlDocumentor {
           Module(
             sym,
             doc,
+            instances,
             parent,
             filteredSubMods,
             traits,
@@ -677,6 +699,7 @@ object HtmlDocumentor {
       .getOrElse(Module(
         mod.sym,
         mod.doc,
+        Nil,
         None,
         Nil,
         Nil,
@@ -692,7 +715,7 @@ object HtmlDocumentor {
     * Get the given module tree, but with all companion modules paired to their respective items.
     */
   private def pairModules(mod: Module): Module = mod match {
-    case Module(sym, doc, parent, submodules, traits, effects, enums, structs, typeAliases, defs) =>
+    case Module(sym, doc, instances, parent, submodules, traits, effects, enums, structs, typeAliases, defs) =>
 
       val visitedSubmodules = submodules.map(pairModules)
 
@@ -725,6 +748,7 @@ object HtmlDocumentor {
       Module(
         sym,
         doc,
+        instances,
         parent,
         filteredSubmodules,
         pairedTraits,
@@ -799,6 +823,7 @@ object HtmlDocumentor {
     docBreadcrumbs(mod.parent, mod.name)
     sb.append(s"<h1>${esc(mod.name)}</h1>")
     modDoc(mod.doc)
+    docModuleInstances(mod.instances)
     docSummarySection("Modules", sortedSubModules, (m: Module) => m.doc)
     docSummarySection("Traits", sortedTraits, (t: Trait) => t.decl.doc)
     docSummarySection("Effects", sortedEffs, (e: Effect) => e.decl.doc)
@@ -1714,6 +1739,27 @@ object HtmlDocumentor {
   }
 
   /**
+    * Documents the given `instances` of the built-in type that a module is the module of, see
+    * [[builtinTypeOf]], by their traits, see [[docInstanceTraits]].
+    *
+    * A module has no declaration to head a box, so the instances are a box of their own, which
+    * sets them as they are set on the page of an enum or a struct.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `instances` is empty, nothing will be generated.
+    */
+  private def docModuleInstances(instances: List[TypedAst.Instance])(implicit sb: StringBuilder): Unit = {
+    if (instances.isEmpty) {
+      return
+    }
+
+    sb.append("<div class='box' id='main-box'>")
+    docInstanceTraits(instances)
+    sb.append("</div>")
+  }
+
+  /**
     * Documents the type `tpe` of an instance, see [[docType]]. A type headed by an enum or a struct
     * has the qualified name as its title, since two types of different modules may share a name,
     * e.g. `Chain.ViewLeft` and `Nec.ViewLeft`.
@@ -2182,9 +2228,13 @@ object HtmlDocumentor {
 
   /**
     * A representation of a module that's easier to work with while generating documentation.
+    *
+    * The `instances` are those of the built-in type that the module is the module of, e.g. of
+    * `Int32` for the module `Int32`. Every other module has none.
     */
   case class Module(sym: Symbol.ModuleSym,
                     doc: Doc,
+                    instances: List[TypedAst.Instance],
                     parent: Option[Symbol.ModuleSym],
                     submodules: List[Module],
                     traits: List[Trait],
