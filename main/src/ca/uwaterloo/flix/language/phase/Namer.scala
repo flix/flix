@@ -188,7 +188,7 @@ object Namer {
     case decl: DesugaredAst.Declaration.Trait => visitTrait(decl, ns0)
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
-    case decl: DesugaredAst.Declaration.Val => throw InternalCompilerException("val declarations are not yet supported past desugaring", decl.loc)
+    case decl: DesugaredAst.Declaration.Val => visitVal(decl, ns0)
     case decl: DesugaredAst.Declaration.Enum => visitEnum(decl, ns0)
     case decl: DesugaredAst.Declaration.Struct => visitStruct(decl, ns0)
     case decl: DesugaredAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
@@ -307,6 +307,9 @@ object Namer {
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.Def(sym, _, _, _) =>
+      tryAddToTable(table0, sym.namespace, sym.name, decl)
+
+    case NamedAst.Declaration.Val(sym, _, _, _, _, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, cases, _) =>
@@ -841,6 +844,30 @@ object Namer {
       val sym = Symbol.mkDefnSym(ns0, ident, id)
       val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts)
       NamedAst.Declaration.Def(sym, spec, e, loc)
+  }
+
+  /**
+    * Performs naming on the given val declaration `decl0`.
+    */
+  private def visitVal(decl0: DesugaredAst.Declaration.Val, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Val = decl0 match {
+    case DesugaredAst.Declaration.Val(doc, ann, mod0, ident, tpe, exp, loc) =>
+      if (isReservedName(ident.name)) {
+        sctx.errors.add(NameError.IllegalReservedName(ident))
+      }
+
+      // A val must be monomorphic: its declared type may not contain an unbound type variable.
+      // (Unlike `visitDef`, we do not call `getImplicitTypeParamsFromTypes` here: a val has
+      // no type parameters to bind such a variable.)
+      for (tvar <- freeTypeVars(tpe)) {
+        sctx.errors.add(NameError.IllegalPolymorphicVal(ident.name, tvar.name, tvar.loc))
+      }
+
+      val mod = visitModifiers(mod0, ns0)
+      val t = visitType(tpe)
+      val e = visitExp(exp)(RegionScope.Top, sctx, flix)
+
+      val sym = Symbol.mkValSym(ns0, ident)
+      NamedAst.Declaration.Val(sym, doc, ann, mod, t, e, loc)
   }
 
   /**
@@ -1806,6 +1833,7 @@ object Namer {
     case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.Sig(sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Def(sym, _, _, _) => sym.loc
+    case NamedAst.Declaration.Val(sym, _, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.StructField(_, _, sym, _, _) => sym.loc

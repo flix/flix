@@ -403,4 +403,31 @@ object NameError {
          |""".stripMargin
     }
   }
+
+  /**
+    * An error raised to indicate that a val's declared type has an unexpected polymorphic type variable.
+    *
+    * A `val` must be monomorphic: unlike a `def`, it has no type parameters that
+    * could bind such a variable.
+    *
+    * @param name the name of the val.
+    * @param tvar the name of the offending type variable.
+    * @param loc  the location of the offending type variable.
+    */
+  case class IllegalPolymorphicVal(name: String, tvar: String, loc: SourceLocation) extends NameError {
+    def code: ErrorCode = ErrorCode.E5991
+
+    def summary: String = s"Polymorphic val: '$name' has an unexpected polymorphic type variable '$tvar'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Polymorphic val: '${red(name)}' has an unexpected polymorphic type variable '${red(tvar)}'.
+         |
+         |${highlight(loc, "unexpected polymorphic type variable", fmt)}
+         |
+         |${underline("Explanation:")} A val must have a monomorphic type. Unlike a function,
+         |a val has no type parameters, so a type variable in its declared type cannot be bound.
+         |""".stripMargin
+    }
+  }
 }

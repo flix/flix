@@ -385,6 +385,8 @@ object Resolver {
       resolveInstance(inst, scp0, ns0)
     case defn@NamedAst.Declaration.Def(_, _, _, _) =>
       Some(resolveDef(defn, None, scp0)(ns0, taenv, sctx, root, flix))
+    case NamedAst.Declaration.Val(sym, _, _, _, _, _, _) =>
+      throw InternalCompilerException("val declarations are not yet supported past naming", sym.loc)
     case enum0@NamedAst.Declaration.Enum(_, _, _, _, _, _, _, _) =>
       Some(resolveEnum(enum0, scp0, taenv, ns0, root))
     case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _) =>
@@ -3556,6 +3558,7 @@ object Resolver {
     case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym
     case NamedAst.Declaration.Sig(sym, _, _, _) => sym
     case NamedAst.Declaration.Def(sym, _, _, _) => sym
+    case NamedAst.Declaration.Val(sym, _, _, _, _, _, _) => sym
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym
     case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) => sym
     case NamedAst.Declaration.StructField(_, _, sym, _, _) => sym
@@ -3575,6 +3578,7 @@ object Resolver {
     */
   private def infallableLookupSym(sym: Symbol, root: NamedAst.Root): List[NamedAst.Declaration] = sym match {
     case sym: Symbol.DefnSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
+    case sym: Symbol.ValSym => throw InternalCompilerException("val declarations are not yet supported past naming", sym.loc)
     case sym: Symbol.EnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.StructSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.RestrictableEnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
