@@ -52,10 +52,10 @@ object SymbolSet {
   def ambiguous(s1: SymbolSet, s2: SymbolSet): SymbolSet = {
     val s3 = s1 ++ s2
     SymbolSet(
-      s3.enums.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
-      s3.structs.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
-      s3.traits.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
-      s3.effects.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
+      s3.enums.filter(sym1 => s3.enums.exists(sym2 => isAmbiguous(sym1, sym2))),
+      s3.structs.filter(sym1 => s3.structs.exists(sym2 => isAmbiguous(sym1, sym2))),
+      s3.traits.filter(sym1 => s3.traits.exists(sym2 => isAmbiguous(sym1, sym2))),
+      s3.effects.filter(sym1 => s3.effects.exists(sym2 => isAmbiguous(sym1, sym2))),
     )
   }
 
