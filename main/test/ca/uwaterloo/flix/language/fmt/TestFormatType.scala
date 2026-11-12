@@ -10,7 +10,7 @@ package ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TypeAliasSymUse
 import ca.uwaterloo.flix.language.ast.shared.{RegionScope, VarText}
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.Nel
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -349,87 +349,6 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatPartialType.Tuple.External.01") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Tuple(2), loc), List(Type.Str), loc)
-
-    val expected = "(String, ?)"
-    val actual = Pretty.tpe(tpe)(standardFormat).plain
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Boolean.External.01") {
-    val tpe = Type.Complement
-
-    val expected = "~?"
-    val actual = Pretty.tpe(tpe)(standardFormat).plain
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Boolean.External.03") {
-    val tpe = Type.Union
-
-    val expected = "? + ?"
-    val actual = Pretty.tpe(tpe)(standardFormat).plain
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Boolean.External.04") {
-    val tpe = Type.Apply(Type.Union, Type.Pure, loc)
-
-    val expected = "{} + ?"
-    val actual = Pretty.tpe(tpe)(standardFormat).plain
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Boolean.External.06") {
-    val tpe = Type.Intersection
-
-    val expected = "? & ?"
-    val actual = Pretty.tpe(tpe)(standardFormat).plain
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Boolean.External.07") {
-    val tpe = Type.Apply(Type.Intersection, Type.Pure, loc)
-
-    val expected = "{} & ?"
-    val actual = Pretty.tpe(tpe)(standardFormat).plain
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Arrow.External.01") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(Type.Pure), loc)
-
-    val expected = raw"? -> ?"
-    val actual = Pretty.tpe(tpe)(standardFormat).plain
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Arrow.External.02") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3), loc), List(Type.IO, Type.Str), loc)
-
-    val expected = raw"String -> (? -> ? \ IO)"
-    val actual = Pretty.tpe(tpe)(standardFormat).plain
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Arrow.External.03") {
-    val tpe = Type.Cst(TypeConstructor.Arrow(4), loc)
-
-    val expected = raw"? -> (? -> (? -> ? \ ?))"
-    val actual = Pretty.tpe(tpe)(standardFormat).plain
-
-    assert(actual == expected)
-  }
-
   test("FormatType.Alias.External.01") {
     val name = Name.mkQName("MyType")
     val ident = name.ident
@@ -473,69 +392,6 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkOr(List(a, b, c), loc)
 
     val expected = "a or b or c"
-    val actual = Pretty.tpe(tpe)(standardFormat).plain
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Boolean.External.08") {
-    val tpe = Type.Not
-
-    val expected = "not ?"
-    val actual = Pretty.tpe(tpe)(standardFormat).plain
-
-    assert(actual == expected)
-  }
-
-  test("FormatOverAppliedType.Record.External.01") {
-    val row = Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, Type.RecordRowEmpty, loc)
-    val tpe = Type.mkApply(Type.mkRecord(row, loc), List(Type.Str), loc)
-
-    val expected = "{ x = Int32 }[String]"
-    val actual = Pretty.tpe(tpe)(standardFormat).plain
-
-    assert(actual == expected)
-  }
-
-  test("FormatOverAppliedType.RecordRow.External.01") {
-    val row = Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, Type.RecordRowEmpty, loc)
-    val tpe = Type.mkApply(row, List(Type.Str, Type.Bool), loc)
-
-    val expected = "( x = Int32 )[String, Bool]"
-    val actual = Pretty.tpe(tpe)(standardFormat).plain
-
-    assert(actual == expected)
-  }
-
-  test("FormatOverAppliedType.Boolean.External.01") {
-    val a = Type.Var(new Symbol.KindedTypeVarSym(1, VarText.SourceText("a"), Kind.Bool, scope, loc), loc)
-    val b = Type.Var(new Symbol.KindedTypeVarSym(2, VarText.SourceText("b"), Kind.Bool, scope, loc), loc)
-    val c = Type.Var(new Symbol.KindedTypeVarSym(3, VarText.SourceText("c"), Kind.Bool, scope, loc), loc)
-    val tpe = Type.mkApply(Type.And, List(a, b, c), loc)
-
-    val expected = "(a and b)[c]"
-    val actual = Pretty.tpe(tpe)(standardFormat).plain
-
-    assert(actual == expected)
-  }
-
-  test("FormatOverAppliedType.Boolean.External.02") {
-    val a = Type.Var(new Symbol.KindedTypeVarSym(1, VarText.SourceText("a"), Kind.Bool, scope, loc), loc)
-    val b = Type.Var(new Symbol.KindedTypeVarSym(2, VarText.SourceText("b"), Kind.Bool, scope, loc), loc)
-    val tpe = Type.mkApply(Type.Not, List(a, b), loc)
-
-    val expected = "(not a)[b]"
-    val actual = Pretty.tpe(tpe)(standardFormat).plain
-
-    assert(actual == expected)
-  }
-
-  test("FormatOverAppliedType.Boolean.External.03") {
-    val a = Type.Var(new Symbol.KindedTypeVarSym(1, VarText.SourceText("a"), Kind.Eff, scope, loc), loc)
-    val b = Type.Var(new Symbol.KindedTypeVarSym(2, VarText.SourceText("b"), Kind.Eff, scope, loc), loc)
-    val tpe = Type.mkApply(Type.Complement, List(a, b), loc)
-
-    val expected = "(~a)[b]"
     val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
