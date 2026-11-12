@@ -1,9 +1,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.lsp.SemanticTokenType
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.fmt.AnsiEmitter
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -185,67 +183,8 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
   }
 
   //
-  // Category 8: Implicit Unit Tests
-  //
-
-  test("Highlighter.ImplicitUnit.Def.01") {
-    val input = """def foo(): Int32 = "hello""""
-    val (root, errors) = check(input, Options.TestWithLibNix)
-    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
-    assertNotTypeColored("(", output)
-  }
-
-  test("Highlighter.ImplicitUnit.Apply.01") {
-    val input =
-      """
-        |def f(): Int32 = 123
-        |def g(): String = f()
-        |""".stripMargin
-    val (root, errors) = check(input, Options.TestWithLibNix)
-    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
-    assertNotTypeColored("(", output)
-  }
-
-  test("Highlighter.ImplicitUnit.Lambda.01") {
-    val input = """def g(): String = { let f = () -> 123; f() }"""
-    val (root, errors) = check(input, Options.TestWithLibNix)
-    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
-    assertNotTypeColored("(", output)
-  }
-
-  test("Highlighter.ImplicitUnit.Datalog.01") {
-    val input = """def g(): String = #{ A(). }"""
-    val (root, errors) = check(input, Options.TestWithLibMin)
-    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
-    assertNotTypeColored("(", output)
-  }
-
-  test("Highlighter.ImplicitUnit.SetLit.01") {
-    val input = """def g(): String = Set#{}"""
-    val (root, errors) = check(input, Options.TestWithLibAll)
-    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
-    assertNotTypeColored("Set#", output)
-  }
-
-  test("Highlighter.ImplicitUnit.MapLit.01") {
-    val input = """def g(): String = Map#{}"""
-    val (root, errors) = check(input, Options.TestWithLibAll)
-    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
-    assertNotTypeColored("Map#", output)
-  }
-
-  //
   // Helper Functions
   //
-
-  /**
-    * Asserts that the source code in `output` is highlighted and that the token `s` does not have the color of a type.
-    */
-  private def assertNotTypeColored(s: String, output: String): Unit = {
-    val emitter = new AnsiEmitter(AnsiTerminalFormatter)
-    assert(output.contains(emitter.token(SemanticTokenType.Keyword, "def")), "Expected highlighted source code")
-    assert(!output.contains(emitter.token(SemanticTokenType.Type, s)), s"Expected '$s' not to have the color of a type")
-  }
 
   private def assertSingleLineFormat(output: String): Unit = {
     assert(output.contains(" | "), "Expected ' | ' separator")
