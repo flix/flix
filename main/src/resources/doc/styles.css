@@ -680,6 +680,13 @@ main > section > h2 {
 .decl > code {
     flex: 1;
 }
+/* The head of a signature and each of its clauses is a box of its own, so a signature that is too
+   long for one line breaks before a clause, and inside a box only if the box alone is too long.
+   A clause also has the class `with` or `where`, so that the two can be laid out differently. */
+.decl > code > .head,
+.decl > code > .clause {
+    display: inline-block;
+}
 .decl > * {
     height: fit-content;
 }

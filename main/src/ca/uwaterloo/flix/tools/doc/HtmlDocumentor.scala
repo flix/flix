@@ -1577,14 +1577,36 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docSpec(sym: Symbol with QualifiedSym, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit links: Links, sb: StringBuilder): Unit = {
+    val specLinks = links.except(sym)
+    val sc = spec.declaredScheme
     docAnnotations(spec.ann)
     sb.append("<div class='decl'>")
     sb.append(s"<code>")
-    docFmt(Pretty.spec(sym, spec))(links.except(sym), sb)
+    sb.append("<span class='head'>")
+    docFmt(Pretty.specHead(sym, spec))(specLinks, sb)
+    sb.append("</span>")
+    docClause("with", Pretty.withClause(sc.tconstrs))(specLinks, sb)
+    docClause("where", Pretty.whereClause(sc.econstrs))(specLinks, sb)
     sb.append("</code>")
     docActions(linkId, loc)
     sb.append("</div>")
     docDoc(spec.doc)
+  }
+
+  /**
+    * Documents the given `with` or `where` clause `clause` of a declaration, if there is one, after
+    * a space.
+    *
+    * The clause is an element of its own, with the class `clause` and the class `cls` that tells
+    * which clause it is: `with` or `where`. The stylesheet decides, per clause, where a declaration
+    * that is too long for one line breaks.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docClause(cls: String, clause: Option[Fmt])(implicit links: Links, sb: StringBuilder): Unit = clause.foreach { c =>
+    sb.append(s" <span class='clause $cls'>")
+    docFmt(c)
+    sb.append("</span>")
   }
 
   /**
@@ -1729,7 +1751,7 @@ object HtmlDocumentor {
     * If `tconsts` is empty, nothing will be generated.
     */
   private def docTraitConstraints(tconsts: List[TraitConstraint])(implicit links: Links, sb: StringBuilder): Unit = {
-    docFmt(Pretty.constraints(tconsts.sortBy(_.loc), Nil))
+    docClause("with", Pretty.withClause(tconsts.sortBy(_.loc)))
   }
 
   /**
@@ -1754,7 +1776,7 @@ object HtmlDocumentor {
       return
     }
 
-    sb.append("<span> <span class='kw'>with</span> ")
+    sb.append(" <span class='clause with'><span class='kw'>with</span> ")
     docList(derives.traits.sortBy(_.loc)) { t =>
       docTraitName(t.sym)
     }
