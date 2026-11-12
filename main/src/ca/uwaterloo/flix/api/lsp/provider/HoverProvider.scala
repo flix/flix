@@ -70,7 +70,7 @@ object HoverProvider {
          |${Pretty.spec(defDecl.sym, defDecl.spec).plain}
          |```
          |
-         |${FormatDoc.asMarkDown(defDecl.spec.doc)}
+         |${defDecl.spec.doc.text}
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(loc)
@@ -84,7 +84,7 @@ object HoverProvider {
          |${Pretty.spec(sigDecl.sym, sigDecl.spec).plain}
          |```
          |
-         |${FormatDoc.asMarkDown(sigDecl.spec.doc)}
+         |${sigDecl.spec.doc.text}
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(loc)
@@ -98,7 +98,7 @@ object HoverProvider {
          |${Pretty.spec(opDecl.sym, opDecl.spec).plain}
          |```
          |
-         |${FormatDoc.asMarkDown(opDecl.spec.doc)}
+         |${opDecl.spec.doc.text}
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(loc)
