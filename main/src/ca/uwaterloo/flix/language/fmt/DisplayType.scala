@@ -772,8 +772,9 @@ object DisplayType {
   }
 
   /**
-    * Returns the union of the given `tpes`, simplified: a pure member and a repeated member are
-    * dropped, and the rest keep their order. A union with the universe as a member is the universe.
+    * Returns the union of the given `tpes`, simplified: a pure member, a repeated member and a
+    * member that lies inside the others are dropped, and the rest keep their order. A union with
+    * the universe as a member is the universe.
     *
     * Only the union is simplified. A member that is an intersection, a difference or a complement
     * is kept as it is.
@@ -785,13 +786,28 @@ object DisplayType {
     } else if (tpes.contains(Univ)) {
       Univ
     } else {
-      tpes.filterNot(_ == Pure).distinct match {
+      val distinct = tpes.filterNot(_ == Pure).distinct
+      distinct.filterNot(tpe => liesInside(tpe, distinct.filterNot(_ == tpe))) match {
         case Nil => Pure
         case tpe :: Nil => tpe
         case members => Plus(members)
       }
     }
   }
+
+  /**
+    * Returns `true` if `tpe` lies inside the union of the given `members`, by what it is built
+    * from: `ef & A` and `ef - A` lie inside `ef`, and `ef1 + ef2` lies inside a union that has both.
+    *
+    * It is `false` when the two would have to be compared by what they hold.
+    */
+  private def liesInside(tpe: DisplayType, members: List[DisplayType]): Boolean =
+    members.contains(tpe) || (tpe match {
+      case Plus(tpes) => tpes.forall(liesInside(_, members))
+      case Intersection(tpes) => tpes.exists(liesInside(_, members))
+      case Difference(base :: _) => liesInside(base, members)
+      case _ => false
+    })
 
   /**
     * Returns the operands of the intersection `tpe`, where an operand that is itself an intersection
