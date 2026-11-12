@@ -411,6 +411,9 @@ object Kinder {
       case ResolvedAst.Expr.Var(sym, loc) =>
         KindedAst.Expr.Var(sym, loc)
 
+      case ResolvedAst.Expr.Val(_, loc) =>
+        throw InternalCompilerException("val expressions are not yet supported past resolution", loc)
+
       case ResolvedAst.Expr.Hole(sym, env, loc) =>
         KindedAst.Expr.Hole(sym, env, loc)
 
