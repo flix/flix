@@ -1720,7 +1720,7 @@ object HtmlDocumentor {
     * Document the name of the given trait symbol, creating a link to the trait's documentation.
     */
   private def docTraitName(sym: Symbol.TraitSym)(implicit sb: StringBuilder): Unit = {
-    sb.append(s"<a class='ty' href='${escUrl(traitFileName(sym))}' title='trait ${esc(traitName(sym))}'>")
+    sb.append(s"<a class='tr' href='${escUrl(traitFileName(sym))}' title='trait ${esc(traitName(sym))}'>")
     sb.append(esc(sym.name))
     sb.append("</a>")
   }
@@ -1991,12 +1991,13 @@ object HtmlDocumentor {
 
   /**
     * Documents the given printed syntax `f`: a link per declaration that has a page or an anchor,
-    * see [[Links]], and a class per token, see [[docClass]].
+    * see [[Links]], a class per token, see [[docClass]], and a class per part with a role, see
+    * [[docSpanClass]].
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docFmt(f: Fmt)(implicit links: Links, sb: StringBuilder): Unit = {
-    sb.append(f.html(links.link, docClass))
+    sb.append(f.html(links.link, docClass, docSpanClass))
   }
 
   /**
@@ -2006,6 +2007,13 @@ object HtmlDocumentor {
   private def docClass(tpe: SemanticTokenType): Option[String] = tpe match {
     case SemanticTokenType.EnumMember => Some("case-tag")
     case _ => HtmlHighlighter.cssClass(tpe)
+  }
+
+  /**
+    * Returns the CSS class of a part of printed syntax with the role `role`, if it has one.
+    */
+  private def docSpanClass(role: Fmt.Role): Option[String] = role match {
+    case Fmt.Role.Kind => Some("kind")
   }
 
   /**

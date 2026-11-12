@@ -9,7 +9,7 @@ package ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
 import ca.uwaterloo.flix.language.ast.shared.{Constant, EqualityConstraint, QualifiedSym, RegionScope, TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.fmt.Fmt.{SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
+import ca.uwaterloo.flix.language.fmt.Fmt.{Role, Span, SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.TypeSimplifier
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -342,8 +342,15 @@ object Pretty {
 
   /**
     * Returns the given kind `k` as a tree, e.g. `Type -> Eff`.
+    *
+    * The kind is one [[Fmt.Span]], so that an emitter can tell it from a type.
     */
-  def kind(k: Kind): Fmt = k match {
+  def kind(k: Kind): Fmt = Span(Role.Kind, kindBody(k))
+
+  /**
+    * Returns the given kind `k` as a tree, without the span around it.
+    */
+  private def kindBody(k: Kind): Fmt = k match {
     case Kind.Wild => text("???")
     case Kind.WildCaseSet => ty("CaseSet") ++ text("[???]")
     case Kind.Star => ty("Type")
@@ -355,8 +362,8 @@ object Pretty {
     case Kind.Jvm => ty("Jvm")
     case Kind.CaseSet(sym) => ty("CaseSet") ++ text("[") ++ SymUse(sym, SemanticTokenType.Enum, sym.name) ++ text("]")
     // parenthesize the left because `->` is right-associative
-    case Kind.Arrow(k1: Kind.Arrow, k2) => parens(kind(k1)) ++ text(" ") ++ op("->") ++ text(" ") ++ kind(k2)
-    case Kind.Arrow(k1, k2) => kind(k1) ++ text(" ") ++ op("->") ++ text(" ") ++ kind(k2)
+    case Kind.Arrow(k1: Kind.Arrow, k2) => parens(kindBody(k1)) ++ text(" ") ++ op("->") ++ text(" ") ++ kindBody(k2)
+    case Kind.Arrow(k1, k2) => kindBody(k1) ++ text(" ") ++ op("->") ++ text(" ") ++ kindBody(k2)
     case Kind.Error => ty("Error")
   }
 

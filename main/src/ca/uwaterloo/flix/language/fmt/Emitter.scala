@@ -37,6 +37,11 @@ trait Emitter[A] {
     */
   def concat(parts: List[A]): A
 
+  /**
+    * A part with a role, see [[Fmt.Span]]. Its `body` is already emitted.
+    */
+  def span(role: Fmt.Role, body: A): A
+
 }
 
 /**
@@ -52,6 +57,8 @@ object PlainEmitter extends Emitter[String] {
 
   def concat(parts: List[String]): String = parts.mkString
 
+  def span(role: Fmt.Role, body: String): String = body
+
 }
 
 /**
@@ -59,10 +66,11 @@ object PlainEmitter extends Emitter[String] {
   *
   * `link` gives the URL of the page or anchor that documents a symbol, or `None` if there is none,
   * in which case the name is a colored token like any other rather than a dead link. `cssClass`
-  * gives the class of a kind of token, or `None` if it is not styled. The emitter knows neither:
+  * gives the class of a kind of token, or `None` if it is not styled. `spanClass` gives the class
+  * of a part with a role, or `None` if it is not set apart. The emitter knows none of the three:
   * its caller knows which pages are written and which stylesheet they load.
   */
-class HtmlEmitter(link: Symbol => Option[String], cssClass: SemanticTokenType => Option[String]) extends Emitter[String] {
+class HtmlEmitter(link: Symbol => Option[String], cssClass: SemanticTokenType => Option[String], spanClass: Fmt.Role => Option[String]) extends Emitter[String] {
 
   def text(s: String): String = HtmlEmitter.escape(s)
 
@@ -82,6 +90,11 @@ class HtmlEmitter(link: Symbol => Option[String], cssClass: SemanticTokenType =>
   }
 
   def concat(parts: List[String]): String = parts.mkString
+
+  def span(role: Fmt.Role, body: String): String = spanClass(role) match {
+    case Some(cls) => s"<span class='$cls'>$body</span>"
+    case None => body
+  }
 
 }
 
@@ -121,5 +134,7 @@ object TokenEmitter extends Emitter[List[(SemanticTokenType, String)]] {
   def symUse(sym: Symbol, kind: SemanticTokenType, s: String): List[(SemanticTokenType, String)] = List((kind, s))
 
   def concat(parts: List[List[(SemanticTokenType, String)]]): List[(SemanticTokenType, String)] = parts.flatten
+
+  def span(role: Fmt.Role, body: List[(SemanticTokenType, String)]): List[(SemanticTokenType, String)] = body
 
 }
