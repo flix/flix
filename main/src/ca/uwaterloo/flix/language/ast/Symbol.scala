@@ -184,7 +184,7 @@ object Symbol {
   }
 
   /**
-    * Returns the val (field) symbol for the given name `ident` in the given namespace `ns`.
+    * Returns the val symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkValSym(ns: NName, ident: Ident): ValSym = {
     new ValSym(ns.parts, ident.name, ident.loc)
@@ -477,7 +477,7 @@ object Symbol {
   }
 
   /**
-    * Val (Field) Symbol.
+    * Val Symbol.
     */
   final class ValSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Locatable with Symbol with QualifiedSym {
 

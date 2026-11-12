@@ -847,11 +847,7 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given val (field) declaration `decl0`.
-    *
-    * Unlike a def, a val is not implicitly polymorphic: its declared type must not
-    * contain any free type variable. If it does, we raise [[NameError.IllegalPolymorphicField]]
-    * for each offending type variable and continue, producing a best-effort AST node.
+    * Performs naming on the given val declaration `decl0`.
     */
   private def visitVal(decl0: DesugaredAst.Declaration.Val, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Val = decl0 match {
     case DesugaredAst.Declaration.Val(doc, ann, mod0, ident, tpe, exp, loc) =>
@@ -859,11 +855,11 @@ object Namer {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
 
-      // A field must be monomorphic: its declared type may not contain a free type variable.
+      // A val must be monomorphic: its declared type may not contain an unbound type variable.
       // (Unlike `visitDef`, we do not call `getImplicitTypeParamsFromTypes` here: a val has
       // no type parameters to bind such a variable.)
       for (tvar <- freeTypeVars(tpe)) {
-        sctx.errors.add(NameError.IllegalPolymorphicField(ident.name, tvar.name, tvar.loc))
+        sctx.errors.add(NameError.IllegalPolymorphicVal(ident.name, tvar.name, tvar.loc))
       }
 
       val mod = visitModifiers(mod0, ns0)
