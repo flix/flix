@@ -8,10 +8,10 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
+import ca.uwaterloo.flix.language.ast.shared.{SymbolSet, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.Pretty
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, Pretty}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -151,6 +151,10 @@ object RedundancyError {
     */
   case class RedundantTraitConstraint(entailingTconstr: TraitConstraint, redundantTconstr: TraitConstraint, loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7394
+
+    def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(entailingTconstr), SymbolSet.symbolsOf(redundantTconstr))
+
+    private implicit def opts: FormatOptions = FormatOptions.Default.copy(qualify = amb)
 
     def summary: String = "Redundant trait constraint."
 

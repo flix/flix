@@ -225,11 +225,17 @@ object Pretty {
   }
 
   /**
+    * Returns the given trait symbol `sym` as a tree, e.g. `Order`.
+    */
+  def traitSym(sym: Symbol.TraitSym)(implicit o: FormatOptions): RichText =
+    SymUse(sym, SemanticTokenType.Interface, qualify(sym))
+
+  /**
     * Returns the given trait constraint `tc` as a tree, e.g. `Order[a]`.
     */
   def traitConstraint(tc: TraitConstraint)(implicit o: FormatOptions): RichText = tc match {
     case TraitConstraint(head, arg, _) =>
-      SymUse(head.sym, SemanticTokenType.Interface, qualify(head.sym)) ++ text("[") ++ tpe(arg) ++ text("]")
+      traitSym(head.sym) ++ text("[") ++ tpe(arg) ++ text("]")
   }
 
   /**
