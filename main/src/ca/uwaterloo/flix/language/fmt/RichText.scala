@@ -7,7 +7,7 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Symbol, TypeConstructor}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -19,9 +19,10 @@ import ca.uwaterloo.flix.util.Formatter
   * without being printed twice.
   *
   * Every name that stands for a declaration keeps its [[Symbol]]: in a [[RichText.SymDecl]] where the
-  * declaration is made, and in a [[RichText.SymUse]] everywhere else. Every other colored atom carries
-  * the [[SemanticTokenType]] the LSP assigns to the same syntax in a [[RichText.Token]]. Punctuation is
-  * [[RichText.Text]] and is never styled.
+  * declaration is made, and in a [[RichText.SymUse]] everywhere else. A built-in type has no
+  * declaration, and keeps its [[TypeConstructor]] in a [[RichText.Builtin]]. Every other colored atom
+  * carries the [[SemanticTokenType]] the LSP assigns to the same syntax in a [[RichText.Token]].
+  * Punctuation is [[RichText.Text]] and is never styled.
   */
 sealed trait RichText {
 
@@ -44,12 +45,13 @@ sealed trait RichText {
   /**
     * Renders this tree as HTML.
     *
-    * A [[RichText.SymUse]] whose symbol `link` resolves becomes an anchor to that URL; every other
-    * colored atom, a [[RichText.SymDecl]] included, becomes a span with the class `cssClass` gives its
-    * kind, or plain text if it gives none. The text is escaped.
+    * A [[RichText.SymUse]] whose symbol `link` resolves becomes an anchor to that URL, and so does a
+    * [[RichText.Builtin]] whose type constructor `builtinLink` resolves; every other colored atom, a
+    * [[RichText.SymDecl]] included, becomes a span with the class `cssClass` gives its kind, or plain
+    * text if it gives none. The text is escaped.
     */
-  def html(link: Symbol => Option[String], cssClass: SemanticTokenType => Option[String]): String =
-    RichText.render(this, new HtmlEmitter(link, cssClass))
+  def html(link: Symbol => Option[String], builtinLink: TypeConstructor => Option[String], cssClass: SemanticTokenType => Option[String]): String =
+    RichText.render(this, new HtmlEmitter(link, builtinLink, cssClass))
 
   /**
     * Returns the colored atoms of this tree in order, without the punctuation between them.
@@ -66,10 +68,18 @@ object RichText {
   case class Text(s: String) extends RichText
 
   /**
-    * A colored atom that stands for no declaration: a keyword, an operator, a primitive type, a
-    * type variable.
+    * A colored atom that stands for no declaration: a keyword, an operator, a kind, a type
+    * variable.
     */
   case class Token(kind: SemanticTokenType, s: String) extends RichText
+
+  /**
+    * A built-in type that a program can name, e.g. `Int32`, `String`, `Array`. It stands for no
+    * declaration, so it has no symbol, but it is known by its type constructor `tc`, and can be
+    * linked to the page that documents it. `s` is the text as printed, e.g. `String` for
+    * `TypeConstructor.Str`. It is colored like a type.
+    */
+  case class Builtin(tc: TypeConstructor, s: String) extends RichText
 
   /**
     * The declaration of a symbol: the name of a declaration where it is declared, e.g. `sort` in
@@ -109,7 +119,7 @@ object RichText {
   def op(s: String): RichText = Token(SemanticTokenType.Operator, s)
 
   /**
-    * Returns the given built-in type, e.g. `Int32`, `Array`, or kind.
+    * Returns the given type that is no [[Builtin]], e.g. `Tuple2`, a Java class, or the given kind.
     */
   def ty(s: String): RichText = Token(SemanticTokenType.Type, s)
 
@@ -149,6 +159,7 @@ object RichText {
   def render[A](f: RichText, e: Emitter[A]): A = f match {
     case Text(s) => e.text(s)
     case Token(kind, s) => e.token(kind, s)
+    case Builtin(tc, s) => e.builtin(tc, s)
     case SymDecl(sym, kind, s) => e.symDecl(sym, kind, s)
     case SymUse(sym, kind, s) => e.symUse(sym, kind, s)
     case Concat(parts) => e.concat(parts.map(render(_, e)))
