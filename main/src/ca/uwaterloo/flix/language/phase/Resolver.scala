@@ -97,6 +97,7 @@ object Resolver {
       traits,
       table.instances,
       table.defs,
+      table.vals,
       table.enums,
       table.structs,
       table.restrictableEnums,
@@ -127,6 +128,7 @@ object Resolver {
     case trt: ResolvedAst.Declaration.Trait => SymbolTable.empty.addTrait(trt)
     case inst: ResolvedAst.Declaration.Instance => SymbolTable.empty.addInstance(inst)
     case defn: ResolvedAst.Declaration.Def => SymbolTable.empty.addDef(defn)
+    case v: ResolvedAst.Declaration.Val => SymbolTable.empty.addVal(v)
     case enum0: ResolvedAst.Declaration.Enum => SymbolTable.empty.addEnum(enum0)
     case struct: ResolvedAst.Declaration.Struct => SymbolTable.empty.addStruct(struct)
     case enum0: ResolvedAst.Declaration.RestrictableEnum => SymbolTable.empty.addRestrictableEnum(enum0)
@@ -385,8 +387,8 @@ object Resolver {
       resolveInstance(inst, scp0, ns0)
     case defn@NamedAst.Declaration.Def(_, _, _, _) =>
       Some(resolveDef(defn, None, scp0)(ns0, taenv, sctx, root, flix))
-    case NamedAst.Declaration.Val(sym, _, _, _, _, _, _) =>
-      throw InternalCompilerException("val declarations are not yet supported past naming", sym.loc)
+    case v@NamedAst.Declaration.Val(_, _, _, _, _, _, _) =>
+      Some(resolveVal(v, scp0)(ns0, taenv, sctx, root, flix))
     case enum0@NamedAst.Declaration.Enum(_, _, _, _, _, _, _, _) =>
       Some(resolveEnum(enum0, scp0, taenv, ns0, root))
     case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _) =>
@@ -553,6 +555,16 @@ object Resolver {
         val exp = resolveExp(exp0, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix)
         ResolvedAst.Declaration.Def(sym, spec, exp, loc)
       }
+  }
+
+  /**
+    * Performs name resolution on the given val `d0` in the given namespace `ns0`.
+    */
+  private def resolveVal(d0: NamedAst.Declaration.Val, scp0: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Declaration.Val = d0 match {
+    case NamedAst.Declaration.Val(sym, doc, ann, mod, tpe0, exp0, loc) =>
+      val tpe = resolveType(tpe0, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
+      val exp = resolveExp(exp0, scp0)(RegionScope.Top, ns0, taenv, sctx, root, flix)
+      ResolvedAst.Declaration.Val(sym, doc, ann, mod, tpe, exp, loc)
   }
 
   /**
@@ -3578,7 +3590,7 @@ object Resolver {
     */
   private def infallableLookupSym(sym: Symbol, root: NamedAst.Root): List[NamedAst.Declaration] = sym match {
     case sym: Symbol.DefnSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
-    case sym: Symbol.ValSym => throw InternalCompilerException("val declarations are not yet supported past naming", sym.loc)
+    case sym: Symbol.ValSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.EnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.StructSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.RestrictableEnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
@@ -3864,6 +3876,7 @@ object Resolver {
                                  traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait],
                                  instances: ListMap[Symbol.TraitSym, ResolvedAst.Declaration.Instance],
                                  defs: Map[Symbol.DefnSym, ResolvedAst.Declaration.Def],
+                                 vals: Map[Symbol.ValSym, ResolvedAst.Declaration.Val],
                                  enums: Map[Symbol.EnumSym, ResolvedAst.Declaration.Enum],
                                  structs: Map[Symbol.StructSym, ResolvedAst.Declaration.Struct],
                                  structFields: Map[Symbol.StructFieldSym, ResolvedAst.Declaration.StructField],
@@ -3875,6 +3888,8 @@ object Resolver {
     def addTrait(trt: ResolvedAst.Declaration.Trait): SymbolTable = copy(traits = traits + (trt.sym -> trt))
 
     def addDef(defn: ResolvedAst.Declaration.Def): SymbolTable = copy(defs = defs + (defn.sym -> defn))
+
+    def addVal(v: ResolvedAst.Declaration.Val): SymbolTable = copy(vals = vals + (v.sym -> v))
 
     def addEnum(enum0: ResolvedAst.Declaration.Enum): SymbolTable = copy(enums = enums + (enum0.sym -> enum0))
 
@@ -3949,6 +3964,7 @@ object Resolver {
         traits = this.traits ++ that.traits,
         instances = this.instances ++ that.instances,
         defs = this.defs ++ that.defs,
+        vals = this.vals ++ that.vals,
         enums = that.enums.foldLeft(this.enums) {
           case (acc, (newSym, enum0)) => acc.updatedWith(newSym)(resilientMergeEnums(enum0, _))
         },
@@ -3964,7 +3980,7 @@ object Resolver {
   }
 
   private object SymbolTable {
-    val empty: SymbolTable = SymbolTable(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
+    val empty: SymbolTable = SymbolTable(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
 
     /**
       * Traverses `xs`, gathering the symbols from each element by applying the function `f`.

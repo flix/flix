@@ -1920,6 +1920,12 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
+  test("UndefinedType.07") {
+    val input = "val x: Foo = 42"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
 
   test("CyclicTraitHierarchy.01") {
     val input = "trait A[a] with A[a]"

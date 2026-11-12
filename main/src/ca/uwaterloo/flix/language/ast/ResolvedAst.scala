@@ -17,12 +17,13 @@ import java.lang.constant.ClassDesc
 
 object ResolvedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, List.empty, None, Map.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, List.empty, None, Map.empty, Map.empty)
 
   case class Root(modules: Map[Symbol.ModuleSym, Declaration.Mod],
                   traits: Map[Symbol.TraitSym, Declaration.Trait],
                   instances: ListMap[Symbol.TraitSym, Declaration.Instance],
                   defs: Map[Symbol.DefnSym, Declaration.Def],
+                  vals: Map[Symbol.ValSym, Declaration.Val],
                   enums: Map[Symbol.EnumSym, Declaration.Enum],
                   structs: Map[Symbol.StructSym, Declaration.Struct],
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, Declaration.RestrictableEnum],
@@ -48,6 +49,8 @@ object ResolvedAst {
     case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr], loc: SourceLocation) extends Declaration
 
     case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr, loc: SourceLocation) extends Declaration
+
+    case class Val(sym: Symbol.ValSym, doc: Doc, ann: Annotations, mod: Modifiers, tpe: UnkindedType, exp: Expr, loc: SourceLocation) extends Declaration
 
     case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
 
