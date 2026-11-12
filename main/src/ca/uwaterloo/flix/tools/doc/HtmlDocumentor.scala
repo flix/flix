@@ -922,6 +922,10 @@ object HtmlDocumentor {
     docSection("Signatures", sortedSigs, docSignature)
     docSection("Trait Definitions", sortedTraitDefs, docSignature)
 
+    docSummarySection("Traits", sortedTraits, (t: Trait) => t.decl.doc)
+    docSummarySection("Effects", sortedEffs, (e: Effect) => e.decl.doc)
+    docSummarySection("Enums", sortedEnums, (e: Enum) => e.decl.doc)
+    docSummarySection("Structs", sortedStructs, (s: Struct) => s.decl.doc)
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Module Definitions", sortedModuleDefs, docDef)
 
@@ -1020,6 +1024,10 @@ object HtmlDocumentor {
 
     docSection("Operations", sortedOps, docOp)
 
+    docSummarySection("Traits", sortedTraits, (t: Trait) => t.decl.doc)
+    docSummarySection("Effects", sortedEffs, (e: Effect) => e.decl.doc)
+    docSummarySection("Enums", sortedEnums, (e: Enum) => e.decl.doc)
+    docSummarySection("Structs", sortedStructs, (s: Struct) => s.decl.doc)
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Definitions", sortedModuleDefs, docDef)
 
@@ -1111,6 +1119,10 @@ object HtmlDocumentor {
     docInstanceTraits(enm.instances)
     sb.append("</div>")
 
+    docSummarySection("Traits", sortedTraits, (t: Trait) => t.decl.doc)
+    docSummarySection("Effects", sortedEffs, (e: Effect) => e.decl.doc)
+    docSummarySection("Enums", sortedEnums, (e: Enum) => e.decl.doc)
+    docSummarySection("Structs", sortedStructs, (s: Struct) => s.decl.doc)
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Definitions", sortedModuleDefs, docDef)
 
@@ -1201,6 +1213,10 @@ object HtmlDocumentor {
     docInstanceTraits(struct.instances)
     sb.append("</div>")
 
+    docSummarySection("Traits", sortedTraits, (t: Trait) => t.decl.doc)
+    docSummarySection("Effects", sortedEffs, (e: Effect) => e.decl.doc)
+    docSummarySection("Enums", sortedEnums, (e: Enum) => e.decl.doc)
+    docSummarySection("Structs", sortedStructs, (s: Struct) => s.decl.doc)
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Definitions", sortedModuleDefs, docDef)
 
