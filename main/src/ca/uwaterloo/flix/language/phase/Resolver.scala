@@ -841,6 +841,7 @@ object Resolver {
         case ResolvedQName.Op(op) => visitOp(op, loc)
         case ResolvedQName.LocalDef(sym, fparams) => visitLocalDef(sym, fparams.length, loc)
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
+        case ResolvedQName.Val(vald) => ResolvedAst.Expr.Val(ValSymUse(vald.sym, loc), loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = false, loc)
         case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
@@ -854,6 +855,7 @@ object Resolver {
         case ResolvedQName.Op(op) => visitOp(op, loc)
         case ResolvedQName.LocalDef(sym, fparams) => visitLocalDef(sym, fparams.length, loc)
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
+        case ResolvedQName.Val(vald) => ResolvedAst.Expr.Val(ValSymUse(vald.sym, loc), loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = true, loc)
         case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
@@ -937,6 +939,7 @@ object Resolver {
         case ResolvedQName.Op(op) => visitApplyOp(op, exps, scp0, innerLoc, outerLoc)
         case ResolvedQName.LocalDef(sym, fparams) => visitApplyLocalDef(sym, fparams.length, exps, scp0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApplyClo(app, scp0)
+        case ResolvedQName.Val(_) => visitApplyClo(app, scp0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, scp0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, scp0, innerLoc, outerLoc)
         case ResolvedQName.Error(m) => visitApplyError(m, exps, scp0, outerLoc)
@@ -949,6 +952,7 @@ object Resolver {
         case ResolvedQName.Op(op) => visitApplyOp(op, exps, scp0, innerLoc, outerLoc)
         case ResolvedQName.LocalDef(sym, fparams) => visitApplyLocalDef(sym, fparams.length, exps, scp0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApplyClo(app, scp0)
+        case ResolvedQName.Val(_) => visitApplyClo(app, scp0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, scp0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, scp0, innerLoc, outerLoc)
         case ResolvedQName.Error(error) => ResolvedAst.Expr.Error(error)
@@ -2310,6 +2314,7 @@ object Resolver {
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Case) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.RestrictableCase) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Op) => decl
+      case decl@Resolution.Declaration(_: NamedAst.Declaration.Val) => decl
       case decl@Resolution.Var(_) => decl
       case decl@Resolution.LocalDef(_, _, _) => decl
     } match {
@@ -2342,6 +2347,9 @@ object Resolver {
       // TODO NS-REFACTOR check accessibility
       case Resolution.Declaration(caze: NamedAst.Declaration.RestrictableCase) :: Nil =>
         ResolvedQName.RestrictableTag(caze)
+      case Resolution.Declaration(vald: NamedAst.Declaration.Val) :: _ =>
+        checkPathAccessibility(vald.sym.namespace, ns0, qname.loc)
+        ResolvedQName.Val(vald)
       // TODO NS-REFACTOR check accessibility
       case Resolution.LocalDef(_, sym, fparams) :: _ => ResolvedQName.LocalDef(sym, fparams)
       case Resolution.Var(sym) :: _ => ResolvedQName.Var(sym)
@@ -3839,6 +3847,8 @@ object Resolver {
     case class Op(op: NamedAst.Declaration.Op) extends ResolvedQName
 
     case class RestrictableTag(caze: NamedAst.Declaration.RestrictableCase) extends ResolvedQName
+
+    case class Val(vald: NamedAst.Declaration.Val) extends ResolvedQName
 
     case class Error(e: ResolutionError.UndefinedName) extends ResolvedQName
   }
