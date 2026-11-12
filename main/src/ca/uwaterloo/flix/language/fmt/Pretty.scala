@@ -7,7 +7,7 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
-import ca.uwaterloo.flix.language.ast.shared.{Constant, EqualityConstraint, QualifiedSym, RegionScope, TraitConstraint, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, EqualityConstraint, QualifiedSym, RegionScope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.RichText.{SymDecl, SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
@@ -77,38 +77,9 @@ object Pretty {
   }
 
   /**
-    * Returns the given type variable `sym` as a tree.
+    * Returns the given type variable `sym` as a tree, written by its name in the options.
     */
-  def typeVar(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): RichText = tparam(varName(sym))
-
-  /**
-    * Returns the name of the given type variable `sym`: its source text under
-    * [[FormatOptions.VarName.NameBased]] when it has one, and otherwise its id with a prefix for its
-    * kind, e.g. `t12`, `e3`, `r7`.
-    */
-  private def varName(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): String = {
-    val idBased: String = sym.kind match {
-      case Kind.Wild => "_" + sym.id.toString
-      case Kind.WildCaseSet => "_c" + sym.id.toString
-      case Kind.Star => "t" + sym.id
-      case Kind.Eff => "e" + sym.id
-      case Kind.Bool => "b" + sym.id
-      case Kind.RecordRow => "r" + sym.id
-      case Kind.SchemaRow => "s" + sym.id
-      case Kind.Predicate => "'" + sym.id.toString
-      case Kind.Jvm => "j" + sym.id.toString
-      case Kind.CaseSet(_) => "c" + sym.id.toString
-      case Kind.Arrow(_, _) => "'" + sym.id.toString
-      case Kind.Error => "err" + sym.id.toString
-    }
-    o.varNames match {
-      case FormatOptions.VarName.IdBased => idBased
-      case FormatOptions.VarName.NameBased => sym.text match {
-        case VarText.Absent => idBased
-        case VarText.SourceText(s) => s
-      }
-    }
-  }
+  def typeVar(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): RichText = tparam(o.varNames.nameOf(sym))
 
   /**
     * Returns the given type view `d` as a tree.
