@@ -217,15 +217,9 @@ object HtmlDocumentor {
     * A symbol without documentation, e.g. a private declaration or one of another origin, resolves
     * to nothing, so that its name is written as a colored token rather than as a dead link.
     */
-  private class Links(documented: Set[Symbol], self: Option[Symbol] = None) {
+  private class Links(documented: Set[Symbol]) {
 
-    /**
-      * Returns these links without one to `sym`: the declaration being documented does not link to
-      * itself.
-      */
-    def except(sym: Symbol): Links = new Links(documented, Some(sym))
-
-    def link(sym: Symbol): Option[String] = if (!documented.contains(sym) || self.contains(sym)) None else sym match {
+    def link(sym: Symbol): Option[String] = if (!documented.contains(sym)) None else sym match {
       case s: Symbol.TraitSym => Some(escUrl(traitFileName(s)))
       case s: Symbol.EffSym => Some(escUrl(effectFileName(s)))
       case s: Symbol.EnumSym => Some(escUrl(enumFileName(s)))
@@ -1530,7 +1524,7 @@ object HtmlDocumentor {
     sb.append(s"<div class='box' id='ta-${esc(ta.sym.name)}'>")
     sb.append("<div class='decl'>")
     sb.append("<code>")
-    docFmt(Pretty.typeAliasDecl(ta))(links.except(ta.sym), sb)
+    docFmt(Pretty.typeAliasDecl(ta))
     sb.append("</code>")
     docActions(Some(s"ta-${ta.sym.name}"), ta.loc)
     sb.append("</div>")
@@ -1576,17 +1570,16 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSpec(sym: Symbol with QualifiedSym, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit links: Links, sb: StringBuilder): Unit = {
-    val specLinks = links.except(sym)
+  private def docSpec(sym: QualifiedSym, spec: TypedAst.Spec, loc: SourceLocation, linkId: Option[String])(implicit links: Links, sb: StringBuilder): Unit = {
     val sc = spec.declaredScheme
     docAnnotations(spec.ann)
     sb.append("<div class='decl'>")
     sb.append(s"<code>")
     sb.append("<span class='head'>")
-    docFmt(Pretty.specHead(sym, spec))(specLinks, sb)
+    docFmt(Pretty.specHead(sym, spec))
     sb.append("</span>")
-    docClause("with", Pretty.withClause(sc.tconstrs))(specLinks, sb)
-    docClause("where", Pretty.whereClause(sc.econstrs))(specLinks, sb)
+    docClause("with", Pretty.withClause(sc.tconstrs))
+    docClause("where", Pretty.whereClause(sc.econstrs))
     sb.append("</code>")
     docActions(linkId, loc)
     sb.append("</div>")
@@ -1796,7 +1789,7 @@ object HtmlDocumentor {
     for (c <- cases.sortBy(_.loc)) {
       sb.append(s"<div class='case' id='case-${esc(c.sym.name)}'>")
       sb.append("<code>")
-      docFmt(Pretty.caseDecl(c))(links.except(c.sym), sb)
+      docFmt(Pretty.caseDecl(c))
       sb.append("</code>")
       docDoc(c.doc)
       sb.append("</div>")
@@ -1823,7 +1816,7 @@ object HtmlDocumentor {
     for (f <- fields.sortBy(_.loc)) {
       sb.append(s"<div class='field' id='field-${esc(f.sym.name)}'>")
       sb.append("<code>")
-      docFmt(Pretty.structField(f))(links.except(f.sym), sb)
+      docFmt(Pretty.structField(f))
       sb.append("</code>")
       docDoc(f.doc)
       sb.append("</div>")
