@@ -442,7 +442,7 @@ object DisplayType {
             // Case 1: No args. Fill everything with a hole.
             case Nil =>
               val lastArrow: DisplayType = PolyArrow(Hole, Hole, Hole)
-              // NB: safe to subtract 2 since arity is always at least 2
+              // NB: an arity below 2 gives no further holes
               List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow.apply)
 
             // Case 2: Too many args. Apply the type to the rest.
@@ -450,13 +450,13 @@ object DisplayType {
 
             // Case 3: Pure function.
             case eff :: tpes if eff == Pure =>
-              // NB: safe to reduce because arity is always at least 2
-              tpes.padTo(arity, Hole).reduceRight(PureArrow.apply)
+              // NB: safe to reduce because there are at least 2 types
+              arrowTypes(tpes, arity).reduceRight(PureArrow.apply)
 
             // Case 4: Impure function.
             case eff :: tpes =>
-              // NB: safe to take last 2 because arity is always at least 2
-              val allTpes = tpes.padTo(arity, Hole)
+              // NB: safe to take last 2 because there are at least 2 types
+              val allTpes = arrowTypes(tpes, arity)
               val List(lastArg, ret) = allTpes.takeRight(2)
               val lastArrow: DisplayType = PolyArrow(lastArg, eff, ret)
               allTpes.dropRight(2).foldRight(lastArrow)(PureArrow.apply)
@@ -467,7 +467,7 @@ object DisplayType {
             // Case 1: Too many args. Apply the type to the rest.
             case args if args.lengthIs > arity => overApplied(t, arity)
             // Case 2: Fill the missing args with holes.
-            case args => args.padTo(arity, Hole).reduceRight(ArrowWithoutEffect.apply)
+            case args => arrowTypes(args, arity).reduceRight(ArrowWithoutEffect.apply)
           }
 
         case TypeConstructor.RecordRowEmpty => mkApply(RecordRow(Nil), t.typeArguments.map(visit))
@@ -746,6 +746,19 @@ object DisplayType {
     }
 
     visit(t0)
+  }
+
+  /**
+    * Returns the parameter types and the result type of an arrow of the given `arity` that is applied
+    * to the types `tpes`, with a hole for each type that is missing.
+    *
+    * An arrow is written with a parameter and a result, so there are at least two types. An arrow of
+    * an arity below 2, which no source program has, gets a hole for the parameter, and for the result,
+    * that it has no place for, e.g. `? -> a`.
+    */
+  private def arrowTypes(tpes: List[DisplayType], arity: Int): List[DisplayType] = {
+    val padded = tpes.padTo(arity, Hole)
+    List.fill(2 - padded.length)(Hole) ::: padded
   }
 
   /**
