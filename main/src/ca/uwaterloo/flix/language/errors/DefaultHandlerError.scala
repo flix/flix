@@ -6,7 +6,6 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
@@ -27,7 +26,7 @@ object DefaultHandlerError {
     *
     * For example: `pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E[t]) + IO`.
     */
-  private def expectedSignature(handlerSym: Symbol.DefnSym, handledEff: Type)(implicit flix: Flix): String =
+  private def expectedSignature(handlerSym: Symbol.DefnSym, handledEff: Type): String =
     s"pub def ${handlerSym.name}(f: Unit -> a \\ ef): a \\ (ef - ${Pretty.tpe(handledEff).plain}) + IO"
 
   /**
@@ -63,7 +62,7 @@ object DefaultHandlerError {
     * @param arity      the number of arguments of the default handler.
     * @param loc        the location of the first extraneous argument.
     */
-  case class IllegalArity(handlerSym: Symbol.DefnSym, handledEff: Type, arity: Int, loc: SourceLocation)(implicit flix: Flix) extends DefaultHandlerError {
+  case class IllegalArity(handlerSym: Symbol.DefnSym, handledEff: Type, arity: Int, loc: SourceLocation) extends DefaultHandlerError {
     def code: ErrorCode = ErrorCode.E0838
 
     def summary: String = s"Illegal default handler: '${handlerSym.name}' must take exactly one argument, but takes $arity."
@@ -89,7 +88,7 @@ object DefaultHandlerError {
     * @param handledEff the handled effect applied to its type parameters, e.g. `E[t]`.
     * @param loc        the location of the constraint.
     */
-  case class IllegalConstraint(handlerSym: Symbol.DefnSym, handledEff: Type, loc: SourceLocation)(implicit flix: Flix) extends DefaultHandlerError {
+  case class IllegalConstraint(handlerSym: Symbol.DefnSym, handledEff: Type, loc: SourceLocation) extends DefaultHandlerError {
     def code: ErrorCode = ErrorCode.E0871
 
     def summary: String = s"Illegal default handler: '${handlerSym.name}' must not have trait or equality constraints."
@@ -118,7 +117,7 @@ object DefaultHandlerError {
     * @param actual     the declared effect.
     * @param loc        the location of the declared effect.
     */
-  case class IllegalEffect(handlerSym: Symbol.DefnSym, handledEff: Type, expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix) extends DefaultHandlerError {
+  case class IllegalEffect(handlerSym: Symbol.DefnSym, handledEff: Type, expected: Type, actual: Type, loc: SourceLocation) extends DefaultHandlerError {
     def code: ErrorCode = ErrorCode.E0864
 
     def summary: String = s"Illegal default handler effect: expected '${Pretty.tpe(expected).plain}', found '${Pretty.tpe(actual).plain}'."
@@ -146,7 +145,7 @@ object DefaultHandlerError {
     * @param actual     the handled effect as it occurs in the declared effect, e.g. `E[Int32]`.
     * @param loc        the location of that occurrence.
     */
-  case class IllegalEffectArguments(handlerSym: Symbol.DefnSym, handledEff: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix) extends DefaultHandlerError {
+  case class IllegalEffectArguments(handlerSym: Symbol.DefnSym, handledEff: Type, actual: Type, loc: SourceLocation) extends DefaultHandlerError {
     def code: ErrorCode = ErrorCode.E0863
 
     def summary: String = s"Illegal default handler effect: expected '${Pretty.tpe(handledEff).plain}', found '${Pretty.tpe(actual).plain}'."
@@ -174,7 +173,7 @@ object DefaultHandlerError {
     * @param actual     the declared type of the parameter.
     * @param loc        the location of the declared type of the parameter.
     */
-  case class IllegalParameterType(handlerSym: Symbol.DefnSym, handledEff: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix) extends DefaultHandlerError {
+  case class IllegalParameterType(handlerSym: Symbol.DefnSym, handledEff: Type, actual: Type, loc: SourceLocation) extends DefaultHandlerError {
     def code: ErrorCode = ErrorCode.E0839
 
     def summary: String = s"Illegal default handler parameter: expected 'Unit -> a \\ ef', found '${Pretty.tpe(actual).plain}'."
@@ -203,7 +202,7 @@ object DefaultHandlerError {
     * @param actual     the declared return type.
     * @param loc        the location of the declared return type.
     */
-  case class IllegalReturnType(handlerSym: Symbol.DefnSym, handledEff: Type, expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix) extends DefaultHandlerError {
+  case class IllegalReturnType(handlerSym: Symbol.DefnSym, handledEff: Type, expected: Type, actual: Type, loc: SourceLocation) extends DefaultHandlerError {
     def code: ErrorCode = ErrorCode.E0851
 
     def summary: String = s"Illegal default handler return type: expected '${Pretty.tpe(expected).plain}', found '${Pretty.tpe(actual).plain}'."
@@ -230,7 +229,7 @@ object DefaultHandlerError {
     * @param actual     the declared effect of the default handler.
     * @param loc        the location of the declared effect.
     */
-  case class MissingHandledEffect(handlerSym: Symbol.DefnSym, handledEff: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix) extends DefaultHandlerError {
+  case class MissingHandledEffect(handlerSym: Symbol.DefnSym, handledEff: Type, actual: Type, loc: SourceLocation) extends DefaultHandlerError {
     def code: ErrorCode = ErrorCode.E0852
 
     def summary: String = s"Illegal default handler: '${handlerSym.name}' does not handle '${Pretty.tpe(handledEff).plain}'."

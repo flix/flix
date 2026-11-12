@@ -217,7 +217,7 @@ object TypeError {
     * @param renv       the rigidity environment.
     * @param loc        the location where the error occurred.
     */
-  case class ExtraLabel(label: Name.Label, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class ExtraLabel(label: Name.Label, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7574
 
     def summary: String = s"Extra label '$label' of type '$labelType'."
@@ -353,7 +353,7 @@ object TypeError {
     * @param tpes       the types of the arguments.
     * @param loc        the location where the error occurred.
     */
-  case class MethodNotFound(methodName: Name.Ident, tpe: Type, tpes: List[Type], loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MethodNotFound(methodName: Name.Ident, tpe: Type, tpes: List[Type], loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6136
 
     def summary: String = s"Method not found: '${methodName.name}' on type '${Pretty.tpe(tpe).plain}'."
@@ -381,7 +381,7 @@ object TypeError {
     * @param renv      the rigidity environment.
     * @param loc       the location where the error occurred.
     */
-  case class MismatchedEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6469
 
     def summary: String = s"Unable to unify the effect formulas '${Pretty.tpe(baseType1, Some(renv)).plain}' and '${Pretty.tpe(baseType2, Some(renv)).plain}'."
@@ -411,7 +411,7 @@ object TypeError {
     * @param loc2      the location of the second occurrence of the label.
     * @param loc       the location where the unification error occurred.
     */
-  case class MismatchedLabelType(label: Name.Label, tpe1: Type, tpe2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedLabelType(label: Name.Label, tpe1: Type, tpe2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7491
 
     def summary: String = s"Mismatched types for label '${label.name}': '${Pretty.tpe(tpe1, Some(renv)).plain}' and '${Pretty.tpe(tpe2, Some(renv)).plain}'."
@@ -499,7 +499,7 @@ object TypeError {
     * @param loc2      the location of the second occurrence of the predicate.
     * @param loc       the location where the unification error occurred.
     */
-  case class MismatchedPredicateTypes(pred: Name.Pred, tpe1: Type, tpe2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedPredicateTypes(pred: Name.Pred, tpe1: Type, tpe2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6710
 
     def summary: String = s"Mismatched types for predicate '${pred.name}': '${Pretty.tpe(tpe1, Some(renv)).plain}' and '${Pretty.tpe(tpe2, Some(renv)).plain}'."
@@ -528,7 +528,7 @@ object TypeError {
     * @param renv      the rigidity environment.
     * @param loc       the location where the error occurred.
     */
-  case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6794
 
     def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(fullType1), SymbolSet.symbolsOf(fullType2))
@@ -564,7 +564,7 @@ object TypeError {
     * @param renv   the rigidity environment.
     * @param loc    the location where the error occurred.
     */
-  case class MismatchedEffectArgument(sym: Symbol.EffSym, ith: Int, tparam: Name.Ident, tpe1: Type, tpe2: Type, eff1: Type, eff2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedEffectArgument(sym: Symbol.EffSym, ith: Int, tparam: Name.Ident, tpe1: Type, tpe2: Type, eff1: Type, eff2: Type, renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6795
 
     def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(eff1), SymbolSet.symbolsOf(eff2))
@@ -600,7 +600,7 @@ object TypeError {
     * @param renv         the rigidity environment.
     * @param loc          the location where the error occurred.
     */
-  case class MismatchedArrowAndNonArrow(arrowType: Type, nonArrowType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedArrowAndNonArrow(arrowType: Type, nonArrowType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6925
 
     def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(fullType1), SymbolSet.symbolsOf(fullType2))
@@ -631,7 +631,7 @@ object TypeError {
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class MissingInstance(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstance(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6805
 
     def summary: String = s"Missing instance: '${trt.name}' for type '${Pretty.tpe(tpe, Some(renv)).plain}'."
@@ -659,7 +659,7 @@ object TypeError {
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class MissingInstanceArrow(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstanceArrow(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6916
 
     def summary: String = s"Missing instance: '${trt.name}' for function type '${Pretty.tpe(tpe, Some(renv)).plain}'."
@@ -682,7 +682,7 @@ object TypeError {
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class MissingInstanceEq(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstanceEq(tpe: Type, renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7027
 
     def summary: String = s"Equality is not defined on '${Pretty.tpe(tpe, Some(renv)).plain}'. Define or derive instance of Eq."
@@ -713,7 +713,7 @@ object TypeError {
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class MissingInstanceOrder(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstanceOrder(tpe: Type, renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7138
 
     def summary: String = s"Order is not defined on '${Pretty.tpe(tpe, Some(renv)).plain}'. Define or derive instance of Order."
@@ -746,7 +746,7 @@ object TypeError {
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class MissingInstanceToString(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstanceToString(tpe: Type, renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7249
 
     def summary: String = s"ToString is not defined for '${Pretty.tpe(tpe, Some(renv)).plain}'. Define or derive instance of ToString."
@@ -778,7 +778,7 @@ object TypeError {
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E8243
 
     def summary: String = s"Missing trait constraint: '$trt' for type '${Pretty.tpe(tpe, Some(renv)).plain}'."
@@ -799,7 +799,7 @@ object TypeError {
     * @param tpe the actual type.
     * @param loc the location where the error occurred.
     */
-  case class NonUnitStatement(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class NonUnitStatement(tpe: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E8354
 
     def summary: String = s"Non-unit statement: has type '${Pretty.tpe(tpe).plain}'."
@@ -832,7 +832,7 @@ object TypeError {
     * @param renv       the rigidity environment.
     * @param loc        the location where the error occurred.
     */
-  case class StaticMethodNotFound(clazz: ClassDesc, methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class StaticMethodNotFound(clazz: ClassDesc, methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6358
 
     def summary: String = s"Static method not found: '${methodName.name}' in class '${ClassDescs.binaryNameOf(clazz)}'."
@@ -880,7 +880,7 @@ object TypeError {
     * @param renv       the rigidity environment.
     * @param loc        the location where the error occurred.
     */
-  case class UndefinedLabel(label: Name.Label, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class UndefinedLabel(label: Name.Label, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7463
 
     def summary: String = s"Missing label: '${label.name}' of type '${Pretty.tpe(labelType, Some(renv)).plain}'."
@@ -909,7 +909,7 @@ object TypeError {
     * @param actual   the actual type.
     * @param loc      the location where the error occurred.
     */
-  case class UnexpectedArg(sym: Symbol, ith: Int, expected: Type, actual: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class UnexpectedArg(sym: Symbol, ith: Int, expected: Type, actual: Type, renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7685
 
     def summary: String = s"Unexpected argument: expected '${Pretty.tpe(expected, Some(renv)).plain}', got '${Pretty.tpe(actual, Some(renv)).plain}'."
@@ -936,7 +936,7 @@ object TypeError {
     * @param renv     the rigidity environment.
     * @param loc      the location of the inferred type.
     */
-  case class UnexpectedType(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class UnexpectedType(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7796
 
     def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(expected), SymbolSet.symbolsOf(inferred))
@@ -1042,7 +1042,7 @@ object TypeError {
   /**
     * Returns the types `tpes` formatted as a comma-separated list.
     */
-  private def formatTypes(tpes: List[Type], renv: Option[RigidityEnv] = None)(implicit flix: Flix): String = {
+  private def formatTypes(tpes: List[Type], renv: Option[RigidityEnv] = None): String = {
     tpes.map(tpe => Pretty.tpe(tpe, renv).plain).mkString(", ")
   }
 

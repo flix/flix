@@ -7,7 +7,6 @@
 
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.provider.completion.{CompletionUtils, ExprContext}
@@ -28,7 +27,7 @@ object LspUtil {
     *
     * So the stack actually contains a path from the leaf node that contains the given position to the root node, with the leaf node at the top of the stack.
     */
-  def getStack(name: SourceName, pos: Position)(implicit root: Root, flix: Flix): List[AnyRef] = {
+  def getStack(name: SourceName, pos: Position)(implicit root: Root): List[AnyRef] = {
     val stack = StackConsumer()
 
     if (pos.character >= 2) {
@@ -45,7 +44,7 @@ object LspUtil {
     * The label includes parameter names and types, return type, and effect (if applicable),
     * formatted in a readable way.
     */
-  def getLabelForSpec(spec: TypedAst.Spec)(implicit flix: Flix): String =
+  def getLabelForSpec(spec: TypedAst.Spec): String =
     (Pretty.fparams(spec.fparams) ++ Fmt.text(": ") ++ Pretty.typeAndEff(spec.retTpe, spec.eff)).plain
 
   /**

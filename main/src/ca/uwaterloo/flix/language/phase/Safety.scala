@@ -551,7 +551,7 @@ object Safety {
     *   - No primitive type can be cast to a reference type and vice-versa.
     *   - No Bool type can be cast to a non-Bool type and vice-versa.
     */
-  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit sctx: SharedContext, flix: Flix): Unit = cast match {
+  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit sctx: SharedContext): Unit = cast match {
     case Expr.UncheckedCast(exp, declaredType, _, _, _, loc) =>
       val from = exp.tpe
       val to = declaredType

@@ -7,7 +7,6 @@
 
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{LspUtil, Position, SignatureHelp, SignatureInformation}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SourceName
@@ -18,7 +17,7 @@ object SignatureHelpProvider {
     * Provides signature help for the given position.
     * We find the nearest application, which is the lowest ApplyDef/ApplySig in the AST that contains the position of the cursor.
     */
-  def provideSignatureHelp(name: SourceName, pos: Position)(implicit root: Root, flix: Flix): Option[SignatureHelp] = {
+  def provideSignatureHelp(name: SourceName, pos: Position)(implicit root: Root): Option[SignatureHelp] = {
     LspUtil.getStack(name, pos).collectFirst {
       case TypedAst.Expr.ApplyDef(defnSymUse, exps, _, _, _, _, _, _) =>
         // The lookup is guaranteed to succeed because otherwise the expression would be replaced by Expr.Error.
@@ -43,7 +42,7 @@ object SignatureHelpProvider {
     * @param pos  the position of the cursor.
     * @return a SignatureHelp object containing the signature information.
     */
-  private def mkSignatureHelp(sym: Symbol, spec: TypedAst.Spec, exps: List[TypedAst.Expr], pos: Position)(implicit flix: Flix): SignatureHelp = {
+  private def mkSignatureHelp(sym: Symbol, spec: TypedAst.Spec, exps: List[TypedAst.Expr], pos: Position): SignatureHelp = {
     // Count the index of the active parameter, which is the first expression that contains the position of the cursor.
     val activeParameter = exps.indexWhere(exp => pos.containedBy(exp.loc))
     val signatureInfo = SignatureInformation.from(sym, spec, activeParameter)

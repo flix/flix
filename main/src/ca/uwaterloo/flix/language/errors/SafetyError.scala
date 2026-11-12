@@ -1,6 +1,5 @@
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
@@ -67,7 +66,7 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCast(from: Type, to: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3796
 
     def summary: String = "Impossible cast: neither type is a subtype of the other."
@@ -94,7 +93,7 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCastFromNonJava(from: Type, to: ClassDesc, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCastFromNonJava(from: Type, to: ClassDesc, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3807
 
     def summary: String = "Impossible cast: cannot cast a Flix type to a Java type."
@@ -120,7 +119,7 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCastFromVar(from: Type.Var, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCastFromVar(from: Type.Var, to: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3918
 
     def summary: String = "Impossible cast: cannot cast from a type variable."
@@ -147,7 +146,7 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCastToNonJava(from: ClassDesc, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCastToNonJava(from: ClassDesc, to: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4029
 
     def summary: String = "Impossible cast: cannot cast a Java type to a Flix type."
@@ -173,7 +172,7 @@ object SafetyError {
     * @param to   the destination type (the variable).
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCastToVar(from: Type, to: Type.Var, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCastToVar(from: Type, to: Type.Var, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4132
 
     def summary: String = "Impossible cast: cannot cast to a type variable."
@@ -199,7 +198,7 @@ object SafetyError {
     * @param eff the illegal effect.
     * @param loc the source location of the method.
     */
-  case class IllegalMethodEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalMethodEffect(eff: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4243
 
     def summary: String = s"Unexpected method effect: '${Pretty.tpe(eff).plain}'."
@@ -245,7 +244,7 @@ object SafetyError {
     *
     * @param loc the location of the object
     */
-  case class IllegalThrowType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalThrowType(tpe: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4465
 
     def summary: String = s"Unexpected throw type: '${Pretty.tpe(tpe).plain}' is not a subclass of Throwable."
@@ -383,7 +382,7 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class ImpossibleUncheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class ImpossibleUncheckedCast(from: Type, to: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5023
 
     def summary: String = "Impossible cast: types are incompatible."

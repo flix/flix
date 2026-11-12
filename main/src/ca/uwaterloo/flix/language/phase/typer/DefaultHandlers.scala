@@ -146,7 +146,7 @@ object DefaultHandlers {
   /**
     * Returns an error if the return type of `spec` is not the type variable `a` of the thunk `Unit -> a \ ef`.
     */
-  private def checkReturnType(handlerSym: Symbol.DefnSym, spec: KindedAst.Spec, handledEff: Type, a: Type.Var)(implicit flix: Flix): List[DefaultHandlerError] = {
+  private def checkReturnType(handlerSym: Symbol.DefnSym, spec: KindedAst.Spec, handledEff: Type, a: Type.Var): List[DefaultHandlerError] = {
     if (Type.eraseAliases(spec.tpe) == a) {
       Nil
     } else {

@@ -302,7 +302,7 @@ object ConstraintSolverInterface {
     *
     * The name of the type parameter is looked up in the declaration of the effect.
     */
-  private def mkMismatchedEffectArgument(sym: Symbol.EffSym, ith: Int, tpe1: Type, tpe2: Type, eff1: Type, eff2: Type, renv: RigidityEnv, root: KindedAst.Root, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+  private def mkMismatchedEffectArgument(sym: Symbol.EffSym, ith: Int, tpe1: Type, tpe2: Type, eff1: Type, eff2: Type, renv: RigidityEnv, root: KindedAst.Root, loc: SourceLocation): TypeError = {
     val tparam = root.effects(sym).tparams(ith - 1).name
     TypeError.MismatchedEffectArgument(sym, ith, tparam, tpe1, tpe2, eff1, eff2, renv, loc)
   }
@@ -310,7 +310,7 @@ object ConstraintSolverInterface {
   /**
     * Create either the MismatchedTypes or MismatchedEffects error based on the kind of the type.
     */
-  private def mkMismatchedTypesOrEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+  private def mkMismatchedTypesOrEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation): TypeError = {
     baseType1.kind match {
       case Kind.Eff =>
         TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, loc)
@@ -346,7 +346,7 @@ object ConstraintSolverInterface {
     *
     * Returns `None` otherwise (e.g. if either type is a variable, which could still unify with a function).
     */
-  private def mkArrowAndNonArrowError(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Option[List[TypeError]] = {
+  private def mkArrowAndNonArrowError(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation): Option[List[TypeError]] = {
     if (isArrowType(baseType1) && isConcreteNonArrowType(baseType2))
       Some(List(TypeError.MismatchedArrowAndNonArrow(baseType1, baseType2, fullType1, fullType2, renv, loc)))
     else if (isArrowType(baseType2) && isConcreteNonArrowType(baseType1))
@@ -390,7 +390,7 @@ object ConstraintSolverInterface {
   /**
     * Creates appropriate errors for the mismatched record types.
     */
-  private def mkErrorsFromRecords(tpe1: Type, tpe2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): List[TypeError] = {
+  private def mkErrorsFromRecords(tpe1: Type, tpe2: Type, renv: RigidityEnv, loc: SourceLocation): List[TypeError] = {
     // TODO: Open records
     (tpe1, tpe2) match {
       case (Type.Var(_, _), _) | (_, Type.Var(_, _)) => List(mkMismatchedTypesOrEffects(tpe1, tpe2, tpe1, tpe2, renv, loc))

@@ -6,7 +6,6 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.PredicateCompletion
 import ca.uwaterloo.flix.api.lsp.{Consumer, Range, Visitor}
@@ -17,7 +16,7 @@ import ca.uwaterloo.flix.language.fmt.Pretty
 
 object PredicateCompleter {
 
-  def getCompletions(name: SourceName, range: Range)(implicit root: Root, flix: Flix): Iterable[PredicateCompletion] = {
+  def getCompletions(name: SourceName, range: Range)(implicit root: Root): Iterable[PredicateCompletion] = {
 
     //
     // Find all predicates together with their type and source location.

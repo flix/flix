@@ -7,7 +7,6 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
@@ -105,7 +104,7 @@ object RedundancyError {
     * @param tpe the type of the expression.
     * @param loc the source location of the cast.
     */
-  case class RedundantCheckedTypeCast(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class RedundantCheckedTypeCast(tpe: Type, loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7178
 
     def summary: String = "Redundant type cast."
@@ -150,7 +149,7 @@ object RedundancyError {
     * @param redundantTconstr the tconstr that is made redundant by the other.
     * @param loc              the location where the error occured.
     */
-  case class RedundantTraitConstraint(entailingTconstr: TraitConstraint, redundantTconstr: TraitConstraint, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class RedundantTraitConstraint(entailingTconstr: TraitConstraint, redundantTconstr: TraitConstraint, loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7394
 
     def summary: String = "Redundant trait constraint."
@@ -179,7 +178,7 @@ object RedundancyError {
     * @param eff the effect of the expression.
     * @param loc the source location of the cast.
     */
-  case class RedundantUncheckedEffectCast(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class RedundantUncheckedEffectCast(eff: Type, loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7407
 
     def summary: String = "Redundant effect cast."
@@ -201,7 +200,7 @@ object RedundancyError {
     * @param tpe the type of the expression.
     * @param loc the source location of the cast.
     */
-  case class RedundantUncheckedTypeCast(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class RedundantUncheckedTypeCast(tpe: Type, loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7420
 
     def summary: String = "Redundant type cast."
@@ -223,7 +222,7 @@ object RedundancyError {
     * @param eff the effect that the block unsafely removes.
     * @param loc the source location of the unsafe block.
     */
-  case class RedundantUnsafe(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class RedundantUnsafe(eff: Type, loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7623
 
     def summary: String = "Redundant unsafe block, the expression is pure."

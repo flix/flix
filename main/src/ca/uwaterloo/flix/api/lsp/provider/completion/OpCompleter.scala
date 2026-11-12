@@ -7,7 +7,6 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.OpCompletion
 import ca.uwaterloo.flix.api.lsp.{Position, Range}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Effect, Mod, Op}
@@ -19,7 +18,7 @@ object OpCompleter {
   /**
     * Returns a List of Completion for Op for UndefinedName.
     */
-  def getCompletions(name: SourceName, pos: Position, qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root, flix: Flix): Iterable[OpCompletion] = {
+  def getCompletions(name: SourceName, pos: Position, qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
     val ectx = ExprContext.getExprContext(name, pos)
     if (qn.namespace.nonEmpty) {
       fullyQualifiedCompletion(qn, range, ap, ectx) ++ partiallyQualifiedCompletions(qn, range, ap, scp, ectx)

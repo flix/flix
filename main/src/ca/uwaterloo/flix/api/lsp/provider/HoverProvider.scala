@@ -6,7 +6,6 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Hover, MarkupContent, MarkupKind, Position, Range, Visitor}
@@ -19,14 +18,14 @@ import ca.uwaterloo.flix.language.phase.unification.SetFormula
 
 object HoverProvider {
 
-  def processHover(name: SourceName, pos: Position)(implicit root: Root, flix: Flix): Option[Hover] = {
+  def processHover(name: SourceName, pos: Position)(implicit root: Root): Option[Hover] = {
     val consumer = StackConsumer()
     Visitor.visitRoot(root, consumer, InsideAcceptor(name, pos))
 
     consumer.getStack.headOption.flatMap(hoverAny)
   }
 
-  private def hoverAny(x: AnyRef)(implicit root: Root, flix: Flix): Option[Hover] = x match {
+  private def hoverAny(x: AnyRef)(implicit root: Root): Option[Hover] = x match {
     case tpe: Type => hoverKind(tpe.kind, tpe.loc)
     case (varSym: Symbol.VarSym, tpe: Type) => hoverType(tpe, varSym.loc)
     case exp: Expr => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc)
@@ -40,7 +39,7 @@ object HoverProvider {
     case _ => None
   }
 
-  private def hoverType(tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Option[Hover] = {
+  private def hoverType(tpe: Type, loc: SourceLocation)(implicit root: Root): Option[Hover] = {
     val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(tpe)(root)
     val markup =
       s"""```flix
@@ -52,7 +51,7 @@ object HoverProvider {
     Some(Hover(contents, range))
   }
 
-  private def hoverTypeAndEff(tpe: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): Option[Hover] = {
+  private def hoverTypeAndEff(tpe: Type, eff: Type, loc: SourceLocation): Option[Hover] = {
     val markup =
       s"""```flix
          |${Pretty.typeAndEff(tpe, eff, simplify = true).plain}
@@ -63,7 +62,7 @@ object HoverProvider {
     Some(Hover(contents, range))
   }
 
-  private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Option[Hover] = {
+  private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): Option[Hover] = {
     val defDecl = root.defs(sym)
     val markup =
       s"""```flix
@@ -77,7 +76,7 @@ object HoverProvider {
     Some(Hover(contents, range))
   }
 
-  private def hoverSig(sym: Symbol.SigSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Option[Hover] = {
+  private def hoverSig(sym: Symbol.SigSym, loc: SourceLocation)(implicit root: Root): Option[Hover] = {
     val sigDecl = root.sigs(sym)
     val markup =
       s"""```flix
@@ -91,7 +90,7 @@ object HoverProvider {
     Some(Hover(contents, range))
   }
 
-  private def hoverOp(sym: Symbol.OpSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Option[Hover] = {
+  private def hoverOp(sym: Symbol.OpSym, loc: SourceLocation)(implicit root: Root): Option[Hover] = {
     val opDecl = root.effects(sym.eff).ops.find(_.sym == sym).get // guaranteed to be present
     val markup =
       s"""```flix
