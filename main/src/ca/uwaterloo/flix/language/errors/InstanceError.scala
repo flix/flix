@@ -7,7 +7,6 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
@@ -31,7 +30,7 @@ object InstanceError {
     * @param sym the trait symbol.
     * @param loc the location where the error occurred.
     */
-  case class ComplexInstance(tpe: Type, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class ComplexInstance(tpe: Type, sym: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E1952
 
     def summary: String = s"Complex type '${Pretty.tpe(tpe).plain}' in instance declaration for trait '${sym.name}'."
@@ -67,7 +66,7 @@ object InstanceError {
     * @param sym  the trait symbol.
     * @param loc  the location where the error occurred.
     */
-  case class DuplicateTypeVar(tvar: Type.Var, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class DuplicateTypeVar(tvar: Type.Var, sym: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2063
 
     def summary: String = s"Duplicate type variable '${Pretty.tpe(tvar).plain}' in instance declaration for trait '${sym.name}'."
@@ -191,7 +190,7 @@ object InstanceError {
     * @param expected the scheme of the signature
     * @param actual   the scheme of the definition
     */
-  case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme)(implicit flix: Flix) extends InstanceError {
+  case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2518
 
     def summary: String = s"Mismatched signature '${sigSym.name}' in instance declaration for trait '${sigSym.trt.name}'."
@@ -217,7 +216,7 @@ object InstanceError {
     * @param superTrait the supertrait that is the source of the constraint.
     * @param loc        the location where the error occurred.
     */
-  case class MissingEqualityConstraint(econstr: EqualityConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class MissingEqualityConstraint(econstr: EqualityConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2629
 
     def summary: String = s"Missing equality constraint '${Pretty.equalityConstraint(econstr).plain}' required by super trait '${superTrait.name}'."
@@ -274,7 +273,7 @@ object InstanceError {
     * @param superTrait the symbol of the super trait.
     * @param loc        the location where the error occurred.
     */
-  case class MissingSuperTraitInstance(tpe: Type, subTrait: Symbol.TraitSym, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class MissingSuperTraitInstance(tpe: Type, subTrait: Symbol.TraitSym, superTrait: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2843
 
     def summary: String = s"Missing instance of super trait '${superTrait.name}' for type '${Pretty.tpe(tpe).plain}'."
@@ -307,7 +306,7 @@ object InstanceError {
     * @param superTrait the supertrait that is the source of the constraint.
     * @param loc        the location where the error occurred.
     */
-  case class MissingTraitConstraint(tconstr: TraitConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class MissingTraitConstraint(tconstr: TraitConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2956
 
     def summary: String = s"Missing trait constraint '${Pretty.traitConstraint(tconstr).plain}' required by super trait '${superTrait.name}'."
@@ -340,7 +339,7 @@ object InstanceError {
     * @param tpe the instance type.
     * @param loc the location where the error occurred.
     */
-  case class OrphanInstance(sym: Symbol.TraitSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class OrphanInstance(sym: Symbol.TraitSym, tpe: Type, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3067
 
     def summary: String = s"Orphan instance of '${sym.name}' for type '${Pretty.tpe(tpe).plain}'."

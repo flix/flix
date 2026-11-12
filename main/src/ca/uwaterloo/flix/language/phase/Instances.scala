@@ -57,7 +57,7 @@ object Instances {
     * * The same namespace as its type.
     * * The type's companion module (e.g. instance in `mod Fs.Size` for enum `Fs.Size`).
     */
-  private def checkOrphan(inst: TypedAst.Instance)(implicit sctx: SharedContext, flix: Flix): Unit = inst match {
+  private def checkOrphan(inst: TypedAst.Instance)(implicit sctx: SharedContext): Unit = inst match {
     case TypedAst.Instance(_, _, _, trt, _, tpe, _, _, _, _, ns, _) =>
       val instNs = ns.idents.map(_.name)
       tpe.typeConstructor match {
@@ -79,7 +79,7 @@ object Instances {
     * * all type variables are unique
     * * all type arguments are variables
     */
-  private def checkSimple(inst: TypedAst.Instance)(implicit sctx: SharedContext, flix: Flix): Boolean = inst match {
+  private def checkSimple(inst: TypedAst.Instance)(implicit sctx: SharedContext): Boolean = inst match {
     case TypedAst.Instance(_, _, _, trt, _, tpe, _, _, _, _, _, _) => tpe match {
       case _: Type.Cst => true
       case _: Type.Var =>

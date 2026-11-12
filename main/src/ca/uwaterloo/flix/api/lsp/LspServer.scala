@@ -355,7 +355,7 @@ object LspServer {
     override def hover(params: HoverParams): CompletableFuture[Hover] = {
       val name = ClientUri.toSourceName(new URI(params.getTextDocument.getUri))
       val position = Position.fromLsp4j(params.getPosition)
-      val hover = HoverProvider.processHover(name, position)(flixLanguageServer.root, flixLanguageServer.project.compiler).map(_.toLsp4j).orNull
+      val hover = HoverProvider.processHover(name, position)(flixLanguageServer.root).map(_.toLsp4j).orNull
       CompletableFuture.completedFuture(hover)
     }
 
@@ -399,7 +399,7 @@ object LspServer {
     override def signatureHelp(params: SignatureHelpParams): CompletableFuture[SignatureHelp] = {
       val name = ClientUri.toSourceName(new URI(params.getTextDocument.getUri))
       val pos = Position.fromLsp4j(params.getPosition)
-      val signatureHelp = SignatureHelpProvider.provideSignatureHelp(name, pos)(flixLanguageServer.root, flixLanguageServer.project.compiler)
+      val signatureHelp = SignatureHelpProvider.provideSignatureHelp(name, pos)(flixLanguageServer.root)
       CompletableFuture.completedFuture(signatureHelp.map(_.toLsp4j).orNull)
     }
 

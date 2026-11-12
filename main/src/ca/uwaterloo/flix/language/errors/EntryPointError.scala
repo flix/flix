@@ -6,7 +6,6 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
@@ -84,7 +83,7 @@ object EntryPointError {
     * @param eff the effect.
     * @param loc the location where the error occurred.
     */
-  case class IllegalEntryPointEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
+  case class IllegalEntryPointEffect(eff: Type, loc: SourceLocation) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E0958
 
     def summary: String = s"Unhandled effect: '${Pretty.tpe(eff).plain}'."
@@ -113,7 +112,7 @@ object EntryPointError {
     * @param tpe the return type.
     * @param loc the location of the return type.
     */
-  case class IllegalEntryPointReturnType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
+  case class IllegalEntryPointReturnType(tpe: Type, loc: SourceLocation) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1403
 
     def summary: String = s"Unexpected return type for entry point: '${Pretty.tpe(tpe).plain}'."

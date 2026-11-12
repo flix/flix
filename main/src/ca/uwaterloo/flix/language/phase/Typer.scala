@@ -425,7 +425,7 @@ object Typer {
   /**
     * Verifies that all the associated types in the spec are resolvable, according to the declared type constraints.
     */
-  private def checkSpecAssocTypes(spec0: KindedAst.Spec, extraTconstrs: List[TraitConstraint], tenv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = spec0 match {
+  private def checkSpecAssocTypes(spec0: KindedAst.Spec, extraTconstrs: List[TraitConstraint], tenv: TraitEnv)(implicit sctx: SharedContext): Unit = spec0 match {
     case KindedAst.Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs) =>
       // get all the associated types in the spec
       val tpes = fparams.toList.map(_.tpe) ::: tpe :: eff.getOrElse(Type.Pure) :: econstrs.flatMap(getTypes)
@@ -442,7 +442,7 @@ object Typer {
   /**
     * Verifies that all the associated types in the instance are resolvable, according to the declared type constraints.
     */
-  private def checkInstAssocTypes(inst: KindedAst.Instance, tenv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = inst match {
+  private def checkInstAssocTypes(inst: KindedAst.Instance, tenv: TraitEnv)(implicit sctx: SharedContext): Unit = inst match {
     case KindedAst.Instance(_, _, _, _, tparams, tpe, tconstrs, econstrs, _, _, _, _) =>
       // get all the associated types in the instance
       val tpes = tpe :: econstrs.flatMap(getTypes)
@@ -491,7 +491,7 @@ object Typer {
   /**
     * Verifies that the associated type is resolvable, according to the declared type constraints.
     */
-  private def checkAssocType(assocType: Type.AssocType, tparams: List[KindedAst.TypeParam], tconstrs: List[TraitConstraint], tenv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = assocType match {
+  private def checkAssocType(assocType: Type.AssocType, tparams: List[KindedAst.TypeParam], tconstrs: List[TraitConstraint], tenv: TraitEnv)(implicit sctx: SharedContext): Unit = assocType match {
     case Type.AssocType(AssocTypeSymUse(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
       val trtSym = assocSym.trt
       val matches = tconstrs.flatMap(withSupers(_, tenv)).exists {

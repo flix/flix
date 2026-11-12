@@ -159,7 +159,7 @@ object EntryPoints {
     *
     * A function can be both main and a test at the same time.
     */
-  private def checkDef(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
+  private def checkDef(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root): Unit = {
     if (TypedAstOps.isMain(defn)) checkMain(defn)
     if (TypedAstOps.isTest(defn)) checkTest(defn)
   }
@@ -170,7 +170,7 @@ object EntryPoints {
     * If the signature is invalid, main is invalidated via the shared context and the errors are
     * reported.
     */
-  private def checkMain(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
+  private def checkMain(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root): Unit = {
     val errs = checkSignature(defn)
     if (errs.nonEmpty) {
       // Invalidate main and add errors.
@@ -184,7 +184,7 @@ object EntryPoints {
     *
     * If the signature is invalid, the errors are reported.
     */
-  private def checkTest(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit =
+  private def checkTest(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root): Unit =
     checkSignature(defn).foreach(sctx.errors.add)
 
   /**
@@ -196,7 +196,7 @@ object EntryPoints {
     *
     * The last three checks only run on functions without type variables.
     */
-  private def checkSignature(defn: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): List[EntryPointError] =
+  private def checkSignature(defn: TypedAst.Def)(implicit root: TypedAst.Root): List[EntryPointError] =
     checkNoTypeVariables(defn) match {
       case Some(err) => List(err)
       case None =>
@@ -254,7 +254,7 @@ object EntryPoints {
     * are responsible for wrapping the call in `println(...)` themselves, so the compiler does not
     * need to special-case ToString here.
     */
-  private def checkUnitReturnType(defn: TypedAst.Def)(implicit flix: Flix): Option[EntryPointError] = {
+  private def checkUnitReturnType(defn: TypedAst.Def): Option[EntryPointError] = {
     val retTpe = defn.spec.retTpe
     if (retTpe == Type.Unit) None
     else Some(EntryPointError.IllegalEntryPointReturnType(retTpe, retTpe.loc))
@@ -268,7 +268,7 @@ object EntryPoints {
     * Otherwise returns `Some(err)`. The error names only the effects that are not
     * in `allowed`, e.g. effect `IO + Ask` against allowed `IO` reports just `Ask`.
     */
-  private def checkEffects(defn: TypedAst.Def, allowed: SortedSet[Symbol.EffSym])(implicit flix: Flix): Option[EntryPointError] = {
+  private def checkEffects(defn: TypedAst.Def, allowed: SortedSet[Symbol.EffSym]): Option[EntryPointError] = {
     val eff = defn.spec.eff
     val residual = residualEffects(eff, allowed)
     if (residual.isEmpty) {

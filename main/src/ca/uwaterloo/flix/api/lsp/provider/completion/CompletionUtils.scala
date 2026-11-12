@@ -22,7 +22,7 @@ object CompletionUtils {
 
   private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams.head.tpe)
 
-  def getLabelForSpec(spec: TypedAst.Spec)(implicit flix: Flix): String =
+  def getLabelForSpec(spec: TypedAst.Spec): String =
     (Pretty.fparams(spec.fparams) ++ Fmt.text(": ") ++ Pretty.typeAndEff(spec.retTpe, spec.eff)).plain
 
   /**
@@ -167,7 +167,7 @@ object CompletionUtils {
     * Format types in the right form to be displayed in the list of completions
     * e.g. "(Int32, String)"
     */
-  def formatTypes(tpes: List[Type])(implicit flix: Flix): String =
+  def formatTypes(tpes: List[Type]): String =
     tpes match {
       case Nil => ""
       case _ => tpes.map(tpe => Pretty.tpe(tpe).plain).mkString("(", ", ", ")")
@@ -190,7 +190,7 @@ object CompletionUtils {
     * Format types in the right form to be inserted as a snippet
     * e.g. "(${1:Int32}, ${2:String})"
     */
-  def formatTypesSnippet(tpes: List[Type])(implicit flix: Flix): String =
+  def formatTypesSnippet(tpes: List[Type]): String =
     tpes match {
       case Nil => ""
       case _ => tpes.zipWithIndex.map {
