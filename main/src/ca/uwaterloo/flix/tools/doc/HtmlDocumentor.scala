@@ -1720,7 +1720,7 @@ object HtmlDocumentor {
     * Document the name of the given trait symbol, creating a link to the trait's documentation.
     */
   private def docTraitName(sym: Symbol.TraitSym)(implicit sb: StringBuilder): Unit = {
-    sb.append(s"<a class='ty' href='${escUrl(traitFileName(sym))}' title='trait ${esc(traitName(sym))}'>")
+    sb.append(s"<a class='tr' href='${escUrl(traitFileName(sym))}' title='trait ${esc(traitName(sym))}'>")
     sb.append(esc(sym.name))
     sb.append("</a>")
   }

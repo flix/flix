@@ -233,13 +233,13 @@ object HtmlHighlighter {
     * A type without a class is displayed as plain text.
     */
   def cssClass(tpe: SemanticTokenType): Option[String] = tpe match {
-    case SemanticTokenType.Class => Some("ty")
+    case SemanticTokenType.Class => Some("tr")
     case SemanticTokenType.Comment => Some("cm")
     case SemanticTokenType.Decorator => Some("an")
     case SemanticTokenType.Effect => Some("ef")
     case SemanticTokenType.Enum => Some("ty")
     case SemanticTokenType.Function => Some("fn")
-    case SemanticTokenType.Interface => Some("ty")
+    case SemanticTokenType.Interface => Some("tr")
     case SemanticTokenType.Keyword => Some("kw")
     case SemanticTokenType.Method => Some("fn")
     case SemanticTokenType.Modifier => Some("kw")
