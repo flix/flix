@@ -79,6 +79,8 @@ class AnsiEmitter(fmt: Formatter) extends Emitter[String] {
     case None => s
   }
 
+  def symDecl(sym: Symbol, kind: SemanticTokenType, s: String): String = token(kind, s)
+
   def symUse(sym: Symbol, kind: SemanticTokenType, s: String): String = token(kind, s)
 
   def concat(parts: List[String]): String = parts.mkString
