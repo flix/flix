@@ -716,11 +716,15 @@ object Weeder2 {
       }
     }
 
-    def unitFormalParameter(loc: SourceLocation): FormalParam = FormalParam(
-      Name.Ident("_unit", SourceLocation.Unknown),
-      Some(Type.Unit(loc)),
-      loc
-    )
+    /**
+      * Returns the implicit unit parameter of a function that is declared without parameters.
+      *
+      * The parameter is not written in the source, so its location is synthetic.
+      */
+    def unitFormalParameter(loc: SourceLocation): FormalParam = {
+      val l = loc.asSynthetic
+      FormalParam(Name.Ident("_unit", SourceLocation.Unknown), Some(Type.Unit(l)), l)
+    }
 
     def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit sctx: SharedContext): Nel[FormalParam] = {
       tryPick(TreeKind.ParameterList, tree) match {
@@ -1059,7 +1063,7 @@ object Weeder2 {
       }
       args match {
         // Add synthetic unit arguments if there are none
-        case Nil => List(Expr.Cst(Constant.Unit, tree.loc))
+        case Nil => List(Expr.Cst(Constant.Unit, tree.loc.asSynthetic))
         case args => args
       }
     }
@@ -2819,7 +2823,7 @@ object Weeder2 {
       val maybeLatTerm = tryPickLatticeTermExpr(tree)
       rawList match {
         // A() => A(())
-        case Nil => (List(Expr.Cst(Constant.Unit, tree.loc)), maybeLatTerm)
+        case Nil => (List(Expr.Cst(Constant.Unit, tree.loc.asSynthetic)), maybeLatTerm)
         case nonEmpty => (nonEmpty, maybeLatTerm)
       }
     }
