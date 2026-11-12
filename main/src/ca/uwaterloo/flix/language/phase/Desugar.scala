@@ -1310,7 +1310,7 @@ object Desugar {
       // Vector.toSet requires an instance of Order[a]
       // which we do not have for an empty literal
       // so we construct the empty set directly.
-      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0)
+      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0.asSynthetic)
       mkApplyFqn("Set.empty", List(unit), loc0)
     } else {
       desugarCollectionLitToVec("Vector.toSet", exps0, loc0)
@@ -1325,7 +1325,7 @@ object Desugar {
       // Vector.toMap requires an instance of Order[a]
       // which we do not have for an empty literal
       // so we construct the empty map directly.
-      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0)
+      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0.asSynthetic)
       mkApplyFqn("Map.empty", List(unit), loc0)
     } else {
       val es = exps0.map { case (k, v) => WeededAst.Expr.Tuple(List(k, v), k.loc.spanWith(v.loc)) }
