@@ -112,13 +112,18 @@ object HtmlDocumentor {
     FontFamilies.map("family=" + _).mkString("https://fonts.googleapis.com/css2?", "&", "&display=swap")
 
   /**
-    * The built-in types in the order the "Primitives" line of a trait page lists them: the order in
-    * which the language reference presents them, which puts `Int8` before `Int16`, where the
-    * alphabet puts it after `Int64`. A built-in type absent from the list follows the ones on it.
+    * The built-in types that the documentation knows by name, e.g. `Int32` and `String`.
     *
-    * These are also the built-in types that a module can be the module of, see [[builtinTypeOf]].
+    * The list serves two purposes:
+    *   1. Its order is the order of the "Primitives" line of a trait page, see [[primitiveRank]]:
+    *      the order in which the language reference presents the types, which puts `Int8` before
+    *      `Int16`, where the alphabet puts it after `Int64`. A built-in type absent from the list
+    *      follows the ones on it.
+    *   1. Its members are the types that a module can be the module of, see [[builtinTypeOf]]: a
+    *      module of the root that is named after one of them, e.g. the module `Int32`, has the
+    *      instances of that type on its page.
     */
-  private val PrimitiveOrder: List[TypeConstructor] = List(
+  private val BuiltinTypes: List[TypeConstructor] = List(
     TypeConstructor.Unit,
     TypeConstructor.Bool,
     TypeConstructor.Char,
@@ -478,10 +483,11 @@ object HtmlDocumentor {
     *
     * A built-in type has no declaration, and so no companion module, but the functions of e.g.
     * `Int32` are in a module of the root that is named after it. Such a module is found by its
-    * name: that of a type on [[PrimitiveOrder]], as it is printed, e.g. `String`.
+    * name: that of a type on [[BuiltinTypes]], as it is printed, e.g. `String` for
+    * `TypeConstructor.Str`.
     */
   private def builtinTypeOf(sym: Symbol.ModuleSym): Option[TypeConstructor] = sym.ns match {
-    case name :: Nil => PrimitiveOrder.find(tc => Pretty.tycon(tc).plain == name)
+    case name :: Nil => BuiltinTypes.find(tc => Pretty.tycon(tc).plain == name)
     case _ => None
   }
 
@@ -523,12 +529,12 @@ object HtmlDocumentor {
   }
 
   /**
-    * Returns the position of the head of `tpe` on [[PrimitiveOrder]], or the length of that list
+    * Returns the position of the head of `tpe` on [[BuiltinTypes]], or the length of that list
     * if it is not on it, so that such a type sorts after the ones that are.
     */
   private def primitiveRank(tpe: Type): Int = typeHead(tpe) match {
-    case Some(tc) if PrimitiveOrder.contains(tc) => PrimitiveOrder.indexOf(tc)
-    case _ => PrimitiveOrder.length
+    case Some(tc) if BuiltinTypes.contains(tc) => BuiltinTypes.indexOf(tc)
+    case _ => BuiltinTypes.length
   }
 
   /**
@@ -1685,7 +1691,7 @@ object HtmlDocumentor {
     * instances of the trait: one comma-separated line, e.g. `Bool, Char, Int8, Int16, String,
     * Vector[a] and tuples of 2 to 15 elements`.
     *
-    * The types follow [[PrimitiveOrder]]. The tuple instances, one per arity, are summed up in
+    * The types follow [[BuiltinTypes]]. The tuple instances, one per arity, are summed up in
     * words at the end, since fifteen of them, from `(a1, a2)` to `(a1, ..., a15)`, would swamp the
     * line. They are listed as types only if their arities have a gap, which the words could not tell.
     *
