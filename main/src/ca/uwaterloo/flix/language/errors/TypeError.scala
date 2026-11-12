@@ -388,12 +388,12 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unable to unify the effect formulas: '${red(Pretty.tpe(baseType1, Some(renv), simplify = true).plain)}' and '${red(Pretty.tpe(baseType2, Some(renv), simplify = true).plain)}'.
+      s""">> Unable to unify the effect formulas: '${red(Pretty.tpe(baseType1, Some(renv)).plain)}' and '${red(Pretty.tpe(baseType2, Some(renv)).plain)}'.
          |
          |${highlight(loc, "mismatched effect formulas.", fmt)}
          |
          |Type One: ${cyan(Pretty.tpe(fullType1, Some(renv)).plain)}
-         |Type Two: ${magenta(Pretty.tpe(fullType2, Some(renv), simplify = true).plain)}
+         |Type Two: ${magenta(Pretty.tpe(fullType2, Some(renv)).plain)}
          |""".stripMargin
     }
   }
@@ -535,16 +535,16 @@ object TypeError {
 
     private implicit def opts: FormatOptions = FormatOptions.Default.copy(qualify = amb)
 
-    def summary: String = s"Unable to unify the types '${Pretty.tpe(fullType1, Some(renv), simplify = true).plain}' and '${Pretty.tpe(fullType2, Some(renv), simplify = true).plain}'."
+    def summary: String = s"Unable to unify the types '${Pretty.tpe(fullType1, Some(renv)).plain}' and '${Pretty.tpe(fullType2, Some(renv)).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unable to unify the types: '${red(Pretty.tpe(baseType1, Some(renv), simplify = true).plain)}' and '${red(Pretty.tpe(baseType2, Some(renv), simplify = true).plain)}'.
+      s""">> Unable to unify the types: '${red(Pretty.tpe(baseType1, Some(renv)).plain)}' and '${red(Pretty.tpe(baseType2, Some(renv)).plain)}'.
          |
          |${highlight(loc, "mismatched types.", fmt)}
          |
-         |Type One: ${cyan(Pretty.tpe(fullType1, Some(renv), simplify = true).plain)}
-         |Type Two: ${magenta(Pretty.tpe(fullType2, Some(renv), simplify = true).plain)}
+         |Type One: ${cyan(Pretty.tpe(fullType1, Some(renv)).plain)}
+         |Type Two: ${magenta(Pretty.tpe(fullType2, Some(renv)).plain)}
          |""".stripMargin
     }
   }
@@ -607,16 +607,16 @@ object TypeError {
 
     private implicit def opts: FormatOptions = FormatOptions.Default.copy(qualify = amb)
 
-    def summary: String = s"Unable to unify the function type '${Pretty.tpe(arrowType, Some(renv), simplify = true).plain}' with the non-function type '${Pretty.tpe(nonArrowType, Some(renv), simplify = true).plain}'."
+    def summary: String = s"Unable to unify the function type '${Pretty.tpe(arrowType, Some(renv)).plain}' with the non-function type '${Pretty.tpe(nonArrowType, Some(renv)).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unable to unify the ${magenta("function")} type '${red(Pretty.tpe(arrowType, Some(renv), simplify = true).plain)}' with the non-function type '${red(Pretty.tpe(nonArrowType, Some(renv), simplify = true).plain)}'.
+      s""">> Unable to unify the ${magenta("function")} type '${red(Pretty.tpe(arrowType, Some(renv)).plain)}' with the non-function type '${red(Pretty.tpe(nonArrowType, Some(renv)).plain)}'.
          |
          |${highlight(loc, "mismatched types.", fmt)}
          |
-         |Type One: ${cyan(Pretty.tpe(fullType1, Some(renv), simplify = true).plain)}
-         |Type Two: ${magenta(Pretty.tpe(fullType2, Some(renv), simplify = true).plain)}
+         |Type One: ${cyan(Pretty.tpe(fullType1, Some(renv)).plain)}
+         |Type Two: ${magenta(Pretty.tpe(fullType2, Some(renv)).plain)}
          |
          |${underline("Explanation:")} A ${magenta("function")} type can never be equal to a non-function type, regardless of effects.
          |""".stripMargin
