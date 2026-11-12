@@ -19,8 +19,7 @@ import ca.uwaterloo.flix.language.ast.Symbol
   *
   * Every name that stands for a declaration keeps its [[Symbol]] in a [[Fmt.SymUse]], and every
   * other colored atom carries the [[SemanticTokenType]] the LSP assigns to the same syntax in a
-  * [[Fmt.Token]]. Punctuation is [[Fmt.Text]] and is never styled. A part of more than one atom that
-  * an emitter may set apart as a whole, such as a kind, is a [[Fmt.Span]].
+  * [[Fmt.Token]]. Punctuation is [[Fmt.Text]] and is never styled.
   */
 sealed trait Fmt {
 
@@ -39,11 +38,10 @@ sealed trait Fmt {
     *
     * A [[Fmt.SymUse]] whose symbol `link` resolves becomes an anchor to that URL; every other
     * colored atom becomes a span with the class `cssClass` gives its kind, or plain text if it
-    * gives none. A [[Fmt.Span]] becomes a span with the class `spanClass` gives its role, or just
-    * its body if it gives none. The text is escaped.
+    * gives none. The text is escaped.
     */
-  def html(link: Symbol => Option[String], cssClass: SemanticTokenType => Option[String], spanClass: Fmt.Role => Option[String]): String =
-    Fmt.render(this, new HtmlEmitter(link, cssClass, spanClass))
+  def html(link: Symbol => Option[String], cssClass: SemanticTokenType => Option[String]): String =
+    Fmt.render(this, new HtmlEmitter(link, cssClass))
 
   /**
     * Returns the colored atoms of this tree in order, without the punctuation between them.
@@ -75,26 +73,6 @@ object Fmt {
     * Its parts, in order.
     */
   case class Concat(parts: List[Fmt]) extends Fmt
-
-  /**
-    * A part of the syntax that an emitter may set apart as a whole. `role` says what the part is,
-    * e.g. a kind, and `body` is the part itself.
-    */
-  case class Span(role: Role, body: Fmt) extends Fmt
-
-  /**
-    * What a [[Span]] is.
-    */
-  sealed trait Role
-
-  object Role {
-
-    /**
-      * A kind, e.g. `Type -> Eff`.
-      */
-    case object Kind extends Role
-
-  }
 
   /**
     * The empty tree.
@@ -159,7 +137,6 @@ object Fmt {
     case Token(kind, s) => e.token(kind, s)
     case SymUse(sym, kind, s) => e.symUse(sym, kind, s)
     case Concat(parts) => e.concat(parts.map(render(_, e)))
-    case Span(role, body) => e.span(role, render(body, e))
   }
 
 }

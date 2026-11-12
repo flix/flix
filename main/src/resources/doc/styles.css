@@ -35,7 +35,6 @@
     --name-color: light-dark(#b12250, #ff6696);
     --type-color: light-dark(#3061c4, #6699ff);
     --trait-color: light-dark(#0f766e, #4fd1c5);
-    --kind-color: light-dark(#6b6b6b, #999999);
     --effect-color: light-dark(#d4671e, #ff944d);
     --doc-code-color: light-dark(#d63384, #ff66b3);
     --show-hide-color: light-dark(#0d6efd, #68a4fd);
@@ -90,7 +89,6 @@
     --name-color: #8f2f1a;
     --type-color: #1f6a91;
     --trait-color: #0b6652;
-    --kind-color: #625f52;
     --effect-color: #8a5606;
     --doc-code-color: #5a574c;
     --show-hide-color: #1f6a91;
@@ -128,7 +126,6 @@
     --name-color: #e6b673;
     --type-color: #6cb4e4;
     --trait-color: #8abeb7;
-    --kind-color: #8a8ea8;
     --effect-color: #d19af0;
     --doc-code-color: #c5c8c6;
     --show-hide-color: #6cb4e4;
@@ -166,7 +163,6 @@
     --name-color: #ffb454;
     --type-color: #36a3d9;
     --trait-color: #95e6cb;
-    --kind-color: #868794;
     --effect-color: #d2a6ff;
     --doc-code-color: #ffb454;
     --show-hide-color: #0096cf;
@@ -860,11 +856,6 @@ code .annotation {
 }
 code .name {
     color: var(--name-color);
-}
-/* A kind. It is a part of more than one token, so the tokens inside it take its color too. */
-code .kind,
-code .kind .ty {
-    color: var(--kind-color);
 }
 
 /* BEGIN TOKENS */

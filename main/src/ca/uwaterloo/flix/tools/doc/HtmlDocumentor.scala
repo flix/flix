@@ -1991,13 +1991,12 @@ object HtmlDocumentor {
 
   /**
     * Documents the given printed syntax `f`: a link per declaration that has a page or an anchor,
-    * see [[Links]], a class per token, see [[docClass]], and a class per part with a role, see
-    * [[docSpanClass]].
+    * see [[Links]], and a class per token, see [[docClass]].
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docFmt(f: Fmt)(implicit links: Links, sb: StringBuilder): Unit = {
-    sb.append(f.html(links.link, docClass, docSpanClass))
+    sb.append(f.html(links.link, docClass))
   }
 
   /**
@@ -2007,13 +2006,6 @@ object HtmlDocumentor {
   private def docClass(tpe: SemanticTokenType): Option[String] = tpe match {
     case SemanticTokenType.EnumMember => Some("case-tag")
     case _ => HtmlHighlighter.cssClass(tpe)
-  }
-
-  /**
-    * Returns the CSS class of a part of printed syntax with the role `role`, if it has one.
-    */
-  private def docSpanClass(role: Fmt.Role): Option[String] = role match {
-    case Fmt.Role.Kind => Some("kind")
   }
 
   /**
