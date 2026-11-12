@@ -9,7 +9,7 @@ package ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
 import ca.uwaterloo.flix.language.ast.shared.{Constant, EqualityConstraint, QualifiedSym, RegionScope, TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.fmt.Fmt.{SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
+import ca.uwaterloo.flix.language.fmt.Fmt.{SymDecl, SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.Nel
@@ -267,14 +267,14 @@ object Pretty {
     * Returns the signature of the def, sig or op `sym` with the given `spec` as a tree, up to but
     * not including its constraints, e.g. `def sort(l: List[a]): List[a]`.
     *
-    * The name is a use of `sym`. A symbol of any other kind is written as a function name that
-    * stands for no declaration.
+    * The name is the declaration of `sym`. A symbol of any other kind is written as a function
+    * name that stands for no declaration.
     */
   def specHead(sym: QualifiedSym, spec: TypedAst.Spec)(implicit o: FormatOptions): Fmt = {
     val name = sym match {
-      case s: Symbol.DefnSym => SymUse(s, SemanticTokenType.Function, s.name)
-      case s: Symbol.SigSym => SymUse(s, SemanticTokenType.Method, s.name)
-      case s: Symbol.OpSym => SymUse(s, SemanticTokenType.Function, s.name)
+      case s: Symbol.DefnSym => SymDecl(s, SemanticTokenType.Function, s.name)
+      case s: Symbol.SigSym => SymDecl(s, SemanticTokenType.Method, s.name)
+      case s: Symbol.OpSym => SymDecl(s, SemanticTokenType.Function, s.name)
       case s => Token(SemanticTokenType.Function, s.name)
     }
     kw("def") ++ text(" ") ++ name ++ fparams(spec.fparams) ++ text(": ") ++ typeAndEff(spec.retTpe, spec.eff)
@@ -341,7 +341,7 @@ object Pretty {
       case Nil => Fmt.Empty
       case tpes => parens(sep(", ", tpes.map(t => tpe(t))))
     }
-    kw("case") ++ text(" ") ++ SymUse(caze.sym, SemanticTokenType.EnumMember, caze.sym.name) ++ args
+    kw("case") ++ text(" ") ++ SymDecl(caze.sym, SemanticTokenType.EnumMember, caze.sym.name) ++ args
   }
 
   /**
@@ -350,7 +350,7 @@ object Pretty {
     */
   def structField(field: TypedAst.StructField)(implicit o: FormatOptions): Fmt = {
     val mod = if (field.mod.isMutable) kw("mut") ++ text(" ") else Fmt.Empty
-    mod ++ SymUse(field.sym, SemanticTokenType.Property, field.sym.name) ++ text(": ") ++ tpe(field.tpe)
+    mod ++ SymDecl(field.sym, SemanticTokenType.Property, field.sym.name) ++ text(": ") ++ tpe(field.tpe)
   }
 
   /**
@@ -358,7 +358,7 @@ object Pretty {
     * `type alias Pair[a, b] = (a, b)`.
     */
   def typeAliasDecl(alias: TypedAst.TypeAlias)(implicit o: FormatOptions): Fmt =
-    kw("type") ++ text(" ") ++ kw("alias") ++ text(" ") ++ SymUse(alias.sym, SemanticTokenType.Type, alias.sym.name) ++ tparams(alias.tparams) ++ text(" = ") ++ tpe(alias.tpe)
+    kw("type") ++ text(" ") ++ kw("alias") ++ text(" ") ++ SymDecl(alias.sym, SemanticTokenType.Type, alias.sym.name) ++ tparams(alias.tparams) ++ text(" = ") ++ tpe(alias.tpe)
 
   /**
     * Returns the given kind `k` as a tree, e.g. `Type -> Eff`.
