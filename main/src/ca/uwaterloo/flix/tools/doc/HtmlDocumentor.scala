@@ -463,8 +463,9 @@ object HtmlDocumentor {
 
     val (sigs, defs) = decl.sigs.partition(_.exp.isEmpty)
     val instances = root.instances.get(sym)
+    val subTraits = root.traits.values.filter(t => t.superTraits.exists(_.symUse.sym == sym)).map(_.sym).toList
 
-    Trait(decl, sigs, defs, instances, parent, None)
+    Trait(decl, sigs, defs, instances, subTraits, parent, None)
   }
 
   /**
@@ -607,7 +608,7 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterTrait(trt: Trait): Trait = trt match {
-    case Trait(TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, _, loc), signatures, defs, instances, parent, _) =>
+    case Trait(TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, _, loc), signatures, defs, instances, subTraits, parent, _) =>
       Trait(
         TypedAst.Trait(
           doc,
@@ -623,6 +624,7 @@ object HtmlDocumentor {
         signatures.filter(s => s.spec.mod.isPublic),
         defs.filter(d => d.spec.mod.isPublic),
         instances,
+        subTraits,
         parent,
         None
       )
@@ -963,6 +965,7 @@ object HtmlDocumentor {
     sb.append("</div>")
     docDoc(trt.decl.doc)
     docSubSection("Associated Types", sortedAssocs, docAssoc)
+    docSubTraits(trt.subTraits)
     docInstanceTypes(trt.instances)
     sb.append("</div>")
 
@@ -1680,6 +1683,31 @@ object HtmlDocumentor {
   }
 
   /**
+    * Documents the given `subTraits` of a trait, i.e. the traits that extend it directly, as one
+    * comma-separated line under the heading "Sub-traits", e.g. `Applicative, Filterable,
+    * Traversable` for `Functor`. Each trait links to its page.
+    *
+    * A sub-trait without documentation, e.g. a private trait, is left out, see [[Links]].
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If no sub-trait is documented, nothing will be generated.
+    */
+  private def docSubTraits(subTraits: List[Symbol.TraitSym])(implicit links: Links, sb: StringBuilder): Unit = {
+    val documented = subTraits.filter(sym => links.link(sym).isDefined)
+    if (documented.isEmpty) {
+      return
+    }
+
+    sb.append("<section class='subsection sub-traits'>")
+    sb.append("<h2>Sub-traits</h2>")
+    sb.append("<p><code>")
+    docList(documented.sortBy(_.name))(docTraitName)
+    sb.append("</code></p>")
+    sb.append("</section>")
+  }
+
+  /**
     * Documents the given `instances` of a trait by their types, under the heading "Instances", in
     * two groups: the "Primitives", i.e. the built-in types, see [[docPrimitiveInstances]], and the
     * "Non-primitives", i.e. the enums and structs, each a link to its page, in alphabetical order.
@@ -2280,11 +2308,14 @@ object HtmlDocumentor {
 
   /**
     * A representation of a trait that's easier to work with while generating documentation.
+    *
+    * The `subTraits` are the traits that extend the trait directly, documented or not.
     */
   case class Trait(decl: TypedAst.Trait,
                    signatures: List[TypedAst.Sig],
                    defs: List[TypedAst.Sig],
                    instances: List[TypedAst.Instance],
+                   subTraits: List[Symbol.TraitSym],
                    parent: Symbol.ModuleSym,
                    companionMod: Option[Module]) extends Item {
     override def name: String = traitName(this.decl.sym)
