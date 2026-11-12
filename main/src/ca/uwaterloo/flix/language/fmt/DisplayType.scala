@@ -671,7 +671,7 @@ object DisplayType {
             // Case 2: One arg. Take the left and put a hole at the end: tpe1 - tpe2 - ?
             case arg :: Nil => Difference(splitDifference(arg) :+ Hole)
             // Case 3: Multiple args. Concatenate the left differences: tpe1 - tpe2 - tpe3 - tpe4
-            case arg1 :: arg2 :: Nil => Difference(splitDifference(arg1) :+ arg2)
+            case arg1 :: arg2 :: Nil => mkDifference(splitDifference(arg1) :+ arg2)
             // Case 4: Too many args. Apply the type to the rest.
             case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
@@ -822,8 +822,74 @@ object DisplayType {
         case _ => Intersection(rest)
       }
       val subtracted = complements.collect { case Complement(tpe) => tpe }
-      Difference(splitDifference(base) ++ subtracted)
+      mkDifference(splitDifference(base) ++ subtracted)
     }
+  }
+
+  /**
+    * Returns the difference of the given `tpes`, the first minus the rest, with its concrete effects
+    * resolved: two different effects have nothing in common, so `(ef + A + B) - A` is `(ef - A) + B`
+    * and `A - A` is pure.
+    *
+    * Only a concrete effect is resolved. A variable, an alias or an associated effect may hold
+    * anything, so what is subtracted from it stays, and so does anything subtracted that is not a
+    * concrete effect.
+    */
+  private def mkDifference(tpes: List[DisplayType]): DisplayType = tpes match {
+    case Nil => Difference(tpes)
+    case base :: subtracted =>
+      val (effects, others) = subtracted.flatMap(splitPluses).distinct.partition(isConcrete)
+      val members = splitPluses(base)
+
+      // A member is settled if it is a concrete effect, and each subtracted effect either is that
+      // effect or has nothing in common with it.
+      def isSettled(tpe: DisplayType): Boolean =
+        isConcrete(tpe) && effects.forall(eff => eff == tpe || !isSameEffect(eff, tpe))
+
+      if (effects.isEmpty || !members.exists(isSettled)) {
+        Difference(tpes)
+      } else {
+        // The members that are not settled stay together, where the first of them stood, with the
+        // effects subtracted from them.
+        val rest = members.filterNot(isSettled) match {
+          case tpe :: Nil => tpe
+          case unsettled => mkPlus(unsettled)
+        }
+        val first = members.indexWhere(tpe => !isSettled(tpe))
+        val resolved = members.zipWithIndex.flatMap {
+          case (tpe, _) if isSettled(tpe) => if (effects.contains(tpe)) Nil else List(tpe)
+          case (_, i) if i == first => List(Difference(splitDifference(rest) ++ effects))
+          case _ => Nil
+        }
+        mkPlus(resolved) match {
+          case Pure => Pure
+          case tpe if others.isEmpty => tpe
+          case tpe => Difference(splitDifference(tpe) ++ others)
+        }
+      }
+  }
+
+  /**
+    * Returns `true` if `tpe` is a concrete effect: an effect, with its arguments if it has any, or a
+    * region.
+    */
+  private def isConcrete(tpe: DisplayType): Boolean = tpe match {
+    case Effect(_) => true
+    case Apply(Effect(_), _) => true
+    case Region(_) => true
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if `tpe1` and `tpe2` are the same effect, whatever its arguments.
+    */
+  private def isSameEffect(tpe1: DisplayType, tpe2: DisplayType): Boolean = {
+    def sym(tpe: DisplayType): Option[Symbol.EffSym] = tpe match {
+      case Effect(s) => Some(s)
+      case Apply(Effect(s), _) => Some(s)
+      case _ => None
+    }
+    sym(tpe1).isDefined && sym(tpe1) == sym(tpe2)
   }
 
   /**
