@@ -232,7 +232,7 @@ object HtmlHighlighter {
     *
     * A type without a class is displayed as plain text.
     */
-  private[doc] def cssClass(tpe: SemanticTokenType): Option[String] = tpe match {
+  def cssClass(tpe: SemanticTokenType): Option[String] = tpe match {
     case SemanticTokenType.Class => Some("ty")
     case SemanticTokenType.Comment => Some("cm")
     case SemanticTokenType.Decorator => Some("an")
