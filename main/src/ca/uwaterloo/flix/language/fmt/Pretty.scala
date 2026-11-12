@@ -256,28 +256,6 @@ object Pretty {
   }
 
   /**
-    * Returns the `with` clause of the given trait constraints `tcs` as a tree, e.g.
-    * `with Order[a], Eq[a]`, or `None` if there are none.
-    *
-    * The clause starts at its keyword: the space before it is not part of it.
-    */
-  def withClause(tcs: List[TraitConstraint])(implicit o: FormatOptions): Option[Fmt] = tcs match {
-    case Nil => None
-    case _ => Some(kw("with") ++ text(" ") ++ sep(", ", tcs.map(traitConstraint)))
-  }
-
-  /**
-    * Returns the `where` clause of the given equality constraints `ecs` as a tree, e.g.
-    * `where Collection.Elm[a] ~ Int32`, or `None` if there are none.
-    *
-    * The clause starts at its keyword: the space before it is not part of it.
-    */
-  def whereClause(ecs: List[EqualityConstraint])(implicit o: FormatOptions): Option[Fmt] = ecs match {
-    case Nil => None
-    case _ => Some(kw("where") ++ text(" ") ++ sep(", ", ecs.map(equalityConstraint)))
-  }
-
-  /**
     * Returns the signature of the def, sig or op `sym` with the given `spec` as a tree, written as
     * the declaration would be, e.g. `def sort(l: List[a]): List[a] with Order[a]`.
     *
@@ -305,6 +283,28 @@ object Pretty {
       case s => Token(SemanticTokenType.Function, s.name)
     }
     kw("def") ++ text(" ") ++ name ++ fparams(spec.fparams) ++ text(": ") ++ typeAndEff(spec.retTpe, spec.eff)
+  }
+
+  /**
+    * Returns the `with` clause of the given trait constraints `tcs` as a tree, e.g.
+    * `with Order[a], Eq[a]`, or `None` if there are none.
+    *
+    * The clause starts at its keyword: the space before it is not part of it.
+    */
+  def withClause(tcs: List[TraitConstraint])(implicit o: FormatOptions): Option[Fmt] = tcs match {
+    case Nil => None
+    case _ => Some(kw("with") ++ text(" ") ++ sep(", ", tcs.map(traitConstraint)))
+  }
+
+  /**
+    * Returns the `where` clause of the given equality constraints `ecs` as a tree, e.g.
+    * `where Collection.Elm[a] ~ Int32`, or `None` if there are none.
+    *
+    * The clause starts at its keyword: the space before it is not part of it.
+    */
+  def whereClause(ecs: List[EqualityConstraint])(implicit o: FormatOptions): Option[Fmt] = ecs match {
+    case Nil => None
+    case _ => Some(kw("where") ++ text(" ") ++ sep(", ", ecs.map(equalityConstraint)))
   }
 
   /**
