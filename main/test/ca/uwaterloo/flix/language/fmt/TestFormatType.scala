@@ -512,6 +512,103 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
+  test("FormatType.Difference.External.01") {
+    // An intersection with a complement is printed as a difference.
+    val ef = effVar(1, "ef")
+    val tpe = Type.mkIntersection(ef, Type.mkComplement(effA, loc), loc)
+
+    val expected = "ef - A"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Difference.External.02") {
+    // The complement may come first.
+    val ef = effVar(1, "ef")
+    val tpe = Type.mkIntersection(Type.mkComplement(effA, loc), ef, loc)
+
+    val expected = "ef - A"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Difference.External.03") {
+    // Every complement is subtracted.
+    val ef = effVar(1, "ef")
+    val tpe = Type.mkIntersection(ef, Type.mkIntersection(Type.mkComplement(effA, loc), Type.mkComplement(effB, loc), loc), loc)
+
+    val expected = "ef - A - B"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Difference.External.04") {
+    // A complement is subtracted from a difference without parentheses.
+    val ef = effVar(1, "ef")
+    val tpe = Type.mkIntersection(Type.mkIntersection(ef, Type.mkComplement(effA, loc), loc), Type.mkComplement(effB, loc), loc)
+
+    val expected = "ef - A - B"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Difference.External.05") {
+    // The complements are subtracted from the intersection of the rest.
+    val tpe = Type.mkIntersection(effVar(1, "ef1"), Type.mkIntersection(effVar(2, "ef2"), Type.mkComplement(effA, loc), loc), loc)
+
+    val expected = "(ef1 & ef2) - A"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Difference.External.06") {
+    // The complement of a union is subtracted as a union.
+    val ef = effVar(1, "ef")
+    val tpe = Type.mkIntersection(ef, Type.mkComplement(union(effA, effB), loc), loc)
+
+    val expected = "ef - (A + B)"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Difference.External.07") {
+    // A difference is parenthesized as a member of a union.
+    val ef = effVar(1, "ef")
+    val tpe = union(Type.mkIntersection(ef, Type.mkComplement(effA, loc), loc), effB)
+
+    val expected = "(ef - A) + B"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Difference.External.08") {
+    // An intersection of nothing but complements is kept as it is.
+    val tpe = Type.mkIntersection(Type.mkComplement(effA, loc), Type.mkComplement(effB, loc), loc)
+
+    val expected = "(~A) & (~B)"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Difference.External.09") {
+    // An intersection with a complement inside a type is printed as a difference too.
+    val ef = effVar(1, "ef")
+    val tpe = Type.mkArrowWithEffect(Type.Unit, Type.mkIntersection(ef, Type.mkComplement(effA, loc), loc), Type.Unit, loc)
+
+    val expected = raw"Unit -> Unit \ ef - A"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
   private val effA: Type = mkEff("A")
   private val effB: Type = mkEff("B")
   private val effC: Type = mkEff("C")
