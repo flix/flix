@@ -259,12 +259,51 @@ class TestFormatTypeApplication extends AnyFunSuite {
     6 -> "(a -> (b -> (c -> d)))[e]",
   ))
 
+  // An arrow is written with a parameter and a result. No builder makes an arrow of an arity below
+  // 2, which has no place for a parameter, or for a result. It shows a hole for each one it lacks.
+
+  check("Arrow.Arity1", TypeConstructor.Arrow(1), List(Type.IO, a, b))(List(
+    0 -> raw"? -> ? \ ?",
+    1 -> raw"? -> ? \ IO",
+    2 -> raw"? -> a \ IO",
+    3 -> raw"(? -> a \ IO)[b]",
+  ))
+
+  check("Arrow.Arity1.Pure", TypeConstructor.Arrow(1), List(Type.Pure, a, b))(List(
+    1 -> "? -> ?",
+    2 -> "? -> a",
+    3 -> "(? -> a)[b]",
+  ))
+
+  check("Arrow.Arity0", TypeConstructor.Arrow(0), List(Type.IO, a))(List(
+    0 -> raw"? -> ? \ ?",
+    1 -> raw"? -> ? \ IO",
+    2 -> raw"(? -> ? \ IO)[a]",
+  ))
+
+  check("Arrow.Arity0.Pure", TypeConstructor.Arrow(0), List(Type.Pure, a))(List(
+    0 -> raw"? -> ? \ ?",
+    1 -> "? -> ?",
+    2 -> "(? -> ?)[a]",
+  ))
+
   check(TypeConstructor.ArrowWithoutEffect(2))(
     0 -> "? --> ?",
     1 -> "a --> ?",
     2 -> "a --> b",
     3 -> "(a --> b)[c]",
   )
+
+  check("ArrowWithoutEffect.Arity1", TypeConstructor.ArrowWithoutEffect(1), List(a, b))(List(
+    0 -> "? --> ?",
+    1 -> "? --> a",
+    2 -> "(? --> a)[b]",
+  ))
+
+  check("ArrowWithoutEffect.Arity0", TypeConstructor.ArrowWithoutEffect(0), List(a))(List(
+    0 -> "? --> ?",
+    1 -> "(? --> ?)[a]",
+  ))
 
   /////////////////////////////////////////////////////////////////////////////
   // Records                                                                 //

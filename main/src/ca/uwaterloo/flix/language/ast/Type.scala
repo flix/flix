@@ -255,17 +255,8 @@ sealed trait Type {
 
   /**
     * Returns a human readable string representation of `this` type.
-    *
-    * A debugger or an internal error may print a type that is half-built, so a type that cannot be
-    * printed gives a marker rather than an exception.
     */
-  override def toString: String = {
-    try {
-      Pretty.tpe(this)(FormatOptions.Internal).plain
-    } catch {
-      case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
-    }
-  }
+  override def toString: String = Pretty.tpe(this)(FormatOptions.Internal).plain
 }
 
 object Type {
