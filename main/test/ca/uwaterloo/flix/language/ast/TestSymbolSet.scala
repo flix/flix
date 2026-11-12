@@ -8,7 +8,8 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, Source, SymbolSet}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SecurityContext, Source, SymbolSet, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -101,6 +102,71 @@ class TestSymbolSet extends AnyFunSuite with TestUtils {
     val expected = SymbolSet(Set.empty, Set.empty, Set.empty, Set(Symbol.mkEffSym("A.Log"), Symbol.mkEffSym("B.Log")))
     assert(sameSymbolSet(result, expected))
   }
+
+  test("`symbolsOf` an associated type") {
+    val result = SymbolSet.symbolsOf(Type.AssocType(elm, color, Kind.Star, loc))
+    val expected = SymbolSet(Set(Symbol.mkEnumSym("B.Color")), Set.empty, Set(Symbol.mkTraitSym("A.Coll")), Set.empty)
+    assert(result == expected)
+  }
+
+  test("`symbolsOf` an associated type inside a type") {
+    val result = SymbolSet.symbolsOf(Type.mkArrowWithEffect(Type.Int32, Type.Pure, Type.AssocType(elm, Type.Int32, Kind.Star, loc), loc))
+    val expected = SymbolSet(Set.empty, Set.empty, Set(Symbol.mkTraitSym("A.Coll")), Set.empty)
+    assert(result == expected)
+  }
+
+  test("`symbolsOf` a trait constraint") {
+    val result = SymbolSet.symbolsOf(show)
+    val expected = SymbolSet(Set(Symbol.mkEnumSym("B.Color")), Set.empty, Set(Symbol.mkTraitSym("A.Show")), Set.empty)
+    assert(result == expected)
+  }
+
+  test("`symbolsOf` an equality constraint") {
+    val result = SymbolSet.symbolsOf(elmIsColor)
+    val expected = SymbolSet(Set(Symbol.mkEnumSym("B.Color")), Set.empty, Set(Symbol.mkTraitSym("A.Coll")), Set.empty)
+    assert(result == expected)
+  }
+
+  test("`symbolsOf` a scheme") {
+    val point = Type.Cst(TypeConstructor.Struct(mkStructSym("C", "Point"), Kind.Star), loc)
+    val result = SymbolSet.symbolsOf(Scheme(Nil, List(show), List(elmIsColor), point))
+    val expected = SymbolSet(
+      Set(Symbol.mkEnumSym("B.Color")),
+      Set(mkStructSym("C", "Point")),
+      Set(Symbol.mkTraitSym("A.Show"), Symbol.mkTraitSym("A.Coll")),
+      Set.empty
+    )
+    assert(result == expected)
+  }
+
+  test("`ambiguities` two associated types of two traits with the same name") {
+    val elmOfB = AssocTypeSymUse(Symbol.mkAssocTypeSym(Symbol.mkTraitSym("B.Coll"), Name.Ident("Elm", loc)), loc)
+    val result = SymbolSet.ambiguities(Type.AssocType(elm, Type.Int32, Kind.Star, loc), Type.AssocType(elmOfB, Type.Int32, Kind.Star, loc))
+    val expected = SymbolSet(Set.empty, Set.empty, Set(Symbol.mkTraitSym("A.Coll"), Symbol.mkTraitSym("B.Coll")), Set.empty)
+    assert(result == expected)
+  }
+
+  private val loc: SourceLocation = SourceLocation.Unknown
+
+  /**
+    * The enum type `B.Color`.
+    */
+  private val color: Type = Type.Cst(TypeConstructor.Enum(Symbol.mkEnumSym("B.Color"), Kind.Star), loc)
+
+  /**
+    * The associated type `A.Coll.Elm`.
+    */
+  private val elm: AssocTypeSymUse = AssocTypeSymUse(Symbol.mkAssocTypeSym(Symbol.mkTraitSym("A.Coll"), Name.Ident("Elm", loc)), loc)
+
+  /**
+    * The trait constraint `A.Show[B.Color]`.
+    */
+  private val show: TraitConstraint = TraitConstraint(TraitSymUse(Symbol.mkTraitSym("A.Show"), loc), color, loc)
+
+  /**
+    * The equality constraint `A.Coll.Elm[Int32] ~ B.Color`.
+    */
+  private val elmIsColor: EqualityConstraint = EqualityConstraint(elm, Type.Int32, color, loc)
 
   /**
     * Returns the struct symbol with the given `name` in the namespace `ns`.

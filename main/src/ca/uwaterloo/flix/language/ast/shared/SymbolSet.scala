@@ -6,7 +6,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.shared.QualifiedSym
 
 object SymbolSet {
@@ -22,24 +22,51 @@ object SymbolSet {
   )
 
   /**
-    * Returns all the symbols in a given type
+    * Returns the symbol set that holds the given trait symbol `sym` and nothing else.
     */
-  def symbolsOf(tpe: Type): SymbolSet = {
-    /**
-      * Returns all the symbols in a given type constructor
-      */
-    def getSymbolsWithin(t: TypeConstructor): SymbolSet = {
-      t match {
-        case TypeConstructor.Enum(sym, _) => SymbolSet(Set(sym), Set.empty, Set.empty, Set.empty)
-        case TypeConstructor.Struct(sym, _) => SymbolSet(Set.empty, Set(sym), Set.empty, Set.empty)
-        case TypeConstructor.Effect(sym, _) => SymbolSet(Set.empty, Set.empty, Set.empty, Set(sym))
-        case _ => SymbolSet.empty
-      }
-    }
+  def ofTrait(sym: Symbol.TraitSym): SymbolSet = SymbolSet(Set.empty, Set.empty, Set(sym), Set.empty)
 
-    (tpe.typeConstructors map getSymbolsWithin).foldLeft(empty) {
-      _ ++ _
-    }
+  /**
+    * Returns all the symbols in a given type
+    *
+    * An associated type contributes its trait, since it is written with the trait, e.g.
+    * `Collection.Elm[a]`.
+    */
+  def symbolsOf(tpe: Type): SymbolSet = tpe match {
+    case Type.Var(_, _) => empty
+    case Type.Cst(TypeConstructor.Enum(sym, _), _) => SymbolSet(Set(sym), Set.empty, Set.empty, Set.empty)
+    case Type.Cst(TypeConstructor.Struct(sym, _), _) => SymbolSet(Set.empty, Set(sym), Set.empty, Set.empty)
+    case Type.Cst(TypeConstructor.Effect(sym, _), _) => SymbolSet(Set.empty, Set.empty, Set.empty, Set(sym))
+    case Type.Cst(_, _) => empty
+    case Type.Apply(tpe1, tpe2, _) => symbolsOf(tpe1) ++ symbolsOf(tpe2)
+    case Type.Alias(_, _, t, _) => symbolsOf(t)
+    case Type.AssocType(symUse, arg, _, _) => ofTrait(symUse.sym.trt) ++ symbolsOf(arg)
+    case Type.JvmToType(_, _) => empty
+    case Type.JvmToEff(_, _) => empty
+    case Type.UnresolvedJvmType(_, _) => empty
+  }
+
+  /**
+    * Returns all the symbols in the given trait constraint `tc`: its trait and the symbols in its
+    * type.
+    */
+  def symbolsOf(tc: TraitConstraint): SymbolSet = ofTrait(tc.symUse.sym) ++ symbolsOf(tc.arg)
+
+  /**
+    * Returns all the symbols in the given equality constraint `ec`: the trait of its associated type
+    * and the symbols in its two types.
+    */
+  def symbolsOf(ec: EqualityConstraint): SymbolSet =
+    ofTrait(ec.symUse.sym.trt) ++ symbolsOf(ec.tpe1) ++ symbolsOf(ec.tpe2)
+
+  /**
+    * Returns all the symbols in the given scheme `sc`: those in its type and those in its
+    * constraints.
+    */
+  def symbolsOf(sc: Scheme): SymbolSet = {
+    val tconstrs = sc.tconstrs.map(tc => symbolsOf(tc))
+    val econstrs = sc.econstrs.map(ec => symbolsOf(ec))
+    (tconstrs ::: econstrs).foldLeft(symbolsOf(sc.base))(_ ++ _)
   }
 
   /**
