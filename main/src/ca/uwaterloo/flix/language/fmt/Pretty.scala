@@ -251,35 +251,60 @@ object Pretty {
     * both are empty.
     */
   def constraints(tcs: List[TraitConstraint], ecs: List[EqualityConstraint])(implicit o: FormatOptions): Fmt = {
-    val tcPart =
-      if (tcs.isEmpty) Fmt.Empty
-      else text(" ") ++ kw("with") ++ text(" ") ++ sep(", ", tcs.map(traitConstraint))
-    val ecPart =
-      if (ecs.isEmpty) Fmt.Empty
-      else text(" ") ++ kw("where") ++ text(" ") ++ sep(", ", ecs.map(equalityConstraint))
-    tcPart ++ ecPart
+    val clauses = withClause(tcs).toList ::: whereClause(ecs).toList
+    Fmt.Concat(clauses.map(clause => text(" ") ++ clause))
+  }
+
+  /**
+    * Returns the `with` clause of the given trait constraints `tcs` as a tree, e.g.
+    * `with Order[a], Eq[a]`, or `None` if there are none.
+    *
+    * The clause starts at its keyword: the space before it is not part of it.
+    */
+  def withClause(tcs: List[TraitConstraint])(implicit o: FormatOptions): Option[Fmt] = tcs match {
+    case Nil => None
+    case _ => Some(kw("with") ++ text(" ") ++ sep(", ", tcs.map(traitConstraint)))
+  }
+
+  /**
+    * Returns the `where` clause of the given equality constraints `ecs` as a tree, e.g.
+    * `where Collection.Elm[a] ~ Int32`, or `None` if there are none.
+    *
+    * The clause starts at its keyword: the space before it is not part of it.
+    */
+  def whereClause(ecs: List[EqualityConstraint])(implicit o: FormatOptions): Option[Fmt] = ecs match {
+    case Nil => None
+    case _ => Some(kw("where") ++ text(" ") ++ sep(", ", ecs.map(equalityConstraint)))
   }
 
   /**
     * Returns the signature of the def, sig or op `sym` with the given `spec` as a tree, written as
     * the declaration would be, e.g. `def sort(l: List[a]): List[a] with Order[a]`.
     *
-    * The name is a use of `sym`. A symbol of any other kind is written as a function name that
-    * stands for no declaration.
-    *
-    * The constraints are taken from the declared scheme: `Spec` holds the equality constraints as
-    * `TypedAst.EqualityConstraint`, which does not name the associated type, so there is not enough
-    * in one to write it out.
+    * The signature is [[specHead]] followed by the constraints of the declared scheme: `Spec` holds
+    * the equality constraints as `TypedAst.EqualityConstraint`, which does not name the associated
+    * type, so there is not enough in one to write it out.
     */
   def spec(sym: QualifiedSym, spec: TypedAst.Spec)(implicit o: FormatOptions): Fmt = {
+    val sc = spec.declaredScheme
+    specHead(sym, spec) ++ constraints(sc.tconstrs, sc.econstrs)
+  }
+
+  /**
+    * Returns the signature of the def, sig or op `sym` with the given `spec` as a tree, up to but
+    * not including its constraints, e.g. `def sort(l: List[a]): List[a]`.
+    *
+    * The name is a use of `sym`. A symbol of any other kind is written as a function name that
+    * stands for no declaration.
+    */
+  def specHead(sym: QualifiedSym, spec: TypedAst.Spec)(implicit o: FormatOptions): Fmt = {
     val name = sym match {
       case s: Symbol.DefnSym => SymUse(s, SemanticTokenType.Function, s.name)
       case s: Symbol.SigSym => SymUse(s, SemanticTokenType.Method, s.name)
       case s: Symbol.OpSym => SymUse(s, SemanticTokenType.Function, s.name)
       case s => Token(SemanticTokenType.Function, s.name)
     }
-    val sc = spec.declaredScheme
-    kw("def") ++ text(" ") ++ name ++ fparams(spec.fparams) ++ text(": ") ++ typeAndEff(spec.retTpe, spec.eff) ++ constraints(sc.tconstrs, sc.econstrs)
+    kw("def") ++ text(" ") ++ name ++ fparams(spec.fparams) ++ text(": ") ++ typeAndEff(spec.retTpe, spec.eff)
   }
 
   /**
