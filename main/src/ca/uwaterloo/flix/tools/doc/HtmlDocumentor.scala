@@ -148,7 +148,7 @@ object HtmlDocumentor {
     */
   def run(root: TypedAst.Root, origin: Origin, outputDir: Path): Unit = {
     val mod = documentedModules(root, origin)
-    implicit val links: Links = new Links(documentedSymbols(mod))
+    implicit val links: Links = new Links(documentedSymbols(mod), documentedBuiltins(mod))
     visitMod(mod, outputDir)
 
     HtmlHighlighter.run(root, origin, outputDir)(documentPage)
@@ -218,13 +218,35 @@ object HtmlDocumentor {
   }
 
   /**
+    * Returns the built-in types that the given module tree `mod` documents, each with the module
+    * whose page documents it, see [[builtinTypeOf]].
+    *
+    * Such a module is a module of the root. A companion module is not among the submodules of
+    * `mod`, so a module that has no page of its own is never returned.
+    */
+  private def documentedBuiltins(mod: Module): Map[TypeConstructor, Symbol.ModuleSym] =
+    mod.submodules.flatMap { m =>
+      builtinTypeOf(m.sym) match {
+        case None => Nil
+        case Some(tc) => List(tc -> m.sym)
+      }
+    }.toMap
+
+  /**
     * The resolver from a symbol to the URL of its documentation, given the symbols that are
-    * `documented`, see [[documentedSymbols]].
+    * `documented`, see [[documentedSymbols]], and from a built-in type to that of its, given the
+    * `builtins` that are documented, see [[documentedBuiltins]].
     *
     * A symbol without documentation, e.g. a private declaration or one of another origin, resolves
-    * to nothing, so that its name is written as a colored token rather than as a dead link.
+    * to nothing, so that its name is written as a colored token rather than as a dead link. So does
+    * a built-in type without a module, e.g. `Unit`.
     */
-  private class Links(documented: Set[Symbol]) {
+  private class Links(documented: Set[Symbol], builtins: Map[TypeConstructor, Symbol.ModuleSym]) {
+
+    def builtinLink(tc: TypeConstructor): Option[String] = builtins.get(tc) match {
+      case None => None
+      case Some(sym) => Some(escUrl(moduleFileName(sym)))
+    }
 
     def link(sym: Symbol): Option[String] = if (!documented.contains(sym)) None else sym match {
       case s: Symbol.TraitSym => Some(escUrl(traitFileName(s)))
@@ -2073,13 +2095,13 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the given printed syntax `f`: a link per declaration that has a page or an anchor,
-    * see [[Links]], and a class per token, see [[docClass]].
+    * Documents the given printed syntax `f`: a link per declaration that has a page or an anchor
+    * and per built-in type that has a page, see [[Links]], and a class per token, see [[docClass]].
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docRichText(f: RichText)(implicit links: Links, sb: StringBuilder): Unit = {
-    sb.append(f.html(links.link, docClass))
+    sb.append(f.html(links.link, links.builtinLink, docClass))
   }
 
   /**
