@@ -48,6 +48,9 @@ object ConstraintGen {
         val resTpe = sym.tvar
         InferredAst.Expr.Var(sym, resTpe, loc)
 
+      case Expr.Val(_, _, loc) =>
+        throw InternalCompilerException("val expressions are not yet supported past kinding", loc)
+
       case Expr.Hole(sym, scp, loc) =>
         val tvar = freshVar(Kind.Star, loc)
         val evar = freshVar(Kind.Eff, loc)

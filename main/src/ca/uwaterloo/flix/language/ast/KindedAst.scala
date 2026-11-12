@@ -17,12 +17,13 @@ import java.lang.constant.ClassDesc
 
 object KindedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Map.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Map.empty, Map.empty)
 
   case class Root(modules: Map[Symbol.ModuleSym, Mod],
                   traits: Map[Symbol.TraitSym, Trait],
                   instances: ListMap[Symbol.TraitSym, Instance],
                   defs: Map[Symbol.DefnSym, Def],
+                  vals: Map[Symbol.ValSym, Val],
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, RestrictableEnum],
@@ -42,6 +43,8 @@ object KindedAst {
   case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr], loc: SourceLocation)
 
   case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr, loc: SourceLocation)
+
+  case class Val(sym: Symbol.ValSym, doc: Doc, ann: Annotations, mod: Modifiers, tpe: Type, exp: Expr, loc: SourceLocation)
 
   case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: Nel[FormalParam], sc: Scheme, tpe: Type, eff: Option[Type], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint])
 
@@ -83,6 +86,8 @@ object KindedAst {
     sealed trait FixpointExpr extends Expr
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends Expr
+
+    case class Val(symUse: ValSymUse, tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class Hole(sym: Symbol.HoleSym, scp: LocalScope, loc: SourceLocation) extends Expr
 
