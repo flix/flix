@@ -36,32 +36,71 @@ object ConstraintSolverInterface {
   /**
     * Resolves constraints in the given val using the given inference result.
     *
-    * Not yet implemented: real val type-checking (verifying the body against the declared type
-    * and effect) is deferred to a follow-up PR (this PR only adds the `TypedAst`/`InferredAst`
-    * plumbing -- the `vals` map, `Val`/`Expr.Val` nodes, and every recursive call site that needs
-    * a case for them -- per review; see the stubbed `ConstraintGen.Expr.Val` case for the other
-    * half of that deferral).
+    * A val has no type parameters, so unlike a [[KindedAst.Def]]'s scheme there is nothing to
+    * generalize over: every type variable that inference introduces inside the body must be
+    * pinned down by the declared (monomorphic) type of the val. The declared type itself can
+    * never mention a free type variable -- there are no type parameters to bind one against, and
+    * the Namer already rejects that case (see `NameError.IllegalPolymorphicVal`). Hence it
+    * suffices to equate the declared type with the inferred one, exactly as is done for a def's
+    * declared return type.
     *
-    * This solves only the constraints that arise from the body's own internal structure (e.g. an
-    * `if`/`else`'s two branches needing the same type) -- the same `infConstrs` a def's body
-    * would need solved regardless of its declared signature -- and deliberately omits the two
-    * constraints that would actually check anything against the declaration (declared type ~
-    * inferred type, and the Pure-effect requirement). Omitting those two is what keeps this
-    * "plumbing, not functionality": unlike a straight `throw`, which would crash `Typer.visitVals`
-    * (and hence the whole compiler) on *every* val declaration, checked or not -- including ones
-    * whose only problem is an unrelated, already-reported error from an earlier phase (e.g.
-    * `KindError.UnexpectedEffect.Val.01`, `TestResolver`'s `UndefinedType.07`) -- this keeps those
-    * pre-existing regression tests passing while still not implementing (or even attempting) the
-    * actual type-checking.
+    * A val's body must always actually be pure: there is no way for a val to be granted an
+    * effect the way a def is by its `\ Eff` annotation, so the body's inferred effect is
+    * unconditionally equated with [[Type.Pure]] (the same constraint a def with no effect
+    * annotation gets). A val's own effect annotation, if written at all, is not such a grant of
+    * permission -- it exists only so a user can write a syntactically effectful-looking
+    * expression (e.g. `IO - IO`) that is semantically pure. So the annotation, if present, is
+    * *also* equated with [[Type.Pure]], as a second, independent constraint solved by the same
+    * ordinary effect unification used everywhere else -- which is exactly what lets `IO - IO`
+    * succeed (it normalizes to the empty effect set) while a bare `IO` correctly fails.
     */
-  def visitVal(v: KindedAst.Val, infResult: InfResult, tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = {
-    val InfResult(infConstrs, _, _, infRenv) = infResult
-    val renv = infRenv
-    val (leftovers, subst) = ConstraintSolver2.solveAll(infConstrs, SubstitutionTree.empty)(RegionScope.Top, renv, tenv0, eqEnv0, flix)
-    leftovers match {
-      case Nil => (subst, Nil)
-      case _ => (subst, mkTypeErrors(leftovers, subst, renv, root))
-    }
+  def visitVal(v: KindedAst.Val, infResult: InfResult, tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = v match {
+    case KindedAst.Val(_, _, _, _, tpe, eff0, _, loc) =>
+
+      val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
+
+      val renv = infRenv
+
+      val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
+      val tpos = moveRight(tpe.loc.end)
+      val loc1 = SourceLocation(true, tpe.loc.source, tpe.loc.end, tpos)
+      val declaredEffConstr = TypeConstraint.Equality(Type.Pure, infEff, Provenance.ExpectEffect(expected = Type.Pure, actual = infEff, loc1))
+
+      // If an effect annotation was written, it must itself denote Pure (see above).
+      val annotationMustBePureConstrs = eff0.toList.map { e =>
+        TypeConstraint.Equality(Type.Pure, e, Provenance.ExpectEffect(expected = Type.Pure, actual = e, e.loc))
+      }
+
+      val constrs = declaredTpeConstr :: declaredEffConstr :: (annotationMustBePureConstrs ::: infConstrs)
+
+      val (leftovers, subst) = ConstraintSolver2.solveAll(constrs, SubstitutionTree.empty)(RegionScope.Top, renv, tenv0, eqEnv0, flix)
+      leftovers match {
+        case Nil =>
+          // All constraints solved. Yay!
+          (subst, Nil)
+        case _ =>
+          // We have one or more type errors. We check whether we are in development or production mode.
+          flix.options.build match {
+            case Build.Production =>
+              // We are in production mode, so we have to return immediately with the *original* type error(s).
+              (subst, mkTypeErrors(leftovers, subst, renv, root))
+
+            case Build.Development =>
+              // Otherwise we have special logic for the [[Debug]] effect: We solve a new constraint system where [[Debug]] is allowed.
+              val declaredEffConstrWithDebug = TypeConstraint.Equality(Type.Debug, infEff, Provenance.ExpectEffect(expected = Type.Debug, actual = infEff, loc1))
+              val constrsWithDebug = declaredTpeConstr :: declaredEffConstrWithDebug :: (annotationMustBePureConstrs ::: infConstrs)
+              val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, SubstitutionTree.empty)(RegionScope.Top, renv, tenv0, eqEnv0, flix)
+
+              leftovers2 match {
+                case Nil =>
+                  // Success -- We can type check with [[Debug]].
+                  (subst2, Nil)
+                case _ =>
+                  // Failure -- We report the *original* type error(s). We report the original errors to avoid spurious occurrences of the [[Debug]] effect.
+                  (subst, mkTypeErrors(leftovers, subst, renv, root))
+              }
+          }
+      }
   }
 
   /**

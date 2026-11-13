@@ -3725,4 +3725,25 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MismatchedTypes](result)
   }
 
+  // `Test.Val.EffectAnnotation.01` (`val x: String \ IO - IO = "hi"` -> `expectSuccess`, proving
+  // this `visitVal` enforces purity via real effect unification rather than a syntactic check) is
+  // NOT restored here. #13741 is merge-queued with its Weeder-level "parse and reject" restored
+  // (WeederError.IllegalEffectfulVal rejects any effect annotation that isn't syntactically
+  // exactly `Type.Pure`, so `IO - IO` -- which parses to `Type.Difference`, not `Type.Pure` -- is
+  // now rejected before ever reaching this code. That is a known, accepted limitation per Magnus's
+  // own comment on the revert ("will be revisited once effects are threaded through more fully in
+  // a later PR"), not a bug in `visitVal` -- the unification-based enforcement below is still
+  // correct and exercised by `TypeError.ImplicitlyPureFunctionUsesIO.Val.01`, just not provably so
+  // via `IO - IO` until a later PR relaxes that Weeder-level check.
+
+  test("TypeError.ImplicitlyPureFunctionUsesIO.Val.01") {
+    val input =
+      """
+        |val x: Int32 \ IO = 1
+        |pub eff IO
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
 }
