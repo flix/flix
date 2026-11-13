@@ -2147,9 +2147,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   }
 
   test("EffectAnnotation.Val.01") {
-    // An effect annotation on a val parses and weeds without error. Purity enforcement, if any,
-    // is a semantic (not syntactic) concern and belongs to a later phase (e.g. the typer), since
-    // the Weeder cannot tell e.g. `IO - IO` apart from `IO` without resolving/unifying effects.
+    // Effectful vals are allowed here but rejected in later phases.
     val input = "val myVal: Int32 \\ IO = 1"
     val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
