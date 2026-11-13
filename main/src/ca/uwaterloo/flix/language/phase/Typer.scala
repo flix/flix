@@ -60,7 +60,7 @@ object Typer {
     * empty defaults.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, TypedAst.Mod] = root match {
-    case KindedAst.Root(modules, traits, _, defs, enums, structs, _, effects, typeAliases, _, _, _, _) =>
+    case KindedAst.Root(modules, traits, _, defs, _, enums, structs, _, effects, typeAliases, _, _, _, _) =>
       val sigs = traits.values.flatMap { trt => trt.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 

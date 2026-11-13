@@ -637,15 +637,19 @@ main > section > h2 {
 }
 /* The instances of an item: the heading, in bold, then comma-separated lists of names below it, one
    on the page of a type and one per group, in labelled rows, on the page of a trait. A few words at
-   the size of the code may end a list. */
-.subsection.instances {
+   the size of the code may end a list. The sub-traits of a trait are set as the instances of a type
+   are. */
+.subsection.instances,
+.subsection.sub-traits {
     font-size: 0.85rem;
 }
-.subsection.instances h2 {
+.subsection.instances h2,
+.subsection.sub-traits h2 {
     font-weight: bold;
 }
 .subsection.instances p,
-.subsection.instances dl {
+.subsection.instances dl,
+.subsection.sub-traits p {
     margin: 0.4rem 0 0;
 }
 .subsection.instances dl {

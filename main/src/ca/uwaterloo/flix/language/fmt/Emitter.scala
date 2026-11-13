@@ -7,7 +7,7 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Symbol, TypeConstructor}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -27,6 +27,11 @@ trait Emitter[A] {
     * A colored atom that stands for no declaration, see [[RichText.Token]].
     */
   def token(kind: SemanticTokenType, s: String): A
+
+  /**
+    * A built-in type, see [[RichText.Builtin]].
+    */
+  def builtin(tc: TypeConstructor, s: String): A
 
   /**
     * The declaration of a symbol, i.e. the name of a declaration where it is declared, see
@@ -56,6 +61,8 @@ object PlainEmitter extends Emitter[String] {
 
   def token(kind: SemanticTokenType, s: String): String = s
 
+  def builtin(tc: TypeConstructor, s: String): String = s
+
   def symDecl(sym: Symbol, kind: SemanticTokenType, s: String): String = s
 
   def symUse(sym: Symbol, kind: SemanticTokenType, s: String): String = s
@@ -78,6 +85,8 @@ class AnsiEmitter(fmt: Formatter) extends Emitter[String] {
     case Some((r, g, b)) => fmt.fgColor(r, g, b, s)
     case None => s
   }
+
+  def builtin(tc: TypeConstructor, s: String): String = token(SemanticTokenType.Type, s)
 
   def symDecl(sym: Symbol, kind: SemanticTokenType, s: String): String = token(kind, s)
 
@@ -120,16 +129,18 @@ object AnsiEmitter {
 }
 
 /**
-  * HTML: a span per token, an anchor per use of a symbol that has a link, escaped text.
+  * HTML: a span per token, an anchor per use of a symbol or built-in type that has a link, escaped
+  * text.
   *
-  * `link` gives the URL of the page or anchor that documents a symbol, or `None` if there is none,
-  * in which case the name is a colored token like any other rather than a dead link. `cssClass`
-  * gives the class of a kind of token, or `None` if it is not styled. The emitter knows neither:
-  * its caller knows which pages are written and which stylesheet they load.
+  * `link` gives the URL of the page or anchor that documents a symbol, and `builtinLink` that of
+  * the page that documents a built-in type, or `None` if there is none, in which case the name is
+  * a colored token like any other rather than a dead link. `cssClass` gives the class of a kind of
+  * token, or `None` if it is not styled. The emitter knows none of them: its caller knows which
+  * pages are written and which stylesheet they load.
   *
   * The declaration of a symbol is a colored token too: a declaration does not link to itself.
   */
-class HtmlEmitter(link: Symbol => Option[String], cssClass: SemanticTokenType => Option[String]) extends Emitter[String] {
+class HtmlEmitter(link: Symbol => Option[String], builtinLink: TypeConstructor => Option[String], cssClass: SemanticTokenType => Option[String]) extends Emitter[String] {
 
   def text(s: String): String = HtmlEmitter.escape(s)
 
@@ -138,19 +149,27 @@ class HtmlEmitter(link: Symbol => Option[String], cssClass: SemanticTokenType =>
     case None => HtmlEmitter.escape(s)
   }
 
+  def builtin(tc: TypeConstructor, s: String): String = anchor(builtinLink(tc), SemanticTokenType.Type, s)
+
   def symDecl(sym: Symbol, kind: SemanticTokenType, s: String): String = token(kind, s)
 
-  def symUse(sym: Symbol, kind: SemanticTokenType, s: String): String = link(sym) match {
-    case Some(url) =>
+  def symUse(sym: Symbol, kind: SemanticTokenType, s: String): String = anchor(link(sym), kind, s)
+
+  def concat(parts: List[String]): String = parts.mkString
+
+  /**
+    * Returns `s` as an anchor to `url`, if there is one, and as a token otherwise. Either has the
+    * class of the given `kind`.
+    */
+  private def anchor(url: Option[String], kind: SemanticTokenType, s: String): String = url match {
+    case Some(u) =>
       val cls = cssClass(kind) match {
         case Some(c) => s" class='$c'"
         case None => ""
       }
-      s"<a$cls href='${HtmlEmitter.escape(url)}'>${HtmlEmitter.escape(s)}</a>"
+      s"<a$cls href='${HtmlEmitter.escape(u)}'>${HtmlEmitter.escape(s)}</a>"
     case None => token(kind, s)
   }
-
-  def concat(parts: List[String]): String = parts.mkString
 
 }
 
@@ -186,6 +205,8 @@ object TokenEmitter extends Emitter[List[(SemanticTokenType, String)]] {
   def text(s: String): List[(SemanticTokenType, String)] = Nil
 
   def token(kind: SemanticTokenType, s: String): List[(SemanticTokenType, String)] = List((kind, s))
+
+  def builtin(tc: TypeConstructor, s: String): List[(SemanticTokenType, String)] = List((SemanticTokenType.Type, s))
 
   def symDecl(sym: Symbol, kind: SemanticTokenType, s: String): List[(SemanticTokenType, String)] = List((kind, s))
 

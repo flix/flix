@@ -9,7 +9,7 @@ package ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
 import ca.uwaterloo.flix.language.ast.shared.{Constant, EqualityConstraint, QualifiedSym, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Kind, Scheme, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.fmt.RichText.{SymDecl, SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
+import ca.uwaterloo.flix.language.fmt.RichText.{Builtin, SymDecl, SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.util.collection.Nel
 
@@ -30,8 +30,8 @@ object Pretty {
   /**
     * Returns the given well-kinded type `t` as a tree.
     *
-    * The type variables of `t` are written by the names of the options. Types that are shown
-    * together, e.g. in one error message, get one naming from [[FormatOptions.forTypes]].
+    * The type variables of `t` are written as the options say. Types that are shown together, e.g.
+    * in one error message, get their variables numbered once by [[FormatOptions.forTypes]].
     */
   def tpe(t: Type)(implicit o: FormatOptions): RichText =
     displayType(DisplayType.fromWellKindedType(t))
@@ -50,7 +50,7 @@ object Pretty {
   /**
     * Returns the given type variable `sym` as a tree, written by its name in the options.
     */
-  def typeVar(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): RichText = tparam(o.varNames.nameOf(sym))
+  def typeVar(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): RichText = tparam(o.varFormat.nameOf(sym))
 
   /**
     * Returns the given type view `d` as a tree.
@@ -60,26 +60,27 @@ object Pretty {
   /**
     * Returns the given type constructor `tc` as a tree, written by its name alone, e.g. `Arrow2`.
     *
-    * A constructor that stands for a declaration is a use of its symbol.
+    * A constructor that stands for a declaration is a use of its symbol, and a built-in type that
+    * a program can name, e.g. `Int32`, is a [[Builtin]].
     */
   def tycon(tc: TypeConstructor): RichText = tc match {
     // Primitives
-    case TypeConstructor.Void => ty("Void")
-    case TypeConstructor.AnyType => ty("AnyType")
-    case TypeConstructor.Unit => ty("Unit")
-    case TypeConstructor.Null => ty("Null")
-    case TypeConstructor.Bool => ty("Bool")
-    case TypeConstructor.Char => ty("Char")
-    case TypeConstructor.Float32 => ty("Float32")
-    case TypeConstructor.Float64 => ty("Float64")
-    case TypeConstructor.BigDecimal => ty("BigDecimal")
-    case TypeConstructor.Int8 => ty("Int8")
-    case TypeConstructor.Int16 => ty("Int16")
-    case TypeConstructor.Int32 => ty("Int32")
-    case TypeConstructor.Int64 => ty("Int64")
-    case TypeConstructor.BigInt => ty("BigInt")
-    case TypeConstructor.Str => ty("String")
-    case TypeConstructor.Regex => ty("Regex")
+    case TypeConstructor.Void => Builtin(tc, "Void")
+    case TypeConstructor.AnyType => Builtin(tc, "AnyType")
+    case TypeConstructor.Unit => Builtin(tc, "Unit")
+    case TypeConstructor.Null => Builtin(tc, "Null")
+    case TypeConstructor.Bool => Builtin(tc, "Bool")
+    case TypeConstructor.Char => Builtin(tc, "Char")
+    case TypeConstructor.Float32 => Builtin(tc, "Float32")
+    case TypeConstructor.Float64 => Builtin(tc, "Float64")
+    case TypeConstructor.BigDecimal => Builtin(tc, "BigDecimal")
+    case TypeConstructor.Int8 => Builtin(tc, "Int8")
+    case TypeConstructor.Int16 => Builtin(tc, "Int16")
+    case TypeConstructor.Int32 => Builtin(tc, "Int32")
+    case TypeConstructor.Int64 => Builtin(tc, "Int64")
+    case TypeConstructor.BigInt => Builtin(tc, "BigInt")
+    case TypeConstructor.Str => Builtin(tc, "String")
+    case TypeConstructor.Regex => Builtin(tc, "Regex")
 
     // Arrows
     case TypeConstructor.Arrow(arity) => ty(s"Arrow$arity")
@@ -97,12 +98,12 @@ object Pretty {
     case TypeConstructor.Schema => ty("Schema")
 
     // Collections
-    case TypeConstructor.Array => ty("Array")
+    case TypeConstructor.Array => Builtin(tc, "Array")
     case TypeConstructor.ArrayWithoutRegion => ty("Array")
-    case TypeConstructor.Vector => ty("Vector")
-    case TypeConstructor.Sender => ty("Sender")
-    case TypeConstructor.Receiver => ty("Receiver")
-    case TypeConstructor.Lazy => ty("Lazy")
+    case TypeConstructor.Vector => Builtin(tc, "Vector")
+    case TypeConstructor.Sender => Builtin(tc, "Sender")
+    case TypeConstructor.Receiver => Builtin(tc, "Receiver")
+    case TypeConstructor.Lazy => Builtin(tc, "Lazy")
 
     // User-defined types
     case TypeConstructor.Enum(sym, _) => SymUse(sym, SemanticTokenType.Enum, sym.name)
@@ -358,28 +359,28 @@ object Pretty {
     */
   private def visit(d: DisplayType)(implicit o: FormatOptions): RichText = d match {
     case DisplayType.Hole => text("?")
-    case DisplayType.Void => ty("Void")
-    case DisplayType.AnyType => ty("AnyType")
-    case DisplayType.Unit => ty("Unit")
-    case DisplayType.Null => ty("Null")
-    case DisplayType.Bool => ty("Bool")
-    case DisplayType.Char => ty("Char")
-    case DisplayType.Float32 => ty("Float32")
-    case DisplayType.Float64 => ty("Float64")
-    case DisplayType.BigDecimal => ty("BigDecimal")
-    case DisplayType.Int8 => ty("Int8")
-    case DisplayType.Int16 => ty("Int16")
-    case DisplayType.Int32 => ty("Int32")
-    case DisplayType.Int64 => ty("Int64")
-    case DisplayType.BigInt => ty("BigInt")
-    case DisplayType.Str => ty("String")
-    case DisplayType.Regex => ty("Regex")
-    case DisplayType.Array => ty("Array")
+    case DisplayType.Void => Builtin(TypeConstructor.Void, "Void")
+    case DisplayType.AnyType => Builtin(TypeConstructor.AnyType, "AnyType")
+    case DisplayType.Unit => Builtin(TypeConstructor.Unit, "Unit")
+    case DisplayType.Null => Builtin(TypeConstructor.Null, "Null")
+    case DisplayType.Bool => Builtin(TypeConstructor.Bool, "Bool")
+    case DisplayType.Char => Builtin(TypeConstructor.Char, "Char")
+    case DisplayType.Float32 => Builtin(TypeConstructor.Float32, "Float32")
+    case DisplayType.Float64 => Builtin(TypeConstructor.Float64, "Float64")
+    case DisplayType.BigDecimal => Builtin(TypeConstructor.BigDecimal, "BigDecimal")
+    case DisplayType.Int8 => Builtin(TypeConstructor.Int8, "Int8")
+    case DisplayType.Int16 => Builtin(TypeConstructor.Int16, "Int16")
+    case DisplayType.Int32 => Builtin(TypeConstructor.Int32, "Int32")
+    case DisplayType.Int64 => Builtin(TypeConstructor.Int64, "Int64")
+    case DisplayType.BigInt => Builtin(TypeConstructor.BigInt, "BigInt")
+    case DisplayType.Str => Builtin(TypeConstructor.Str, "String")
+    case DisplayType.Regex => Builtin(TypeConstructor.Regex, "Regex")
+    case DisplayType.Array => Builtin(TypeConstructor.Array, "Array")
     case DisplayType.ArrayWithoutRegion => ty("ArrayWithoutRegion")
-    case DisplayType.Vector => ty("Vector")
-    case DisplayType.Sender => ty("Sender")
-    case DisplayType.Receiver => ty("Receiver")
-    case DisplayType.Lazy => ty("Lazy")
+    case DisplayType.Vector => Builtin(TypeConstructor.Vector, "Vector")
+    case DisplayType.Sender => Builtin(TypeConstructor.Sender, "Sender")
+    case DisplayType.Receiver => Builtin(TypeConstructor.Receiver, "Receiver")
+    case DisplayType.Lazy => Builtin(TypeConstructor.Lazy, "Lazy")
     case DisplayType.False => ty("false")
     case DisplayType.True => ty("true")
     case DisplayType.Pure => ef("{}")

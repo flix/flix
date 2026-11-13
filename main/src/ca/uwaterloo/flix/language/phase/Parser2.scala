@@ -1330,7 +1330,7 @@ object Parser2 {
       expect(TokenKind.KeywordVal)
       nameUnqualified(NAME_FIELD)
       expect(TokenKind.Colon)
-      Type.ttype()
+      Type.typeAndEffect()
       if (eat(TokenKind.Equal)) {
         Expr.statement()
       } else {

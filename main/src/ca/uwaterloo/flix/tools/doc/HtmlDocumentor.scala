@@ -112,11 +112,18 @@ object HtmlDocumentor {
     FontFamilies.map("family=" + _).mkString("https://fonts.googleapis.com/css2?", "&", "&display=swap")
 
   /**
-    * The built-in types in the order the "Primitives" line of a trait page lists them: the order in
-    * which the language reference presents them, which puts `Int8` before `Int16`, where the
-    * alphabet puts it after `Int64`. A built-in type absent from the list follows the ones on it.
+    * The built-in types that the documentation knows by name, e.g. `Int32` and `String`.
+    *
+    * The list serves two purposes:
+    *   1. Its order is the order of the "Primitives" line of a trait page, see [[primitiveRank]]:
+    *      the order in which the language reference presents the types, which puts `Int8` before
+    *      `Int16`, where the alphabet puts it after `Int64`. A built-in type absent from the list
+    *      follows the ones on it.
+    *   1. Its members are the types that a module can be the module of, see [[builtinTypeOf]]: a
+    *      module of the root that is named after one of them, e.g. the module `Int32`, has the
+    *      instances of that type on its page.
     */
-  private val PrimitiveOrder: List[TypeConstructor] = List(
+  private val BuiltinTypes: List[TypeConstructor] = List(
     TypeConstructor.Unit,
     TypeConstructor.Bool,
     TypeConstructor.Char,
@@ -141,7 +148,7 @@ object HtmlDocumentor {
     */
   def run(root: TypedAst.Root, origin: Origin, outputDir: Path): Unit = {
     val mod = documentedModules(root, origin)
-    implicit val links: Links = new Links(documentedSymbols(mod))
+    implicit val links: Links = new Links(documentedSymbols(mod), documentedBuiltins(mod))
     visitMod(mod, outputDir)
 
     HtmlHighlighter.run(root, origin, outputDir)(documentPage)
@@ -211,13 +218,35 @@ object HtmlDocumentor {
   }
 
   /**
+    * Returns the built-in types that the given module tree `mod` documents, each with the module
+    * whose page documents it, see [[builtinTypeOf]].
+    *
+    * Such a module is a module of the root. A companion module is not among the submodules of
+    * `mod`, so a module that has no page of its own is never returned.
+    */
+  private def documentedBuiltins(mod: Module): Map[TypeConstructor, Symbol.ModuleSym] =
+    mod.submodules.flatMap { m =>
+      builtinTypeOf(m.sym) match {
+        case None => Nil
+        case Some(tc) => List(tc -> m.sym)
+      }
+    }.toMap
+
+  /**
     * The resolver from a symbol to the URL of its documentation, given the symbols that are
-    * `documented`, see [[documentedSymbols]].
+    * `documented`, see [[documentedSymbols]], and from a built-in type to that of its, given the
+    * `builtins` that are documented, see [[documentedBuiltins]].
     *
     * A symbol without documentation, e.g. a private declaration or one of another origin, resolves
-    * to nothing, so that its name is written as a colored token rather than as a dead link.
+    * to nothing, so that its name is written as a colored token rather than as a dead link. So does
+    * a built-in type without a module, e.g. `Unit`.
     */
-  private class Links(documented: Set[Symbol]) {
+  private class Links(documented: Set[Symbol], builtins: Map[TypeConstructor, Symbol.ModuleSym]) {
+
+    def builtinLink(tc: TypeConstructor): Option[String] = builtins.get(tc) match {
+      case None => None
+      case Some(sym) => Some(escUrl(moduleFileName(sym)))
+    }
 
     def link(sym: Symbol): Option[String] = if (!documented.contains(sym)) None else sym match {
       case s: Symbol.TraitSym => Some(escUrl(traitFileName(s)))
@@ -402,9 +431,15 @@ object HtmlDocumentor {
         case _ => // No op
       }
 
+      val instances = builtinTypeOf(moduleSym) match {
+        case None => Nil
+        case Some(tc) => instancesOf(root)(_ == tc)
+      }
+
       Module(
         moduleSym,
         mod.doc,
+        instances,
         parent,
         submodules.map(visitMod(_, Some(moduleSym))),
         traits,
@@ -428,8 +463,9 @@ object HtmlDocumentor {
 
     val (sigs, defs) = decl.sigs.partition(_.exp.isEmpty)
     val instances = root.instances.get(sym)
+    val subTraits = root.traits.values.filter(t => t.superTraits.exists(_.symUse.sym == sym)).map(_.sym).toList
 
-    Trait(decl, sigs, defs, instances, parent, None)
+    Trait(decl, sigs, defs, instances, subTraits, parent, None)
   }
 
   /**
@@ -463,6 +499,19 @@ object HtmlDocumentor {
       case _ => false
     }
     Struct(root.structs(sym), instances, parent, None)
+  }
+
+  /**
+    * Returns the built-in type that the module `sym` is the module of, if it is the module of one.
+    *
+    * A built-in type has no declaration, and so no companion module, but the functions of e.g.
+    * `Int32` are in a module of the root that is named after it. Such a module is found by its
+    * name: that of a type on [[BuiltinTypes]], as it is printed, e.g. `String` for
+    * `TypeConstructor.Str`.
+    */
+  private def builtinTypeOf(sym: Symbol.ModuleSym): Option[TypeConstructor] = sym.ns match {
+    case name :: Nil => BuiltinTypes.find(tc => Pretty.tycon(tc).plain == name)
+    case _ => None
   }
 
   /**
@@ -503,12 +552,12 @@ object HtmlDocumentor {
   }
 
   /**
-    * Returns the position of the head of `tpe` on [[PrimitiveOrder]], or the length of that list
+    * Returns the position of the head of `tpe` on [[BuiltinTypes]], or the length of that list
     * if it is not on it, so that such a type sorts after the ones that are.
     */
   private def primitiveRank(tpe: Type): Int = typeHead(tpe) match {
-    case Some(tc) if PrimitiveOrder.contains(tc) => PrimitiveOrder.indexOf(tc)
-    case _ => PrimitiveOrder.length
+    case Some(tc) if BuiltinTypes.contains(tc) => BuiltinTypes.indexOf(tc)
+    case _ => BuiltinTypes.length
   }
 
   /**
@@ -526,10 +575,11 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterContents(mod: Module, origin: Origin): Module = mod match {
-    case Module(sym, doc, parent, submodules, traits, effects, enums, structs, typeAliases, defs) =>
+    case Module(sym, doc, instances, parent, submodules, traits, effects, enums, structs, typeAliases, defs) =>
       Module(
         sym,
         doc,
+        instances,
         parent,
         submodules.map(m => filterContents(m, origin)),
         traits.filter(c => c.decl.mod.isPublic && isFrom(origin, c.decl.sym.loc)).map(c => filterTrait(c)),
@@ -558,7 +608,7 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterTrait(trt: Trait): Trait = trt match {
-    case Trait(TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, _, loc), signatures, defs, instances, parent, _) =>
+    case Trait(TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, _, loc), signatures, defs, instances, subTraits, parent, _) =>
       Trait(
         TypedAst.Trait(
           doc,
@@ -574,6 +624,7 @@ object HtmlDocumentor {
         signatures.filter(s => s.spec.mod.isPublic),
         defs.filter(d => d.spec.mod.isPublic),
         instances,
+        subTraits,
         parent,
         None
       )
@@ -644,7 +695,7 @@ object HtmlDocumentor {
       * Recursively walks the module tree removing empty modules.
       */
     def visitMod(mod: Module): Option[Module] = mod match {
-      case Module(sym, doc, parent, submodules, traits, effects, enums, structs, typeAliases, defs) =>
+      case Module(sym, doc, instances, parent, submodules, traits, effects, enums, structs, typeAliases, defs) =>
         val filteredSubMods = submodules.flatMap(visitMod)
 
         val isEmpty =
@@ -661,6 +712,7 @@ object HtmlDocumentor {
           Module(
             sym,
             doc,
+            instances,
             parent,
             filteredSubMods,
             traits,
@@ -677,6 +729,7 @@ object HtmlDocumentor {
       .getOrElse(Module(
         mod.sym,
         mod.doc,
+        Nil,
         None,
         Nil,
         Nil,
@@ -692,7 +745,7 @@ object HtmlDocumentor {
     * Get the given module tree, but with all companion modules paired to their respective items.
     */
   private def pairModules(mod: Module): Module = mod match {
-    case Module(sym, doc, parent, submodules, traits, effects, enums, structs, typeAliases, defs) =>
+    case Module(sym, doc, instances, parent, submodules, traits, effects, enums, structs, typeAliases, defs) =>
 
       val visitedSubmodules = submodules.map(pairModules)
 
@@ -725,6 +778,7 @@ object HtmlDocumentor {
       Module(
         sym,
         doc,
+        instances,
         parent,
         filteredSubmodules,
         pairedTraits,
@@ -799,6 +853,7 @@ object HtmlDocumentor {
     docBreadcrumbs(mod.parent, mod.name)
     sb.append(s"<h1>${esc(mod.name)}</h1>")
     modDoc(mod.doc)
+    docModuleInstances(mod.instances)
     docSummarySection("Modules", sortedSubModules, (m: Module) => m.doc)
     docSummarySection("Traits", sortedTraits, (t: Trait) => t.decl.doc)
     docSummarySection("Effects", sortedEffs, (e: Effect) => e.decl.doc)
@@ -910,6 +965,7 @@ object HtmlDocumentor {
     sb.append("</div>")
     docDoc(trt.decl.doc)
     docSubSection("Associated Types", sortedAssocs, docAssoc)
+    docSubTraits(trt.subTraits)
     docInstanceTypes(trt.instances)
     sb.append("</div>")
 
@@ -1627,6 +1683,31 @@ object HtmlDocumentor {
   }
 
   /**
+    * Documents the given `subTraits` of a trait, i.e. the traits that extend it directly, as one
+    * comma-separated line under the heading "Sub-traits", e.g. `Applicative, Filterable,
+    * Traversable` for `Functor`. Each trait links to its page.
+    *
+    * A sub-trait without documentation, e.g. a private trait, is left out, see [[Links]].
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If no sub-trait is documented, nothing will be generated.
+    */
+  private def docSubTraits(subTraits: List[Symbol.TraitSym])(implicit links: Links, sb: StringBuilder): Unit = {
+    val documented = subTraits.filter(sym => links.link(sym).isDefined)
+    if (documented.isEmpty) {
+      return
+    }
+
+    sb.append("<section class='subsection sub-traits'>")
+    sb.append("<h2>Sub-traits</h2>")
+    sb.append("<p><code>")
+    docList(documented.sortBy(_.name))(docTraitName)
+    sb.append("</code></p>")
+    sb.append("</section>")
+  }
+
+  /**
     * Documents the given `instances` of a trait by their types, under the heading "Instances", in
     * two groups: the "Primitives", i.e. the built-in types, see [[docPrimitiveInstances]], and the
     * "Non-primitives", i.e. the enums and structs, each a link to its page, in alphabetical order.
@@ -1660,7 +1741,7 @@ object HtmlDocumentor {
     * instances of the trait: one comma-separated line, e.g. `Bool, Char, Int8, Int16, String,
     * Vector[a] and tuples of 2 to 15 elements`.
     *
-    * The types follow [[PrimitiveOrder]]. The tuple instances, one per arity, are summed up in
+    * The types follow [[BuiltinTypes]]. The tuple instances, one per arity, are summed up in
     * words at the end, since fifteen of them, from `(a1, a2)` to `(a1, ..., a15)`, would swamp the
     * line. They are listed as types only if their arities have a gap, which the words could not tell.
     *
@@ -1711,6 +1792,27 @@ object HtmlDocumentor {
     docList(instances.sortBy(_.trt.sym.name))(i => docTraitName(i.trt.sym))
     sb.append("</code></p>")
     sb.append("</section>")
+  }
+
+  /**
+    * Documents the given `instances` of the built-in type that a module is the module of, see
+    * [[builtinTypeOf]], by their traits, see [[docInstanceTraits]].
+    *
+    * A module has no declaration to head a box, so the instances are a box of their own, which
+    * sets them as they are set on the page of an enum or a struct.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `instances` is empty, nothing will be generated.
+    */
+  private def docModuleInstances(instances: List[TypedAst.Instance])(implicit sb: StringBuilder): Unit = {
+    if (instances.isEmpty) {
+      return
+    }
+
+    sb.append("<div class='box' id='main-box'>")
+    docInstanceTraits(instances)
+    sb.append("</div>")
   }
 
   /**
@@ -2021,13 +2123,13 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the given printed syntax `f`: a link per declaration that has a page or an anchor,
-    * see [[Links]], and a class per token, see [[docClass]].
+    * Documents the given printed syntax `f`: a link per declaration that has a page or an anchor
+    * and per built-in type that has a page, see [[Links]], and a class per token, see [[docClass]].
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docRichText(f: RichText)(implicit links: Links, sb: StringBuilder): Unit = {
-    sb.append(f.html(links.link, docClass))
+    sb.append(f.html(links.link, links.builtinLink, docClass))
   }
 
   /**
@@ -2182,9 +2284,13 @@ object HtmlDocumentor {
 
   /**
     * A representation of a module that's easier to work with while generating documentation.
+    *
+    * The `instances` are those of the built-in type that the module is the module of, e.g. of
+    * `Int32` for the module `Int32`. Every other module has none.
     */
   case class Module(sym: Symbol.ModuleSym,
                     doc: Doc,
+                    instances: List[TypedAst.Instance],
                     parent: Option[Symbol.ModuleSym],
                     submodules: List[Module],
                     traits: List[Trait],
@@ -2202,11 +2308,14 @@ object HtmlDocumentor {
 
   /**
     * A representation of a trait that's easier to work with while generating documentation.
+    *
+    * The `subTraits` are the traits that extend the trait directly, documented or not.
     */
   case class Trait(decl: TypedAst.Trait,
                    signatures: List[TypedAst.Sig],
                    defs: List[TypedAst.Sig],
                    instances: List[TypedAst.Instance],
+                   subTraits: List[Symbol.TraitSym],
                    parent: Symbol.ModuleSym,
                    companionMod: Option[Module]) extends Item {
     override def name: String = traitName(this.decl.sym)

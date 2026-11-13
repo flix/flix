@@ -42,7 +42,7 @@ class TestFormatTypeApplication extends AnyFunSuite {
 
   private val loc: SourceLocation = SourceLocation.Unknown
 
-  private val fmt: FormatOptions = FormatOptions(FormatOptions.VarNames.BySource)
+  private val fmt: FormatOptions = FormatOptions(FormatOptions.VarFormat.NameBased)
 
   /**
     * The classes of the type constructors that have a table.

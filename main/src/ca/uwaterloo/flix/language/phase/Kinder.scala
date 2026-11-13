@@ -74,6 +74,8 @@ object Kinder {
 
       val defs = visitDefs(root, oldRoot, changeSet)
 
+      val vals = visitVals(root)
+
       val traits = visitTraits(root, oldRoot, changeSet)
 
       val instances = ParOps.parMapValueList(root.instances)(visitInstance(_, root))
@@ -84,7 +86,7 @@ object Kinder {
         case (sym, m) => sym -> KindedAst.Mod(m.doc, m.ann, m.mod, m.sym, m.loc)
       }
 
-      val newRoot = KindedAst.Root(modules, traits, instances, defs, enums, structs, restrictableEnums, effects, taenv.aliases, root.uses, root.mainEntryPoint, root.sources, root.tokens)
+      val newRoot = KindedAst.Root(modules, traits, instances, defs, vals, enums, structs, restrictableEnums, effects, taenv.aliases, root.uses, root.mainEntryPoint, root.sources, root.tokens)
 
       (newRoot, sctx.errors.asScala.toList)
     }
@@ -325,6 +327,27 @@ object Kinder {
   }
 
   /**
+    * Performs kinding on all the vals in the given root.
+    *
+    * A val has no type parameters, so there is nothing to bind a free type (or kind)
+    * variable against: its declared type is kinded under an empty kind environment,
+    * the same way a struct field's type is.
+    */
+  private def visitVals(root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): Map[Symbol.ValSym, KindedAst.Val] = {
+    ParOps.parMapValues(root.vals)(visitVal(_, root))
+  }
+
+  /**
+    * Performs kinding on the given val.
+    */
+  private def visitVal(val0: ResolvedAst.Declaration.Val, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Val = val0 match {
+    case ResolvedAst.Declaration.Val(sym, doc, ann, mod, tpe0, exp0, loc) =>
+      val tpe = visitType(tpe0, Kind.Star, KindEnv.empty, root)
+      val exp = visitExp(exp0, KindEnv.empty, root)(RegionScope.Top, renv, declKinds, sctx, flix)
+      KindedAst.Val(sym, doc, ann, mod, tpe, exp, loc)
+  }
+
+  /**
     * Performs kinding on the given sig under the given kind environment.
     */
   private def visitSig(sig0: ResolvedAst.Declaration.Sig, traitTparam: KindedAst.TypeParam, kenv0: KindEnv, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Sig = sig0 match {
@@ -411,8 +434,9 @@ object Kinder {
       case ResolvedAst.Expr.Var(sym, loc) =>
         KindedAst.Expr.Var(sym, loc)
 
-      case ResolvedAst.Expr.Val(_, loc) =>
-        throw InternalCompilerException("val expressions are not yet supported past resolution", loc)
+      case ResolvedAst.Expr.Val(symUse, loc) =>
+        val tvar = Type.freshVar(Kind.Star, loc)
+        KindedAst.Expr.Val(symUse, tvar, loc)
 
       case ResolvedAst.Expr.Hole(sym, env, loc) =>
         KindedAst.Expr.Hole(sym, env, loc)
