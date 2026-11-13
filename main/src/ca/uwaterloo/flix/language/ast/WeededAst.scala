@@ -37,7 +37,7 @@ object WeededAst {
 
     case class Redef(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: Nel[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], tconstrs: List[TraitConstraint], constrs: List[EqualityConstraint], loc: SourceLocation) extends Declaration
 
-    case class Val(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tpe: Type, exp: Expr, loc: SourceLocation) extends Declaration
+    case class Val(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tpe: Type, eff: Option[Type], exp: Expr, loc: SourceLocation) extends Declaration
 
     case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tparams: List[TypeParam], derives: Derivations, cases: List[Case], loc: SourceLocation) extends Declaration
 
