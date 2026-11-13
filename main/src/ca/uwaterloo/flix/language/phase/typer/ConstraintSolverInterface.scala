@@ -41,23 +41,37 @@ object ConstraintSolverInterface {
     * pinned down by the declared (monomorphic) type of the val. The declared type itself can
     * never mention a free type variable -- there are no type parameters to bind one against, and
     * the Namer already rejects that case (see `NameError.IllegalPolymorphicVal`). Hence it
-    * suffices to equate the declared type and the declared (implicitly pure) effect with the
-    * inferred ones, exactly as is done for a def's declared return type and effect.
+    * suffices to equate the declared type with the inferred one, exactly as is done for a def's
+    * declared return type.
+    *
+    * A val's body must always actually be pure: there is no way for a val to be granted an
+    * effect the way a def is by its `\ Eff` annotation, so the body's inferred effect is
+    * unconditionally equated with [[Type.Pure]] (the same constraint a def with no effect
+    * annotation gets). A val's own effect annotation, if written at all, is not such a grant of
+    * permission -- it exists only so a user can write a syntactically effectful-looking
+    * expression (e.g. `IO - IO`) that is semantically pure. So the annotation, if present, is
+    * *also* equated with [[Type.Pure]], as a second, independent constraint solved by the same
+    * ordinary effect unification used everywhere else -- which is exactly what lets `IO - IO`
+    * succeed (it normalizes to the empty effect set) while a bare `IO` correctly fails.
     */
   def visitVal(v: KindedAst.Val, infResult: InfResult, tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = v match {
-    case KindedAst.Val(_, _, _, _, tpe, _, loc) =>
+    case KindedAst.Val(_, _, _, _, tpe, eff0, _, loc) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
 
       val renv = infRenv
 
-      // A val has no syntax for an effect annotation, so it is implicitly pure (like a def with no effect annotation).
       val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
       val tpos = moveRight(tpe.loc.end)
       val loc1 = SourceLocation(true, tpe.loc.source, tpe.loc.end, tpos)
       val declaredEffConstr = TypeConstraint.Equality(Type.Pure, infEff, Provenance.ExpectEffect(expected = Type.Pure, actual = infEff, loc1))
 
-      val constrs = declaredTpeConstr :: declaredEffConstr :: infConstrs
+      // If an effect annotation was written, it must itself denote Pure (see above).
+      val annotationMustBePureConstrs = eff0.toList.map { e =>
+        TypeConstraint.Equality(Type.Pure, e, Provenance.ExpectEffect(expected = Type.Pure, actual = e, e.loc))
+      }
+
+      val constrs = declaredTpeConstr :: declaredEffConstr :: (annotationMustBePureConstrs ::: infConstrs)
 
       val (leftovers, subst) = ConstraintSolver2.solveAll(constrs, SubstitutionTree.empty)(RegionScope.Top, renv, tenv0, eqEnv0, flix)
       leftovers match {
@@ -74,7 +88,7 @@ object ConstraintSolverInterface {
             case Build.Development =>
               // Otherwise we have special logic for the [[Debug]] effect: We solve a new constraint system where [[Debug]] is allowed.
               val declaredEffConstrWithDebug = TypeConstraint.Equality(Type.Debug, infEff, Provenance.ExpectEffect(expected = Type.Debug, actual = infEff, loc1))
-              val constrsWithDebug = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
+              val constrsWithDebug = declaredTpeConstr :: declaredEffConstrWithDebug :: (annotationMustBePureConstrs ::: infConstrs)
               val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, SubstitutionTree.empty)(RegionScope.Top, renv, tenv0, eqEnv0, flix)
 
               leftovers2 match {

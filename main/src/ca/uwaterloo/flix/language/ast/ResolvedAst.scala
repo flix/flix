@@ -50,7 +50,7 @@ object ResolvedAst {
 
     case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr, loc: SourceLocation) extends Declaration
 
-    case class Val(sym: Symbol.ValSym, doc: Doc, ann: Annotations, mod: Modifiers, tpe: UnkindedType, exp: Expr, loc: SourceLocation) extends Declaration
+    case class Val(sym: Symbol.ValSym, doc: Doc, ann: Annotations, mod: Modifiers, tpe: UnkindedType, eff: Option[UnkindedType], exp: Expr, loc: SourceLocation) extends Declaration
 
     case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
 
