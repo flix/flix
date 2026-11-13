@@ -79,7 +79,7 @@ object Pretty {
   /**
     * Returns the given type variable `sym` as a tree, written by its name in the options.
     */
-  def typeVar(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): RichText = tparam(o.varNames.nameOf(sym))
+  def typeVar(sym: Symbol.KindedTypeVarSym)(implicit o: FormatOptions): RichText = tparam(o.varFormat.nameOf(sym))
 
   /**
     * Returns the given type view `d` as a tree.

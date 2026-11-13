@@ -19,7 +19,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
   private val scope = RegionScope.Top
   private val loc = SourceLocation.Unknown
   private val standardFormat = FormatOptions(
-    FormatOptions.VarNames.BySource
+    FormatOptions.VarFormat.NameBased
   )
 
   test("FormatType.Type.Record.External.01") {
