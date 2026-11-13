@@ -35,24 +35,7 @@ object ConstraintSolverInterface {
 
   /**
     * Resolves constraints in the given val using the given inference result.
-    *
-    * Not yet implemented: real val type-checking (verifying the body against the declared type
-    * and effect) is deferred to a follow-up PR (this PR only adds the `TypedAst`/`InferredAst`
-    * plumbing -- the `vals` map, `Val`/`Expr.Val` nodes, and every recursive call site that needs
-    * a case for them -- per review; see the stubbed `ConstraintGen.Expr.Val` case for the other
-    * half of that deferral).
-    *
-    * This solves only the constraints that arise from the body's own internal structure (e.g. an
-    * `if`/`else`'s two branches needing the same type) -- the same `infConstrs` a def's body
-    * would need solved regardless of its declared signature -- and deliberately omits the two
-    * constraints that would actually check anything against the declaration (declared type ~
-    * inferred type, and the Pure-effect requirement). Omitting those two is what keeps this
-    * "plumbing, not functionality": unlike a straight `throw`, which would crash `Typer.visitVals`
-    * (and hence the whole compiler) on *every* val declaration, checked or not -- including ones
-    * whose only problem is an unrelated, already-reported error from an earlier phase (e.g.
-    * `KindError.UnexpectedEffect.Val.01`, `TestResolver`'s `UndefinedType.07`) -- this keeps those
-    * pre-existing regression tests passing while still not implementing (or even attempting) the
-    * actual type-checking.
+    * TODO: declaration-level checking (type/purity) is not yet implemented; the follow-up on `feat/val-typer-constraints` adds it.
     */
   def visitVal(v: KindedAst.Val, infResult: InfResult, tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = {
     val InfResult(infConstrs, _, _, infRenv) = infResult
