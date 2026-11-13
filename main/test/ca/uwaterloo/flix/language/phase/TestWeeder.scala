@@ -2153,9 +2153,10 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   }
 
   test("IllegalEffectfulVal.02") {
+    // An explicit `\ {}` is allowed: it just makes the implicit default (pure) explicit.
     val input = "val myVal: Int32 \\ {} = 1"
     val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEffectfulVal](result)
+    expectSuccess(result)
   }
 
   test("IllegalEffectfulVal.03") {

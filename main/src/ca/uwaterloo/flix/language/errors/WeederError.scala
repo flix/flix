@@ -1276,7 +1276,7 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate a val which itself has an effect.
+    * An error raised to indicate a val which has an effect.
     *
     * @param loc the location where the error occurred.
     */
@@ -1291,7 +1291,7 @@ object WeederError {
          |
          |${src(loc, "unexpected effect")}
          |
-         |${underline("Explanation:")} A val may not itself have an effect.
+         |${underline("Explanation:")} A val may not have an effect.
          |""".stripMargin
     }
   }

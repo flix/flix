@@ -369,7 +369,12 @@ object Weeder2 {
       val ident = pickNameIdent(tree)
       val tpe = Types.pickType(tree)
       val eff = Types.tryPickEffect(tree)
-      eff.foreach(e => sctx.errors.add(WeederError.IllegalEffectfulVal(e.loc)))
+      // An explicit `\ {}` always parses to `Type.Pure` (see `visitEffectType`). It is allowed
+      // since it is just making the implicit default explicit; any other effect is not.
+      eff.foreach {
+        case Type.Pure(_) => ()
+        case e => sctx.errors.add(WeederError.IllegalEffectfulVal(e.loc))
+      }
       val exp = Exprs.pickExpr(tree)
       Declaration.Val(doc, ann, mod, ident, tpe, eff, exp, tree.loc)
     }
