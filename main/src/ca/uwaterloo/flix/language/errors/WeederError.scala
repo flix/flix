@@ -1276,22 +1276,22 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that an effect annotation was given on a `val` field declaration.
+    * An error raised to indicate a val which itself has an effect.
     *
-    * @param loc the location of the effect annotation.
+    * @param loc the location where the error occurred.
     */
-  case class UnsupportedEffectOnVal(loc: SourceLocation) extends WeederError {
+  case class IllegalEffectfulVal(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E4217
 
-    def summary: String = "Effects are not yet supported on fields."
+    def summary: String = "Unexpected effect on val."
 
     def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
-      s""">> Effects are not yet supported on fields.
+      s""">> Unexpected effect on val.
          |
-         |${src(loc, "unsupported effect")}
+         |${src(loc, "unexpected effect")}
          |
-         |${underline("Explanation:")} A 'val' field declaration must be pure. Remove the effect annotation.
+         |${underline("Explanation:")} A val may not itself have an effect.
          |""".stripMargin
     }
   }

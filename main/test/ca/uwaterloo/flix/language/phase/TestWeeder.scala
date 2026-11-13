@@ -2146,22 +2146,22 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalConstantPattern](result)
   }
 
-  test("UnsupportedEffectOnVal.01") {
-    val input = "val myField: Int32 \\ IO = 1"
+  test("IllegalEffectfulVal.01") {
+    val input = "val myVal: Int32 \\ IO = 1"
     val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.UnsupportedEffectOnVal](result)
+    expectError[WeederError.IllegalEffectfulVal](result)
   }
 
-  test("UnsupportedEffectOnVal.02") {
-    val input = "val myField: Int32 \\ {} = 1"
+  test("IllegalEffectfulVal.02") {
+    val input = "val myVal: Int32 \\ {} = 1"
     val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.UnsupportedEffectOnVal](result)
+    expectError[WeederError.IllegalEffectfulVal](result)
   }
 
-  test("UnsupportedEffectOnVal.03") {
-    val input = "val myField: Int32 = 1"
+  test("IllegalEffectfulVal.03") {
+    val input = "val myVal: Int32 = 1"
     val result = check(input, Options.TestWithLibNix)
-    rejectError[WeederError.UnsupportedEffectOnVal](result)
+    rejectError[WeederError.IllegalEffectfulVal](result)
   }
 
 }

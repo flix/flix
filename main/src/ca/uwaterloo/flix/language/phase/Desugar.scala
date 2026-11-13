@@ -135,7 +135,7 @@ object Desugar {
   private def visitVal(val0: WeededAst.Declaration.Val)(implicit flix: Flix): DesugaredAst.Declaration.Val = val0 match {
     case WeededAst.Declaration.Val(doc, ann, mod, ident, tpe0, _, exp0, loc) =>
       // The effect annotation, if any, is weeder-only metadata used to raise
-      // WeederError.UnsupportedEffectOnVal. It is dropped here since a val's
+      // WeederError.IllegalEffectfulVal. It is dropped here since a val's
       // effect is always pure and nothing downstream needs it.
       val tpe = visitType(tpe0)
       val exp = visitExp(exp0)

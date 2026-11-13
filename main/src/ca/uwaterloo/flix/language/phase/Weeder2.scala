@@ -369,7 +369,7 @@ object Weeder2 {
       val ident = pickNameIdent(tree)
       val tpe = Types.pickType(tree)
       val eff = Types.tryPickEffect(tree)
-      eff.foreach(e => sctx.errors.add(WeederError.UnsupportedEffectOnVal(e.loc)))
+      eff.foreach(e => sctx.errors.add(WeederError.IllegalEffectfulVal(e.loc)))
       val exp = Exprs.pickExpr(tree)
       Declaration.Val(doc, ann, mod, ident, tpe, eff, exp, tree.loc)
     }
