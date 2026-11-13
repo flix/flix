@@ -341,10 +341,11 @@ object Kinder {
     * Performs kinding on the given val.
     */
   private def visitVal(val0: ResolvedAst.Declaration.Val, root: ResolvedAst.Root)(implicit renv: RootEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Val = val0 match {
-    case ResolvedAst.Declaration.Val(sym, doc, ann, mod, tpe0, exp0, loc) =>
+    case ResolvedAst.Declaration.Val(sym, doc, ann, mod, tpe0, eff0, exp0, loc) =>
       val tpe = visitType(tpe0, Kind.Star, KindEnv.empty, root)
+      val eff = eff0.map(visitEff(_, KindEnv.empty, root))
       val exp = visitExp(exp0, KindEnv.empty, root)(RegionScope.Top, renv, declKinds, sctx, flix)
-      KindedAst.Val(sym, doc, ann, mod, tpe, exp, loc)
+      KindedAst.Val(sym, doc, ann, mod, tpe, eff, exp, loc)
   }
 
   /**

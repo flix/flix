@@ -3759,4 +3759,26 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectSuccess(result)
   }
 
+  test("Test.Val.EffectAnnotation.01") {
+    // `IO - IO` is syntactically effectful but semantically pure: this proves purity is enforced
+    // via real effect unification, not a syntactic check (which would wrongly reject this).
+    val input =
+      """
+        |val x: String \ IO - IO = "hi"
+        |pub eff IO
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
+  test("TypeError.ImplicitlyPureFunctionUsesIO.Val.01") {
+    val input =
+      """
+        |val x: Int32 \ IO = 1
+        |pub eff IO
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
 }
