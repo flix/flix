@@ -2146,23 +2146,13 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalConstantPattern](result)
   }
 
-  test("IllegalEffectfulVal.01") {
+  test("EffectAnnotation.Val.01") {
+    // An effect annotation on a val parses and weeds without error. Purity enforcement, if any,
+    // is a semantic (not syntactic) concern and belongs to a later phase (e.g. the typer), since
+    // the Weeder cannot tell e.g. `IO - IO` apart from `IO` without resolving/unifying effects.
     val input = "val myVal: Int32 \\ IO = 1"
     val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEffectfulVal](result)
-  }
-
-  test("IllegalEffectfulVal.02") {
-    // An explicit `\ {}` is allowed: it just makes the implicit default (pure) explicit.
-    val input = "val myVal: Int32 \\ {} = 1"
-    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
-  }
-
-  test("IllegalEffectfulVal.03") {
-    val input = "val myVal: Int32 = 1"
-    val result = check(input, Options.TestWithLibNix)
-    rejectError[WeederError.IllegalEffectfulVal](result)
   }
 
 }

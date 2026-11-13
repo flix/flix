@@ -134,9 +134,10 @@ object Desugar {
     */
   private def visitVal(val0: WeededAst.Declaration.Val)(implicit flix: Flix): DesugaredAst.Declaration.Val = val0 match {
     case WeededAst.Declaration.Val(doc, ann, mod, ident, tpe0, _, exp0, loc) =>
-      // The effect annotation, if any, is weeder-only metadata used to raise
-      // WeederError.IllegalEffectfulVal. It is dropped here since a val's
-      // effect is always pure and nothing downstream needs it.
+      // The effect annotation, if any, is parsed and carried by the Weeder but not yet enforced
+      // anywhere (purity is a semantic fact the Weeder cannot check syntactically; that
+      // enforcement belongs to a later phase, e.g. the typer). It is dropped here since
+      // DesugaredAst.Declaration.Val has no eff field and nothing at this stage needs it.
       val tpe = visitType(tpe0)
       val exp = visitExp(exp0)
       DesugaredAst.Declaration.Val(doc, ann, mod, ident, tpe, exp, loc)
