@@ -12,7 +12,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestFormatSignature extends AnyFunSuite with TestUtils {
 
-  private val fmt: FormatOptions = FormatOptions(FormatOptions.VarName.NameBased)
+  private val fmt: FormatOptions = FormatOptions(FormatOptions.VarFormat.NameBased)
 
   /**
     * The options the programs of this suite are checked with.
