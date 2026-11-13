@@ -387,7 +387,7 @@ object Resolver {
       resolveInstance(inst, scp0, ns0)
     case defn@NamedAst.Declaration.Def(_, _, _, _) =>
       Some(resolveDef(defn, None, scp0)(ns0, taenv, sctx, root, flix))
-    case vald@NamedAst.Declaration.Val(_, _, _, _, _, _, _, _) =>
+    case vald@NamedAst.Declaration.Val(_, _, _, _, _, _, _) =>
       Some(resolveVal(vald, scp0)(ns0, taenv, sctx, root, flix))
     case enum0@NamedAst.Declaration.Enum(_, _, _, _, _, _, _, _) =>
       Some(resolveEnum(enum0, scp0, taenv, ns0, root))
@@ -561,11 +561,10 @@ object Resolver {
     * Performs name resolution on the given val `d0` in the given namespace `ns0`.
     */
   private def resolveVal(d0: NamedAst.Declaration.Val, scp0: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Declaration.Val = d0 match {
-    case NamedAst.Declaration.Val(sym, doc, ann, mod, tpe0, eff0, exp0, loc) =>
+    case NamedAst.Declaration.Val(sym, doc, ann, mod, tpe0, exp0, loc) =>
       val tpe = resolveType(tpe0, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
-      val eff = eff0.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix))
       val exp = resolveExp(exp0, scp0)(RegionScope.Top, ns0, taenv, sctx, root, flix)
-      ResolvedAst.Declaration.Val(sym, doc, ann, mod, tpe, eff, exp, loc)
+      ResolvedAst.Declaration.Val(sym, doc, ann, mod, tpe, exp, loc)
   }
 
   /**
@@ -3579,7 +3578,7 @@ object Resolver {
     case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym
     case NamedAst.Declaration.Sig(sym, _, _, _) => sym
     case NamedAst.Declaration.Def(sym, _, _, _) => sym
-    case NamedAst.Declaration.Val(sym, _, _, _, _, _, _, _) => sym
+    case NamedAst.Declaration.Val(sym, _, _, _, _, _, _) => sym
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym
     case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) => sym
     case NamedAst.Declaration.StructField(_, _, sym, _, _) => sym
