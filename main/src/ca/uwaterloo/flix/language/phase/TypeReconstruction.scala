@@ -36,7 +36,7 @@ object TypeReconstruction {
     * resolved, since a val has no type parameters to generalize.
     */
   def visitVal(v: KindedAst.Val, exp0: InferredAst.Expr, subst: SubstitutionTree)(implicit flix: Flix): TypedAst.Val = v match {
-    case KindedAst.Val(sym, doc, ann, mod, tpe, _, _, loc) =>
+    case KindedAst.Val(sym, doc, ann, mod, tpe, _, loc) =>
       val exp = visitExp(exp0)(subst, flix)
       TypedAst.Val(doc, ann, mod, sym, tpe, exp, loc)
   }
