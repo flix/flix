@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.Pretty
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, Pretty}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -21,6 +21,8 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
   def kind: CompilationMessageKind = CompilationMessageKind.StratificationError
 
   def code: ErrorCode = ErrorCode.E5914
+
+  private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe)
 
   def summary: String = "The expression is not stratified. A predicate depends strongly on itself."
 
