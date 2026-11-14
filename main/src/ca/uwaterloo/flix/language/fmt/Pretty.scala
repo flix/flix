@@ -7,11 +7,10 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.lsp.SemanticTokenType
-import ca.uwaterloo.flix.language.ast.shared.{Constant, EqualityConstraint, QualifiedSym, RegionScope, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, EqualityConstraint, QualifiedSym, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{Kind, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.RichText.{Builtin, SymDecl, SymUse, Token, ef, kw, op, parens, prop, sep, text, tparam, ty}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
-import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.Nel
 
 /**
@@ -31,39 +30,11 @@ object Pretty {
   /**
     * Returns the given well-kinded type `t` as a tree.
     *
-    * Alpha-renames the flexible variables of `t` if the rigidity environment `renv` is present,
-    * which is a pass over the type that runs before the view is built.
+    * The type variables of `t` are written as the options say. Types that are shown together, e.g.
+    * in one error message, get their variables numbered once by [[FormatOptions.forTypes]].
     */
-  def tpe(t: Type, renv: Option[RigidityEnv] = None)(implicit o: FormatOptions): RichText = {
-    val renamed = renv match {
-      case None => t
-      case Some(env) => alphaRename(t, env)
-    }
-    displayType(DisplayType.fromWellKindedType(renamed))
-  }
-
-  /**
-    * Renames all flexible variables in the given `tpe` to fresh consecutively numbered variables.
-    *
-    * NOTE: This function should *ONLY* be used for pretty printing.
-    */
-  private def alphaRename(tpe: Type, renv: RigidityEnv): Type = {
-    // Compute the free type variables.
-    val freeVars = tpe.typeVars.toList.sortBy(_.sym.id)
-
-    // Compute the flexible variables (i.e. the free variables that are not rigid).
-    val flexibleVars = renv.getFlexibleVarsOf(freeVars)(RegionScope.Top) // TODO LEVELS ideally we should have a proper scope here
-
-    // Compute a substitution that maps the first flexible variable to id 1 and so forth.
-    val m = flexibleVars.zipWithIndex.map {
-      case (Type.Var(sym, loc), index) =>
-        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.scope, loc), loc): Type)
-    }
-    val s = Substitution(m.toMap)
-
-    // Apply the substitution to the type.
-    s(tpe)
-  }
+  def tpe(t: Type)(implicit o: FormatOptions): RichText =
+    displayType(DisplayType.fromWellKindedType(t))
 
   /**
     * Returns `tpe \ eff` for the given type `tpe` and effect `eff`, or just `tpe` if `eff` is pure.
