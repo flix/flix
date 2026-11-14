@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.Pretty
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, Pretty}
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.util.Formatter
 
@@ -69,6 +69,8 @@ object SafetyError {
   case class IllegalCheckedCast(from: Type, to: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3796
 
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(from, to)
+
     def summary: String = "Impossible cast: neither type is a subtype of the other."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
@@ -96,6 +98,8 @@ object SafetyError {
   case class IllegalCheckedCastFromNonJava(from: Type, to: ClassDesc, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3807
 
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(from)
+
     def summary: String = "Impossible cast: cannot cast a Flix type to a Java type."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
@@ -121,6 +125,8 @@ object SafetyError {
     */
   case class IllegalCheckedCastFromVar(from: Type.Var, to: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3918
+
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(from, to)
 
     def summary: String = "Impossible cast: cannot cast from a type variable."
 
@@ -149,6 +155,8 @@ object SafetyError {
   case class IllegalCheckedCastToNonJava(from: ClassDesc, to: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4029
 
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(to)
+
     def summary: String = "Impossible cast: cannot cast a Java type to a Flix type."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
@@ -175,6 +183,8 @@ object SafetyError {
   case class IllegalCheckedCastToVar(from: Type, to: Type.Var, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4132
 
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(from, to)
+
     def summary: String = "Impossible cast: cannot cast to a type variable."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
@@ -200,6 +210,8 @@ object SafetyError {
     */
   case class IllegalMethodEffect(eff: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4243
+
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(eff)
 
     def summary: String = s"Unexpected method effect: '${Pretty.tpe(eff).plain}'."
 
@@ -246,6 +258,8 @@ object SafetyError {
     */
   case class IllegalThrowType(tpe: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4465
+
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe)
 
     def summary: String = s"Unexpected throw type: '${Pretty.tpe(tpe).plain}' is not a subclass of Throwable."
 
@@ -384,6 +398,8 @@ object SafetyError {
     */
   case class ImpossibleUncheckedCast(from: Type, to: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5023
+
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(from, to)
 
     def summary: String = "Impossible cast: types are incompatible."
 
