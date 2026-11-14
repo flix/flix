@@ -7,7 +7,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, RegionScope, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -65,25 +65,11 @@ class TypeContext {
   private var currentScopeConstraints: ScopeConstraints = ScopeConstraints.empty
 
   /**
-    * The current rigidity environment.
-    *
-    * This environment only grows; we don't remove rigid variables as we exit a region.
-    *
-    * We use a mutable variable because RigidityEnv is an immutable structure.
-    */
-  private var renv: RigidityEnv = RigidityEnv.empty
-
-  /**
     * The typing context from outside the current scope.
     *
     * We push and pop information from this stack when we enter and exit regions.
     */
   private val constraintStack: mutable.Stack[ScopeConstraints] = mutable.Stack.empty
-
-  /**
-    * Returns the current rigidity environment.
-    */
-  def getRigidityEnv: RigidityEnv = renv
 
   /**
     * Returns the current type constraints.
@@ -263,17 +249,9 @@ class TypeContext {
   }
 
   /**
-    * Marks the given type variable as rigid in the context.
-    */
-  def rigidify(sym: Symbol.KindedTypeVarSym): Unit = {
-    renv = renv.markRigid(sym)
-  }
-
-  /**
     * Enters a new region.
     *
     * Current scope information is pushed onto the stack,
-    * the region symbol is marked as rigid,
     * and we get a fresh empty set of constraints for the new scope.
     */
   def enterRegion(sym: Symbol.RegionSym): Unit = {
