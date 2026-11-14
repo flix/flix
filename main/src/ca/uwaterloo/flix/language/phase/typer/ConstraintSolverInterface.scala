@@ -34,6 +34,20 @@ object ConstraintSolverInterface {
   }
 
   /**
+    * Resolves constraints in the given val using the given inference result.
+    * TODO: declaration-level checking (type/purity) is not yet implemented; the follow-up on `feat/val-typer-constraints` adds it.
+    */
+  def visitVal(v: KindedAst.Val, infResult: InfResult, tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = {
+    val InfResult(infConstrs, _, _, infRenv) = infResult
+    val renv = infRenv
+    val (leftovers, subst) = ConstraintSolver2.solveAll(infConstrs, SubstitutionTree.empty)(RegionScope.Top, renv, tenv0, eqEnv0, flix)
+    leftovers match {
+      case Nil => (subst, Nil)
+      case _ => (subst, mkTypeErrors(leftovers, subst, renv, root))
+    }
+  }
+
+  /**
     * Resolves constraints in the given signature using the given inference result.
     */
   def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = sig match {

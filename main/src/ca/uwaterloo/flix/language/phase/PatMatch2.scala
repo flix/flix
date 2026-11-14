@@ -643,6 +643,8 @@ object PatMatch2 {
     tast match {
       case Expr.Var(_, _, _) => ()
 
+      case Expr.Val(_, _, _) => ()
+
       case Expr.Hole(_, _, _, _, _) => ()
 
       case Expr.HoleWithExp(exp, _, _, _, _) => visitExp(exp)

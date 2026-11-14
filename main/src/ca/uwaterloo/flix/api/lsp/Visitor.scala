@@ -325,6 +325,7 @@ object Visitor {
     expr match {
       case Expr.Cst(_, _, _) => ()
       case Expr.Var(_, _, _) => ()
+      case Expr.Val(_, _, _) => () // TODO VAL: no LSP support (e.g. go-to-definition) yet.
       case Expr.Hole(_, _, _, _, _) => ()
 
       case Expr.HoleWithExp(exp, _, _, _, _) =>

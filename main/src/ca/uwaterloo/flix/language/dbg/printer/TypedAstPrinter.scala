@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse, ValSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{JConstructor, JField}
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.dbg.DocAst
@@ -31,6 +31,7 @@ object TypedAstPrinter {
   private def print(e: TypedAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Expr.Var(sym, _, _) => printVar(sym)
+    case Expr.Val(ValSymUse(sym, _), _, _) => DocAst.Expr.AsIs(sym.toString)
     case Expr.Hole(sym, _, _, _, _) => DocAst.Expr.Hole(sym)
     case Expr.HoleWithExp(exp, _, _, _, _) => DocAst.Expr.HoleWithExp(print(exp))
     case Expr.OpenAs(_, _, _, _) => DocAst.Expr.Unknown

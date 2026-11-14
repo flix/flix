@@ -198,6 +198,9 @@ object Lowering {
 
     case TypedAst.Expr.Var(sym, tpe, loc) => MonoAst.Expr.Var(sym, lowerType(tpe), loc)
 
+    case TypedAst.Expr.Val(_, _, loc) =>
+      throw InternalCompilerException("val expressions are not yet supported past typing", loc)
+
     case TypedAst.Expr.Hole(sym, _, tpe, eff, loc) =>
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, eff, loc)

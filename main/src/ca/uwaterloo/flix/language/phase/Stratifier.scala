@@ -95,6 +95,8 @@ object Stratifier {
 
     case Expr.Var(_, _, _) => exp0
 
+    case Expr.Val(_, _, _) => exp0
+
     case Expr.Hole(_, _, _, _, _) => exp0
 
     case Expr.HoleWithExp(exp, env, tpe, eff, loc) =>
