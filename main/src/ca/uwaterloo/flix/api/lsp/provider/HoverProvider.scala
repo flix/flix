@@ -43,7 +43,7 @@ object HoverProvider {
     val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(tpe)(root)
     val markup =
       s"""```flix
-         |${Pretty.tpe(tpe).plain}$lowerAndUpperBounds
+         |${Pretty.tpe(tpe)(FormatOptions.forTypes(tpe)).plain}$lowerAndUpperBounds
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -54,7 +54,7 @@ object HoverProvider {
   private def hoverTypeAndEff(tpe: Type, eff: Type, loc: SourceLocation): Option[Hover] = {
     val markup =
       s"""```flix
-         |${Pretty.typeAndEff(tpe, eff).plain}
+         |${Pretty.typeAndEff(tpe, eff)(FormatOptions.forTypes(tpe, eff)).plain}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
