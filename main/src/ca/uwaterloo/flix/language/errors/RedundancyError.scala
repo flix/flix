@@ -107,6 +107,8 @@ object RedundancyError {
   case class RedundantCheckedTypeCast(tpe: Type, loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7178
 
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe)
+
     def summary: String = "Redundant type cast."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
