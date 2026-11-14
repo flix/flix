@@ -198,12 +198,11 @@ object Typer {
     val exp = ConstraintGen.visitExp(defn.exp)
     val tpe = exp.tpe
     val eff0 = exp.eff
-    val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
 
     flix.emitEvent(FlixEvent.NewConstraintsDef(defn.sym, infTconstrs))
 
-    val infResult = InfResult(infTconstrs, tpe, eff0, infRenv)
+    val infResult = InfResult(infTconstrs, tpe, eff0)
     val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, econstrs0, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
     checkSpecAssocTypes(defn.spec, tconstrs0, traitEnv)
@@ -248,10 +247,9 @@ object Typer {
         val exp = ConstraintGen.visitExp(exp0)
         val tpe = exp.tpe
         val eff0 = exp.eff
-        val renv = context.getRigidityEnv
         val constrs = context.getTypeConstraints
 
-        val infResult = InfResult(constrs, tpe, eff0, renv)
+        val infResult = InfResult(constrs, tpe, eff0)
         val (subst, constraintErrors) = ConstraintSolverInterface.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
         constraintErrors.foreach(sctx.errors.add)
         TypeReconstruction.visitSig(sig, Some(exp), subst)

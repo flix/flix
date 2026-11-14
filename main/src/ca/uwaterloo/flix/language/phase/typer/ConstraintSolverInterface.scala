@@ -48,7 +48,7 @@ object ConstraintSolverInterface {
   def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = spec match {
     case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs) =>
 
-      val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
+      val InfResult(infConstrs, infTpe, infEff) = infResult
 
       // The initial substitution maps from formal parameters to their types
       val initialSubst = fparams.foldLeft(Substitution.empty) {
@@ -60,9 +60,8 @@ object ConstraintSolverInterface {
 
       // The rigidity environment is made up of:
       // 1. rigid variables from the context (e.g. from instance type parameters)
-      // 2. rigid variables from type inference (e.g. regions)
-      // 3. rigid variables from declared function type parameters
-      val renv = allTparams.foldLeft(infRenv ++ renv0) {
+      // 2. rigid variables from declared function type parameters
+      val renv = allTparams.foldLeft(renv0) {
         case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
       }
 
