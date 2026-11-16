@@ -64,6 +64,30 @@ Never compare runs made with different heap settings. An unpinned default heap i
 
 Run master and the change from checkouts of their own commits (master is the merge base), one run per side, master first, same JDK, idle machine. Numbers that go into a PR come from an `--n 500` run. Never drop warm-up iterations: every statistic is over all iterations.
 
+## Profiling with `--top`
+
+`--top` shows a live, top-style TUI of where the compiler spends its time: one row per def with its phase, allocation, time, `%cpu` and `%wall`. Run it from the fat JAR in a real terminal, with the heap pinned as for benchmarks:
+
+```bash
+./mill flix.assembly
+java -Xms8g -Xmx8g -jar out/flix/assembly.dest/out.jar --top foo.flix
+```
+
+When compilation finishes, the phase label in the top-left corner changes to `done` and the TUI waits for `q`.
+
+The TUI is turned off when the JVM has no console (`System.console() == null` in `Main.scala`). So `./mill flix.run --top foo.flix` from a non-interactive shell, or the JAR with its output redirected, prints nothing and exits 0. To capture the screen without an interactive terminal (Windows):
+
+1. From the repository root, start the JAR in a hidden console window of a known size:
+
+   ```powershell
+   $p = Start-Process cmd.exe -ArgumentList '/c', 'chcp 65001 >nul & mode con: cols=170 lines=45 & java -Xms8g -Xmx8g -jar out\flix\assembly.dest\out.jar --top foo.flix' -WorkingDirectory $PWD -WindowStyle Hidden -PassThru
+   ```
+
+2. Read that window's screen buffer through `kernel32` P/Invoke: `FreeConsole`, `AttachConsole($p.Id)`, open `CONOUT$` with `CreateFileW`, get the size from `GetConsoleScreenBufferInfo`, and read each row with `ReadConsoleOutputCharacterW`.
+3. Poll every 500 ms until the text contains `done`, read once more, then end the process with `taskkill /T /F /PID $p.Id`.
+
+`mode con` sets how much is captured: the table fills the window height and the def name column takes the spare width. `chcp 65001` keeps the progress bar and sparkline characters intact.
+
 ## Commit Messages
 
 Commit messages must start with a lowercase prefix followed by a colon and space:
