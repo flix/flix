@@ -487,6 +487,9 @@ object Specialization {
     case Expr.Cst(cst, tpe, loc) =>
       Expr.Cst(cst, subst(tpe), loc)
 
+    case Expr.Val(_, _, loc) =>
+      throw InternalCompilerException("val expressions are not yet supported past typing", loc)
+
     case Expr.Hole(sym, scp, tpe, eff, loc) =>
       val t = subst(tpe)
       Expr.Hole(sym, scp, t, subst(eff), loc)

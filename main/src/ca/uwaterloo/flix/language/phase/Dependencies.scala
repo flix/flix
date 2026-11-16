@@ -116,6 +116,10 @@ object Dependencies {
     case Expr.Var(_, tpe, _) =>
       visitType(tpe)
 
+    case Expr.Val(symUse, tpe, _) =>
+      visitSymUse(symUse)
+      visitType(tpe)
+
     case Expr.Hole(_, _, tpe, eff, _) =>
       visitType(tpe)
       visitType(eff)
@@ -585,6 +589,7 @@ object Dependencies {
     case SymUse.SigSymUse(sym, loc) => addDependency(sym.loc, loc)
     case SymUse.StructFieldSymUse(sym, loc) => addDependency(sym.loc, loc)
     case SymUse.TraitSymUse(sym, loc) => addDependency(sym.loc, loc)
+    case SymUse.ValSymUse(sym, loc) => addDependency(sym.loc, loc)
     case _ => ()
   }
 

@@ -135,6 +135,9 @@ private[monomorph2] object SpecializeAndLower {
       val t = visitType(tpe, subst)
       MonoAst.Expr.Var(env0(sym), t, loc)
 
+    case TypedAst.Expr.Val(_, _, loc) =>
+      throw InternalCompilerException("val expressions are not yet supported past typing", loc)
+
     case TypedAst.Expr.Hole(sym, _, tpe, eff, loc) =>
       val t = visitType(tpe, subst)
       MonoAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, subst(eff), loc)

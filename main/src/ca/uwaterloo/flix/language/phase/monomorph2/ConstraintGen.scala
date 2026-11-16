@@ -286,6 +286,7 @@ private[monomorph2] object ConstraintGen {
   private def visitExp(exp0: Expr)(implicit tparamEnv: TypeParamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(_, _, _)        => ()
     case Expr.Var(_, _, _)        => ()
+    case Expr.Val(_, _, loc)      => throw InternalCompilerException("val expressions are not yet supported past typing", loc)
     case Expr.Hole(_, _, _, _, _) => ()
 
     case Expr.ApplyDef(symUse, exps, targs, _, _, _, _, _) =>
