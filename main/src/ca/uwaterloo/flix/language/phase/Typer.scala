@@ -232,10 +232,9 @@ object Typer {
     val exp = ConstraintGen.visitExp(v.exp)
     val infTpe = exp.tpe
     val infEff = exp.eff
-    val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
 
-    val infResult = InfResult(infTconstrs, infTpe, infEff, infRenv)
+    val infResult = InfResult(infTconstrs, infTpe, infEff)
     val (subst, constraintErrors) = ConstraintSolverInterface.visitVal(v, infResult, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
     TypeReconstruction.visitVal(v, exp, subst)

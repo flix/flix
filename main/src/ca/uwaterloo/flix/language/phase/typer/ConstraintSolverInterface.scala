@@ -38,12 +38,13 @@ object ConstraintSolverInterface {
     * TODO: declaration-level checking (type/purity) is not yet implemented; the follow-up on `feat/val-typer-constraints` adds it.
     */
   def visitVal(v: KindedAst.Val, infResult: InfResult, tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = {
-    val InfResult(infConstrs, _, _, infRenv) = infResult
-    val renv = infRenv
+    val InfResult(infConstrs, _, _) = infResult
+    // A val has no type parameters, so there are no rigid variables to carry in.
+    val renv = RigidityEnv.empty
     val (leftovers, subst) = ConstraintSolver2.solveAll(infConstrs, SubstitutionTree.empty)(RegionScope.Top, renv, tenv0, eqEnv0, flix)
     leftovers match {
       case Nil => (subst, Nil)
-      case _ => (subst, mkTypeErrors(leftovers, subst, renv, root))
+      case _ => (subst, mkTypeErrors(leftovers, subst, root))
     }
   }
 
