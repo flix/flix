@@ -48,10 +48,13 @@ object ConstraintGen {
         val resTpe = sym.tvar
         InferredAst.Expr.Var(sym, resTpe, loc)
 
-      case Expr.Val(_, _, loc) =>
-        // Not yet implemented: real constraint generation for val references is deferred to a
-        // follow-up PR (this PR only adds the `TypedAst`/`InferredAst` plumbing, per review).
-        throw InternalCompilerException("val type-checking is not yet implemented", loc)
+      case Expr.Val(symUse, tvar, loc) =>
+        // A val has no type parameters, so its declared type is already fully resolved: unlike `ApplyDef`,
+        // there is nothing to instantiate here.
+        val declaredTpe = root.vals(symUse.sym).tpe
+        val itpe = mkResolvable(declaredTpe, loc)
+        c.unifyType(tvar, itpe, loc)
+        InferredAst.Expr.Val(symUse, itpe, loc)
 
       case Expr.Hole(sym, scp, loc) =>
         val tvar = freshVar(Kind.Star, loc)
