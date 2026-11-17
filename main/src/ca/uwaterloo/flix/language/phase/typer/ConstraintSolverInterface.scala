@@ -139,10 +139,7 @@ object ConstraintSolverInterface {
     * Solves `constrs` and, if anything is left over, reports type errors -- unless we're in
     * development mode, in which case we first retry once with `constrsWithDebug` (which should be
     * `constrs` with the declared effect widened to allow [[Type.Debug]]), falling back to the
-    * *original* errors from `constrs` if that retry doesn't fully solve either. This is shared by
-    * [[visitVal]] and [[visitSpec]], which differ only in how they build `constrs`/
-    * `constrsWithDebug` (e.g. a val's declared effect is always exactly [[Type.Pure]], while a
-    * def's/sig's may be a real annotation) and in their rigidity/trait/equality environments.
+    * *original* errors from `constrs` if that retry doesn't fully solve either.
     *
     * `constrsWithDebug` is call-by-name so it is only built when actually needed.
     */
