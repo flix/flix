@@ -769,15 +769,13 @@ object PrettyPrinter {
     if (fields.length < 2) return commaBodyJoin(children)
     val singleLineFields = fields.filter(f => effectiveLayoutOf(f) == Layout.SingleLine)
     val maxWidth = singleLineFields.map(recordFieldPreEqualWidth).maxOption.getOrElse(0)
-    filtered.foldLeft(empty) { (result, child) =>
-      val childDoc = child match {
-        case t: Tree if fieldKinds.contains(t.kind) => alignedRecordField(t, maxWidth)
-        case t: Token if t.kind == TokenKind.Comma => text(",") <> line
-        case t: Token if t.kind == TokenKind.Bar => space <> text("|") <> space
-        case other => prettyChild(other)
-      }
-      result <> childDoc
+    val render: SyntaxTree.Child => Doc = {
+      case t: Tree if fieldKinds.contains(t.kind) => alignedRecordField(t, maxWidth)
+      case other => prettyChild(other)
     }
+    joinChildrenWith(filtered, render,
+      TokenKind.Comma -> (text(",") <> line),
+      TokenKind.Bar -> (space <> text("|") <> space))
   }
 
   private def prettyAlignedRecord(tree: Tree, fieldKinds: Set[TreeKind]): Doc =
@@ -813,14 +811,11 @@ object PrettyPrinter {
     val singleLineFragments = fragments.filter(f => effectiveLayoutOf(f) == Layout.SingleLine)
     val alignArrows = fragments.length >= 2 && singleLineFragments.length == fragments.length
     val maxWidth = if (alignArrows) singleLineFragments.map(mapKeyWidth).maxOption.getOrElse(0) else 0
-    filtered.foldLeft(empty) { (result, child) =>
-      val childDoc = child match {
-        case t: Tree if t.kind == TreeKind.Expr.LiteralMapKeyValueFragment => alignedMapFragment(t, maxWidth)
-        case t: Token if t.kind == TokenKind.Comma => text(",") <> line
-        case other => prettyChild(other)
-      }
-      result <> childDoc
+    val render: SyntaxTree.Child => Doc = {
+      case t: Tree if t.kind == TreeKind.Expr.LiteralMapKeyValueFragment => alignedMapFragment(t, maxWidth)
+      case other => prettyChild(other)
     }
+    joinChildrenWith(filtered, render, TokenKind.Comma -> (text(",") <> line))
   }
 
   /** Formatting for enum and restrictable enum declarations. */
@@ -1958,6 +1953,12 @@ object PrettyPrinter {
   private def joinChildren(
     children: Array[SyntaxTree.Child],
     replacements: (TokenKind, Doc)*
+  ): Doc = joinChildrenWith(children, prettyChild, replacements: _*)
+
+  private def joinChildrenWith(
+    children: Array[SyntaxTree.Child],
+    render: SyntaxTree.Child => Doc,
+    replacements: (TokenKind, Doc)*
   ): Doc = {
     if (children.isEmpty) return empty
     val replMap = replacements.toMap
@@ -1998,7 +1999,7 @@ object PrettyPrinter {
               if (blank) hardline <> hardline else hardline
             } else empty
           prevReplEndsWithLine = false
-          result = result <> gap <> prettyChild(child)
+          result = result <> gap <> render(child)
           prev = Some(child)
           i += 1
       }

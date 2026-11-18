@@ -6,7 +6,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, Type}
+import ca.uwaterloo.flix.language.ast.Type
 
 /**
   *
@@ -15,6 +15,5 @@ import ca.uwaterloo.flix.language.ast.{RigidityEnv, Type}
   * @param constrs constraints inferred for the expression
   * @param tpe     the inferred type of the expression
   * @param eff     the inferred effect of the expression
-  * @param renv    the inferred rigidity environment for the expression (marking region variables)
   */
-case class InfResult(constrs: List[TypeConstraint], tpe: Type, eff: Type, renv: RigidityEnv)
+case class InfResult(constrs: List[TypeConstraint], tpe: Type, eff: Type)

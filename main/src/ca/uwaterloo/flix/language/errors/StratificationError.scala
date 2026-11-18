@@ -7,21 +7,22 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.FormatType
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, Pretty}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
   * An error raised to indicate that a constraint set is not stratified.
   */
-case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends CompilationMessage {
+case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Type, loc: SourceLocation) extends CompilationMessage {
   def kind: CompilationMessageKind = CompilationMessageKind.StratificationError
 
   def code: ErrorCode = ErrorCode.E5914
+
+  private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe)
 
   def summary: String = "The expression is not stratified. A predicate depends strongly on itself."
 
@@ -33,7 +34,7 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
        |
        |The type of the expression is:
        |
-       |  ${cyan(FormatType.formatType(tpe))}
+       |  ${Pretty.tpe(tpe).ansi(fmt)}
        |
        |The following predicate symbols are on the cycle:
        |

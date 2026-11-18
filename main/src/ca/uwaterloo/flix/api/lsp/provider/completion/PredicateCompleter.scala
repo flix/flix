@@ -6,18 +6,17 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.PredicateCompletion
 import ca.uwaterloo.flix.api.lsp.{Consumer, Range, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SourceName
 import ca.uwaterloo.flix.language.ast.{Name, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.fmt.FormatType
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, Pretty}
 
 object PredicateCompleter {
 
-  def getCompletions(name: SourceName, range: Range)(implicit root: Root, flix: Flix): Iterable[PredicateCompletion] = {
+  def getCompletions(name: SourceName, range: Range)(implicit root: Root): Iterable[PredicateCompletion] = {
 
     //
     // Find all predicates together with their type and source location.
@@ -39,7 +38,7 @@ object PredicateCompleter {
 
     predsWithTypeAndLoc.map {
       case (predName, tpe) =>
-      Completion.PredicateCompletion(predName.name, range, Priority.Lower(0), arityOf(tpe), FormatType.formatType(tpe))
+      Completion.PredicateCompletion(predName.name, range, Priority.Lower(0), arityOf(tpe), Pretty.tpe(tpe)(FormatOptions.forTypes(tpe)).plain)
     }
   }
 

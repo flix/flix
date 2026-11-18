@@ -34,6 +34,21 @@ object ConstraintSolverInterface {
   }
 
   /**
+    * Resolves constraints in the given val using the given inference result.
+    * TODO: declaration-level checking (type/purity) is not yet implemented; the follow-up on `feat/val-typer-constraints` adds it.
+    */
+  def visitVal(v: KindedAst.Val, infResult: InfResult, tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = {
+    val InfResult(infConstrs, _, _) = infResult
+    // A val has no type parameters, so there are no rigid variables to carry in.
+    val renv = RigidityEnv.empty
+    val (leftovers, subst) = ConstraintSolver2.solveAll(infConstrs, SubstitutionTree.empty)(RegionScope.Top, renv, tenv0, eqEnv0, flix)
+    leftovers match {
+      case Nil => (subst, Nil)
+      case _ => (subst, mkTypeErrors(leftovers, subst, root))
+    }
+  }
+
+  /**
     * Resolves constraints in the given signature using the given inference result.
     */
   def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = sig match {
@@ -48,7 +63,7 @@ object ConstraintSolverInterface {
   def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = spec match {
     case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs) =>
 
-      val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
+      val InfResult(infConstrs, infTpe, infEff) = infResult
 
       // The initial substitution maps from formal parameters to their types
       val initialSubst = fparams.foldLeft(Substitution.empty) {
@@ -60,9 +75,8 @@ object ConstraintSolverInterface {
 
       // The rigidity environment is made up of:
       // 1. rigid variables from the context (e.g. from instance type parameters)
-      // 2. rigid variables from type inference (e.g. regions)
-      // 3. rigid variables from declared function type parameters
-      val renv = allTparams.foldLeft(infRenv ++ renv0) {
+      // 2. rigid variables from declared function type parameters
+      val renv = allTparams.foldLeft(renv0) {
         case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
       }
 
@@ -105,7 +119,7 @@ object ConstraintSolverInterface {
           flix.options.build match {
             case Build.Production =>
               // We are in production mode, so we have to return immediately with the *original* type error(s).
-              (subst, mkTypeErrors(leftovers, subst, renv, root))
+              (subst, mkTypeErrors(leftovers, subst, root))
 
             case Build.Development =>
               // Otherwise we have special logic for the [[Debug]] effect: We solve a new constraint system where [[Debug]] is allowed by the effect signature.
@@ -121,7 +135,7 @@ object ConstraintSolverInterface {
                   (subst2, Nil)
                 case _ =>
                   // Failure -- We report the *original* type error(s). We report the original errors to avoid spurious occurrences of the [[Debug]] effect.
-                  (subst, mkTypeErrors(leftovers, subst, renv, root))
+                  (subst, mkTypeErrors(leftovers, subst, root))
               }
           }
       }
@@ -130,8 +144,8 @@ object ConstraintSolverInterface {
   /**
     * Constructs a collection of type errors from a list of unsolvable type constraints `constrs`.
     */
-  private def mkTypeErrors(constrs: List[TypeConstraint], subst: SubstitutionTree, renv: RigidityEnv, root: KindedAst.Root)(implicit flix: Flix): List[TypeError] = {
-    val errors = constrs.flatMap(mkTypeError(_, subst, renv, root))
+  private def mkTypeErrors(constrs: List[TypeConstraint], subst: SubstitutionTree, root: KindedAst.Root)(implicit flix: Flix): List[TypeError] = {
+    val errors = constrs.flatMap(mkTypeError(_, subst, root))
     filterEffErrors(errors)
   }
 
@@ -153,23 +167,23 @@ object ConstraintSolverInterface {
   /**
     * Constructs a collection of type errors from a single unsolvable constraint `constr`.
     */
-  private def mkTypeError(constr: TypeConstraint, subst: SubstitutionTree, renv: RigidityEnv, root: KindedAst.Root)(implicit flix: Flix): List[TypeError] = constr match {
+  private def mkTypeError(constr: TypeConstraint, subst: SubstitutionTree, root: KindedAst.Root)(implicit flix: Flix): List[TypeError] = constr match {
     case TypeConstraint.Equality(Type.UnresolvedJvmType(member, _), _, prov) =>
-      List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
+      List(mkErrorFromUnresolvedJvmMember(member, subst, prov.loc))
 
     case TypeConstraint.Equality(_, Type.UnresolvedJvmType(member, _), prov) =>
-      List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
+      List(mkErrorFromUnresolvedJvmMember(member, subst, prov.loc))
 
     case TypeConstraint.Equality(tpe1, tpe2, Provenance.ExpectType(expected, actual, loc)) =>
       val expectedTpe = subst(expected)
       val actualTpe = subst(actual)
       (tpe1.kind, tpe2.kind) match {
         case (Kind.RecordRow, Kind.RecordRow) =>
-          mkErrorsFromRecords(tpe1, tpe2, renv, loc)
+          mkErrorsFromRecords(tpe1, tpe2, loc)
         case (_, _) =>
           // A function type and a concrete non-function type can never be unified, regardless of effects.
-          mkArrowAndNonArrowError(expectedTpe, actualTpe, expectedTpe, actualTpe, renv, loc)
-            .getOrElse(List(TypeError.UnexpectedType(expected = expectedTpe, inferred = actualTpe, renv, loc)))
+          mkArrowAndNonArrowError(expectedTpe, actualTpe, expectedTpe, actualTpe, loc)
+            .getOrElse(List(TypeError.UnexpectedType(expected = expectedTpe, inferred = actualTpe, loc)))
       }
 
     case TypeConstraint.Equality(tpe1, tpe2, Provenance.ExpectArgument(expected, actual, sym, num, loc)) =>
@@ -177,11 +191,11 @@ object ConstraintSolverInterface {
       val actualTpe = subst(actual)
       (tpe1.kind, tpe2.kind) match {
         case (Kind.RecordRow, Kind.RecordRow) =>
-          mkErrorsFromRecords(tpe1, tpe2, renv, loc)
+          mkErrorsFromRecords(tpe1, tpe2, loc)
         case (_, _) =>
           // A function type and a concrete non-function type can never be unified, regardless of effects.
-          mkArrowAndNonArrowError(expectedTpe, actualTpe, expectedTpe, actualTpe, renv, loc)
-            .getOrElse(List(TypeError.UnexpectedArg(sym, num, expected = expectedTpe, actual = actualTpe, renv, loc)))
+          mkArrowAndNonArrowError(expectedTpe, actualTpe, expectedTpe, actualTpe, loc)
+            .getOrElse(List(TypeError.UnexpectedArg(sym, num, expected = expectedTpe, actual = actualTpe, loc)))
       }
 
     case TypeConstraint.Equality(_, _, Provenance.NonUnitStatement(actual, loc)) =>
@@ -193,20 +207,20 @@ object ConstraintSolverInterface {
       val fullTpe1 = subst(fullType1)
       val fullTpe2 = subst(fullType2)
       // A function type and a concrete non-function type can never be unified, regardless of effects.
-      mkArrowAndNonArrowError(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc)
-        .getOrElse(List(mkMismatchedTypesOrEffects(baseTpe1, baseTpe2, fullTpe1, fullTpe2, renv, loc)))
+      mkArrowAndNonArrowError(baseTpe1, baseTpe2, fullTpe1, fullTpe2, loc)
+        .getOrElse(List(mkMismatchedTypesOrEffects(baseTpe1, baseTpe2, fullTpe1, fullTpe2, loc)))
 
     case TypeConstraint.Equality(baseType1, baseType2, Provenance.PolyEffEq(sym, ith, eff1, eff2, loc)) =>
-      List(mkMismatchedEffectArgument(sym, ith, subst(baseType1), subst(baseType2), subst(eff1), subst(eff2), renv, root, loc))
+      List(mkMismatchedEffectArgument(sym, ith, subst(baseType1), subst(baseType2), subst(eff1), subst(eff2), root, loc))
 
     case TypeConstraint.Equality(tpe1, tpe2, Provenance.Label(label, loc1, loc2, inner)) =>
       if (ConstraintSolver2.isSyntactic(tpe1.kind)) {
         // The leftover is (a part of) the type of the label.
         val (fullType1, fullType2) = enclosingTypes(inner).getOrElse((tpe1, tpe2))
-        List(TypeError.MismatchedLabelType(label, subst(tpe1), subst(tpe2), subst(fullType1), subst(fullType2), renv, loc1, loc2, inner.loc))
+        List(TypeError.MismatchedLabelType(label, subst(tpe1), subst(tpe2), subst(fullType1), subst(fullType2), loc1, loc2, inner.loc))
       } else {
         // The leftover is an effect, a row, or the like: report it as the enclosing constraint would.
-        mkTypeError(TypeConstraint.Equality(tpe1, tpe2, inner), subst, renv, root)
+        mkTypeError(TypeConstraint.Equality(tpe1, tpe2, inner), subst, root)
       }
 
     case TypeConstraint.Equality(tpe1, tpe2, Provenance.Predicate(pred, loc1, loc2, inner)) =>
@@ -229,71 +243,71 @@ object ConstraintSolverInterface {
           if (ConstraintSolver2.isSyntactic(t1.kind)) {
             // The leftover is (a part of) a term type of the predicate.
             val (fullType1, fullType2) = enclosingTypes(inner).getOrElse((tpe1, tpe2))
-            List(TypeError.MismatchedPredicateTypes(pred, t1, t2, subst(fullType1), subst(fullType2), renv, loc1, loc2, inner.loc))
+            List(TypeError.MismatchedPredicateTypes(pred, t1, t2, subst(fullType1), subst(fullType2), loc1, loc2, inner.loc))
           } else {
             // The leftover is an effect, a row, or the like: report it as the enclosing constraint would.
-            mkTypeError(TypeConstraint.Equality(tpe1, tpe2, inner), subst, renv, root)
+            mkTypeError(TypeConstraint.Equality(tpe1, tpe2, inner), subst, root)
           }
       }
 
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-      List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
+      List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), prov.loc))
 
     case TypeConstraint.SubEff(eff1, eff2, prov) =>
       // The larger effect is the expected one, so it is reported first.
-      List(mkMismatchedTypesOrEffects(subst(eff2), subst(eff1), subst(eff2), subst(eff1), renv, prov.loc))
+      List(mkMismatchedTypesOrEffects(subst(eff2), subst(eff1), subst(eff2), subst(eff1), prov.loc))
 
     // TODO We have simply duplicated equality here.
     // TODO We should establish invariants on conflicted/equality cases.
     case TypeConstraint.Conflicted(Type.UnresolvedJvmType(member, _), _, prov) =>
-      List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
+      List(mkErrorFromUnresolvedJvmMember(member, subst, prov.loc))
 
     case TypeConstraint.Conflicted(_, Type.UnresolvedJvmType(member, _), prov) =>
-      List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
+      List(mkErrorFromUnresolvedJvmMember(member, subst, prov.loc))
 
     case TypeConstraint.Conflicted(_, _, Provenance.ExpectType(expected, actual, loc)) =>
-      List(TypeError.UnexpectedType(expected = subst(expected), inferred = subst(actual), renv, loc))
+      List(TypeError.UnexpectedType(expected = subst(expected), inferred = subst(actual), loc))
 
     case TypeConstraint.Conflicted(_, _, Provenance.ExpectArgument(expected, actual, sym, num, loc)) =>
-      List(TypeError.UnexpectedArg(sym, num, expected = subst(expected), actual = subst(actual), renv, loc))
+      List(TypeError.UnexpectedArg(sym, num, expected = subst(expected), actual = subst(actual), loc))
 
     case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.Match(baseTpe1, baseTpe2, loc)) =>
-      List(mkMismatchedTypesOrEffects(subst(baseTpe1), subst(baseTpe2), subst(tpe1), subst(tpe2), renv, loc))
+      List(mkMismatchedTypesOrEffects(subst(baseTpe1), subst(baseTpe2), subst(tpe1), subst(tpe2), loc))
 
     case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.PolyEffEq(sym, ith, eff1, eff2, loc)) =>
-      List(mkMismatchedEffectArgument(sym, ith, subst(tpe1), subst(tpe2), subst(eff1), subst(eff2), renv, root, loc))
+      List(mkMismatchedEffectArgument(sym, ith, subst(tpe1), subst(tpe2), subst(eff1), subst(eff2), root, loc))
 
     case TypeConstraint.Conflicted(_, _, Provenance.Timeout(msg, loc)) =>
       List(TypeError.TooComplex(msg, loc))
 
     // A conflict inside a record label or predicate is reported as the enclosing constraint would.
     case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.Label(_, _, _, inner)) =>
-      mkTypeError(TypeConstraint.Conflicted(tpe1, tpe2, inner), subst, renv, root)
+      mkTypeError(TypeConstraint.Conflicted(tpe1, tpe2, inner), subst, root)
 
     case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.Predicate(_, _, _, inner)) =>
-      mkTypeError(TypeConstraint.Conflicted(tpe1, tpe2, inner), subst, renv, root)
+      mkTypeError(TypeConstraint.Conflicted(tpe1, tpe2, inner), subst, root)
 
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
-      List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
+      List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), prov.loc))
 
     case TypeConstraint.EffConflicted(err) => List(err)
 
     case TypeConstraint.Trait(sym, tpe, loc) =>
       tpe.typeConstructor match {
-        case Some(TypeConstructor.Arrow(_)) => List(TypeError.MissingInstanceArrow(sym, subst(tpe), renv, loc))
+        case Some(TypeConstructor.Arrow(_)) => List(TypeError.MissingInstanceArrow(sym, subst(tpe), loc))
         case _ =>
           if (sym == PredefinedTraits.lookupTraitSym("Eq", root)) {
-            List(TypeError.MissingInstanceEq(subst(tpe), renv, loc))
+            List(TypeError.MissingInstanceEq(subst(tpe), loc))
           } else if (sym == PredefinedTraits.lookupTraitSym("Order", root)) {
-            List(TypeError.MissingInstanceOrder(subst(tpe), renv, loc))
+            List(TypeError.MissingInstanceOrder(subst(tpe), loc))
           } else if (sym == PredefinedTraits.lookupTraitSym("ToString", root)) {
-            List(TypeError.MissingInstanceToString(subst(tpe), renv, loc))
+            List(TypeError.MissingInstanceToString(subst(tpe), loc))
           } else {
-            List(TypeError.MissingInstance(sym, subst(tpe), renv, loc))
+            List(TypeError.MissingInstance(sym, subst(tpe), loc))
           }
       }
     case TypeConstraint.Purification(sym, _, _, _, nested) =>
-      nested.flatMap(mkTypeError(_, subst.branches.getOrElse(sym, SubstitutionTree.empty), renv, root))
+      nested.flatMap(mkTypeError(_, subst.branches.getOrElse(sym, SubstitutionTree.empty), root))
   }
 
   /**
@@ -302,20 +316,20 @@ object ConstraintSolverInterface {
     *
     * The name of the type parameter is looked up in the declaration of the effect.
     */
-  private def mkMismatchedEffectArgument(sym: Symbol.EffSym, ith: Int, tpe1: Type, tpe2: Type, eff1: Type, eff2: Type, renv: RigidityEnv, root: KindedAst.Root, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+  private def mkMismatchedEffectArgument(sym: Symbol.EffSym, ith: Int, tpe1: Type, tpe2: Type, eff1: Type, eff2: Type, root: KindedAst.Root, loc: SourceLocation): TypeError = {
     val tparam = root.effects(sym).tparams(ith - 1).name
-    TypeError.MismatchedEffectArgument(sym, ith, tparam, tpe1, tpe2, eff1, eff2, renv, loc)
+    TypeError.MismatchedEffectArgument(sym, ith, tparam, tpe1, tpe2, eff1, eff2, loc)
   }
 
   /**
     * Create either the MismatchedTypes or MismatchedEffects error based on the kind of the type.
     */
-  private def mkMismatchedTypesOrEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+  private def mkMismatchedTypesOrEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation): TypeError = {
     baseType1.kind match {
       case Kind.Eff =>
-        TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, loc)
+        TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, loc)
       case _ =>
-        TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, loc)
+        TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, loc)
     }
   }
 
@@ -345,11 +359,11 @@ object ConstraintSolverInterface {
     *
     * Returns `None` otherwise (e.g. if either type is a variable, which could still unify with a function).
     */
-  private def mkArrowAndNonArrowError(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Option[List[TypeError]] = {
+  private def mkArrowAndNonArrowError(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation): Option[List[TypeError]] = {
     if (isArrowType(baseType1) && isConcreteNonArrowType(baseType2))
-      Some(List(TypeError.MismatchedArrowAndNonArrow(baseType1, baseType2, fullType1, fullType2, renv, loc)))
+      Some(List(TypeError.MismatchedArrowAndNonArrow(baseType1, baseType2, fullType1, fullType2, loc)))
     else if (isArrowType(baseType2) && isConcreteNonArrowType(baseType1))
-      Some(List(TypeError.MismatchedArrowAndNonArrow(baseType2, baseType1, fullType1, fullType2, renv, loc)))
+      Some(List(TypeError.MismatchedArrowAndNonArrow(baseType2, baseType1, fullType1, fullType2, loc)))
     else
       None
   }
@@ -379,20 +393,20 @@ object ConstraintSolverInterface {
   /**
     * Creates an appropriate error from the unresolved Jvm member.
     */
-  private def mkErrorFromUnresolvedJvmMember(member: Type.JvmMember, renv: RigidityEnv, subst: SubstitutionTree, loc: SourceLocation)(implicit flix: Flix): TypeError = member match {
-    case JvmMember.JvmConstructor(clazz, tpes) => TypeError.ConstructorNotFound(clazz, tpes.map(subst.apply), renv, loc)
+  private def mkErrorFromUnresolvedJvmMember(member: Type.JvmMember, subst: SubstitutionTree, loc: SourceLocation)(implicit flix: Flix): TypeError = member match {
+    case JvmMember.JvmConstructor(clazz, tpes) => TypeError.ConstructorNotFound(clazz, tpes.map(subst.apply), loc)
     case JvmMember.JvmField(base, tpe, name) => TypeError.FieldNotFound(base, name, subst(tpe), loc)
     case JvmMember.JvmMethod(tpe, name, tpes) => TypeError.MethodNotFound(name, subst(tpe), tpes.map(subst.apply), loc)
-    case JvmMember.JvmStaticMethod(clazz, name, tpes) => TypeError.StaticMethodNotFound(clazz, name, tpes.map(subst.apply), renv, loc)
+    case JvmMember.JvmStaticMethod(clazz, name, tpes) => TypeError.StaticMethodNotFound(clazz, name, tpes.map(subst.apply), loc)
   }
 
   /**
     * Creates appropriate errors for the mismatched record types.
     */
-  private def mkErrorsFromRecords(tpe1: Type, tpe2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): List[TypeError] = {
+  private def mkErrorsFromRecords(tpe1: Type, tpe2: Type, loc: SourceLocation): List[TypeError] = {
     // TODO: Open records
     (tpe1, tpe2) match {
-      case (Type.Var(_, _), _) | (_, Type.Var(_, _)) => List(mkMismatchedTypesOrEffects(tpe1, tpe2, tpe1, tpe2, renv, loc))
+      case (Type.Var(_, _), _) | (_, Type.Var(_, _)) => List(mkMismatchedTypesOrEffects(tpe1, tpe2, tpe1, tpe2, loc))
       case _ =>
         val tpe1Labels = getRecordLabels(tpe1, List.empty[(Name.Label, Type)])
         val tpe2Labels = getRecordLabels(tpe2, List.empty[(Name.Label, Type)])
@@ -400,30 +414,30 @@ object ConstraintSolverInterface {
         if (tpe1Labels.isEmpty && tpe2Labels.nonEmpty) {
           tpe2Labels.map {
             case (label, labelTpe) =>
-              TypeError.ExtraLabel(label, labelTpe, tpe2, renv, loc)
+              TypeError.ExtraLabel(label, labelTpe, tpe2, loc)
           }
           // Undefined label only.
         } else if (tpe2Labels.map(_._1).toSet.subsetOf(tpe1Labels.map(_._1).toSet)) {
           tpe1Labels.flatMap {
             case (label, labelTpe) =>
               if (!tpe2Labels.map(_._1).contains(label)) {
-                List(TypeError.UndefinedLabel(label, labelTpe, tpe2, renv, loc))
+                List(TypeError.UndefinedLabel(label, labelTpe, tpe2, loc))
               } else Nil
           }
         } else if (tpe2Labels.isEmpty && tpe1Labels.nonEmpty) {
           tpe1Labels.map {
             case (label, labelTpe) =>
-              TypeError.UndefinedLabel(label, labelTpe, tpe2, renv, loc)
+              TypeError.UndefinedLabel(label, labelTpe, tpe2, loc)
           }
           // Both undefined and extra labels.
         } else {
           tpe1Labels.filterNot(tpe2Labels.contains(_)).map {
             case (label, labelTpe) =>
-              TypeError.UndefinedLabel(label, labelTpe, tpe2, renv, loc)
+              TypeError.UndefinedLabel(label, labelTpe, tpe2, loc)
           } ++
             tpe2Labels.filterNot(tpe1Labels.contains(_)).map {
               case (label, labelTpe) =>
-                TypeError.ExtraLabel(label, labelTpe, tpe2, renv, loc)
+                TypeError.ExtraLabel(label, labelTpe, tpe2, loc)
             }
         }
     }

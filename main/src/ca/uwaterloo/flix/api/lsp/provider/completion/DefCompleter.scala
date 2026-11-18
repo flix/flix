@@ -6,7 +6,6 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
 import ca.uwaterloo.flix.api.lsp.{Position, Range}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Def, Effect, Mod}
@@ -21,7 +20,7 @@ object DefCompleter {
     * Whether the returned completions are qualified is based on whether the UndefinedName is qualified.
     * When providing completions for unqualified defs that is not in scope, we will also automatically use the def.
     */
-  def getCompletions(name: SourceName, pos: Position, qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: Root, flix: Flix): Iterable[Completion] = {
+  def getCompletions(name: SourceName, pos: Position, qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: Root): Iterable[Completion] = {
     val ectx = ExprContext.getExprContext(name, pos)
 
     if (qn.namespace.nonEmpty) {

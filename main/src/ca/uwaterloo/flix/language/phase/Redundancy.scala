@@ -249,7 +249,7 @@ object Redundancy {
   /**
     * Finds redundant trait constraints in `tconstrs`.
     */
-  private def redundantTraitConstraints(tconstrs: List[TraitConstraint])(implicit root: Root, flix: Flix): List[RedundancyError] = {
+  private def redundantTraitConstraints(tconstrs: List[TraitConstraint])(implicit root: Root): List[RedundancyError] = {
     for {
       (tconstr1, i1) <- tconstrs.zipWithIndex
       (tconstr2, i2) <- tconstrs.zipWithIndex
@@ -363,6 +363,8 @@ object Redundancy {
       // Case 4: Wild, recursive use of sym.
       case (true, true) => Used.empty + HiddenVarSym(sym, loc)
     }
+
+    case Expr.Val(_, _, _) => Used.empty
 
     case Expr.Hole(sym, _, _, _, _) =>
       lctx.holeSyms += sym

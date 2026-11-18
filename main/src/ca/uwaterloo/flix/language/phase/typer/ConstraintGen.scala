@@ -48,6 +48,11 @@ object ConstraintGen {
         val resTpe = sym.tvar
         InferredAst.Expr.Var(sym, resTpe, loc)
 
+      case Expr.Val(_, _, loc) =>
+        // Not yet implemented: real constraint generation for val references is deferred to a
+        // follow-up PR (this PR only adds the `TypedAst`/`InferredAst` plumbing, per review).
+        throw InternalCompilerException("val type-checking is not yet implemented", loc)
+
       case Expr.Hole(sym, scp, loc) =>
         val tvar = freshVar(Kind.Star, loc)
         val evar = freshVar(Kind.Eff, loc)
@@ -1578,10 +1583,12 @@ object ConstraintGen {
     *
     * With [[EffectBound.Exact]] the function has exactly the effect of its body. With [[EffectBound.Upper]]
     * the function has a fresh effect variable of which the effect of the body must be a subeffect, so the
-    * function may be given a larger effect than its body.
+    * function may be given a larger effect than its body. An upper bound is treated as exact if the
+    * context has sub-effecting disabled, i.e. inside a def annotated `@NoSubEff`.
     */
   private def mkBoundedEff(bound: EffectBound, eff: Type, loc: SourceLocation)(implicit c: TypeContext, scope: RegionScope, flix: Flix): Type = bound match {
     case EffectBound.Exact => eff
+    case EffectBound.Upper if !c.subEffecting => eff
     case EffectBound.Upper =>
       val evar = freshVar(Kind.Eff, loc)
       c.subEff(eff, evar, loc)

@@ -1317,8 +1317,8 @@ pub mod List {
     pub def toMapWith(f: a -> (k, v) \ ef, l: List[a]): Map[k, v] \ ef with Order[k] =
         foldLeft(
             (acc, x) -> {
-                let (key, val) = f(x);
-                Map.insert(key, val, acc)
+                let (key, value) = f(x);
+                Map.insert(key, value, acc)
             },
             Map.empty(),
             l

@@ -29,51 +29,51 @@ mod Test.Exp.Jvm.InvokeMethod.ZeroArg {
 
     @Test
     def testInvokeMethod_06(): Unit \ Assert =
-        let val = 12093ii;
-        assertEq(expected = 12093, val.intValueExact())
+        let value = 12093ii;
+        assertEq(expected = 12093, value.intValueExact())
 
     @Test
     def testInvokeMethod_07(): Unit \ Assert + IO =
-        let val = -20938ii;
-        assertEq(expected = -20938f32, val.floatValue())
+        let value = -20938ii;
+        assertEq(expected = -20938f32, value.floatValue())
 
     @Test
     def testInvokeMethod_08(): Unit \ Assert + IO =
-        let val = 34882ii;
-        assertEq(expected = 1, val.getLowestSetBit())
+        let value = 34882ii;
+        assertEq(expected = 1, value.getLowestSetBit())
 
     @Test
     def testInvokeMethod_09(): Unit \ Assert + IO =
-        let val = 2384721ii;
-        assertEq(expected = 9, val.bitCount())
+        let value = 2384721ii;
+        assertEq(expected = 9, value.bitCount())
 
     @Test
     def testInvokeMethod_10(): Unit \ Assert + IO =
-        let val = -32ii;
-        assertEq(expected = 32ii, val.abs())
+        let value = -32ii;
+        assertEq(expected = 32ii, value.abs())
 
     @Test
     def testInvokeMethod_11(): Unit \ Assert =
-        let val = -123.45ff;
-        assertEq(expected = 123.45ff, val.abs())
+        let value = -123.45ff;
+        assertEq(expected = 123.45ff, value.abs())
 
     @Test
     def testInvokeMethod_12(): Unit \ Assert =
-        let val = 12443.1489ff;
-        assertEq(expected = 9, val.precision())
+        let value = 12443.1489ff;
+        assertEq(expected = 9, value.precision())
 
     @Test
     def testInvokeMethod_13(): Unit \ Assert + IO =
-        let val = -50.000001ff;
-        assertEq(expected = -50.000001ff, val.plus())
+        let value = -50.000001ff;
+        assertEq(expected = -50.000001ff, value.plus())
 
     @Test
     def testInvokeMethod_14(): Unit \ Assert =
-        let val = 23984.1119ff;
-        assertEq(expected = 23984.1119f64, val.doubleValue())
+        let value = 23984.1119ff;
+        assertEq(expected = 23984.1119f64, value.doubleValue())
 
     @Test
     def testInvokeMethod_15(): Unit \ Assert =
-        let val = 57842.0109ff;
-        assertEq(expected = 57842.0109f32, val.floatValue())
+        let value = 57842.0109ff;
+        assertEq(expected = 57842.0109f32, value.floatValue())
 }

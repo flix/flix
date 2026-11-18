@@ -10,7 +10,6 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Mountpoint, Origin, PackageId, SecurityContext, Source, SourceName}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
-import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.jvm.{ByteBuddyJavaTypeProvider, DependencyClassPath, ExternalJarLoader, JavaTypeProvider}
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.CodeGen
@@ -104,7 +103,7 @@ class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil, mounts: M
   /**
     * A cache of ASTs for incremental compilation.
     */
-  private var cachedLexerTokens: Map[Source, Array[Token]] = Map.empty
+  private var cachedLexerTokens: Map[Source, SourceTokens] = Map.empty
   private var cachedParserCst: SyntaxTree.Root = SyntaxTree.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
   private var cachedDesugarAst: DesugaredAst.Root = DesugaredAst.empty
@@ -425,15 +424,6 @@ class Flix(pkgs: List[InstalledPackage] = Nil, jars: List[Path] = Nil, mounts: M
       compilerTop = Some(t)
     }
     this
-  }
-
-  /**
-    * Returns the format options associated with this Flix instance.
-    */
-  def getFormatOptions: FormatOptions = {
-    FormatOptions(
-      varNames = FormatOptions.VarName.NameBased // TODO add cli option
-    )
   }
 
   /**

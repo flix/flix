@@ -180,6 +180,8 @@ object SyntaxTree {
       case object Struct extends Decl
 
       case object TypeAlias extends Decl
+
+      case object Val extends Decl
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////

@@ -7,12 +7,11 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
+import ca.uwaterloo.flix.language.ast.shared.{SymbolSet, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.{FormatTraitConstraint, FormatType}
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, Pretty}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -105,8 +104,10 @@ object RedundancyError {
     * @param tpe the type of the expression.
     * @param loc the source location of the cast.
     */
-  case class RedundantCheckedTypeCast(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class RedundantCheckedTypeCast(tpe: Type, loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7178
+
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe)
 
     def summary: String = "Redundant type cast."
 
@@ -116,7 +117,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant cast.", fmt)}
          |
-         |The expression already has the type '${cyan(FormatType.formatType(tpe))}'.
+         |The expression already has the type '${Pretty.tpe(tpe).ansi(fmt)}'.
          |""".stripMargin
     }
   }
@@ -150,18 +151,22 @@ object RedundancyError {
     * @param redundantTconstr the tconstr that is made redundant by the other.
     * @param loc              the location where the error occured.
     */
-  case class RedundantTraitConstraint(entailingTconstr: TraitConstraint, redundantTconstr: TraitConstraint, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class RedundantTraitConstraint(entailingTconstr: TraitConstraint, redundantTconstr: TraitConstraint, loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7394
+
+    def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(entailingTconstr), SymbolSet.symbolsOf(redundantTconstr))
+
+    private implicit def opts: FormatOptions = FormatOptions.Default.copy(qualify = amb)
 
     def summary: String = "Redundant trait constraint."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Redundant trait constraint '${red(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}'.
+      s""">> Redundant trait constraint '${Pretty.traitConstraint(redundantTconstr).ansi(fmt)}'.
          |
          |${highlight(loc, "redundant trait constraint.", fmt)}
          |
-         |The constraint is implied by '${cyan(FormatTraitConstraint.formatTraitConstraint(entailingTconstr))}'.
+         |The constraint is implied by '${Pretty.traitConstraint(entailingTconstr).ansi(fmt)}'.
          |
          |${underline("Explanation:")} A trait constraint is redundant if it is implied by another
          |constraint. For example, if we have:
@@ -179,7 +184,7 @@ object RedundancyError {
     * @param eff the effect of the expression.
     * @param loc the source location of the cast.
     */
-  case class RedundantUncheckedEffectCast(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class RedundantUncheckedEffectCast(eff: Type, loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7407
 
     def summary: String = "Redundant effect cast."
@@ -190,7 +195,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant cast.", fmt)}
          |
-         |The expression already has the '${cyan(FormatType.formatType(eff))}' effect.
+         |The expression already has the '${Pretty.tpe(eff).ansi(fmt)}' effect.
          |""".stripMargin
     }
   }
@@ -201,7 +206,7 @@ object RedundancyError {
     * @param tpe the type of the expression.
     * @param loc the source location of the cast.
     */
-  case class RedundantUncheckedTypeCast(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class RedundantUncheckedTypeCast(tpe: Type, loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7420
 
     def summary: String = "Redundant type cast."
@@ -212,7 +217,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant cast.", fmt)}
          |
-         |The expression already has the type '${cyan(FormatType.formatType(tpe))}'.
+         |The expression already has the type '${Pretty.tpe(tpe).ansi(fmt)}'.
          |""".stripMargin
     }
   }
@@ -223,7 +228,7 @@ object RedundancyError {
     * @param eff the effect that the block unsafely removes.
     * @param loc the source location of the unsafe block.
     */
-  case class RedundantUnsafe(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class RedundantUnsafe(eff: Type, loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7623
 
     def summary: String = "Redundant unsafe block, the expression is pure."
@@ -234,7 +239,7 @@ object RedundancyError {
          |
          |${highlight(loc, "redundant unsafe block.", fmt)}
          |
-         |${underline("Explanation:")} The block unsafely removes the '${cyan(FormatType.formatType(eff))}' effect,
+         |${underline("Explanation:")} The block unsafely removes the '${Pretty.tpe(eff).ansi(fmt)}' effect,
          |but the body expression is pure.
          |""".stripMargin
     }
@@ -549,8 +554,8 @@ object RedundancyError {
          |
          |${highlight(loc, "useless unsafe block.", fmt)}
          |
-         |${underline("Explanation:")} An unsafe block that runs the 'Pure' effect is useless
-         |since 'Pure' means no effects.
+         |${underline("Explanation:")} An unsafe block that runs the '{}' effect is useless
+         |since '{}' means no effects.
          |""".stripMargin
     }
   }
