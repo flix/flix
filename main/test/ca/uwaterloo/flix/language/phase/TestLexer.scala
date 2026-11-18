@@ -777,7 +777,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
   private def tokensOf(s: String): List[Token] = {
     val src = Source.fromString(SourceName.PathName(CompilerConstants.VirtualTestFile), Origin.User, SecurityContext.Unrestricted, s)
     val (tokens, _) = Lexer.lex(src)
-    tokens.toList.filterNot(_.kind == TokenKind.Eof)
+    tokens.tokens.toList.filterNot(_.kind == TokenKind.Eof)
   }
 
 }

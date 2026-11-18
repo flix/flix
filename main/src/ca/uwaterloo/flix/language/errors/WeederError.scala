@@ -406,7 +406,7 @@ object WeederError {
          |For example:
          |
          |    Readable.Elm[t] ~ Int8
-         |    Foldable.Aef[t] ~ Pure
+         |    Foldable.Aef[t] ~ {}
          |
          |""".stripMargin
     }
@@ -1271,6 +1271,27 @@ object WeederError {
          |${src(loc, "must be qualified")}
          |
          |${underline("Explanation:")} A use must be qualified, e.g. 'use Foo.bar'.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a val which has an effect.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEffectfulVal(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E4217
+
+    def summary: String = "Unexpected effect on val."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected effect on val.
+         |
+         |${src(loc, "unexpected effect")}
+         |
+         |${underline("Explanation:")} A val may not have an effect.
          |""".stripMargin
     }
   }

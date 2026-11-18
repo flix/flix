@@ -1,13 +1,12 @@
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.jvm.JavaMethod
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.FormatType
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, Pretty}
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.util.Formatter
 
@@ -67,8 +66,10 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCast(from: Type, to: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3796
+
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(from, to)
 
     def summary: String = "Impossible cast: neither type is a subtype of the other."
 
@@ -78,8 +79,8 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(FormatType.formatType(from))}
-         |To  : ${red(FormatType.formatType(to))}
+         |From: ${Pretty.tpe(from).ansi(fmt)}
+         |To  : ${Pretty.tpe(to).ansi(fmt)}
          |
          |${underline("Explanation:")} A checked cast between Java types requires a subtype
          |relationship. Neither type is a subtype of the other.
@@ -94,8 +95,10 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCastFromNonJava(from: Type, to: ClassDesc, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCastFromNonJava(from: Type, to: ClassDesc, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3807
+
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(from)
 
     def summary: String = "Impossible cast: cannot cast a Flix type to a Java type."
 
@@ -105,7 +108,7 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(FormatType.formatType(from))}
+         |From: ${Pretty.tpe(from).ansi(fmt)}
          |To  : ${red(JavaTypes.formatType(to))}
          |
          |${underline("Explanation:")} A checked cast can only be used between Java types.
@@ -120,8 +123,10 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCastFromVar(from: Type.Var, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCastFromVar(from: Type.Var, to: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3918
+
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(from, to)
 
     def summary: String = "Impossible cast: cannot cast from a type variable."
 
@@ -131,8 +136,8 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(FormatType.formatType(from))}
-         |To  : ${red(FormatType.formatType(to))}
+         |From: ${Pretty.tpe(from).ansi(fmt)}
+         |To  : ${Pretty.tpe(to).ansi(fmt)}
          |
          |${underline("Explanation:")} A checked cast requires the source type to be known
          |at compile time.
@@ -147,8 +152,10 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCastToNonJava(from: ClassDesc, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCastToNonJava(from: ClassDesc, to: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4029
+
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(to)
 
     def summary: String = "Impossible cast: cannot cast a Java type to a Flix type."
 
@@ -159,7 +166,7 @@ object SafetyError {
          |${highlight(loc, "impossible cast", fmt)}
          |
          |From: ${red(JavaTypes.formatType(from))}
-         |To  : ${red(FormatType.formatType(to))}
+         |To  : ${Pretty.tpe(to).ansi(fmt)}
          |
          |${underline("Explanation:")} A checked cast can only be used between Java types.
          |""".stripMargin
@@ -173,8 +180,10 @@ object SafetyError {
     * @param to   the destination type (the variable).
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedCastToVar(from: Type, to: Type.Var, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCastToVar(from: Type, to: Type.Var, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4132
+
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(from, to)
 
     def summary: String = "Impossible cast: cannot cast to a type variable."
 
@@ -184,8 +193,8 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(FormatType.formatType(from))}
-         |To  : ${red(FormatType.formatType(to))}
+         |From: ${Pretty.tpe(from).ansi(fmt)}
+         |To  : ${Pretty.tpe(to).ansi(fmt)}
          |
          |${underline("Explanation:")} A checked cast requires the target type to be known
          |at compile time.
@@ -199,14 +208,16 @@ object SafetyError {
     * @param eff the illegal effect.
     * @param loc the source location of the method.
     */
-  case class IllegalMethodEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalMethodEffect(eff: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4243
 
-    def summary: String = s"Unexpected method effect: '${FormatType.formatType(eff)}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(eff)
+
+    def summary: String = s"Unexpected method effect: '${Pretty.tpe(eff).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected method effect: '${red(FormatType.formatType(eff))}'.
+      s""">> Unexpected method effect: '${Pretty.tpe(eff).ansi(fmt)}'.
          |
          |${highlight(loc, "unexpected effect", fmt)}
          |
@@ -245,14 +256,16 @@ object SafetyError {
     *
     * @param loc the location of the object
     */
-  case class IllegalThrowType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalThrowType(tpe: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4465
 
-    def summary: String = s"Unexpected throw type: '${FormatType.formatType(tpe)}' is not a subclass of Throwable."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe)
+
+    def summary: String = s"Unexpected throw type: '${Pretty.tpe(tpe).plain}' is not a subclass of Throwable."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected throw type: '${red(FormatType.formatType(tpe))}' is not a subclass of Throwable.
+      s""">> Unexpected throw type: '${Pretty.tpe(tpe).ansi(fmt)}' is not a subclass of Throwable.
          |
          |${highlight(loc, "unexpected type", fmt)}
          |
@@ -383,8 +396,10 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class ImpossibleUncheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class ImpossibleUncheckedCast(from: Type, to: Type, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5023
+
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(from, to)
 
     def summary: String = "Impossible cast: types are incompatible."
 
@@ -394,8 +409,8 @@ object SafetyError {
          |
          |${highlight(loc, "impossible cast", fmt)}
          |
-         |From: ${red(FormatType.formatType(from))}
-         |To  : ${red(FormatType.formatType(to))}
+         |From: ${Pretty.tpe(from).ansi(fmt)}
+         |To  : ${Pretty.tpe(to).ansi(fmt)}
          |
          |${underline("Explanation:")} An unchecked cast between these types will never succeed.
          |""".stripMargin

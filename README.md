@@ -4,7 +4,7 @@
     title="The Flix Programming Language">
 </p>
 
-**Flix** is a statically typed functional, imperative, and logic programming language.
+**Flix** is a powerful effect-oriented programming language.
 
 We refer you to the [official Flix website (flix.dev)](https://flix.dev/) for more information about Flix. 
 
@@ -17,40 +17,36 @@ We refer you to the [official Flix website (flix.dev)](https://flix.dev/) for mo
 ## Example
 
 ```flix
-///
-/// The expressions of the lambda calculus are: variables, lambda abstractions, and applications.
-///
-enum Expression {
-    // A variable expression. A variable is represented by an integer. 
-    case Var(Int32),
+use Net.Http
+use Net.Retry
+use Net.HttpResponse
+use Time.Clock
+use Time.Duration.{milliseconds, seconds}
 
-    // A lambda abstracation expression. A variable is represented by an integer.
-    case Abs(Int32, Expression),
-
-    // A function application expression.
-    case App(Expression, Expression),
-}
-
-///
-/// Performs alpha conversion by introducing fresh variables for all variables in the given expression `e0`.
-///
-def alpha(e0: Expression, m: Map[Int32, Int32]): Expression = match e0 {
-    case Var(x) =>
-        // Check if we need to rename the variable.
-        match Map.get(x, m) {
-            case None => Var(x)
-            case Some(y) => Var(y)
+// An example showing use of multiple effects and effect handlers.
+def main(): Unit \ { Clock, Http, Logger, IO } =
+    let defaultHeaders = Map#{
+        "Accept"        => List#{"application/json"},
+        "Authorization" => List#{"Bearer tok123"}
+    };
+    run {
+        let urls = List#{"/api/users", "/api/posts"};
+        foreach (url <- urls) {
+            match Http.get(url) {
+                case Ok(resp) => println("${url} -> ${HttpResponse.status(resp)}")
+                case Err(err) => println("${url} -> ${err}")
+            }
+        };
+        match Http.get("https://notfound.flix.dev/") {
+            case Ok(resp) => println("notfound -> ${HttpResponse.status(resp)}")
+            case Err(err) => println("notfound -> ${err}")
         }
-
-    case Abs(x, e) =>
-        // Generate a fresh variable name for `x`.
-        let y = freshVar();
-        Abs(y, alpha(e, Map.insert(x, y, m)))
-
-    case App(e1, e2) =>
-        // Recursively perform alpha conversion on each expression.
-        App(alpha(e1, m), alpha(e2, m))
-}
+    } with Http.withBaseUrl("https://flix.dev")
+      with Http.withDefaultHeaders(defaultHeaders)
+      with Http.withRetry(Retry.linear(maxRetries = 2, delay = milliseconds(100)))
+      with Http.withCircuitBreaker(failureThreshold = 3, cooldown = seconds(5))
+      with Http.withSlidingWindow(maxRequests = 2, window = seconds(1))
+      with Http.withLogging
 ```
 
 ## Building

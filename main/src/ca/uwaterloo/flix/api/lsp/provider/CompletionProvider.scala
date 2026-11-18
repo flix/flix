@@ -126,7 +126,7 @@ object CompletionProvider {
   /**
     * Returns completions based on the syntactic context.
     */
-  private def getSyntacticCompletions(name: SourceName, e: ParseError)(implicit root: Root, flix: Flix): List[Completion] = {
+  private def getSyntacticCompletions(name: SourceName, e: ParseError)(implicit root: Root): List[Completion] = {
     val range: Range = Range.from(e.loc)
     if (range.isEmpty)
       Nil

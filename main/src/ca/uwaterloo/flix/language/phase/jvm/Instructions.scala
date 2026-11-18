@@ -475,7 +475,13 @@ object Instructions {
   def pushNull()(implicit mv: MethodVisitor): Unit =
     ACONST_NULL()
 
-  /** Pushes the string constant `s` onto the operand stack. */
+  /**
+    * Pushes the string constant `s` onto the operand stack.
+    *
+    * The string is loaded from the constant pool with an `ldc` instruction, so it is interned:
+    * two pushes of equal strings yield the same object. Record labels and extensible tag names
+    * are compared by reference and depend on this.
+    */
   def pushString(s: String)(implicit mv: MethodVisitor): Unit =
     mv.visitLoadConstantInstruction(s)
 

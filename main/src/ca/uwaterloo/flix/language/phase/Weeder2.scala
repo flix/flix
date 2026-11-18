@@ -240,6 +240,7 @@ object Weeder2 {
         TreeKind.Decl.Trait,
         TreeKind.Decl.Instance,
         TreeKind.Decl.Def,
+        TreeKind.Decl.Val,
         TreeKind.Decl.Enum,
         TreeKind.Decl.RestrictableEnum,
         TreeKind.Decl.Struct,
@@ -251,6 +252,7 @@ object Weeder2 {
           case TreeKind.Decl.Trait => visitTraitDecl(t)
           case TreeKind.Decl.Instance => visitInstanceDecl(t)
           case TreeKind.Decl.Def => visitDefinitionDecl(t)
+          case TreeKind.Decl.Val => visitValDecl(t)
           case TreeKind.Decl.Enum => visitEnumDecl(t)
           case TreeKind.Decl.RestrictableEnum => visitRestrictableEnumDecl(t)
           case TreeKind.Decl.Struct => visitStructDecl(t)
@@ -357,6 +359,24 @@ object Weeder2 {
       val tconstrs = Types.pickConstraints(tree)
       val constrs = pickEqualityConstraints(tree)
       Declaration.Redef(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
+    }
+
+    private def visitValDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Val = {
+      expect(tree, TreeKind.Decl.Val)
+      val doc = pickDocumentation(tree)
+      val ann = pickAnnotations(tree)
+      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
+      val ident = pickNameIdent(tree)
+      val tpe = Types.pickType(tree)
+      val eff = Types.tryPickEffect(tree)
+      // An explicit `\ {}` always parses to `Type.Pure` (see `visitEffectType`). It is allowed
+      // since it is just making the implicit default explicit; any other effect is not.
+      eff.foreach {
+        case Type.Pure(_) => ()
+        case e => sctx.errors.add(WeederError.IllegalEffectfulVal(e.loc))
+      }
+      val exp = Exprs.pickExpr(tree)
+      Declaration.Val(doc, ann, mod, ident, tpe, eff, exp, tree.loc)
     }
 
     private def visitEnumDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Enum = {
@@ -704,11 +724,15 @@ object Weeder2 {
       }
     }
 
-    def unitFormalParameter(loc: SourceLocation): FormalParam = FormalParam(
-      Name.Ident("_unit", SourceLocation.Unknown),
-      Some(Type.Unit(loc)),
-      loc
-    )
+    /**
+      * Returns the implicit unit parameter of a function that is declared without parameters.
+      *
+      * The parameter is not written in the source, so its location is synthetic.
+      */
+    def unitFormalParameter(loc: SourceLocation): FormalParam = {
+      val l = loc.asSynthetic
+      FormalParam(Name.Ident("_unit", SourceLocation.Unknown), Some(Type.Unit(l)), l)
+    }
 
     def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit sctx: SharedContext): Nel[FormalParam] = {
       tryPick(TreeKind.ParameterList, tree) match {
@@ -1047,7 +1071,7 @@ object Weeder2 {
       }
       args match {
         // Add synthetic unit arguments if there are none
-        case Nil => List(Expr.Cst(Constant.Unit, tree.loc))
+        case Nil => List(Expr.Cst(Constant.Unit, tree.loc.asSynthetic))
         case args => args
       }
     }
@@ -2807,7 +2831,7 @@ object Weeder2 {
       val maybeLatTerm = tryPickLatticeTermExpr(tree)
       rawList match {
         // A() => A(())
-        case Nil => (List(Expr.Cst(Constant.Unit, tree.loc)), maybeLatTerm)
+        case Nil => (List(Expr.Cst(Constant.Unit, tree.loc.asSynthetic)), maybeLatTerm)
         case nonEmpty => (nonEmpty, maybeLatTerm)
       }
     }

@@ -263,7 +263,7 @@ private[monomorph2] object ConstraintGen {
           //
           // N.B. We use full unification rather than reading type arguments off fixed positions because
           // a default handler's parameter type only has to be *equal* to `Unit -> a \ ef`, not
-          // written that way syntactically — e.g. `f: Unit -> a \ (ef + Pure)` is a valid handler
+          // written that way syntactically — e.g. `f: Unit -> a \ (ef + {})` is a valid handler
           // parameter type too. Unifying the complete handler arrow also recovers type parameters
           // that occur only in the handled effect.
           val concreteParamTpe = Type.mkArrowWithEffect(Type.Unit, eff, defn.spec.retTpe, loc)
@@ -286,6 +286,7 @@ private[monomorph2] object ConstraintGen {
   private def visitExp(exp0: Expr)(implicit tparamEnv: TypeParamEnv,  sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(_, _, _)        => ()
     case Expr.Var(_, _, _)        => ()
+    case Expr.Val(_, _, loc)      => throw InternalCompilerException("val expressions are not yet supported past typing", loc)
     case Expr.Hole(_, _, _, _, _) => ()
 
     case Expr.ApplyDef(symUse, exps, targs, _, _, _, _, _) =>

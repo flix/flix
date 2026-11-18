@@ -407,9 +407,9 @@ pub mod Fixpoint3.ProvenanceReconstruct {
         terms
             |> Vector.map(
                 t -> match t {
-                    case BodyTerm.Var(v)   => getVal(v, varSymToVal)
-                    case BodyTerm.Lit(val) => val
-                    case BodyTerm.Wild     => unreachable!()
+                    case BodyTerm.Var(v)     => getVal(v, varSymToVal)
+                    case BodyTerm.Lit(value) => value
+                    case BodyTerm.Wild       => unreachable!()
                 }
             )
 
@@ -424,10 +424,10 @@ pub mod Fixpoint3.ProvenanceReconstruct {
                 match (acc, i) -> t -> match t {
                     case BodyTerm.Wild => (acc, i + 1)
                     case BodyTerm.Var(v) => match Map.get(v, varSymToVal) {
-                        case None      => (acc, i + 1)
-                        case Some(val) => ((i, val) :: acc, i + 1)
+                        case None        => (acc, i + 1)
+                        case Some(value) => ((i, value) :: acc, i + 1)
                     }
-                    case BodyTerm.Lit(val) => ((i, val) :: acc, i + 1)
+                    case BodyTerm.Lit(value) => ((i, value) :: acc, i + 1)
                 }
             );
         List.toVector(List.reverse(filterAsList))
@@ -493,12 +493,12 @@ pub mod Fixpoint3.ProvenanceReconstruct {
     def areHeadApplicationsSatisfied(headApps: Vector[(HeadTerm, Boxed)], varSymToVal: Map[VarSym, Boxed]): Bool = {
         headApps
             |> Vector.forAll(
-                match (app, val) -> match app {
-                    case (HeadTerm.App1(f, v1))                 => val == f(getVal(v1, varSymToVal))
-                    case (HeadTerm.App2(f, v1, v2))             => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal))
-                    case (HeadTerm.App3(f, v1, v2, v3))         => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal))
-                    case (HeadTerm.App4(f, v1, v2, v3, v4))     => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal))
-                    case (HeadTerm.App5(f, v1, v2, v3, v4, v5)) => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal), getVal(v5, varSymToVal))
+                match (app, value) -> match app {
+                    case (HeadTerm.App1(f, v1))                 => value == f(getVal(v1, varSymToVal))
+                    case (HeadTerm.App2(f, v1, v2))             => value == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal))
+                    case (HeadTerm.App3(f, v1, v2, v3))         => value == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal))
+                    case (HeadTerm.App4(f, v1, v2, v3, v4))     => value == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal))
+                    case (HeadTerm.App5(f, v1, v2, v3, v4, v5)) => value == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal), getVal(v5, varSymToVal))
                     case _                                      => unreachable!()
                 }
             )

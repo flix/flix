@@ -82,10 +82,10 @@ object Resolver {
 
     // The module-level uses, keyed by module. These are also resolved (and any errors reported)
     // by `visitDecl` when the modules themselves are resolved, so we do not report errors here.
-    val uses = root.uses.map {
+    val uses = ParOps.parMap(root.uses) {
       case (ns, uses0) =>
         new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone) -> uses0.flatMap(visitUseOrImport(_, ns, root).toOption)
-    }
+    }.toMap
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     val (taenv, taOrder) = resolveTypeAliases(defaultUses, root)
@@ -97,6 +97,7 @@ object Resolver {
       traits,
       table.instances,
       table.defs,
+      table.vals,
       table.enums,
       table.structs,
       table.restrictableEnums,
@@ -127,6 +128,7 @@ object Resolver {
     case trt: ResolvedAst.Declaration.Trait => SymbolTable.empty.addTrait(trt)
     case inst: ResolvedAst.Declaration.Instance => SymbolTable.empty.addInstance(inst)
     case defn: ResolvedAst.Declaration.Def => SymbolTable.empty.addDef(defn)
+    case vald: ResolvedAst.Declaration.Val => SymbolTable.empty.addVal(vald)
     case enum0: ResolvedAst.Declaration.Enum => SymbolTable.empty.addEnum(enum0)
     case struct: ResolvedAst.Declaration.Struct => SymbolTable.empty.addStruct(struct)
     case enum0: ResolvedAst.Declaration.RestrictableEnum => SymbolTable.empty.addRestrictableEnum(enum0)
@@ -385,6 +387,8 @@ object Resolver {
       resolveInstance(inst, scp0, ns0)
     case defn@NamedAst.Declaration.Def(_, _, _, _) =>
       Some(resolveDef(defn, None, scp0)(ns0, taenv, sctx, root, flix))
+    case vald@NamedAst.Declaration.Val(_, _, _, _, _, _, _) =>
+      Some(resolveVal(vald, scp0)(ns0, taenv, sctx, root, flix))
     case enum0@NamedAst.Declaration.Enum(_, _, _, _, _, _, _, _) =>
       Some(resolveEnum(enum0, scp0, taenv, ns0, root))
     case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _) =>
@@ -551,6 +555,16 @@ object Resolver {
         val exp = resolveExp(exp0, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix)
         ResolvedAst.Declaration.Def(sym, spec, exp, loc)
       }
+  }
+
+  /**
+    * Performs name resolution on the given val `d0` in the given namespace `ns0`.
+    */
+  private def resolveVal(d0: NamedAst.Declaration.Val, scp0: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Declaration.Val = d0 match {
+    case NamedAst.Declaration.Val(sym, doc, ann, mod, tpe0, exp0, loc) =>
+      val tpe = resolveType(tpe0, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)(RegionScope.Top, sctx, flix)
+      val exp = resolveExp(exp0, scp0)(RegionScope.Top, ns0, taenv, sctx, root, flix)
+      ResolvedAst.Declaration.Val(sym, doc, ann, mod, tpe, exp, loc)
   }
 
   /**
@@ -827,6 +841,7 @@ object Resolver {
         case ResolvedQName.Op(op) => visitOp(op, loc)
         case ResolvedQName.LocalDef(sym, fparams) => visitLocalDef(sym, fparams.length, loc)
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
+        case ResolvedQName.Val(vald) => ResolvedAst.Expr.Val(ValSymUse(vald.sym, loc), loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = false, loc)
         case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
@@ -840,6 +855,7 @@ object Resolver {
         case ResolvedQName.Op(op) => visitOp(op, loc)
         case ResolvedQName.LocalDef(sym, fparams) => visitLocalDef(sym, fparams.length, loc)
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
+        case ResolvedQName.Val(vald) => ResolvedAst.Expr.Val(ValSymUse(vald.sym, loc), loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = true, loc)
         case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
@@ -923,6 +939,7 @@ object Resolver {
         case ResolvedQName.Op(op) => visitApplyOp(op, exps, scp0, innerLoc, outerLoc)
         case ResolvedQName.LocalDef(sym, fparams) => visitApplyLocalDef(sym, fparams.length, exps, scp0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApplyClo(app, scp0)
+        case ResolvedQName.Val(_) => visitApplyClo(app, scp0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, scp0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, scp0, innerLoc, outerLoc)
         case ResolvedQName.Error(m) => visitApplyError(m, exps, scp0, outerLoc)
@@ -935,6 +952,7 @@ object Resolver {
         case ResolvedQName.Op(op) => visitApplyOp(op, exps, scp0, innerLoc, outerLoc)
         case ResolvedQName.LocalDef(sym, fparams) => visitApplyLocalDef(sym, fparams.length, exps, scp0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApplyClo(app, scp0)
+        case ResolvedQName.Val(_) => visitApplyClo(app, scp0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, scp0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, scp0, innerLoc, outerLoc)
         case ResolvedQName.Error(error) => ResolvedAst.Expr.Error(error)
@@ -2296,6 +2314,7 @@ object Resolver {
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Case) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.RestrictableCase) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Op) => decl
+      case decl@Resolution.Declaration(_: NamedAst.Declaration.Val) => decl
       case decl@Resolution.Var(_) => decl
       case decl@Resolution.LocalDef(_, _, _) => decl
     } match {
@@ -2328,6 +2347,9 @@ object Resolver {
       // TODO NS-REFACTOR check accessibility
       case Resolution.Declaration(caze: NamedAst.Declaration.RestrictableCase) :: Nil =>
         ResolvedQName.RestrictableTag(caze)
+      case Resolution.Declaration(vald: NamedAst.Declaration.Val) :: _ =>
+        checkPathAccessibility(vald.sym.namespace, ns0, qname.loc)
+        ResolvedQName.Val(vald)
       // TODO NS-REFACTOR check accessibility
       case Resolution.LocalDef(_, sym, fparams) :: _ => ResolvedQName.LocalDef(sym, fparams)
       case Resolution.Var(sym) :: _ => ResolvedQName.Var(sym)
@@ -3556,6 +3578,7 @@ object Resolver {
     case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _) => sym
     case NamedAst.Declaration.Sig(sym, _, _, _) => sym
     case NamedAst.Declaration.Def(sym, _, _, _) => sym
+    case NamedAst.Declaration.Val(sym, _, _, _, _, _, _) => sym
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym
     case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) => sym
     case NamedAst.Declaration.StructField(_, _, sym, _, _) => sym
@@ -3575,6 +3598,7 @@ object Resolver {
     */
   private def infallableLookupSym(sym: Symbol, root: NamedAst.Root): List[NamedAst.Declaration] = sym match {
     case sym: Symbol.DefnSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
+    case sym: Symbol.ValSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.EnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.StructSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.RestrictableEnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
@@ -3824,6 +3848,8 @@ object Resolver {
 
     case class RestrictableTag(caze: NamedAst.Declaration.RestrictableCase) extends ResolvedQName
 
+    case class Val(vald: NamedAst.Declaration.Val) extends ResolvedQName
+
     case class Error(e: ResolutionError.UndefinedName) extends ResolvedQName
   }
 
@@ -3860,6 +3886,7 @@ object Resolver {
                                  traits: Map[Symbol.TraitSym, ResolvedAst.Declaration.Trait],
                                  instances: ListMap[Symbol.TraitSym, ResolvedAst.Declaration.Instance],
                                  defs: Map[Symbol.DefnSym, ResolvedAst.Declaration.Def],
+                                 vals: Map[Symbol.ValSym, ResolvedAst.Declaration.Val],
                                  enums: Map[Symbol.EnumSym, ResolvedAst.Declaration.Enum],
                                  structs: Map[Symbol.StructSym, ResolvedAst.Declaration.Struct],
                                  structFields: Map[Symbol.StructFieldSym, ResolvedAst.Declaration.StructField],
@@ -3871,6 +3898,8 @@ object Resolver {
     def addTrait(trt: ResolvedAst.Declaration.Trait): SymbolTable = copy(traits = traits + (trt.sym -> trt))
 
     def addDef(defn: ResolvedAst.Declaration.Def): SymbolTable = copy(defs = defs + (defn.sym -> defn))
+
+    def addVal(v: ResolvedAst.Declaration.Val): SymbolTable = copy(vals = vals + (v.sym -> v))
 
     def addEnum(enum0: ResolvedAst.Declaration.Enum): SymbolTable = copy(enums = enums + (enum0.sym -> enum0))
 
@@ -3945,6 +3974,7 @@ object Resolver {
         traits = this.traits ++ that.traits,
         instances = this.instances ++ that.instances,
         defs = this.defs ++ that.defs,
+        vals = this.vals ++ that.vals,
         enums = that.enums.foldLeft(this.enums) {
           case (acc, (newSym, enum0)) => acc.updatedWith(newSym)(resilientMergeEnums(enum0, _))
         },
@@ -3960,7 +3990,7 @@ object Resolver {
   }
 
   private object SymbolTable {
-    val empty: SymbolTable = SymbolTable(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
+    val empty: SymbolTable = SymbolTable(Map.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
 
     /**
       * Traverses `xs`, gathering the symbols from each element by applying the function `f`.

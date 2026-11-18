@@ -54,6 +54,40 @@ If asked to do an extensive comparison, use `--n 250` or `--n 500`.
 
 Drop `--frontend` if the change affects the backend, so the benchmark covers the full pipeline.
 
+**Always pin the heap at 8 GB.** `./mill flix.run` does this already through `forkArgs` in `build.mill`. When running from the fat jar, pass the flags yourself:
+
+```bash
+java -Xms8g -Xmx8g -jar out/flix/assembly.dest/out.jar Xperf --frontend --par --n 500
+```
+
+Never compare runs made with different heap settings. An unpinned default heap is about 20% slower on the frontend and the gap is not the same in every phase.
+
+Run master and the change from checkouts of their own commits (master is the merge base), one run per side, master first, same JDK, idle machine. Numbers that go into a PR come from an `--n 500` run. Never drop warm-up iterations: every statistic is over all iterations.
+
+## Profiling with `--top`
+
+`--top` shows a live, top-style TUI of where the compiler spends its time: one row per def with its phase, allocation, time, `%cpu` and `%wall`. Run it from the fat JAR in a real terminal, with the heap pinned as for benchmarks:
+
+```bash
+./mill flix.assembly
+java -Xms8g -Xmx8g -jar out/flix/assembly.dest/out.jar --top foo.flix
+```
+
+When compilation finishes, the phase label in the top-left corner changes to `done` and the TUI waits for `q`.
+
+The TUI is turned off when the JVM has no console (`System.console() == null` in `Main.scala`). So `./mill flix.run --top foo.flix` from a non-interactive shell, or the JAR with its output redirected, prints nothing and exits 0. To capture the screen without an interactive terminal (Windows):
+
+1. From the repository root, start the JAR in a hidden console window of a known size:
+
+   ```powershell
+   $p = Start-Process cmd.exe -ArgumentList '/c', 'chcp 65001 >nul & mode con: cols=170 lines=45 & java -Xms8g -Xmx8g -jar out\flix\assembly.dest\out.jar --top foo.flix' -WorkingDirectory $PWD -WindowStyle Hidden -PassThru
+   ```
+
+2. Read that window's screen buffer through `kernel32` P/Invoke: `FreeConsole`, `AttachConsole($p.Id)`, open `CONOUT$` with `CreateFileW`, get the size from `GetConsoleScreenBufferInfo`, and read each row with `ReadConsoleOutputCharacterW`.
+3. Poll every 500 ms until the text contains `done`, read once more, then end the process with `taskkill /T /F /PID $p.Id`.
+
+`mode con` sets how much is captured: the table fills the window height and the def name column takes the spare width. `chcp 65001` keeps the progress bar and sparkline characters intact.
+
 ## Commit Messages
 
 Commit messages must start with a lowercase prefix followed by a colon and space:
@@ -81,6 +115,19 @@ Example: `refactor/simplify-type-reduction`
 ## GitHub Pull Requests
 
 - Omit the testing section from the PR description.
+- A PR that claims a performance change has a `## Performance` section with one `###` subsection per machine, in alphabetical order by machine name. Each subsection contains, in this order:
+  1. One sentence with the setup: the Xperf command, the OS, the JDK, "heap pinned at 8 GB", one run per side, the master commit first and then the PR commit.
+  2. This table, every statistic over all iterations:
+
+     | Throughput (lines/s) | master | this PR | Change |
+     |---|---|---|---|
+     | Median | | | **+x.x%** |
+     | p10 | | | |
+     | p90 | | | |
+     | Best | | | |
+     | Iterations below 90% of median | | | |
+
+  3. One sentence naming the phase that moved, with its median before and after, and stating that every other phase is within N ms.
 
 ## Writing Flix Code
 

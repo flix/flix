@@ -63,6 +63,7 @@ object Desugar {
     case d: WeededAst.Declaration.Instance => visitInstance(d)
     case d: WeededAst.Declaration.Def => visitDef(d)
     case d: WeededAst.Declaration.Redef => visitRedef(d)
+    case d: WeededAst.Declaration.Val => visitVal(d)
     case d: WeededAst.Declaration.Enum => visitEnum(d)
     case d: WeededAst.Declaration.RestrictableEnum => visitRestrictableEnum(d)
     case d: WeededAst.Declaration.Struct => visitStruct(d)
@@ -126,6 +127,19 @@ object Desugar {
       val tconstrs = tconstrs0.map(visitTraitConstraint)
       val econstrs = econstrs0.map(visitEqualityConstraint)
       DesugaredAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, econstrs, loc)
+  }
+
+  /**
+    * Desugars the given [[WeededAst.Declaration.Val]] `val0`.
+    */
+  private def visitVal(val0: WeededAst.Declaration.Val)(implicit flix: Flix): DesugaredAst.Declaration.Val = val0 match {
+    case WeededAst.Declaration.Val(doc, ann, mod, ident, tpe0, _, exp0, loc) =>
+      // The effect annotation, if any, is weeder-only metadata used to raise
+      // WeederError.IllegalEffectfulVal. It is dropped here since a val's
+      // effect is always pure and nothing downstream needs it.
+      val tpe = visitType(tpe0)
+      val exp = visitExp(exp0)
+      DesugaredAst.Declaration.Val(doc, ann, mod, ident, tpe, exp, loc)
   }
 
   /**
@@ -1299,7 +1313,7 @@ object Desugar {
       // Vector.toSet requires an instance of Order[a]
       // which we do not have for an empty literal
       // so we construct the empty set directly.
-      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0)
+      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0.asSynthetic)
       mkApplyFqn("Set.empty", List(unit), loc0)
     } else {
       desugarCollectionLitToVec("Vector.toSet", exps0, loc0)
@@ -1314,7 +1328,7 @@ object Desugar {
       // Vector.toMap requires an instance of Order[a]
       // which we do not have for an empty literal
       // so we construct the empty map directly.
-      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0)
+      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0.asSynthetic)
       mkApplyFqn("Map.empty", List(unit), loc0)
     } else {
       val es = exps0.map { case (k, v) => WeededAst.Expr.Tuple(List(k, v), k.loc.spanWith(v.loc)) }

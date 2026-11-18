@@ -9,7 +9,7 @@ package ca.uwaterloo.flix.language.verifier
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Source
-import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, SourceTokens, Token, TokenKind}
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, ParOps}
 
 /**
@@ -34,9 +34,19 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, ParOps}
 object TokenVerifier {
 
   /** Checks that tokens adhere to the invariants. */
-  def verify(m: Map[Source, Array[Token]])(implicit flix: Flix): Unit = {
+  def verify(m: Map[Source, SourceTokens])(implicit flix: Flix): Unit = {
     ParOps.parMap(m) {
-      case (src, tokens) => checkSource(src, tokens)
+      case (src, tokens) =>
+        checkSource(src, tokens.tokens)
+        checkSemanticTokens(src, tokens)
+    }
+  }
+
+  /** Checks that the semantic tokens of `src` are exactly its semantic tokens (see [[TokenKind.isSemantic]]), in order. */
+  private def checkSemanticTokens(src: Source, tokens: SourceTokens): Unit = {
+    val expected = tokens.tokens.filter(_.kind.isSemantic)
+    if (!expected.sameElements(tokens.semanticTokens)) {
+      throw InternalCompilerException(s"Semantic tokens of '${src.name}' do not match its tokens.", SourceLocation.Unknown)
     }
   }
 

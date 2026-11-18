@@ -268,7 +268,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
         ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON).toList))
 
     case Request.Hover(id, name, pos) =>
-      HoverProvider.processHover(name, pos)(root, project.compiler) match {
+      HoverProvider.processHover(name, pos)(root) match {
         case Some(hover) => ("id" -> id) ~ hover.toJSON
         case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this hover.")
       }
@@ -301,7 +301,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> SemanticTokensProvider.provideSemanticTokens(name)(root)))
 
     case Request.Signature(id, name, pos) =>
-      SignatureHelpProvider.provideSignatureHelp(name, pos)(root, project.compiler) match {
+      SignatureHelpProvider.provideSignatureHelp(name, pos)(root) match {
         case Some(signature) => ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> signature.toJSON)
         case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this signature.")
       }

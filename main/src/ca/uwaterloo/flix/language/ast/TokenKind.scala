@@ -140,6 +140,7 @@ sealed abstract class TokenKind(private val flags: Int = 0) {
       case TokenKind.KeywordUniv => "'univ'"
       case TokenKind.KeywordUnsafe => "'unsafe'"
       case TokenKind.KeywordUse => "'use'"
+      case TokenKind.KeywordVal => "'val'"
       case TokenKind.KeywordWhere => "'where'"
       case TokenKind.KeywordWith => "'with'"
 
@@ -243,6 +244,7 @@ sealed abstract class TokenKind(private val flags: Int = 0) {
     case TokenKind.KeywordStruct => true
     case TokenKind.KeywordTrait => true
     case TokenKind.KeywordType => true
+    case TokenKind.KeywordVal => true
     case _ => false
   })
 
@@ -829,6 +831,8 @@ object TokenKind {
   case object KeywordUnsafe extends TokenKind(Flags.Keyword)
 
   case object KeywordUse extends TokenKind(Flags.Keyword)
+
+  case object KeywordVal extends TokenKind(Flags.Keyword)
 
   case object KeywordWhere extends TokenKind(Flags.Keyword)
 

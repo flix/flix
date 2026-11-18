@@ -41,6 +41,8 @@ object NamedAst {
 
     case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr, loc: SourceLocation) extends Declaration
 
+    case class Val(sym: Symbol.ValSym, doc: Doc, ann: Annotations, mod: Modifiers, tpe: Type, exp: Expr, loc: SourceLocation) extends Declaration
+
     case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
 
     case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation) extends Declaration

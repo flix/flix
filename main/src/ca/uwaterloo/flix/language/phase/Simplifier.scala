@@ -190,7 +190,7 @@ object Simplifier {
           SimplifiedAst.Expr.Let(closureSym, lambdaExp, spawnExp, t, Purity.Impure, loc)
 
         case AtomicOp.Lazy =>
-          // Wrap the expression in a closure: () -> tpe \ Pure
+          // Wrap the expression in a closure: () -> tpe \ {}
           val e = es.head
           val lambdaTyp = SimpleType.mkArrow(List(SimpleType.Unit), e.tpe)
           val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_lazy", BoundBy.FormalParam, loc), SimpleType.Unit, loc)

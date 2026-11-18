@@ -225,19 +225,21 @@ object HtmlHighlighter {
   /**
     * Returns the CSS class of a token of the type `tpe`, if it has one.
     *
-    * The classes are defined in `highlight.css`. They are specific to the highlighter, i.e. no
-    * other part of the documentation uses them, and they are short, since a page has one per token.
+    * The classes are defined in `styles.css`, which every page loads, and are shared with the
+    * signatures of the other pages, which [[HtmlDocumentor]] prints with the same function, so a
+    * type in a signature and the same type in the source are styled alike. They are short, since a
+    * source page has one per token.
     *
     * A type without a class is displayed as plain text.
     */
-  private def cssClass(tpe: SemanticTokenType): Option[String] = tpe match {
-    case SemanticTokenType.Class => Some("ty")
+  def cssClass(tpe: SemanticTokenType): Option[String] = tpe match {
+    case SemanticTokenType.Class => Some("tr")
     case SemanticTokenType.Comment => Some("cm")
     case SemanticTokenType.Decorator => Some("an")
     case SemanticTokenType.Effect => Some("ef")
     case SemanticTokenType.Enum => Some("ty")
     case SemanticTokenType.Function => Some("fn")
-    case SemanticTokenType.Interface => Some("ty")
+    case SemanticTokenType.Interface => Some("tr")
     case SemanticTokenType.Keyword => Some("kw")
     case SemanticTokenType.Method => Some("fn")
     case SemanticTokenType.Modifier => Some("kw")

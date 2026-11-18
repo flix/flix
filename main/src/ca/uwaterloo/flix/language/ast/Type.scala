@@ -10,7 +10,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
-import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, Pretty}
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -256,7 +256,7 @@ sealed trait Type {
   /**
     * Returns a human readable string representation of `this` type.
     */
-  override def toString: String = FormatType.formatTypeWithOptions(this, FormatOptions.Internal)
+  override def toString: String = Pretty.tpe(this)(FormatOptions.Internal).plain
 }
 
 object Type {
