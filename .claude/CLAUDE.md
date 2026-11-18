@@ -88,6 +88,12 @@ The TUI is turned off when the JVM has no console (`System.console() == null` in
 
 `mode con` sets how much is captured: the table fills the window height and the def name column takes the spare width. `chcp 65001` keeps the progress bar and sparkline characters intact.
 
+On macOS, use a pseudo-terminal from Python instead:
+
+1. `pty.fork()`. In the child, set the size with a `TIOCSWINSZ` ioctl on fd 0, set `LC_ALL=en_US.UTF-8` (the `chcp 65001` counterpart) and `TERM=xterm-256color`, and `exec` the `java` command above.
+2. Read the master fd. Each repaint is one frame between `ESC[?2026h` and `ESC[?2026l`; strip the ANSI codes from it.
+3. When a frame contains `done`, keep the next one, write `q` to the master fd, and read to EOF.
+
 ## Commit Messages
 
 Commit messages must start with a lowercase prefix followed by a colon and space:
