@@ -414,15 +414,8 @@ object ConstraintGen {
       c.expectTypeArguments(symUse.sym, declaredArgumentTypes.toList, tpes, exps.map(_.loc))
       c.addClassConstraints(tconstrs, loc)
       c.addEqualityConstraints(econstrs, loc)
-      val resEff = if (declaredEff == Type.Pure) {
-        // A pure def is not the source of an effect.
-        Type.mkUnion(effs, loc)
-      } else {
-        // The def is the source of its declared effect. The effect is relocated to the call, like the trait
-        // constraints above, so that effect provenance can point at the call where the effect enters the program.
-        // The union is put behind a fresh variable only if the solver must reduce or canonicalize the effect.
-        mkResolvableEff(relocate(declaredEff, loc), effs, loc)
-      }
+      // The declared effect is relocated to the call for effect provenance.
+      val resEff = mkResolvableEff(relocate(declaredEff, loc), effs, loc)
       val resTpe = mkResolvable(declaredResultType, loc)
       InferredAst.Expr.ApplyDef(symUse, es, targs, itpe, resTpe, resEff, loc)
 
@@ -457,7 +450,7 @@ object ConstraintGen {
       // must canonicalize it, which it does only through a constraint: written into the tree directly, `Emit[Int32]`
       // is never checked against `Emit[String]`. The union is therefore put behind a fresh variable in that case, and
       // likewise if the operation itself declares an associated effect, which the solver must reduce.
-      // The declared effect is relocated to the call for effect provenance, see `ApplyDef`.
+      // The declared effect is relocated to the call for effect provenance.
       val resEff = mkResolvableEff(relocate(declaredEff, loc), effs, loc)
       InferredAst.Expr.ApplyOp(symUse, es, resTpe, resEff, loc)
 
@@ -489,7 +482,7 @@ object ConstraintGen {
       // or apply a polymorphic effect, which it must canonicalize. Both happen only through a constraint: written into
       // the tree directly, a region is purified before the associated effect inside it is reduced, and `Emit[Int32]`
       // is never checked against `Emit[String]`. The union is therefore put behind a fresh variable in either case.
-      // The declared effect is relocated to the call for effect provenance, see `ApplyDef`.
+      // The declared effect is relocated to the call for effect provenance.
       val resEff = mkResolvableEff(relocate(declaredEff, loc), effs, loc)
       InferredAst.Expr.ApplySig(symUse, es, targ, targs, itpe, resTpe, resEff, loc)
   }
