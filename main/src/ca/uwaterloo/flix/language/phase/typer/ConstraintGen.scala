@@ -397,8 +397,8 @@ object ConstraintGen {
       val targs = tparams.map(sym => Type.freshVar(sym.kind, sym.loc))
       val subst = Substitution(tparams.zip(targs).toMap)
 
-      val tconstrs = defn.spec.tconstrs.map(subst.apply).map(_.copy(loc = loc))
-      val econstrs = defn.spec.econstrs.map(subst.apply).map(_.copy(loc = loc))
+      val tconstrs = defn.spec.tconstrs.map(subst.apply)
+      val econstrs = defn.spec.econstrs.map(subst.apply)
 
       // If no effect specified, we assume the function is pure
       val declaredEff = subst(defn.spec.eff.getOrElse(Type.Pure))
@@ -440,9 +440,7 @@ object ConstraintGen {
 
     case Expr.ApplyOp(symUse, exps, loc) =>
       val op = lookupOp(symUse.sym, symUse.loc)
-      val (tconstrs0, econstrs0, declaredType, _) = Scheme.instantiate(op.spec.sc, symUse.loc.asSynthetic)
-      val tconstrs = tconstrs0.map(_.copy(loc = loc))
-      val econstrs = econstrs0.map(_.copy(loc = loc))
+      val (tconstrs, econstrs, declaredType, _) = Scheme.instantiate(op.spec.sc, symUse.loc.asSynthetic)
       val declaredEff = declaredType.arrowEffectType
       val declaredArgumentTypes = declaredType.arrowArgTypes
       val declaredResultType = generalizeVoid(declaredType.arrowResultType)
@@ -468,8 +466,8 @@ object ConstraintGen {
 
       val mapping = (trt.tparam.sym -> targ) :: sig.spec.tparams.map(_.sym).zip(targs)
       val subst = Substitution(mapping.toMap)
-      val tconstrs = sig.spec.tconstrs.map(subst.apply).map(_.copy(loc = loc))
-      val econstrs = sig.spec.econstrs.map(subst.apply).map(_.copy(loc = loc))
+      val tconstrs = sig.spec.tconstrs.map(subst.apply)
+      val econstrs = sig.spec.econstrs.map(subst.apply)
 
       val declaredEff = subst(sig.spec.eff.getOrElse(Type.Pure))
       val declaredResultType = subst(sig.spec.tpe)
