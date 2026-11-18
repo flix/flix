@@ -62,9 +62,9 @@ object Aggregation {
     * `par`), so such a phase reads as a partial blind spot even when fully
     * instrumented.
     *
-    * Phase wall and per-def times are summed by name first, since a phase can
-    * run more than once (e.g. `OccurrenceAnalyzer` / `Inliner` across optimizer
-    * rounds). Phases in [[Model.NonAttributablePhases]] are dropped entirely
+    * Phase wall and per-def times are summed by name first, so a phase name
+    * that occurs more than once in `phaseTimers` counts as one phase with its
+    * total. Phases in [[Model.NonAttributablePhases]] are dropped entirely
     * (they have no per-def unit). The unknown-phase bucket `"?"` never appears
     * as a real phase-timer entry, so it can't leak in.
     *
