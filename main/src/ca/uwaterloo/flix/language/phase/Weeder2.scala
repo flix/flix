@@ -647,6 +647,7 @@ object Weeder2 {
         case "@LoweringTargetDatalog" => LoweringTargetDatalog(loc)
         case "@Lazy" => Lazy(loc)
         case "@LazyWhenPure" => LazyWhenPure(loc)
+        case "@NoSubEff" => NoSubEff(loc)
         case "@Skip" => Skip(loc)
         case "@Test" => Test(loc)
         case "@Tailrec" => TailRecursive(loc)

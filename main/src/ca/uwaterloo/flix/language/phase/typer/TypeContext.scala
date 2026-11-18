@@ -19,8 +19,12 @@ import scala.collection.mutable
   * It maintains a stack of information: Whenever inference enters a region, the current information is pushed
   * onto the stack, and a new empty scope is entered. On exiting a region, the information is popped off, and
   * a special constraint is added which incorporates all the popped constraints.
+  *
+  * `subEffecting` controls whether lambdas and local defs are sub-effected, i.e. given a fresh effect
+  * variable bounded below by the effect of their body rather than that effect itself. It is `false` for
+  * a def annotated `@NoSubEff`.
   */
-class TypeContext {
+class TypeContext(val subEffecting: Boolean = true) {
 
   private object ScopeConstraints {
     /**

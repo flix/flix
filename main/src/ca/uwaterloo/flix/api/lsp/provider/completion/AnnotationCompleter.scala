@@ -22,6 +22,7 @@ object AnnotationCompleter {
       Completion.AnnotationCompletion("Deprecated",       range, Priority.Medium(0)),
       Completion.AnnotationCompletion("Lazy",             range, Priority.Medium(0)),
       Completion.AnnotationCompletion("LazyWhenPure",     range, Priority.Medium(0)),
+      Completion.AnnotationCompletion("NoSubEff",         range, Priority.Medium(0)),
       Completion.AnnotationCompletion("Parallel",         range, Priority.Medium(0)),
       Completion.AnnotationCompletion("ParallelWhenPure", range, Priority.Medium(0)),
       Completion.AnnotationCompletion("Tailrec",          range, Priority.Medium(0)),
