@@ -16,8 +16,10 @@ import ca.uwaterloo.flix.util.Sha256
   * [[EffectLock.nameOf]]. The package itself is not part of the name: the entry the signature is
   * recorded under names it.
   *
-  * The defs and the sigs of a package are kept apart, so that a def and a sig may share a name
-  * without one of them standing for the other.
+  * The defs and the sigs of a package are written in tables of their own for the reader, and
+  * for nothing else: a def and a sig cannot share a name in one namespace, so a check compares
+  * a locked name against whichever kind the package declares it as now, see
+  * [[EffectLock.check]].
   *
   * @param defs the hash of each public def of the package.
   * @param sigs the hash of each public sig of the package.
