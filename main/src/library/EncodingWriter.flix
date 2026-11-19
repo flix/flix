@@ -78,7 +78,7 @@ pub mod EncodingWriter {
             let dest: Array[Int8, rc] = Array.empty(rc, numChars * maxBytesPerChar);
             let charBuffer = CharBuffer.wrap(src);
             let byteBuffer = ByteBuffer.wrap(dest);
-            checked_ecast(encoder |> encodeBuffered(rc, charBuffer, byteBuffer))
+            encoder |> encodeBuffered(rc, charBuffer, byteBuffer)
         };
         checked_ecast(unsafe IO { do() })
 

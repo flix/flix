@@ -59,22 +59,8 @@ object Parser2 {
   }
 
   private class State(val tokens: Array[Token], val src: Source) {
-    /**
-      * The indices into `tokens` of the tokens the grammar sees: every token that is not a comment,
-      * including the final [[TokenKind.Eof]]. The grammar never sees a comment. Instead
-      * [[buildTree]] puts the comments back into the syntax tree.
-      */
-    val visible: Array[Int] = {
-      val buf = new ArrayBuffer[Int](tokens.length)
-      var i = 0
-      while (i < tokens.length) {
-        if (!tokens(i).kind.isComment) {
-          buf.append(i)
-        }
-        i += 1
-      }
-      buf.toArray
-    }
+    /** The visible tokens, i.e. the tokens the grammar sees (see [[VisibleTokens]]). */
+    val visible: VisibleTokens = new VisibleTokens(tokens)
 
     /** The current token being considered by the parser, as an index into [[visible]]. */
     var position: Int = 0
@@ -106,6 +92,50 @@ object Parser2 {
   }
 
   /**
+    * The tokens the grammar sees: every token in `tokens` that is not a comment, including the
+    * final [[TokenKind.Eof]], in order. The grammar never sees a comment. Instead [[buildTree]] puts
+    * the comments back into the syntax tree.
+    *
+    * The constructor collects them in one pass over `tokens`. Both arrays have room for every token
+    * and only their first `length` entries are in use.
+    */
+  private final class VisibleTokens(tokens: Array[Token]) {
+    /** The index into `tokens` of every visible token. */
+    private val indices: Array[Int] = new Array(tokens.length)
+
+    /** The kind of every visible token: `kinds(pos)` is the kind of `tokens(indices(pos))`. */
+    private val kinds: Array[TokenKind] = new Array(tokens.length)
+
+    /** The number of visible tokens. */
+    val length: Int = init()
+
+    /**
+      * Fills `indices` and `kinds` with the index and the kind of every visible token in `tokens`,
+      * in order, and returns how many there are. Called once, by the constructor.
+      */
+    private def init(): Int = {
+      var n = 0
+      var i = 0
+      while (i < tokens.length) {
+        val kind = tokens(i).kind
+        if (!kind.isComment) {
+          indices(n) = i
+          kinds(n) = kind
+          n += 1
+        }
+        i += 1
+      }
+      n
+    }
+
+    /** Returns the index into the tokens of the visible token at `pos`. */
+    def index(pos: Int): Int = indices(pos)
+
+    /** Returns the kind of the visible token at `pos`. */
+    def kind(pos: Int): TokenKind = kinds(pos)
+  }
+
+  /**
     * Marks point to positions in a list of tokens where an Open or Close event resides.
     *
     * This is useful because it lets the parser open a group, without knowing exactly what
@@ -128,23 +158,23 @@ object Parser2 {
     case class Closed(index: Int) extends Mark
   }
 
-  def run(tokens0: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): (SyntaxTree.Root, List[CompilationMessage]) = flix.phase("Parser2") {
+  def run(tokens0: Map[Source, SourceTokens], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): (SyntaxTree.Root, List[CompilationMessage]) = flix.phase("Parser2") {
     // Compute the stale and fresh sources.
     val (stale, fresh) = changeSet.partition(tokens0, oldRoot.units)
 
     // Schedule the biggest sources first to increase throughput.
-    def sortBy(p: (Source, Array[Token])): Int = -p._2.length
+    def sortBy(p: (Source, SourceTokens)): Int = -p._2.tokens.length
 
     // Parse each stale source in parallel and join them into a WeededAst.Root.
     val (refreshed, errors) = ParOps.parMapWithPriority(stale, sortBy) {
       case (src, tokens) =>
-        val (tree, errors) = parse(src, tokens)
+        val (tree, errors) = parse(src, tokens.tokens)
         (src -> tree, errors)
     }.unzip
 
-    // Compute semantic tokens to retain in the AST.
-    val retainedTokens = ParOps.parMapValues(tokens0) {
-      case tokens => tokens.filter(_.kind.isSemantic)
+    // The semantic tokens to retain in the AST were collected by the lexer.
+    val retainedTokens = tokens0.map {
+      case (src, tokens) => src -> tokens.semanticTokens
     }
 
     // Join refreshed syntax trees with the already fresh ones.
@@ -160,6 +190,108 @@ object Parser2 {
     val tree = buildTree()
     // Return with errors as soft failures to run subsequent phases for more validations.
     (tree, s.errors.toList)
+  }
+
+  /**
+    * A stack of the children not yet collected into a node, shared by every currently-open node.
+    *
+    * The children of the most recently opened node are always a contiguous suffix of the stack, so
+    * closing a node is a matter of popping that suffix. See [[buildTree]].
+    */
+  private final class WorkStack {
+    /** The children on the stack, in `items(0)` to `items(size - 1)`. */
+    private var items: Array[SyntaxTree.Child] = new Array(64)
+
+    /** The number of children on the stack. */
+    var size: Int = 0
+
+    /** Pushes `child` onto the stack. */
+    def push(child: SyntaxTree.Child): Unit = {
+      if (size == items.length) {
+        items = Array.copyOf(items, 2 * size)
+      }
+      items(size) = child
+      size += 1
+    }
+
+    /** Inserts `child` at `index`, moving the children from `index` onwards up by one. */
+    def insert(index: Int, child: SyntaxTree.Child): Unit = {
+      if (size == items.length) {
+        items = Array.copyOf(items, 2 * size)
+      }
+      System.arraycopy(items, index, items, index + 1, size - index)
+      items(index) = child
+      size += 1
+    }
+
+    /** Pops the top `n` children off the stack and returns them, in order, in a right-sized array. */
+    def pop(n: Int): Array[SyntaxTree.Child] = {
+      val result = new Array[SyntaxTree.Child](n)
+      size -= n
+      System.arraycopy(items, size, result, 0, n)
+      result
+    }
+  }
+
+  /**
+    * A stack of the currently-open nodes, innermost on top.
+    *
+    * For each open node it records where its children begin in the [[WorkStack]], its kind, the
+    * visible token it starts at, and how many visible tokens had been advanced when it was opened.
+    * Its depth is only the current nesting level (small). See [[buildTree]].
+    */
+  private final class NodeStack {
+    private var starts: Array[Int] = new Array(32)
+    private var kinds: Array[TreeKind] = new Array(32)
+    private var openTokens: Array[Token] = new Array(32)
+    private var advancedAtOpen: Array[Int] = new Array(32)
+
+    /** The number of open nodes, i.e. the current nesting depth. */
+    var depth: Int = 0
+
+    /**
+      * Pushes a node of kind `kind` whose children begin at `start` in the work-stack, that starts
+      * at the visible token `openToken`, and that was opened when `advanced` tokens had been
+      * advanced.
+      */
+    def push(start: Int, kind: TreeKind, openToken: Token, advanced: Int): Unit = {
+      if (depth == starts.length) {
+        val n = 2 * depth
+        starts = Array.copyOf(starts, n)
+        kinds = Array.copyOf(kinds, n)
+        openTokens = Array.copyOf(openTokens, n)
+        advancedAtOpen = Array.copyOf(advancedAtOpen, n)
+      }
+      starts(depth) = start
+      kinds(depth) = kind
+      openTokens(depth) = openToken
+      advancedAtOpen(depth) = advanced
+      depth += 1
+    }
+
+    /** Pops the innermost open node. */
+    def pop(): Unit = depth -= 1
+
+    /** Returns where the children of the node at depth `d` begin in the work-stack. */
+    def start(d: Int): Int = starts(d)
+
+    /** Returns the kind of the node at depth `d`. */
+    def kind(d: Int): TreeKind = kinds(d)
+
+    /** Returns the visible token the node at depth `d` starts at. */
+    def openToken(d: Int): Token = openTokens(d)
+
+    /** Returns how many visible tokens had been advanced when the node at depth `d` was opened. */
+    def advancedAt(d: Int): Int = advancedAtOpen(d)
+
+    /** Moves the start of every node at depth `from` or deeper up by `by`. */
+    def shiftStarts(from: Int, by: Int): Unit = {
+      var d = from
+      while (d < depth) {
+        starts(d) += by
+        d += 1
+      }
+    }
   }
 
   /**
@@ -188,25 +320,21 @@ object Parser2 {
     //
     // To do so we keep a single shared work-stack holding, at any moment, the not-yet-collected
     // children of every currently-open node. The children of the most recently opened node are
-    // always a contiguous suffix of `workStack`. On Open we remember where that suffix begins; on
-    // Close we copy the suffix into a right-sized array, shrink the work-stack back to the start,
-    // and push the finished node so it becomes a child of its parent.
-    val workStack: ArrayBuffer[SyntaxTree.Child] = ArrayBuffer.empty
+    // always a contiguous suffix of `work`. On Open we remember where that suffix begins; on Close
+    // we pop the suffix into a right-sized array and push the finished node so it becomes a child
+    // of its parent.
+    val work = new WorkStack
 
-    // The remaining stacks hold, for every currently-open node, where its children begin in
-    // `workStack`, its kind, the visible token it starts at, and how many visible tokens had been
-    // advanced when it was opened. Their depth is only the current nesting level (small).
-    val startStack: ArrayBuffer[Int] = ArrayBuffer.empty
-    val kindStack: ArrayBuffer[TreeKind] = ArrayBuffer.empty
-    val locationStack: ArrayBuffer[Token] = ArrayBuffer.empty
-    val advancedStack: ArrayBuffer[Int] = ArrayBuffer.empty
+    // The currently-open nodes: where each one's children begin in `work`, its kind, the visible
+    // token it starts at, and how many visible tokens had been advanced when it was opened.
+    val nodes = new NodeStack
 
-    // Drop the last event, which must be a Close. This leaves the root node unclosed so that it is
-    // never popped during the loop below; it is finalized separately afterwards, when the work-stack
-    // holds exactly the root's children.
-    val lastEvent = s.events.last
-    s.events.dropRightInPlace(1)
-    assert(lastEvent match {
+    // The last event must be a Close. It is not replayed, which leaves the root node unclosed so
+    // that it is never popped during the loop below; it is finalized separately afterwards, when
+    // the work-stack holds exactly the root's children.
+    val events = s.events
+    val numEvents = events.length - 1
+    assert(events(numEvents) match {
       case Event.Close => true
       case _ => false
     })
@@ -221,16 +349,12 @@ object Parser2 {
     var lastAdvance = Token(TokenKind.Eof, s.src, 0, 0, b, e)
 
     /**
-      * Inserts `children` into `workStack` at `index` as children of the node at `depth`, and moves
-      * the start of every node above that node accordingly.
+      * Inserts `child` into `work` at `index` as a child of the node at `depth`, and moves the
+      * start of every node above that node accordingly.
       */
-    def insertChildren(index: Int, depth: Int, children: ArrayBuffer[SyntaxTree.Child]): Unit = {
-      workStack.insertAll(index, children)
-      var d = depth + 1
-      while (d < startStack.length) {
-        startStack(d) += children.length
-        d += 1
-      }
+    def insertChild(index: Int, depth: Int, child: SyntaxTree.Child): Unit = {
+      work.insert(index, child)
+      nodes.shiftStarts(depth + 1, 1)
     }
 
     /**
@@ -239,8 +363,8 @@ object Parser2 {
       * the last advance, except the root; they are the stack entries from that depth upwards.
       */
     def chainStart(): Int = {
-      var depth = startStack.length
-      while (depth > 1 && advancedStack(depth - 1) == advanced) {
+      var depth = nodes.depth
+      while (depth > 1 && nodes.advancedAt(depth - 1) == advanced) {
         depth -= 1
       }
       depth
@@ -249,8 +373,8 @@ object Parser2 {
     /** Returns the depth of the outermost documentable open node at `from` or deeper, or -1. */
     def outermostDocumentable(from: Int): Int = {
       var depth = from
-      while (depth < startStack.length) {
-        if (kindStack(depth).isDocumentable) {
+      while (depth < nodes.depth) {
+        if (nodes.kind(depth).isDocumentable) {
           return depth
         }
         depth += 1
@@ -260,7 +384,7 @@ object Parser2 {
 
     /** Places the comments between the last advanced token and the next visible token. */
     def placeComments(): Unit = {
-      val end = s.visible(advanced)
+      val end = s.visible.index(advanced)
       if (nextUnplaced >= end) {
         return
       }
@@ -288,38 +412,32 @@ object Parser2 {
       // outermost node of the chain, the plain comments are inserted at the same index and must
       // end up in front of it.
       if (doc.nonEmpty) {
-        val docComment = mkComment(TreeKind.DocComment, doc)
-        insertChildren(startStack(target), target, ArrayBuffer[SyntaxTree.Child](docComment))
+        insertChild(nodes.start(target), target, mkComment(TreeKind.DocComment, doc))
       }
       // The plain comments become children of the innermost node open before the chain, placed
-      // just before the chain.
-      val plain: ArrayBuffer[SyntaxTree.Child] = ArrayBuffer.empty
+      // just before the chain: the trailing comments first, then the leading ones.
+      var before = if (chain < nodes.depth) nodes.start(chain) else work.size
       if (trailing.nonEmpty) {
-        plain.append(mkComment(TreeKind.PlainComment, trailing))
+        insertChild(before, chain - 1, mkComment(TreeKind.PlainComment, trailing))
+        before += 1
       }
       if (leading.nonEmpty) {
-        plain.append(mkComment(TreeKind.PlainComment, leading))
-      }
-      if (plain.nonEmpty) {
-        val before = if (chain < startStack.length) startStack(chain) else workStack.length
-        insertChildren(before, chain - 1, plain)
+        insertChild(before, chain - 1, mkComment(TreeKind.PlainComment, leading))
       }
     }
 
-    for (event <- s.events) {
-      event match {
+    var i = 0
+    while (i < numEvents) {
+      events(i) match {
         case Event.Open(kind) =>
-          startStack.append(workStack.length)
-          kindStack.append(kind)
-          locationStack.append(visibleToken(advanced))
-          advancedStack.append(advanced)
+          nodes.push(work.size, kind, visibleToken(advanced), advanced)
 
         case Event.Close =>
-          val top = startStack.length - 1
-          val start = startStack(top)
-          val kind = kindStack(top)
-          val openToken = locationStack(top)
-          val numChildren = workStack.length - start
+          val top = nodes.depth - 1
+          val start = nodes.start(top)
+          val kind = nodes.kind(top)
+          val openToken = nodes.openToken(top)
+          val numChildren = work.size - start
           val loc = if (numChildren == 0)
             // If the subtree has no children, give it a zero length position just after the last
             // token.
@@ -328,44 +446,36 @@ object Parser2 {
             // Otherwise the source location can span from the first to the last token in the
             // subtree.
             mkSourceLocation(openToken.start, lastAdvance.end)
-          // Copy this node's children (the suffix of workStack) into a right-sized array.
-          val childArray = new Array[SyntaxTree.Child](numChildren)
-          var i = 0
-          while (i < numChildren) {
-            childArray(i) = workStack(start + i)
-            i += 1
-          }
-          workStack.dropRightInPlace(numChildren)
-          startStack.dropRightInPlace(1)
-          kindStack.dropRightInPlace(1)
-          locationStack.dropRightInPlace(1)
-          advancedStack.dropRightInPlace(1)
-          workStack += SyntaxTree.Tree(kind, childArray, loc)
+          // Pop this node's children (the suffix of the work-stack) into a right-sized array.
+          val children = work.pop(numChildren)
+          nodes.pop()
+          work.push(SyntaxTree.Tree(kind, children, loc))
 
         case Event.Advance =>
           placeComments()
           val token = visibleToken(advanced)
           lastAdvance = token
-          workStack += token
+          work.push(token)
           nextUnplaced += 1
           advanced += 1
       }
+      i += 1
     }
 
     // Place the comments after the last visible token.
     placeComments()
 
-    // The root is never closed (its Close was dropped above), so its children are exactly the
+    // The root is never closed (its Close was not replayed), so its children are exactly the
     // remaining contents of the work-stack. Finalize it here.
-    assert(startStack.length == 1)
+    assert(nodes.depth == 1)
     val eof = visibleToken(advanced)
     assert(eof.kind == TokenKind.Eof)
     val loc = SourceLocation(isReal = true, s.src, SourcePosition.FirstPosition, eof.end)
-    SyntaxTree.Tree(TreeKind.Root, workStack.toArray, loc)
+    SyntaxTree.Tree(TreeKind.Root, work.pop(work.size), loc)
   }
 
   /** Returns the visible token at `pos`, an index into [[State.visible]]. */
-  private def visibleToken(pos: Int)(implicit s: State): Token = s.tokens(s.visible(pos))
+  private def visibleToken(pos: Int)(implicit s: State): Token = s.tokens(s.visible.index(pos))
 
   /**
     * Reports the doc comments in `comments`, a run of comments that documents nothing, as one
@@ -497,7 +607,7 @@ object Parser2 {
       TokenKind.Eof
     } else {
       s.fuel -= 1
-      visibleToken(s.position + lookahead).kind
+      s.visible.kind(s.position + lookahead)
     }
   }
 
@@ -1028,6 +1138,7 @@ object Parser2 {
         case TokenKind.KeywordTrait => traitDecl(mark)
         case TokenKind.KeywordInstance => instanceDecl(mark)
         case TokenKind.KeywordDef => definitionDecl(mark)
+        case TokenKind.KeywordVal => valDecl(mark)
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumerationDecl(mark)
         case TokenKind.KeywordStruct => structDecl(mark)
         case TokenKind.KeywordType => typeAliasDecl(mark)
@@ -1211,6 +1322,21 @@ object Parser2 {
 
       val treeKind = if (declKind == TokenKind.KeywordRedef) TreeKind.Decl.Redef else TreeKind.Decl.Def
       close(mark, treeKind)
+    }
+
+    private def valDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
+      assert(at(TokenKind.KeywordVal))
+      expect(TokenKind.KeywordVal)
+      nameUnqualified(NAME_FIELD)
+      expect(TokenKind.Colon)
+      Type.typeAndEffect()
+      if (eat(TokenKind.Equal)) {
+        Expr.statement()
+      } else {
+        expect(TokenKind.Equal) // Produce an error for missing '='.
+      }
+      close(mark, TreeKind.Decl.Val)
     }
 
     private def enumerationDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
@@ -3495,28 +3621,31 @@ object Parser2 {
       lhs
     }
 
-    /** A precedence table for type operators, lower is higher precedence. */
-    private def TYPE_OP_PRECEDENCE: List[Array[TokenKind]] = List(
+    /**
+      * A precedence table for type operators, mapping each operator to its precedence level,
+      * where lower is higher precedence.
+      */
+    private val TYPE_OP_PRECEDENCE: Map[TokenKind, Int] = List(
       // Binary ops.
-      Array(TokenKind.ArrowThinRWhitespace),
-      Array(TokenKind.KeywordRvadd, TokenKind.KeywordRvsub),
-      Array(TokenKind.KeywordRvand),
-      Array(TokenKind.Plus, TokenKind.Minus),
-      Array(TokenKind.Ampersand),
-      Array(TokenKind.KeywordXor),
-      Array(TokenKind.KeywordOr),
-      Array(TokenKind.KeywordAnd),
+      List(TokenKind.ArrowThinRWhitespace),
+      List(TokenKind.KeywordRvadd, TokenKind.KeywordRvsub),
+      List(TokenKind.KeywordRvand),
+      List(TokenKind.Plus, TokenKind.Minus),
+      List(TokenKind.Ampersand),
+      List(TokenKind.KeywordXor),
+      List(TokenKind.KeywordOr),
+      List(TokenKind.KeywordAnd),
       // Unary ops.
-      Array(TokenKind.KeywordRvnot, TokenKind.Tilde, TokenKind.KeywordNot)
-    )
+      List(TokenKind.KeywordRvnot, TokenKind.Tilde, TokenKind.KeywordNot)
+    ).zipWithIndex.flatMap { case (ops, level) => ops.map(_ -> level) }.toMap
 
     private def rightBindsTighter(left: TokenKind, right: TokenKind): Boolean = {
-      val rt = TYPE_OP_PRECEDENCE.indexWhere(l => l.contains(right))
+      val rt = TYPE_OP_PRECEDENCE.getOrElse(right, -1)
       if (rt == -1) {
         return false
       }
 
-      val lt = TYPE_OP_PRECEDENCE.indexWhere(l => l.contains(left))
+      val lt = TYPE_OP_PRECEDENCE.getOrElse(left, -1)
       if (lt == -1) {
         assert(left == TokenKind.Eof)
         return true

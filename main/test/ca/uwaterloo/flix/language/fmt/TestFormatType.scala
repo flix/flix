@@ -10,7 +10,7 @@ package ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TypeAliasSymUse
 import ca.uwaterloo.flix.language.ast.shared.{RegionScope, VarText}
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.Nel
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -19,14 +19,14 @@ class TestFormatType extends AnyFunSuite with TestUtils {
   private val scope = RegionScope.Top
   private val loc = SourceLocation.Unknown
   private val standardFormat = FormatOptions(
-    FormatOptions.VarName.NameBased
+    FormatOptions.VarFormat.NameBased
   )
 
   test("FormatType.Type.Record.External.01") {
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Label("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc), loc)
 
     val expected = "{ x = Int32, y = String }"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -36,7 +36,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, rest, loc), loc)
 
     val expected = "{ x = Int32 | r0 }"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -45,7 +45,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Label("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc)
 
     val expected = "( x = Int32, y = String )"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -55,7 +55,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, rest, loc)
 
     val expected = "( x = Int32 | r0 )"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -69,7 +69,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, alias, loc)
 
     val expected = "( x = Int32 | MyEmptyRecordRow )"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -83,7 +83,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkRecord(alias, loc)
 
     val expected = "{ MyEmptyRecordRow }"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -93,7 +93,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType, loc)
 
     val expected = "t0 -> t0"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -105,7 +105,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType, loc)
 
     val expected = raw"t0 -> t1 \ e2"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -116,7 +116,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkArrowWithEffect(paramType, Type.IO, returnType, loc)
 
     val expected = raw"t0 -> t1 \ IO"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -125,7 +125,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkIoUncurriedArrow(Nel.of(Type.Int8, Type.Int16), Type.Int32, loc)
 
     val expected = raw"Int8 -> (Int16 -> Int32 \ IO)"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -135,7 +135,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkArrowWithEffect(Type.BigInt, eff, Type.Bool, loc)
 
     val expected = raw"BigInt -> Bool \ e1 + e2"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -145,7 +145,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkPureArrow(arg, Type.Str, loc)
 
     val expected = "((Bool, Bool)) -> String"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -155,7 +155,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("S", loc), relationType, Type.SchemaRowEmpty, loc), loc)
 
     val expected = "#{ S(Int32, String) }"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -167,7 +167,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaRowExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc), loc)
 
     val expected = "#{ A(String; Bool), B(Int32; String) | s5 }"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -177,7 +177,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkSchemaRowExtend(Name.Pred("S", loc), relationType, Type.SchemaRowEmpty, loc)
 
     val expected = "#( S(Int32, String) )"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -189,7 +189,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkSchemaRowExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaRowExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc)
 
     val expected = "#( A(String; Bool), B(Int32; String) | s5 )"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -205,7 +205,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkSchemaRowExtend(Name.Pred("X", loc), latticeType1, alias, loc)
 
     val expected = "#( X(String; Bool) | MyEmptySchemaRow )"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -221,7 +221,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkSchemaRowExtend(Name.Pred("X", loc), alias, Type.SchemaRowEmpty, loc)
 
     val expected = "#( X(String; Bool) )"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -233,7 +233,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkEnum(Symbol.mkEnumSym("Triplet"), List(tvar1, tvar2, tvar3), loc)
 
     val expected = "Triplet[t1, t2, t3]"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -242,7 +242,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Label("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc), loc)
 
     val expected = "{ x = Int32, y = String }"
-    val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)
+    val actual = Pretty.tpe(tpe)(FormatOptions.Internal).plain
 
     assert(actual == expected)
   }
@@ -252,7 +252,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, rest, loc), loc)
 
     val expected = "{ x = Int32 | r0 }"
-    val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)
+    val actual = Pretty.tpe(tpe)(FormatOptions.Internal).plain
 
     assert(actual == expected)
   }
@@ -262,7 +262,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType, loc)
 
     val expected = "t0 -> t0"
-    val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)
+    val actual = Pretty.tpe(tpe)(FormatOptions.Internal).plain
 
     assert(actual == expected)
   }
@@ -274,7 +274,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType, loc)
 
     val expected = raw"t0 -> t1 \ e2"
-    val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)
+    val actual = Pretty.tpe(tpe)(FormatOptions.Internal).plain
 
     assert(actual == expected)
   }
@@ -284,7 +284,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("S", loc), relationType, Type.SchemaRowEmpty, loc), loc)
 
     val expected = "#{ S(Int32, String) }"
-    val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)
+    val actual = Pretty.tpe(tpe)(FormatOptions.Internal).plain
 
     assert(actual == expected)
   }
@@ -296,7 +296,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkAnd(List(a, b, c), loc)
 
     val expected = "b1 and b2 and b3"
-    val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)
+    val actual = Pretty.tpe(tpe)(FormatOptions.Internal).plain
 
     assert(actual == expected)
   }
@@ -308,7 +308,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkOr(List(a, b, c), loc)
 
     val expected = "b1 or b2 or b3"
-    val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)
+    val actual = Pretty.tpe(tpe)(FormatOptions.Internal).plain
 
     assert(actual == expected)
   }
@@ -320,7 +320,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaRowExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc), loc)
 
     val expected = "#{ A(String; Bool), B(Int32; String) | s5 }"
-    val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)
+    val actual = Pretty.tpe(tpe)(FormatOptions.Internal).plain
 
     assert(actual == expected)
   }
@@ -332,7 +332,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkEnum(Symbol.mkEnumSym("Triplet"), List(tvar1, tvar2, tvar3), loc)
 
     val expected = "Triplet[t1, t2, t3]"
-    val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)
+    val actual = Pretty.tpe(tpe)(FormatOptions.Internal).plain
 
     assert(actual == expected)
   }
@@ -344,88 +344,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkUnion(tvar1, tvar2, tvar3, loc)
 
     val expected = "a + b + c"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Tuple.External.01") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Tuple(2), loc), List(Type.Str), loc)
-
-    val expected = "(String, ?)"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Boolean.External.01") {
-    val tpe = Type.Complement
-
-    val expected = "~?"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Boolean.External.03") {
-    val tpe = Type.Union
-
-    val expected = "? + ?"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Boolean.External.04") {
-    val tpe = Type.Apply(Type.Union, Type.Pure, loc)
-
-    val expected = "Pure + ?"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Boolean.External.06") {
-    val tpe = Type.Intersection
-
-    val expected = "? & ?"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Boolean.External.07") {
-    val tpe = Type.Apply(Type.Intersection, Type.Pure, loc)
-
-    val expected = "Pure & ?"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Arrow.External.01") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(Type.Pure), loc)
-
-    val expected = raw"? -> ?"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Arrow.External.02") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3), loc), List(Type.IO, Type.Str), loc)
-
-    val expected = raw"String -> (? -> ? \ IO)"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
-
-    assert(actual == expected)
-  }
-
-  test("FormatPartialType.Arrow.External.03") {
-    val tpe = Type.Cst(TypeConstructor.Arrow(4), loc)
-
-    val expected = raw"? -> (? -> (? -> ? \ ?))"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -437,7 +356,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.Alias(TypeAliasSymUse(sym, loc), Nil, Type.Int32, loc)
 
     val expected = "MyType"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -449,7 +368,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val ma = Type.mkApply(m, List(a), loc)
 
     val expected = "m[a]"
-    val actual = FormatType.formatTypeWithOptions(ma, standardFormat)
+    val actual = Pretty.tpe(ma)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -461,7 +380,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkAnd(List(a, b, c), loc)
 
     val expected = "a and b and c"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
 
     assert(actual == expected)
   }
@@ -473,7 +392,93 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tpe = Type.mkOr(List(a, b, c), loc)
 
     val expected = "a or b or c"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Numbered.01") {
+    // Two types that are shown together share one numbering.
+    val x = Type.Var(new Symbol.KindedTypeVarSym(10, VarText.Absent, Kind.Star, scope, loc), loc)
+    val y = Type.Var(new Symbol.KindedTypeVarSym(20, VarText.Absent, Kind.Star, scope, loc), loc)
+    val tpe1 = Type.mkTuple(List(x, y), loc)
+    val tpe2 = Type.mkPureArrow(y, y, loc)
+    val opts = FormatOptions.forTypes(tpe1, tpe2)
+
+    assert(Pretty.tpe(tpe1)(opts).plain == "(t0, t1)")
+    assert(Pretty.tpe(tpe2)(opts).plain == "t1 -> t1")
+  }
+
+  test("FormatType.Numbered.02") {
+    // Without a numbering, a variable with no source text is written by its id.
+    val x = Type.Var(new Symbol.KindedTypeVarSym(10, VarText.Absent, Kind.Star, scope, loc), loc)
+    val y = Type.Var(new Symbol.KindedTypeVarSym(20, VarText.Absent, Kind.Star, scope, loc), loc)
+    val tpe = Type.mkTuple(List(x, y), loc)
+
+    val expected = "(t10, t20)"
+    val actual = Pretty.tpe(tpe)(standardFormat).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Numbered.03") {
+    // A variable with a source text keeps it and takes no number.
+    val a = Type.Var(new Symbol.KindedTypeVarSym(10, VarText.SourceText("a"), Kind.Star, scope, loc), loc)
+    val x = Type.Var(new Symbol.KindedTypeVarSym(20, VarText.Absent, Kind.Star, scope, loc), loc)
+    val tpe = Type.mkTuple(List(a, x), loc)
+
+    val expected = "(a, t0)"
+    val actual = Pretty.tpe(tpe)(FormatOptions.forTypes(tpe)).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Numbered.04") {
+    // A number is skipped if its name is the source text of another variable.
+    val a = Type.Var(new Symbol.KindedTypeVarSym(20, VarText.SourceText("t0"), Kind.Star, scope, loc), loc)
+    val x = Type.Var(new Symbol.KindedTypeVarSym(10, VarText.Absent, Kind.Star, scope, loc), loc)
+    val tpe = Type.mkTuple(List(a, x), loc)
+
+    val expected = "(t0, t1)"
+    val actual = Pretty.tpe(tpe)(FormatOptions.forTypes(tpe)).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Numbered.05") {
+    // The numbers run across the kinds.
+    val x = Type.Var(new Symbol.KindedTypeVarSym(10, VarText.Absent, Kind.Star, scope, loc), loc)
+    val y = Type.Var(new Symbol.KindedTypeVarSym(20, VarText.Absent, Kind.Star, scope, loc), loc)
+    val e = Type.Var(new Symbol.KindedTypeVarSym(30, VarText.Absent, Kind.Eff, scope, loc), loc)
+    val tpe = Type.mkArrowWithEffect(x, e, y, loc)
+
+    val expected = "t0 -> t1 \\ e2"
+    val actual = Pretty.tpe(tpe)(FormatOptions.forTypes(tpe)).plain
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Numbered.06") {
+    // An occurrence with a source text gives its text to every occurrence of the variable.
+    val x1 = Type.Var(new Symbol.KindedTypeVarSym(10, VarText.Absent, Kind.Star, scope, loc), loc)
+    val x2 = Type.Var(new Symbol.KindedTypeVarSym(10, VarText.SourceText("a"), Kind.Star, scope, loc), loc)
+    val y = Type.Var(new Symbol.KindedTypeVarSym(20, VarText.Absent, Kind.Star, scope, loc), loc)
+    val tpe1 = Type.mkTuple(List(x1, y), loc)
+    val tpe2 = Type.mkPureArrow(x2, y, loc)
+    val opts = FormatOptions.forTypes(tpe1, tpe2)
+
+    assert(Pretty.tpe(tpe1)(opts).plain == "(a, t0)")
+    assert(Pretty.tpe(tpe2)(opts).plain == "a -> t0")
+  }
+
+  test("FormatType.Numbered.07") {
+    // A variable that the numbering was not built from is written by its id.
+    val x = Type.Var(new Symbol.KindedTypeVarSym(10, VarText.Absent, Kind.Star, scope, loc), loc)
+    val y = Type.Var(new Symbol.KindedTypeVarSym(20, VarText.Absent, Kind.Star, scope, loc), loc)
+    val tpe = Type.mkTuple(List(x, y), loc)
+
+    val expected = "(t0, t20)"
+    val actual = Pretty.tpe(tpe)(FormatOptions.forTypes(x)).plain
 
     assert(actual == expected)
   }

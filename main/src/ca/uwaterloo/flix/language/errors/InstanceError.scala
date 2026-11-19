@@ -7,13 +7,10 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymbolSet, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
-import ca.uwaterloo.flix.language.fmt.{FormatEqualityConstraint, FormatScheme, FormatTraitConstraint}
-import ca.uwaterloo.flix.language.fmt.FormatType.formatType
-import ca.uwaterloo.flix.language.fmt.FormatTypeConstructor.formatTypeConstructor
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, Pretty}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -33,14 +30,14 @@ object InstanceError {
     * @param sym the trait symbol.
     * @param loc the location where the error occurred.
     */
-  case class ComplexInstance(tpe: Type, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class ComplexInstance(tpe: Type, sym: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E1952
 
-    def summary: String = s"Complex type '${formatType(tpe)}' in instance declaration for trait '${sym.name}'."
+    def summary: String = s"Complex type '${Pretty.tpe(tpe).plain}' in instance declaration for trait '${sym.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Complex type '${red(formatType(tpe))}' in instance declaration for trait '${magenta(sym.name)}'.
+      s""">> Complex type '${Pretty.tpe(tpe).ansi(fmt)}' in instance declaration for trait '${magenta(sym.name)}'.
          |
          |${highlight(loc, "expected a type constructor applied to distinct type variables", fmt)}
          |
@@ -69,14 +66,14 @@ object InstanceError {
     * @param sym  the trait symbol.
     * @param loc  the location where the error occurred.
     */
-  case class DuplicateTypeVar(tvar: Type.Var, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class DuplicateTypeVar(tvar: Type.Var, sym: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2063
 
-    def summary: String = s"Duplicate type variable '${formatType(tvar)}' in instance declaration for trait '${sym.name}'."
+    def summary: String = s"Duplicate type variable '${Pretty.tpe(tvar).plain}' in instance declaration for trait '${sym.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Duplicate type variable '${red(formatType(tvar))}' in instance declaration for trait '${magenta(sym.name)}'.
+      s""">> Duplicate type variable '${Pretty.tpe(tvar).ansi(fmt)}' in instance declaration for trait '${magenta(sym.name)}'.
          |
          |${highlight(loc, "duplicate occurrence", fmt)}
          |
@@ -193,19 +190,23 @@ object InstanceError {
     * @param expected the scheme of the signature
     * @param actual   the scheme of the definition
     */
-  case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme)(implicit flix: Flix) extends InstanceError {
+  case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2518
 
-    def summary: String = s"Mismatched signature '${sigSym.name}' in instance declaration for trait '${sigSym.trt.name}'."
+    def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.ofTrait(sigSym.trt) ++ SymbolSet.symbolsOf(expected), SymbolSet.symbolsOf(actual))
+
+    private implicit def opts: FormatOptions = FormatOptions.Default.copy(qualify = amb)
+
+    def summary: String = s"Mismatched signature '${sigSym.name}' in instance declaration for trait '${Pretty.traitSym(sigSym.trt).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched signature '${red(sigSym.name)}' in instance declaration for trait '${magenta(sigSym.trt.name)}'.
+      s""">> Mismatched signature '${red(sigSym.name)}' in instance declaration for trait '${magenta(Pretty.traitSym(sigSym.trt).plain)}'.
          |
          |${highlight(loc, "signature mismatch", fmt)}
          |
-         |Expected: ${cyan(FormatScheme.formatScheme(expected))}
-         |Actual:   ${red(FormatScheme.formatScheme(actual))}
+         |Expected: ${Pretty.scheme(expected).ansi(fmt)}
+         |Actual:   ${Pretty.scheme(actual).ansi(fmt)}
          |
          |${underline("Explanation:")} The implementation must match the signature declared in the trait.
          |""".stripMargin
@@ -219,18 +220,22 @@ object InstanceError {
     * @param superTrait the supertrait that is the source of the constraint.
     * @param loc        the location where the error occurred.
     */
-  case class MissingEqualityConstraint(econstr: EqualityConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class MissingEqualityConstraint(econstr: EqualityConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2629
 
-    def summary: String = s"Missing equality constraint '${FormatEqualityConstraint.formatEqualityConstraint(econstr)}' required by super trait '${superTrait.name}'."
+    def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(econstr), SymbolSet.ofTrait(superTrait))
+
+    private implicit def opts: FormatOptions = FormatOptions.Default.copy(qualify = amb)
+
+    def summary: String = s"Missing equality constraint '${Pretty.equalityConstraint(econstr).plain}' required by super trait '${Pretty.traitSym(superTrait).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing equality constraint '${red(FormatEqualityConstraint.formatEqualityConstraint(econstr))}' required by super trait '${magenta(superTrait.name)}'.
+      s""">> Missing equality constraint '${Pretty.equalityConstraint(econstr).ansi(fmt)}' required by super trait '${magenta(Pretty.traitSym(superTrait).plain)}'.
          |
          |${highlight(loc, "missing constraint", fmt)}
          |
-         |${underline("Explanation:")} The super trait '${superTrait.name}' requires this equality constraint to be satisfied.
+         |${underline("Explanation:")} The super trait '${Pretty.traitSym(superTrait).plain}' requires this equality constraint to be satisfied.
          |Add the constraint to the instance declaration.
          |""".stripMargin
     }
@@ -276,19 +281,23 @@ object InstanceError {
     * @param superTrait the symbol of the super trait.
     * @param loc        the location where the error occurred.
     */
-  case class MissingSuperTraitInstance(tpe: Type, subTrait: Symbol.TraitSym, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class MissingSuperTraitInstance(tpe: Type, subTrait: Symbol.TraitSym, superTrait: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2843
 
-    def summary: String = s"Missing instance of super trait '${superTrait.name}' for type '${formatType(tpe)}'."
+    def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.ofTrait(subTrait) ++ SymbolSet.symbolsOf(tpe), SymbolSet.ofTrait(superTrait))
+
+    private implicit def opts: FormatOptions = FormatOptions.Default.copy(qualify = amb)
+
+    def summary: String = s"Missing instance of super trait '${Pretty.traitSym(superTrait).plain}' for type '${Pretty.tpe(tpe).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing instance of super trait '${red(superTrait.name)}' for type '${magenta(formatType(tpe))}'.
+      s""">> Missing instance of super trait '${red(Pretty.traitSym(superTrait).plain)}' for type '${Pretty.tpe(tpe).ansi(fmt)}'.
          |
          |${highlight(loc, "missing super trait instance", fmt)}
          |
-         |${underline("Explanation:")} The trait '${subTrait.name}' extends '${superTrait.name}'.
-         |An instance of '${subTrait.name}' requires a corresponding instance of '${superTrait.name}'.
+         |${underline("Explanation:")} The trait '${Pretty.traitSym(subTrait).plain}' extends '${Pretty.traitSym(superTrait).plain}'.
+         |An instance of '${Pretty.traitSym(subTrait).plain}' requires a corresponding instance of '${Pretty.traitSym(superTrait).plain}'.
          |
          |${underline("Example:")}
          |
@@ -309,18 +318,22 @@ object InstanceError {
     * @param superTrait the supertrait that is the source of the constraint.
     * @param loc        the location where the error occurred.
     */
-  case class MissingTraitConstraint(tconstr: TraitConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class MissingTraitConstraint(tconstr: TraitConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2956
 
-    def summary: String = s"Missing trait constraint '${FormatTraitConstraint.formatTraitConstraint(tconstr)}' required by super trait '${superTrait.name}'."
+    def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(tconstr), SymbolSet.ofTrait(superTrait))
+
+    private implicit def opts: FormatOptions = FormatOptions.Default.copy(qualify = amb)
+
+    def summary: String = s"Missing trait constraint '${Pretty.traitConstraint(tconstr).plain}' required by super trait '${Pretty.traitSym(superTrait).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing trait constraint '${red(FormatTraitConstraint.formatTraitConstraint(tconstr))}' required by super trait '${magenta(superTrait.name)}'.
+      s""">> Missing trait constraint '${Pretty.traitConstraint(tconstr).ansi(fmt)}' required by super trait '${magenta(Pretty.traitSym(superTrait).plain)}'.
          |
          |${highlight(loc, "missing constraint", fmt)}
          |
-         |${underline("Explanation:")} The super trait '${superTrait.name}' requires this trait constraint to be satisfied.
+         |${underline("Explanation:")} The super trait '${Pretty.traitSym(superTrait).plain}' requires this trait constraint to be satisfied.
          |Add the constraint to the instance declaration.
          |
          |${underline("Example:")}
@@ -342,14 +355,14 @@ object InstanceError {
     * @param tpe the instance type.
     * @param loc the location where the error occurred.
     */
-  case class OrphanInstance(sym: Symbol.TraitSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class OrphanInstance(sym: Symbol.TraitSym, tpe: Type, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3067
 
-    def summary: String = s"Orphan instance of '${sym.name}' for type '${formatType(tpe)}'."
+    def summary: String = s"Orphan instance of '${sym.name}' for type '${Pretty.tpe(tpe).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Orphan instance of '${magenta(sym.name)}' for type '${red(formatType(tpe))}'.
+      s""">> Orphan instance of '${magenta(sym.name)}' for type '${Pretty.tpe(tpe).ansi(fmt)}'.
          |
          |${highlight(loc, "orphan instance", fmt)}
          |
@@ -382,11 +395,11 @@ object InstanceError {
   case class OverlappingInstances(sym: Symbol.TraitSym, tc: TypeConstructor, loc1: SourceLocation, loc2: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3178
 
-    def summary: String = s"Overlapping instances of '${sym.name}' for type '${formatTypeConstructor(tc)}'."
+    def summary: String = s"Overlapping instances of '${sym.name}' for type '${Pretty.tycon(tc).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Overlapping instances of '${magenta(sym.name)}' for type '${red(formatTypeConstructor(tc))}'.
+      s""">> Overlapping instances of '${magenta(sym.name)}' for type '${Pretty.tycon(tc).ansi(fmt)}'.
          |
          |${highlight(loc1, "first instance", fmt)}
          |

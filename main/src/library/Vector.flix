@@ -574,7 +574,7 @@ pub mod Vector {
                 loop(i + 1, karr -> k(putA(mx, i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
+        Functor.map(Array.toVector, loop(0, x -> x))
     }
 
     ///
@@ -592,7 +592,7 @@ pub mod Vector {
                 loop(i + 1, karr -> k(putA(f(x), i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
+        Functor.map(Array.toVector, loop(0, x -> x))
     }
 
     ///
@@ -618,7 +618,7 @@ pub mod Vector {
                 loop(i + 1, karr -> k(putA(f(x, y), i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, x -> checked_ecast(x)))
+        Functor.map(Array.toVector, loop(0, x -> x))
     }
 
     ///

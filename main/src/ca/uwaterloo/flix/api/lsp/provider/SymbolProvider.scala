@@ -11,7 +11,7 @@ import ca.uwaterloo.flix.api.lsp.{DocumentSymbol, Location, Range, SymbolKind, W
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SourceName
-import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
+import ca.uwaterloo.flix.language.fmt.Pretty
 
 object SymbolProvider {
 
@@ -75,7 +75,7 @@ object SymbolProvider {
     */
   private def mkTypeParamDocumentSymbol(t: TypedAst.TypeParam) = t match {
     case TypedAst.TypeParam(name, tpe, loc) => DocumentSymbol(
-      name.name, Some(formatKind(tpe.kind)), SymbolKind.TypeParameter, Range.from(loc), Range.from(loc), Nil, Nil,
+      name.name, Some(Pretty.kind(tpe.kind).plain), SymbolKind.TypeParameter, Range.from(loc), Range.from(loc), Nil, Nil,
     )
   }
 

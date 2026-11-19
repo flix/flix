@@ -40,6 +40,7 @@ object TypedAstOps {
   def sigSymsOf(exp0: Expr): Set[Symbol.SigSym] = exp0 match {
     case Expr.Cst(_, _, _) => Set.empty
     case Expr.Var(_, _, _) => Set.empty
+    case Expr.Val(_, _, _) => Set.empty
     case Expr.Hole(_, _, _, _, _) => Set.empty
     case Expr.HoleWithExp(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.OpenAs(_, exp, _, _) => sigSymsOf(exp)
@@ -79,6 +80,8 @@ object TypedAstOps {
     case Expr.VectorLit(exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.VectorLoad(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.VectorLength(exp, _) => sigSymsOf(exp)
+    case Expr.Lazy(exp, _, _) => sigSymsOf(exp)
+    case Expr.Force(exp, _, _, _) => sigSymsOf(exp)
     case Expr.Ascribe(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expr.InstanceOf(exp, _, _) => sigSymsOf(exp)
     case Expr.CheckedCast(_, exp, _, _, _) => sigSymsOf(exp)
@@ -105,8 +108,6 @@ object TypedAstOps {
     case Expr.SelectChannel(rules, default, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
     case Expr.Spawn(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.ParYield(frags, exp, _, _, _) => sigSymsOf(exp) ++ frags.flatMap(f => sigSymsOf(f.exp))
-    case Expr.Lazy(exp, _, _) => sigSymsOf(exp)
-    case Expr.Force(exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointConstraintSet(_, _, _) => Set.empty
     case Expr.FixpointLambda(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointMerge(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -151,6 +152,8 @@ object TypedAstOps {
     case Expr.Cst(_, _, _) => Map.empty
 
     case Expr.Var(sym, tpe, _) => Map(sym -> tpe)
+
+    case Expr.Val(_, _, _) => Map.empty
 
     case Expr.Hole(_, _, _, _, _) => Map.empty
 
@@ -297,6 +300,12 @@ object TypedAstOps {
     case Expr.VectorLength(exp, _) =>
       freeVars(exp)
 
+    case Expr.Lazy(exp, _, _) =>
+      freeVars(exp)
+
+    case Expr.Force(exp, _, _, _) =>
+      freeVars(exp)
+
     case Expr.Ascribe(exp, _, _, _, _, _) =>
       freeVars(exp)
 
@@ -396,12 +405,6 @@ object TypedAstOps {
         case (acc, ParYieldFragment(p, e, _)) => acc ++ freeVars(p) ++ freeVars(e)
       }
       freeVars(exp) -- freeFragVars.keys
-
-    case Expr.Lazy(exp, _, _) =>
-      freeVars(exp)
-
-    case Expr.Force(exp, _, _, _) =>
-      freeVars(exp)
 
     case Expr.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Map.empty[Symbol.VarSym, Type]) {

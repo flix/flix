@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse, ValSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{JConstructor, JField}
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.dbg.DocAst
@@ -31,6 +31,7 @@ object TypedAstPrinter {
   private def print(e: TypedAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Expr.Var(sym, _, _) => printVar(sym)
+    case Expr.Val(ValSymUse(sym, _), _, _) => DocAst.Expr.AsIs(sym.toString)
     case Expr.Hole(sym, _, _, _, _) => DocAst.Expr.Hole(sym)
     case Expr.HoleWithExp(exp, _, _, _, _) => DocAst.Expr.HoleWithExp(print(exp))
     case Expr.OpenAs(_, _, _, _) => DocAst.Expr.Unknown
@@ -70,6 +71,8 @@ object TypedAstPrinter {
     case Expr.VectorLit(exps, _, _, _) => DocAst.Expr.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, _, _, _) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, _) => DocAst.Expr.VectorLength(print(exp))
+    case Expr.Lazy(exp, _, _) => DocAst.Expr.Lazy(print(exp))
+    case Expr.Force(exp, _, _, _) => DocAst.Expr.Force(print(exp))
     case Expr.Ascribe(exp, _, _, tpe, _, _) => DocAst.Expr.AscriptionTpe(print(exp), TypePrinter.print(tpe))
     case Expr.InstanceOf(exp, clazz, _) => DocAst.Expr.InstanceOf(print(exp), clazz)
     case Expr.CheckedCast(_, _, _, _, _) => DocAst.Expr.Unknown
@@ -96,8 +99,6 @@ object TypedAstPrinter {
     case Expr.SelectChannel(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Spawn(exp1, exp2, _, _, _) => DocAst.Expr.Spawn(print(exp1), print(exp2))
     case Expr.ParYield(_, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.Lazy(exp, _, _) => DocAst.Expr.Lazy(print(exp))
-    case Expr.Force(exp, _, _, _) => DocAst.Expr.Force(print(exp))
     case Expr.FixpointConstraintSet(_, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointLambda(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointMerge(_, _, _, _, _) => DocAst.Expr.Unknown

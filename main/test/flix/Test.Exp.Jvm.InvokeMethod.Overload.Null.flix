@@ -24,8 +24,8 @@ mod Test.Exp.Jvm.InvokeMethod.Overload.Null {
     @Test
     def testInvokeMethod_03(): Unit \ Assert =
         let obj = "txt";
-        let val: String = (checked_cast(null): String);
-        assertFalse(obj.equals(val))
+        let value: String = (checked_cast(null): String);
+        assertFalse(obj.equals(value))
 
     @Test
     def testInvokeMethod_04(): Unit \ Assert + IO =

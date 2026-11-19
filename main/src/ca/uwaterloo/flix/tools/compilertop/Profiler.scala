@@ -54,9 +54,7 @@ import scala.jdk.CollectionConverters.*
   * | TreeShaker1        | No           | Pure filter pass; no per-def work to time.                                                                    |
   * | Monomorpher        | Yes          | Initial + worklist, keyed by the source generic sym.                                                          |
   * | LambdaDrop         | Yes          |                                                                                                               |
-  * | Optimizer          | No           | Fixed-point wrapper around `OccurrenceAnalyzer` / `Inliner`; captured transitively through those inner phases.|
-  * | OccurrenceAnalyzer | Yes          |                                                                                                               |
-  * | Inliner            | Yes          |                                                                                                               |
+  * | Optimizer          | Yes          | Per-def work of `OccurrenceAnalyzer` and `Inliner`: both run inside this phase and are not phases themselves. |
   * | Simplifier         | Yes          |                                                                                                               |
   * | ClosureConv        | Yes          |                                                                                                               |
   * | LambdaLift         | Yes          |                                                                                                               |

@@ -9,7 +9,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, Pretty}
 import ca.uwaterloo.flix.language.phase.typer.*
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
@@ -203,7 +203,7 @@ case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], tconstrs: List[Tra
     * Returns a human readable representation of the polytype.
     */
   override def toString: String = {
-    FormatScheme.formatSchemeWithOptions(this, FormatOptions.Internal)
+    Pretty.scheme(this)(FormatOptions.Internal).plain
   }
 
 }

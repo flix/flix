@@ -48,7 +48,7 @@ pub mod Iterator {
             case Some(a) => Ans(a)
             case None    => Done
         };
-        let iterF = () -> checked_ecast(f1());
+        let iterF = () -> f1();
         Iterator(rc, iterF)
 
     ///
@@ -64,7 +64,7 @@ pub mod Iterator {
             case None           => Done
             case Some((a, st1)) => Ref.put(st1, state); Ans(a)
         };
-        let iterF = () -> checked_ecast(f1());
+        let iterF = () -> f1();
         Iterator(rc, iterF)
 
     ///
@@ -80,14 +80,14 @@ pub mod Iterator {
             case None     => Done
             case Some(a1) => Ref.put(a1, state); Ans(a1)
         };
-        let iterF = () -> checked_ecast(f1());
+        let iterF = () -> f1();
         Iterator(rc, iterF)
 
     ///
     /// Returns an empty iterator.
     ///
     pub def empty(rc: Region[r]): Iterator[a, r, r] =
-        let f = _ -> checked_ecast(Done);
+        let f = _ -> Done;
         Iterator(rc, f)
 
     ///
@@ -441,7 +441,7 @@ pub mod Iterator {
             case Ans(a) => loop(ks -> k(f(a, ks)))
             case Done   => k(s)
         };
-        loop(x -> checked_ecast(x))
+        loop(x -> x)
 
     ///
     /// Returns the result of mapping each element and combining the results.
@@ -614,7 +614,7 @@ pub mod Iterator {
     /// is not general enough at the use-site when `innerIter` is re-assigned within `outerLoop`.
     ///
     def polymorphicEmpty(rc: Region[r]): Iterator[a, ef, r] =
-        let f = _ -> checked_ecast(Done);
+        let f = _ -> Done;
         Iterator(rc, f)
 
     ///

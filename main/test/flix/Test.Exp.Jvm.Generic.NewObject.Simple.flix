@@ -14,6 +14,10 @@ mod Test.Exp.Jvm.Generic.NewObject.Simple {
     import java.util.{Iterator => JIterator}
     import java.util.TreeMap
     import java.util.concurrent.Callable
+    import java.util.function.BiFunction
+    import java.util.function.Consumer
+    import java.util.function.{Function => JFunction}
+    import java.util.function.{Predicate => JPredicate}
 
     // CompileTests
 
@@ -394,6 +398,121 @@ mod Test.Exp.Jvm.Generic.NewObject.Simple {
             def call(_this: Callable[Unit]): Unit = ()
         };
         assertEq(expected = (), c.call())
+
+    // --- Generic interface instantiated with a primitive type param in parameter position ---
+    // The overridden method's erased JVM parameter type is `Object`, so the generated method
+    // receives a boxed argument and must unbox it (e.g. via `Integer.intValue`) before the body
+    // runs; otherwise the anonymous class fails JVM verification with a `VerifyError`.
+
+    @Test
+    def testNewObjectPrimitiveParamInt8(): Unit \ {Assert, IO} =
+        let f = new JFunction[Int8, String] {
+            def apply(_this: JFunction[Int8, String], x: Int8): String = "${x}"
+        };
+        assertEq(expected = "42", f.apply(42i8))
+
+    @Test
+    def testNewObjectPrimitiveParamInt16(): Unit \ {Assert, IO} =
+        let f = new JFunction[Int16, String] {
+            def apply(_this: JFunction[Int16, String], x: Int16): String = "${x}"
+        };
+        assertEq(expected = "42", f.apply(42i16))
+
+    @Test
+    def testNewObjectPrimitiveParamInt32(): Unit \ {Assert, IO} =
+        let f = new JFunction[Int32, String] {
+            def apply(_this: JFunction[Int32, String], x: Int32): String = "${x}"
+        };
+        assertEq(expected = "42", f.apply(42i32))
+
+    @Test
+    def testNewObjectPrimitiveParamInt64(): Unit \ {Assert, IO} =
+        let f = new JFunction[Int64, String] {
+            def apply(_this: JFunction[Int64, String], x: Int64): String = "${x}"
+        };
+        assertEq(expected = "42", f.apply(42i64))
+
+    @Test
+    def testNewObjectPrimitiveParamFloat32(): Unit \ {Assert, IO} =
+        let f = new JFunction[Float32, String] {
+            def apply(_this: JFunction[Float32, String], x: Float32): String = "${x}"
+        };
+        assertEq(expected = "42.0", f.apply(42.0f32))
+
+    @Test
+    def testNewObjectPrimitiveParamFloat64(): Unit \ {Assert, IO} =
+        let f = new JFunction[Float64, String] {
+            def apply(_this: JFunction[Float64, String], x: Float64): String = "${x}"
+        };
+        assertEq(expected = "42.0", f.apply(42.0f64))
+
+    @Test
+    def testNewObjectPrimitiveParamBool(): Unit \ {Assert, IO} =
+        let f = new JFunction[Bool, String] {
+            def apply(_this: JFunction[Bool, String], x: Bool): String = "${x}"
+        };
+        assertEq(expected = "true", f.apply(true))
+
+    @Test
+    def testNewObjectPrimitiveParamChar(): Unit \ {Assert, IO} =
+        let f = new JFunction[Char, String] {
+            def apply(_this: JFunction[Char, String], x: Char): String = "${x}"
+        };
+        assertEq(expected = "x", f.apply('x'))
+
+    @Test
+    def testNewObjectPrimitiveParamAndReturn(): Unit \ {Assert, IO} =
+        let f = new JFunction[Int32, Int32] {
+            def apply(_this: JFunction[Int32, Int32], x: Int32): Int32 = x + 1
+        };
+        assertEq(expected = 43, f.apply(42))
+
+    @Test
+    def testNewObjectPrimitiveParamPredicate(): Unit \ {Assert, IO} =
+        let p = new JPredicate[Int64] {
+            def test(_this: JPredicate[Int64], x: Int64): Bool = x > 0i64
+        };
+        assertTrue(p.test(1i64))
+
+    @Test
+    def testNewObjectPrimitiveParamConsumer(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        let c = new Consumer[Bool] {
+            def accept(_this: Consumer[Bool], b: Bool): Unit \ IO =
+                l.add("${b}");
+                ()
+        };
+        c.accept(true);
+        let r: String = l.get(0);
+        assertEq(expected = "true", r)
+
+    @Test
+    def testNewObjectPrimitiveParamsComparator(): Unit \ {Assert, IO} =
+        let c = new Comparator[Int32] {
+            def compare(_this: Comparator[Int32], x: Int32, y: Int32): Int32 = x - y
+        };
+        assertEq(expected = 4, c.compare(7, 3))
+
+    @Test
+    def testNewObjectPrimitiveParamsComparatorFromJava(): Unit \ {Assert, IO} =
+        // Java calls `compare(Object, Object)` with boxed integers.
+        let c = new Comparator[Int32] {
+            def compare(_this: Comparator[Int32], x: Int32, y: Int32): Int32 = y - x
+        };
+        let l: ArrayList[Int32] = new ArrayList();
+        l.add(1);
+        l.add(3);
+        l.add(2);
+        JCollections.sort(l, c);
+        let r: Int32 = l.get(0);
+        assertEq(expected = 3, r)
+
+    @Test
+    def testNewObjectMixedParamsBiFunction(): Unit \ {Assert, IO} =
+        let f = new BiFunction[String, Float64, String] {
+            def apply(_this: BiFunction[String, Float64, String], s: String, d: Float64): String = "${s}:${d}"
+        };
+        assertEq(expected = "pi:3.14", f.apply("pi", 3.14))
 
     // --- Generic interface instantiated with a reference type param (list, tuple, enum, record) ---
     // These are the reference-typed counterparts of the primitive tests above. The overridden

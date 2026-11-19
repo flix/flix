@@ -406,7 +406,7 @@ object WeederError {
          |For example:
          |
          |    Readable.Elm[t] ~ Int8
-         |    Foldable.Aef[t] ~ Pure
+         |    Foldable.Aef[t] ~ {}
          |
          |""".stripMargin
     }
@@ -1145,6 +1145,31 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that a name used the escape character '$', which only is used with keywords.
+    *
+    * @param name the name without the `$`.
+    * @param loc  the location of the escaped name.
+    */
+  case class RedundantEscape(name: String, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E3171
+
+    def summary: String = s"Redundant escape: '$name' is not a keyword."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Redundant escape: '${red(name)}' is not a keyword.
+         |
+         |${src(loc, "redundant '$'")}
+         |
+         |${underline("Explanation:")} We only allow escaping keywords with $$. For example:
+         |
+         |    def $$mod(x) = x      // OK: 'mod' is a keyword
+         |    def $$example(x) = x  // not OK: 'example' is not a keyword
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate an undefined annotation.
     *
     * @param name the name of the undefined annotation.
@@ -1246,6 +1271,27 @@ object WeederError {
          |${src(loc, "must be qualified")}
          |
          |${underline("Explanation:")} A use must be qualified, e.g. 'use Foo.bar'.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a val which has an effect.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEffectfulVal(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E4217
+
+    def summary: String = "Unexpected effect on val."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected effect on val.
+         |
+         |${src(loc, "unexpected effect")}
+         |
+         |${underline("Explanation:")} A val may not have an effect.
          |""".stripMargin
     }
   }

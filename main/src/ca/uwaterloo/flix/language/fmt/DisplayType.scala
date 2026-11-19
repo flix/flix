@@ -9,9 +9,10 @@ package ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
-import ca.uwaterloo.flix.language.ast.shared.{SymbolSet, VarText}
 import ca.uwaterloo.flix.language.jvm.ClassDescs
 import ca.uwaterloo.flix.util.InternalCompilerException
+
+import java.lang.constant.ClassDesc
 
 /**
   * A well-kinded type in an easily-printable format.
@@ -20,7 +21,13 @@ sealed trait DisplayType
 
 object DisplayType {
 
-  private class OverAppliedType(loc: SourceLocation) extends InternalCompilerException("Unexpected over-applied type.", loc)
+  /**
+    * An operator node: `not a`, `a and b`, `a -> b`, ...
+    *
+    * An operator is not atomic, so it is parenthesized when it stands as an operand of another
+    * operator or in an argument position. Every other node is atomic and never parenthesized.
+    */
+  sealed trait Operator extends DisplayType
 
   ///////
   // Hole
@@ -178,17 +185,17 @@ object DisplayType {
   /**
     * Boolean negation.
     */
-  case class Not(tpe: DisplayType) extends DisplayType
+  case class Not(tpe: DisplayType) extends Operator
 
   /**
     * A chain of types connected by `and`.
     */
-  case class And(tpes: List[DisplayType]) extends DisplayType
+  case class And(tpes: List[DisplayType]) extends Operator
 
   /**
     * A chain of types connected by `or`.
     */
-  case class Or(tpes: List[DisplayType]) extends DisplayType
+  case class Or(tpes: List[DisplayType]) extends Operator
 
   ////////////////
   // Set Operators
@@ -197,7 +204,7 @@ object DisplayType {
   /**
     * Set complement.
     */
-  case class Complement(tpe: DisplayType) extends DisplayType
+  case class Complement(tpe: DisplayType) extends Operator
 
   /**
     * A chain of types in a set.
@@ -207,22 +214,22 @@ object DisplayType {
   /**
     * A chain of types connected by `&`.
     */
-  case class Plus(tpes: List[DisplayType]) extends DisplayType
+  case class Plus(tpes: List[DisplayType]) extends Operator
 
   /**
     * A chain of types connected by `&`.
     */
-  case class Intersection(tpes: List[DisplayType]) extends DisplayType
+  case class Intersection(tpes: List[DisplayType]) extends Operator
 
   /**
     * A chain of types connected by `⊕`.
     */
-  case class SymmetricDiff(tpes: List[DisplayType]) extends DisplayType
+  case class SymmetricDiff(tpes: List[DisplayType]) extends Operator
 
   /**
     * A chain of types connected by `-`.
     */
-  case class Difference(tpes: List[DisplayType]) extends DisplayType
+  case class Difference(tpes: List[DisplayType]) extends Operator
 
   /////////////
   // Predicates
@@ -249,23 +256,17 @@ object DisplayType {
   /**
     * A pure function.
     */
-  case class PureArrow(arg: DisplayType, ret: DisplayType) extends DisplayType
+  case class PureArrow(arg: DisplayType, ret: DisplayType) extends Operator
 
   /**
     * A function with a purity.
     */
-  case class PolyArrow(arg: DisplayType, eff: DisplayType, ret: DisplayType) extends DisplayType
+  case class PolyArrow(arg: DisplayType, eff: DisplayType, ret: DisplayType) extends Operator
 
   /**
     * A backend function (no effect).
     */
-  case class ArrowWithoutEffect(arg: DisplayType, ret: DisplayType) extends DisplayType
-
-  ///////
-  // Tags
-  ///////
-
-  case class TagConstructor(name: String) extends DisplayType
+  case class ArrowWithoutEffect(arg: DisplayType, ret: DisplayType) extends Operator
 
   ////////////
   // JVM Types
@@ -289,14 +290,53 @@ object DisplayType {
 
   case class JvmMethod(method: JavaMethod) extends DisplayType
 
+  ////////////////
+  // Declarations
+  ////////////////
+
+  /**
+    * An enum, by its symbol.
+    */
+  case class Enum(sym: Symbol.EnumSym) extends DisplayType
+
+  /**
+    * A struct, by its symbol.
+    */
+  case class Struct(sym: Symbol.StructSym) extends DisplayType
+
+  /**
+    * A restrictable enum, by its symbol.
+    */
+  case class RestrictableEnum(sym: Symbol.RestrictableEnumSym) extends DisplayType
+
+  /**
+    * A case of a restrictable enum in a case set, by its symbol.
+    */
+  case class Case(sym: Symbol.RestrictableCaseSym) extends DisplayType
+
+  /**
+    * A type alias, by its symbol.
+    */
+  case class Alias(sym: Symbol.TypeAliasSym) extends DisplayType
+
+  /**
+    * An associated type, by its symbol.
+    */
+  case class Assoc(sym: Symbol.AssocTypeSym) extends DisplayType
+
+  /**
+    * An effect, by its symbol.
+    */
+  case class Effect(sym: Symbol.EffSym) extends DisplayType
+
+  /**
+    * A Java class, by its descriptor.
+    */
+  case class Native(desc: ClassDesc) extends DisplayType
+
   //////////////////////
   // Miscellaneous Types
   //////////////////////
-
-  /**
-    * A simple named type (e.g., enum or type alias).
-    */
-  case class Name(name: String) extends DisplayType
 
   /**
     * A type applied to one or more types.
@@ -304,9 +344,9 @@ object DisplayType {
   case class Apply(tpe: DisplayType, tpes: List[DisplayType]) extends DisplayType
 
   /**
-    * A type variable.
+    * A type variable, by its symbol.
     */
-  case class Var(id: Int, kind: Kind, text: VarText) extends DisplayType
+  case class Var(sym: Symbol.KindedTypeVarSym) extends DisplayType
 
   /**
     * A tuple.
@@ -314,9 +354,9 @@ object DisplayType {
   case class Tuple(tpes: List[DisplayType]) extends DisplayType
 
   /**
-    * A region.
+    * A region, by its symbol.
     */
-  case class Region(name: String) extends DisplayType
+  case class Region(sym: Symbol.RegionSym) extends DisplayType
 
   /**
     * An error type.
@@ -357,42 +397,44 @@ object DisplayType {
   /**
     * Creates a simple type from the well-kinded type `t`.
     */
-  def fromWellKindedType(t0: Type, amb : SymbolSet = SymbolSet.empty): DisplayType = {
+  def fromWellKindedType(t0: Type): DisplayType = {
 
     def visit(t: Type): DisplayType = t.baseType match {
       case Type.Var(sym, _) =>
-        mkApply(Var(sym.id, sym.kind, sym.text), t.typeArguments.map(visit))
+        mkApply(Var(sym), t.typeArguments.map(visit))
       case Type.Alias(cst, args, _, _) =>
-        mkApply(Name(amb.qualify(cst.sym)), (args ++ t.typeArguments).map(visit))
+        mkApply(Alias(cst.sym), (args ++ t.typeArguments).map(visit))
       case Type.AssocType(cst, arg, _, _) =>
-        mkApply(Name(cst.sym.name), (arg :: t.typeArguments).map(visit))
+        mkApply(Assoc(cst.sym), (arg :: t.typeArguments).map(visit))
       case Type.JvmToType(tpe, _) =>
         mkApply(DisplayType.JvmToType(visit(tpe)), t.typeArguments.map(visit))
       case Type.JvmToEff(tpe, _) =>
         mkApply(DisplayType.JvmToEff(visit(tpe)), t.typeArguments.map(visit))
-      case Type.UnresolvedJvmType(member, _) => member match {
-        case JvmMember.JvmConstructor(clazz, tpes) => DisplayType.JvmUnresolvedConstructor(ClassDescs.simpleNameOf(clazz), tpes.map(visit))
-        case JvmMember.JvmMethod(tpe, name, tpes) => DisplayType.JvmUnresolvedMethod(visit(tpe), name.name, tpes.map(visit))
-        case JvmMember.JvmField(_, tpe, name) => DisplayType.JvmUnresolvedField(visit(tpe), name.name)
-        case JvmMember.JvmStaticMethod(clazz, name, tpes) => DisplayType.JvmUnresolvedStaticMethod(ClassDescs.simpleNameOf(clazz), name.name, tpes.map(visit))
-      }
+      case Type.UnresolvedJvmType(member, _) =>
+        val base = member match {
+          case JvmMember.JvmConstructor(clazz, tpes) => DisplayType.JvmUnresolvedConstructor(ClassDescs.simpleNameOf(clazz), tpes.map(visit))
+          case JvmMember.JvmMethod(tpe, name, tpes) => DisplayType.JvmUnresolvedMethod(visit(tpe), name.name, tpes.map(visit))
+          case JvmMember.JvmField(_, tpe, name) => DisplayType.JvmUnresolvedField(visit(tpe), name.name)
+          case JvmMember.JvmStaticMethod(clazz, name, tpes) => DisplayType.JvmUnresolvedStaticMethod(ClassDescs.simpleNameOf(clazz), name.name, tpes.map(visit))
+        }
+        mkApply(base, t.typeArguments.map(visit))
       case Type.Cst(tc, _) => tc match {
-        case TypeConstructor.Void => Void
-        case TypeConstructor.AnyType => AnyType
-        case TypeConstructor.Unit => Unit
-        case TypeConstructor.Null => Null
-        case TypeConstructor.Bool => Bool
-        case TypeConstructor.Char => Char
-        case TypeConstructor.Float32 => Float32
-        case TypeConstructor.Float64 => Float64
-        case TypeConstructor.BigDecimal => BigDecimal
-        case TypeConstructor.Int8 => Int8
-        case TypeConstructor.Int16 => Int16
-        case TypeConstructor.Int32 => Int32
-        case TypeConstructor.Int64 => Int64
-        case TypeConstructor.BigInt => BigInt
-        case TypeConstructor.Str => Str
-        case TypeConstructor.Regex => Regex
+        case TypeConstructor.Void => mkApply(Void, t.typeArguments.map(visit))
+        case TypeConstructor.AnyType => mkApply(AnyType, t.typeArguments.map(visit))
+        case TypeConstructor.Unit => mkApply(Unit, t.typeArguments.map(visit))
+        case TypeConstructor.Null => mkApply(Null, t.typeArguments.map(visit))
+        case TypeConstructor.Bool => mkApply(Bool, t.typeArguments.map(visit))
+        case TypeConstructor.Char => mkApply(Char, t.typeArguments.map(visit))
+        case TypeConstructor.Float32 => mkApply(Float32, t.typeArguments.map(visit))
+        case TypeConstructor.Float64 => mkApply(Float64, t.typeArguments.map(visit))
+        case TypeConstructor.BigDecimal => mkApply(BigDecimal, t.typeArguments.map(visit))
+        case TypeConstructor.Int8 => mkApply(Int8, t.typeArguments.map(visit))
+        case TypeConstructor.Int16 => mkApply(Int16, t.typeArguments.map(visit))
+        case TypeConstructor.Int32 => mkApply(Int32, t.typeArguments.map(visit))
+        case TypeConstructor.Int64 => mkApply(Int64, t.typeArguments.map(visit))
+        case TypeConstructor.BigInt => mkApply(BigInt, t.typeArguments.map(visit))
+        case TypeConstructor.Str => mkApply(Str, t.typeArguments.map(visit))
+        case TypeConstructor.Regex => mkApply(Regex, t.typeArguments.map(visit))
 
         case TypeConstructor.Arrow(arity) =>
           val args = t.typeArguments.map(visit)
@@ -400,28 +442,35 @@ object DisplayType {
             // Case 1: No args. Fill everything with a hole.
             case Nil =>
               val lastArrow: DisplayType = PolyArrow(Hole, Hole, Hole)
-              // NB: safe to subtract 2 since arity is always at least 2
+              // NB: an arity below 2 gives no further holes
               List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow.apply)
 
-            // Case 2: Pure function.
-            case eff :: tpes if eff == Pure =>
-              // NB: safe to reduce because arity is always at least 2
-              tpes.padTo(arity, Hole).reduceRight(PureArrow.apply)
+            // Case 2: Too many args. Apply the type to the rest.
+            case _ :: tpes if tpes.lengthIs > arity => overApplied(t, arity + 1)
 
-            // Case 3: Impure function.
+            // Case 3: Pure function.
+            case eff :: tpes if eff == Pure =>
+              // NB: safe to reduce because there are at least 2 types
+              arrowTypes(tpes, arity).reduceRight(PureArrow.apply)
+
+            // Case 4: Impure function.
             case eff :: tpes =>
-              // NB: safe to take last 2 because arity is always at least 2
-              val allTpes = tpes.padTo(arity, Hole)
+              // NB: safe to take last 2 because there are at least 2 types
+              val allTpes = arrowTypes(tpes, arity)
               val List(lastArg, ret) = allTpes.takeRight(2)
               val lastArrow: DisplayType = PolyArrow(lastArg, eff, ret)
               allTpes.dropRight(2).foldRight(lastArrow)(PureArrow.apply)
           }
 
         case TypeConstructor.ArrowWithoutEffect(arity) =>
-          val args = t.typeArguments.map(visit)
-          args.padTo(arity, Hole).reduceRight(ArrowWithoutEffect.apply)
+          t.typeArguments.map(visit) match {
+            // Case 1: Too many args. Apply the type to the rest.
+            case args if args.lengthIs > arity => overApplied(t, arity)
+            // Case 2: Fill the missing args with holes.
+            case args => arrowTypes(args, arity).reduceRight(ArrowWithoutEffect.apply)
+          }
 
-        case TypeConstructor.RecordRowEmpty => RecordRow(Nil)
+        case TypeConstructor.RecordRowEmpty => mkApply(RecordRow(Nil), t.typeArguments.map(visit))
 
         case TypeConstructor.RecordRowExtend(label) =>
           val args = t.typeArguments.map(visit)
@@ -432,8 +481,8 @@ object DisplayType {
             case tpe :: Nil => RecordRowExtend(RecordLabelType(label.name, tpe) :: Nil, Hole)
             // Case 3: Fully applied. Dispatch to proper record handler.
             case _ :: _ :: Nil => fromRecordRow(t)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(label.loc)
+            // Case 4: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
         case TypeConstructor.Record =>
@@ -447,8 +496,8 @@ object DisplayType {
               case RecordRowExtend(labels, rest) => RecordExtend(labels, rest)
               case nonRecord => RecordConstructor(nonRecord)
             }
-            // Case 3: Too many args. Error.
-            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // Case 3: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ => overApplied(t, 1)
           }
 
         case TypeConstructor.Extensible =>
@@ -462,11 +511,11 @@ object DisplayType {
               case SchemaRowExtend(fields, rest) => ExtensibleExtend(fields, rest)
               case nonSchema => ExtensibleUnknown(nonSchema)
             }
-            // Case 3: Too many args. Error.
-            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // Case 3: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ => overApplied(t, 1)
           }
 
-        case TypeConstructor.SchemaRowEmpty => SchemaRow(Nil)
+        case TypeConstructor.SchemaRowEmpty => mkApply(SchemaRow(Nil), t.typeArguments.map(visit))
 
         case TypeConstructor.SchemaRowExtend(pred) =>
           // erase aliases over the Schema/Relation
@@ -482,8 +531,8 @@ object DisplayType {
             case _ :: Nil => SchemaRowExtend(NonPredFieldType(pred.name, args.head) :: Nil, Hole)
             // Case 5: Fully applied. Dispatch to proper schema handler.
             case _ :: _ :: Nil => fromSchemaRow(t)
-            // Case 6: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(pred.loc)
+            // Case 6: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
         case TypeConstructor.Schema =>
@@ -497,8 +546,8 @@ object DisplayType {
               case SchemaRowExtend(fields, rest) => SchemaExtend(fields, rest)
               case nonSchema => SchemaConstructor(nonSchema)
             }
-            // Case 3: Too many args. Error.
-            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // Case 3: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ => overApplied(t, 1)
           }
 
         case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(visit))
@@ -507,30 +556,43 @@ object DisplayType {
         case TypeConstructor.Sender => mkApply(Sender, t.typeArguments.map(visit))
         case TypeConstructor.Receiver => mkApply(Receiver, t.typeArguments.map(visit))
         case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(visit))
-        case TypeConstructor.Enum(sym, _) =>
-          mkApply(Name(amb.qualify(sym)), t.typeArguments.map(visit))
-        case TypeConstructor.Struct(sym, _) => mkApply(Name(amb.qualify(sym)), t.typeArguments.map(visit))
-        case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(amb.qualify(sym)), t.typeArguments.map(visit))
-        case TypeConstructor.Native(desc, _) => mkApply(Name(ClassDescs.canonicalNameOf(desc)), t.typeArguments.map(visit))
+        case TypeConstructor.Enum(sym, _) => mkApply(Enum(sym), t.typeArguments.map(visit))
+        case TypeConstructor.Struct(sym, _) => mkApply(Struct(sym), t.typeArguments.map(visit))
+        case TypeConstructor.RestrictableEnum(sym, _) => mkApply(RestrictableEnum(sym), t.typeArguments.map(visit))
+        case TypeConstructor.Native(desc, _) => mkApply(Native(desc), t.typeArguments.map(visit))
         case TypeConstructor.JvmConstructor(constructor) => mkApply(JvmConstructor(constructor), t.typeArguments.map(visit))
         case TypeConstructor.JvmMethod(method, _) => mkApply(JvmMethod(method), t.typeArguments.map(visit))
         case TypeConstructor.JvmField(field) => mkApply(JvmField(field), t.typeArguments.map(visit))
         case TypeConstructor.Tuple(l) =>
-          val tpes = t.typeArguments.map(visit).padTo(l, Hole)
-          Tuple(tpes)
+          t.typeArguments.map(visit) match {
+            // Case 1: Too many args. Apply the type to the rest.
+            case tpes if tpes.lengthIs > l => overApplied(t, l)
+            // Case 2: Fill the missing args with holes.
+            case tpes => Tuple(tpes.padTo(l, Hole))
+          }
         case TypeConstructor.Relation(l) =>
-          val tpes = t.typeArguments.map(visit).padTo(l, Hole)
-          Relation(tpes)
+          t.typeArguments.map(visit) match {
+            // Case 1: Too many args. Apply the type to the rest.
+            case tpes if tpes.lengthIs > l => overApplied(t, l)
+            // Case 2: Fill the missing args with holes.
+            case tpes => Relation(tpes.padTo(l, Hole))
+          }
         case TypeConstructor.Lattice(l) =>
-          val tpesAndLat = t.typeArguments.map(visit).padTo(l, Hole)
-          val tpes = tpesAndLat.init
-          val lat = tpesAndLat.last
-          Lattice(tpes, lat)
-        case TypeConstructor.Pure => Pure
-        case TypeConstructor.Univ => Univ
+          t.typeArguments.map(visit) match {
+            // Case 1: Too many args. Apply the type to the rest.
+            case tpes if tpes.lengthIs > l => overApplied(t, l)
+            // Case 2: A lattice of no types has no lattice type to show.
+            case _ if l == 0 => LatticeConstructor
+            // Case 3: Fill the missing args with holes.
+            case tpes =>
+              val tpesAndLat = tpes.padTo(l, Hole)
+              Lattice(tpesAndLat.init, tpesAndLat.last)
+          }
+        case TypeConstructor.Pure => mkApply(Pure, t.typeArguments.map(visit))
+        case TypeConstructor.Univ => mkApply(Univ, t.typeArguments.map(visit))
 
-        case TypeConstructor.True => True
-        case TypeConstructor.False => False
+        case TypeConstructor.True => mkApply(True, t.typeArguments.map(visit))
+        case TypeConstructor.False => mkApply(False, t.typeArguments.map(visit))
 
         case TypeConstructor.And =>
           // collapse into a chain of ands
@@ -541,8 +603,8 @@ object DisplayType {
             case args :: Nil => And(args :+ Hole)
             // Case 3: Multiple args. Concatenate them: tpe1 and tpe2 and tpe3 and tpe4
             case args1 :: args2 :: Nil => And(args1 ++ args2)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // Case 4: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
         case TypeConstructor.Or =>
@@ -554,17 +616,22 @@ object DisplayType {
             case args :: Nil => Or(args :+ Hole)
             // Case 3: Multiple args. Concatenate them: tpe1 or tpe2 or tpe3 or tpe4
             case args1 :: args2 :: Nil => Or(args1 ++ args2)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // Case 4: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
-        case TypeConstructor.Not => DisplayType.Not(visit(t.typeArguments.head))
+        case TypeConstructor.Not =>
+          t.typeArguments.map(visit) match {
+            case Nil => DisplayType.Not(Hole)
+            case arg :: Nil => DisplayType.Not(arg)
+            case _ :: _ :: _ => overApplied(t, 1)
+          }
 
         case TypeConstructor.Complement =>
           t.typeArguments.map(visit) match {
             case Nil => Complement(Hole)
             case arg :: Nil => Complement(arg)
-            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            case _ :: _ :: _ => overApplied(t, 1)
           }
 
         case TypeConstructor.Union =>
@@ -575,22 +642,24 @@ object DisplayType {
             // Case 2: One arg. Take the left and put a hole at the end: tpe1 + tpe2 + ?
             case args :: Nil => Plus(args :+ Hole)
             // Case 3: Multiple args. Concatenate them: tpe1 + tpe2 + tpe3 + tpe4
-            case args1 :: args2 :: Nil => Plus(args1 ++ args2)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            case args1 :: args2 :: Nil => mkPlus(args1 ++ args2)
+            // Case 4: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
         case TypeConstructor.Intersection =>
           // collapse into a chain of intersections
-          t.typeArguments.map(visit).map(splitIntersections) match {
+          t.typeArguments match {
             // Case 1: No args. ? & ?
             case Nil => Intersection(Hole :: Hole :: Nil)
             // Case 2: One arg. Take the left and put a hole at the end: tpe1 & tpe2 & ?
-            case args :: Nil => Intersection(args :+ Hole)
+            case arg :: Nil => Intersection(splitIntersections(visit(arg)) :+ Hole)
             // Case 3: Multiple args. Concatenate them: tpe1 & tpe2 & tpe3 & tpe4
-            case args1 :: args2 :: Nil => Intersection(args1 ++ args2)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // The whole chain is collected before any of it is visited, so that a complement is
+            // subtracted from the chain and not from the operand it happens to be nested with.
+            case _ :: _ :: Nil => mkIntersection(intersectionOperands(t).map(visit).flatMap(splitIntersections))
+            // Case 4: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
         case TypeConstructor.Difference =>
@@ -602,9 +671,9 @@ object DisplayType {
             // Case 2: One arg. Take the left and put a hole at the end: tpe1 - tpe2 - ?
             case arg :: Nil => Difference(splitDifference(arg) :+ Hole)
             // Case 3: Multiple args. Concatenate the left differences: tpe1 - tpe2 - tpe3 - tpe4
-            case arg1 :: arg2 :: Nil => Difference(splitDifference(arg1) :+ arg2)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            case arg1 :: arg2 :: Nil => mkDifference(splitDifference(arg1) :+ arg2)
+            // Case 4: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
         case TypeConstructor.SymmetricDiff =>
@@ -615,12 +684,12 @@ object DisplayType {
             case arg :: Nil => SymmetricDiff(arg :+ Hole)
             // Case 3: Multiple args. Concatenate them: tpe1 ⊕ tpe2
             case arg1 :: arg2 :: Nil => SymmetricDiff(arg1 ++ arg2)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            // Case 4: Too many args. Apply the type to the rest.
+            case _ :: _ :: _ :: _ => overApplied(t, 2)
           }
 
         case TypeConstructor.CaseSet(syms, _) =>
-          val names = syms.toList.map(sym => DisplayType.Name(sym.name))
+          val names = syms.toList.map(sym => DisplayType.Case(sym))
           val set = DisplayType.Union(names)
           mkApply(set, t.typeArguments.map(visit))
 
@@ -628,7 +697,7 @@ object DisplayType {
           t.typeArguments.map(visit) match {
             case Nil => Complement(Hole)
             case arg :: Nil => Complement(arg)
-            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
+            case _ :: _ :: _ => overApplied(t, 1)
           }
 
         case TypeConstructor.CaseIntersection(_) =>
@@ -636,7 +705,7 @@ object DisplayType {
             case Nil => Intersection(Hole :: Hole :: Nil)
             case arg :: Nil => Intersection(arg :: Hole :: Nil)
             case arg1 :: arg2 :: Nil => Intersection(arg1 :: arg2 :: Nil)
-            case _ => throw new OverAppliedType(t.loc)
+            case _ => overApplied(t, 2)
           }
 
         case TypeConstructor.CaseUnion(_) =>
@@ -644,7 +713,7 @@ object DisplayType {
             case Nil => Plus(Hole :: Hole :: Nil)
             case arg :: Nil => Plus(arg :: Hole :: Nil)
             case arg1 :: arg2 :: Nil => Plus(arg1 :: arg2 :: Nil)
-            case _ => throw new OverAppliedType(t.loc)
+            case _ => overApplied(t, 2)
           }
 
         case TypeConstructor.CaseSymmetricDiff(_) =>
@@ -652,20 +721,46 @@ object DisplayType {
             case Nil => SymmetricDiff(Hole :: Hole :: Nil)
             case arg :: Nil => SymmetricDiff(arg :: Hole :: Nil)
             case arg1 :: arg2 :: Nil => SymmetricDiff(arg1 :: arg2 :: Nil)
-            case _ => throw new OverAppliedType(t.loc)
+            case _ => overApplied(t, 2)
           }
 
-        case TypeConstructor.Effect(sym, _) => mkApply(DisplayType.Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.Region(sym) => mkApply(DisplayType.Region(sym.text), t.typeArguments.map(visit))
+        case TypeConstructor.Effect(sym, _) => mkApply(DisplayType.Effect(sym), t.typeArguments.map(visit))
+        case TypeConstructor.Region(sym) => mkApply(DisplayType.Region(sym), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(visit))
         case TypeConstructor.RegionWithoutRegion => mkApply(RegionWithoutRegion, t.typeArguments.map(visit))
 
+        // NB: An error type can have any kind, so its arguments say nothing and are not shown.
         case TypeConstructor.Error(_, _) => DisplayType.Error
       }
       case Type.Apply(_, _, loc) => throw InternalCompilerException("unexpected Type.Apply", loc)
     }
 
+    /**
+      * Returns the view of the type `t`, which has more arguments than the `n` its constructor takes:
+      * the view of `t` with its first `n` arguments, applied to the rest.
+      *
+      * A well-kinded type is never over-applied, but an ill-kinded one is shown as it stands, e.g.
+      * `{ x = Int32 }[String]`, so that an error message can print it.
+      */
+    def overApplied(t: Type, n: Int): DisplayType = {
+      val (args, rest) = t.typeArguments.splitAt(n)
+      mkApply(visit(Type.mkApply(t.baseType, args, t.loc)), rest.map(visit))
+    }
+
     visit(t0)
+  }
+
+  /**
+    * Returns the parameter types and the result type of an arrow of the given `arity` that is applied
+    * to the types `tpes`, with a hole for each type that is missing.
+    *
+    * An arrow is written with a parameter and a result, so there are at least two types. An arrow of
+    * an arity below 2, which no source program has, gets a hole for the parameter, and for the result,
+    * that it has no place for, e.g. `? -> a`.
+    */
+  private def arrowTypes(tpes: List[DisplayType], arity: Int): List[DisplayType] = {
+    val padded = tpes.padTo(arity, Hole)
+    List.fill(2 - padded.length)(Hole) ::: padded
   }
 
   /**
@@ -674,6 +769,143 @@ object DisplayType {
   private def mkApply(base: DisplayType, args: List[DisplayType]): DisplayType = args match {
     case Nil => base
     case _ :: _ => Apply(base, args)
+  }
+
+  /**
+    * Returns the union of the given `tpes`, simplified: a pure member, a repeated member and a
+    * member that lies inside the others are dropped, and the rest keep their order. A union with
+    * the universe as a member is the universe.
+    *
+    * Only the union is simplified. A member that is an intersection, a difference or a complement
+    * is kept as it is.
+    */
+  private def mkPlus(tpes: List[DisplayType]): DisplayType = {
+    if (tpes.contains(Hole)) {
+      // A hole stands for a missing argument, so two holes are not the same member.
+      Plus(tpes)
+    } else if (tpes.contains(Univ)) {
+      Univ
+    } else {
+      val distinct = tpes.filterNot(_ == Pure).distinct
+      distinct.filterNot(tpe => liesInside(tpe, distinct.filterNot(_ == tpe))) match {
+        case Nil => Pure
+        case tpe :: Nil => tpe
+        case members => Plus(members)
+      }
+    }
+  }
+
+  /**
+    * Returns `true` if `tpe` lies inside the union of the given `members`, by what it is built
+    * from: `ef & A` and `ef - A` lie inside `ef`, and `ef1 + ef2` lies inside a union that has both.
+    *
+    * It is `false` when the two would have to be compared by what they hold.
+    */
+  private def liesInside(tpe: DisplayType, members: List[DisplayType]): Boolean =
+    members.contains(tpe) || (tpe match {
+      case Plus(tpes) => tpes.forall(liesInside(_, members))
+      case Intersection(tpes) => tpes.exists(liesInside(_, members))
+      case Difference(base :: _) => liesInside(base, members)
+      case _ => false
+    })
+
+  /**
+    * Returns the operands of the intersection `tpe`, where an operand that is itself an intersection
+    * gives its operands.
+    */
+  private def intersectionOperands(tpe: Type): List[Type] = tpe match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) =>
+      intersectionOperands(tpe1) ::: intersectionOperands(tpe2)
+    case _ => List(tpe)
+  }
+
+  /**
+    * Returns the intersection of the given `tpes`, as a difference if one of them is a complement:
+    * `ef & ~A` is `ef - A`, which is how the effect of a handler is written in a signature.
+    *
+    * An intersection of nothing but complements is kept as it is.
+    */
+  private def mkIntersection(tpes: List[DisplayType]): DisplayType = {
+    val (complements, rest) = tpes.partition {
+      case Complement(_) => true
+      case _ => false
+    }
+    if (complements.isEmpty || rest.isEmpty) {
+      Intersection(tpes)
+    } else {
+      val base = rest match {
+        case tpe :: Nil => tpe
+        case _ => Intersection(rest)
+      }
+      val subtracted = complements.collect { case Complement(tpe) => tpe }
+      mkDifference(splitDifference(base) ++ subtracted)
+    }
+  }
+
+  /**
+    * Returns the difference of the given `tpes`, the first minus the rest, with its concrete effects
+    * resolved: two different effects have nothing in common, so `(ef + A + B) - A` is `(ef - A) + B`
+    * and `A - A` is pure.
+    *
+    * Only a concrete effect is resolved. A variable, an alias or an associated effect may hold
+    * anything, so what is subtracted from it stays, and so does anything subtracted that is not a
+    * concrete effect.
+    */
+  private def mkDifference(tpes: List[DisplayType]): DisplayType = tpes match {
+    case Nil => Difference(tpes)
+    case base :: subtracted =>
+      val (effects, others) = subtracted.flatMap(splitPluses).distinct.partition(isConcrete)
+      val members = splitPluses(base)
+
+      // A member is settled if it is a concrete effect, and each subtracted effect either is that
+      // effect or has nothing in common with it.
+      def isSettled(tpe: DisplayType): Boolean =
+        isConcrete(tpe) && effects.forall(eff => eff == tpe || !isSameEffect(eff, tpe))
+
+      if (effects.isEmpty || !members.exists(isSettled)) {
+        Difference(tpes)
+      } else {
+        // The members that are not settled stay together, where the first of them stood, with the
+        // effects subtracted from them.
+        val rest = members.filterNot(isSettled) match {
+          case tpe :: Nil => tpe
+          case unsettled => mkPlus(unsettled)
+        }
+        val first = members.indexWhere(tpe => !isSettled(tpe))
+        val resolved = members.zipWithIndex.flatMap {
+          case (tpe, _) if isSettled(tpe) => if (effects.contains(tpe)) Nil else List(tpe)
+          case (_, i) if i == first => List(Difference(splitDifference(rest) ++ effects))
+          case _ => Nil
+        }
+        mkPlus(resolved) match {
+          case Pure => Pure
+          case tpe if others.isEmpty => tpe
+          case tpe => Difference(splitDifference(tpe) ++ others)
+        }
+      }
+  }
+
+  /**
+    * Returns `true` if `tpe` is a concrete effect: an effect, with its arguments if it has any, or a
+    * region.
+    */
+  private def isConcrete(tpe: DisplayType): Boolean = tpe match {
+    case Effect(_) => true
+    case Apply(Effect(_), _) => true
+    case Region(_) => true
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if `tpe1` and `tpe2` are the same effect, whatever its arguments.
+    */
+  private def isSameEffect(tpe1: DisplayType, tpe2: DisplayType): Boolean = {
+    def sym(tpe: DisplayType): Option[Symbol.EffSym] = tpe match {
+      case Effect(s) => Some(s)
+      case Apply(Effect(s), _) => Some(s)
+      case _ => None
+    }
+    sym(tpe1).isDefined && sym(tpe1) == sym(tpe2)
   }
 
   /**

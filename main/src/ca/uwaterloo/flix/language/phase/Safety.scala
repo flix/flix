@@ -89,6 +89,9 @@ object Safety {
     case Expr.Var(_, _, _) =>
       ()
 
+    case Expr.Val(_, _, _) =>
+      ()
+
     case Expr.Hole(_, _, _, _, _) =>
       ()
 
@@ -229,6 +232,12 @@ object Safety {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
+    case Expr.Lazy(exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.Force(exp, _, _, _) =>
+      visitExp(exp)
+
     case Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
@@ -343,12 +352,6 @@ object Safety {
 
     case Expr.ParYield(frags, exp, _, _, _) =>
       frags.foreach(fragment => visitExp(fragment.exp))
-      visitExp(exp)
-
-    case Expr.Lazy(exp, _, _) =>
-      visitExp(exp)
-
-    case Expr.Force(exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.FixpointConstraintSet(cs, _, _) =>
@@ -551,7 +554,7 @@ object Safety {
     *   - No primitive type can be cast to a reference type and vice-versa.
     *   - No Bool type can be cast to a non-Bool type and vice-versa.
     */
-  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit sctx: SharedContext, flix: Flix): Unit = cast match {
+  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit sctx: SharedContext): Unit = cast match {
     case Expr.UncheckedCast(exp, declaredType, _, _, _, loc) =>
       val from = exp.tpe
       val to = declaredType

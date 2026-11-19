@@ -1149,7 +1149,7 @@ pub mod List {
             case (x :: rs1, y :: rs2) => loop(rs1, rs2, ks -> k(((z, zs) -> z :: zs) <$> f(x, y) <*> ks))
             case (_, _)               => k(Applicative.point(Nil))
         };
-        loop(xs, ys, x -> checked_ecast(x))
+        loop(xs, ys, x -> x)
 
     ///
     /// Returns a pair of lists, the first containing all first components in `l`
@@ -1317,8 +1317,8 @@ pub mod List {
     pub def toMapWith(f: a -> (k, v) \ ef, l: List[a]): Map[k, v] \ ef with Order[k] =
         foldLeft(
             (acc, x) -> {
-                let (key, val) = f(x);
-                Map.insert(key, val, acc)
+                let (key, value) = f(x);
+                Map.insert(key, value, acc)
             },
             Map.empty(),
             l

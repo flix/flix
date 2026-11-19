@@ -14,7 +14,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.jvm.{JavaField, JavaMethod}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EffSymOrRigidVar, SymbolSet}
-import ca.uwaterloo.flix.language.fmt.FormatType.formatType
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, Pretty, RichText}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
@@ -87,17 +87,18 @@ object TypeError {
     * Java constructor not found type error.
     *
     * @param tpes the types of the arguments.
-    * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class ConstructorNotFound(clazz: ClassDesc, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class ConstructorNotFound(clazz: ClassDesc, tpes: List[Type], loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E6025
 
-    def summary: String = s"Constructor not found: '${ClassDescs.binaryNameOf(clazz)}' with arguments (${formatTypes(tpes, Some(renv))})."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpes*)
+
+    def summary: String = s"Constructor not found: '${ClassDescs.binaryNameOf(clazz)}' with arguments (${formatTypes(tpes).plain})."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Constructor not found: '${red(ClassDescs.binaryNameOf(clazz))}' with arguments (${cyan(formatTypes(tpes, Some(renv)))}).
+      s""">> Constructor not found: '${red(ClassDescs.binaryNameOf(clazz))}' with arguments (${formatTypes(tpes).ansi(fmt)}).
          |
          |${highlight(loc, "cannot find constructor", fmt)}
          |
@@ -214,25 +215,26 @@ object TypeError {
     * @param label      the name of the extra label.
     * @param labelType  the type of the extra label.
     * @param recordType the record type where the label is missing.
-    * @param renv       the rigidity environment.
     * @param loc        the location where the error occurred.
     */
-  case class ExtraLabel(label: Name.Label, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class ExtraLabel(label: Name.Label, labelType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7574
+
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(labelType, recordType)
 
     def summary: String = s"Extra label '$label' of type '$labelType'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Extra label '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
+      s""">> Extra label '${red(label.name)}' of type '${Pretty.tpe(labelType).ansi(fmt)}'.
          |
          |${highlight(loc, "extra label.", fmt)}
          |
          |The record type:
          |
-         |  ${cyan(formatType(recordType, Some(renv)))}
+         |  ${Pretty.tpe(recordType).ansi(fmt)}
          |
-         |contains the extra label '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
+         |contains the extra label '${red(label.name)}' of type '${Pretty.tpe(labelType).ansi(fmt)}'.
          |""".stripMargin
     }
   }
@@ -248,7 +250,9 @@ object TypeError {
   case class FieldNotFound(base: SourceLocation, fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E6247
 
-    def summary: String = s"Field not found: '${fieldName.name}' on type '${formatType(tpe)}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe)
+
+    def summary: String = s"Field not found: '${fieldName.name}' on type '${Pretty.tpe(tpe).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
@@ -258,7 +262,7 @@ object TypeError {
            |Available fields:
            |${availableFields.map(f => s"  - ${formatField(f)}").mkString("\n")}
            |""".stripMargin
-      s""">> Field not found: '${red(fieldName.name)}' on type '${magenta(formatType(tpe))}'.
+      s""">> Field not found: '${red(fieldName.name)}' on type '${Pretty.tpe(tpe).ansi(fmt)}'.
          |
          |${highlight(loc, "cannot find field", fmt)}
          |$available""".stripMargin
@@ -353,14 +357,16 @@ object TypeError {
     * @param tpes       the types of the arguments.
     * @param loc        the location where the error occurred.
     */
-  case class MethodNotFound(methodName: Name.Ident, tpe: Type, tpes: List[Type], loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MethodNotFound(methodName: Name.Ident, tpe: Type, tpes: List[Type], loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6136
 
-    def summary: String = s"Method not found: '${methodName.name}' on type '${formatType(tpe)}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes((tpe :: tpes)*)
+
+    def summary: String = s"Method not found: '${methodName.name}' on type '${Pretty.tpe(tpe).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Method not found: '${red(methodName.name)}' on type '${magenta(formatType(tpe))}' with arguments (${cyan(formatTypes(tpes))}).
+      s""">> Method not found: '${red(methodName.name)}' on type '${Pretty.tpe(tpe).ansi(fmt)}' with arguments (${formatTypes(tpes).ansi(fmt)}).
          |
          |${highlight(loc, "cannot find method", fmt)}
          |
@@ -378,22 +384,23 @@ object TypeError {
     * @param baseType2 the second effect formula.
     * @param fullType1 the first full type in which the first effect formula occurs.
     * @param fullType2 the second full type in which the second effect formula occurs.
-    * @param renv      the rigidity environment.
     * @param loc       the location where the error occurred.
     */
-  case class MismatchedEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6469
 
-    def summary: String = s"Unable to unify the effect formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(baseType1, baseType2, fullType1, fullType2)
+
+    def summary: String = s"Unable to unify the effect formulas '${Pretty.tpe(baseType1).plain}' and '${Pretty.tpe(baseType2).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unable to unify the effect formulas: '${red(formatType(baseType1, Some(renv), minimizeEffs = true))}' and '${red(formatType(baseType2, Some(renv), minimizeEffs = true))}'.
+      s""">> Unable to unify the effect formulas: '${Pretty.tpe(baseType1).ansi(fmt)}' and '${Pretty.tpe(baseType2).ansi(fmt)}'.
          |
          |${highlight(loc, "mismatched effect formulas.", fmt)}
          |
-         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
-         |Type Two: ${magenta(formatType(fullType2, Some(renv), minimizeEffs = true))}
+         |Type One: ${Pretty.tpe(fullType1).ansi(fmt)}
+         |Type Two: ${Pretty.tpe(fullType2).ansi(fmt)}
          |""".stripMargin
     }
   }
@@ -406,26 +413,27 @@ object TypeError {
     * @param tpe2      the second type (the part of the label's type that could not be unified).
     * @param fullType1 the first enclosing type.
     * @param fullType2 the second enclosing type.
-    * @param renv      the rigidity environment.
     * @param loc1      the location of the first occurrence of the label.
     * @param loc2      the location of the second occurrence of the label.
     * @param loc       the location where the unification error occurred.
     */
-  case class MismatchedLabelType(label: Name.Label, tpe1: Type, tpe2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedLabelType(label: Name.Label, tpe1: Type, tpe2: Type, fullType1: Type, fullType2: Type, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7491
 
-    def summary: String = s"Mismatched types for label '${label.name}': '${formatType(tpe1, Some(renv))}' and '${formatType(tpe2, Some(renv))}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe1, tpe2, fullType1, fullType2)
+
+    def summary: String = s"Mismatched types for label '${label.name}': '${Pretty.tpe(tpe1).plain}' and '${Pretty.tpe(tpe2).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched types for label '${cyan(label.name)}': '${red(formatType(tpe1, Some(renv)))}' and '${red(formatType(tpe2, Some(renv)))}'.
+      s""">> Mismatched types for label '${cyan(label.name)}': '${Pretty.tpe(tpe1).ansi(fmt)}' and '${Pretty.tpe(tpe2).ansi(fmt)}'.
          |
-         |${highlight(loc1, s"'${formatType(tpe1, Some(renv))}' comes from here.", fmt)}
+         |${highlight(loc1, s"'${Pretty.tpe(tpe1).ansi(fmt)}' comes from here.", fmt)}
          |
-         |${highlight(loc2, s"'${formatType(tpe2, Some(renv))}' comes from here.", fmt)}
+         |${highlight(loc2, s"'${Pretty.tpe(tpe2).ansi(fmt)}' comes from here.", fmt)}
          |
-         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
-         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
+         |Type One: ${Pretty.tpe(fullType1).ansi(fmt)}
+         |Type Two: ${Pretty.tpe(fullType2).ansi(fmt)}
          |""".stripMargin
     }
   }
@@ -494,26 +502,27 @@ object TypeError {
     * @param tpe2      the second type (the part of the predicate's type that could not be unified).
     * @param fullType1 the first enclosing type.
     * @param fullType2 the second enclosing type.
-    * @param renv      the rigidity environment.
     * @param loc1      the location of the first occurrence of the predicate.
     * @param loc2      the location of the second occurrence of the predicate.
     * @param loc       the location where the unification error occurred.
     */
-  case class MismatchedPredicateTypes(pred: Name.Pred, tpe1: Type, tpe2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedPredicateTypes(pred: Name.Pred, tpe1: Type, tpe2: Type, fullType1: Type, fullType2: Type, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6710
 
-    def summary: String = s"Mismatched types for predicate '${pred.name}': '${formatType(tpe1, Some(renv))}' and '${formatType(tpe2, Some(renv))}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe1, tpe2, fullType1, fullType2)
+
+    def summary: String = s"Mismatched types for predicate '${pred.name}': '${Pretty.tpe(tpe1).plain}' and '${Pretty.tpe(tpe2).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched types for predicate '${cyan(pred.name)}': '${red(formatType(tpe1, Some(renv)))}' and '${red(formatType(tpe2, Some(renv)))}'.
+      s""">> Mismatched types for predicate '${cyan(pred.name)}': '${Pretty.tpe(tpe1).ansi(fmt)}' and '${Pretty.tpe(tpe2).ansi(fmt)}'.
          |
-         |${highlight(loc1, s"'${formatType(tpe1, Some(renv))}' comes from here.", fmt)}
+         |${highlight(loc1, s"'${Pretty.tpe(tpe1).ansi(fmt)}' comes from here.", fmt)}
          |
-         |${highlight(loc2, s"'${formatType(tpe2, Some(renv))}' comes from here.", fmt)}
+         |${highlight(loc2, s"'${Pretty.tpe(tpe2).ansi(fmt)}' comes from here.", fmt)}
          |
-         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
-         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
+         |Type One: ${Pretty.tpe(fullType1).ansi(fmt)}
+         |Type Two: ${Pretty.tpe(fullType2).ansi(fmt)}
          |""".stripMargin
     }
   }
@@ -525,24 +534,25 @@ object TypeError {
     * @param baseType2 the second base type.
     * @param fullType1 the first full type.
     * @param fullType2 the second full type.
-    * @param renv      the rigidity environment.
     * @param loc       the location where the error occurred.
     */
-  case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6794
 
     def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(fullType1), SymbolSet.symbolsOf(fullType2))
 
-    def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb)}' and '${formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb)}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(baseType1, baseType2, fullType1, fullType2).copy(qualify = amb)
+
+    def summary: String = s"Unable to unify the types '${Pretty.tpe(fullType1).plain}' and '${Pretty.tpe(fullType2).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unable to unify the types: '${red(formatType(baseType1, Some(renv), minimizeEffs = true, amb = amb))}' and '${red(formatType(baseType2, Some(renv), minimizeEffs = true, amb = amb))}'.
+      s""">> Unable to unify the types: '${Pretty.tpe(baseType1).ansi(fmt)}' and '${Pretty.tpe(baseType2).ansi(fmt)}'.
          |
          |${highlight(loc, "mismatched types.", fmt)}
          |
-         |Type One: ${cyan(formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb))}
-         |Type Two: ${magenta(formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb))}
+         |Type One: ${Pretty.tpe(fullType1).ansi(fmt)}
+         |Type Two: ${Pretty.tpe(fullType2).ansi(fmt)}
          |""".stripMargin
     }
   }
@@ -559,26 +569,27 @@ object TypeError {
     * @param tpe2   the second mismatched (base) type.
     * @param eff1   the first effect application.
     * @param eff2   the second effect application.
-    * @param renv   the rigidity environment.
     * @param loc    the location where the error occurred.
     */
-  case class MismatchedEffectArgument(sym: Symbol.EffSym, ith: Int, tparam: Name.Ident, tpe1: Type, tpe2: Type, eff1: Type, eff2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedEffectArgument(sym: Symbol.EffSym, ith: Int, tparam: Name.Ident, tpe1: Type, tpe2: Type, eff1: Type, eff2: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6795
 
     def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(eff1), SymbolSet.symbolsOf(eff2))
 
-    def summary: String = s"Mismatched type arguments for effect '$sym': '${formatType(tpe1, Some(renv), amb = amb)}' and '${formatType(tpe2, Some(renv), amb = amb)}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe1, tpe2, eff1, eff2).copy(qualify = amb)
+
+    def summary: String = s"Mismatched type arguments for effect '$sym': '${Pretty.tpe(tpe1).plain}' and '${Pretty.tpe(tpe2).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched type arguments for effect '${magenta(sym.toString)}': '${red(formatType(tpe1, Some(renv), amb = amb))}' and '${red(formatType(tpe2, Some(renv), amb = amb))}'.
+      s""">> Mismatched type arguments for effect '${magenta(sym.toString)}': '${Pretty.tpe(tpe1).ansi(fmt)}' and '${Pretty.tpe(tpe2).ansi(fmt)}'.
          |
          |${highlight(loc, "mismatched effect type argument.", fmt)}
          |
          |The effect '${magenta(sym.toString)}' is used with different types for its ${Grammar.ordinal(ith)} type parameter '${cyan(tparam.name)}'.
          |
-         |Effect One: ${cyan(formatType(eff1, Some(renv), amb = amb))}
-         |Effect Two: ${magenta(formatType(eff2, Some(renv), amb = amb))}
+         |Effect One: ${Pretty.tpe(eff1).ansi(fmt)}
+         |Effect Two: ${Pretty.tpe(eff2).ansi(fmt)}
          |""".stripMargin
     }
   }
@@ -593,24 +604,25 @@ object TypeError {
     * @param nonArrowType the non-function type.
     * @param fullType1    the first full type.
     * @param fullType2    the second full type.
-    * @param renv         the rigidity environment.
     * @param loc          the location where the error occurred.
     */
-  case class MismatchedArrowAndNonArrow(arrowType: Type, nonArrowType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedArrowAndNonArrow(arrowType: Type, nonArrowType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6925
 
     def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(fullType1), SymbolSet.symbolsOf(fullType2))
 
-    def summary: String = s"Unable to unify the function type '${formatType(arrowType, Some(renv), minimizeEffs = true, amb = amb)}' with the non-function type '${formatType(nonArrowType, Some(renv), minimizeEffs = true, amb = amb)}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(arrowType, nonArrowType, fullType1, fullType2).copy(qualify = amb)
+
+    def summary: String = s"Unable to unify the function type '${Pretty.tpe(arrowType).plain}' with the non-function type '${Pretty.tpe(nonArrowType).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unable to unify the ${magenta("function")} type '${red(formatType(arrowType, Some(renv), minimizeEffs = true, amb = amb))}' with the non-function type '${red(formatType(nonArrowType, Some(renv), minimizeEffs = true, amb = amb))}'.
+      s""">> Unable to unify the ${magenta("function")} type '${Pretty.tpe(arrowType).ansi(fmt)}' with the non-function type '${Pretty.tpe(nonArrowType).ansi(fmt)}'.
          |
          |${highlight(loc, "mismatched types.", fmt)}
          |
-         |Type One: ${cyan(formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb))}
-         |Type Two: ${magenta(formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb))}
+         |Type One: ${Pretty.tpe(fullType1).ansi(fmt)}
+         |Type Two: ${Pretty.tpe(fullType2).ansi(fmt)}
          |
          |${underline("Explanation:")} A ${magenta("function")} type can never be equal to a non-function type, regardless of effects.
          |""".stripMargin
@@ -622,24 +634,25 @@ object TypeError {
     *
     * @param trt  the trait of the instance.
     * @param tpe  the type of the instance.
-    * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class MissingInstance(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstance(trt: Symbol.TraitSym, tpe: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6805
 
-    def summary: String = s"Missing instance: '${trt.name}' for type '${formatType(tpe, Some(renv))}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe)
+
+    def summary: String = s"Missing instance: '${trt.name}' for type '${Pretty.tpe(tpe).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing instance: '${cyan(trt.name)}' for type '${red(formatType(tpe, Some(renv)))}'.
+      s""">> Missing instance: '${cyan(trt.name)}' for type '${Pretty.tpe(tpe).ansi(fmt)}'.
          |
          |${highlight(loc, "missing instance", fmt)}
          |
-         |${underline("Explanation:")} The type '${formatType(tpe, Some(renv))}' does not have an
+         |${underline("Explanation:")} The type '${Pretty.tpe(tpe).ansi(fmt)}' does not have an
          |instance of the '${trt.name}' trait. To fix this, either:
          |
-         |  (a) Define an instance of '${trt.name}' for '${formatType(tpe, Some(renv))}', or
+         |  (a) Define an instance of '${trt.name}' for '${Pretty.tpe(tpe).ansi(fmt)}', or
          |  (b) Use 'with' to derive an instance, if the trait supports derivation.
          |""".stripMargin
     }
@@ -650,17 +663,18 @@ object TypeError {
     *
     * @param trt  the trait of the instance.
     * @param tpe  the type of the instance.
-    * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class MissingInstanceArrow(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstanceArrow(trt: Symbol.TraitSym, tpe: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6916
 
-    def summary: String = s"Missing instance: '${trt.name}' for function type '${formatType(tpe, Some(renv))}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe)
+
+    def summary: String = s"Missing instance: '${trt.name}' for function type '${Pretty.tpe(tpe).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing instance: '${cyan(trt.name)}' for ${magenta("function")} type '${red(formatType(tpe, Some(renv)))}'.
+      s""">> Missing instance: '${cyan(trt.name)}' for ${magenta("function")} type '${Pretty.tpe(tpe).ansi(fmt)}'.
          |
          |${highlight(loc, "missing instance", fmt)}
          |
@@ -673,25 +687,26 @@ object TypeError {
     * Missing `Eq` instance.
     *
     * @param tpe  the type of the instance.
-    * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class MissingInstanceEq(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstanceEq(tpe: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7027
 
-    def summary: String = s"Equality is not defined on '${formatType(tpe, Some(renv))}'. Define or derive instance of Eq."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe)
+
+    def summary: String = s"Equality is not defined on '${Pretty.tpe(tpe).plain}'. Define or derive instance of Eq."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Equality is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of Eq.
+      s""">> Equality is not defined on ${Pretty.tpe(tpe).ansi(fmt)}. Define or derive an instance of Eq.
          |
          |${highlight(loc, s"missing Eq instance", fmt)}
          |
          |${underline("Explanation:")}
-         |To define equality on '${formatType(tpe, Some(renv))}', either:
+         |To define equality on '${Pretty.tpe(tpe).ansi(fmt)}', either:
          |
-         |  (a) define an instance of Eq for '${formatType(tpe, Some(renv))}', or
-         |  (b) use 'with' to derive an instance of Eq for '${formatType(tpe, Some(renv))}', for example:.
+         |  (a) define an instance of Eq for '${Pretty.tpe(tpe).ansi(fmt)}', or
+         |  (b) use 'with' to derive an instance of Eq for '${Pretty.tpe(tpe).ansi(fmt)}', for example:.
          |
          |  enum Color with Eq {
          |    case Red, Green, Blue
@@ -704,25 +719,26 @@ object TypeError {
     * Missing `Order` instance.
     *
     * @param tpe  the type of the instance.
-    * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class MissingInstanceOrder(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstanceOrder(tpe: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7138
 
-    def summary: String = s"Order is not defined on '${formatType(tpe, Some(renv))}'. Define or derive instance of Order."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe)
+
+    def summary: String = s"Order is not defined on '${Pretty.tpe(tpe).plain}'. Define or derive instance of Order."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Order is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of Order.
+      s""">> Order is not defined on ${Pretty.tpe(tpe).ansi(fmt)}. Define or derive an instance of Order.
          |
          |${highlight(loc, s"missing Order instance", fmt)}
          |
          |${underline("Explanation:")}
-         |To define an order on '${formatType(tpe, Some(renv))}', either:
+         |To define an order on '${Pretty.tpe(tpe).ansi(fmt)}', either:
          |
-         |  (a) define an instance of Order for '${formatType(tpe, Some(renv))}', or
-         |  (b) use 'with' to derive an instance of Order for '${formatType(tpe, Some(renv))}', for example:.
+         |  (a) define an instance of Order for '${Pretty.tpe(tpe).ansi(fmt)}', or
+         |  (b) use 'with' to derive an instance of Order for '${Pretty.tpe(tpe).ansi(fmt)}', for example:.
          |
          |  enum Color with Eq, Order {
          |    case Red, Green, Blue
@@ -737,25 +753,26 @@ object TypeError {
     * Missing `ToString` instance.
     *
     * @param tpe  the type of the instance.
-    * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class MissingInstanceToString(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstanceToString(tpe: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7249
 
-    def summary: String = s"ToString is not defined for '${formatType(tpe, Some(renv))}'. Define or derive instance of ToString."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe)
+
+    def summary: String = s"ToString is not defined for '${Pretty.tpe(tpe).plain}'. Define or derive instance of ToString."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> ToString is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of ToString.
+      s""">> ToString is not defined on ${Pretty.tpe(tpe).ansi(fmt)}. Define or derive an instance of ToString.
          |
          |${highlight(loc, s"missing ToString instance", fmt)}
          |
          |${underline("Explanation:")}
-         |To define a string representation of '${formatType(tpe, Some(renv))}', either:
+         |To define a string representation of '${Pretty.tpe(tpe).ansi(fmt)}', either:
          |
-         |  (a) define an instance of ToString for '${formatType(tpe, Some(renv))}', or
-         |  (b) use 'with' to derive an instance of ToString for '${formatType(tpe, Some(renv))}', for example:.
+         |  (a) define an instance of ToString for '${Pretty.tpe(tpe).ansi(fmt)}', or
+         |  (b) use 'with' to derive an instance of ToString for '${Pretty.tpe(tpe).ansi(fmt)}', for example:.
          |
          |  enum Color with ToString {
          |    case Red, Green, Blue
@@ -769,17 +786,18 @@ object TypeError {
     *
     * @param trt  the trait of the constraint.
     * @param tpe  the type of the constraint.
-    * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E8243
 
-    def summary: String = s"Missing trait constraint: '$trt' for type '${formatType(tpe, Some(renv))}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe)
+
+    def summary: String = s"Missing trait constraint: '$trt' for type '${Pretty.tpe(tpe).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing trait constraint: '${magenta(trt.toString)}' for type '${red(formatType(tpe, Some(renv)))}'.
+      s""">> Missing trait constraint: '${magenta(trt.toString)}' for type '${Pretty.tpe(tpe).ansi(fmt)}'.
          |
          |${highlight(loc, "missing trait constraint", fmt)}
          |""".stripMargin
@@ -793,14 +811,16 @@ object TypeError {
     * @param tpe the actual type.
     * @param loc the location where the error occurred.
     */
-  case class NonUnitStatement(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class NonUnitStatement(tpe: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E8354
 
-    def summary: String = s"Non-unit statement: has type '${formatType(tpe)}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpe)
+
+    def summary: String = s"Non-unit statement: has type '${Pretty.tpe(tpe).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Non-unit statement: has type '${red(formatType(tpe))}'.
+      s""">> Non-unit statement: has type '${Pretty.tpe(tpe).ansi(fmt)}'.
          |
          |${highlight(loc, "non-unit type", fmt)}
          |
@@ -823,17 +843,18 @@ object TypeError {
     * @param clazz      the Java class expected to contain the static method.
     * @param methodName the name of the method.
     * @param tpes       the types of the arguments.
-    * @param renv       the rigidity environment.
     * @param loc        the location where the error occurred.
     */
-  case class StaticMethodNotFound(clazz: ClassDesc, methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class StaticMethodNotFound(clazz: ClassDesc, methodName: Name.Ident, tpes: List[Type], loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6358
+
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(tpes*)
 
     def summary: String = s"Static method not found: '${methodName.name}' in class '${ClassDescs.binaryNameOf(clazz)}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Static method not found: '${red(methodName.name)}' in class '${magenta(ClassDescs.binaryNameOf(clazz))}' with arguments (${cyan(formatTypes(tpes, Some(renv)))}).
+      s""">> Static method not found: '${red(methodName.name)}' in class '${magenta(ClassDescs.binaryNameOf(clazz))}' with arguments (${formatTypes(tpes).ansi(fmt)}).
          |
          |${highlight(loc, "cannot find static method", fmt)}
          |
@@ -871,25 +892,26 @@ object TypeError {
     * @param label      the name of the missing label.
     * @param labelType  the type of the missing label.
     * @param recordType the record type where the label is missing.
-    * @param renv       the rigidity environment.
     * @param loc        the location where the error occurred.
     */
-  case class UndefinedLabel(label: Name.Label, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class UndefinedLabel(label: Name.Label, labelType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7463
 
-    def summary: String = s"Missing label: '${label.name}' of type '${formatType(labelType, Some(renv))}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(labelType, recordType)
+
+    def summary: String = s"Missing label: '${label.name}' of type '${Pretty.tpe(labelType).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Missing label: '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
+      s""">> Missing label: '${red(label.name)}' of type '${Pretty.tpe(labelType).ansi(fmt)}'.
          |
          |${highlight(loc, "missing label", fmt)}
          |
          |The record type:
          |
-         |  ${cyan(formatType(recordType, Some(renv)))}
+         |  ${Pretty.tpe(recordType).ansi(fmt)}
          |
-         |does not contain the label '${red(label.name)}' of type ${cyan(formatType(labelType, Some(renv)))}.
+         |does not contain the label '${red(label.name)}' of type ${Pretty.tpe(labelType).ansi(fmt)}.
          |""".stripMargin
     }
   }
@@ -903,21 +925,23 @@ object TypeError {
     * @param actual   the actual type.
     * @param loc      the location where the error occurred.
     */
-  case class UnexpectedArg(sym: Symbol, ith: Int, expected: Type, actual: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class UnexpectedArg(sym: Symbol, ith: Int, expected: Type, actual: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7685
 
-    def summary: String = s"Unexpected argument: expected '${formatType(expected, Some(renv))}', got '${formatType(actual, Some(renv))}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(expected, actual)
+
+    def summary: String = s"Unexpected argument: expected '${Pretty.tpe(expected).plain}', got '${Pretty.tpe(actual).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected argument: expected '${cyan(formatType(expected, Some(renv)))}', got '${red(formatType(actual, Some(renv)))}'.
+      s""">> Unexpected argument: expected '${Pretty.tpe(expected).ansi(fmt)}', got '${Pretty.tpe(actual).ansi(fmt)}'.
          |
          |${highlight(loc, "unexpected argument type", fmt)}
          |
-         |The function '${magenta(sym.toString)}' expects its ${Grammar.ordinal(ith)} argument to be of type '${cyan(formatType(expected, Some(renv)))}'.
+         |The function '${magenta(sym.toString)}' expects its ${Grammar.ordinal(ith)} argument to be of type '${Pretty.tpe(expected).ansi(fmt)}'.
          |
-         |Expected: ${cyan(formatType(expected, Some(renv)))}
-         |  Actual: ${red(formatType(actual, Some(renv)))}
+         |Expected: ${Pretty.tpe(expected).ansi(fmt)}
+         |  Actual: ${Pretty.tpe(actual).ansi(fmt)}
          |""".stripMargin
     }
   }
@@ -927,19 +951,20 @@ object TypeError {
     *
     * @param expected the expected type.
     * @param inferred the inferred type.
-    * @param renv     the rigidity environment.
     * @param loc      the location of the inferred type.
     */
-  case class UnexpectedType(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class UnexpectedType(expected: Type, inferred: Type, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E7796
 
     def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(expected), SymbolSet.symbolsOf(inferred))
 
-    def summary: String = s"Unexpected type: expected '${formatType(expected, Some(renv), amb = amb)}', found '${formatType(inferred, Some(renv), amb = amb)}'."
+    private implicit lazy val opts: FormatOptions = FormatOptions.forTypes(expected, inferred).copy(qualify = amb)
+
+    def summary: String = s"Unexpected type: expected '${Pretty.tpe(expected).plain}', found '${Pretty.tpe(inferred).plain}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected type: expected '${cyan(formatType(expected, Some(renv), amb = amb))}', found '${red(formatType(inferred, Some(renv), amb = amb))}'.
+      s""">> Unexpected type: expected '${Pretty.tpe(expected).ansi(fmt)}', found '${Pretty.tpe(inferred).ansi(fmt)}'.
          |
          |${highlight(loc, "unexpected type", fmt)}
          |""".stripMargin
@@ -1032,10 +1057,10 @@ object TypeError {
   }
 
   /**
-    * Returns the types `tpes` formatted as a comma-separated list.
+    * Returns the types `tpes` as a comma-separated list.
     */
-  private def formatTypes(tpes: List[Type], renv: Option[RigidityEnv] = None)(implicit flix: Flix): String = {
-    tpes.map(formatType(_, renv)).mkString(", ")
+  private def formatTypes(tpes: List[Type])(implicit o: FormatOptions): RichText = {
+    RichText.sep(", ", tpes.map(tpe => Pretty.tpe(tpe)))
   }
 
   /**

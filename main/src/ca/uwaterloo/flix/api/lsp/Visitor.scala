@@ -142,7 +142,7 @@ object Visitor {
   }
 
   private def visitAssocTypeDef(tdefn: AssocTypeDef)(implicit a: Acceptor, c: Consumer): Unit = {
-    val AssocTypeDef(_, _, symUse, arg, _, loc) = tdefn
+    val AssocTypeDef(_, _, symUse, arg, tpe, loc) = tdefn
     if (!a.accept(loc)) {
       return
     }
@@ -151,6 +151,7 @@ object Visitor {
 
     visitAssocTypeSymUse(symUse)
     visitType(arg)
+    visitType(tpe)
   }
 
   private def visitAssocTypeSymUse(symUse: AssocTypeSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -324,6 +325,7 @@ object Visitor {
     expr match {
       case Expr.Cst(_, _, _) => ()
       case Expr.Var(_, _, _) => ()
+      case Expr.Val(_, _, _) => () // TODO VAL: no LSP support (e.g. go-to-definition) yet.
       case Expr.Hole(_, _, _, _, _) => ()
 
       case Expr.HoleWithExp(exp, _, _, _, _) =>
@@ -472,8 +474,16 @@ object Visitor {
       case Expr.VectorLength(exp, _) =>
         visitExpr(exp)
 
-      case Expr.Ascribe(exp, _, _, _, _, _) =>
+      case Expr.Lazy(exp, _, _) =>
         visitExpr(exp)
+
+      case Expr.Force(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.Ascribe(exp, expectedType, expectedEff, _, _, _) =>
+        visitExpr(exp)
+        expectedType.foreach(visitType)
+        expectedEff.foreach(visitType)
 
       case Expr.InstanceOf(exp, _, _) =>
         visitExpr(exp)
@@ -560,12 +570,6 @@ object Visitor {
       case Expr.ParYield(frags, exp, _, _, _) =>
         visitExpr(exp)
         frags.foreach(visitParYieldFrag)
-
-      case Expr.Lazy(exp, _, _) =>
-        visitExpr(exp)
-
-      case Expr.Force(exp, _, _, _) =>
-        visitExpr(exp)
 
       case Expr.FixpointConstraintSet(cs, _, _) =>
         cs.foreach(visitConstraint)

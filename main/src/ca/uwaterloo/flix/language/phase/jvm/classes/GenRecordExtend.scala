@@ -82,6 +82,7 @@ object GenRecordExtend {
         DUP()
         INVOKESPECIAL(Constructor(value))
         DUP()
+        // The label is copied by reference, so the copy holds the same constant pool string.
         thisLoad()
         GETFIELD(LabelField(value))
         PUTFIELD(LabelField(value))
@@ -100,14 +101,21 @@ object GenRecordExtend {
   }
 
   /**
-    * Compares the label of `this`and `ALOAD(1)` and executes the designated branch.
+    * Compares the label of `this` and `ALOAD(1)` and executes the designated branch.
+    *
+    * The labels are compared by reference, not with `equals`. This is sound because every
+    * label is loaded from the constant pool with an `ldc` instruction, and the JVM interns
+    * such strings: equal labels are the same object, whichever class loaded them.
+    *
+    * The labels are loaded by `RecordSelect`, `RecordExtend`, and `RecordRestrict` in
+    * [[ca.uwaterloo.flix.language.phase.jvm.GenExpression]]. A label that is built at
+    * runtime -- and not interned -- would never be found.
     */
   private def caseOnLabelEquality(value: ClassDesc)(cases: Branch => Unit)(implicit mv: MethodVisitor): Unit = {
     thisLoad()
     GETFIELD(LabelField(value))
     ALOAD(1)
-    INVOKEVIRTUAL(ClassConstants.Object.EqualsMethod)
-    branch(Condition.Bool)(cases)
+    branch(Condition.ACMPEQ)(cases)
   }
 
 }

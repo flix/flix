@@ -116,6 +116,10 @@ object Dependencies {
     case Expr.Var(_, tpe, _) =>
       visitType(tpe)
 
+    case Expr.Val(symUse, tpe, _) =>
+      visitSymUse(symUse)
+      visitType(tpe)
+
     case Expr.Hole(_, _, tpe, eff, _) =>
       visitType(tpe)
       visitType(eff)
@@ -138,38 +142,7 @@ object Dependencies {
       visitExp(exp)
       visitType(tpe)
 
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, _, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.ApplyDef(symUse, exps, _, itpe, tpe, eff, _, _) =>
-      visitSymUse(symUse)
-      exps.foreach(visitExp)
-      visitType(itpe)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, _, _) =>
-      visitSymUse(symUse)
-      exps.foreach(visitExp)
-      visitType(arrowTpe)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.ApplyOp(op, exps, tpe, eff, _, _) =>
-      visitSymUse(op)
-      exps.foreach(visitExp)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.ApplySig(symUse, exps, _, _, itpe, tpe, eff, _, _) =>
-      visitSymUse(symUse)
-      exps.foreach(visitExp)
-      visitType(itpe)
-      visitType(tpe)
-      visitType(eff)
+    case e: Expr.ApplyExpr => visitApplyExpr(e)
 
     case Expr.Unary(_, exp, tpe, eff, _) =>
       visitExp(exp)
@@ -238,6 +211,109 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
+    case e: Expr.DataExpr => visitDataExpr(e)
+
+    case Expr.Ascribe(exp, _, _, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.InstanceOf(exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.CheckedCast(_, exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, _) =>
+      visitExp(exp)
+      declaredType.toList.foreach(visitType)
+      declaredEff.toList.foreach(visitType)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.Unsafe(exp, runEff, asEff, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(runEff)
+      asEff.foreach(visitType)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.TryCatch(exp, rules, tpe, eff, _) =>
+      visitExp(exp)
+      rules.foreach(visitCatchRule)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.Throw(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.Handler(symUse, rules, bodyType, bodyEff, handledEff, tpe, _) =>
+      visitSymUse(symUse)
+      rules.foreach(visitHandlerRule)
+      visitType(bodyType)
+      visitType(bodyEff)
+      visitType(handledEff)
+      visitType(tpe)
+
+    case Expr.RunWith(exp1, exp2, tpe, eff, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitType(tpe)
+      visitType(eff)
+
+    case e: Expr.JvmExpr => visitJvmExpr(e)
+
+    case e: Expr.ChannelExpr => visitChannelExpr(e)
+
+    case e: Expr.FixpointExpr => visitFixpointExpr(e)
+
+    case Expr.Error(_, tpe, eff) =>
+      visitType(tpe)
+      visitType(eff)
+  }
+
+  /** Visits the application `exp0`, recording its dependencies. */
+  private def visitApplyExpr(exp0: Expr.ApplyExpr)(implicit sctx: SharedContext): Unit = exp0 match {
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.ApplyDef(symUse, exps, _, itpe, tpe, eff, _, _) =>
+      visitSymUse(symUse)
+      exps.foreach(visitExp)
+      visitType(itpe)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, _, _) =>
+      visitSymUse(symUse)
+      exps.foreach(visitExp)
+      visitType(arrowTpe)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.ApplyOp(op, exps, tpe, eff, _, _) =>
+      visitSymUse(op)
+      exps.foreach(visitExp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.ApplySig(symUse, exps, _, _, itpe, tpe, eff, _, _) =>
+      visitSymUse(symUse)
+      exps.foreach(visitExp)
+      visitType(itpe)
+      visitType(tpe)
+      visitType(eff)
+  }
+
+  /** Visits the data expression `exp0`, recording its dependencies: tags, tuples, records, arrays, structs, vectors and lazy values. */
+  private def visitDataExpr(exp0: Expr.DataExpr)(implicit sctx: SharedContext): Unit = exp0 match {
     case Expr.Tag(symUse, exps, tpe, eff, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
@@ -341,59 +417,18 @@ object Dependencies {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, _, _, tpe, eff, _) =>
+    case Expr.Lazy(exp, tpe, _) =>
+      visitExp(exp)
+      visitType(tpe)
+
+    case Expr.Force(exp, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
+  }
 
-    case Expr.InstanceOf(exp, _, _) =>
-      visitExp(exp)
-
-    case Expr.CheckedCast(_, exp, tpe, eff, _) =>
-      visitExp(exp)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, _) =>
-      visitExp(exp)
-      declaredType.toList.foreach(visitType)
-      declaredEff.toList.foreach(visitType)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.Unsafe(exp, runEff, asEff, tpe, eff, _) =>
-      visitExp(exp)
-      visitType(runEff)
-      asEff.foreach(visitType)
-      visitType(tpe)
-      visitType(eff)
-
-
-    case Expr.TryCatch(exp, rules, tpe, eff, _) =>
-      visitExp(exp)
-      rules.foreach(visitCatchRule)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.Throw(exp, tpe, eff, _) =>
-      visitExp(exp)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.Handler(symUse, rules, bodyType, bodyEff, handledEff, tpe, _) =>
-      visitSymUse(symUse)
-      rules.foreach(visitHandlerRule)
-      visitType(bodyType)
-      visitType(bodyEff)
-      visitType(handledEff)
-      visitType(tpe)
-
-    case Expr.RunWith(exp1, exp2, tpe, eff, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
-      visitType(tpe)
-      visitType(eff)
-
+  /** Visits the Java interop expression `exp0`, recording its dependencies. */
+  private def visitJvmExpr(exp0: Expr.JvmExpr)(implicit sctx: SharedContext): Unit = exp0 match {
     case Expr.InvokeConstructor(_, exps, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
@@ -445,9 +480,16 @@ object Dependencies {
       visitType(eff)
       constructors.foreach(visitJvmConstructor)
       methods.foreach(visitJvmMethod)
+  }
 
-
+  /** Visits the channel or concurrency expression `exp0`, recording its dependencies. */
+  private def visitChannelExpr(exp0: Expr.ChannelExpr)(implicit sctx: SharedContext): Unit = exp0 match {
     case Expr.NewChannel(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.GetChannel(exp, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
@@ -475,16 +517,10 @@ object Dependencies {
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
+  }
 
-    case Expr.Lazy(exp, tpe, _) =>
-      visitExp(exp)
-      visitType(tpe)
-
-    case Expr.Force(exp, tpe, eff, _) =>
-      visitExp(exp)
-      visitType(tpe)
-      visitType(eff)
-
+  /** Visits the Datalog expression `exp0`, recording its dependencies. */
+  private def visitFixpointExpr(exp0: Expr.FixpointExpr)(implicit sctx: SharedContext): Unit = exp0 match {
     case Expr.FixpointConstraintSet(cs, tpe, _) =>
       cs.foreach(visitConstrait)
       visitType(tpe)
@@ -525,15 +561,6 @@ object Dependencies {
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
-
-    case Expr.Error(_, tpe, eff) =>
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.GetChannel(exp, tpe, eff, _) =>
-      visitExp(exp)
-      visitType(tpe)
-      visitType(eff)
   }
 
   private def visitType(tpe: Type)(implicit sctx: SharedContext): Unit = tpe match {
@@ -562,6 +589,7 @@ object Dependencies {
     case SymUse.SigSymUse(sym, loc) => addDependency(sym.loc, loc)
     case SymUse.StructFieldSymUse(sym, loc) => addDependency(sym.loc, loc)
     case SymUse.TraitSymUse(sym, loc) => addDependency(sym.loc, loc)
+    case SymUse.ValSymUse(sym, loc) => addDependency(sym.loc, loc)
     case _ => ()
   }
 

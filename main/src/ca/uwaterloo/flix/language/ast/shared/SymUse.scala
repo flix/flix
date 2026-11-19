@@ -77,6 +77,11 @@ object SymUse {
   case class TraitSymUse(sym: Symbol.TraitSym, loc: SourceLocation) extends SymUse
 
   /**
+    * Represents a use of a val sym.
+    */
+  case class ValSymUse(sym: Symbol.ValSym, loc: SourceLocation) extends SymUse
+
+  /**
     * Represents a use of a type alias sym.
     */
   case class TypeAliasSymUse(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends SymUse

@@ -182,11 +182,6 @@ object TypeConstraint {
     }
 
     /**
-      * The constraint indicates that the left effect is a variable representing the source effect on the right.
-      */
-    case class Source(eff1: Type.Var, eff2: Type, loc: SourceLocation) extends Provenance
-
-    /**
       * The constraint indicates that the type is used in the first part of a statement (must be unit).
       */
     case class NonUnitStatement(actual: Type, loc: SourceLocation) extends Provenance

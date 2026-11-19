@@ -162,7 +162,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[MismatchedTypes](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("MismatchedArrowAndNonArrow.01") {
@@ -213,7 +213,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[MismatchedTypes](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestOverApplied.01") {
@@ -2115,7 +2115,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(): Unit \ IO = ()
         |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = true))
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -2127,35 +2127,50 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  mustBeIO(() -> ())
         |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix.copy(xsubeffecting = true))
+    val result = check(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 
-  test("TooComplex.01") {
-    // Effect unification gives up on the region of `f`, which must be reported as too complex
-    // rather than as a conflict between the effects.
+  test("Subeffecting.NoSubEff.Lambda.01") {
+    // Without sub-effecting a pure lambda cannot be passed where an IO function is required.
     val input =
       """
-        |eff Crash { def crash(): Void }
-        |
-        |def ws(s: Ref[Int32, r]): Unit \ r = Ref.put(0, s)
-        |
-        |def p(k: Int32, s: Ref[Int32, r]): Option[Int32] \ r + Crash =
-        |    if (Ref.get(s) > k) Some(k) else if (Ref.get(s) < -k) Crash.crash() else None
-        |
-        |def f(s: Ref[Int32, r]): Int32 \ r + Crash = region rc {
-        |    let progress = Ref.fresh(rc, true);
-        |    def loop() = {
-        |        s !> ws |> p(1) |> Foldable.forEach(_ -> Ref.put(true, progress));
-        |        s !> ws |> p(2) |> Foldable.forEach(_ -> Ref.put(true, progress));
-        |        s !> ws |> p(3) |> Foldable.forEach(_ -> Ref.put(true, progress))
-        |    };
-        |    loop();
-        |    42
-        |}
+        |def mustBeIO(f: Unit -> Unit \ IO): Unit \ IO = f()
+        |@NoSubEff
+        |def f(): Unit \ IO =
+        |  mustBeIO(() -> ())
+        |pub eff IO
         |""".stripMargin
-    val result = check(input, Options.TestWithLibAll.copy(xsubeffecting = true))
-    expectError[TypeError.TooComplex](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("Subeffecting.NoSubEff.LocalDef.01") {
+    // Without sub-effecting a pure local def cannot be passed where an IO function is required.
+    val input =
+      """
+        |def mustBeIO(f: Int32 -> Int32 \ IO): Int32 \ IO = f(1)
+        |@NoSubEff
+        |def f(): Int32 \ IO = {
+        |  def id(x) = x;
+        |  mustBeIO(id)
+        |}
+        |pub eff IO
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("Subeffecting.NoSubEff.CheckedCast.01") {
+    // A checked effect cast is explicit sub-effecting and is not disabled by the annotation.
+    val input =
+      """
+        |@NoSubEff
+        |def f(): Unit \ IO = checked_ecast(())
+        |pub eff IO
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectSuccess(result)
   }
 
   test("ErrorType.01") {

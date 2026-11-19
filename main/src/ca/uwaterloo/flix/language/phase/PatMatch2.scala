@@ -643,6 +643,8 @@ object PatMatch2 {
     tast match {
       case Expr.Var(_, _, _) => ()
 
+      case Expr.Val(_, _, _) => ()
+
       case Expr.Hole(_, _, _, _, _) => ()
 
       case Expr.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
@@ -764,6 +766,10 @@ object PatMatch2 {
 
       case Expr.VectorLength(exp, _) => visitExp(exp)
 
+      case Expr.Lazy(exp, _, _) => visitExp(exp)
+
+      case Expr.Force(exp, _, _, _) => visitExp(exp)
+
       case Expr.Ascribe(exp, _, _, _, _, _) => visitExp(exp)
 
       case Expr.InstanceOf(exp, _, _) => visitExp(exp)
@@ -837,10 +843,6 @@ object PatMatch2 {
         visitExp(exp)
         frags.foreach(f => visitExp(f.exp))
         checkFrags(frags, root, loc)
-
-      case Expr.Lazy(exp, _, _) => visitExp(exp)
-
-      case Expr.Force(exp, _, _, _) => visitExp(exp)
 
       case Expr.FixpointConstraintSet(cs, _, _) => cs.foreach(visitConstraint)
 

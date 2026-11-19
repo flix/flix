@@ -240,6 +240,7 @@ object Weeder2 {
         TreeKind.Decl.Trait,
         TreeKind.Decl.Instance,
         TreeKind.Decl.Def,
+        TreeKind.Decl.Val,
         TreeKind.Decl.Enum,
         TreeKind.Decl.RestrictableEnum,
         TreeKind.Decl.Struct,
@@ -251,6 +252,7 @@ object Weeder2 {
           case TreeKind.Decl.Trait => visitTraitDecl(t)
           case TreeKind.Decl.Instance => visitInstanceDecl(t)
           case TreeKind.Decl.Def => visitDefinitionDecl(t)
+          case TreeKind.Decl.Val => visitValDecl(t)
           case TreeKind.Decl.Enum => visitEnumDecl(t)
           case TreeKind.Decl.RestrictableEnum => visitRestrictableEnumDecl(t)
           case TreeKind.Decl.Struct => visitStructDecl(t)
@@ -357,6 +359,24 @@ object Weeder2 {
       val tconstrs = Types.pickConstraints(tree)
       val constrs = pickEqualityConstraints(tree)
       Declaration.Redef(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
+    }
+
+    private def visitValDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Val = {
+      expect(tree, TreeKind.Decl.Val)
+      val doc = pickDocumentation(tree)
+      val ann = pickAnnotations(tree)
+      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
+      val ident = pickNameIdent(tree)
+      val tpe = Types.pickType(tree)
+      val eff = Types.tryPickEffect(tree)
+      // An explicit `\ {}` always parses to `Type.Pure` (see `visitEffectType`). It is allowed
+      // since it is just making the implicit default explicit; any other effect is not.
+      eff.foreach {
+        case Type.Pure(_) => ()
+        case e => sctx.errors.add(WeederError.IllegalEffectfulVal(e.loc))
+      }
+      val exp = Exprs.pickExpr(tree)
+      Declaration.Val(doc, ann, mod, ident, tpe, eff, exp, tree.loc)
     }
 
     private def visitEnumDecl(tree: Tree)(implicit sctx: SharedContext): Declaration.Enum = {
@@ -627,6 +647,7 @@ object Weeder2 {
         case "@LoweringTargetDatalog" => LoweringTargetDatalog(loc)
         case "@Lazy" => Lazy(loc)
         case "@LazyWhenPure" => LazyWhenPure(loc)
+        case "@NoSubEff" => NoSubEff(loc)
         case "@Skip" => Skip(loc)
         case "@Test" => Test(loc)
         case "@Tailrec" => TailRecursive(loc)
@@ -703,11 +724,15 @@ object Weeder2 {
       }
     }
 
-    def unitFormalParameter(loc: SourceLocation): FormalParam = FormalParam(
-      Name.Ident("_unit", SourceLocation.Unknown),
-      Some(Type.Unit(loc)),
-      loc
-    )
+    /**
+      * Returns the implicit unit parameter of a function that is declared without parameters.
+      *
+      * The parameter is not written in the source, so its location is synthetic.
+      */
+    def unitFormalParameter(loc: SourceLocation): FormalParam = {
+      val l = loc.asSynthetic
+      FormalParam(Name.Ident("_unit", SourceLocation.Unknown), Some(Type.Unit(l)), l)
+    }
 
     def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit sctx: SharedContext): Nel[FormalParam] = {
       tryPick(TreeKind.ParameterList, tree) match {
@@ -1046,7 +1071,7 @@ object Weeder2 {
       }
       args match {
         // Add synthetic unit arguments if there are none
-        case Nil => List(Expr.Cst(Constant.Unit, tree.loc))
+        case Nil => List(Expr.Cst(Constant.Unit, tree.loc.asSynthetic))
         case args => args
       }
     }
@@ -2137,138 +2162,175 @@ object Weeder2 {
     private def visitIntrinsic(tree: Tree, args: Option[List[Expr]], loc: SourceLocation)(implicit sctx: SharedContext): Expr = {
       expect(tree, TreeKind.Expr.Intrinsic)
       val intrinsic = text(tree).head.stripPrefix("%%").stripSuffix("%%")
-      val res = (intrinsic, args) match {
-        case ("ARRAY_LENGTH", Some(e1 :: Nil)) => Expr.ArrayLength(e1, loc)
-        case ("ARRAY_LOAD", Some(e1 :: e2 :: Nil)) => Expr.ArrayLoad(e1, e2, loc)
-        case ("ARRAY_NEW", Some(e1 :: e2 :: e3 :: Nil)) => Expr.ArrayNew(e1, e2, e3, loc)
-        case ("ARRAY_STORE", Some(e1 :: e2 :: e3 :: Nil)) => Expr.ArrayStore(e1, e2, e3, loc)
-        case ("BOOL_AND", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BoolOp.And, e1, e2, loc)
-        case ("BOOL_EQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BoolOp.Eq, e1, e2, loc)
-        case ("BOOL_NEQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BoolOp.Neq, e1, e2, loc)
-        case ("BOOL_NOT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.BoolOp.Not, e1, loc)
-        case ("BOOL_OR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, loc)
-        case ("CHANNEL_GET", Some(e1 :: Nil)) => Expr.GetChannel(e1, loc)
-        case ("CHANNEL_NEW", Some(e :: Nil)) => Expr.NewChannel(e, loc)
-        case ("CHANNEL_PUT", Some(e1 :: e2 :: Nil)) => Expr.PutChannel(e1, e2, loc)
-        case ("CHAR_EQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Eq, e1, e2, loc)
-        case ("CHAR_GE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Ge, e1, e2, loc)
-        case ("CHAR_GT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Gt, e1, e2, loc)
-        case ("CHAR_LE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Le, e1, e2, loc)
-        case ("CHAR_LT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Lt, e1, e2, loc)
-        case ("CHAR_NEQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Neq, e1, e2, loc)
-        case ("FILE", None) => Expr.Cst(Constant.Str(s"${loc.source.name}"), loc)
-        case ("FLOAT32_ADD", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Add, e1, e2, loc)
-        case ("FLOAT32_DIV", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Div, e1, e2, loc)
-        case ("FLOAT32_EQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Eq, e1, e2, loc)
-        case ("FLOAT32_EXP", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Exp, e1, e2, loc)
-        case ("FLOAT32_GE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Ge, e1, e2, loc)
-        case ("FLOAT32_GT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Gt, e1, e2, loc)
-        case ("FLOAT32_LE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Le, e1, e2, loc)
-        case ("FLOAT32_LT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Lt, e1, e2, loc)
-        case ("FLOAT32_MUL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Mul, e1, e2, loc)
-        case ("FLOAT32_NEG", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.Float32Op.Neg, e1, loc)
-        case ("FLOAT32_NEQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Neq, e1, e2, loc)
-        case ("FLOAT32_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Sub, e1, e2, loc)
-        case ("FLOAT64_ADD", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Add, e1, e2, loc)
-        case ("FLOAT64_DIV", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Div, e1, e2, loc)
-        case ("FLOAT64_EQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Eq, e1, e2, loc)
-        case ("FLOAT64_EXP", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Exp, e1, e2, loc)
-        case ("FLOAT64_GE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Ge, e1, e2, loc)
-        case ("FLOAT64_GT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Gt, e1, e2, loc)
-        case ("FLOAT64_LE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Le, e1, e2, loc)
-        case ("FLOAT64_LT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Lt, e1, e2, loc)
-        case ("FLOAT64_MUL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Mul, e1, e2, loc)
-        case ("FLOAT64_NEG", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.Float64Op.Neg, e1, loc)
-        case ("FLOAT64_NEQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Neq, e1, e2, loc)
-        case ("FLOAT64_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Sub, e1, e2, loc)
-        case ("INT16_ADD", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Add, e1, e2, loc)
-        case ("INT16_AND", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.And, e1, e2, loc)
-        case ("INT16_DIV", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Div, e1, e2, loc)
-        case ("INT16_EQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Eq, e1, e2, loc)
-        case ("INT16_EXP", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Exp, e1, e2, loc)
-        case ("INT16_GE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Ge, e1, e2, loc)
-        case ("INT16_GT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Gt, e1, e2, loc)
-        case ("INT16_LE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Le, e1, e2, loc)
-        case ("INT16_LT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Lt, e1, e2, loc)
-        case ("INT16_MUL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Mul, e1, e2, loc)
-        case ("INT16_NEG", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.Int16Op.Neg, e1, loc)
-        case ("INT16_NEQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Neq, e1, e2, loc)
-        case ("INT16_NOT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.Int16Op.Not, e1, loc)
-        case ("INT16_OR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Or, e1, e2, loc)
-        case ("INT16_REM", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Rem, e1, e2, loc)
-        case ("INT16_SHL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Shl, e1, e2, loc)
-        case ("INT16_SHR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Shr, e1, e2, loc)
-        case ("INT16_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Sub, e1, e2, loc)
-        case ("INT16_XOR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Xor, e1, e2, loc)
-        case ("INT32_ADD", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Add, e1, e2, loc)
-        case ("INT32_AND", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.And, e1, e2, loc)
-        case ("INT32_DIV", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Div, e1, e2, loc)
-        case ("INT32_EQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Eq, e1, e2, loc)
-        case ("INT32_EXP", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Exp, e1, e2, loc)
-        case ("INT32_GE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Ge, e1, e2, loc)
-        case ("INT32_GT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Gt, e1, e2, loc)
-        case ("INT32_LE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Le, e1, e2, loc)
-        case ("INT32_LT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Lt, e1, e2, loc)
-        case ("INT32_MUL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Mul, e1, e2, loc)
-        case ("INT32_NEG", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.Int32Op.Neg, e1, loc)
-        case ("INT32_NEQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Neq, e1, e2, loc)
-        case ("INT32_NOT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.Int32Op.Not, e1, loc)
-        case ("INT32_OR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Or, e1, e2, loc)
-        case ("INT32_REM", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Rem, e1, e2, loc)
-        case ("INT32_SHL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Shl, e1, e2, loc)
-        case ("INT32_SHR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Shr, e1, e2, loc)
-        case ("INT32_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Sub, e1, e2, loc)
-        case ("INT32_XOR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Xor, e1, e2, loc)
-        case ("INT64_ADD", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Add, e1, e2, loc)
-        case ("INT64_AND", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.And, e1, e2, loc)
-        case ("INT64_DIV", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Div, e1, e2, loc)
-        case ("INT64_EQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Eq, e1, e2, loc)
-        case ("INT64_EXP", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Exp, e1, e2, loc)
-        case ("INT64_GE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Ge, e1, e2, loc)
-        case ("INT64_GT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Gt, e1, e2, loc)
-        case ("INT64_LE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Le, e1, e2, loc)
-        case ("INT64_LT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Lt, e1, e2, loc)
-        case ("INT64_MUL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Mul, e1, e2, loc)
-        case ("INT64_NEG", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.Int64Op.Neg, e1, loc)
-        case ("INT64_NEQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Neq, e1, e2, loc)
-        case ("INT64_NOT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.Int64Op.Not, e1, loc)
-        case ("INT64_OR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Or, e1, e2, loc)
-        case ("INT64_REM", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Rem, e1, e2, loc)
-        case ("INT64_SHL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Shl, e1, e2, loc)
-        case ("INT64_SHR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Shr, e1, e2, loc)
-        case ("INT64_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Sub, e1, e2, loc)
-        case ("INT64_XOR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Xor, e1, e2, loc)
-        case ("INT8_ADD", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Add, e1, e2, loc)
-        case ("INT8_AND", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.And, e1, e2, loc)
-        case ("INT8_DIV", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Div, e1, e2, loc)
-        case ("INT8_EQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Eq, e1, e2, loc)
-        case ("INT8_EXP", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Exp, e1, e2, loc)
-        case ("INT8_GE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Ge, e1, e2, loc)
-        case ("INT8_GT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Gt, e1, e2, loc)
-        case ("INT8_LE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Le, e1, e2, loc)
-        case ("INT8_LT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Lt, e1, e2, loc)
-        case ("INT8_MUL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Mul, e1, e2, loc)
-        case ("INT8_NEG", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.Int8Op.Neg, e1, loc)
-        case ("INT8_NEQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Neq, e1, e2, loc)
-        case ("INT8_NOT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.Int8Op.Not, e1, loc)
-        case ("INT8_OR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Or, e1, e2, loc)
-        case ("INT8_REM", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Rem, e1, e2, loc)
-        case ("INT8_SHL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Shl, e1, e2, loc)
-        case ("INT8_SHR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Shr, e1, e2, loc)
-        case ("INT8_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Sub, e1, e2, loc)
-        case ("INT8_XOR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Xor, e1, e2, loc)
-        case ("LINE", None) => Expr.Cst(Constant.Str(s"${loc.startLine}"), loc)
-        case ("REFLECT_EFF", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ReflectOp.ReflectEff, e1, loc)
-        case ("REFLECT_VALUE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ReflectOp.ReflectValue, e1, loc)
-        case ("REFLECT_TYPE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ReflectOp.ReflectType, e1, loc)
-        case ("VECTOR_GET", Some(e1 :: e2 :: Nil)) => Expr.VectorLoad(e1, e2, loc)
-        case ("VECTOR_LENGTH", Some(e1 :: Nil)) => Expr.VectorLength(e1, loc)
-        case _ =>
-          val error = UndefinedIntrinsic(loc)
-          sctx.errors.add(error)
-          Expr.Error(error)
+      args match {
+        case None => visitUnappliedIntrinsic(intrinsic, loc)
+        case Some(e1 :: Nil) => visitUnaryIntrinsic(intrinsic, e1, loc)
+        case Some(e1 :: e2 :: Nil) => visitBinaryIntrinsic(intrinsic, e1, e2, loc)
+        case Some(e1 :: e2 :: e3 :: Nil) => visitTernaryIntrinsic(intrinsic, e1, e2, e3, loc)
+        case _ => mkUndefinedIntrinsic(loc)
       }
-      res
+    }
+
+    /**
+      * Returns the expression corresponding to the unapplied intrinsic `intrinsic` (e.g. `%%LINE%%`).
+      */
+    private def visitUnappliedIntrinsic(intrinsic: String, loc: SourceLocation)(implicit sctx: SharedContext): Expr = intrinsic match {
+      case "FILE" => Expr.Cst(Constant.Str(s"${loc.source.name}"), loc)
+      case "LINE" => Expr.Cst(Constant.Str(s"${loc.startLine}"), loc)
+      case _ => mkUndefinedIntrinsic(loc)
+    }
+
+    /**
+      * Returns the expression corresponding to the intrinsic `intrinsic` applied to the argument `e1`.
+      */
+    private def visitUnaryIntrinsic(intrinsic: String, e1: Expr, loc: SourceLocation)(implicit sctx: SharedContext): Expr = intrinsic match {
+      case "ARRAY_LENGTH" => Expr.ArrayLength(e1, loc)
+      case "BOOL_NOT" => Expr.Unary(SemanticOp.BoolOp.Not, e1, loc)
+      case "CHANNEL_GET" => Expr.GetChannel(e1, loc)
+      case "CHANNEL_NEW" => Expr.NewChannel(e1, loc)
+      case "FLOAT32_NEG" => Expr.Unary(SemanticOp.Float32Op.Neg, e1, loc)
+      case "FLOAT64_NEG" => Expr.Unary(SemanticOp.Float64Op.Neg, e1, loc)
+      case "INT16_NEG" => Expr.Unary(SemanticOp.Int16Op.Neg, e1, loc)
+      case "INT16_NOT" => Expr.Unary(SemanticOp.Int16Op.Not, e1, loc)
+      case "INT32_NEG" => Expr.Unary(SemanticOp.Int32Op.Neg, e1, loc)
+      case "INT32_NOT" => Expr.Unary(SemanticOp.Int32Op.Not, e1, loc)
+      case "INT64_NEG" => Expr.Unary(SemanticOp.Int64Op.Neg, e1, loc)
+      case "INT64_NOT" => Expr.Unary(SemanticOp.Int64Op.Not, e1, loc)
+      case "INT8_NEG" => Expr.Unary(SemanticOp.Int8Op.Neg, e1, loc)
+      case "INT8_NOT" => Expr.Unary(SemanticOp.Int8Op.Not, e1, loc)
+      case "REFLECT_EFF" => Expr.Unary(SemanticOp.ReflectOp.ReflectEff, e1, loc)
+      case "REFLECT_VALUE" => Expr.Unary(SemanticOp.ReflectOp.ReflectValue, e1, loc)
+      case "REFLECT_TYPE" => Expr.Unary(SemanticOp.ReflectOp.ReflectType, e1, loc)
+      case "VECTOR_LENGTH" => Expr.VectorLength(e1, loc)
+      case _ => mkUndefinedIntrinsic(loc)
+    }
+
+    /**
+      * Returns the expression corresponding to the intrinsic `intrinsic` applied to the arguments `e1` and `e2`.
+      */
+    private def visitBinaryIntrinsic(intrinsic: String, e1: Expr, e2: Expr, loc: SourceLocation)(implicit sctx: SharedContext): Expr = intrinsic match {
+      case "ARRAY_LOAD" => Expr.ArrayLoad(e1, e2, loc)
+      case "BOOL_AND" => Expr.Binary(SemanticOp.BoolOp.And, e1, e2, loc)
+      case "BOOL_EQ" => Expr.Binary(SemanticOp.BoolOp.Eq, e1, e2, loc)
+      case "BOOL_NEQ" => Expr.Binary(SemanticOp.BoolOp.Neq, e1, e2, loc)
+      case "BOOL_OR" => Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, loc)
+      case "CHANNEL_PUT" => Expr.PutChannel(e1, e2, loc)
+      case "CHAR_EQ" => Expr.Binary(SemanticOp.CharOp.Eq, e1, e2, loc)
+      case "CHAR_GE" => Expr.Binary(SemanticOp.CharOp.Ge, e1, e2, loc)
+      case "CHAR_GT" => Expr.Binary(SemanticOp.CharOp.Gt, e1, e2, loc)
+      case "CHAR_LE" => Expr.Binary(SemanticOp.CharOp.Le, e1, e2, loc)
+      case "CHAR_LT" => Expr.Binary(SemanticOp.CharOp.Lt, e1, e2, loc)
+      case "CHAR_NEQ" => Expr.Binary(SemanticOp.CharOp.Neq, e1, e2, loc)
+      case "FLOAT32_ADD" => Expr.Binary(SemanticOp.Float32Op.Add, e1, e2, loc)
+      case "FLOAT32_DIV" => Expr.Binary(SemanticOp.Float32Op.Div, e1, e2, loc)
+      case "FLOAT32_EQ" => Expr.Binary(SemanticOp.Float32Op.Eq, e1, e2, loc)
+      case "FLOAT32_EXP" => Expr.Binary(SemanticOp.Float32Op.Exp, e1, e2, loc)
+      case "FLOAT32_GE" => Expr.Binary(SemanticOp.Float32Op.Ge, e1, e2, loc)
+      case "FLOAT32_GT" => Expr.Binary(SemanticOp.Float32Op.Gt, e1, e2, loc)
+      case "FLOAT32_LE" => Expr.Binary(SemanticOp.Float32Op.Le, e1, e2, loc)
+      case "FLOAT32_LT" => Expr.Binary(SemanticOp.Float32Op.Lt, e1, e2, loc)
+      case "FLOAT32_MUL" => Expr.Binary(SemanticOp.Float32Op.Mul, e1, e2, loc)
+      case "FLOAT32_NEQ" => Expr.Binary(SemanticOp.Float32Op.Neq, e1, e2, loc)
+      case "FLOAT32_SUB" => Expr.Binary(SemanticOp.Float32Op.Sub, e1, e2, loc)
+      case "FLOAT64_ADD" => Expr.Binary(SemanticOp.Float64Op.Add, e1, e2, loc)
+      case "FLOAT64_DIV" => Expr.Binary(SemanticOp.Float64Op.Div, e1, e2, loc)
+      case "FLOAT64_EQ" => Expr.Binary(SemanticOp.Float64Op.Eq, e1, e2, loc)
+      case "FLOAT64_EXP" => Expr.Binary(SemanticOp.Float64Op.Exp, e1, e2, loc)
+      case "FLOAT64_GE" => Expr.Binary(SemanticOp.Float64Op.Ge, e1, e2, loc)
+      case "FLOAT64_GT" => Expr.Binary(SemanticOp.Float64Op.Gt, e1, e2, loc)
+      case "FLOAT64_LE" => Expr.Binary(SemanticOp.Float64Op.Le, e1, e2, loc)
+      case "FLOAT64_LT" => Expr.Binary(SemanticOp.Float64Op.Lt, e1, e2, loc)
+      case "FLOAT64_MUL" => Expr.Binary(SemanticOp.Float64Op.Mul, e1, e2, loc)
+      case "FLOAT64_NEQ" => Expr.Binary(SemanticOp.Float64Op.Neq, e1, e2, loc)
+      case "FLOAT64_SUB" => Expr.Binary(SemanticOp.Float64Op.Sub, e1, e2, loc)
+      case "INT16_ADD" => Expr.Binary(SemanticOp.Int16Op.Add, e1, e2, loc)
+      case "INT16_AND" => Expr.Binary(SemanticOp.Int16Op.And, e1, e2, loc)
+      case "INT16_DIV" => Expr.Binary(SemanticOp.Int16Op.Div, e1, e2, loc)
+      case "INT16_EQ" => Expr.Binary(SemanticOp.Int16Op.Eq, e1, e2, loc)
+      case "INT16_EXP" => Expr.Binary(SemanticOp.Int16Op.Exp, e1, e2, loc)
+      case "INT16_GE" => Expr.Binary(SemanticOp.Int16Op.Ge, e1, e2, loc)
+      case "INT16_GT" => Expr.Binary(SemanticOp.Int16Op.Gt, e1, e2, loc)
+      case "INT16_LE" => Expr.Binary(SemanticOp.Int16Op.Le, e1, e2, loc)
+      case "INT16_LT" => Expr.Binary(SemanticOp.Int16Op.Lt, e1, e2, loc)
+      case "INT16_MUL" => Expr.Binary(SemanticOp.Int16Op.Mul, e1, e2, loc)
+      case "INT16_NEQ" => Expr.Binary(SemanticOp.Int16Op.Neq, e1, e2, loc)
+      case "INT16_OR" => Expr.Binary(SemanticOp.Int16Op.Or, e1, e2, loc)
+      case "INT16_REM" => Expr.Binary(SemanticOp.Int16Op.Rem, e1, e2, loc)
+      case "INT16_SHL" => Expr.Binary(SemanticOp.Int16Op.Shl, e1, e2, loc)
+      case "INT16_SHR" => Expr.Binary(SemanticOp.Int16Op.Shr, e1, e2, loc)
+      case "INT16_SUB" => Expr.Binary(SemanticOp.Int16Op.Sub, e1, e2, loc)
+      case "INT16_XOR" => Expr.Binary(SemanticOp.Int16Op.Xor, e1, e2, loc)
+      case "INT32_ADD" => Expr.Binary(SemanticOp.Int32Op.Add, e1, e2, loc)
+      case "INT32_AND" => Expr.Binary(SemanticOp.Int32Op.And, e1, e2, loc)
+      case "INT32_DIV" => Expr.Binary(SemanticOp.Int32Op.Div, e1, e2, loc)
+      case "INT32_EQ" => Expr.Binary(SemanticOp.Int32Op.Eq, e1, e2, loc)
+      case "INT32_EXP" => Expr.Binary(SemanticOp.Int32Op.Exp, e1, e2, loc)
+      case "INT32_GE" => Expr.Binary(SemanticOp.Int32Op.Ge, e1, e2, loc)
+      case "INT32_GT" => Expr.Binary(SemanticOp.Int32Op.Gt, e1, e2, loc)
+      case "INT32_LE" => Expr.Binary(SemanticOp.Int32Op.Le, e1, e2, loc)
+      case "INT32_LT" => Expr.Binary(SemanticOp.Int32Op.Lt, e1, e2, loc)
+      case "INT32_MUL" => Expr.Binary(SemanticOp.Int32Op.Mul, e1, e2, loc)
+      case "INT32_NEQ" => Expr.Binary(SemanticOp.Int32Op.Neq, e1, e2, loc)
+      case "INT32_OR" => Expr.Binary(SemanticOp.Int32Op.Or, e1, e2, loc)
+      case "INT32_REM" => Expr.Binary(SemanticOp.Int32Op.Rem, e1, e2, loc)
+      case "INT32_SHL" => Expr.Binary(SemanticOp.Int32Op.Shl, e1, e2, loc)
+      case "INT32_SHR" => Expr.Binary(SemanticOp.Int32Op.Shr, e1, e2, loc)
+      case "INT32_SUB" => Expr.Binary(SemanticOp.Int32Op.Sub, e1, e2, loc)
+      case "INT32_XOR" => Expr.Binary(SemanticOp.Int32Op.Xor, e1, e2, loc)
+      case "INT64_ADD" => Expr.Binary(SemanticOp.Int64Op.Add, e1, e2, loc)
+      case "INT64_AND" => Expr.Binary(SemanticOp.Int64Op.And, e1, e2, loc)
+      case "INT64_DIV" => Expr.Binary(SemanticOp.Int64Op.Div, e1, e2, loc)
+      case "INT64_EQ" => Expr.Binary(SemanticOp.Int64Op.Eq, e1, e2, loc)
+      case "INT64_EXP" => Expr.Binary(SemanticOp.Int64Op.Exp, e1, e2, loc)
+      case "INT64_GE" => Expr.Binary(SemanticOp.Int64Op.Ge, e1, e2, loc)
+      case "INT64_GT" => Expr.Binary(SemanticOp.Int64Op.Gt, e1, e2, loc)
+      case "INT64_LE" => Expr.Binary(SemanticOp.Int64Op.Le, e1, e2, loc)
+      case "INT64_LT" => Expr.Binary(SemanticOp.Int64Op.Lt, e1, e2, loc)
+      case "INT64_MUL" => Expr.Binary(SemanticOp.Int64Op.Mul, e1, e2, loc)
+      case "INT64_NEQ" => Expr.Binary(SemanticOp.Int64Op.Neq, e1, e2, loc)
+      case "INT64_OR" => Expr.Binary(SemanticOp.Int64Op.Or, e1, e2, loc)
+      case "INT64_REM" => Expr.Binary(SemanticOp.Int64Op.Rem, e1, e2, loc)
+      case "INT64_SHL" => Expr.Binary(SemanticOp.Int64Op.Shl, e1, e2, loc)
+      case "INT64_SHR" => Expr.Binary(SemanticOp.Int64Op.Shr, e1, e2, loc)
+      case "INT64_SUB" => Expr.Binary(SemanticOp.Int64Op.Sub, e1, e2, loc)
+      case "INT64_XOR" => Expr.Binary(SemanticOp.Int64Op.Xor, e1, e2, loc)
+      case "INT8_ADD" => Expr.Binary(SemanticOp.Int8Op.Add, e1, e2, loc)
+      case "INT8_AND" => Expr.Binary(SemanticOp.Int8Op.And, e1, e2, loc)
+      case "INT8_DIV" => Expr.Binary(SemanticOp.Int8Op.Div, e1, e2, loc)
+      case "INT8_EQ" => Expr.Binary(SemanticOp.Int8Op.Eq, e1, e2, loc)
+      case "INT8_EXP" => Expr.Binary(SemanticOp.Int8Op.Exp, e1, e2, loc)
+      case "INT8_GE" => Expr.Binary(SemanticOp.Int8Op.Ge, e1, e2, loc)
+      case "INT8_GT" => Expr.Binary(SemanticOp.Int8Op.Gt, e1, e2, loc)
+      case "INT8_LE" => Expr.Binary(SemanticOp.Int8Op.Le, e1, e2, loc)
+      case "INT8_LT" => Expr.Binary(SemanticOp.Int8Op.Lt, e1, e2, loc)
+      case "INT8_MUL" => Expr.Binary(SemanticOp.Int8Op.Mul, e1, e2, loc)
+      case "INT8_NEQ" => Expr.Binary(SemanticOp.Int8Op.Neq, e1, e2, loc)
+      case "INT8_OR" => Expr.Binary(SemanticOp.Int8Op.Or, e1, e2, loc)
+      case "INT8_REM" => Expr.Binary(SemanticOp.Int8Op.Rem, e1, e2, loc)
+      case "INT8_SHL" => Expr.Binary(SemanticOp.Int8Op.Shl, e1, e2, loc)
+      case "INT8_SHR" => Expr.Binary(SemanticOp.Int8Op.Shr, e1, e2, loc)
+      case "INT8_SUB" => Expr.Binary(SemanticOp.Int8Op.Sub, e1, e2, loc)
+      case "INT8_XOR" => Expr.Binary(SemanticOp.Int8Op.Xor, e1, e2, loc)
+      case "VECTOR_GET" => Expr.VectorLoad(e1, e2, loc)
+      case _ => mkUndefinedIntrinsic(loc)
+    }
+
+    /**
+      * Returns the expression corresponding to the intrinsic `intrinsic` applied to the arguments `e1`, `e2` and `e3`.
+      */
+    private def visitTernaryIntrinsic(intrinsic: String, e1: Expr, e2: Expr, e3: Expr, loc: SourceLocation)(implicit sctx: SharedContext): Expr = intrinsic match {
+      case "ARRAY_NEW" => Expr.ArrayNew(e1, e2, e3, loc)
+      case "ARRAY_STORE" => Expr.ArrayStore(e1, e2, e3, loc)
+      case _ => mkUndefinedIntrinsic(loc)
+    }
+
+    /**
+      * Reports an undefined or misapplied intrinsic at `loc` and returns an error expression.
+      */
+    private def mkUndefinedIntrinsic(loc: SourceLocation)(implicit sctx: SharedContext): Expr = {
+      val error = UndefinedIntrinsic(loc)
+      sctx.errors.add(error)
+      Expr.Error(error)
     }
   }
 
@@ -2769,7 +2831,7 @@ object Weeder2 {
       val maybeLatTerm = tryPickLatticeTermExpr(tree)
       rawList match {
         // A() => A(())
-        case Nil => (List(Expr.Cst(Constant.Unit, tree.loc)), maybeLatTerm)
+        case Nil => (List(Expr.Cst(Constant.Unit, tree.loc.asSynthetic)), maybeLatTerm)
         case nonEmpty => (nonEmpty, maybeLatTerm)
       }
     }
@@ -3364,10 +3426,23 @@ object Weeder2 {
     * Only use this if the structure of tree is well-known.
     * IE. Calling on a tree of kind [[TreeKind.Ident]] is fine, but if the kind is not known avoid using [[tokenToIdent]].
     */
-  private def tokenToIdent(tree: Tree): Name.Ident = {
+  private def tokenToIdent(tree: Tree)(implicit sctx: SharedContext): Name.Ident = {
     tree.children.headOption match {
       case Some(token@Token(_, src, _, _, sp1, sp2)) =>
-        Name.Ident(token.text, SourceLocation(isReal = true, src, sp1, sp2))
+        val loc = SourceLocation(isReal = true, src, sp1, sp2)
+        val isNameLowercase = token.kind == TokenKind.NameLowercase
+        val isEscaped = src.data(token.startIndex) == '$'
+        val name = if (isNameLowercase && isEscaped) {
+          val unescaped = token.text.substring(1)
+          if (!Lexer.isKeyword(unescaped)) {
+            sctx.errors.add(WeederError.RedundantEscape(unescaped, loc))
+          }
+          unescaped
+        } else {
+          token.text
+        }
+
+        Name.Ident(name, loc)
       // If child is an ErrorTree, that means the parse already reported and error.
       // We can avoid double reporting by returning a success here.
       // Doing it this way is most resilient, but phases down the line might have trouble with this sort of thing.

@@ -34,7 +34,7 @@
     --keyword-color: light-dark(#030303, #fcfcfc);
     --name-color: light-dark(#b12250, #ff6696);
     --type-color: light-dark(#3061c4, #6699ff);
-    --kind-color: light-dark(#6b6b6b, #999999);
+    --trait-color: light-dark(#0f766e, #4fd1c5);
     --effect-color: light-dark(#d4671e, #ff944d);
     --doc-code-color: light-dark(#d63384, #ff66b3);
     --show-hide-color: light-dark(#0d6efd, #68a4fd);
@@ -88,7 +88,7 @@
     --keyword-color: #262625;
     --name-color: #8f2f1a;
     --type-color: #1f6a91;
-    --kind-color: #625f52;
+    --trait-color: #0b6652;
     --effect-color: #8a5606;
     --doc-code-color: #5a574c;
     --show-hide-color: #1f6a91;
@@ -125,7 +125,7 @@
     --keyword-color: #dcdded;
     --name-color: #e6b673;
     --type-color: #6cb4e4;
-    --kind-color: #8a8ea8;
+    --trait-color: #8abeb7;
     --effect-color: #d19af0;
     --doc-code-color: #c5c8c6;
     --show-hide-color: #6cb4e4;
@@ -162,7 +162,7 @@
     --keyword-color: #ff7733;
     --name-color: #ffb454;
     --type-color: #36a3d9;
-    --kind-color: #868794;
+    --trait-color: #95e6cb;
     --effect-color: #d2a6ff;
     --doc-code-color: #ffb454;
     --show-hide-color: #0096cf;
@@ -637,15 +637,19 @@ main > section > h2 {
 }
 /* The instances of an item: the heading, in bold, then comma-separated lists of names below it, one
    on the page of a type and one per group, in labelled rows, on the page of a trait. A few words at
-   the size of the code may end a list. */
-.subsection.instances {
+   the size of the code may end a list. The sub-traits of a trait are set as the instances of a type
+   are. */
+.subsection.instances,
+.subsection.sub-traits {
     font-size: 0.85rem;
 }
-.subsection.instances h2 {
+.subsection.instances h2,
+.subsection.sub-traits h2 {
     font-weight: bold;
 }
 .subsection.instances p,
-.subsection.instances dl {
+.subsection.instances dl,
+.subsection.sub-traits p {
     margin: 0.4rem 0 0;
 }
 .subsection.instances dl {
@@ -679,6 +683,30 @@ main > section > h2 {
 }
 .decl > code {
     flex: 1;
+}
+/* The head of a signature and each of its clauses is a box of its own, so a signature that is too
+   long for one line breaks before a clause, and inside a box only if the box alone is too long.
+   A clause also has the class `with` or `where`, so that the two can be laid out differently. */
+.decl > code > .head,
+.decl > code > .clause {
+    display: inline-block;
+}
+/* A signature that takes more than one line has a hanging indent: a clause that starts a line is
+   indented to the name, which follows `def `, and a line that continues the head is indented twice
+   as far. A clause does not inherit the negative indent of the first line. A narrow screen has no
+   indent: there it would take a quarter of the line. */
+@media (min-width: 801px) {
+    .decl > code:has(> .head) {
+        padding-left: 4ch;
+        text-indent: -4ch;
+    }
+    .decl > code > .head {
+        padding-left: 8ch;
+        text-indent: -8ch;
+    }
+    .decl > code > .clause {
+        text-indent: 0;
+    }
 }
 .decl > * {
     height: fit-content;
@@ -843,9 +871,10 @@ td.align-right, th.align-right {
 code {
     font-family: var(--code-font);
 }
+/* A link inside code, to the page of a declaration, is told from plain text by its underline. */
 code a {
     color: inherit;
-    text-decoration: inherit;
+    text-decoration: underline;
 }
 code.annotations {
     display: block;
@@ -853,23 +882,50 @@ code.annotations {
 code .annotation {
     color: var(--annotation-color);
 }
-code .keyword {
-    color: var(--keyword-color);
-}
 code .name {
     color: var(--name-color);
 }
-code .type {
-    color: var(--type-color);
+
+/* BEGIN TOKENS */
+/* A token of code. The classes are those of `HtmlHighlighter.cssClass`. */
+/* An annotation. */
+code .an {
+    color: var(--annotation-color);
 }
-code .kind {
-    color: var(--kind-color);
+/* A comment. */
+code .cm {
+    color: var(--comment-color);
 }
-code .effect {
+/* An effect. */
+code .ef {
     color: var(--effect-color);
 }
-/* A link inside code, to the page of a trait or a type, is told from plain text by its underline. */
-code .tpe-constraint,
-code a.type {
-    text-decoration: underline;
+/* A function, i.e. a definition, a signature, or an operation. */
+code .fn {
+    color: var(--name-color);
 }
+/* A keyword. It has the color of plain text. */
+code .kw {
+    color: var(--keyword-color);
+}
+/* A number. */
+code .nu {
+    color: var(--number-color);
+}
+/* A string, a character, or a regular expression. */
+code .st {
+    color: var(--string-color);
+}
+/* A trait. */
+code .tr {
+    color: var(--trait-color);
+}
+/* A type or a type variable. */
+code .ty {
+    color: var(--type-color);
+}
+/* A local variable or a parameter. */
+code .va {
+    color: var(--variable-color);
+}
+/* END TOKENS */

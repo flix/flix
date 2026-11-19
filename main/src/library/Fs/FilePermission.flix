@@ -44,16 +44,12 @@ pub mod Fs.FilePermission {
     /// In other words, re-interprets the `FilePermission` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FilePermission) + IO = x ->
-        checked_ecast(
-            Fs.FileSystem.handle(
-                y ->
-                    checked_ecast(
-                        Fs.FileStat.runWithFileSystem(
-                            () -> runWithFileStat(() -> f(y))
-                        )
-                    )
-            )(x)
-        )
+        Fs.FileSystem.handle(
+            y ->
+                Fs.FileStat.runWithFileSystem(
+                    () -> runWithFileStat(() -> f(y))
+                )
+        )(x)
 
     ///
     /// Runs the `FilePermission` effect of the given function `f`.

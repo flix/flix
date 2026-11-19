@@ -7,7 +7,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.fmt.FormatKind
+import ca.uwaterloo.flix.language.fmt.Pretty
 import ca.uwaterloo.flix.util.ConcurrentCache
 
 import scala.annotation.tailrec
@@ -30,7 +30,7 @@ sealed trait Kind {
   /**
     * Returns a human readable representation of `this` kind.
     */
-  override def toString: String = FormatKind.formatKind(this)
+  override def toString: String = Pretty.kind(this).plain
 
 
 }

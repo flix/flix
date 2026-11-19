@@ -1477,7 +1477,7 @@ mod TestBPlusTree {
         let tree = BPlusTree.empty(rc);
         let pairs = (1, 2) :: (2, 4) :: (1, 3) :: (2, 5) :: Nil;
         List.forEach(match (k, v) -> BPlusTree.put(k, v, tree), pairs);
-        let map = List.foldLeft(acc -> match (key, val) -> Map.insert(key, val, acc), Map#{}, pairs);
+        let map = List.foldLeft(acc -> match (key, value) -> Map.insert(key, value, acc), Map#{}, pairs);
         let finalPairs = Map.toList(map);
         assertEq(expected = List.sort(finalPairs), BPlusTree.toList(tree))
     }
@@ -1490,7 +1490,7 @@ mod TestBPlusTree {
         };
         let pairs = Random.handle(getRandomPairs)();
         List.forEach(match (k, v) -> BPlusTree.put(k, v, tree), pairs);
-        let map = List.foldLeft(acc -> match (key, val) -> Map.insert(key, val, acc), Map#{}, pairs);
+        let map = List.foldLeft(acc -> match (key, value) -> Map.insert(key, value, acc), Map#{}, pairs);
         let finalPairs = Map.toList(map);
         assertEq(expected = finalPairs, BPlusTree.toList(tree))
     }

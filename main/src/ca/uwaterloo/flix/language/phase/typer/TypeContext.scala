@@ -7,7 +7,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, RegionScope, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -19,8 +19,12 @@ import scala.collection.mutable
   * It maintains a stack of information: Whenever inference enters a region, the current information is pushed
   * onto the stack, and a new empty scope is entered. On exiting a region, the information is popped off, and
   * a special constraint is added which incorporates all the popped constraints.
+  *
+  * `subEffecting` controls whether lambdas and local defs are sub-effected, i.e. given a fresh effect
+  * variable bounded below by the effect of their body rather than that effect itself. It is `false` for
+  * a def annotated `@NoSubEff`.
   */
-class TypeContext {
+class TypeContext(val subEffecting: Boolean = true) {
 
   private object ScopeConstraints {
     /**
@@ -65,25 +69,11 @@ class TypeContext {
   private var currentScopeConstraints: ScopeConstraints = ScopeConstraints.empty
 
   /**
-    * The current rigidity environment.
-    *
-    * This environment only grows; we don't remove rigid variables as we exit a region.
-    *
-    * We use a mutable variable because RigidityEnv is an immutable structure.
-    */
-  private var renv: RigidityEnv = RigidityEnv.empty
-
-  /**
     * The typing context from outside the current scope.
     *
     * We push and pop information from this stack when we enter and exit regions.
     */
   private val constraintStack: mutable.Stack[ScopeConstraints] = mutable.Stack.empty
-
-  /**
-    * Returns the current rigidity environment.
-    */
-  def getRigidityEnv: RigidityEnv = renv
 
   /**
     * Returns the current type constraints.
@@ -222,20 +212,6 @@ class TypeContext {
   }
 
   /**
-    * Generates a constraint representing a source effect.
-    *
-    * For an effect variable effVar and source effect sourceEff, generates:
-    *
-    * {{{
-    *   effVar ~ sourceEff
-    * }}}
-    */
-  def unifySource(effVar: Type.Var, sourceEff: Type, loc: SourceLocation): Unit = {
-    val constr = TypeConstraint.Equality(effVar, sourceEff, Provenance.Source(effVar, sourceEff, loc))
-    currentScopeConstraints.add(constr)
-  }
-
-  /**
     * Adds the given trait constraints to the context.
     *
     * Each constraint is reported at the given `loc`, regardless of the location stored on the
@@ -263,17 +239,9 @@ class TypeContext {
   }
 
   /**
-    * Marks the given type variable as rigid in the context.
-    */
-  def rigidify(sym: Symbol.KindedTypeVarSym): Unit = {
-    renv = renv.markRigid(sym)
-  }
-
-  /**
     * Enters a new region.
     *
     * Current scope information is pushed onto the stack,
-    * the region symbol is marked as rigid,
     * and we get a fresh empty set of constraints for the new scope.
     */
   def enterRegion(sym: Symbol.RegionSym): Unit = {

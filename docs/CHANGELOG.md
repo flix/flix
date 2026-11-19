@@ -1,5 +1,12 @@
 # Changelog
 
+Version 0.80.0:
+- Language: Added sub-effecting for lambdas and local defs (thanks Magnus!)
+- Compiler: Significantly improved performance of type and effect inference (thanks Magnus!)
+- Compiler: Various performance improvements across the compiler (thanks Magnus!)
+- Compiler: Improved how types and effects are printed in error messages (thanks Magnus!)
+- Compiler: Added type links, sub-traits, and instances of built-in types to the generated API documentation (thanks Magnus!)
+
 Version 0.79.0:
 - Compiler: Added a new pretty printer based on Wadler-Lindig (thanks gwydd!)
 - Compiler: Added support for themes to the generated API documentation (thanks Magnus!)

@@ -9,6 +9,7 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.unification.shared.SveMode
+import ca.uwaterloo.flix.tools.XPerfMode
 
 object Options {
   // Enable constraint-based monomorphization if "XNEWMONO" env var is set.
@@ -31,11 +32,10 @@ object Options {
     assumeYes = false,
     xprintphases = false,
     xnodeprecated = false,
-    xsubeffecting = false,
     xnewmono = EnableMono2,
     XPerfN = None,
     XPerfFrontend = false,
-    XPerfPar = false,
+    XPerfMode = XPerfMode.Parallel,
     xchaosMonkey = false,
     xsve = SveMode.PerEquation,
     xverify = false
@@ -90,10 +90,9 @@ case class Options(lib: LibLevel,
                    assumeYes: Boolean,
                    xprintphases: Boolean,
                    xnodeprecated: Boolean,
-                   xsubeffecting: Boolean,
                    xnewmono: Boolean,
                    XPerfFrontend: Boolean,
-                   XPerfPar: Boolean,
+                   XPerfMode: XPerfMode,
                    XPerfN: Option[Int],
                    xchaosMonkey: Boolean,
                    xsve: SveMode,

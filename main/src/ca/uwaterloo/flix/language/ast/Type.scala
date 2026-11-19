@@ -10,7 +10,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
-import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, Pretty}
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -256,7 +256,7 @@ sealed trait Type {
   /**
     * Returns a human readable string representation of `this` type.
     */
-  override def toString: String = FormatType.formatTypeWithOptions(this, FormatOptions.Internal)
+  override def toString: String = Pretty.tpe(this)(FormatOptions.Internal).plain
 }
 
 object Type {
@@ -1072,39 +1072,46 @@ object Type {
   }
 
   /**
-    * Returns the type `Union(tpe1, tpe2)`.
+    * Returns a (possibly simplified) union of the effects tpe1 and tpe2.
     */
   def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.Pure, _), _) => tpe2
     case (_, Type.Cst(TypeConstructor.Pure, _)) => tpe1
-    case (Type.Cst(TypeConstructor.Univ, _), _) => Type.Univ
-    case (_, Type.Cst(TypeConstructor.Univ, _)) => Type.Univ
     case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.Union, tpe1, loc), tpe2, loc)
   }
 
   /**
-    * Returns the type `And(tpe1, And(tpe2, tpe3))`.
+    * Returns a (possibly simplified) union of the effects tpe1, tpe2, and tpe3.
     */
   def mkUnion(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Type =
     mkUnion(tpe1, mkUnion(tpe2, tpe3, loc), loc)
 
   /**
-    * Returns the type `And(tpe1, And(tpe2, And(tpe3, tpe4)))`.
+    * Returns a (possibly simplified) union of the effects tpe1, tpe2, tpe3, and tpe4.
     */
   def mkUnion(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation): Type =
     mkUnion(tpe1, mkUnion(tpe2, mkUnion(tpe3, tpe4, loc), loc), loc)
 
   /**
-    * Returns the type `And(tpe1, And(tpe2, ...))`.
+    * Returns a (possibly simplified) union of the effects tpes.
+    *
+    * Returns Pure if tpes is empty.
     */
   def mkUnion(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.Pure
+    case x :: Nil => x
     case x :: xs => mkUnion(x, mkUnion(xs, loc), loc)
   }
 
   /**
-    * Returns the type `Or(tpe1, tpe2)`.
+    * Returns a (possibly simplified) union of the effect tpe1 and the effects tpes.
+    */
+  def mkUnion(tpe1: Type, tpes: List[Type], loc: SourceLocation): Type =
+    mkUnion(tpe1, mkUnion(tpes, loc), loc)
+
+  /**
+    * Returns a (possibly simplified) intersection of the effects tpe1 and tpe2.
     */
   def mkIntersection(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.Pure, _), _) => Type.Pure
@@ -1116,15 +1123,18 @@ object Type {
   }
 
   /**
-    * Returns the type `Or(tpe1, Or(tpe2, ...))`.
+    * Returns a (possibly simplified) intersection of the effects tpes.
+    *
+    * Returns Univ if tpes is empty.
     */
   def mkIntersection(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.Univ
+    case x :: Nil => x
     case x :: xs => mkIntersection(x, mkIntersection(xs, loc), loc)
   }
 
   /**
-    * Returns the type `Xor(tpe1, tpe2)`.
+    * Returns a (possibly simplified) symmetric difference of the effects tpe1 and tpe2.
     */
   def mkSymmetricDiff(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.Pure, _), _) => tpe2
@@ -1133,10 +1143,13 @@ object Type {
   }
 
   /**
-    * Returns the type `Xor(tpe1, Xor(tpe2, ...))`.
+    * Returns a (possibly simplified) symmetric difference of the effects tpes.
+    *
+    * Returns Pure if tpes is empty.
     */
   def mkSymmetricDiff(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.Pure
+    case x :: Nil => x
     case x :: xs => mkSymmetricDiff(x, mkSymmetricDiff(xs, loc), loc)
   }
 

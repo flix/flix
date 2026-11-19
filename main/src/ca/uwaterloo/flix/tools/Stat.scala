@@ -129,7 +129,7 @@ object Stat {
     val numLines = isBlank.length
     val hasCode = new Array[Boolean](numLines)
     val (tokens, _) = Lexer.lex(src)
-    for (t <- tokens if t.kind != TokenKind.Eof && !t.kind.isComment) {
+    for (t <- tokens.tokens if t.kind != TokenKind.Eof && !t.kind.isComment) {
       var l = math.max(t.start.lineOneIndexed - 1, 0)
       val end = math.min(t.end.lineOneIndexed - 1, numLines - 1)
       while (l <= end) {
