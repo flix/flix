@@ -294,27 +294,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an operation which itself has an effect.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalEffectfulOperation(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E9356
-
-    def summary: String = "Unexpected effect on operation."
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s""">> Unexpected effect on operation.
-         |
-         |${src(loc, "unexpected effect")}
-         |
-         |${underline("Explanation:")} Effect operations may not themselves have effects.
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate a val which has an effect.
     *
     * @param loc the location where the error occurred.
@@ -352,38 +331,6 @@ object WeederError {
          |${src(loc, "empty tuple type")}
          |
          |${underline("Explanation:")} Use '${cyan("Unit")}' instead of an empty tuple type '${red("()")}'.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate an enum using both singleton and multiton syntaxes.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalEnum(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E9467
-
-    def summary: String = "Unexpected enum format."
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s""">> Unexpected enum format.
-         |
-         |${src(loc, "mixed singleton and case syntax")}
-         |
-         |${underline("Explanation:")} Only one enum form may be used.
-         |If you only need one case, use the singleton syntax:
-         |
-         |    enum E(Int32)
-         |
-         |If you need multiple cases, use the case syntax:
-         |
-         |    enum E {
-         |        case C1(Int32)
-         |        case C2(Bool)
-         |    }
-         |
          |""".stripMargin
     }
   }
@@ -656,25 +603,6 @@ object WeederError {
          |${src(loc, "exactly one parameter required")}
          |
          |${underline("Explanation:")} A trait must have exactly one type parameter.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that type parameters are present on an effect operation.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalOperationTypeParams(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E9245
-
-    def summary: String = "Unexpected effect operation type parameters."
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s""">> Unexpected effect operation type parameters.
-         |
-         |${src(loc, "effect operations cannot declare type parameters")}
          |""".stripMargin
     }
   }

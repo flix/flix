@@ -214,6 +214,81 @@ object ParseError {
   }
 
   /**
+    * An error raised to indicate an operation which itself has an effect.
+    *
+    * @param sctx the syntactic context.
+    * @param loc  the location where the error occurred.
+    */
+  case class IllegalEffectfulOperation(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    def code: ErrorCode = ErrorCode.E9356
+
+    def summary: String = "Unexpected effect on operation."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected effect on operation.
+         |
+         |${src(loc, "unexpected effect")}
+         |
+         |${underline("Explanation:")} Effect operations may not themselves have effects.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an enum using both singleton and multiton syntaxes.
+    *
+    * @param sctx the syntactic context.
+    * @param loc  the location where the error occurred.
+    */
+  case class IllegalEnum(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    def code: ErrorCode = ErrorCode.E9467
+
+    def summary: String = "Unexpected enum format."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected enum format.
+         |
+         |${src(loc, "mixed singleton and case syntax")}
+         |
+         |${underline("Explanation:")} Only one enum form may be used.
+         |If you only need one case, use the singleton syntax:
+         |
+         |    enum E(Int32)
+         |
+         |If you need multiple cases, use the case syntax:
+         |
+         |    enum E {
+         |        case C1(Int32)
+         |        case C2(Bool)
+         |    }
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that type parameters are present on an effect operation.
+    *
+    * @param sctx the syntactic context.
+    * @param loc  the location where the error occurred.
+    */
+  case class IllegalOperationTypeParams(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    def code: ErrorCode = ErrorCode.E9245
+
+    def summary: String = "Unexpected effect operation type parameters."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected effect operation type parameters.
+         |
+         |${src(loc, "effect operations cannot declare type parameters")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that something was syntactically malformed.
     * This error is very generic, and should be avoided in favor of other ParserErrors if possible.
     *
