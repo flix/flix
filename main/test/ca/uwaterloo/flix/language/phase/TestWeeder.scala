@@ -36,6 +36,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateAnnotation](result)
   }
 
+  test("DuplicateAnnotation.03") {
+    val input =
+      """@MaxEffVars(12) @MaxEffVars(16)
+        |def f(): Unit = ()
+    """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateAnnotation](result)
+  }
+
   test("DuplicateFormalParam.01") {
     val input = "def f(x: Int32, x: Int32): Int32 = 42"
     val result = check(input, Options.TestWithLibNix)
@@ -389,6 +398,20 @@ class TestWeeder extends AnyFunSuite with TestUtils {
       """
         |def f(): Int32 = {
         |    @NoSubEff
+        |    def g(i) = if (i <= 0) 0 else g(i - 1);
+        |    g(10)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalAnnotation](result)
+  }
+
+  test("IllegalAnnotation.LocalDef.04") {
+    // @MaxEffVars on local def should be illegal
+    val input =
+      """
+        |def f(): Int32 = {
+        |    @MaxEffVars(16)
         |    def g(i) = if (i <= 0) 0 else g(i - 1);
         |    g(10)
         |}
@@ -1321,6 +1344,16 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedInt](result)
   }
 
+  test("MalformedInt32.03") {
+    // The argument of an annotation is an Int32.
+    val input =
+      """@MaxEffVars(10000000000)
+        |def f(): Unit = ()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedInt](result)
+  }
+
   test("MalformedInt64.01") {
     val input = "def f(): Int64 = -100000000000000000000i64"
     val result = check(input, Options.TestWithLibNix)
@@ -1432,6 +1465,27 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[WeederError.MismatchedKindAnnotations](result)
+  }
+
+  test("MissingAnnotationArgument.01") {
+    val input =
+      """@MaxEffVars
+        |def f(): Unit = ()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingAnnotationArgument](result)
+  }
+
+  test("MissingAnnotationArgument.02") {
+    val input =
+      """
+        |trait T[a] {
+        |    @MaxEffVars
+        |    pub def f(x: a): Unit
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingAnnotationArgument](result)
   }
 
   test("MissingArgumentList.01") {
@@ -1710,6 +1764,16 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.UndefinedAnnotation](result)
   }
 
+  test("UndefinedAnnotation.04") {
+    // An undefined annotation with an argument is reported as undefined.
+    val input =
+      """@MaxEffectVars(16)
+        |def foo(x: Int32): Int32 = 42
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.UndefinedAnnotation](result)
+  }
+
   test("UndefinedIntrinsic.01") {
     val input =
       """
@@ -1735,6 +1799,28 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[WeederError.UndefinedIntrinsic](result)
+  }
+
+  test("UnexpectedAnnotationArgument.01") {
+    val input =
+      """@Test(16)
+        |def f(): Unit = ()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.UnexpectedAnnotationArgument](result)
+  }
+
+  test("UnexpectedAnnotationArgument.02") {
+    val input =
+      """
+        |def f(): Int32 = {
+        |    @Tailrec(16)
+        |    def g(i) = if (i <= 0) 0 else g(i - 1);
+        |    g(10)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.UnexpectedAnnotationArgument](result)
   }
 
   // Testing that the casing of 'foo' and 'Foo' should match

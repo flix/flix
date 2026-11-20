@@ -53,6 +53,8 @@ object CompilerConstants {
   /**
     * The maximum number of variables an equation may contain before it is
     * considered too complex for set unification.
+    *
+    * A function overrides the limit with the `@MaxEffVars` annotation.
     */
   val MaxEffUnificationVars: Int = 11
 

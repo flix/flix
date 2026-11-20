@@ -1561,12 +1561,33 @@ object Parser2 {
       close(mark, TreeKind.ModifierList)
     }
 
-    def annotations()(implicit s: State): Mark.Closed = {
+    def annotations()(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
       val mark = open()
       while (at(TokenKind.Annotation) && !eof()) {
-        advance()
+        annotation()
       }
       close(mark, TreeKind.AnnotationList)
+    }
+
+    /** Parses an annotation with an optional integer argument, e.g. `@Test` or `@MaxEffVars(16)`. */
+    private def annotation()(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
+      assert(at(TokenKind.Annotation))
+      val mark = open()
+      expect(TokenKind.Annotation)
+      if (eat(TokenKind.ParenL)) {
+        if (!eat(TokenKind.LiteralInt)) {
+          // The argument is not an integer. Skip ahead until we hit the closing parenthesis or a declaration.
+          val errMark = open()
+          val actual = nth(0)
+          val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.LiteralInt)), actual = Some(actual), sctx, hint = Some("an annotation argument must be an integer literal."), loc = currentSourceLocation())
+          while (!at(TokenKind.ParenR) && !nth(0).isFirstInDecl && !eof()) {
+            advance()
+          }
+          closeWithError(errMark, error, Some(actual))
+        }
+        expect(TokenKind.ParenR)
+      }
+      close(mark, TreeKind.Annotation)
     }
 
     def parameters()(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
@@ -3039,10 +3060,13 @@ object Parser2 {
           namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef, TokenKind.Annotation)),
           checkForItem = kind => kind == TokenKind.KeywordDef || kind == TokenKind.Annotation,
           getItem = () => {
-            // Skip past any annotations to find the `def` keyword.
+            // Skip past any annotations, and their arguments, to find the `def` keyword.
             var defOffset = 0
             while (nth(defOffset) == TokenKind.Annotation) {
               defOffset += 1
+              if (nth(defOffset) == TokenKind.ParenL && nth(defOffset + 1) == TokenKind.LiteralInt && nth(defOffset + 2) == TokenKind.ParenR) {
+                defOffset += 3
+              }
             }
             // If `def` is followed by `new`, parse as JvmConstructor; otherwise JvmMethod.
             if (nth(defOffset + 1) == TokenKind.KeywordNew) jvmConstructor()

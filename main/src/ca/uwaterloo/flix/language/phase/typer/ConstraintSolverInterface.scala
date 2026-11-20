@@ -6,7 +6,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EqualityConstraint, RegionScope, TraitConstraint}
@@ -41,7 +41,9 @@ object ConstraintSolverInterface {
     val InfResult(infConstrs, _, _) = infResult
     // A val has no type parameters, so there are no rigid variables to carry in.
     val renv = RigidityEnv.empty
-    val (leftovers, subst) = ConstraintSolver2.solveAll(infConstrs, SubstitutionTree.empty)(RegionScope.Top, renv, tenv0, eqEnv0, flix)
+    // The limit on the variables of an effect equation is the default unless the val is annotated with `@MaxEffVars`.
+    val maxEffVars = v.ann.maxEffVars.getOrElse(CompilerConstants.MaxEffUnificationVars)
+    val (leftovers, subst) = ConstraintSolver2.solveAll(infConstrs, SubstitutionTree.empty, maxEffVars)(RegionScope.Top, renv, tenv0, eqEnv0, flix)
     leftovers match {
       case Nil => (subst, Nil)
       case _ => (subst, mkTypeErrors(leftovers, subst, root))
@@ -61,9 +63,12 @@ object ConstraintSolverInterface {
     * Resolves constraints in the given spec using the given inference result.
     */
   def visitSpec(spec: KindedAst.Spec, loc: SourceLocation, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = spec match {
-    case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs) =>
+    case KindedAst.Spec(_, ann, _, _, fparams, _, tpe, eff, tconstrs, econstrs) =>
 
       val InfResult(infConstrs, infTpe, infEff) = infResult
+
+      // The limit on the variables of an effect equation is the default unless the spec is annotated with `@MaxEffVars`.
+      val maxEffVars = ann.maxEffVars.getOrElse(CompilerConstants.MaxEffUnificationVars)
 
       // The initial substitution maps from formal parameters to their types
       val initialSubst = fparams.foldLeft(Substitution.empty) {
@@ -109,7 +114,7 @@ object ConstraintSolverInterface {
       // We resolve the constraints under the environments we created. //
       ///////////////////////////////////////////////////////////////////
 
-      val (leftovers, subst) = ConstraintSolver2.solveAll(constrs, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
+      val (leftovers, subst) = ConstraintSolver2.solveAll(constrs, initialTree, maxEffVars)(RegionScope.Top, renv, tenv, eenv, flix)
       leftovers match {
         case Nil =>
           // All constraints solved. Yay!
@@ -127,7 +132,7 @@ object ConstraintSolverInterface {
               val declaredEffConstrWithDebug = TypeConstraint.Equality(declaredEffWithDebug, infEff, Provenance.ExpectEffect(expected = declaredEffWithDebug, actual = infEff, loc))
               val constrs0 = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
               val constrsWithDebug = constrs0.map(initialTree.apply)
-              val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
+              val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree, maxEffVars)(RegionScope.Top, renv, tenv, eenv, flix)
 
               leftovers2 match {
                 case Nil =>

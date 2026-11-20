@@ -885,6 +885,7 @@ object TypeError {
          |
          |  (a) Break your function into smaller functions.
          |  (b) Annotate your function with @NoSubEff to disable sub-effecting.
+         |  (c) Annotate your function with @MaxEffVars(n) to raise the limit, e.g. @MaxEffVars(16).
          |""".stripMargin
     }
   }

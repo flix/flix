@@ -55,6 +55,46 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("ParseError.AnnotationArgument.01") {
+    val input =
+      """
+        |@MaxEffVars()
+        |def f(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("ParseError.AnnotationArgument.02") {
+    val input =
+      """
+        |@MaxEffVars(x)
+        |def f(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("ParseError.AnnotationArgument.03") {
+    val input =
+      """
+        |@MaxEffVars(-1)
+        |def f(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("ParseError.AnnotationArgument.04") {
+    val input =
+      """
+        |@MaxEffVars(16
+        |def f(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
   test("IllegalOperationTypeParams.01") {
     val input =
       """
