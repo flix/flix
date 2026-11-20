@@ -13,7 +13,7 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.ast.shared.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
-import ca.uwaterloo.flix.language.errors.ParseError
+import ca.uwaterloo.flix.language.errors.{NamedTokenSet, ParseError}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import scala.collection.mutable.ArrayBuffer

@@ -14,7 +14,7 @@ import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, SemanticOp, Sou
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.WeederError.*
-import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
+import ca.uwaterloo.flix.language.errors.{NamedTokenSet, ParseError, WeederError}
 import ca.uwaterloo.flix.util.collection.{ArrayOps, Nel, SeqOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
