@@ -1267,6 +1267,9 @@ object Weeder2 {
                 case token@Token(TokenKind.GenericOperator, _, _, _, _, _) =>
                   val ident = Name.Ident(token.text, op.loc)
                   Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc)
+                case token@Token(TokenKind.NameMath, _, _, _, _, _) =>
+                  val ident = Name.Ident(token.text, op.loc)
+                  Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc)
                 case _ =>
                   throw InternalCompilerException(s"Expr.Binary operator not recognized", tree.loc)
               }
