@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.{LexerError, ParseError, ResolutionError, WeederError}
+import ca.uwaterloo.flix.language.errors.{LexerError, ParseError, ResolutionError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -63,7 +63,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalOperationTypeParams](result)
+    expectError[ParseError.IllegalOperationTypeParams](result)
   }
 
   test("IllegalOperationTypeParams.02") {
@@ -74,7 +74,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalOperationTypeParams](result)
+    expectError[ParseError.IllegalOperationTypeParams](result)
   }
 
   test("IllegalExtMatchRule.01") {
@@ -127,7 +127,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEffectfulOperation](result)
+    expectError[ParseError.IllegalEffectfulOperation](result)
   }
 
   test("IllegalEffectfulOperation.02") {
@@ -138,7 +138,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEffectfulOperation](result)
+    expectError[ParseError.IllegalEffectfulOperation](result)
   }
 
   test("IllegalEffectfulOperation.03") {
@@ -149,7 +149,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEffectfulOperation](result)
+    expectError[ParseError.IllegalEffectfulOperation](result)
   }
 
   test("IllegalEffectfulOperation.04") {
@@ -163,7 +163,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEffectfulOperation](result)
+    expectError[ParseError.IllegalEffectfulOperation](result)
   }
 
   test("IllegalEnum.01") {
@@ -172,7 +172,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |enum E(Int32) { }
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEnum](result)
+    expectError[ParseError.IllegalEnum](result)
   }
 
   test("IllegalEnum.02") {
@@ -181,7 +181,18 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |enum E(a) { }
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEnum](result)
+    expectError[ParseError.IllegalEnum](result)
+  }
+
+  test("IllegalEnum.03") {
+    val input =
+      """
+        |enum E(Int32) {
+        |    case C
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.IllegalEnum](result)
   }
 
   test("IllegalModule.01") {

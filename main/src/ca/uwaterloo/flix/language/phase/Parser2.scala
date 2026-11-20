@@ -13,7 +13,7 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.ast.shared.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
-import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
+import ca.uwaterloo.flix.language.errors.ParseError
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import scala.collection.mutable.ArrayBuffer
@@ -1377,7 +1377,7 @@ object Parser2 {
       if (eat(TokenKind.CurlyL)) {
         // Check for illegal enum using both shorthand and body.
         if (isShorthand) {
-          closeWithError(open(), WeederError.IllegalEnum(nameLoc))
+          closeWithError(open(), ParseError.IllegalEnum(SyntacticContext.Unknown, nameLoc))
         }
         enumCases()
         expect(TokenKind.CurlyR)
@@ -1531,7 +1531,7 @@ object Parser2 {
         val mark = open()
         val loc = currentSourceLocation()
         Type.parameters()
-        closeWithError(mark, WeederError.IllegalOperationTypeParams(loc))
+        closeWithError(mark, ParseError.IllegalOperationTypeParams(SyntacticContext.Unknown, loc))
       }
 
       if (at(TokenKind.ParenL)) {
@@ -1545,7 +1545,7 @@ object Parser2 {
         val mark = open()
         eat(TokenKind.Backslash)
         Type.ttype()
-        closeWithError(mark, WeederError.IllegalEffectfulOperation(typeLoc))
+        closeWithError(mark, ParseError.IllegalEffectfulOperation(SyntacticContext.Unknown, typeLoc))
       }
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
