@@ -6,7 +6,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
@@ -129,13 +129,15 @@ object ConstraintSolver2 {
 
   /**
     * Solves the given constraint set as far as possible.
+    *
+    * An effect equation with more than `maxEffVars` variables is considered too complex to solve.
     */
-  def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: RegionScope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
+  def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree, maxEffVars: Int = CompilerConstants.MaxEffUnificationVars)(implicit scope: RegionScope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
     // Apply the initial substitution to the constraints.
     val constrs = constrs0.map(initialSubst.apply)
     val soup = new Soup(constrs, initialSubst)
     val progress = Progress()
-    val res = soup.exhaustively(progress)(solveOne)
+    val res = soup.exhaustively(progress)(solveOne(_, _, maxEffVars))
     res.get
   }
 
@@ -281,7 +283,7 @@ object ConstraintSolver2 {
   /**
     * Iterates once over all reduction rules to apply them to the constraint set.
     */
-  private def solveOne(soup: Soup, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): Soup = {
+  private def solveOne(soup: Soup, progress: Progress, maxEffVars: Int)(implicit scope: RegionScope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): Soup = {
     val reduced = soup
       .exhaustively(progress) {
         (soup, progress) =>
@@ -292,7 +294,7 @@ object ConstraintSolver2 {
       }
     // Effect unification requires all applications of a polymorphic effect to agree; see the pass.
     canonicalizeEffectApplications(reduced, progress)
-      .blockApply(blockEffectUnification(_, progress))
+      .blockApply(blockEffectUnification(_, progress, maxEffVars))
       .flatMapSubst(caseSetUnification(_, progress))
       .flatMapSubst(booleanUnification(_, progress))
       .flatMap(contextReduction(_, progress))
@@ -654,8 +656,10 @@ object ConstraintSolver2 {
 
   /**
     * Performs effect unification on all the given constraints.
+    *
+    * An effect equation with more than `maxEffVars` variables is considered too complex to solve.
     */
-  private def blockEffectUnification(constrs0: List[TypeConstraint], progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
+  private def blockEffectUnification(constrs0: List[TypeConstraint], progress: Progress, maxEffVars: Int)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
 
     // Separate out the effect unification stuff: the effect equalities, the subeffect
     // constraints, and everything else.
@@ -672,7 +676,7 @@ object ConstraintSolver2 {
     val hasEffConstrs = eqConstrs.nonEmpty || subConstrs.nonEmpty
 
     // First solve all the top-level constraints together
-    val (leftovers1, subst1) = EffUnification3.unifyAll(eqConstrs.toList, subConstrs.toList, scope, renv) match {
+    val (leftovers1, subst1) = EffUnification3.unifyAll(eqConstrs.toList, subConstrs.toList, scope, renv, maxEffVars) match {
       case Result.Ok(subst) =>
         // If we solved everything, then we can use the new substitution.
         // We only mark progress if there was something to solve.
@@ -713,7 +717,7 @@ object ConstraintSolver2 {
       // and put the substitution in the tree
       case c@TypeConstraint.Purification(sym, eff1, eff2_0, prov, nested0) =>
         // Note: `tree0` has already been applied to `nested0` by the mapping over `rest0a` above.
-        val (nested, subst2) = blockEffectUnification(nested0, progress)(scope.enter(sym), renv, flix)
+        val (nested, subst2) = blockEffectUnification(nested0, progress, maxEffVars)(scope.enter(sym), renv, flix)
         branches = branches + (sym -> subst2)
 
         // apply the inner substitution to the to-be-purified effect

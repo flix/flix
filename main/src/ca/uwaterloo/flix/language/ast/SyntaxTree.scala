@@ -97,6 +97,8 @@ object SyntaxTree {
       */
     case object UnclosedMark extends TreeKind
 
+    case object Annotation extends TreeKind
+
     case object AnnotationList extends TreeKind
 
     case object Argument extends TreeKind

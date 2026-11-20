@@ -8,6 +8,7 @@
 package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.{Compl, Cst, ElemSet, Empty, Inter, Union, Var}
@@ -378,7 +379,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
     */
   def assertSolved(input: List[Equation]): Unit = {
     for (mode <- List(SveMode.PerEquation, SveMode.PerComponent, SveMode.PerSystem)) {
-      val (eqs, subst) = SetUnification.solve(input, mode)
+      val (eqs, subst) = SetUnification.solve(input, mode, CompilerConstants.MaxEffUnificationVars)
       assert(eqs.isEmpty, mode)
       for (eq <- input) {
         assert(isEquivalent(subst(eq.f1), subst(eq.f2)), s"$mode: $eq is not satisfied by $subst")

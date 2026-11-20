@@ -122,6 +122,19 @@ object Annotation {
   }
 
   /**
+    * An AST node that represents a `@MaxEffVars` annotation.
+    *
+    * A function marked with `@MaxEffVars(n)` is type checked with `n` as the maximum number of
+    * variables an effect equation may contain before it is considered too complex.
+    *
+    * @param limit the maximum number of variables.
+    * @param loc   the source location of the annotation.
+    */
+  case class MaxEffVars(limit: Int, loc: SourceLocation) extends Annotation {
+    override def toString: String = s"@MaxEffVars($limit)"
+  }
+
+  /**
     * An AST node that represents a `@NoSubEff` annotation.
     *
     * A function marked with `@NoSubEff` is type checked without sub-effecting: the lambdas and local

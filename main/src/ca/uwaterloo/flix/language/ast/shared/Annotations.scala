@@ -73,6 +73,13 @@ case class Annotations(annotations: List[Annotation]) {
   def isLoweringTargetChannel: Boolean = annotations exists (_.isInstanceOf[Annotation.LoweringTargetChannel])
 
   /**
+    * Optionally returns the limit of the `@MaxEffVars` annotation in `this` sequence.
+    */
+  def maxEffVars: Option[Int] = annotations.collectFirst {
+    case Annotation.MaxEffVars(limit, _) => limit
+  }
+
+  /**
     * Returns `true` if `this` sequence contains the `@NoSubEff` annotation.
     */
   def isNoSubEff: Boolean = annotations exists (_.isInstanceOf[Annotation.NoSubEff])

@@ -1975,6 +1975,7 @@ object HtmlDocumentor {
     case Annotation.CompileTest(_) => false
     case Annotation.LoweringTargetChannel(_) => false
     case Annotation.LoweringTargetDatalog(_) => false
+    case Annotation.MaxEffVars(_, _) => false
     case Annotation.NoSubEff(_) => false
     case Annotation.Skip(_) => false
     case Annotation.Test(_) => false

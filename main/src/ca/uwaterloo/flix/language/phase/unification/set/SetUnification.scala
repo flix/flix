@@ -7,7 +7,6 @@
 
 package ca.uwaterloo.flix.language.phase.unification.set
 
-import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
@@ -20,11 +19,6 @@ import scala.collection.immutable.IntMap
 import scala.collection.mutable
 
 object SetUnification {
-
-  /**
-   * The maximum number of variables an equation may contain before it is considered too complex.
-   */
-  val MaxVars: Int = CompilerConstants.MaxEffUnificationVars
 
   /** The maximum number of passes over the rule sequence (see [[solve]]). */
   private val MaxIterations: Int = 32
@@ -141,9 +135,10 @@ object SetUnification {
     * made by [[unionAssignment]] makes [[interAssignment]] applicable.
     *
     * The equations that remain after the rewrite rules are solved by SVE at the granularity
-    * given by `mode` (see [[SveAlgorithm.sveAll]]).
+    * given by `mode` (see [[SveAlgorithm.sveAll]]). An equation that remains with more than
+    * `maxVars` variables is considered too complex for SVE and is returned as a timeout.
     */
-  def solve(l: List[Equation], mode: SveMode): (List[Equation], SetSubstitution) = {
+  def solve(l: List[Equation], mode: SveMode, maxVars: Int): (List[Equation], SetSubstitution) = {
     val state = new State(l)
 
     if (EnableRewriteRules) {
@@ -187,7 +182,7 @@ object SetUnification {
       }
     }
 
-    sveAll(state.eqs, mode) match {
+    sveAll(state.eqs, mode, maxVars) match {
       case Result.Ok(s) =>
         // Success: We solved all equations using SVE.
         // Mark all equations as solved and update the substitution.
@@ -839,8 +834,10 @@ object SetUnification {
     *
     * Returns `Result.Ok(s)` with a complete substitution `s` if all equations were solved.
     * Returns `Result.Err(l)` with a list of unsolveable equations. (At least one equation is unsolveable.)
+    *
+    * An equation with more than `maxVars` variables is unsolvable: it is too complex.
     */
-  private def sveAll(eqs: List[Equation], mode: SveMode): Result[SetSubstitution, List[Equation]] = {
+  private def sveAll(eqs: List[Equation], mode: SveMode, maxVars: Int): Result[SetSubstitution, List[Equation]] = {
     // Return immediately if there are no equations to solve.
     if (eqs.isEmpty) {
       return Result.Ok(SetSubstitution.empty)
@@ -861,8 +858,8 @@ object SetUnification {
     // Return immediately if there is an equation that has too many variables.
     for (eq <- eqs) {
       val allVars = eq.f1.varsOf ++ eq.f2.varsOf
-      if (allVars.size > MaxVars) {
-        return Result.Err(List(eq.toTimeout(s"Unification too complex: The equation contains ${allVars.size} variables which exceeds the limit of $MaxVars")))
+      if (allVars.size > maxVars) {
+        return Result.Err(List(eq.toTimeout(s"Unification too complex: The equation contains ${allVars.size} variables which exceeds the limit of $maxVars")))
       }
     }
 
