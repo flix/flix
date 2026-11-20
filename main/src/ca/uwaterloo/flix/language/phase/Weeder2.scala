@@ -1226,10 +1226,7 @@ object Weeder2 {
               op.children.head match {
                 case t: SyntaxTree.Tree if t.kind == TreeKind.OperatorError =>
                   // Synthetic OperatorError inserted by the parser to recover from a missing binary operator.
-                  // Use the source location between the two expressions to indicate where the operator is missing.
-                  val betweenLoc = SourceLocation(isReal = true, e1.loc.source, e1.loc.end, e2.loc.start)
-                  val error = ParseError.MissingBinaryOperator(SyntacticContext.Expr.OtherExpr, betweenLoc)
-                  sctx.errors.add(error)
+                  // The parser has already reported the error, so we recover by keeping both operands.
                   Expr.LetMatch(Pattern.Wild(tree.loc.asSynthetic), None, e1, e2, tree.loc)
                 // Infix function with a malformed name, e.g. 1 `checked_cast` 2.
                 // The parser has already reported the error, so we recover with an error operator and keep both operands.
