@@ -1649,9 +1649,11 @@ object Parser2 {
             exprMarks.addOne(expression())
           } else {
             // Same line: We assume that a binary operator is missing between the two expressions,
-            // so we create a Binary node with a synthetic OperatorError child.
-            // The Weeder will detect OperatorError, emit ParseError.MissingBinaryOperator,
-            // and produce LetMatch(Wild) so both sub-expressions can still be type-checked.
+            // so we report the error and create a Binary node with a synthetic OperatorError child.
+            // The Weeder will detect OperatorError and produce LetMatch(Wild) so both
+            // sub-expressions can still be type-checked.
+            val errorLoc = mkSourceLocation(previousSourceLocation().end, currentSourceLocation().start)
+            s.errors.append(ParseError.MissingBinaryOperator(sctx, errorLoc))
             val lastIdx = exprMarks.length - 1
             val mark = openBefore(exprMarks(lastIdx))
             val markOp = open()
