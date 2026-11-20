@@ -1078,7 +1078,7 @@ object WeederError {
     * @param loc the location where the error occurred.
     */
   case class NonUnaryAssocType(n: Int, loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E3236
+    def code: ErrorCode = ErrorCode.E3243
 
     def summary: String = s"Non-unary associated type: expected 1 parameter, found $n."
 
