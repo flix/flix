@@ -294,25 +294,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that type parameters are present on an effect operation.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalOperationTypeParams(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E9245
-
-    def summary: String = "Unexpected effect operation type parameters."
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s""">> Unexpected effect operation type parameters.
-         |
-         |${src(loc, "effect operations cannot declare type parameters")}
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate an operation which itself has an effect.
     *
     * @param loc the location where the error occurred.
@@ -329,6 +310,27 @@ object WeederError {
          |${src(loc, "unexpected effect")}
          |
          |${underline("Explanation:")} Effect operations may not themselves have effects.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a val which has an effect.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEffectfulVal(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E4217
+
+    def summary: String = "Unexpected effect on val."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected effect on val.
+         |
+         |${src(loc, "unexpected effect")}
+         |
+         |${underline("Explanation:")} A val may not have an effect.
          |""".stripMargin
     }
   }
@@ -659,6 +661,25 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that type parameters are present on an effect operation.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalOperationTypeParams(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E9245
+
+    def summary: String = "Unexpected effect operation type parameters."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected effect operation type parameters.
+         |
+         |${src(loc, "effect operations cannot declare type parameters")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate an illegal predicate arity.
     *
     * @param loc the location where the error occurs.
@@ -673,6 +694,50 @@ object WeederError {
       s""">> Malformed predicate arity.
          |
          |${src(loc, "arity must be a positive integer")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a qualified extensible variant pattern.
+    *
+    * @param qname the offending qualified name.
+    */
+  case class IllegalQualifiedExtPattern(qname: Name.QName) extends WeederError {
+    def code: ErrorCode = ErrorCode.E0894
+
+    def summary: String = "Unexpected qualified extensible variant pattern."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected qualified extensible variant pattern.
+         |
+         |${src(loc, "qualified pattern not allowed")}
+         |
+         |${underline("Explanation:")} Extensible variants cannot be qualified. Use '${cyan("B")}' instead of '${red("A.B")}'.
+         |""".stripMargin
+    }
+
+    def loc: SourceLocation = qname.loc
+  }
+
+  /**
+    * An error raised to indicate an illegal qualified name.
+    *
+    * @param loc the location of the illegal qualified name.
+    */
+  case class IllegalQualifiedName(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1896
+
+    def summary: String = "Unexpected qualified name."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected qualified name.
+         |
+         |${src(loc, "qualified name not allowed here")}
+         |
+         |${underline("Explanation:")} Java names must be imported, e.g. 'import java.lang.Object'.
          |""".stripMargin
     }
   }
@@ -738,50 +803,6 @@ object WeederError {
          |${underline("Explanation:")} Regex cannot be used as a pattern. Use an 'if' guard instead:
          |
          |    case s if Regex.isMatch(regex"...", s) => ...
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate a qualified extensible variant pattern.
-    *
-    * @param qname the offending qualified name.
-    */
-  case class IllegalQualifiedExtPattern(qname: Name.QName) extends WeederError {
-    def code: ErrorCode = ErrorCode.E0894
-
-    def summary: String = "Unexpected qualified extensible variant pattern."
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s""">> Unexpected qualified extensible variant pattern.
-         |
-         |${src(loc, "qualified pattern not allowed")}
-         |
-         |${underline("Explanation:")} Extensible variants cannot be qualified. Use '${cyan("B")}' instead of '${red("A.B")}'.
-         |""".stripMargin
-    }
-
-    def loc: SourceLocation = qname.loc
-  }
-
-  /**
-    * An error raised to indicate an illegal qualified name.
-    *
-    * @param loc the location of the illegal qualified name.
-    */
-  case class IllegalQualifiedName(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E1896
-
-    def summary: String = "Unexpected qualified name."
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s""">> Unexpected qualified name.
-         |
-         |${src(loc, "qualified name not allowed here")}
-         |
-         |${underline("Explanation:")} Java names must be imported, e.g. 'import java.lang.Object'.
          |""".stripMargin
     }
   }
@@ -1271,27 +1292,6 @@ object WeederError {
          |${src(loc, "must be qualified")}
          |
          |${underline("Explanation:")} A use must be qualified, e.g. 'use Foo.bar'.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate a val which has an effect.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalEffectfulVal(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E4217
-
-    def summary: String = "Unexpected effect on val."
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s""">> Unexpected effect on val.
-         |
-         |${src(loc, "unexpected effect")}
-         |
-         |${underline("Explanation:")} A val may not have an effect.
          |""".stripMargin
     }
   }
