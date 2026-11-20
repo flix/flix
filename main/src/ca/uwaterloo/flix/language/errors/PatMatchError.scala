@@ -52,7 +52,7 @@ object PatMatchError {
     * @param loc       the location of the redundant catch rule.
     */
   case class RedundantCatchRule(coveredBy: SourceLocation, loc: SourceLocation) extends PatMatchError {
-    def code: ErrorCode = ErrorCode.E5963
+    def code: ErrorCode = ErrorCode.E5966
 
     def summary: String = "Unreachable catch rule: already covered by a preceding case."
 
@@ -76,7 +76,7 @@ object PatMatchError {
     * @param loc       the location of the redundant pattern.
     */
   case class RedundantPattern(coveredBy: Option[SourceLocation], loc: SourceLocation) extends PatMatchError {
-    def code: ErrorCode = ErrorCode.E5963
+    def code: ErrorCode = ErrorCode.E5968
 
     def summary: String = "Unreachable pattern: already covered by a preceding case."
 
