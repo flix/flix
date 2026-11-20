@@ -881,7 +881,10 @@ object TypeError {
          |
          |${highlight(loc, "complex type inference", fmt)}
          |
-         |${underline("Suggestion:")} Break your function into smaller functions.
+         |${underline("Possible fixes:")}
+         |
+         |  (a) Break the function into smaller functions, or
+         |  (b) Raise the limit for the function with '@MaxEffVars', e.g. '@MaxEffVars(16)'.
          |""".stripMargin
     }
   }
