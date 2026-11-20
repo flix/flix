@@ -128,6 +128,92 @@ object ParseError {
   }
 
   /**
+    * An error raised to indicate that a Thick Right Arrow was expected, but got a Thin Right Arrow
+    *
+    * @param sctx      The syntactic context.
+    * @param loc       The source location.
+    */
+  case class ExpectedArrowThickRGotArrowThinR(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E3169
+    def summary: String = s"Expected '=>' got '->'"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected '=>' got '->'
+         |
+         |${src(loc, s"Use '=>' instead of '->'")}
+         |""".stripMargin
+    }
+
+  }
+
+  /**
+    * An error raised to indicate that a Thick Right Arrow was expected, but got an Equal.
+    *
+    * @param sctx      The syntactic context.
+    * @param loc       The source location.
+    */
+  case class ExpectedArrowThickRGotEqual(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E8652
+    def summary: String = s"Expected '=>' got '='"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected '=>' got '='
+         |
+         |${src(loc, s"Use '=>' instead of '='")}
+         |""".stripMargin
+    }
+
+  }
+
+  /**
+    * An error raised to indicate that a Backslash was expected, but got a Slash.
+    *
+    * @param sctx      The syntactic context.
+    * @param loc       The source location.
+    */
+  case class ExpectedBackslashGotSlash(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E3795
+    def summary: String = s"Expected '\\' got '/'"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected '\\' got '/'
+         |
+         |${src(loc, s"Use '\\' instead of '/'")}
+         |""".stripMargin
+    }
+
+  }
+
+  /**
+    * An error raised to indicate that a semicolon was expected.
+    *
+    * @param sctx      The syntactic context.
+    * @param loc       The source location.
+    * @param found     The token that was found instead.
+    */
+  case class ExpectedSemicolon(sctx: SyntacticContext, loc: SourceLocation, found: TokenKind) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E3190
+
+    def summary: String = s"Expected ';' but found '$found'"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected ';' but found '$found'
+         |
+         |${src(loc, s"Expected ';' here")}
+         |""".stripMargin
+    }
+
+  }
+
+  /**
     * An error raised to indicate that something was syntactically malformed.
     * This error is very generic, and should be avoided in favor of other ParserErrors if possible.
     *
@@ -172,6 +258,25 @@ object ParseError {
          |
          |${src(loc, s"Here")}
          |Hint: doc-comments must annotate declarations.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a binary operator is missing between two expressions.
+    *
+    * @param sctx The syntactic context.
+    * @param loc  The source location.
+    */
+  case class MissingBinaryOperator(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E9061
+    def summary: String = s"Missing operator between expressions."
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Missing operator between expressions.
+         |
+         |${src(loc, s"Expected an operator here")}
          |""".stripMargin
     }
   }
@@ -244,112 +349,6 @@ object ParseError {
       s""">> Trailing ${red(separator.display)}.
          |
          |${src(loc, s"Here")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that a Thick Right Arrow was expected, but got an Equal.
-    *
-    * @param sctx      The syntactic context.
-    * @param loc       The source location.
-    */
-  case class ExpectedArrowThickRGotEqual(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
-    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
-    def code: ErrorCode = ErrorCode.E8652
-    def summary: String = s"Expected '=>' got '='"
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s""">> Expected '=>' got '='
-         |
-         |${src(loc, s"Use '=>' instead of '='")}
-         |""".stripMargin
-    }
-
-  }
-
-  /**
-    * An error raised to indicate that a Backslash was expected, but got a Slash.
-    *
-    * @param sctx      The syntactic context.
-    * @param loc       The source location.
-    */
-  case class ExpectedBackslashGotSlash(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
-    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
-    def code: ErrorCode = ErrorCode.E3795
-    def summary: String = s"Expected '\\' got '/'"
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s""">> Expected '\\' got '/'
-         |
-         |${src(loc, s"Use '\\' instead of '/'")}
-         |""".stripMargin
-    }
-
-  }
-
-  /**
-    * An error raised to indicate that a Thick Right Arrow was expected, but got a Thin Right Arrow
-    *
-    * @param sctx      The syntactic context.
-    * @param loc       The source location.
-    */
-  case class ExpectedArrowThickRGotArrowThinR(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
-    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
-    def code: ErrorCode = ErrorCode.E3169
-    def summary: String = s"Expected '=>' got '->'"
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s""">> Expected '=>' got '->'
-         |
-         |${src(loc, s"Use '=>' instead of '->'")}
-         |""".stripMargin
-    }
-
-  }
-
-
-  /**
-    * An error raised to indicate that a semicolon was expected.
-    *
-    * @param sctx      The syntactic context.
-    * @param loc       The source location.
-    * @param found     The token that was found instead.
-    */
-  case class ExpectedSemicolon(sctx: SyntacticContext, loc: SourceLocation, found: TokenKind) extends ParseError {
-    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
-    def code: ErrorCode = ErrorCode.E3190
-
-    def summary: String = s"Expected ';' but found '$found'"
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s""">> Expected ';' but found '$found'
-         |
-         |${src(loc, s"Expected ';' here")}
-         |""".stripMargin
-    }
-
-  }
-
-  /**
-    * An error raised to indicate a binary operator is missing between two expressions.
-    *
-    * @param sctx The syntactic context.
-    * @param loc  The source location.
-    */
-  case class MissingBinaryOperator(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
-    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
-    def code: ErrorCode = ErrorCode.E9061
-    def summary: String = s"Missing operator between expressions."
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s""">> Missing operator between expressions.
-         |
-         |${src(loc, s"Expected an operator here")}
          |""".stripMargin
     }
   }
