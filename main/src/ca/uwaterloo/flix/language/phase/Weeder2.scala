@@ -1264,7 +1264,10 @@ object Weeder2 {
                       sctx.errors.add(error)
                       Expr.Error(error)
                   }
-                case token@Token(TokenKind.GenericOperator | TokenKind.NameMath, _, _, _, _, _) =>
+                case token@Token(TokenKind.GenericOperator, _, _, _, _, _) =>
+                  val ident = Name.Ident(token.text, op.loc)
+                  Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc)
+                case token@Token(TokenKind.NameMath, _, _, _, _, _) =>
                   val ident = Name.Ident(token.text, op.loc)
                   Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc)
                 case _ =>
