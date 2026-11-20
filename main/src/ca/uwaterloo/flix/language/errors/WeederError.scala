@@ -765,7 +765,7 @@ object WeederError {
     * @param loc the location where the error occurred.
     */
   case class IllegalUnaryPlus(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E3236
+    def code: ErrorCode = ErrorCode.E3241
 
     def summary: String = "Unexpected unary '+'."
 
