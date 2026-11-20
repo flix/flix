@@ -210,9 +210,14 @@ final class Profiler(phaseProvider: () => Option[String]) extends FlixListener {
 
   /**
     * Subscribes the profiler to compiler events emitted via `Flix.emitEvent`.
-    * Today only [[FlixEvent.NewConstraintsDef]] is consumed — Typer fires it
-    * once per def with the post-generation constraint list, which gives us
-    * a clean per-def `cns` reading without instrumenting any inner loops.
+    * Three events are consumed:
+    *
+    *   - [[FlixEvent.NewConstraintsDef]]: Typer fires it once per def with the
+    *     post-generation constraint list, which gives a clean per-def `cns`
+    *     reading without instrumenting any inner loops.
+    *   - [[FlixEvent.InlinedDef]]: counts how often a def is inlined.
+    *   - [[FlixEvent.EmittedClass]]: adds the size of each emitted class to
+    *     its def's byte count.
     */
   override def notify(e: FlixEvent): Unit = e match {
     case FlixEvent.NewConstraintsDef(sym, tconstrs) =>
