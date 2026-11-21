@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.errors.ParseError
+import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -1002,7 +1002,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+    expectError[WeederError.NeedAtleastOne](result)
     expectMain(result)
   }
 

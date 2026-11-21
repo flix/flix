@@ -145,7 +145,7 @@ object Weeder2 {
     }
     // Issue an error if it's empty.
     if (uses.isEmpty) {
-      val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, tree.loc)
+      val error = NeedAtleastOne(NamedTokenSet.Name, None, tree.loc)
       sctx.errors.add(error)
     }
     uses
@@ -190,7 +190,7 @@ object Weeder2 {
         val imports = visitImportMany(importMany, jname.fqn)
         // Issue an error if it's empty.
         if (imports.isEmpty) {
-          val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, importMany.loc)
+          val error = NeedAtleastOne(NamedTokenSet.Name, None, importMany.loc)
           sctx.errors.add(error)
         }
         imports
@@ -1039,22 +1039,22 @@ object Weeder2 {
     private def visitApplyExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
       expect(tree, TreeKind.Expr.Apply)
       val exprTree = pick(TreeKind.Expr.Expr, tree)
-      val args = pickArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)
+      val args = pickArguments(tree)
       tryPick(TreeKind.Expr.Intrinsic, exprTree) match {
         case Some(intrinsic) => visitIntrinsic(intrinsic, Some(args), tree.loc)
         case None => Expr.Apply(visitExpr(exprTree), args, tree.loc)
       }
     }
 
-    private def pickArguments(tree: Tree, synctx: SyntacticContext)(implicit sctx: SharedContext): List[Expr] = {
-      visitArguments(pick(TreeKind.ArgumentList, tree, synctx = synctx))
+    private def pickArguments(tree: Tree)(implicit sctx: SharedContext): List[Expr] = {
+      visitArguments(pick(TreeKind.ArgumentList, tree))
     }
 
     /**
       * This method is the same as pickArguments but considers Unit as no-argument. It calls visitMethodArguments instead.
       */
-    private def pickRawArguments(tree: Tree, synctx: SyntacticContext)(implicit sctx: SharedContext): List[Expr] = {
-      visitMethodArguments(pick(TreeKind.ArgumentList, tree, synctx = synctx))
+    private def pickRawArguments(tree: Tree)(implicit sctx: SharedContext): List[Expr] = {
+      visitMethodArguments(pick(TreeKind.ArgumentList, tree))
     }
 
     private def tryPickArguments(tree: Tree)(implicit sctx: SharedContext): Option[List[Expr]] = {
@@ -1395,7 +1395,7 @@ object Weeder2 {
       rules0.map(visitMatchRule) match {
         // Case: no valid match rule found in match expr
         case Nil =>
-          val error = NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
+          val error = NeedAtleastOne(NamedTokenSet.MatchRule, loc = expr.loc)
           sctx.errors.add(error)
           // Fall back on Expr.Error.
           Expr.Error(error)
@@ -1426,7 +1426,7 @@ object Weeder2 {
       val expr = pickExpr(tree)
       rules0.map(t => visitRestrictableChooseRule(isStar, t)) match {
         case Nil =>
-          val error = NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, None, tree.loc)
+          val error = NeedAtleastOne(NamedTokenSet.MatchRule, None, tree.loc)
           sctx.errors.add(error)
           val rules = RestrictableChooseRule(WeededAst.RestrictableChoosePattern.Error(tree.loc.asSynthetic), Expr.Error(error)) :: Nil
           Expr.RestrictableChoose(isStar, expr, rules, tree.loc)
@@ -1586,7 +1586,7 @@ object Weeder2 {
       rules0.map(visitExtMatchRule) match {
         // Case: no valid match rule found in ematch expr
         case Nil =>
-          val error = NeedAtleastOne(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
+          val error = NeedAtleastOne(NamedTokenSet.ExtMatchRule, loc = expr.loc)
           sctx.errors.add(error)
           val defaultRule = ExtMatchRule(ExtPattern.Error(expr.loc), Expr.Error(error), tree.loc)
           Expr.ExtMatch(expr, defaultRule :: Nil, tree.loc)
@@ -1685,7 +1685,7 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.RecordOperation)
       val ops = pickAllMulti(tree, TreeKind.Expr.RecordOpUpdate, TreeKind.Expr.RecordOpExtend, TreeKind.Expr.RecordOpRestrict)
       if (ops.isEmpty) {
-        val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowercase)), SyntacticContext.Expr.OtherExpr, hint = Some("Record operations must contain at least one operation"), tree.loc)
+        val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowercase)), hint = Some("Record operations must contain at least one operation"), tree.loc)
         sctx.errors.add(error)
       }
       ops.foldRight(pickExpr(tree))((op, acc) => {
@@ -1717,7 +1717,7 @@ object Weeder2 {
       regionName.map(visitRegionName) match {
         case Some(region) => Expr.ArrayLit(exprs, region, tree.loc)
         case None =>
-          val error = MissingRegion(TokenKind.ArrayHash, SyntacticContext.Expr.OtherExpr, tree.loc)
+          val error = MissingRegion(TokenKind.ArrayHash, tree.loc)
           sctx.errors.add(error)
           Expr.ArrayLit(exprs, Expr.Error(error), tree.loc)
       }
@@ -1834,7 +1834,7 @@ object Weeder2 {
         // Bad case: try expr
         case Nil | Nil :: Nil =>
           // Fall back on Expr.Error
-          val error = NeedAtleastOne(NamedTokenSet.CatchRule, SyntacticContext.Expr.OtherExpr, None, tree.loc)
+          val error = NeedAtleastOne(NamedTokenSet.CatchRule, None, tree.loc)
           sctx.errors.add(error)
           Expr.Error(error)
         // Case: try expr catch { rules... }
@@ -1930,14 +1930,14 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.InvokeMethod)
       val baseExp = pickExpr(tree)
       val method = pickNameIdent(tree)
-      val argsExps = pickRawArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)
+      val argsExps = pickRawArguments(tree)
       Expr.InvokeMethod(baseExp, method, argsExps, tree.loc)
     }
 
     private def visitInvokeSuperMethodExpr(tree: Tree)(implicit sctx: SharedContext): Expr = {
       expect(tree, TreeKind.Expr.InvokeSuperMethod)
       val method = pickNameIdent(tree)
-      val argsExps = pickRawArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)
+      val argsExps = pickRawArguments(tree)
       Expr.InvokeSuperMethod(method, argsExps, tree.loc)
     }
 
@@ -2059,7 +2059,7 @@ object Weeder2 {
         case Some(expr2) =>
           Expr.Spawn(expr1, expr2, tree.loc)
         case None =>
-          val error = MissingRegion(TokenKind.KeywordSpawn, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          val error = MissingRegion(TokenKind.KeywordSpawn, loc = tree.loc)
           sctx.errors.add(error)
           Expr.Spawn(expr1, Expr.Error(error), tree.loc)
       }
@@ -2069,7 +2069,7 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.ParYield)
       val fragments = pickAll(TreeKind.Expr.ParYieldFragment, tree)
       if (fragments.isEmpty) {
-        val error = NeedAtleastOne(NamedTokenSet.Pattern, SyntacticContext.Expr.OtherExpr, Some("Valid par-yield syntax looks like `par (x <- e) yield x` "), loc = tree.loc)
+        val error = NeedAtleastOne(NamedTokenSet.Pattern, Some("Valid par-yield syntax looks like `par (x <- e) yield x` "), loc = tree.loc)
         sctx.errors.add(error)
         Expr.Error(error)
       } else {
@@ -2979,7 +2979,7 @@ object Weeder2 {
       val innerTypes = pickAll(TreeKind.Type.Type, tree)
       innerTypes.map(visitType) match {
         case Nil =>
-          sctx.errors.add(NeedAtleastOne(NamedTokenSet.Type, SyntacticContext.Decl.Enum, loc = tree.loc))
+          sctx.errors.add(NeedAtleastOne(NamedTokenSet.Type, loc = tree.loc))
           List(Type.Error(tree.loc))
         case types => types
       }
@@ -3231,7 +3231,7 @@ object Weeder2 {
               tparams
             // No type parameters. Issue an error and return an empty list.
             case (Nil, Nil) =>
-              val error = NeedAtleastOne(NamedTokenSet.Parameter, SyntacticContext.Decl.Type, None, tparamsTree.loc)
+              val error = NeedAtleastOne(NamedTokenSet.Parameter, None, tparamsTree.loc)
               sctx.errors.add(error)
               Nil
           }
@@ -3528,11 +3528,11 @@ object Weeder2 {
   /**
     * Picks out the first sub-tree of a specific [[TreeKind]].
     */
-  private def pick(kind: TreeKind, tree: Tree, synctx: SyntacticContext = SyntacticContext.Unknown): Tree = {
+  private def pick(kind: TreeKind, tree: Tree): Tree = {
     tryPick(kind, tree) match {
       case Some(t) => t
       case None =>
-        val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), synctx, loc = tree.loc)
+        val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), loc = tree.loc)
         throw PickException(error)
     }
   }
@@ -3540,11 +3540,11 @@ object Weeder2 {
   /**
     * Picks out the first token of a specific [[TokenKind]].
     */
-  private def pickToken(kind: TokenKind, tree: Tree, synctx: SyntacticContext = SyntacticContext.Unknown): Token = {
+  private def pickToken(kind: TokenKind, tree: Tree): Token = {
     tryPickToken(kind, tree) match {
       case Some(t) => t
       case _ =>
-        val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(kind)), synctx, loc = tree.loc)
+        val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(kind)), loc = tree.loc)
         throw PickException(error)
     }
   }

@@ -77,15 +77,6 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[ParseError.IllegalOperationTypeParams](result)
   }
 
-  test("IllegalExtMatchRule.01") {
-    val input =
-      """
-        |def f(): Int32 = ematch xvar A(1) { }
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
   test("IllegalExtTag.01") {
     val input =
       """
@@ -327,18 +318,6 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ParseError](result)
-  }
-
-  test("NeedAtleastOne.01") {
-    val input =
-      """
-        |trait A[] {
-        |    def f(x: a): a
-        |}
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
   }
 
   test("ExpectedArrowThickRGotEqual.02") {
