@@ -124,6 +124,12 @@ object GenExpression {
     case Expr.ApplySelfTail(sym, exps, _, _, _) =>
       compileApplySelfTail(sym, exps)
 
+    case Expr.IfThenElse(exp1, exp2, Expr.JumpTo(sym, _, _, _), _, _, _) =>
+      // The else-branch only jumps, so we jump straight to its target when the condition is
+      // false and fall through into the then-branch. This leaves no unreachable `goto` behind.
+      compileJumpIfFalse(exp1, ctx.lenv(sym))
+      compileExpr(exp2)
+
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       compileExpr(exp1)
       branch(Condition.Bool) {
@@ -140,15 +146,15 @@ object GenExpression {
       // Label for the end of all branches
       val endLabel = new Label()
       // Skip branches if `exp` does not jump
-      mv.visitJumpInsn(Opcodes.GOTO, endLabel)
+      if (completesNormally(exp)) mv.visitJumpInsn(Opcodes.GOTO, endLabel)
       // Compiling branches
       branches.foreach { case (sym, branchExp) =>
         // Label for the start of the branch
         mv.visitLabel(updatedJumpLabels(sym))
         // evaluating the expression for the branch
         compileExpr(branchExp)(mv, ctx1, root, flix)
-        // Skip the rest of the branches
-        mv.visitJumpInsn(Opcodes.GOTO, endLabel)
+        // Skip the rest of the branches, unless the branch never reaches this point
+        if (completesNormally(branchExp)) mv.visitJumpInsn(Opcodes.GOTO, endLabel)
       }
       // label for the end of branches
       mv.visitLabel(endLabel)
@@ -1648,6 +1654,39 @@ object GenExpression {
     GETFIELD(GenTagged.OrdinalField)
     pushInt(ordinal)
     ifConditionElse(Condition.ICMPEQ)(pushBool(true))(pushBool(false))
+  }
+
+  /**
+    * Emits code that jumps to `target` if `exp` evaluates to `false` and falls through otherwise.
+    *
+    * A tag test jumps on the ordinal, without materializing a `Bool`.
+    *
+    * [...] -> [...]
+    */
+  private def compileJumpIfFalse(exp: Expr, target: Label)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp match {
+    case Expr.ApplyAtomic(AtomicOp.Is(sym), List(e), _, _, _) =>
+      compileExpr(e)
+      CHECKCAST(GenTagged.Desc)
+      GETFIELD(GenTagged.OrdinalField)
+      pushInt(sym.ordinal)
+      mv.visitJumpInsn(Opcodes.IF_ICMPNE, target)
+
+    case _ =>
+      compileExpr(exp)
+      mv.visitJumpInsn(Opcodes.IFEQ, target)
+  }
+
+  /**
+    * Returns `false` if control can never reach the instruction after `exp`.
+    *
+    * The check is syntactic and conservative: `true` is always a safe answer.
+    */
+  private def completesNormally(exp: Expr): Boolean = exp match {
+    case Expr.JumpTo(_, _, _, _) => false
+    case Expr.ApplyAtomic(AtomicOp.MatchError, _, _, _, _) => false
+    case Expr.Let(_, _, _, exp2, _) => completesNormally(exp2)
+    case Expr.IfThenElse(_, exp2, exp3, _, _, _) => completesNormally(exp2) || completesNormally(exp3)
+    case _ => true
   }
 
   private def compileTag(sym: Symbol.CaseSym, exps: List[Expr], tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
