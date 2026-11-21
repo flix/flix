@@ -74,6 +74,18 @@ mod Test.Exp.Apply.Tail {
         assertEq(expected = true, stmtRecursion(n))
     }
 
+    @Test
+    def testApplyTail17(): Unit \ Assert =
+        assertEq(expected = 1234567, countFirst(1234567, 0))
+
+    @Test
+    def testApplyTail18(): Unit \ Assert =
+        assertEq(expected = true, oddFirst(1234567))
+
+    @Test
+    def testApplyTail19(): Unit \ Assert =
+        assertEq(expected = true, evenFirst(123456))
+
     def odd(n: Int32): Bool = match n {
         case 0 => false
         case 1 => true
@@ -113,6 +125,24 @@ mod Test.Exp.Apply.Tail {
     def stmtRecursion(n: Ref[Int32, r]): Bool \ r = {
         Ref.put(Ref.get(n) - 1, n);
         if (Ref.get(n) == 0) true else stmtRecursion(n)
+    }
+
+    /// The self tail call is in the first rule of the match.
+    def countFirst(n: Int32, acc: Int32): Int32 = match n {
+        case x if x > 0 => countFirst(x - 1, acc + 1)
+        case _          => acc
+    }
+
+    /// The tail call is in the first rule of the match.
+    def oddFirst(n: Int32): Bool = match n {
+        case x if x > 1 => evenFirst(x - 1)
+        case x          => x == 1
+    }
+
+    /// The tail call is in the first rule of the match.
+    def evenFirst(n: Int32): Bool = match n {
+        case x if x > 1 => oddFirst(x - 1)
+        case x          => x == 0
     }
 
 }
