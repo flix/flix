@@ -11,7 +11,7 @@ pub mod Fixpoint3.Util {
     ///
     /// Unwraps an option.
     ///
-    /// Causes runtime hole error when `x` is `None`.
+    /// Crashes with `bug!` when `x` is `None`.
     ///
     pub def getOrCrash(x: Option[a]): a = match x {
         case Some(v) => v

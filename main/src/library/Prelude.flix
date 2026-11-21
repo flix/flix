@@ -1,5 +1,6 @@
 import java.lang.System
 import java.lang.IndexOutOfBoundsException
+import java.lang.RuntimeException
 
 ///
 /// Static denotes the region of global lifetime.
@@ -149,20 +150,34 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 ///
 /// Crashes the current process with the given message `m`.
 ///
+@Inline
 pub def bug!(m: String): a = unsafe IO {
-    System.err.println("*".repeat(80));
-    System.err.println("**");
-    System.err.println("**  BUG: ${m}");
-    System.err.println("**");
-    System.err.println("*".repeat(80));
-    System.err.println("");
-    ?panic
+    printErrorMessage(m);
+    throw new RuntimeException(m)
 }
 
 ///
 /// Asserts that this expression is unreachable. Crashes if not.
 ///
-pub def unreachable!(): a = bug!("Reached unreachable expression.")
+@Inline
+pub def unreachable!(): a = unsafe IO {
+    printErrorMessage("Reached unreachable expression.");
+    throw new RuntimeException("Reached unreachable expression.")
+}
+
+///
+/// Prints the given error message `m` to standard error.
+///
+/// Not polymorphic, unlike `bug!` and `unreachable!`, so that there is only one copy of it.
+///
+def printErrorMessage(m: String): Unit \ IO = {
+    System.err.println("*".repeat(80));
+    System.err.println("**");
+    System.err.println("**  BUG: ${m}");
+    System.err.println("**");
+    System.err.println("*".repeat(80));
+    System.err.println("")
+}
 
 ///
 /// Throws an `IndexOutOfBoundsException` with the given message `m`.
