@@ -1679,11 +1679,16 @@ object GenExpression {
   /**
     * Returns `false` if control can never reach the instruction after `exp`.
     *
+    * That is the case when `exp` ends in a jump or in one of the operations that always throw.
+    *
     * The check is syntactic and conservative: `true` is always a safe answer.
     */
   private def completesNormally(exp: Expr): Boolean = exp match {
     case Expr.JumpTo(_, _, _, _) => false
+    case Expr.ApplyAtomic(AtomicOp.Throw, _, _, _, _) => false
+    case Expr.ApplyAtomic(AtomicOp.HoleError(_), _, _, _, _) => false
     case Expr.ApplyAtomic(AtomicOp.MatchError, _, _, _, _) => false
+    case Expr.ApplyAtomic(AtomicOp.CastError(_, _), _, _, _, _) => false
     case Expr.Let(_, _, _, exp2, _) => completesNormally(exp2)
     case Expr.IfThenElse(_, exp2, exp3, _, _, _) => completesNormally(exp2) || completesNormally(exp3)
     case _ => true
