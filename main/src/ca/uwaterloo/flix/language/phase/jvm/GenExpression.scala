@@ -146,7 +146,7 @@ object GenExpression {
       // Label for the end of all branches
       val endLabel = new Label()
       // Skip branches if `exp` does not jump
-      if (completesNormally(exp)) mv.visitJumpInsn(Opcodes.GOTO, endLabel)
+      if (!neverFallsThrough(exp)) mv.visitJumpInsn(Opcodes.GOTO, endLabel)
       // Compiling branches
       branches.foreach { case (sym, branchExp) =>
         // Label for the start of the branch
@@ -154,7 +154,7 @@ object GenExpression {
         // evaluating the expression for the branch
         compileExpr(branchExp)(mv, ctx1, root, flix)
         // Skip the rest of the branches, unless the branch never reaches this point
-        if (completesNormally(branchExp)) mv.visitJumpInsn(Opcodes.GOTO, endLabel)
+        if (!neverFallsThrough(branchExp)) mv.visitJumpInsn(Opcodes.GOTO, endLabel)
       }
       // label for the end of branches
       mv.visitLabel(endLabel)
@@ -1677,21 +1677,22 @@ object GenExpression {
   }
 
   /**
-    * Returns `false` if control can never reach the instruction after `exp`.
+    * Returns `true` if control never reaches the instruction after `exp`.
     *
     * That is the case when `exp` ends in a jump or in one of the operations that always throw.
     *
-    * The check is syntactic and conservative: `true` is always a safe answer.
+    * The check is syntactic and under-approximates: `false` means that `exp` may fall through,
+    * so `false` is always a safe answer.
     */
-  private def completesNormally(exp: Expr): Boolean = exp match {
-    case Expr.JumpTo(_, _, _, _) => false
-    case Expr.ApplyAtomic(AtomicOp.Throw, _, _, _, _) => false
-    case Expr.ApplyAtomic(AtomicOp.HoleError(_), _, _, _, _) => false
-    case Expr.ApplyAtomic(AtomicOp.MatchError, _, _, _, _) => false
-    case Expr.ApplyAtomic(AtomicOp.CastError(_, _), _, _, _, _) => false
-    case Expr.Let(_, _, _, exp2, _) => completesNormally(exp2)
-    case Expr.IfThenElse(_, exp2, exp3, _, _, _) => completesNormally(exp2) || completesNormally(exp3)
-    case _ => true
+  private def neverFallsThrough(exp: Expr): Boolean = exp match {
+    case Expr.JumpTo(_, _, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.Throw, _, _, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.HoleError(_), _, _, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.MatchError, _, _, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.CastError(_, _), _, _, _, _) => true
+    case Expr.Let(_, _, _, exp2, _) => neverFallsThrough(exp2)
+    case Expr.IfThenElse(_, exp2, exp3, _, _, _) => neverFallsThrough(exp2) && neverFallsThrough(exp3)
+    case _ => false
   }
 
   private def compileTag(sym: Symbol.CaseSym, exps: List[Expr], tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
