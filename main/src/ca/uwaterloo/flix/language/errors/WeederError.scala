@@ -831,6 +831,29 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that something was syntactically malformed.
+    * This error is very generic, and should be avoided in favor of other WeederErrors if possible.
+    *
+    * @param namedTokenSet Name of the malformed token set.
+    * @param hint          Optional hint with more details about the error.
+    * @param loc           The source location.
+    */
+  case class Malformed(namedTokenSet: NamedTokenSet, hint: Option[String] = None, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E6067
+
+    def summary: String = s"Malformed ${namedTokenSet.display(Formatter.NoFormatter)}."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
+      s""">> Malformed ${red(namedTokenSet.display(formatter))}.
+         |
+         |${src(loc, s"Here")}$hintStr
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate a non-single character literal.
     *
     * @param chars the characters in the character literal.
@@ -979,6 +1002,28 @@ object WeederError {
          |    enum E[a, b]              // OK
          |    enum E[a: Type, b: Type]  // OK
          |    enum E[a, b: Type]        // not OK
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that something expected is missing.
+    *
+    * @param expected Names of the items that are expected at the location.
+    * @param hint     Optional hint with more details about the error.
+    * @param loc      The source location.
+    */
+  case class Missing(expected: NamedTokenSet, hint: Option[String] = None, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E6634
+
+    def summary: String = s"Expected ${expected.display(Formatter.NoFormatter)}."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
+      s""">> Expected ${expected.display(formatter)}.
+         |
+         |${src(loc, s"Here")}$hintStr
          |""".stripMargin
     }
   }

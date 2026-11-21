@@ -12,9 +12,9 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.language.errors.ParseError.*
+import ca.uwaterloo.flix.language.errors.ParseError.NamedTokenSet
+import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError.*
-import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.collection.{ArrayOps, Nel, SeqOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
@@ -171,7 +171,7 @@ object Weeder2 {
 
       // recover from missing alias by using ident
       case ident :: _ =>
-        val error = Malformed(NamedTokenSet.Alias, SyntacticContext.Unknown, hint = Some(s"Give an alias after ${TokenKind.ArrowThickR.display}."), loc = tree.loc)
+        val error = Malformed(NamedTokenSet.Alias, hint = Some(s"Give an alias after ${TokenKind.ArrowThickR.display}."), loc = tree.loc)
         sctx.errors.add(error)
         val qname = Name.QName(namespace, ident, tree.loc)
         UseOrImport.Use(pkg, qname, ident, ident.loc)
@@ -225,7 +225,7 @@ object Weeder2 {
         UseOrImport.Import(jname, alias, tree.loc)
       // recover from missing alias by using ident
       case ident :: _ =>
-        val error = Malformed(NamedTokenSet.Alias, SyntacticContext.Unknown, hint = Some(s"Give an alias after ${TokenKind.ArrowThickR.display}."), loc = tree.loc)
+        val error = Malformed(NamedTokenSet.Alias, hint = Some(s"Give an alias after ${TokenKind.ArrowThickR.display}."), loc = tree.loc)
         sctx.errors.add(error)
         UseOrImport.Import(Name.JavaName(Seq(ident.name), tree.loc), ident, ident.loc)
       case _ => throw InternalCompilerException("Parser passed malformed use with alias", tree.loc)
@@ -752,7 +752,7 @@ object Weeder2 {
             Nel.unsafeFrom(fparams)
           }
         case None =>
-          val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.Module, loc = tree.loc)
+          val error = Missing(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), loc = tree.loc)
           sctx.errors.add(error)
           Nel.of(unitFormalParameter(tree.loc))
       }
@@ -784,7 +784,7 @@ object Weeder2 {
         case Some(expr) => expr
         case None =>
           // Fall back on Expr.Error. Parser has reported an error here.
-          val err = UnexpectedToken(expected = NamedTokenSet.Expression, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          val err = Missing(expected = NamedTokenSet.Expression, loc = tree.loc)
           Expr.Error(err)
       }
     }
@@ -1028,7 +1028,7 @@ object Weeder2 {
             val ident = pickNameIdent(tree)
             Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), tree.loc)
           case _ =>
-            val error = UnexpectedToken(expected = NamedTokenSet.Literal, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+            val error = Missing(expected = NamedTokenSet.Literal, loc = tree.loc)
             sctx.errors.add(error)
             Expr.Error(error)
         }
@@ -1093,12 +1093,12 @@ object Weeder2 {
             case Expr.Ambiguous(qname, _) =>
               Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.Cst(Constant.RecordEmpty, tree.loc), tree.loc)
             case _ =>
-              val error = Malformed(NamedTokenSet.Name, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+              val error = Malformed(NamedTokenSet.Name, loc = tree.loc)
               sctx.errors.add(error)
               Expr.Error(error)
           }
         case _ =>
-          val error = Malformed(NamedTokenSet.Name, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          val error = Malformed(NamedTokenSet.Name, loc = tree.loc)
           sctx.errors.add(error)
           Expr.Error(error)
       }
@@ -1254,10 +1254,8 @@ object Weeder2 {
                         Expr.Error(error)
                       }
                     case None =>
-                      val error = UnexpectedToken(
+                      val error = Missing(
                         NamedTokenSet.FromTreeKinds(Set(TreeKind.QName)),
-                        None,
-                        SyntacticContext.Expr.OtherExpr,
                         hint = Some("Use a single unqualified Java type like 'Object' instead of 'java.lang.object'."),
                         loc = exprs(1).loc
                       )
@@ -1370,7 +1368,7 @@ object Weeder2 {
           (defBody, continuation)
         case e =>
           // Fall back on Expr.Error. Parser has reported an error here.
-          val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), SyntacticContext.Expr.OtherExpr, hint = Some("Internal definitions must be followed by an expression"), loc = e.loc)
+          val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), hint = Some("Internal definitions must be followed by an expression"), loc = e.loc)
           (e, Expr.Error(error))
       }
 
@@ -1414,7 +1412,7 @@ object Weeder2 {
         case expr1 :: expr2 :: Nil => MatchRule(pat, Some(expr1), expr2, tree.loc)
         // Fall back on Expr.Error. Parser has reported an error here.
         case _ =>
-          val error = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          val error = Malformed(NamedTokenSet.MatchRule, loc = tree.loc)
           MatchRule(Pattern.Error(tree.loc), None, Expr.Error(error), tree.loc)
       }
     }
@@ -1573,7 +1571,7 @@ object Weeder2 {
         case e =>
           // The location of the error is the end of the expression, zero-width.
           val loc = e.loc.copy(start = e.loc.end).asSynthetic
-          val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordLet)), SyntacticContext.Expr.OtherExpr, hint = Some("let-bindings must be followed by an expression"), loc)
+          val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordLet)), hint = Some("let-bindings must be followed by an expression"), loc)
           (e, Expr.Error(error))
       }
       Expr.LetMatch(Patterns.restrictToNonConstant(pattern), tpe, boundValue, continuation, tree.loc)
@@ -1754,7 +1752,7 @@ object Weeder2 {
         case k :: v :: Nil => (k, v)
         // case: k =>
         case k :: Nil =>
-          val error = Malformed(NamedTokenSet.KeyValuePair, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          val error = Malformed(NamedTokenSet.KeyValuePair, loc = tree.loc)
           sctx.errors.add(error)
           (k, Expr.Error(error))
         case xs => throw InternalCompilerException(s"Malformed KeyValue pair, found ${xs.length} expressions", tree.loc)
@@ -1807,10 +1805,8 @@ object Weeder2 {
         // Bad case: run expr
         case Nil =>
           // Fall back on Expr.Error
-          val error = UnexpectedToken(
+          val error = Missing(
             expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith)),
-            actual = None,
-            SyntacticContext.Expr.OtherExpr,
             loc = tree.loc)
           sctx.errors.add(error)
           Expr.RunWith(expr, List(Expr.Error(error)), tree.loc)
@@ -2357,7 +2353,7 @@ object Weeder2 {
           // Avoid double reporting errors by returning a success here
           case TreeKind.ErrorTree(_) => Pattern.Error(tree.loc)
           case _ =>
-            val error = UnexpectedToken(NamedTokenSet.Pattern, actual = None, SyntacticContext.Unknown, loc = tree.loc)
+            val error = Missing(NamedTokenSet.Pattern, loc = tree.loc)
             sctx.errors.add(error)
             Pattern.Error(tree.loc)
         }
@@ -3627,7 +3623,7 @@ object Weeder2 {
   /**
     * A global shared context. Must be thread-safe.
     *
-    * @param errors the [[WeederError]]s or [[ParseError]]s in the AST, if any.
+    * @param errors the [[WeederError]]s in the AST, if any.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[CompilationMessage])
 

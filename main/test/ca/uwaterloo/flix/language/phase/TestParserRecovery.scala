@@ -990,7 +990,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+    expectError[WeederError.Missing](result)
     expectMain(result)
   }
 
