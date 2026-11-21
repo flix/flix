@@ -830,15 +830,15 @@ object Simplifier {
     // let matchVar = x ;
     //
     //   branch {
-    //     jumpto label$1
+    //     ...          (the first rule)
     //
-    //     label$1:
-    //       ...
     //     label$2:
     //       ...
     //     default:
     //       MatchError
     //   }
+    //
+    // The first rule is the body of the branch. It has no label because nothing jumps to it.
     //
 
     // Generate a fresh variable to hold the result of the match expression.
@@ -884,14 +884,14 @@ object Simplifier {
     val errorExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, t, Purity.Impure, loc)
     val errorBranch = defaultLab -> errorExp
 
-    // The initial expression simply jumps to the first label.
-    val entry = SimplifiedAst.Expr.JumpTo(ruleLabels.head, t, jumpPurity, loc)
+    // The first rule is the body of the branch.
+    val (_, entry) = branches.head
 
     // The purity of the branch
     val branchPurity = Purity.combineAll(branches.map { case (_, exp) => exp.purity })
 
-    // Assemble all the branches together.
-    val branch = SimplifiedAst.Expr.Branch(entry, branches.toMap + errorBranch, t, branchPurity, loc)
+    // Assemble the remaining branches together.
+    val branch = SimplifiedAst.Expr.Branch(entry, branches.tail.toMap + errorBranch, t, branchPurity, loc)
 
     // The purity of the match exp
     val matchPurity = Purity.combine(matchExp.purity, branch.purity)
@@ -1075,12 +1075,13 @@ object Simplifier {
     * let mv0 = e1;
     * let mv1 = e2;
     * branch {
-    *   jumpto label$1
-    *   label$1: patternMatchList([p1, p2], [mv0, mv1], guard, body1, jumpto label$2)
+    *   patternMatchList([p1, p2], [mv0, mv1], guard, body1, jumpto label$2)
     *   label$2: patternMatchList([], [], guard, body2, jumpto default)
     *   default: MatchError
     * }
     * }}}
+    *
+    * The first rule is the body of the branch. It has no label because nothing jumps to it.
     */
   private def flattenTupleMatch(elms: List[MonoAst.Expr], rules: List[MonoAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = {
     // Create a match variable for each tuple element.
@@ -1120,9 +1121,10 @@ object Simplifier {
     val errorExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, t, Purity.Impure, loc)
     val errorBranch = (defaultLab, errorExp)
 
-    val entry = SimplifiedAst.Expr.JumpTo(ruleLabels.head, t, jumpPurity, loc)
+    // The first rule is the body of the branch.
+    val (_, entry) = branches.head
     val branchPurity = Purity.combineAll(branches.map { case (_, exp) => exp.purity })
-    val branch = SimplifiedAst.Expr.Branch(entry, branches.toMap + errorBranch, t, branchPurity, loc)
+    val branch = SimplifiedAst.Expr.Branch(entry, branches.tail.toMap + errorBranch, t, branchPurity, loc)
 
     // Wrap in let-bindings for each match variable: let mv0 = e1; let mv1 = e2; ... branch
     val bodyPurity = Purity.combine(Purity.combineAll(matchExps.map(_.purity)), branch.purity)
@@ -1322,9 +1324,10 @@ object Simplifier {
         }
 
         val errorBranch = (defaultLab, overallDefault)
-        val entry = SimplifiedAst.Expr.JumpTo(ruleLabels.head, t, jumpPurity, loc)
+        // The first rule is the body of the branch.
+        val (_, entry) = branches.head
         val branchPurity = Purity.combineAll(branches.map { case (_, exp) => exp.purity })
-        val caseBody = SimplifiedAst.Expr.Branch(entry, branches.toMap + errorBranch, t, branchPurity, loc)
+        val caseBody = SimplifiedAst.Expr.Branch(entry, branches.tail.toMap + errorBranch, t, branchPurity, loc)
         (caseSym, caseBody)
       }
     }

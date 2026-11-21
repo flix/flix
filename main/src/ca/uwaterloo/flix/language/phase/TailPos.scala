@@ -73,9 +73,10 @@ object TailPos {
       Expr.IfThenElse(exp1, e2, e3, tpe, purity, loc)
 
     case Expr.Branch(e0, br0, tpe, purity, loc) =>
-      // Each branch is in tail position.
+      // The body and each branch are in tail position.
+      val e = visitExp(e0)
       val br = MapOps.mapValues(br0)(visitExp)
-      Expr.Branch(e0, br, tpe, purity, loc)
+      Expr.Branch(e, br, tpe, purity, loc)
 
     case Expr.Switch(e0, enumSym, cases0, default0, tpe, purity, loc) =>
       // Each case and default is in tail position.
