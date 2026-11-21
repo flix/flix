@@ -357,55 +357,6 @@ object ParseError {
   }
 
   /**
-    * An error raised to indicate that a regioned expression is missing a region.
-    *
-    * @param token Name of the expression missing a region. See [[TokenKind.display]].
-    * @param sctx  The syntactic context.
-    * @param loc   The source location.
-    */
-  case class MissingRegion(token: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
-    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
-
-    def code: ErrorCode = ErrorCode.E6392
-
-    def summary: String = s"Expected region on ${token.display}."
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s""">> Expected ${red("region")} on ${cyan(token.display)}.
-         |
-         |${src(loc, s"Here")}
-         |Hint: Add a region using `@ <region>`
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that no items were found in a context where one or more is needed.
-    *
-    * @param expected Names of the items that are expected at least one of. See [[TokenKind.display]].
-    * @param sctx     The syntactic context.
-    * @param hint     Optional hint with more details about the error
-    * @param loc      The source location.
-    */
-  case class NeedAtleastOne(expected: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
-    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
-
-    def code: ErrorCode = ErrorCode.E6405
-
-    def summary: String = s"Expected at least one ${expected.display(Formatter.NoFormatter)}."
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      s""">> Expected at least one ${expected.display(formatter)}.
-         |
-         |${src(loc, s"Here")}$hintStr
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate that a trailing separator is present.
     *
     * @param separator Name of the separator that is trailing. See [[TokenKind.display]].

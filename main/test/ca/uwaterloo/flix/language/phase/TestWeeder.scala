@@ -403,7 +403,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |enum Foo()
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
+    expectError[WeederError.NeedAtleastOne](result)
   }
 
   test("IllegalEqualityConstraint.01") {
@@ -482,6 +482,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalEscapeSequence](result)
+  }
+
+  test("IllegalExtMatchRule.01") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) { }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.NeedAtleastOne](result)
   }
 
   test("IllegalExtPattern.01") {
@@ -1962,7 +1971,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    try { true } catch {}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
+    expectError[WeederError.NeedAtleastOne](result)
   }
 
   test("MissingTypeParameter.Enum.01") {
@@ -1971,7 +1980,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |enum E[]
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
+    expectError[WeederError.NeedAtleastOne](result)
   }
 
   test("MissingTypeParameter.Struct.01") {
@@ -1980,7 +1989,19 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |struct S[] { }
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
+    expectError[WeederError.NeedAtleastOne](result)
+  }
+
+  test("MissingTypeParameter.Trait.01") {
+    val input =
+      """
+        |trait A[] {
+        |    def f(x: a): a
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.NeedAtleastOne](result)
   }
 
   test("MissingTypeParameter.TypeAlias.01") {
@@ -1989,7 +2010,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |type alias T[] = Int32
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
+    expectError[WeederError.NeedAtleastOne](result)
   }
 
   test("MissingUse.Top.01") {
@@ -1998,7 +2019,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |use Foo.{}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
+    expectError[WeederError.NeedAtleastOne](result)
   }
 
   test("MissingUse.Mod.01") {
@@ -2009,7 +2030,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
+    expectError[WeederError.NeedAtleastOne](result)
   }
 
   test("MissingUse.Def.01") {
@@ -2020,7 +2041,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
+    expectError[WeederError.NeedAtleastOne](result)
   }
 
   test("MissingImport.Top.01") {
@@ -2029,7 +2050,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |import java.lang.{}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
+    expectError[WeederError.NeedAtleastOne](result)
   }
 
   test("MissingImport.Mod.01") {
@@ -2040,7 +2061,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
+    expectError[WeederError.NeedAtleastOne](result)
   }
 
   test("EmptyParPatterns.01") {
@@ -2049,7 +2070,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): Int32 = par () yield 1
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
+    expectError[WeederError.NeedAtleastOne](result)
   }
 
   test("EmptyTypeParamList.01") {
@@ -2070,7 +2091,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
+    expectError[WeederError.NeedAtleastOne](result)
   }
 
   test("IllegalUnaryPlus.01") {
