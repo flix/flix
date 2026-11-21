@@ -170,6 +170,7 @@ pub def unreachable!(): a = unsafe IO {
 ///
 /// Not polymorphic, unlike `bug!` and `unreachable!`, so that there is only one copy of it.
 ///
+@DontInline
 def printErrorMessage(m: String): Unit \ IO = {
     System.err.println("*".repeat(80));
     System.err.println("**");
