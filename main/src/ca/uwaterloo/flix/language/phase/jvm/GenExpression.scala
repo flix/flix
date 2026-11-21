@@ -124,6 +124,28 @@ object GenExpression {
     case Expr.ApplySelfTail(sym, exps, _, _, _) =>
       compileApplySelfTail(sym, exps)
 
+    case Expr.IfThenElse(exp1, exp2, Expr.JumpTo(sym, _, _, _), _, _, _) =>
+      // The else-branch only jumps, so we jump straight to its target when the condition is
+      // false and fall through into the then-branch. This leaves no unreachable `goto` behind.
+      val target = ctx.lenv(sym)
+      exp1 match {
+        case Expr.ApplyAtomic(AtomicOp.Is(caseSym), List(e), _, _, _) =>
+          // The condition is a tag test. We compare the ordinals and jump if they differ,
+          // without materializing a Bool.
+          compileExpr(e) // tag
+          CHECKCAST(GenTagged.Desc) // tag
+          GETFIELD(GenTagged.OrdinalField) // ordinal
+          pushInt(caseSym.ordinal) // ordinal, expected ordinal
+          mv.visitJumpInsn(Opcodes.IF_ICMPNE, target)
+
+        case _ =>
+          // Any other condition leaves a Bool on the stack. We jump if it is false.
+          compileExpr(exp1) // Bool
+          mv.visitJumpInsn(Opcodes.IFEQ, target)
+      }
+      // The condition holds, so we continue with the then-branch.
+      compileExpr(exp2)
+
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       compileExpr(exp1)
       branch(Condition.Bool) {
@@ -140,15 +162,15 @@ object GenExpression {
       // Label for the end of all branches
       val endLabel = new Label()
       // Skip branches if `exp` does not jump
-      mv.visitJumpInsn(Opcodes.GOTO, endLabel)
+      if (!neverFallsThrough(exp)) mv.visitJumpInsn(Opcodes.GOTO, endLabel)
       // Compiling branches
       branches.foreach { case (sym, branchExp) =>
         // Label for the start of the branch
         mv.visitLabel(updatedJumpLabels(sym))
         // evaluating the expression for the branch
         compileExpr(branchExp)(mv, ctx1, root, flix)
-        // Skip the rest of the branches
-        mv.visitJumpInsn(Opcodes.GOTO, endLabel)
+        // Skip the rest of the branches, unless the branch never reaches this point
+        if (!neverFallsThrough(branchExp)) mv.visitJumpInsn(Opcodes.GOTO, endLabel)
       }
       // label for the end of branches
       mv.visitLabel(endLabel)
@@ -1648,6 +1670,25 @@ object GenExpression {
     GETFIELD(GenTagged.OrdinalField)
     pushInt(ordinal)
     ifConditionElse(Condition.ICMPEQ)(pushBool(true))(pushBool(false))
+  }
+
+  /**
+    * Returns `true` if control never reaches the instruction after `exp`.
+    *
+    * That is the case when `exp` ends in a jump or in one of the operations that always throw.
+    *
+    * The check is syntactic and under-approximates: `false` means that `exp` may fall through,
+    * so `false` is always a safe answer.
+    */
+  private def neverFallsThrough(exp: Expr): Boolean = exp match {
+    case Expr.JumpTo(_, _, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.Throw, _, _, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.HoleError(_), _, _, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.MatchError, _, _, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.CastError(_, _), _, _, _, _) => true
+    case Expr.Let(_, _, _, exp2, _) => neverFallsThrough(exp2)
+    case Expr.IfThenElse(_, exp2, exp3, _, _, _) => neverFallsThrough(exp2) && neverFallsThrough(exp3)
+    case _ => false
   }
 
   private def compileTag(sym: Symbol.CaseSym, exps: List[Expr], tpes: List[ClassDesc])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
