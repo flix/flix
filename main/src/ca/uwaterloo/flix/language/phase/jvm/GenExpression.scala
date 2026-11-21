@@ -127,7 +127,23 @@ object GenExpression {
     case Expr.IfThenElse(exp1, exp2, Expr.JumpTo(sym, _, _, _), _, _, _) =>
       // The else-branch only jumps, so we jump straight to its target when the condition is
       // false and fall through into the then-branch. This leaves no unreachable `goto` behind.
-      compileJumpIfFalse(exp1, ctx.lenv(sym))
+      val target = ctx.lenv(sym)
+      exp1 match {
+        case Expr.ApplyAtomic(AtomicOp.Is(caseSym), List(e), _, _, _) =>
+          // The condition is a tag test. We compare the ordinals and jump if they differ,
+          // without materializing a Bool.
+          compileExpr(e) // tag
+          CHECKCAST(GenTagged.Desc) // tag
+          GETFIELD(GenTagged.OrdinalField) // ordinal
+          pushInt(caseSym.ordinal) // ordinal, expected ordinal
+          mv.visitJumpInsn(Opcodes.IF_ICMPNE, target)
+
+        case _ =>
+          // Any other condition leaves a Bool on the stack. We jump if it is false.
+          compileExpr(exp1) // Bool
+          mv.visitJumpInsn(Opcodes.IFEQ, target)
+      }
+      // The condition holds, so we continue with the then-branch.
       compileExpr(exp2)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -1654,26 +1670,6 @@ object GenExpression {
     GETFIELD(GenTagged.OrdinalField)
     pushInt(ordinal)
     ifConditionElse(Condition.ICMPEQ)(pushBool(true))(pushBool(false))
-  }
-
-  /**
-    * Emits code that jumps to `target` if `exp` evaluates to `false` and falls through otherwise.
-    *
-    * A tag test jumps on the ordinal, without materializing a `Bool`.
-    *
-    * [...] -> [...]
-    */
-  private def compileJumpIfFalse(exp: Expr, target: Label)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp match {
-    case Expr.ApplyAtomic(AtomicOp.Is(sym), List(e), _, _, _) =>
-      compileExpr(e)
-      CHECKCAST(GenTagged.Desc)
-      GETFIELD(GenTagged.OrdinalField)
-      pushInt(sym.ordinal)
-      mv.visitJumpInsn(Opcodes.IF_ICMPNE, target)
-
-    case _ =>
-      compileExpr(exp)
-      mv.visitJumpInsn(Opcodes.IFEQ, target)
   }
 
   /**
