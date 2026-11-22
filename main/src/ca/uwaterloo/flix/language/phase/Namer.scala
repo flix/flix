@@ -119,8 +119,8 @@ object Namer {
         // For every declaration in that namespace, for a given name,
         for (decl <- decls) {
           decl match {
-            // We check if it is a *public* module declaration.
-            case Declaration.Mod(_, _, mod, sym, _, _, _, loc) if mod.isPublic =>
+            // We check if it is a module declaration, public or not.
+            case Declaration.Mod(_, _, _, sym, _, _, _, loc) =>
               // The root the module is named under, i.e. the root namespace or the root of its package, is implicitly declared.
               val root = Name.rootOf(loc.source.origin).parts
               sym.parent() match {
