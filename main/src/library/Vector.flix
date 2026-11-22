@@ -251,11 +251,17 @@ pub mod Vector {
     pub def size(v: Vector[a]): Int32 = length(v)
 
     ///
-    /// Returns a fresh array with the elements from the vector `v` from index `b` (inclusive) until index `e` (exclusive).
+    /// Returns a fresh vector with the elements of the vector `v` from index `start` (inclusive) until index `end` (exclusive).
+    ///
+    /// Indices that are out of bounds in `v` are clamped (i.e. `start` to between `0` and `length(v)`, and `end` to between `start` and `length(v)`).
     ///
     pub def slice(start: {start = Int32}, end: {end = Int32}, v: Vector[a]): Vector[a] = region rc {
-        let arr = toArray(rc, v);
-        Array.slice(rc, start, end, arr) |> Array.toVector
+        let len = length(v);
+        let b = Int32.max(0, Int32.min(start#start, len));
+        let e = Int32.max(b, Int32.min(end#end, len));
+        // A vector is represented as an array, hence the casts are safe and the vector is copied once.
+        let arr: Array[a, rc] = unchecked_cast(v as Array[a, rc]);
+        unchecked_cast(Array.copyOfRange(rc, b, e, arr) as Vector[a])
     }
 
     ///
