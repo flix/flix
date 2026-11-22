@@ -447,6 +447,12 @@ object Visitor {
         visitExpr(exp2)
         visitExpr(exp3)
 
+      case Expr.ArraySlice(exp1, exp2, exp3, exp4, _, _, _) =>
+        visitExpr(exp1)
+        visitExpr(exp2)
+        visitExpr(exp3)
+        visitExpr(exp4)
+
       case Expr.StructNew(_, fields, region, _, _, _) =>
         fields.foreach {
           case (symUse, exp) =>

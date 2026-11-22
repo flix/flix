@@ -211,6 +211,12 @@ object Safety {
       visitExp(exp2)
       visitExp(exp3)
 
+    case Expr.ArraySlice(exp1, exp2, exp3, exp4, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
+      visitExp(exp4)
+
     case Expr.StructNew(_, fields, region, _, _, _) =>
       fields.foreach { case (_, exp) => visitExp(exp) }
       region.foreach(visitExp)

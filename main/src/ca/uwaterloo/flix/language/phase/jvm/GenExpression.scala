@@ -904,6 +904,23 @@ object GenExpression {
       compileExpr(exp)
       ARRAYLENGTH()
 
+    case AtomicOp.ArraySlice =>
+      val List(exp1, exp2, exp3) = exps
+      // We get the inner type of the array
+      val innerType = tpe.asInstanceOf[SimpleType.Array].tpe
+      val erasedElmTpe = TypeDescs.toErasedClassDesc(innerType)
+      val erasedArrTpe = erasedElmTpe.arrayType()
+      val copyOfRangeMethod = ClassMaker.StaticMethod(JavaClasses.Arrays, "copyOfRange", MethodTypeDesc.of(erasedArrTpe, erasedArrTpe, CD_int, CD_int))
+
+      // Add source line number for debugging (can fail with out of bounds).
+      addLoc(loc)
+      compileExpr(exp1) // Evaluating the array
+      compileExpr(exp2) // Evaluating the begin index
+      compileExpr(exp3) // Evaluating the end index
+      INVOKESTATIC(copyOfRangeMethod)
+      // The method for reference arrays returns `Object[]`, but the new array has the runtime class of the given array.
+      if (!erasedElmTpe.isPrimitive) CHECKCAST(TypeDescs.toClassDesc(tpe))
+
     case AtomicOp.StructNew(sym, mutability, _) =>
       val structElms = getStructType(root.structs(sym))
       val (fieldExps, regionOpt) = mutability match {

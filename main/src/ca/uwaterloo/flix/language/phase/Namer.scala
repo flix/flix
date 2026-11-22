@@ -1134,6 +1134,13 @@ object Namer {
       val e3 = visitExp(exp3)
       NamedAst.Expr.ArrayStore(e1, e2, e3, loc)
 
+    case DesugaredAst.Expr.ArraySlice(exp1, exp2, exp3, exp4, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      val e4 = visitExp(exp4)
+      NamedAst.Expr.ArraySlice(e1, e2, e3, e4, loc)
+
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.StructGet(e, name, loc)

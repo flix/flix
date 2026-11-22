@@ -669,6 +669,13 @@ object Kinder {
       val exp = visitExp(exp0, kenv0, root)
       KindedAst.Expr.ArrayLength(exp, loc)
 
+    case ResolvedAst.Expr.ArraySlice(exp10, exp20, exp30, exp40, loc) =>
+      val exp1 = visitExp(exp10, kenv0, root)
+      val exp2 = visitExp(exp20, kenv0, root)
+      val exp3 = visitExp(exp30, kenv0, root)
+      val exp4 = visitExp(exp40, kenv0, root)
+      KindedAst.Expr.ArraySlice(exp1, exp2, exp3, exp4, loc)
+
     case ResolvedAst.Expr.StructNew(sym, exps0, region0, loc) =>
       val fields = exps0.map {
         case (symUse, fieldExp0) =>

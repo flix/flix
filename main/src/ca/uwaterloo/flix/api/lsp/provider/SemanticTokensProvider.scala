@@ -535,6 +535,9 @@ object SemanticTokensProvider {
     case Expr.ArrayLength(exp, _, _) =>
       visitExp(exp)
 
+    case Expr.ArraySlice(exp1, exp2, exp3, exp4, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ visitExp(exp4)
+
     case Expr.StructNew(sym, fields, region, _, _, _) =>
       val (names, exps) = fields.unzip
       val ts = names.map(name => SemanticToken(SemanticTokenType.Property, Nil, name.loc))

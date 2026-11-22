@@ -459,6 +459,14 @@ private[monomorph2] object SpecializeAndLower {
       val e3 = visitExp(exp3, env0, subst)
       MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, subst(eff), loc)
 
+    case TypedAst.Expr.ArraySlice(exp1, exp2, exp3, exp4, tpe, eff, loc) =>
+      val e1 = visitExp(exp1, env0, subst)
+      val e2 = visitExp(exp2, env0, subst)
+      val e3 = visitExp(exp3, env0, subst)
+      val e4 = visitExp(exp4, env0, subst)
+      val t = visitType(tpe, subst)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.ArraySlice, List(e1, e2, e3, e4), t, subst(eff), loc)
+
     case TypedAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
       val t = subst(tpe)
       val newStructSym = lookupStructSym(sym, t)

@@ -159,6 +159,8 @@ object NamedAst {
 
     case class ArrayLength(exp: Expr, loc: SourceLocation) extends DataExpr
 
+    case class ArraySlice(exp1: Expr, exp2: Expr, exp3: Expr, exp4: Expr, loc: SourceLocation) extends DataExpr
+
     case class StructGet(exp: Expr, name: Name.Label, loc: SourceLocation) extends DataExpr
 
     case class StructPut(exp1: Expr, name: Name.Label, exp2: Expr, loc: SourceLocation) extends DataExpr

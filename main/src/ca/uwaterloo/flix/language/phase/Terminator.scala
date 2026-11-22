@@ -704,6 +704,14 @@ object Terminator {
       val e3 = visitExp(contexts, exp3, ApplyPosition.NonTail)
       if ((e1 eq exp1) && (e2 eq exp2) && (e3 eq exp3)) exp0 else Expr.ArrayStore(e1, e2, e3, eff, loc)
 
+    case Expr.ArraySlice(exp1, exp2, exp3, exp4, tpe, eff, loc) =>
+      checkForbidden(contexts, loc)
+      val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
+      val e2 = visitExp(contexts, exp2, ApplyPosition.NonTail)
+      val e3 = visitExp(contexts, exp3, ApplyPosition.NonTail)
+      val e4 = visitExp(contexts, exp4, ApplyPosition.NonTail)
+      if ((e1 eq exp1) && (e2 eq exp2) && (e3 eq exp3) && (e4 eq exp4)) exp0 else Expr.ArraySlice(e1, e2, e3, e4, tpe, eff, loc)
+
     case Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
       checkForbidden(contexts, loc)
       val fs = ListOps.mapWithReuse(fields0) { case p@(f, exp1) =>

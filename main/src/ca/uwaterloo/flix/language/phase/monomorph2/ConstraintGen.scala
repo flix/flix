@@ -426,6 +426,12 @@ private[monomorph2] object ConstraintGen {
       visitExp(exp2)
       visitExp(exp3)
 
+    case Expr.ArraySlice(exp1, exp2, exp3, exp4, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
+      visitExp(exp4)
+
     case Expr.VectorLit(exps, _, _, _) =>
       for (exp <- exps) {
         visitExp(exp)

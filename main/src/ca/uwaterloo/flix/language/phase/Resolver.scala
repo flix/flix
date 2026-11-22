@@ -1206,6 +1206,13 @@ object Resolver {
       val b = resolveExp(exp, scp0)
       ResolvedAst.Expr.ArrayLength(b, loc)
 
+    case NamedAst.Expr.ArraySlice(exp1, exp2, exp3, exp4, loc) =>
+      val e1 = resolveExp(exp1, scp0)
+      val e2 = resolveExp(exp2, scp0)
+      val e3 = resolveExp(exp3, scp0)
+      val e4 = resolveExp(exp4, scp0)
+      ResolvedAst.Expr.ArraySlice(e1, e2, e3, e4, loc)
+
     case NamedAst.Expr.StructGet(exp, field0, loc) =>
       lookupStructField(field0, scp0, ns0, root) match {
         case Result.Ok(field) =>

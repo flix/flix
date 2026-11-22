@@ -301,6 +301,13 @@ object Stratifier {
       val e3 = visitExp(exp3)
       if ((e1 eq exp1) && (e2 eq exp2) && (e3 eq exp3)) exp0 else Expr.ArrayStore(e1, e2, e3, eff, loc)
 
+    case Expr.ArraySlice(exp1, exp2, exp3, exp4, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      val e4 = visitExp(exp4)
+      if ((e1 eq exp1) && (e2 eq exp2) && (e3 eq exp3) && (e4 eq exp4)) exp0 else Expr.ArraySlice(e1, e2, e3, e4, tpe, eff, loc)
+
     case Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
       val fields = ListOps.mapWithReuse(fields0) { case p@(name, e0) =>
         val e = visitExp(e0)

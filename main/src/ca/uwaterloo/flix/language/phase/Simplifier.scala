@@ -156,6 +156,12 @@ object Simplifier {
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
 
+        case AtomicOp.ArraySlice =>
+          // The region expression is dropped (head of exps / es)
+          val es1 = es.tail
+          val t = visitType(tpe)
+          SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
+
         case AtomicOp.VectorLit =>
           // Note: We simplify Vectors to Arrays.
           val t = visitType(tpe)

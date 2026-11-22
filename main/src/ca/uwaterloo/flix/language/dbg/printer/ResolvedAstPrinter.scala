@@ -72,6 +72,7 @@ object ResolvedAstPrinter {
     case Expr.ArrayLoad(base, index, _) => DocAst.Expr.ArrayLoad(print(base), print(index))
     case Expr.ArrayStore(base, index, elm, _) => DocAst.Expr.ArrayStore(print(base), print(index), print(elm))
     case Expr.ArrayLength(base, _) => DocAst.Expr.ArrayLength(print(base))
+    case Expr.ArraySlice(exp1, exp2, exp3, exp4, _) => DocAst.Expr.InRegion(DocAst.Expr.ArraySlice(print(exp2), print(exp3), print(exp4)), print(exp1))
     case Expr.StructNew(sym, exps, regionOpt, _) =>
       DocAst.Expr.StructNew(sym, exps.map {
         case (symUse, exp) => (symUse.sym, print(exp))
