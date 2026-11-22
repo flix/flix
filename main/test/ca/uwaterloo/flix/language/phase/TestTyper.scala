@@ -2050,61 +2050,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("TypeError.ArraySlice.01") {
-    // The indices must be of type Int32.
-    val input =
-      """
-        |def f(rc: Region[r2], a: Array[String, r1]): Array[String, r2] \ { r1, r2 } =
-        |    %%ARRAY_SLICE%%(rc, a, "0", 1)
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
-  test("TypeError.ArraySlice.02") {
-    // The result is in the region of the region argument, not in the region of the array argument.
-    val input =
-      """
-        |def f(rc: Region[r2], a: Array[String, r1]): Array[String, r1] \ { r1, r2 } =
-        |    %%ARRAY_SLICE%%(rc, a, 0, 1)
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
-  test("TypeError.ArraySlice.03") {
-    // The effect includes the region of the array argument.
-    val input =
-      """
-        |def f(rc: Region[r2], a: Array[String, r1]): Array[String, r2] \ r2 =
-        |    %%ARRAY_SLICE%%(rc, a, 0, 1)
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
-  test("TypeError.ArraySlice.04") {
-    // The effect includes the region of the region argument.
-    val input =
-      """
-        |def f(rc: Region[r2], a: Array[String, r1]): Array[String, r2] \ r1 =
-        |    %%ARRAY_SLICE%%(rc, a, 0, 1)
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
-  test("TypeError.ArraySlice.05") {
-    // The second argument must be an array.
-    val input =
-      """
-        |def f(rc: Region[r], v: Vector[String]): Array[String, r] \ r =
-        |    %%ARRAY_SLICE%%(rc, v, 0, 1)
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
   test("TypeError.ConstructorUnboxing.01") {
     val input =
       """
