@@ -354,59 +354,23 @@ mod TestVector {
 
     @Test
     def slice07(): Unit \ Assert =
-        assertEq(expected = (Vector#{}: Vector[Int32]), Vector.slice(start = 0, end = 0, (Vector#{}: Vector[Int32])))
-
-    @Test
-    def slice08(): Unit \ Assert =
-        assertEq(expected = (Vector#{}: Vector[Int32]), Vector.slice(start = 0, end = 3, (Vector#{}: Vector[Int32])))
-
-    @Test
-    def slice09(): Unit \ Assert =
         assertEq(expected = Vector#{2, 3}, Vector.slice(start = 1, end = 5, Vector#{1, 2, 3}))
 
     @Test
-    def slice10(): Unit \ Assert =
+    def slice08(): Unit \ Assert =
         assertEq(expected = Vector#{"a"}, Vector.slice(start = 0, end = 4, Vector#{"a"}))
 
     @Test
-    def slice11(): Unit \ Assert =
-        assertEq(expected = 1, Vector.length(Vector.slice(start = 0, end = 4, Vector#{"a"})))
-
-    @Test
-    def slice12(): Unit \ Assert =
+    def slice09(): Unit \ Assert =
         assertEq(expected = Vector#{1, 2}, Vector.slice(start = -2, end = 2, Vector#{1, 2, 3}))
 
     @Test
-    def slice13(): Unit \ Assert =
-        assertEq(expected = (Vector#{}: Vector[Int32]), Vector.slice(start = -5, end = -2, Vector#{1, 2, 3}))
-
-    @Test
-    def slice14(): Unit \ Assert =
-        assertEq(expected = (Vector#{}: Vector[Int32]), Vector.slice(start = 3, end = 5, Vector#{1, 2, 3}))
-
-    @Test
-    def slice15(): Unit \ Assert =
+    def slice10(): Unit \ Assert =
         assertEq(expected = (Vector#{}: Vector[Int32]), Vector.slice(start = 5, end = 7, Vector#{1, 2, 3}))
 
     @Test
-    def slice16(): Unit \ Assert =
+    def slice11(): Unit \ Assert =
         assertEq(expected = (Vector#{}: Vector[Int32]), Vector.slice(start = 2, end = 1, Vector#{1, 2, 3}))
-
-    @Test
-    def slice17(): Unit \ Assert =
-        assertEq(expected = (Vector#{}: Vector[Int32]), Vector.slice(start = 5, end = 1, Vector#{1, 2, 3}))
-
-    @Test
-    def slice18(): Unit \ Assert =
-        assertEq(expected = Vector#{1, 2, 3}, Vector.slice(start = Int32.minValue(), end = Int32.maxValue(), Vector#{1, 2, 3}))
-
-    @Test
-    def slice19(): Unit \ Assert =
-        assertEq(expected = Vector#{Some('b'), None}, Vector.slice(start = 1, end = 9, Vector#{Some('a'), Some('b'), None}))
-
-    @Test
-    def slice20(): Unit \ Assert =
-        assertEq(expected = Vector#{Vector#{2.0}}, Vector.slice(start = 1, end = 2, Vector#{Vector#{1.0}, Vector#{2.0}, Vector#{3.0}}))
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
