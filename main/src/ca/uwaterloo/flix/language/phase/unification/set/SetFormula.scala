@@ -321,7 +321,8 @@ object SetFormula {
   /**
     * Returns `f` simplified: nested unions and intersections are flattened, units and duplicated
     * members are removed, a member together with its complement collapses the node to `empty` or
-    * `univ`, and the absorption laws `a ∩ (a ∪ b) = a` and `a ∪ (a ∩ b) = a` are applied.
+    * `univ`, and the absorption laws `a ∩ (a ∪ b) = a` and `a ∪ (a ∩ b) = a` and the complement
+    * absorption laws `a ∩ (!a ∪ b) = a ∩ b` and `a ∪ (!a ∩ b) = a ∪ b` are applied.
     * Complements are pushed to the atoms by [[mkCompl]].
     *
     * Members keep their order of first occurrence, so the result is a simplified form, not a
@@ -340,7 +341,7 @@ object SetFormula {
     case Xor(l) => mkXorAll(l.map(simplify))
   }
 
-  /** Returns the complement of `m` if it is cheap to form, for the complementary-pair check. */
+  /** Returns the complement of `m` if it is cheap to form. */
   private def complOf(m: SetFormula): Option[SetFormula] = m match {
     case Compl(g) => Some(g)
     case Cst(_) | Var(_) | ElemSet(_) | Xor(_) => Some(Compl(m))
@@ -364,9 +365,24 @@ object SetFormula {
     }
     // Absorption: a ∩ (a ∪ b) = a. A union member is dropped if one of its members is also a member
     // of the intersection.
-    val kept = ms.filter {
-      case Union(l) => !l.exists(set.contains)
-      case _ => true
+    // Complement absorption: a ∩ (!a ∪ b) = a ∩ b. A member of a union member is dropped if its
+    // complement is also a member of the intersection.
+    var reduced = false
+    val kept = ms.flatMap {
+      case Union(l) if l.exists(set.contains) => Nil
+      case u@Union(l) =>
+        val rest = l.toList.filterNot(m => complOf(m).exists(set.contains))
+        if (rest.lengthCompare(l.length) == 0) {
+          u :: Nil
+        } else {
+          reduced = true
+          mkUnionAll(rest) :: Nil
+        }
+      case m => m :: Nil
+    }
+    if (reduced) {
+      // A reduced union can be `empty`, an intersection, or a duplicate or complement of a member.
+      return mkInterAll(kept)
     }
     kept match {
       case Nil => Univ
@@ -392,9 +408,24 @@ object SetFormula {
     }
     // Absorption: a ∪ (a ∩ b) = a. An intersection member is dropped if one of its members is also
     // a member of the union.
-    val kept = ms.filter {
-      case Inter(l) => !l.exists(set.contains)
-      case _ => true
+    // Complement absorption: a ∪ (!a ∩ b) = a ∪ b. A member of an intersection member is dropped if
+    // its complement is also a member of the union.
+    var reduced = false
+    val kept = ms.flatMap {
+      case Inter(l) if l.exists(set.contains) => Nil
+      case i@Inter(l) =>
+        val rest = l.toList.filterNot(m => complOf(m).exists(set.contains))
+        if (rest.lengthCompare(l.length) == 0) {
+          i :: Nil
+        } else {
+          reduced = true
+          mkInterAll(rest) :: Nil
+        }
+      case m => m :: Nil
+    }
+    if (reduced) {
+      // A reduced intersection can be `univ`, a union, or a duplicate or complement of a member.
+      return mkUnionAll(kept)
     }
     kept match {
       case Nil => Empty
