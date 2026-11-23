@@ -30,7 +30,9 @@ import scala.collection.mutable
   * Additionally it eliminates all type variables and normalizes types. This means that types have
   * unique representations, without aliases and associated types.
   *
-  * Additionally it resolves trait methods into actual function calls.
+  * Additionally it resolves trait methods into actual function calls. If a trait method resolves
+  * to a def that wraps a primitive operation, e.g. `Add.add` for `Int32`, the call is replaced by
+  * the operation itself.
   *
   * For example, the polymorphic program:
   *
@@ -692,9 +694,62 @@ object Specialization {
 
     case Expr.ApplySig(symUse, exps, _, targs, itpe, tpe, eff, pos, loc) =>
       val it = subst(itpe)
-      val newSym = specializeSigSym(symUse.sym, it)
+      val defn = resolveSigSym(symUse.sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
-      Expr.ApplyDef(DefSymUse(newSym, symUse.loc), es, targs, it, subst(tpe), subst(eff), pos, loc)
+      val t = subst(tpe)
+      val ef = subst(eff)
+      applyPrimitive(defn, es, t, ef, loc).getOrElse {
+        val newSym = specializeDefCallsite(defn, it)
+        Expr.ApplyDef(DefSymUse(newSym, symUse.loc), es, targs, it, t, ef, pos, loc)
+      }
+  }
+
+  /**
+    * Optionally returns the primitive operation that `defn` wraps, applied to `exps`.
+    *
+    * A def wraps a primitive operation if its body is that operation applied to the formal
+    * parameters of the def, in declaration order. For example:
+    *
+    *   - `pub def add(x: Int32, y: Int32): Int32 = %%INT32_ADD%%(x, y)`
+    *
+    * A call to such a def is equivalent to the operation applied to the arguments of the call: the
+    * arguments are still evaluated exactly once and from left to right. Applying the operation
+    * directly means that the def is neither specialized nor later inlined by the optimizer.
+    *
+    * @param defn the def that the call resolves to.
+    * @param exps the specialized arguments of the call.
+    * @param tpe  the specialized type of the call.
+    * @param eff  the specialized effect of the call.
+    * @param loc  the source location of the call.
+    */
+  private def applyPrimitive(defn: TypedAst.Def, exps: List[TypedAst.Expr], tpe: Type, eff: Type, loc: SourceLocation): Option[TypedAst.Expr] = (defn.exp, defn.spec.fparams, exps) match {
+    case (Expr.Unary(sop, Expr.Var(sym, _, _), _, _, _), Nel(fparam, Nil), e :: Nil)
+      if fparam.bnd.sym == sym && canApplyDirectly(sop, defn) =>
+      Some(Expr.Unary(sop, e, tpe, eff, loc))
+
+    case (Expr.Binary(sop, Expr.Var(sym1, _, _), Expr.Var(sym2, _, _), _, _, _), Nel(fparam1, fparam2 :: Nil), e1 :: e2 :: Nil)
+      if fparam1.bnd.sym == sym1 && fparam2.bnd.sym == sym2 && canApplyDirectly(sop, defn) =>
+      Some(Expr.Binary(sop, e1, e2, tpe, eff, loc))
+
+    case _ => None
+  }
+
+  /**
+    * Returns `true` if a call to `defn`, which wraps `sop`, can be replaced by `sop` applied to the
+    * arguments of the call.
+    *
+    * This is not the case if:
+    *
+    *   - `sop` is `and` or `or`. They do not evaluate their second operand when the first decides
+    *     the result, whereas a call evaluates both arguments.
+    *   - `sop` is a reflection operation. They are resolved when the def that contains them is
+    *     specialized.
+    *   - `defn` is marked `@DontInline`.
+    */
+  private def canApplyDirectly(sop: SemanticOp, defn: TypedAst.Def): Boolean = sop match {
+    case SemanticOp.BoolOp.And | SemanticOp.BoolOp.Or => false
+    case _: SemanticOp.ReflectOp => false
+    case _ => !defn.spec.ann.isDontInline
   }
 
   /** Specializes the unary operation `sop` applied to `exp`. */
@@ -1226,16 +1281,6 @@ object Specialization {
     } else {
       specializeDefCallsite(defn, tpe)
     }
-  }
-
-  /**
-    * Resolves and specializes `sym` w.r.t. `tpe`.
-    *
-    * N.B.: `tpe` must be normalized.
-    */
-  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): Symbol.DefnSym = {
-    val defn = resolveSigSym(sym, tpe)
-    specializeDefCallsite(defn, tpe)
   }
 
   /**
