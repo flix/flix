@@ -200,6 +200,8 @@ object TypedAst {
       def tpe: Type = Type.Unit
     }
 
+    case class ArraySlice(exp1: Expr, exp2: Expr, exp3: Expr, exp4: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
+
     case class StructNew(sym: Symbol.StructSym, fields: List[(StructFieldSymUse, Expr)], region: Option[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr
 
     case class StructGet(exp: Expr, symUse: StructFieldSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends DataExpr

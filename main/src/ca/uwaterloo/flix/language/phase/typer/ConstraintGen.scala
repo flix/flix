@@ -847,6 +847,22 @@ object ConstraintGen {
       val resEff = e.eff
       InferredAst.Expr.ArrayLength(e, resEff, loc)
 
+    case Expr.ArraySlice(exp1, exp2, exp3, exp4, loc) =>
+      val elmVar = freshVar(Kind.Star, loc)
+      val srcRegionVar = freshVar(Kind.Eff, loc)
+      val dstRegionVar = freshVar(Kind.Eff, loc)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      val e4 = visitExp(exp4)
+      c.expectType(expected = Type.mkRegionToStar(dstRegionVar, loc), actual = e1.tpe, exp1.loc)
+      c.expectType(expected = Type.mkArray(elmVar, srcRegionVar, loc), actual = e2.tpe, exp2.loc)
+      c.expectType(expected = Type.Int32, actual = e3.tpe, exp3.loc)
+      c.expectType(expected = Type.Int32, actual = e4.tpe, exp4.loc)
+      val resTpe = Type.mkArray(elmVar, dstRegionVar, loc)
+      val resEff = Type.mkUnion(List(srcRegionVar, dstRegionVar, e1.eff, e2.eff, e3.eff, e4.eff), loc)
+      InferredAst.Expr.ArraySlice(e1, e2, e3, e4, resTpe, resEff, loc)
+
     case Expr.StructNew(sym, fields, regionOpt, loc) =>
       // This case needs to handle expressions like `new S { f = rhs } @ r` where `f` was not present in the struct declaration
       // Here, we check that `rhs` is itself valid by visiting it but make sure not to unify it with anything

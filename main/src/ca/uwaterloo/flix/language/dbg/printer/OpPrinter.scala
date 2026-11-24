@@ -212,6 +212,8 @@ object OpPrinter {
     case (AtomicOp.Spawn, List(d1, d2)) => Spawn(d1, d2)
     case (AtomicOp.PutField(field), List(d1, d2)) => JavaPutField(field, d1, d2)
     case (AtomicOp.ArrayStore, List(d1, d2, d3)) => ArrayStore(d1, d2, d3)
+    case (AtomicOp.ArraySlice, List(d1, d2, d3)) => ArraySlice(d1, d2, d3)
+    case (AtomicOp.ArraySlice, List(d1, d2, d3, d4)) => InRegion(ArraySlice(d2, d3, d4), d1)
     case (AtomicOp.InvokeMethod(method), d :: rs) => JavaInvokeMethod(method, d, rs)
     case (AtomicOp.InvokeSuperMethod(_, method), d :: rs) => JavaInvokeMethod(method, d, rs)
     // fall back if non other applies

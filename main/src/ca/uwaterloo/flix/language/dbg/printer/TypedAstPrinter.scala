@@ -65,6 +65,7 @@ object TypedAstPrinter {
     case Expr.ArrayLoad(exp1, exp2, _, _, _) => DocAst.Expr.ArrayLoad(print(exp1), print(exp2))
     case Expr.ArrayLength(exp, _, _) => DocAst.Expr.ArrayLength(print(exp))
     case Expr.ArrayStore(exp1, exp2, exp3, _, _) => DocAst.Expr.ArrayStore(print(exp1), print(exp2), print(exp3))
+    case Expr.ArraySlice(exp1, exp2, exp3, exp4, _, _, _) => DocAst.Expr.InRegion(DocAst.Expr.ArraySlice(print(exp2), print(exp3), print(exp4)), print(exp1))
     case Expr.StructNew(sym, fields, regionOpt, _, _, _) => DocAst.Expr.StructNew(sym, fields.map { case (k, v) => (k.sym, print(v)) }, regionOpt.map(print))
     case Expr.StructGet(exp, field, _, _, _) => DocAst.Expr.StructGet(print(exp), field.sym)
     case Expr.StructPut(exp1, field, exp2, _, _, _) => DocAst.Expr.StructPut(print(exp1), field.sym, print(exp2))

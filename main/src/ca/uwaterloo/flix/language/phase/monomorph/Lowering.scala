@@ -473,6 +473,14 @@ object Lowering {
       val e3 = lowerExp(exp3)
       MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, eff, loc)
 
+    case TypedAst.Expr.ArraySlice(exp1, exp2, exp3, exp4, tpe, eff, loc) =>
+      val e1 = lowerExp(exp1)
+      val e2 = lowerExp(exp2)
+      val e3 = lowerExp(exp3)
+      val e4 = lowerExp(exp4)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.ArraySlice, List(e1, e2, e3, e4), t, eff, loc)
+
     case TypedAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
       val fields = fields0.map { case (k, v) => (k, lowerExp(v)) }
       val (names0, es) = fields.unzip

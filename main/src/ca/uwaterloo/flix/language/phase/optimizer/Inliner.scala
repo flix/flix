@@ -925,6 +925,7 @@ object Inliner {
       case AtomicOp.ArrayLoad => exps.forall(isSimple)
       case AtomicOp.ArrayStore => exps.forall(isSimple)
       case AtomicOp.ArrayLength => exps.forall(isSimple)
+      case AtomicOp.ArraySlice => exps.forall(isSimple)
       case AtomicOp.VectorLit => exps.forall(isSimple)
       case AtomicOp.VectorLoad => exps.forall(isSimple)
       case AtomicOp.VectorLength => exps.forall(isSimple)

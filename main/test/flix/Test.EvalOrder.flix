@@ -328,6 +328,21 @@ mod Test.EvalOrder {
     }
 
     ///
+    /// Array Slices.
+    ///
+
+    @Test
+    def testArraySlice01(): Unit \ Assert = region rc {
+        // The region expression is evaluated before the other arguments.
+        let c = Ref.fresh(rc, 0);
+        let r = Ref.fresh(rc, -1);
+        let a = Array#{10, 11, 12, 13, 14} @ rc;
+        let s = %%ARRAY_SLICE%%({ Ref.put(next(c), r); rc }, a, next(c), 2 + next(c));
+        assertEq(expected = 11 :: 12 :: 13 :: Nil, Array.toList(s));
+        assertEq(expected = 0, Ref.get(r))
+    }
+
+    ///
     /// New Structs.
     ///
 

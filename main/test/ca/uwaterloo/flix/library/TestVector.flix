@@ -340,6 +340,38 @@ mod TestVector {
     def slice03(): Unit \ Assert =
         assertEq(expected = 3, Vector.slice(start = 2, end = 3, Vector#{1, 2, 3}) |> Vector.get(0))
 
+    @Test
+    def slice04(): Unit \ Assert =
+        assertEq(expected = Vector#{1, 2, 3}, Vector.slice(start = 0, end = 3, Vector#{1, 2, 3}))
+
+    @Test
+    def slice05(): Unit \ Assert =
+        assertEq(expected = Vector#{2, 3}, Vector.slice(start = 1, end = 3, Vector#{1, 2, 3, 4}))
+
+    @Test
+    def slice06(): Unit \ Assert =
+        assertEq(expected = (Vector#{}: Vector[Int32]), Vector.slice(start = 1, end = 1, Vector#{1, 2, 3}))
+
+    @Test
+    def slice07(): Unit \ Assert =
+        assertEq(expected = Vector#{2, 3}, Vector.slice(start = 1, end = 5, Vector#{1, 2, 3}))
+
+    @Test
+    def slice08(): Unit \ Assert =
+        assertEq(expected = Vector#{"a"}, Vector.slice(start = 0, end = 4, Vector#{"a"}))
+
+    @Test
+    def slice09(): Unit \ Assert =
+        assertEq(expected = Vector#{1, 2}, Vector.slice(start = -2, end = 2, Vector#{1, 2, 3}))
+
+    @Test
+    def slice10(): Unit \ Assert =
+        assertEq(expected = (Vector#{}: Vector[Int32]), Vector.slice(start = 5, end = 7, Vector#{1, 2, 3}))
+
+    @Test
+    def slice11(): Unit \ Assert =
+        assertEq(expected = (Vector#{}: Vector[Int32]), Vector.slice(start = 2, end = 1, Vector#{1, 2, 3}))
+
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////

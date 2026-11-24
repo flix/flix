@@ -707,6 +707,13 @@ object Desugar {
       val e3 = visitExp(exp3)
       Expr.ArrayStore(e1, e2, e3, loc)
 
+    case WeededAst.Expr.ArraySlice(exp1, exp2, exp3, exp4, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      val e4 = visitExp(exp4)
+      Expr.ArraySlice(e1, e2, e3, e4, loc)
+
     case WeededAst.Expr.StructGet(e, name, loc) =>
       Expr.StructGet(visitExp(e), name, loc)
 
