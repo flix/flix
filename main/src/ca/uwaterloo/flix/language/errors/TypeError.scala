@@ -881,7 +881,10 @@ object TypeError {
          |
          |${highlight(loc, "complex type inference", fmt)}
          |
-         |${underline("Suggestion:")} Break your function into smaller functions.
+         |${underline("Possible fixes:")}
+         |
+         |  (a) Break your function into smaller functions.
+         |  (b) Annotate your function with @NoSubEff to disable sub-effecting.
          |""".stripMargin
     }
   }
