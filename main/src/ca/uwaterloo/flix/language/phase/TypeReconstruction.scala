@@ -311,6 +311,13 @@ object TypeReconstruction {
       val e3 = visitExp(exp3)
       TypedAst.Expr.ArrayStore(e1, e2, e3, visitType(eff), loc)
 
+    case InferredAst.Expr.ArraySlice(exp1, exp2, exp3, exp4, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      val e4 = visitExp(exp4)
+      TypedAst.Expr.ArraySlice(e1, e2, e3, e4, visitType(tpe), visitType(eff), loc)
+
     case InferredAst.Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
       val r = region.map(visitExp)
       val fs = fields.map { case (k, v) => (k, visitExp(v)) }

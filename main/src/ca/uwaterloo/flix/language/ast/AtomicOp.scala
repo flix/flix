@@ -57,6 +57,8 @@ object AtomicOp {
 
   case object ArrayLength extends DataOp
 
+  case object ArraySlice extends DataOp
+
   case object VectorLit extends DataOp
 
   case object VectorLoad extends DataOp

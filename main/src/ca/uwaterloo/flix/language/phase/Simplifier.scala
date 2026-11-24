@@ -150,11 +150,38 @@ object Simplifier {
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(StringConcatMethod), es, t, purity, loc)
 
-        case AtomicOp.ArrayLit | AtomicOp.ArrayNew =>
-          // The region expression is dropped (head of exps / es)
-          val es1 = es.tail
+        case AtomicOp.ArrayLit =>
+          // The region (head of es) is dropped, but evaluated first if it is impure.
+          val regExp :: elmExps = es
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
+          val arrayExp = SimplifiedAst.Expr.ApplyAtomic(op, elmExps, t, purity, loc)
+          if (Purity.isPure(regExp.purity)) {
+            arrayExp
+          } else {
+            SimplifiedAst.Expr.Stm(List(regExp), arrayExp, t, purity, loc)
+          }
+
+        case AtomicOp.ArrayNew =>
+          // The region (head of es) is dropped, but evaluated first if it is impure.
+          val regExp :: argExps = es
+          val t = visitType(tpe)
+          val arrayExp = SimplifiedAst.Expr.ApplyAtomic(op, argExps, t, purity, loc)
+          if (Purity.isPure(regExp.purity)) {
+            arrayExp
+          } else {
+            SimplifiedAst.Expr.Stm(List(regExp), arrayExp, t, purity, loc)
+          }
+
+        case AtomicOp.ArraySlice =>
+          // The region (head of es) is dropped, but evaluated first if it is impure.
+          val regExp :: argExps = es
+          val t = visitType(tpe)
+          val arrayExp = SimplifiedAst.Expr.ApplyAtomic(op, argExps, t, purity, loc)
+          if (Purity.isPure(regExp.purity)) {
+            arrayExp
+          } else {
+            SimplifiedAst.Expr.Stm(List(regExp), arrayExp, t, purity, loc)
+          }
 
         case AtomicOp.VectorLit =>
           // Note: We simplify Vectors to Arrays.

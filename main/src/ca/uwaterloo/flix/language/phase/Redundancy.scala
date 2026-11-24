@@ -784,6 +784,13 @@ object Redundancy {
       val us3 = visitExp(elm, env0, rc)
       us1 ++ us2 ++ us3
 
+    case Expr.ArraySlice(exp1, exp2, exp3, exp4, _, _, _) =>
+      val us1 = visitExp(exp1, env0, rc)
+      val us2 = visitExp(exp2, env0, rc)
+      val us3 = visitExp(exp3, env0, rc)
+      val us4 = visitExp(exp4, env0, rc)
+      us1 ++ us2 ++ us3 ++ us4
+
     case Expr.StructNew(sym, fields, region, _, _, _) =>
       sctx.structSyms.put(sym, ())
       visitExps(fields.map { case (_, v) => v }, env0, rc) ++ region.map(visitExp(_, env0, rc)).getOrElse(Used.empty)

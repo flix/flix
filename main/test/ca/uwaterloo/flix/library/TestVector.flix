@@ -340,6 +340,38 @@ mod TestVector {
     def slice03(): Unit \ Assert =
         assertEq(expected = 3, Vector.slice(start = 2, end = 3, Vector#{1, 2, 3}) |> Vector.get(0))
 
+    @Test
+    def slice04(): Unit \ Assert =
+        assertEq(expected = Vector#{1, 2, 3}, Vector.slice(start = 0, end = 3, Vector#{1, 2, 3}))
+
+    @Test
+    def slice05(): Unit \ Assert =
+        assertEq(expected = Vector#{2, 3}, Vector.slice(start = 1, end = 3, Vector#{1, 2, 3, 4}))
+
+    @Test
+    def slice06(): Unit \ Assert =
+        assertEq(expected = (Vector#{}: Vector[Int32]), Vector.slice(start = 1, end = 1, Vector#{1, 2, 3}))
+
+    @Test
+    def slice07(): Unit \ Assert =
+        assertEq(expected = Vector#{2, 3}, Vector.slice(start = 1, end = 5, Vector#{1, 2, 3}))
+
+    @Test
+    def slice08(): Unit \ Assert =
+        assertEq(expected = Vector#{"a"}, Vector.slice(start = 0, end = 4, Vector#{"a"}))
+
+    @Test
+    def slice09(): Unit \ Assert =
+        assertEq(expected = Vector#{1, 2}, Vector.slice(start = -2, end = 2, Vector#{1, 2, 3}))
+
+    @Test
+    def slice10(): Unit \ Assert =
+        assertEq(expected = (Vector#{}: Vector[Int32]), Vector.slice(start = 5, end = 7, Vector#{1, 2, 3}))
+
+    @Test
+    def slice11(): Unit \ Assert =
+        assertEq(expected = (Vector#{}: Vector[Int32]), Vector.slice(start = 2, end = 1, Vector#{1, 2, 3}))
+
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -1132,6 +1164,11 @@ mod TestVector {
         let v = Vector#{Some(1), Some(2)};
         assertEq(expected = Some(Vector#{1, 2}), Vector.sequence(v))
 
+    @Test
+    def sequence08(): Unit \ Assert =
+        let v = Vector#{1 :: 2 :: Nil, 3 :: 4 :: Nil};
+        assertEq(expected = List#{Vector#{1, 3}, Vector#{1, 4}, Vector#{2, 3}, Vector#{2, 4} }, Vector.sequence(v))
+
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //
     /////////////////////////////////////////////////////////////////////////////
@@ -1166,6 +1203,11 @@ mod TestVector {
         let v = Vector#{1, 2, 1};
         assertEq(expected = Some(Vector#{1, 2, 1}), Vector.traverse(x -> if (x > 2) None else Some(x), v))
 
+    @Test
+    def traverse07(): Unit \ Assert =
+        let v = Vector#{1, 2};
+        assertEq(expected = List#{Vector#{1, 2}, Vector#{1, 12}, Vector#{11, 2}, Vector#{11, 12}}, Vector.traverse(x -> x :: (x + 10) :: Nil, v))
+
     /////////////////////////////////////////////////////////////////////////////
     // zipWithA                                                                //
     /////////////////////////////////////////////////////////////////////////////
@@ -1198,6 +1240,11 @@ mod TestVector {
     def zipWithA06(): Unit \ Assert =
         let v = Vector.zipWithA((x, y) -> if (x + y > 5) None else Some(x + y), Vector#{1, 2, 3}, Vector#{1, 1, 1});
         assertEq(expected = Some(Vector#{2, 3, 4}), v)
+
+    @Test
+    def zipWithA07(): Unit \ Assert =
+        let v = Vector.zipWithA((x, y) -> (x + y) :: (x * y) :: Nil, Vector#{1, 2}, Vector#{3, 4});
+        assertEq(expected = List#{Vector#{4, 6}, Vector#{4, 8}, Vector#{3, 6}, Vector#{3, 8}}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // flatMap                                                                 //

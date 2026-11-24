@@ -2163,6 +2163,7 @@ object Weeder2 {
         case Some(e1 :: Nil) => visitUnaryIntrinsic(intrinsic, e1, loc)
         case Some(e1 :: e2 :: Nil) => visitBinaryIntrinsic(intrinsic, e1, e2, loc)
         case Some(e1 :: e2 :: e3 :: Nil) => visitTernaryIntrinsic(intrinsic, e1, e2, e3, loc)
+        case Some(e1 :: e2 :: e3 :: e4 :: Nil) => visitQuaternaryIntrinsic(intrinsic, e1, e2, e3, e4, loc)
         case _ => mkUndefinedIntrinsic(loc)
       }
     }
@@ -2317,6 +2318,14 @@ object Weeder2 {
     private def visitTernaryIntrinsic(intrinsic: String, e1: Expr, e2: Expr, e3: Expr, loc: SourceLocation)(implicit sctx: SharedContext): Expr = intrinsic match {
       case "ARRAY_NEW" => Expr.ArrayNew(e1, e2, e3, loc)
       case "ARRAY_STORE" => Expr.ArrayStore(e1, e2, e3, loc)
+      case _ => mkUndefinedIntrinsic(loc)
+    }
+
+    /**
+      * Returns the expression corresponding to the intrinsic `intrinsic` applied to the arguments `e1`, `e2`, `e3` and `e4`.
+      */
+    private def visitQuaternaryIntrinsic(intrinsic: String, e1: Expr, e2: Expr, e3: Expr, e4: Expr, loc: SourceLocation)(implicit sctx: SharedContext): Expr = intrinsic match {
+      case "ARRAY_SLICE" => Expr.ArraySlice(e1, e2, e3, e4, loc)
       case _ => mkUndefinedIntrinsic(loc)
     }
 

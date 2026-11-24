@@ -381,6 +381,14 @@ object Dependencies {
       visitExp(exp3)
       visitType(eff)
 
+    case Expr.ArraySlice(exp1, exp2, exp3, exp4, tpe, eff, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
+      visitExp(exp4)
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.StructNew(_, fields, region, tpe, eff, _) =>
       fields.foreach{ field =>
         visitSymUse(field._1)

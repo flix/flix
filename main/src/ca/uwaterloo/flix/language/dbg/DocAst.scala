@@ -199,6 +199,9 @@ object DocAst {
     def ArrayStore(d1: Expr, index: Expr, d2: Expr): Expr =
       Assign(SquareApp(d1, List(index)), d2)
 
+    def ArraySlice(d: Expr, begin: Expr, end: Expr): Expr =
+      SquareApp(d, List(Binary(begin, "..", end)))
+
     def StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], regionOpt: Option[Expr]): Expr = {
       val beforeRecord = "new " + sym.toString
       val name = Name.Label(sym.name, sym.loc)

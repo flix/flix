@@ -269,6 +269,80 @@ mod Test.EvalOrder {
     }
 
     ///
+    /// Array Literals.
+    ///
+
+    @Test
+    def testArrayLit01(): Unit \ Assert = region rc {
+        let c = Ref.fresh(rc, 0);
+        let a = Array#{next(c), next(c), next(c)} @ rc;
+        assertEq(expected = 0 :: 1 :: 2 :: Nil, Array.toList(a))
+    }
+
+    @Test
+    def testArrayLit02(): Unit \ Assert = region rc {
+        // The region expression is evaluated before the elements.
+        let c = Ref.fresh(rc, 0);
+        let r = Ref.fresh(rc, -1);
+        let a = Array#{next(c), next(c)} @ { Ref.put(next(c), r); rc };
+        assertEq(expected = 1 :: 2 :: Nil, Array.toList(a));
+        assertEq(expected = 0, Ref.get(r))
+    }
+
+    @Test
+    def testArrayLit03(): Unit \ Assert = region rc {
+        // The region expression uses an effect operation.
+        let log = Ref.fresh(rc, Nil);
+        let l = run {
+            let a = Array#{Emit.emit(2), Emit.emit(3)} @ { discard Emit.emit(1); rc };
+            Array.toList(a)
+        } with handler Emit {
+            def emit(x, k) = {
+                Ref.put(x :: Ref.get(log), log);
+                k(x)
+            }
+        };
+        assertEq(expected = 2 :: 3 :: Nil, l);
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, List.reverse(Ref.get(log)))
+    }
+
+    ///
+    /// New Arrays.
+    ///
+
+    @Test
+    def testArrayNew01(): Unit \ Assert = region rc {
+        let c = Ref.fresh(rc, 0);
+        let a = %%ARRAY_NEW%%(rc, 10 + next(c), 2 + next(c));
+        assertEq(expected = 10 :: 10 :: 10 :: Nil, Array.toList(a))
+    }
+
+    @Test
+    def testArrayNew02(): Unit \ Assert = region rc {
+        // The region expression is evaluated before the other arguments.
+        let c = Ref.fresh(rc, 0);
+        let r = Ref.fresh(rc, -1);
+        let a = %%ARRAY_NEW%%({ Ref.put(next(c), r); rc }, 10 + next(c), next(c));
+        assertEq(expected = 11 :: 11 :: Nil, Array.toList(a));
+        assertEq(expected = 0, Ref.get(r))
+    }
+
+    ///
+    /// Array Slices.
+    ///
+
+    @Test
+    def testArraySlice01(): Unit \ Assert = region rc {
+        // The region expression is evaluated before the other arguments.
+        let c = Ref.fresh(rc, 0);
+        let r = Ref.fresh(rc, -1);
+        let a = Array#{10, 11, 12, 13, 14} @ rc;
+        let s = %%ARRAY_SLICE%%({ Ref.put(next(c), r); rc }, a, next(c), 2 + next(c));
+        assertEq(expected = 11 :: 12 :: 13 :: Nil, Array.toList(s));
+        assertEq(expected = 0, Ref.get(r))
+    }
+
+    ///
     /// New Structs.
     ///
 

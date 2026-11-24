@@ -251,11 +251,17 @@ pub mod Vector {
     pub def size(v: Vector[a]): Int32 = length(v)
 
     ///
-    /// Returns a fresh array with the elements from the vector `v` from index `b` (inclusive) until index `e` (exclusive).
+    /// Returns a fresh vector with the elements of the vector `v` from index `start` (inclusive) until index `end` (exclusive).
+    ///
+    /// Indices that are out of bounds in `v` are clamped (i.e. `start` to between `0` and `length(v)`, and `end` to between `start` and `length(v)`).
     ///
     pub def slice(start: {start = Int32}, end: {end = Int32}, v: Vector[a]): Vector[a] = region rc {
-        let arr = toArray(rc, v);
-        Array.slice(rc, start, end, arr) |> Array.toVector
+        let len = length(v);
+        let b = Int32.max(0, Int32.min(start#start, len));
+        let e = Int32.max(b, Int32.min(end#end, len));
+        // A vector is represented as an array, hence the casts are safe and the vector is copied once.
+        let arr: Array[a, rc] = unchecked_cast(v as Array[a, rc]);
+        unchecked_cast(Array.copyOfRange(rc, b, e, arr) as Vector[a])
     }
 
     ///
@@ -560,66 +566,64 @@ pub mod Vector {
         init(i -> f(i, get(i, v)), length(v))
 
     ///
+    /// Helper function for `sequence` and `traverse`.
+    ///
+    /// Builds an "applicative list" from a head of one applicative action and an
+    /// applicative list of the tail.
+    ///
+    def consA(mx: f[a], ml: f[List[a]]): f[List[a]] with Applicative[f] =
+        use Functor.{<$>};
+        use Applicative.{<*>};
+        (((x, xs) -> x :: xs) <$> mx) <*> ml
+
+    ///
     /// Returns the result of running all the actions in the list `v` going from left
     /// to right.
     ///
-    pub def sequence(v: Vector[m[a]]): m[Vector[a]] with Applicative[m] = region rc {
+    pub def sequence(v: Vector[m[a]]): m[Vector[a]] with Applicative[m] =
         let len = length(v);
-        let arr = Array.empty(rc, len);
         def loop(i, k) = {
             if (i == len)
-                k(Applicative.point(arr))
+                k(Applicative.point(Nil))
             else {
                 let mx = get(i, v);
-                loop(i + 1, karr -> k(putA(mx, i, karr)))
+                loop(i + 1, ks -> k(consA(mx, ks)))
             }
         };
-        Functor.map(Array.toVector, loop(0, x -> x))
-    }
+        loop(0, identity) |> Functor.map(List.toVector)
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
     /// vector `v` going from left to right.
     ///
-    pub def traverse(f: a -> m[b] \ ef, v: Vector[a]): m[Vector[b]] \ ef with Applicative[m] = region rc {
-        let len = length(v);
-        let arr = Array.empty(rc, len);
+    pub def traverse(f: a -> m[b] \ ef, v: Vector[a]): m[Vector[b]] \ ef with Applicative[m] =
+        let len = Vector.length(v);
         def loop(i, k) = {
             if (i == len)
-                k(Applicative.point(arr))
+                k(Applicative.point(Nil))
             else {
-                let x = get(i, v);
-                loop(i + 1, karr -> k(putA(f(x), i, karr)))
+                let x = Vector.get(i, v);
+                loop(i + 1, ks -> k(consA(f(x), ks)))
             }
         };
-        Functor.map(Array.toVector, loop(0, x -> x))
-    }
+        loop(0, identity) |> Functor.map(List.toVector)
 
-    ///
-    /// Helper for `sequence`, `traverse` and `zipWithA`.
-    ///
-    def putA(mx: m[a], i: Int32, marr: m[Array[a, r]]): m[Array[a, r]] \ r with Applicative[m] =
-        use Functor.{<$>};
-        use Applicative.{<*>};
-        (((x, arr) -> { Array.put(x, i, arr); arr }) <$> mx) <*> marr
 
     ///
     /// Generalize `zipWith` to an applicative functor `f`.
     ///
-    pub def zipWithA(f: (a, b) -> m[c] \ ef, v1: Vector[a], v2: Vector[b]): m[Vector[c]] \ ef with Applicative[m] = region rc {
+    pub def zipWithA(f: (a, b) -> m[c] \ ef, v1: Vector[a], v2: Vector[b]): m[Vector[c]] \ ef with Applicative[m] =
         let len = Int32.min(length(v1), length(v2));
-        let arr = Array.empty(rc, len);
         def loop(i, k) = {
             if (i == len)
-                k(Applicative.point(arr))
+                k(Applicative.point(Nil))
             else {
                 let x = get(i, v1);
                 let y = get(i, v2);
-                loop(i + 1, karr -> k(putA(f(x, y), i, karr)))
+                loop(i + 1, ks -> k(consA(f(x, y), ks)))
             }
         };
-        Functor.map(Array.toVector, loop(0, x -> x))
-    }
+        loop(0, identity) |> Functor.map(List.toVector)
 
     ///
     /// Apply every function from `f` to every argument from `v` and return a list with all results.

@@ -890,6 +890,14 @@ object Specialization {
       val e3 = specializeExp(exp3, env0, subst)
       Expr.ArrayStore(e1, e2, e3, subst(eff), loc)
 
+    case Expr.ArraySlice(exp1, exp2, exp3, exp4, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val e3 = specializeExp(exp3, env0, subst)
+      val e4 = specializeExp(exp4, env0, subst)
+      val t = subst(tpe)
+      Expr.ArraySlice(e1, e2, e3, e4, t, subst(eff), loc)
+
     case Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
       val fields = fields0.map { case (k, v) => (k, specializeExp(v, env0, subst)) }
       val region = region0.map(r => specializeExp(r, env0, subst))
