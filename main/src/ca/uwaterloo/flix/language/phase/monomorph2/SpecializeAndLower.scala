@@ -124,6 +124,8 @@ private[monomorph2] object SpecializeAndLower {
     *   - variables are renamed via `env0`,
     *   - every type is ground-instantiated via `subst`,
     *   - def/sig/case/struct symbols are resolved against the solver solution,
+    *   - a sig call that resolves to a def that wraps a primitive operation, e.g. `Add.add` for
+    *     `Int32`, is replaced by the operation itself,
     *   - types are lowered and Datalog/channel expressions are lowered to the primitives.
     */
   private def visitExp(exp0: TypedAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit tables: SpecializationTables, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
@@ -340,9 +342,61 @@ private[monomorph2] object SpecializeAndLower {
 
     case TypedAst.Expr.ApplySig(symUse, exps, _, _, itpe0, tpe, eff, _, loc) =>
       val groundArrowTpe = subst(itpe0)
-      val newSym = resolveSigSym(symUse.sym, groundArrowTpe)
+      val (defn, newSym) = resolveSigSym(symUse.sym, groundArrowTpe)
       val es = exps.map(visitExp(_, env0, subst))
-      MonoAst.Expr.ApplyDef(newSym, es, visitTypeSubstituted(groundArrowTpe), visitType(tpe, subst), subst(eff), loc)
+      val t = visitType(tpe, subst)
+      val ef = subst(eff)
+      applyPrimitive(defn, es, t, ef, loc).getOrElse {
+        MonoAst.Expr.ApplyDef(newSym, es, visitTypeSubstituted(groundArrowTpe), t, ef, loc)
+      }
+  }
+
+  /**
+    * Optionally returns the primitive operation that `defn` wraps, applied to `exps`.
+    *
+    * A def wraps a primitive operation if its body is that operation applied to the formal
+    * parameters of the def, in declaration order. For example:
+    *
+    *   - `pub def add(x: Int32, y: Int32): Int32 = %%INT32_ADD%%(x, y)`
+    *
+    * A call to such a def is equivalent to the operation applied to the arguments of the call: the
+    * arguments are still evaluated exactly once and from left to right. Applying the operation
+    * directly means that the call is not later inlined by the optimizer.
+    *
+    * @param defn the def that the call resolves to.
+    * @param exps the specialized and lowered arguments of the call.
+    * @param tpe  the specialized and lowered type of the call.
+    * @param eff  the specialized effect of the call.
+    * @param loc  the source location of the call.
+    */
+  private def applyPrimitive(defn: TypedAst.Def, exps: List[MonoAst.Expr], tpe: Type, eff: Type, loc: SourceLocation): Option[MonoAst.Expr] = (defn.exp, defn.spec.fparams, exps) match {
+    case (TypedAst.Expr.Unary(sop, TypedAst.Expr.Var(sym, _, _), _, _, _), Nel(fparam, Nil), e :: Nil)
+      if fparam.bnd.sym == sym && canApplyDirectly(sop, defn) =>
+      Some(MonoAst.Expr.ApplyAtomic(AtomicOp.Unary(sop), List(e), tpe, eff, loc))
+
+    case (TypedAst.Expr.Binary(sop, TypedAst.Expr.Var(sym1, _, _), TypedAst.Expr.Var(sym2, _, _), _, _, _), Nel(fparam1, fparam2 :: Nil), e1 :: e2 :: Nil)
+      if fparam1.bnd.sym == sym1 && fparam2.bnd.sym == sym2 && canApplyDirectly(sop, defn) =>
+      Some(MonoAst.Expr.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), tpe, eff, loc))
+
+    case _ => None
+  }
+
+  /**
+    * Returns `true` if a call to `defn`, which wraps `sop`, can be replaced by `sop` applied to the
+    * arguments of the call.
+    *
+    * This is not the case if:
+    *
+    *   - `sop` is `and` or `or`. They do not evaluate their second operand when the first decides
+    *     the result, whereas a call evaluates both arguments.
+    *   - `sop` is a reflection operation. They are resolved when the def that contains them is
+    *     specialized.
+    *   - `defn` is marked `@DontInline`.
+    */
+  private def canApplyDirectly(sop: SemanticOp, defn: TypedAst.Def): Boolean = sop match {
+    case SemanticOp.BoolOp.And | SemanticOp.BoolOp.Or => false
+    case _: SemanticOp.ReflectOp => false
+    case _ => !defn.spec.ann.isDontInline
   }
 
   /** Specializes and lowers the unary operation `sop` applied to `exp`. */

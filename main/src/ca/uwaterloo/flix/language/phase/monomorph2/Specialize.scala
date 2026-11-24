@@ -170,9 +170,12 @@ private[monomorph2] object Specialize {
         TypedAst.Op(sym, spec, loc)
     }
 
-  /** Returns the sym to use for a call to signature `sym`'s instance implementation (or trait-level default) at ground arrow type `groundArrowTpe`. */
+  /**
+    * Returns the def that a call to signature `sym` resolves to at ground arrow type `groundArrowTpe`, i.e. the
+    * instance implementation or the trait-level default, together with the sym to use for the call.
+    */
   private[monomorph2] def resolveSigSym(sym: Symbol.SigSym, groundArrowTpe: Type)
-                            (implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): Symbol.DefnSym = {
+                            (implicit tables: SpecializationTables, root: TypedAst.Root, flix: Flix): (TypedAst.Def, Symbol.DefnSym) = {
     val sig = root.sigs(sym)
     val trt = root.traits(sym.trt)
     val subst = ConstraintSolver2.fullyUnify(sig.spec.declaredScheme.base, groundArrowTpe, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix).get
@@ -181,12 +184,12 @@ private[monomorph2] object Specialize {
     val tyCon = traitType.typeConstructor.get
     val instance = tables.instances((sym.trt, tyCon))
     val defns = instance.defs.filter(_.sym.text == sig.sym.name)
-    val (resolvedSym, isParametric) = (sig.exp, defns) match {
+    val (resolvedDef, isParametric) = (sig.exp, defns) match {
       // An instance implementation exists. Use it.
-      case (_, defn :: Nil) => (defn.sym, defn.spec.tparams.nonEmpty || instance.tparams.nonEmpty)
+      case (_, defn :: Nil) => (defn, defn.spec.tparams.nonEmpty || instance.tparams.nonEmpty)
 
       // No instance implementation, but a default implementation exists. Use it.
-      case (Some(_), Nil)   => (MonomorphHelpers.defaultSigImplSym(sig), true)
+      case (Some(exp), Nil) => (TypedAst.Def(MonomorphHelpers.defaultSigImplSym(sig), sig.spec, exp, sig.sym.loc), true)
 
       // Multiple matching defs. Should have been caught previously.
       case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.", sym.loc)
@@ -194,9 +197,10 @@ private[monomorph2] object Specialize {
       // No matching defs and no default. Should have been caught previously.
       case (None, Nil)      => throw InternalCompilerException(s"No default or matching definition found for '$sym'.", sym.loc)
     }
+    val resolvedSym = resolvedDef.sym
     tables.defTable.get((resolvedSym, groundArrowTpe)) match {
-      case Some(specializedSym) => specializedSym
-      case None if !isParametric => resolvedSym
+      case Some(specializedSym) => (resolvedDef, specializedSym)
+      case None if !isParametric => (resolvedDef, resolvedSym)
       case None => throw InternalCompilerException(s"No specialization for $resolvedSym at type $groundArrowTpe.", sym.loc)
     }
   }
