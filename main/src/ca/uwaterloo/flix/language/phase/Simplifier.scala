@@ -173,10 +173,15 @@ object Simplifier {
           }
 
         case AtomicOp.ArraySlice =>
-          // The region expression is dropped (head of exps / es)
-          val es1 = es.tail
+          // The region (head of es) is dropped, but evaluated first if it is impure.
+          val regExp :: argExps = es
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
+          val arrayExp = SimplifiedAst.Expr.ApplyAtomic(op, argExps, t, purity, loc)
+          if (Purity.isPure(regExp.purity)) {
+            arrayExp
+          } else {
+            SimplifiedAst.Expr.Stm(List(regExp), arrayExp, t, purity, loc)
+          }
 
         case AtomicOp.VectorLit =>
           // Note: We simplify Vectors to Arrays.
