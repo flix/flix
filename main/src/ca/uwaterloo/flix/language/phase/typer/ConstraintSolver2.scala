@@ -253,6 +253,10 @@ object ConstraintSolver2 {
         val t2 = visitType(tpe2)
         if ((t1 eq tpe1) && (t2 eq tpe2)) constr else TypeConstraint.Conflicted(t1, t2, prov)
       case TypeConstraint.EffConflicted(_) => constr
+      case TypeConstraint.Speculative(tpe1, tpe2, loc) =>
+        val t1 = visitType(tpe1)
+        val t2 = visitType(tpe2)
+        if ((t1 eq tpe1) && (t2 eq tpe2)) constr else TypeConstraint.Speculative(t1, t2, loc)
     }
 
     // Constraints first, then the tree: bindings made before this pass may contain applications
@@ -439,6 +443,11 @@ object ConstraintSolver2 {
       }
 
     case TypeConstraint.EffConflicted(_) => constr :: Nil
+
+    case TypeConstraint.Speculative(_, _, _) =>
+      // A speculation has no logical content (see [[TypeConstraint.Speculative]]). The solver interface
+      // removes the speculations of a system before solving it; one that reaches the solver is dropped.
+      Nil
   }
 
   /**
@@ -562,6 +571,7 @@ object ConstraintSolver2 {
     case c: TypeConstraint.SubEff => List(c)
     case c: TypeConstraint.Conflicted => List(c)
     case c: TypeConstraint.EffConflicted => List(c)
+    case c: TypeConstraint.Speculative => List(c)
 
     case c@TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       val nested = ListOps.flatMapWithReuse(nested0)(contextReduction(_, progress)(scope.enter(sym), renv0, trenv, eqenv, flix))
