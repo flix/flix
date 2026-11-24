@@ -150,14 +150,22 @@ object Simplifier {
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(StringConcatMethod), es, t, purity, loc)
 
-        case AtomicOp.ArrayLit | AtomicOp.ArrayNew =>
-          // The region (head of exps / es) is only used for typing, so its value is dropped.
-          // An impure region expression must still be evaluated. We evaluate it first, as a
-          // statement before the array is created. This holds for `Array#{e1, e2} @ rc` too,
-          // i.e. `rc` is evaluated before `e1` and `e2`.
-          val regExp :: restExps = es
+        case AtomicOp.ArrayLit =>
+          // The region (head of es) is dropped, but evaluated first if it is impure.
+          val regExp :: elmExps = es
           val t = visitType(tpe)
-          val arrayExp = SimplifiedAst.Expr.ApplyAtomic(op, restExps, t, purity, loc)
+          val arrayExp = SimplifiedAst.Expr.ApplyAtomic(op, elmExps, t, purity, loc)
+          if (Purity.isPure(regExp.purity)) {
+            arrayExp
+          } else {
+            SimplifiedAst.Expr.Stm(List(regExp), arrayExp, t, purity, loc)
+          }
+
+        case AtomicOp.ArrayNew =>
+          // The region (head of es) is dropped, but evaluated first if it is impure.
+          val regExp :: argExps = es
+          val t = visitType(tpe)
+          val arrayExp = SimplifiedAst.Expr.ApplyAtomic(op, argExps, t, purity, loc)
           if (Purity.isPure(regExp.purity)) {
             arrayExp
           } else {
