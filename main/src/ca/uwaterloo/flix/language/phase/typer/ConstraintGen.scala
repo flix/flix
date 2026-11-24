@@ -380,15 +380,29 @@ object ConstraintGen {
 
   /** Generates constraints for the application `exp0`. */
   private def visitApplyExpr(exp0: Expr.ApplyExpr)(implicit c: TypeContext, scope: RegionScope, root: KindedAst.Root, flix: Flix): InferredAst.Expr = exp0 match {
-    case Expr.ApplyClo(exp1, exp2, loc) =>
-      val lambdaBodyType = freshVar(Kind.Star, loc)
-      val lambdaBodyEff = freshVar(Kind.Eff, loc)
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      c.expectType(Type.mkArrowWithEffect(e2.tpe, lambdaBodyEff, lambdaBodyType, loc), e1.tpe, loc)
-      val resTpe = lambdaBodyType
-      val resEff = Type.mkUnion(lambdaBodyEff, e1.eff, e2.eff, loc)
-      InferredAst.Expr.ApplyClo(e1, e2, resTpe, resEff, loc)
+    case Expr.ApplyClo(exp1, exp2, loc) => knownClosureType(exp1) match {
+      case Some((paramTpe, closureEff, resultTpe)) =>
+        // The type of the closure is known, e.g. it is the resumption of a handler rule. The application then has
+        // the result type and the effect of the closure, so it needs no variables, and only its argument is constrained.
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        // A mismatch is reported as below: the function type that the application requires against the type of the closure.
+        val requiredTpe = Type.mkArrowWithEffect(e2.tpe, closureEff, resultTpe, loc)
+        c.expectTypePart(e2.tpe, paramTpe, expected = requiredTpe, actual = e1.tpe, loc)
+        val resTpe = resultTpe
+        val resEff = Type.mkUnion(closureEff, e1.eff, e2.eff, loc)
+        InferredAst.Expr.ApplyClo(e1, e2, resTpe, resEff, loc)
+
+      case None =>
+        val lambdaBodyType = freshVar(Kind.Star, loc)
+        val lambdaBodyEff = freshVar(Kind.Eff, loc)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        c.expectType(Type.mkArrowWithEffect(e2.tpe, lambdaBodyEff, lambdaBodyType, loc), e1.tpe, loc)
+        val resTpe = lambdaBodyType
+        val resEff = Type.mkUnion(lambdaBodyEff, e1.eff, e2.eff, loc)
+        InferredAst.Expr.ApplyClo(e1, e2, resTpe, resEff, loc)
+    }
 
     case Expr.ApplyDef(symUse, exps, loc) =>
       val defn = root.defs(symUse.sym)
@@ -1474,6 +1488,20 @@ object ConstraintGen {
           val e = visitExp(body)
           InferredAst.HandlerRule(symUse, Nel.unsafeFrom(fps ::: fp :: Nil), e, loc)
       }
+  }
+
+  /**
+    * Optionally returns the parameter type, the effect and the result type of the closure `exp`, if they are known
+    * before `exp` is visited: that is, if `exp` is a variable that was given a function type of one parameter (see
+    * [[TypeContext.bindVar]]).
+    */
+  private def knownClosureType(exp: KindedAst.Expr)(implicit c: TypeContext): Option[(Type, Type, Type)] = exp match {
+    case Expr.Var(sym, _) => c.typeOfVar(sym) match {
+      case Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), eff, _), paramTpe, _), resultTpe, _) =>
+        Some((paramTpe, eff, resultTpe))
+      case _ => None
+    }
+    case _ => None
   }
 
   /**

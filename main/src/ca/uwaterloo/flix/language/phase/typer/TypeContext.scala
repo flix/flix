@@ -191,6 +191,23 @@ class TypeContext(val subEffecting: Boolean = true) {
   }
 
   /**
+    * Generates a constraint unifying `tpe1` and `tpe2`, where `tpe1` is a part of the type `expected` and `tpe2`
+    * is the corresponding part of the type `actual`.
+    *
+    * {{{
+    *   tpe1 ~ tpe2
+    * }}}
+    *
+    * A mismatch is reported in terms of `expected` and `actual`, as for the constraint `expected ~ actual`
+    * of which this constraint is a part.
+    */
+  def expectTypePart(tpe1: Type, tpe2: Type, expected: Type, actual: Type, loc: SourceLocation): Unit = {
+    val prov = Provenance.ExpectType(expected, actual, loc)
+    val constr = TypeConstraint.Equality(tpe1, tpe2, prov)
+    currentScopeConstraints.add(constr)
+  }
+
+  /**
     * Generates a constraint requiring the effect `eff1` to be a subset of the effect `eff2`.
     *
     * {{{
