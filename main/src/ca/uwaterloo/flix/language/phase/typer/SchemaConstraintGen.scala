@@ -295,8 +295,8 @@ object SchemaConstraintGen {
     * Those predicates are already type checked: the desugarer copies them into the pseudo-constraint that
     * forms the query expression. Here we only need the annotated predicates to complete the tree.
     */
-  private def visitBodyPredicateUnchecked(body0: KindedAst.Predicate.Body)(implicit root: KindedAst.Root, flix: Flix): InferredAst.Predicate.Body = {
-    val (body, _) = visitBodyPredicate(body0)(new TypeContext, root, flix)
+  private def visitBodyPredicateUnchecked(body0: KindedAst.Predicate.Body)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): InferredAst.Predicate.Body = {
+    val (body, _) = visitBodyPredicate(body0)(c.unchecked, root, flix)
     body
   }
 
