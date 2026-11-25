@@ -35,17 +35,32 @@ object ConstraintSolverInterface {
 
   /**
     * Resolves constraints in the given val using the given inference result.
-    * TODO: declaration-level checking (type/purity) is not yet implemented; the follow-up on `feat/val-typer-constraints` adds it.
+    *
+    * A val is monomorphic (no type parameters), so unlike a [[KindedAst.Def]]'s scheme, there is nothing to generalize over.
     */
-  def visitVal(v: KindedAst.Val, infResult: InfResult, tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = {
-    val InfResult(infConstrs, _, _) = infResult
-    // A val has no type parameters, so there are no rigid variables to carry in.
-    val renv = RigidityEnv.empty
-    val (leftovers, subst) = ConstraintSolver2.solveAll(infConstrs, SubstitutionTree.empty)(RegionScope.Top, renv, tenv0, eqEnv0, flix)
-    leftovers match {
-      case Nil => (subst, Nil)
-      case _ => (subst, mkTypeErrors(leftovers, subst, root))
-    }
+  def visitVal(v: KindedAst.Val, infResult: InfResult, tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = v match {
+    case KindedAst.Val(_, _, _, _, tpe, _, loc) =>
+
+      val InfResult(infConstrs, infTpe, infEff) = infResult
+
+      // A val has no type parameters, so there are no rigid variables to carry in.
+      val renv = RigidityEnv.empty
+
+      // A val has no syntax for an effect annotation, so it is implicitly pure (like a def with no effect annotation).
+      val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
+      val tpos = moveRight(tpe.loc.end)
+      val loc1 = SourceLocation(true, tpe.loc.source, tpe.loc.end, tpos)
+      val declaredEffConstr = TypeConstraint.Equality(Type.Pure, infEff, Provenance.ExpectEffect(expected = Type.Pure, actual = infEff, loc1))
+
+      val constrs = declaredTpeConstr :: declaredEffConstr :: infConstrs
+
+      // Only built if we actually need to retry with [[Debug]] allowed (see `solveWithDebugRetry`).
+      def constrsWithDebug = {
+        val declaredEffConstrWithDebug = TypeConstraint.Equality(Type.Debug, infEff, Provenance.ExpectEffect(expected = Type.Debug, actual = infEff, loc1))
+        declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
+      }
+
+      solveWithDebugRetry(constrs, SubstitutionTree.empty, constrsWithDebug, renv, tenv0, eqEnv0, root)
   }
 
   /**
@@ -104,41 +119,57 @@ object ConstraintSolverInterface {
       val initialTree = SubstitutionTree.shallow(initialSubst)
       val constrs = constrs0.map(initialTree.apply)
 
+      // Only built if we actually need to retry with [[Debug]] allowed (see `solveWithDebugRetry`).
+      def constrsWithDebug = {
+        val declaredEffWithDebug = Type.mkUnion(eff.getOrElse(Type.Pure), Type.Debug, loc)
+        val declaredEffConstrWithDebug = TypeConstraint.Equality(declaredEffWithDebug, infEff, Provenance.ExpectEffect(expected = declaredEffWithDebug, actual = infEff, loc))
+        val constrs0 = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
+        constrs0.map(initialTree.apply)
+      }
+
       ///////////////////////////////////////////////////////////////////
       //             This is where the stuff happens!                  //
       // We resolve the constraints under the environments we created. //
       ///////////////////////////////////////////////////////////////////
 
-      val (leftovers, subst) = ConstraintSolver2.solveAll(constrs, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
-      leftovers match {
-        case Nil =>
-          // All constraints solved. Yay!
-          (subst, Nil)
-        case _ =>
-          // We have one or more type errors. We check whether we are in development or production mode.
-          flix.options.build match {
-            case Build.Production =>
-              // We are in production mode, so we have to return immediately with the *original* type error(s).
-              (subst, mkTypeErrors(leftovers, subst, root))
+      solveWithDebugRetry(constrs, initialTree, constrsWithDebug, renv, tenv, eenv, root)
+  }
 
-            case Build.Development =>
-              // Otherwise we have special logic for the [[Debug]] effect: We solve a new constraint system where [[Debug]] is allowed by the effect signature.
-              val declaredEffWithDebug = Type.mkUnion(eff.getOrElse(Type.Pure), Type.Debug, loc)
-              val declaredEffConstrWithDebug = TypeConstraint.Equality(declaredEffWithDebug, infEff, Provenance.ExpectEffect(expected = declaredEffWithDebug, actual = infEff, loc))
-              val constrs0 = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
-              val constrsWithDebug = constrs0.map(initialTree.apply)
-              val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
+  /**
+    * Solves `constrs` and, if anything is left over, reports type errors -- unless we're in
+    * development mode, in which case we first retry once with `constrsWithDebug` (which should be
+    * `constrs` with the declared effect widened to allow [[Type.Debug]]), falling back to the
+    * *original* errors from `constrs` if that retry doesn't fully solve either.
+    *
+    * `constrsWithDebug` is call-by-name so it is only built when actually needed.
+    */
+  private def solveWithDebugRetry(constrs: List[TypeConstraint], initialTree: SubstitutionTree, constrsWithDebug: => List[TypeConstraint], renv: RigidityEnv, tenv: TraitEnv, eenv: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = {
+    val (leftovers, subst) = ConstraintSolver2.solveAll(constrs, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
+    leftovers match {
+      case Nil =>
+        // All constraints solved. Yay!
+        (subst, Nil)
+      case _ =>
+        // We have one or more type errors. We check whether we are in development or production mode.
+        flix.options.build match {
+          case Build.Production =>
+            // We are in production mode, so we have to return immediately with the *original* type error(s).
+            (subst, mkTypeErrors(leftovers, subst, root))
 
-              leftovers2 match {
-                case Nil =>
-                  // Success -- We can type check with [[Debug]].
-                  (subst2, Nil)
-                case _ =>
-                  // Failure -- We report the *original* type error(s). We report the original errors to avoid spurious occurrences of the [[Debug]] effect.
-                  (subst, mkTypeErrors(leftovers, subst, root))
-              }
-          }
-      }
+          case Build.Development =>
+            // Otherwise we have special logic for the [[Debug]] effect: We solve a new constraint system where [[Debug]] is allowed.
+            val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
+
+            leftovers2 match {
+              case Nil =>
+                // Success -- We can type check with [[Debug]].
+                (subst2, Nil)
+              case _ =>
+                // Failure -- We report the *original* type error(s). We report the original errors to avoid spurious occurrences of the [[Debug]] effect.
+                (subst, mkTypeErrors(leftovers, subst, root))
+            }
+        }
+    }
   }
 
   /**
