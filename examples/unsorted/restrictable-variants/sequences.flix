@@ -703,15 +703,6 @@ mod Seq {
         Foldable.joinWith(f, sep, l)
 
     ///
-    /// Returns the elements of `l` as a `DelayList`.
-    ///
-    pub def toDelayList(l: Seq[s][a]): DelayList[a] = choose l {
-        case Seq.Nil         => DelayList.ENil
-        case Seq.One(x)      => DelayList.LCons(x, lazy DelayList.ENil)
-        case Seq.Cons(x, xs) => DelayList.LCons(x, lazy toDelayList(xs))
-    }
-
-    ///
     /// Returns the list `l` as a chain.
     ///
     pub def toChain(l: Seq[s][a]): Chain[a] =
@@ -825,15 +816,6 @@ mod Seq {
             }
         };
         Iterator.unfoldWithIter(rc, next)
-
-    ///
-    /// Returns the association list `l` as a `DelayMap`.
-    ///
-    /// If `l` contains multiple mappings with the same key, `toDelayMap` does not
-    /// make any guarantees about which mapping will be in the resulting map.
-    ///
-    pub def toDelayMap(l: Seq[s][(a, b)]): DelayMap[a, b] with Order[a] =
-        foldRight((x, acc) -> DelayMap.insert(fst(x), snd(x), acc), DelayMap.empty(), l)
 
 }
 

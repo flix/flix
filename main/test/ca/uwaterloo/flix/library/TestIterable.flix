@@ -32,27 +32,6 @@ mod TestIterable {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // DelayMap instance                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def iterableDelayMap01(): Unit \ Assert = region rc {
-        let m : DelayMap[Int32, Char] = DelayMap.empty();
-        assertEq(expected = Nil, Iterable.iterator(rc, m) |> Iterator.toList)
-    }
-
-    @Test
-    def iterableDelayMap02(): Unit \ Assert = region rc {
-        let m = {
-            let Map.Map(t) = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'};
-            let f = (_, v) -> lazy v;
-            DelayMap.DMap(RedBlackTree.mapWithKey(f, t))
-        };
-        assertEq(expected = List#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}, Iterable.iterator(rc, m) |> Iterator.toList)
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // List instance                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
