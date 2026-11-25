@@ -576,7 +576,6 @@ object CompilerPerf {
     flix.addSource(Path.of("TestArray.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"), sctx)
     flix.addSource(Path.of("TestChain.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"), sctx)
     flix.addSource(Path.of("TestIterator.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"), sctx)
-    flix.addSource(Path.of("TestDelayList.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayList.flix"), sctx)
     flix.addSource(Path.of("TestList.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestList.flix"), sctx)
     flix.addSource(Path.of("TestMap.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestMap.flix"), sctx)
     flix.addSource(Path.of("TestMutDeque.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutDeque.flix"), sctx)

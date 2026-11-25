@@ -266,7 +266,7 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
     assertSolved(input)
   }
 
-  test("DelayMap.insertWith.Fusion") {
+  test("Fusion.NestedUnion") {
     // c0 ~ x10 ∪ x11 ∪ c0 ∪ (x8 ∪ x9 ∪ (x6 ∪ x7 ∪ (x4 ∪ x5 ∪ (x2 ∪ x3 ∪ (x0 ∪ x1)))))
     val inner = Union(TwoList(Var(0), Var(1), List()))
     val nested = List(2, 4, 6, 8).foldLeft(inner: SetFormula) {

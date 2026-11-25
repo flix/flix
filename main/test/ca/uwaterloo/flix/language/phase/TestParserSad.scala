@@ -189,7 +189,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
   test("IllegalModule.01") {
     val input =
       """
-        |mod DelayMap {
+        |mod M {
         |    @Experimental
         |    pub de
         |""".stripMargin
