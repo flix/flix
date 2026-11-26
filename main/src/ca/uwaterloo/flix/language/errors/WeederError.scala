@@ -1029,6 +1029,28 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that an annotation is missing its argument.
+    *
+    * @param name the name of the annotation.
+    * @param loc  the location of the annotation.
+    */
+  case class MissingAnnotationArgument(name: String, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E2743
+
+    def summary: String = s"Missing argument: annotation '@$name' requires an integer."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Missing argument: annotation '${red("@" + name)}' requires an integer.
+         |
+         |${src(loc, "argument required")}
+         |
+         |${underline("Tip:")} Write the argument in parentheses, e.g. '@$name(16)'.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that a constructor invocation is missing its argument list.
     *
     * @param loc the location of the constructor invocation.
@@ -1223,6 +1245,26 @@ object WeederError {
       s""">> Undefined annotation '${red(name)}'.
          |
          |${src(loc, "undefined annotation")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that an annotation was given an argument it does not take.
+    *
+    * @param name the name of the annotation.
+    * @param loc  the location of the annotation.
+    */
+  case class UnexpectedAnnotationArgument(name: String, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E3489
+
+    def summary: String = s"Unexpected argument: annotation '@$name' takes no argument."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected argument: annotation '${red("@" + name)}' takes no argument.
+         |
+         |${src(loc, "unexpected argument")}
          |""".stripMargin
     }
   }

@@ -2173,6 +2173,138 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectSuccess(result)
   }
 
+  test("TooComplex.01") {
+    // The branches force an equation between two unions of six effect variables each.
+    val input =
+      """
+        |def u(f1: Unit -> Unit \ e1, f2: Unit -> Unit \ e2, f3: Unit -> Unit \ e3, f4: Unit -> Unit \ e4, f5: Unit -> Unit \ e5, f6: Unit -> Unit \ e6): Unit -> Unit \ e1 + e2 + e3 + e4 + e5 + e6 =
+        |    () -> { f1(); f2(); f3(); f4(); f5(); f6() }
+        |
+        |pub def f(): Int32 =
+        |    let _ = (a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6) ->
+        |        if (true) u(a1, a2, a3, a4, a5, a6) else u(b1, b2, b3, b4, b5, b6);
+        |    1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.TooComplex](result)
+  }
+
+  test("TooComplex.MaxEffVars.01") {
+    // The annotation sets the limit: it can also lower it.
+    val input =
+      """
+        |def u(f1: Unit -> Unit \ e1, f2: Unit -> Unit \ e2, f3: Unit -> Unit \ e3): Unit -> Unit \ e1 + e2 + e3 =
+        |    () -> { f1(); f2(); f3() }
+        |
+        |@MaxEffVars(4)
+        |pub def f(): Int32 =
+        |    let _ = (a1, a2, a3, b1, b2, b3) ->
+        |        if (true) u(a1, a2, a3) else u(b1, b2, b3);
+        |    1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.TooComplex](result)
+  }
+
+  test("TooComplex.MaxEffVars.02") {
+    // The annotation on a trait signature does not apply to the instance.
+    val input =
+      """
+        |def u(f1: Unit -> Unit \ e1, f2: Unit -> Unit \ e2, f3: Unit -> Unit \ e3, f4: Unit -> Unit \ e4, f5: Unit -> Unit \ e5, f6: Unit -> Unit \ e6): Unit -> Unit \ e1 + e2 + e3 + e4 + e5 + e6 =
+        |    () -> { f1(); f2(); f3(); f4(); f5(); f6() }
+        |
+        |trait T[a] {
+        |    @MaxEffVars(12)
+        |    pub def f(_: a): Int32 =
+        |        let _ = (a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6) ->
+        |            if (true) u(a1, a2, a3, a4, a5, a6) else u(b1, b2, b3, b4, b5, b6);
+        |        1
+        |}
+        |
+        |instance T[Bool] {
+        |    redef f(_: Bool): Int32 =
+        |        let _ = (a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6) ->
+        |            if (true) u(a1, a2, a3, a4, a5, a6) else u(b1, b2, b3, b4, b5, b6);
+        |        2
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.TooComplex](result)
+  }
+
+  test("MaxEffVars.Def.01") {
+    val input =
+      """
+        |def u(f1: Unit -> Unit \ e1, f2: Unit -> Unit \ e2, f3: Unit -> Unit \ e3, f4: Unit -> Unit \ e4, f5: Unit -> Unit \ e5, f6: Unit -> Unit \ e6): Unit -> Unit \ e1 + e2 + e3 + e4 + e5 + e6 =
+        |    () -> { f1(); f2(); f3(); f4(); f5(); f6() }
+        |
+        |@MaxEffVars(12)
+        |pub def f(): Int32 =
+        |    let _ = (a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6) ->
+        |        if (true) u(a1, a2, a3, a4, a5, a6) else u(b1, b2, b3, b4, b5, b6);
+        |    1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
+  test("MaxEffVars.Val.01") {
+    val input =
+      """
+        |def u(f1: Unit -> Unit \ e1, f2: Unit -> Unit \ e2, f3: Unit -> Unit \ e3, f4: Unit -> Unit \ e4, f5: Unit -> Unit \ e5, f6: Unit -> Unit \ e6): Unit -> Unit \ e1 + e2 + e3 + e4 + e5 + e6 =
+        |    () -> { f1(); f2(); f3(); f4(); f5(); f6() }
+        |
+        |@MaxEffVars(12)
+        |pub val x: Int32 = {
+        |    let _ = (a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6) ->
+        |        if (true) u(a1, a2, a3, a4, a5, a6) else u(b1, b2, b3, b4, b5, b6);
+        |    1
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
+  test("MaxEffVars.Sig.01") {
+    val input =
+      """
+        |def u(f1: Unit -> Unit \ e1, f2: Unit -> Unit \ e2, f3: Unit -> Unit \ e3, f4: Unit -> Unit \ e4, f5: Unit -> Unit \ e5, f6: Unit -> Unit \ e6): Unit -> Unit \ e1 + e2 + e3 + e4 + e5 + e6 =
+        |    () -> { f1(); f2(); f3(); f4(); f5(); f6() }
+        |
+        |trait T[a] {
+        |    @MaxEffVars(12)
+        |    pub def f(_: a): Int32 =
+        |        let _ = (a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6) ->
+        |            if (true) u(a1, a2, a3, a4, a5, a6) else u(b1, b2, b3, b4, b5, b6);
+        |        1
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
+  test("MaxEffVars.Instance.01") {
+    val input =
+      """
+        |def u(f1: Unit -> Unit \ e1, f2: Unit -> Unit \ e2, f3: Unit -> Unit \ e3, f4: Unit -> Unit \ e4, f5: Unit -> Unit \ e5, f6: Unit -> Unit \ e6): Unit -> Unit \ e1 + e2 + e3 + e4 + e5 + e6 =
+        |    () -> { f1(); f2(); f3(); f4(); f5(); f6() }
+        |
+        |trait T[a] {
+        |    pub def f(x: a): Int32
+        |}
+        |
+        |instance T[Bool] {
+        |    @MaxEffVars(12)
+        |    pub def f(_: Bool): Int32 =
+        |        let _ = (a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6) ->
+        |            if (true) u(a1, a2, a3, a4, a5, a6) else u(b1, b2, b3, b4, b5, b6);
+        |        1
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
   test("ErrorType.01") {
     // There should be no type error because Abc does not resolve.
     val input =

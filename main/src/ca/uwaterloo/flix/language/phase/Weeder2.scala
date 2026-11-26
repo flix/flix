@@ -599,16 +599,17 @@ object Weeder2 {
       val optAnn = tryPick(TreeKind.AnnotationList, tree)
       val ann = optAnn.map(
           tree => {
-            val tokens = pickAllTokens(tree)
+            val trees = pickAll(TreeKind.Annotation, tree)
+            val tokens = trees.map(pickToken(TokenKind.Annotation, _))
             // Check for duplicate annotations
-            val errors = SeqOps.getDuplicates(tokens.toSeq, (t: Token) => t.text).map(pair => {
+            val errors = SeqOps.getDuplicates(tokens, (t: Token) => t.text).map(pair => {
               val name = pair._1.text
               val loc1 = pair._1.mkSourceLocation()
               val loc2 = pair._2.mkSourceLocation()
               DuplicateAnnotation(name.stripPrefix("@"), loc1, loc2)
             })
             errors.foreach(sctx.errors.add)
-            val result = tokens.toList.map(visitAnnotation)
+            val result = trees.map(visitAnnotation)
             checkInlineAndDontInline(result)
             result
           })
@@ -631,10 +632,13 @@ object Weeder2 {
       }
     }
 
-    private def visitAnnotation(token: Token)(implicit sctx: SharedContext): Annotation = {
+    private def visitAnnotation(tree: Tree)(implicit sctx: SharedContext): Annotation = {
+      expect(tree, TreeKind.Annotation)
+      val token = pickToken(TokenKind.Annotation, tree)
       val loc = token.mkSourceLocation()
+      val name = token.text.stripPrefix("@")
       import Annotation.*
-      token.text match {
+      val ann = token.text match {
         case "@CompileTest" => CompileTest(loc)
         case "@DefaultHandler" => DefaultHandler(loc)
         case "@Deprecated" => Deprecated(loc)
@@ -647,17 +651,55 @@ object Weeder2 {
         case "@LoweringTargetDatalog" => LoweringTargetDatalog(loc)
         case "@Lazy" => Lazy(loc)
         case "@LazyWhenPure" => LazyWhenPure(loc)
+        case "@MaxEffVars" => visitMaxEffVars(tree, name, loc)
         case "@NoSubEff" => NoSubEff(loc)
         case "@Skip" => Skip(loc)
         case "@Test" => Test(loc)
         case "@Tailrec" => TailRecursive(loc)
         case "@Terminates" => Terminates(loc)
-        case other =>
-          val name = other.stripPrefix("@")
+        case _ =>
           val error = UndefinedAnnotation(name, loc)
           sctx.errors.add(error)
           Annotation.Error(name, loc)
       }
+      // Only `@MaxEffVars` takes an argument. An erroneous annotation has already been reported.
+      ann match {
+        case MaxEffVars(_, _) => ()
+        case Annotation.Error(_, _) => ()
+        case _ =>
+          if (hasAnnotationArgument(tree)) {
+            sctx.errors.add(UnexpectedAnnotationArgument(name, loc))
+          }
+      }
+      ann
+    }
+
+    /**
+      * Returns the `@MaxEffVars` annotation of `tree` with its integer argument.
+      *
+      * Returns [[Annotation.Error]] if the argument is missing or malformed.
+      */
+    private def visitMaxEffVars(tree: Tree, name: String, loc: SourceLocation)(implicit sctx: SharedContext): Annotation = {
+      tryPickToken(TokenKind.LiteralInt, tree) match {
+        case Some(arg) => Constants.toInt32(arg) match {
+          case Expr.Cst(Constant.Int32(limit), _) => Annotation.MaxEffVars(limit, loc)
+          case _ => Annotation.Error(name, loc) // The malformed literal has already been reported.
+        }
+        case None =>
+          // The parser has already reported an argument that is not an integer.
+          if (!hasAnnotationArgument(tree)) {
+            sctx.errors.add(MissingAnnotationArgument(name, loc))
+          }
+          Annotation.Error(name, loc)
+      }
+    }
+
+    /**
+      * Returns `true` if the annotation `tree` has an argument, e.g. `@MaxEffVars(16)`.
+      */
+    def hasAnnotationArgument(tree: Tree): Boolean = {
+      expect(tree, TreeKind.Annotation)
+      tryPickToken(TokenKind.ParenL, tree).isDefined
     }
 
     private def pickEqualityConstraints(tree: Tree)(implicit sctx: SharedContext): List[EqualityConstraint] = {
@@ -1990,10 +2032,13 @@ object Weeder2 {
     private def pickJvmAnnotations(tree: Tree)(implicit sctx: SharedContext): List[WeededAst.JvmAnnotation] = {
       val optAnn = tryPick(TreeKind.AnnotationList, tree)
       optAnn.map { annTree =>
-        val tokens = pickAllTokens(annTree)
-        tokens.toList.map { token =>
+        pickAll(TreeKind.Annotation, annTree).map { t =>
+          val token = pickToken(TokenKind.Annotation, t)
           val loc = token.mkSourceLocation()
           val name = token.text.stripPrefix("@")
+          if (Decls.hasAnnotationArgument(t)) {
+            sctx.errors.add(UnexpectedAnnotationArgument(name, loc))
+          }
           WeededAst.JvmAnnotation(Name.Ident(name, loc), loc)
         }
       }.getOrElse(Nil)

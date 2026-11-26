@@ -45,6 +45,9 @@ object EffUnification3 {
     *
     * Note: Treats `Type.Error` as a constant, i.e. only equal to itself. Hence, it is better to drop constraints that contain `Type.Error`.
     *
+    * An equation that the rewrite rules leave with more than `maxVars` variables is too complex
+    * to solve: it is returned as a conflict whose provenance is a timeout.
+    *
     * A subeffect constraint `s ⊑ t` is read in one of two ways:
     *   - strictly, as the equation `t ~ s`, whose solution is the minimal solution of the
     *     constraint (a solution of the equation is always a solution of the constraint), or
@@ -68,7 +71,7 @@ object EffUnification3 {
     * `F[a]` and `F[b]` may reach this function only after `a` and `b` have become equal;
     * `F[Int32]` and `F[String]` must be rejected by ordinary type unification beforehand.
     */
-  def unifyAll(eqs0: List[TypeConstraint.Equality], subs0: List[TypeConstraint.SubEff], scope: RegionScope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
+  def unifyAll(eqs0: List[TypeConstraint.Equality], subs0: List[TypeConstraint.SubEff], scope: RegionScope, renv: RigidityEnv, maxVars: Int)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
     // Performance: Nothing to do if there are no constraints.
     if (eqs0.isEmpty && subs0.isEmpty) {
       return Result.Ok(Substitution.empty)
@@ -93,7 +96,7 @@ object EffUnification3 {
     if (EnableSmartSubeffecting && scope == RegionScope.Top) {
       try {
         val equations = toEquations(eqs) ::: subs.map(toStrictEquation)
-        val (unsolvedEqns, resultSubst) = SetUnification.solve(equations, flix.options.xsve)
+        val (unsolvedEqns, resultSubst) = SetUnification.solve(equations, flix.options.xsve, maxVars)
         if (unsolvedEqns.isEmpty) {
           // We have found a valid solution without subeffecting. Return it immediately.
           return Result.Ok(fromSetSubst(resultSubst))
@@ -110,7 +113,7 @@ object EffUnification3 {
     try {
       val equations = toEquations(eqs) ::: subs.map(toLaxEquation)
       flix.emitEvent(FlixEvent.SolveEffEquations(equations))
-      val (unsolvedEqns, resultSubst) = SetUnification.solve(equations, flix.options.xsve)
+      val (unsolvedEqns, resultSubst) = SetUnification.solve(equations, flix.options.xsve, maxVars)
       if (unsolvedEqns.isEmpty) {
         Result.Ok(fromSetSubst(resultSubst))
       } else {
