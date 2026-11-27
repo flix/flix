@@ -12,7 +12,7 @@ pub mod Sys.Env {
 
     use Sys.Env
 
-    import dev.flix.runtime.Global
+    import dev.flix.runtime.Host
     import java.lang.NullPointerException
     import java.lang.Runtime
     import java.lang.SecurityException
@@ -117,7 +117,7 @@ pub mod Sys.Env {
             f(x)
         } with handler Env {
             def getArgs(k) =
-                k(Array.toList(Global.getArgs()))
+                k(Array.toList(Host.getArgs()))
 
             def getEnv(k) = region rc {
                 try {
