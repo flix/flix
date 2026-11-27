@@ -10,11 +10,11 @@ import java.net.{URL, URLClassLoader}
 
 object ExternalJarLoader {
 
-  /** The binary name of the `Global` class, i.e. `dev.flix.runtime.Global`. */
-  private val GlobalBinaryName: String = ClassDescs.binaryNameOf(FlixClasses.Global)
+  /** The binary name of the `Host` class, i.e. `dev.flix.runtime.Host`. */
+  private val HostBinaryName: String = ClassDescs.binaryNameOf(FlixClasses.Host)
 
-  /** The class file name of the `Global` class, i.e. `dev/flix/runtime/Global.class`. */
-  private val GlobalClassFileName: String = ClassDescs.classFileNameOf(FlixClasses.Global)
+  /** The class file name of the `Host` class, i.e. `dev/flix/runtime/Host.class`. */
+  private val HostClassFileName: String = ClassDescs.classFileNameOf(FlixClasses.Host)
 
   /** The prefix shared by the binary names of the test classes, i.e. `dev.flix.test.`. */
   private val TestBinaryNamePrefix: String = FlixClasses.TestPackage.mkString("", ".", ".")
@@ -39,10 +39,10 @@ class ExternalJarLoader(urls: Array[URL]) extends URLClassLoader(urls, ClassLoad
       super.findClass(name)
     } catch {
       case e: ClassNotFoundException =>
-        // Special case for the Global class.
+        // Special case for the Host class.
         // This is never used at runtime, but we need to be able to load it at compile
         // time in order to check method signatures
-        if (name == GlobalBinaryName)
+        if (name == HostBinaryName)
           super.findSystemClass(name)
         // Special case for testing to allow us to load test classes
         else if (name.startsWith(TestBinaryNamePrefix))
@@ -57,7 +57,7 @@ class ExternalJarLoader(urls: Array[URL]) extends URLClassLoader(urls, ClassLoad
     val resource = super.findResource(name)
     if (resource != null) {
       resource
-    } else if (name == GlobalClassFileName || name.startsWith(TestClassFileNamePrefix)) {
+    } else if (name == HostClassFileName || name.startsWith(TestClassFileNamePrefix)) {
       ClassLoader.getSystemResource(name)
     } else {
       null

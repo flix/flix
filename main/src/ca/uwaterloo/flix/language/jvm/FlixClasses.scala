@@ -23,12 +23,12 @@ object FlixClasses {
   val TestPackage: List[String] = List("dev", "flix", "test")
 
   /**
-    * The `dev.flix.runtime.Global` class, which holds the global id counter and the
+    * The `dev.flix.runtime.Host` class, which holds the global id counter and the
     * command line arguments.
     *
-    * The compiler generates this class, but `main/src/dev/flix/runtime/Global.java` provides
+    * The compiler generates this class, but `main/src/dev/flix/runtime/Host.java` provides
     * a mock of it so that its method signatures can be checked at compile time.
     */
-  val Global: ClassDesc = ClassDesc.of(RuntimePackage.mkString("."), "Global")
+  val Host: ClassDesc = ClassDesc.of(RuntimePackage.mkString("."), "Host")
 
 }

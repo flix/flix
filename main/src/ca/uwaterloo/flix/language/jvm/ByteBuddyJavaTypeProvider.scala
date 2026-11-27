@@ -57,7 +57,7 @@ object ByteBuddyJavaTypeProvider {
     *
     * `deps` is consulted first because a class loader constructed at run time cannot serve
     * resources inside a GraalVM native image. `loader` is still consulted for the class files the
-    * compiler provides itself, such as `dev.flix.runtime.Global`.
+    * compiler provides itself, such as `dev.flix.runtime.Host`.
     */
   def fromDependencyClassPath(deps: DependencyClassPath, loader: ClassLoader): ByteBuddyJavaTypeProvider =
     fromLocators(List(

@@ -42,7 +42,7 @@ object GenMain {
   private def mainIns(sym: Symbol.DefnSym)(implicit mv: MethodVisitor): Unit = {
     withName(0, JavaClasses.String.arrayType())(args => {
       args.load()
-      INVOKESTATIC(GenGlobal.SetArgsMethod)
+      INVOKESTATIC(GenHost.SetArgsMethod)
       GenFunAndClosureClasses.runUnitDef(sym, s"in ${ClassDescs.binaryNameOf(Desc)}")
       RETURN()
     })

@@ -9,7 +9,7 @@
 
 /// Functions for solving Datalog programs and querying their models.
 pub mod Fixpoint3.Solver {
-    import dev.flix.runtime.Global
+    import dev.flix.runtime.Host
 
     use Fixpoint3.{Boxed, Debugging, Interpreter, Options, Phase, Predicate, PredSymsOf, SubstitutePredSym}
     use Fixpoint3.Ast.Datalog.{Datalog, Constraint, HeadTerm}
@@ -232,7 +232,7 @@ pub mod Fixpoint3.Solver {
             } else {
                 // Case 2: Introduce a fresh name (index) for the predicate symbol.
                 let PredSym(name, _) = predSym;
-                let nextId = unsafe IO { Global.newId() + 1i64 }; // We add one because the counter starts at zero.
+                let nextId = unsafe IO { Host.newId() + 1i64 }; // We add one because the counter starts at zero.
                 let newPredSym = PredSym(name, nextId);
                 Map.insert(predSym, newPredSym, macc)
             }

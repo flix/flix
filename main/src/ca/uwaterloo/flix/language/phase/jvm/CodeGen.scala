@@ -13,7 +13,7 @@ import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.language.jvm.ClassDescs
-import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenCastError, GenEffectCall, GenExtTag, GenExtTagged, GenFlixError, GenFrame, GenFrames, GenFramesCons, GenFramesNil, GenGlobal, GenHandler, GenHoleError, GenLazy, GenMain, GenMatchError, GenNamespace, GenNullaryTag, GenRecord, GenRecordEmpty, GenRecordExtend, GenRegion, GenReifiedSourceLocation, GenResult, GenResumption, GenResumptionCons, GenResumptionNil, GenResumptionWrapper, GenStruct, GenSuspension, GenTag, GenTagged, GenThunk, GenTuple, GenUncaughtExceptionHandler, GenUnhandledEffectError, GenUnit, GenValue}
+import ca.uwaterloo.flix.language.phase.jvm.classes.{GenAbstractArrow, GenArrow, GenCastError, GenEffectCall, GenExtTag, GenExtTagged, GenFlixError, GenFrame, GenFrames, GenFramesCons, GenFramesNil, GenHandler, GenHoleError, GenHost, GenLazy, GenMain, GenMatchError, GenNamespace, GenNullaryTag, GenRecord, GenRecordEmpty, GenRecordExtend, GenRegion, GenReifiedSourceLocation, GenResult, GenResumption, GenResumptionCons, GenResumptionNil, GenResumptionWrapper, GenStruct, GenSuspension, GenTag, GenTagged, GenThunk, GenTuple, GenUncaughtExceptionHandler, GenUnhandledEffectError, GenUnit, GenValue}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.constant.ClassDesc
@@ -86,7 +86,7 @@ object CodeGen {
     val castErrorClass = List(JvmClass(GenCastError.Desc, GenCastError.genByteCode()))
     val unhandledEffectErrorClass = List(JvmClass(GenUnhandledEffectError.Desc, GenUnhandledEffectError.genByteCode()))
 
-    val globalClass = List(JvmClass(GenGlobal.Desc, GenGlobal.genByteCode()))
+    val hostClass = List(JvmClass(GenHost.Desc, GenHost.genByteCode()))
 
     val regionClass = List(JvmClass(GenRegion.Desc, GenRegion.genByteCode()))
 
@@ -134,7 +134,7 @@ object CodeGen {
       matchErrorClass,
       castErrorClass,
       unhandledEffectErrorClass,
-      globalClass,
+      hostClass,
       regionClass,
       uncaughtExceptionHandlerClass,
       resultInterface,

@@ -22,16 +22,16 @@ import java.lang.constant.ConstantDescs.{CD_int, CD_long, CD_void}
 import java.lang.constant.{ClassDesc, MethodTypeDesc}
 
 /**
-  * The `dev.flix.runtime.Global` class, which holds the global id counter and the command line arguments.
+  * The `dev.flix.runtime.Host` class, which holds the global id counter and the command line arguments.
   */
-object GenGlobal {
+object GenHost {
 
   /**
-    * The JVM class descriptor for the generated `Global` class.
+    * The JVM class descriptor for the generated `Host` class.
     *
     * The name is fixed in source code, so it is neither mangled nor `$` suffixed.
     */
-  val Desc: ClassDesc = FlixClasses.Global
+  val Desc: ClassDesc = FlixClasses.Host
 
   def genByteCode()(implicit flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkClass(this.Desc, IsFinal)
