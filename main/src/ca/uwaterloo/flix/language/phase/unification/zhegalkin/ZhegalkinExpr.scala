@@ -16,25 +16,27 @@ import scala.collection.mutable
 object ZhegalkinExpr {
 
   /**
-    * A smart constructor for Zhegalkin expressions that filters empty intersections.
+    * A smart constructor for Zhegalkin expressions.
     *
     * A Zhegalkin expression is of the form: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn
+    *
+    * The terms may come in any order and may repeat variables. They are sorted, the terms with
+    * the same variables are combined, and the terms with an empty coefficient are dropped.
     */
   def mkZhegalkinExpr[T](cst: T, terms: List[ZhegalkinTerm[T]])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
-    if (cst == lat.Bot && terms.isEmpty) {
-      return alg.zero
+    if (terms.isEmpty) {
+      return mkOrdered(cst, Nil)
     }
-    if (cst == lat.Top && terms.isEmpty) {
-      return alg.one
-    }
+    mkXorOfTerms(cst, mutable.ArrayBuffer.from(terms))
+  }
 
-    // Construct a new polynomial.
-
-    // Compute non-empty terms (i.e. terms where the coefficient is non-empty).
-    val ts = terms.filter(t => !lat.isBot(t.cst))
-
-    // Special case: If ts is empty then this could be 0 or 1.
-    if (ts.isEmpty) {
+  /**
+    * Returns the Zhegalkin expression `cst ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn` where `terms` is in the order
+    * of [[compareVars]], without repeated variables and without empty coefficients.
+    */
+  private def mkOrdered[T](cst: T, terms: List[ZhegalkinTerm[T]])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
+    if (terms.isEmpty) {
+      // The zero and the one are unique.
       if (lat.isBot(cst)) {
         return alg.zero
       }
@@ -42,9 +44,66 @@ object ZhegalkinExpr {
         return alg.one
       }
     }
+    ZhegalkinExpr(cst, terms)
+  }
 
-    // General case:
-    ZhegalkinExpr(cst, ts.sortBy(t => t.vars.size))
+  /**
+    * Returns the Zhegalkin expression `cst ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn` for `terms` in any order.
+    *
+    * This is xor in a single pass over any number of operands: the terms are sorted, which puts
+    * the terms with the same variables next to each other, and every such run is combined with
+    *
+    * {{{
+    *   (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A
+    * }}}
+    *
+    * The buffer `terms` is sorted in place.
+    */
+  private def mkXorOfTerms[T](cst: T, terms: mutable.ArrayBuffer[ZhegalkinTerm[T]])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
+    terms.sortInPlaceWith((t1, t2) => compareVars(t1.vars, t2.vars) < 0)
+    val result = mutable.ListBuffer.empty[ZhegalkinTerm[T]]
+    val n = terms.length
+    var i = 0
+    while (i < n) {
+      val t = terms(i)
+      var c = t.cst
+      var j = i + 1
+      while (j < n && compareVars(terms(j).vars, t.vars) == 0) {
+        c = mkXor(c, terms(j).cst)
+        j += 1
+      }
+      if (!lat.isBot(c)) {
+        result += (if (j == i + 1) t else ZhegalkinTerm(c, t.vars))
+      }
+      i = j
+    }
+    mkOrdered(cst, result.toList)
+  }
+
+  /**
+    * Compares two sets of variables: the smaller set is less, and sets of the same size are
+    * compared lexicographically.
+    *
+    * The terms of a Zhegalkin expression are kept in this order, with distinct variables. This
+    * makes xor a merge (see [[computeXor]]) and the representation of a polynomial unique.
+    */
+  private def compareVars(vars1: SortedSet[ZhegalkinVar], vars2: SortedSet[ZhegalkinVar]): Int = {
+    if (vars1 eq vars2) {
+      return 0
+    }
+    val bySize = Integer.compare(vars1.size, vars2.size)
+    if (bySize != 0) {
+      return bySize
+    }
+    val i1 = vars1.iterator
+    val i2 = vars2.iterator
+    while (i1.hasNext) {
+      val cmp = i1.next().compare(i2.next())
+      if (cmp != 0) {
+        return cmp
+      }
+    }
+    0
   }
 
   /** Returns a Zhegalkin expression that represents a single variable, i.e. x ~~ Ø ⊕ (𝓤 ∩ x) */
@@ -110,35 +169,54 @@ object ZhegalkinExpr {
   /**
     * Computes and returns the xor of the given two Zhegalkin expressions `e1` and `e2`.
     *
-    * Does not use any simplification rules nor any cache.
+    * Does not use any cache.
+    *
+    * The terms of both expressions are in the order of [[compareVars]], so the xor is a merge:
+    * a term whose variables occur in one expression is kept, and two terms with the same
+    * variables are combined with `(c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A`, and dropped if their
+    * coefficients cancel.
     */
-  private def computeXor[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = (e1, e2) match {
-    case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
-      val c = mkXor(c1, c2)
-      // Eliminate duplicates: a ⊕ a = 0
-
-      // We want to retain all terms that occur an odd number of times.
-      val seen = mutable.Set.empty[ZhegalkinTerm[T]]
-      for (t <- ts1.iterator ++ ts2.iterator) {
-        if (seen.contains(t)) {
-          // The term is already there, so we remove it, since we have seen it an even number of times.
-          seen.remove(t)
-        } else {
-          seen.add(t)
+  private def computeXor[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
+    var ts1 = e1.terms
+    var ts2 = e2.terms
+    val merged = mutable.ListBuffer.empty[ZhegalkinTerm[T]]
+    while (ts1.nonEmpty && ts2.nonEmpty) {
+      val t1 = ts1.head
+      val t2 = ts2.head
+      val cmp = compareVars(t1.vars, t2.vars)
+      if (cmp < 0) {
+        merged += t1
+        ts1 = ts1.tail
+      } else if (cmp > 0) {
+        merged += t2
+        ts2 = ts2.tail
+      } else {
+        val c = mkXor(t1.cst, t2.cst)
+        if (!lat.isBot(c)) {
+          merged += ZhegalkinTerm(c, t1.vars)
         }
+        ts1 = ts1.tail
+        ts2 = ts2.tail
       }
-      val allTermsNonDup = seen.toList
+    }
+    // The rest of the longer list is shared with the operand.
+    mkOrdered(mkXor(e1.cst, e2.cst), merged.prependToList(if (ts1.nonEmpty) ts1 else ts2))
+  }
 
-      // Merge coefficients: (c1 ∩ x1 ∩ x2) ⊕ (c2 ∩ x1 ∩ x2) = (c1 ∩ c2) ∩ x1 ∩ x2
-      val termsGroupedByVarSet = allTermsNonDup.groupBy(_.vars).toList
-      val mergedTerms = termsGroupedByVarSet.map {
-        case (vars, l) =>
-          val mergedCst: T = l.foldLeft(lat.Bot) { // Neutral element for Xor.
-            case (acc, t) => mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A.
-          }
-          ZhegalkinTerm(mergedCst, vars)
-      }
-      mkZhegalkinExpr(c, mergedTerms)
+  /**
+    * Returns the xor of `cst` and the given Zhegalkin expressions `es`.
+    *
+    * Collects the terms of all operands and combines them in a single pass, where a fold of
+    * [[mkXor]] would rebuild the accumulated expression once per operand.
+    */
+  def mkXorAll[T](cst: T, es: List[ZhegalkinExpr[T]])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
+    var c = cst
+    val terms = mutable.ArrayBuffer.empty[ZhegalkinTerm[T]]
+    for (e <- es) {
+      c = mkXor(c, e.cst)
+      terms ++= e.terms
+    }
+    mkXorOfTerms(c, terms)
   }
 
   /**
@@ -207,13 +285,22 @@ object ZhegalkinExpr {
     *       ⊕ (t12 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
     *       ⊕ ...
     * }}}
+    *
+    * The products are collected and combined in a single pass (see [[mkXorOfTerms]]).
     */
-  private def computeInter[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = e1 match {
-    case ZhegalkinExpr(c1, ts1) =>
+  private def computeInter[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = (e1, e2) match {
+    case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
+      // c1 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m)
       val zero = mkInterConstantExpr(c1, e2)
-      ts1.foldLeft(zero) {
-        case (acc, z) => mkXor(acc, mkInterTermExpr(z, e2))
+      val terms = mutable.ArrayBuffer.from(zero.terms)
+      for (t1 <- ts1) {
+        // t1 ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m) = (t1 ∩ c2) ⊕ (t1 ∩ t21) ⊕ (t1 ∩ t22) ⊕ ... ⊕ (t1 ∩ t2m)
+        terms += mkInterConstantTerm(c2, t1)
+        for (t2 <- ts2) {
+          terms += mkInterTermTerm(t1, t2)
+        }
       }
+      mkXorOfTerms(zero.cst, terms)
   }
 
   /**
@@ -254,22 +341,6 @@ object ZhegalkinExpr {
   }
 
   /**
-    * Computes the intersection of the given Zhegalkin term `t` and the given Zhegalkin expression `e`.
-    *
-    * {{{
-    *   t ∩ (c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn) = (t ∩ c) ⊕ (t ∩ t1) ⊕ (t ∩ t2) ⊕ ... ⊕ (t ∩ tn)
-    * }}}
-    *
-    */
-  private def mkInterTermExpr[T](t: ZhegalkinTerm[T], e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = e match {
-    case ZhegalkinExpr(c2, terms) =>
-      val zero: ZhegalkinExpr[T] = mkZhegalkinExpr(lat.Bot, List(mkInterConstantTerm(c2, t)))
-      terms.foldLeft(zero) {
-        case (acc, t2) => mkXor(acc, mkZhegalkinExpr(lat.Bot, List(mkInterTermTerm(t, t2))))
-      }
-  }
-
-  /**
     * Computes the intersection of the two given Zhegalkin terms `t1` and `t2`.
     *
     * {{{
@@ -306,6 +377,8 @@ object ZhegalkinExpr {
 case class ZhegalkinExpr[T](cst: T, terms: List[ZhegalkinTerm[T]]) {
 
   // Representation Invariants:
+  //  The terms have non-empty coefficients and distinct variables, and are sorted by their
+  //  variables (see ZhegalkinExpr.compareVars).
   //  if (this == ZhegalkinExpr.zero) {
   //    assert(this eq ZhegalkinExpr.zero)
   //  }
@@ -333,9 +406,7 @@ case class ZhegalkinExpr[T](cst: T, terms: List[ZhegalkinTerm[T]]) {
       return this
     }
 
-    terms.foldLeft(ZhegalkinExpr.mkZhegalkinExpr(cst, Nil)) {
-      case (acc, term) => ZhegalkinExpr.mkXor(acc, term.map(f))
-    }
+    ZhegalkinExpr.mkXorAll(cst, terms.map(_.map(f)))
   }
 
   /**
@@ -350,9 +421,10 @@ case class ZhegalkinExpr[T](cst: T, terms: List[ZhegalkinTerm[T]]) {
   /**
     * Returns the hashCode of `this` Zhegalkin expression.
     *
-    * Caching the hashCode leads to speed-ups.
+    * Caching the hashCode leads to speed-ups. It is computed on demand, because most expressions
+    * are intermediate results that are never used as the key of a cache.
     */
-  override val hashCode: Int = Objects.hash(cst, terms)
+  override lazy val hashCode: Int = Objects.hash(cst, terms)
 
   /** Returns a human-readable string representation of `this` Zhegalkin expression. Must only be used for debugging. */
   override def toString: String =
