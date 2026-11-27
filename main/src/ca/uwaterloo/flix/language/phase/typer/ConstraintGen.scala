@@ -10,7 +10,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.{Expr, ExtPattern, ExtTagPattern}
 import ca.uwaterloo.flix.language.ast.jvm.JavaField
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, RegionScope, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, RegionScope, TypeSource, VarText}
 import ca.uwaterloo.flix.language.ast.{InferredAst, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.jvm.JavaTypes
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -45,7 +45,7 @@ object ConstraintGen {
     implicit val scope: RegionScope = c.getScope
     exp0 match {
       case Expr.Var(sym, loc) =>
-        val resTpe = sym.tvar
+        val resTpe = c.typeOfVar(sym)
         InferredAst.Expr.Var(sym, resTpe, loc)
 
       case Expr.Val(_, _, loc) =>
@@ -380,15 +380,29 @@ object ConstraintGen {
 
   /** Generates constraints for the application `exp0`. */
   private def visitApplyExpr(exp0: Expr.ApplyExpr)(implicit c: TypeContext, scope: RegionScope, root: KindedAst.Root, flix: Flix): InferredAst.Expr = exp0 match {
-    case Expr.ApplyClo(exp1, exp2, loc) =>
-      val lambdaBodyType = freshVar(Kind.Star, loc)
-      val lambdaBodyEff = freshVar(Kind.Eff, loc)
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      c.expectType(Type.mkArrowWithEffect(e2.tpe, lambdaBodyEff, lambdaBodyType, loc), e1.tpe, loc)
-      val resTpe = lambdaBodyType
-      val resEff = Type.mkUnion(lambdaBodyEff, e1.eff, e2.eff, loc)
-      InferredAst.Expr.ApplyClo(e1, e2, resTpe, resEff, loc)
+    case Expr.ApplyClo(exp1, exp2, loc) => knownClosureType(exp1) match {
+      case Some((paramTpe, closureEff, resultTpe)) =>
+        // The type of the closure is known, e.g. it is the resumption of a handler rule. The application then has
+        // the result type and the effect of the closure, so it needs no variables, and only its argument is constrained.
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        // A mismatch is reported as below: the function type that the application requires against the type of the closure.
+        val requiredTpe = Type.mkArrowWithEffect(e2.tpe, closureEff, resultTpe, loc)
+        c.expectTypePart(e2.tpe, paramTpe, expected = requiredTpe, actual = e1.tpe, loc)
+        val resTpe = resultTpe
+        val resEff = Type.mkUnion(closureEff, e1.eff, e2.eff, loc)
+        InferredAst.Expr.ApplyClo(e1, e2, resTpe, resEff, loc)
+
+      case None =>
+        val lambdaBodyType = freshVar(Kind.Star, loc)
+        val lambdaBodyEff = freshVar(Kind.Eff, loc)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        c.expectType(Type.mkArrowWithEffect(e2.tpe, lambdaBodyEff, lambdaBodyType, loc), e1.tpe, loc)
+        val resTpe = lambdaBodyType
+        val resEff = Type.mkUnion(lambdaBodyEff, e1.eff, e2.eff, loc)
+        InferredAst.Expr.ApplyClo(e1, e2, resTpe, resEff, loc)
+    }
 
     case Expr.ApplyDef(symUse, exps, loc) =>
       val defn = root.defs(symUse.sym)
@@ -1199,8 +1213,8 @@ object ConstraintGen {
     *     `visitRestrictableChooseRuleUnchecked`. The expression is already an error, so it is given fresh
     *     error types instead.
     */
-  def visitExpUnchecked(exp0: KindedAst.Expr)(implicit root: KindedAst.Root, flix: Flix): InferredAst.Expr =
-    visitExp(exp0)(new TypeContext, root, flix)
+  def visitExpUnchecked(exp0: KindedAst.Expr)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): InferredAst.Expr =
+    visitExp(exp0)(c.unchecked, root, flix)
 
   /**
     * Generates constraints for the pattern.
@@ -1384,17 +1398,65 @@ object ConstraintGen {
   }
 
   /**
-    * Generates constraints unifying the given expected and actual formal parameters.
+    * Returns the formal parameters `actual` of a rule that handles the operation `op`, where `expected` are the types
+    * of the parameters of `op`.
+    *
+    * The type of a rule parameter follows from the operation, so the parameter is given that type directly (see
+    * [[bindFormalParam]]). A parameter that cannot be bound is constrained to the expected type instead, like the
+    * argument of a call (see [[isBindable]]).
     */
-  private def unifyFormalParams(op: Symbol.OpSym, expected: List[Type], actual: List[KindedAst.FormalParam])(implicit c: TypeContext): Unit = {
-    // length check done in Resolver
-    c.expectTypeArguments(op, expectedTypes = expected, actualTypes = actual.map(_.tpe), actual.map(_.loc))
+  private def visitRuleParams(op: Symbol.OpSym, expected: List[Type], actual: List[KindedAst.FormalParam])(implicit c: TypeContext): List[InferredAst.FormalParam] = {
+    def visit(es: List[Type], as: List[KindedAst.FormalParam], ith: Int): List[InferredAst.FormalParam] = (es, as) match {
+      case (e :: es1, a :: as1) =>
+        val fp = if (isBindable(a, e)) {
+          bindFormalParam(a, e)
+        } else {
+          c.expectTypeArgument(op, ith, expectedType = e, actualType = a.tpe, a.loc)
+          visitFormalParam(a)
+        }
+        fp :: visit(es1, as1, ith + 1)
+      case _ =>
+        // The resolver has checked the number of parameters. Any surplus is left unconstrained.
+        as.map(visitFormalParam)
+    }
+
+    visit(expected, actual, 1)
+  }
+
+  /**
+    * Returns `true` if the formal parameter `fparam` of a handler rule can be given the type `tpe` directly.
+    *
+    * It cannot if:
+    *
+    *   - the parameter has a type ascription. The source of a rule has none, but the weeder ascribes `Unit` to the
+    *     parameter that it adds to a rule with no parameter other than the resumption.
+    *   - the type must be reduced or canonicalized by the constraint solver, which requires a constraint.
+    */
+  private def isBindable(fparam: KindedAst.FormalParam, tpe: Type): Boolean = fparam.src match {
+    case TypeSource.Inferred => !requiresReductionOrCanonicalization(tpe)
+    case TypeSource.Ascribed => false
+  }
+
+  /**
+    * Gives the formal parameter `fparam` the type `tpe` and returns the parameter annotated with that type.
+    *
+    * The parameter is bound in the type context, not constrained: every use of it has the type `tpe`, so its
+    * type variable occurs in no constraint.
+    */
+  private def bindFormalParam(fparam: KindedAst.FormalParam, tpe: Type)(implicit c: TypeContext): InferredAst.FormalParam = fparam match {
+    case KindedAst.FormalParam(sym, _, src, loc) =>
+      c.bindVar(sym, tpe)
+      val bnd = InferredAst.Binder(sym, tpe)
+      InferredAst.FormalParam(bnd, tpe, src, loc)
   }
 
   /**
     * Generates constraints for the given handler rule.
     *
-    * Returns the body's type and the body's effect.
+    * Returns the rule with its parameters and its body annotated with their types.
+    *
+    * The parameters of the rule and its resumption generate no constraints: their types follow from the declaration
+    * of the operation, the type of the try-block and the effect of the continuation (see [[visitRuleParams]]).
     *
     * @param tryBlockTpe        the type of the try-block associated with the handler
     * @param continuationEffect the effect of the continuation
@@ -1416,12 +1478,30 @@ object ConstraintGen {
           val resumptionResType = tryBlockTpe
           val resumptionEff = continuationEffect
           val expectedResumptionType = Type.mkArrowWithEffect(resumptionArgType, resumptionEff, resumptionResType, loc.asSynthetic)
-          unifyFormalParams(symUse.sym, expected = expectedParamTypes, actual = actualFparams)
-          c.expectType(expected = expectedResumptionType, actual = resumptionFparam.tpe, resumptionFparam.loc)
+          val fps = visitRuleParams(symUse.sym, expected = expectedParamTypes, actual = actualFparams)
+          val fp = if (isBindable(resumptionFparam, resumptionArgType)) {
+            bindFormalParam(resumptionFparam, expectedResumptionType)
+          } else {
+            c.expectType(expected = expectedResumptionType, actual = resumptionFparam.tpe, resumptionFparam.loc)
+            visitFormalParam(resumptionFparam)
+          }
           val e = visitExp(body)
-          val fps = actualFparams0.map(visitFormalParam)
-          InferredAst.HandlerRule(symUse, fps, e, loc)
+          InferredAst.HandlerRule(symUse, Nel.unsafeFrom(fps ::: fp :: Nil), e, loc)
       }
+  }
+
+  /**
+    * Optionally returns the parameter type, the effect and the result type of the closure `exp`, if they are known
+    * before `exp` is visited: that is, if `exp` is a variable that was given a function type of one parameter (see
+    * [[TypeContext.bindVar]]).
+    */
+  private def knownClosureType(exp: KindedAst.Expr)(implicit c: TypeContext): Option[(Type, Type, Type)] = exp match {
+    case Expr.Var(sym, _) => c.typeOfVar(sym) match {
+      case Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), eff, _), paramTpe, _), resultTpe, _) =>
+        Some((paramTpe, eff, resultTpe))
+      case _ => None
+    }
+    case _ => None
   }
 
   /**

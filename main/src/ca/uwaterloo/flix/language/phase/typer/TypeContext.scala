@@ -76,9 +76,48 @@ class TypeContext(val subEffecting: Boolean = true) {
   private val constraintStack: mutable.Stack[ScopeConstraints] = mutable.Stack.empty
 
   /**
+    * The types of the variables whose type is known where they are bound.
+    *
+    * A variable that is not in the map has the type variable of its symbol as its type.
+    */
+  private var varTypes: Map[Symbol.VarSym, Type] = Map.empty
+
+  /**
     * Returns the current type constraints.
     */
   def getTypeConstraints: List[TypeConstraint] = currentScopeConstraints.getConstraints
+
+  /**
+    * Gives the variable `sym` the type `tpe`.
+    *
+    * Every reference to `sym` then has the type `tpe`, so the type variable of `sym` appears in no
+    * constraint and the solver never has to bind it.
+    *
+    * The type `tpe` must not require reduction or canonicalization by the solver: it is written into the tree.
+    */
+  def bindVar(sym: Symbol.VarSym, tpe: Type): Unit = {
+    varTypes = varTypes.updated(sym, tpe)
+  }
+
+  /**
+    * Returns the type of the variable `sym`: the type it was given with [[bindVar]], and its type variable otherwise.
+    */
+  def typeOfVar(sym: Symbol.VarSym): Type = {
+    // Perf: Most defs give no variable a type.
+    if (varTypes.isEmpty) sym.tvar else varTypes.getOrElse(sym, sym.tvar)
+  }
+
+  /**
+    * Returns a new context for an expression whose constraints are discarded.
+    *
+    * The new context has no constraints, but it knows the variable types of this context. An unchecked expression
+    * may refer to a variable that was given a type with [[bindVar]], and no constraint gives that variable its type.
+    */
+  def unchecked: TypeContext = {
+    val ctx = new TypeContext
+    ctx.varTypes = varTypes
+    ctx
+  }
 
   /**
     * Returns the current scope.
@@ -152,6 +191,23 @@ class TypeContext(val subEffecting: Boolean = true) {
   }
 
   /**
+    * Generates a constraint unifying `tpe1` and `tpe2`, where `tpe1` is a part of the type `expected` and `tpe2`
+    * is the corresponding part of the type `actual`.
+    *
+    * {{{
+    *   tpe1 ~ tpe2
+    * }}}
+    *
+    * A mismatch is reported in terms of `expected` and `actual`, as for the constraint `expected ~ actual`
+    * of which this constraint is a part.
+    */
+  def expectTypePart(tpe1: Type, tpe2: Type, expected: Type, actual: Type, loc: SourceLocation): Unit = {
+    val prov = Provenance.ExpectType(expected, actual, loc)
+    val constr = TypeConstraint.Equality(tpe1, tpe2, prov)
+    currentScopeConstraints.add(constr)
+  }
+
+  /**
     * Generates a constraint requiring the effect `eff1` to be a subset of the effect `eff2`.
     *
     * {{{
@@ -200,15 +256,26 @@ class TypeContext(val subEffecting: Boolean = true) {
       val actualType = as.head
       val loc = ls.head
 
-      val prov = Provenance.ExpectArgument(expectedType, actualType, sym, idx, loc)
-      val constr = TypeConstraint.Equality(expectedType, actualType, prov)
-      currentScopeConstraints.add(constr)
+      expectTypeArgument(sym, idx, expectedType, actualType, loc)
 
       es = es.tail
       as = as.tail
       ls = ls.tail
       idx = idx + 1
     }
+  }
+
+  /**
+    * Generates a constraint expecting the `ith` type argument of `sym` (1-based) to unify.
+    *
+    * {{{
+    *   expectedType ~ actualType
+    * }}}
+    */
+  def expectTypeArgument(sym: Symbol, ith: Int, expectedType: Type, actualType: Type, actualLoc: SourceLocation): Unit = {
+    val prov = Provenance.ExpectArgument(expectedType, actualType, sym, ith, actualLoc)
+    val constr = TypeConstraint.Equality(expectedType, actualType, prov)
+    currentScopeConstraints.add(constr)
   }
 
   /**

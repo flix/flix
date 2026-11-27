@@ -205,9 +205,9 @@ object RestrictableChooseConstraintGen {
     * the pattern of the first rule is a `RestrictableChoosePattern.Error`: the choose expression cannot be
     * type checked, but we still need its rules to complete the tree.
     */
-  private def visitRestrictableChooseRuleUnchecked(rule: KindedAst.RestrictableChooseRule)(implicit root: KindedAst.Root, flix: Flix): InferredAst.RestrictableChooseRule = rule match {
+  private def visitRestrictableChooseRuleUnchecked(rule: KindedAst.RestrictableChooseRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): InferredAst.RestrictableChooseRule = rule match {
     case KindedAst.RestrictableChooseRule(pat, exp) =>
-      val p = visitRestrictableChoosePattern(pat)(new TypeContext, root, flix)
+      val p = visitRestrictableChoosePattern(pat)(c.unchecked, root, flix)
       val e = visitExpUnchecked(exp)
       InferredAst.RestrictableChooseRule(p, e)
   }
