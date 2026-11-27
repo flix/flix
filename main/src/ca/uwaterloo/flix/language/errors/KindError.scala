@@ -7,7 +7,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.VarText
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.Pretty
@@ -21,6 +21,32 @@ sealed trait KindError extends CompilationMessage {
 }
 
 object KindError {
+
+  /**
+    * An error raised when a type parameter of an effect has a kind other than `Type`.
+    *
+    * @param sym        the effect symbol.
+    * @param tparam     the name of the type parameter.
+    * @param actualKind the kind of the type parameter.
+    * @param loc        the location of the type parameter.
+    */
+  case class IllegalEffectTypeParamKind(sym: Symbol.EffSym, tparam: Name.Ident, actualKind: Kind, loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3449
+
+    def summary: String =
+      s"Illegal kind '${Pretty.kind(actualKind).plain}' of type parameter '${tparam.name}' of effect '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Illegal kind '${Pretty.kind(actualKind).ansi(fmt)}' of type parameter '${red(tparam.name)}' of effect '${cyan(sym.name)}'.
+         |
+         |${highlight(loc, "type parameter must have kind 'Type'", fmt)}
+         |
+         |${underline("Explanation:")} Every type parameter of an effect must have kind 'Type'.
+         |An effect cannot be parameterized by another kind, such as 'Eff' or 'Type -> Type'.
+         |""".stripMargin
+    }
+  }
 
   /**
     * An error raised when a type variable is applied as an effect constructor.
