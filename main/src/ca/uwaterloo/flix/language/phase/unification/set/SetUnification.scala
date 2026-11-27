@@ -35,6 +35,11 @@ object SetUnification {
   var EnableRewriteRules: Boolean = true
 
   /**
+    * Enables the clause solver [[SetUnification2]] in place of the rewrite rules and SVE below.
+    */
+  var EnableClauseSolver: Boolean = true
+
+  /**
     * Enables simple statistics tracking.
     */
   var EnableStats: Boolean = false
@@ -142,8 +147,14 @@ object SetUnification {
     *
     * The equations that remain after the rewrite rules are solved by SVE at the granularity
     * given by `mode` (see [[SveAlgorithm.sveAll]]).
+    *
+    * If [[EnableClauseSolver]] is set, the system is instead solved by [[SetUnification2]].
     */
   def solve(l: List[Equation], mode: SveMode): (List[Equation], SetSubstitution) = {
+    if (EnableClauseSolver) {
+      return SetUnification2.solve(l, mode)
+    }
+
     val state = new State(l)
 
     if (EnableRewriteRules) {
