@@ -247,8 +247,8 @@ object Typer {
     changeSet.updateStaleValues(root.traits, oldRoot.traits) { staleTraits =>
       // Performance: We check the signatures of all the traits in parallel and then reassemble the
       // traits. If we checked the traits in parallel, the signatures of each trait would be checked
-      // one after another, and a single trait with many default implementations (e.g. `Foldable`)
-      // would take longer than all the other traits together.
+      // one after another, and we would wait for the trait with the most default implementations
+      // while the other threads are idle.
       val sigs = staleTraits.values.flatMap(trt => trt.sigs.values.map(sig => (trt, sig)))
 
       // Schedule the biggest signatures first to increase throughput.
