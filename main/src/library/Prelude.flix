@@ -8,9 +8,18 @@ import java.lang.RuntimeException
 pub type alias Static = IO
 
 ///
-/// A type alias used while we transition to a proper `Heap` effect.
+/// The effect of reading from the region `r`.
 ///
-type alias Heap[h: Eff] = h
+/// A type alias for `r` used while we transition to a proper `Read` effect.
+///
+pub type alias Read[r: Region] = r
+
+///
+/// The effect of writing to the region `r`.
+///
+/// A type alias for `r` used while we transition to a proper `Write` effect.
+///
+pub type alias Write[r: Region] = r
 
 ///
 /// Type of proxies that carry type information where a witness is not available.

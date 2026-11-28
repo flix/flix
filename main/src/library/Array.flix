@@ -96,19 +96,19 @@ pub mod Array {
     ///
     /// Returns a new uninitialized array of length `l` in the region `r`.
     ///
-    pub def empty(rc: Region[r], l: Int32): Array[a, r] \ Heap[r] =
+    pub def empty(rc: Region[r], l: Int32): Array[a, r] \ Write[r] =
         %%ARRAY_NEW%%(rc, Reflect.default(), l)
 
     ///
     /// Retrieves the value at position `i` in the array `a`.
     ///
-    pub def get(i: Int32, a: Array[a, r]): a \ r =
+    pub def get(i: Int32, a: Array[a, r]): a \ Read[r] =
         %%ARRAY_LOAD%%(a, i)
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
     ///
-    pub def put(x: a, i: Int32, a: Array[a, r]): Unit \ r =
+    pub def put(x: a, i: Int32, a: Array[a, r]): Unit \ Write[r] =
         %%ARRAY_STORE%%(a, i, x)
 
     ///
