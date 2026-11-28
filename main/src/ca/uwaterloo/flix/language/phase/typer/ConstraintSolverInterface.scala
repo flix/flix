@@ -98,11 +98,10 @@ object ConstraintSolverInterface {
           TypeConstraint.Equality(Type.Pure, infEff, Provenance.ExpectEffect(expected = Type.Pure, actual = infEff, loc1))
         }
       }
-      val constrs0 = declaredTpeConstr :: declaredEffConstr :: infConstrs
+      val constrs = declaredTpeConstr :: declaredEffConstr :: infConstrs
 
-      // Apply the initial substitution to all the constraints
+      // Note: The solver applies the initial substitution to all the constraints.
       val initialTree = SubstitutionTree.shallow(initialSubst)
-      val constrs = constrs0.map(initialTree.apply)
 
       ///////////////////////////////////////////////////////////////////
       //             This is where the stuff happens!                  //
@@ -125,8 +124,7 @@ object ConstraintSolverInterface {
               // Otherwise we have special logic for the [[Debug]] effect: We solve a new constraint system where [[Debug]] is allowed by the effect signature.
               val declaredEffWithDebug = Type.mkUnion(eff.getOrElse(Type.Pure), Type.Debug, loc)
               val declaredEffConstrWithDebug = TypeConstraint.Equality(declaredEffWithDebug, infEff, Provenance.ExpectEffect(expected = declaredEffWithDebug, actual = infEff, loc))
-              val constrs0 = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
-              val constrsWithDebug = constrs0.map(initialTree.apply)
+              val constrsWithDebug = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
               val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
 
               leftovers2 match {

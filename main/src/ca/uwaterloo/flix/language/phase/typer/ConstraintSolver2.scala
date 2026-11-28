@@ -132,7 +132,7 @@ object ConstraintSolver2 {
     */
   def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: RegionScope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
     // Apply the initial substitution to the constraints.
-    val constrs = constrs0.map(initialSubst.apply)
+    val constrs = ListOps.mapWithReuse(constrs0)(initialSubst.apply)
     val soup = new Soup(constrs, initialSubst)
     val progress = Progress()
     val res = soup.exhaustively(progress)(solveOne)
