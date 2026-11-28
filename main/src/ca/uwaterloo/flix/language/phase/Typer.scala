@@ -63,8 +63,8 @@ object Typer {
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, TypedAst.Mod] = root match {
     case KindedAst.Root(modules, traits, _, defs, vals, enums, structs, _, effects, typeAliases, _, _, _, _) =>
       // Performance: We build the set of symbols with a single builder. Concatenating the key sets
-      // of the maps one at a time inserts every symbol into a persistent set, which is several
-      // times slower for the tens of thousands of symbols in a program.
+      // of the maps one at a time inserts every symbol into a persistent set, which is slow
+      // for the thousands of symbols in a program.
       val symsBuilder = Set.newBuilder[Symbol]
 
       // The namespaces of the symbols. Most symbols share their namespace with many others,
