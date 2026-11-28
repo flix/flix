@@ -265,12 +265,24 @@ object Kinder {
     */
   private def visitEffect(eff: ResolvedAst.Declaration.Effect, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, declKinds: DeclKinds, sctx: SharedContext, flix: Flix): KindedAst.Effect = eff match {
     case ResolvedAst.Declaration.Effect(doc, ann, mod, sym, tparams0, ops0, loc) =>
+      checkEffectTypeParams(sym, tparams0)
       val kenv = getKindEnvFromTypeParams(tparams0)
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
       val tpe = Type.mkApply(Type.Cst(TypeConstructor.Effect(sym, declKinds.effectKinds(sym)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
       val ops = ops0.map(visitOp(_, tparams, tpe, kenv, root))
       KindedAst.Effect(doc, ann, mod, sym, tparams, ops, loc)
+  }
+
+  /**
+    * Reports an error for every type parameter of the effect `sym` that has a kind other than `Type`.
+    *
+    * The parameter keeps its declared kind, so that the rest of the program is kinded as written.
+    */
+  private def checkEffectTypeParams(sym: Symbol.EffSym, tparams0: List[ResolvedAst.TypeParam])(implicit sctx: SharedContext): Unit = tparams0.foreach {
+    case ResolvedAst.TypeParam.Kinded(name, _, kind, loc) if kind != Kind.Star =>
+      sctx.errors.add(KindError.IllegalEffectTypeParamKind(sym, name, kind, loc))
+    case _ => // OK: The type parameter has kind `Type`, the default for an unkinded type parameter.
   }
 
   /**

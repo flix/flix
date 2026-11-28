@@ -464,6 +464,89 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   // ---------------------------------------------------------------------------
+  // --- KindError.IllegalEffectTypeParamKind ---
+  // ---------------------------------------------------------------------------
+
+  test("KindError.IllegalEffectTypeParamKind.Eff.01") {
+    val input =
+      """
+        |eff E[ef: Eff] {
+        |    def op(f: Unit -> Unit \ ef): Unit
+        |}
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectOneError[KindError.IllegalEffectTypeParamKind](result)
+  }
+
+  test("KindError.IllegalEffectTypeParamKind.Region.01") {
+    val input =
+      """
+        |eff E[r: Region] {
+        |    def op(a: Array[Int32, r]): Unit
+        |}
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectOneError[KindError.IllegalEffectTypeParamKind](result)
+  }
+
+  test("KindError.IllegalEffectTypeParamKind.Bool.01") {
+    val input =
+      """
+        |eff E[_b: Bool]
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectOneError[KindError.IllegalEffectTypeParamKind](result)
+  }
+
+  test("KindError.IllegalEffectTypeParamKind.RecordRow.01") {
+    val input =
+      """
+        |eff E[r: RecordRow] {
+        |    def op(x: { | r }): Unit
+        |}
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectOneError[KindError.IllegalEffectTypeParamKind](result)
+  }
+
+  test("KindError.IllegalEffectTypeParamKind.Arrow.01") {
+    val input =
+      """
+        |eff E[m: Type -> Type] {
+        |    def op(x: m[Int32]): Unit
+        |}
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectOneError[KindError.IllegalEffectTypeParamKind](result)
+  }
+
+  test("KindError.IllegalEffectTypeParamKind.Mixed.01") {
+    val input =
+      """
+        |eff E[a: Type, ef: Eff] {
+        |    def op(x: a, f: Unit -> Unit \ ef): Unit
+        |}
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectOneError[KindError.IllegalEffectTypeParamKind](result)
+  }
+
+  test("KindError.IllegalEffectTypeParamKind.Use.01") {
+    val input =
+      """
+        |eff A
+        |
+        |eff E[ef: Eff] {
+        |    def op(f: Unit -> Unit \ ef): Unit
+        |}
+        |
+        |def f(g: Unit -> Unit \ A): Unit \ E[A] = E.op(g)
+        |""".stripMargin
+    val result = check(input, DefaultOptions)
+    expectOneError[KindError.IllegalEffectTypeParamKind](result)
+  }
+
+  // ---------------------------------------------------------------------------
   // --- KindError.IllegalPolymorphicEffectConstructor ---
   // ---------------------------------------------------------------------------
 
