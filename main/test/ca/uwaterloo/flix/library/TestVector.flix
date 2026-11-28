@@ -1208,6 +1208,19 @@ mod TestVector {
         let v = Vector#{1, 2};
         assertEq(expected = List#{Vector#{1, 2}, Vector#{1, 12}, Vector#{11, 2}, Vector#{11, 12}}, Vector.traverse(x -> x :: (x + 10) :: Nil, v))
 
+    @Test
+    def traverse08(): Unit \ Assert = region rc {
+        let cell = Ref.fresh(rc, 0);
+        // Add previous value to current value - this shows we are going left-to-right
+        def f(x) = {
+            let prev = Ref.get(cell);
+            Ref.put(x, cell);
+            Some(x + prev)
+        };
+        let v = Vector#{1, 2, 3, 4, 5};
+        assertEq(expected = Some(Vector#{1, 3, 5, 7, 9}), Vector.traverse(f, v))
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // zipWithA                                                                //
     /////////////////////////////////////////////////////////////////////////////
