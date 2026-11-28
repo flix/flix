@@ -603,7 +603,8 @@ pub mod Vector {
                 k(Applicative.point(Nil))
             else {
                 let x = Vector.get(i, v);
-                loop(i + 1, ks -> k(consA(f(x), ks)))
+                let ans = f(x);
+                loop(i + 1, ks -> k(consA(ans, ks)))
             }
         };
         loop(0, identity) |> Functor.map(List.toVector)
