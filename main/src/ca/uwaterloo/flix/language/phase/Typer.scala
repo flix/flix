@@ -244,25 +244,47 @@ object Typer {
     * Performs type inference and reassembly on all traits in the given AST root.
     */
   private def visitTraits(root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.TraitSym, TypedAst.Trait] = {
-    changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait(_, root, traitEnv, eqEnv)))
+    changeSet.updateStaleValues(root.traits, oldRoot.traits) { staleTraits =>
+      // Performance: We check the signatures of all the traits in parallel and then reassemble the
+      // traits. If we checked the traits in parallel, the signatures of each trait would be checked
+      // one after another, and a single trait with many default implementations (e.g. `Foldable`)
+      // would take longer than all the other traits together.
+      val sigs = staleTraits.values.flatMap(trt => trt.sigs.values.map(sig => (trt, sig)))
+
+      // Schedule the biggest signatures first to increase throughput.
+      def sortBy(p: (KindedAst.Trait, KindedAst.Sig)): Int = p._2.loc.startLine - p._2.loc.endLine
+
+      val typedSigs = ParOps.parMapWithPriority(sigs, sortBy) {
+        case (trt, sig) => sig.sym -> visitTraitSig(trt, sig, root, traitEnv, eqEnv)
+      }.toMap
+
+      MapOps.mapValues(staleTraits)(visitTrait(_, typedSigs))
+    }
   }
 
   /**
-    * Reassembles a single trait.
+    * Reassembles a single trait from its signatures in `typedSigs`.
     */
-  private def visitTrait(trt: KindedAst.Trait, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): TypedAst.Trait = trt match {
+  private def visitTrait(trt: KindedAst.Trait, typedSigs: Map[Symbol.SigSym, TypedAst.Sig]): TypedAst.Trait = trt match {
     case KindedAst.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, loc) =>
       val tparam = visitTypeParam(tparam0)
-      val renv = RigidityEnv.empty.markRigid(tparam0.sym)
       val superTraits = superTraits0 // no subst to be done
       val assocs = assocs0.map {
         case KindedAst.AssocTypeSig(sigDoc, sigMod, sigSym, tp0, kind, tpe, sigLoc) =>
           val tp = visitTypeParam(tp0)
           TypedAst.AssocTypeSig(sigDoc, sigMod, sigSym, tp, kind, tpe, sigLoc)
       }
-      val tconstr = TraitConstraint(TraitSymUse(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
-      val sigs = sigs0.values.map(visitSig(_, renv, List(tconstr), root, traitEnv, eqEnv)).toList
+      val sigs = sigs0.values.map(sig => typedSigs(sig.sym)).toList
       TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, loc)
+  }
+
+  /**
+    * Performs type inference and reassembly on the signature `sig` of the trait `trt`.
+    */
+  private def visitTraitSig(trt: KindedAst.Trait, sig: KindedAst.Sig, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): TypedAst.Sig = {
+    val renv = RigidityEnv.empty.markRigid(trt.tparam.sym)
+    val tconstr = TraitConstraint(TraitSymUse(trt.sym, trt.sym.loc), Type.Var(trt.tparam.sym, trt.tparam.loc), trt.sym.loc)
+    visitSig(sig, renv, List(tconstr), root, traitEnv, eqEnv)
   }
 
   /**
