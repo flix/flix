@@ -62,30 +62,35 @@ object Typer {
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, TypedAst.Mod] = root match {
     case KindedAst.Root(modules, traits, _, defs, vals, enums, structs, _, effects, typeAliases, _, _, _, _) =>
-      val sigs = traits.values.flatMap { trt => trt.sigs.values.map(_.sym) }
-      val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
+      // Performance: We build the set of symbols with a single builder. Concatenating the key sets
+      // of the maps one at a time inserts every symbol into a persistent set, which is several
+      // times slower for the tens of thousands of symbols in a program.
+      val symsBuilder = Set.newBuilder[Symbol]
 
-      val syms0 = traits.keys ++ defs.keys ++ vals.keys ++ enums.keys ++ structs.keys ++ effects.keys ++ typeAliases.keys ++ sigs ++ ops
+      // The namespaces of the symbols. Most symbols share their namespace with many others,
+      // so we collect the distinct namespaces (in order of first occurrence) before we compute their prefixes.
+      val fullNamespaces = mutable.LinkedHashSet.empty[List[String]]
+
+      traits.keysIterator.foreach { sym => symsBuilder += sym; fullNamespaces += sym.namespace }
+      defs.keysIterator.foreach { sym => symsBuilder += sym; fullNamespaces += sym.namespace }
+      vals.keysIterator.foreach { sym => symsBuilder += sym; fullNamespaces += sym.namespace }
+      enums.keysIterator.foreach { sym => symsBuilder += sym; fullNamespaces += sym.namespace }
+      structs.keysIterator.foreach { sym => symsBuilder += sym; fullNamespaces += sym.namespace }
+      effects.keysIterator.foreach { sym => symsBuilder += sym; fullNamespaces += sym.namespace }
+      typeAliases.keysIterator.foreach { sym => symsBuilder += sym; fullNamespaces += sym.namespace }
+
+      // Signatures and operations belong to the module of their trait or effect, which is not a namespace.
+      traits.valuesIterator.foreach { trt => trt.sigs.valuesIterator.foreach(sig => symsBuilder += sig.sym) }
+      effects.valuesIterator.foreach { eff => eff.ops.foreach(op => symsBuilder += op.sym) }
 
       // collect namespaces from prefixes of other symbols
       // TODO this should be done in resolver once the duplicate namespace issue is managed
-      val namespaces = syms0.collect {
-        case sym: Symbol.DefnSym => sym.namespace
-        case sym: Symbol.ValSym => sym.namespace
-        case sym: Symbol.EnumSym => sym.namespace
-        case sym: Symbol.StructSym => sym.namespace
-        case sym: Symbol.StructFieldSym => sym.namespace
-        case sym: Symbol.RestrictableEnumSym => sym.namespace
-        case sym: Symbol.TraitSym => sym.namespace
-        case sym: Symbol.TypeAliasSym => sym.namespace
-        case sym: Symbol.EffSym => sym.namespace
-      }.flatMap {
-        fullNs =>
-          fullNs.inits.collect {
-            case ns@(_ :: _) => new Symbol.ModuleSym(ns, ModuleKind.Standalone)
-          }
-      }.toSet
-      val syms = syms0 ++ namespaces
+      for (fullNs <- fullNamespaces; ns <- fullNs.inits) {
+        if (ns.nonEmpty) {
+          symsBuilder += new Symbol.ModuleSym(ns, ModuleKind.Standalone)
+        }
+      }
+      val syms = symsBuilder.result()
 
       val groups = syms.groupBy {
         case sym: Symbol.DefnSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
